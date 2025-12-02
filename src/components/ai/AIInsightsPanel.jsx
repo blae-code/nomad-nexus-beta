@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, RefreshCw, Radio, Activity, Sparkles, AlertTriangle, Info, Lightbulb } from "lucide-react";
 import { refreshAgent } from "@/components/ai/aiOrchestrator";
+import AgentRuleManager from "@/components/ai/AgentRuleManager";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 
@@ -108,6 +109,7 @@ export default function AIInsightsPanel({ eventId, compact = false }) {
                      <RefreshCw className={cn("w-3 h-3", isRunning && "animate-spin")} />
                    </Button>
                  )}
+                 {canTrigger && <AgentRuleManager agentSlug={agent.slug} />}
               </div>
               
               {/* Output */}
