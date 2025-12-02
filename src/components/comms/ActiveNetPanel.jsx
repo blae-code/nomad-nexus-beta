@@ -5,9 +5,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText } from "lucide-react";
+import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
+import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -163,10 +164,11 @@ export default function ActiveNetPanel({ net, user, eventId }) {
 
   if (!net) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-zinc-600 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20 p-10">
-        <Radio className="w-12 h-12 mb-4 opacity-20" />
-        <p className="uppercase tracking-widest text-sm">No Frequency Selected</p>
-        <p className="text-xs mt-2">Select a net from the list to monitor</p>
+      <div className="h-full flex flex-col items-center justify-center text-zinc-700 border-2 border-dashed border-zinc-900 rounded-lg bg-zinc-950/50 p-10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(63,63,70,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] opacity-10" />
+        <Radio className="w-16 h-16 mb-6 opacity-20" />
+        <p className="uppercase tracking-[0.3em] text-sm font-bold">No Frequency Selected</p>
+        <p className="text-xs mt-2 text-zinc-600 font-mono">AWAITING INPUT //</p>
       </div>
     );
   }
@@ -174,48 +176,50 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   return (
     <div className="h-full flex flex-col gap-6">
       {/* Header Card */}
-      <Card className="bg-zinc-950 border-zinc-800 relative overflow-hidden">
+      <TerminalCard className="relative overflow-hidden" active={isTransmitting}>
         {isTransmitting && (
            <motion.div 
              initial={{ opacity: 0 }}
-             animate={{ opacity: 0.1 }}
+             animate={{ opacity: 0.05 }}
              className="absolute inset-0 bg-emerald-500 pointer-events-none"
            />
         )}
-        <CardHeader className="pb-4">
-          <div className="flex justify-between items-start">
+        
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-6">
             <div>
-              <div className="flex items-center gap-3">
-                 <h2 className="text-3xl font-black font-mono text-white tracking-tight">{net.code}</h2>
+              <div className="flex items-center gap-4">
+                 <h2 className="text-4xl font-black font-mono text-white tracking-tighter leading-none text-shadow-sm">
+                    {net.code}
+                 </h2>
                  {isTransmitting && (
-                   <Badge className="bg-red-500 text-white animate-pulse border-none">TRANSMITTING</Badge>
+                   <Badge className="bg-red-500 text-white animate-pulse border-none font-mono tracking-widest">TX ACTIVE</Badge>
                  )}
               </div>
-              <p className="text-zinc-400 uppercase tracking-widest text-xs mt-1">{net.label}</p>
+              <div className="flex items-center gap-2 mt-2">
+                 <NetTypeIcon type={net.type} />
+                 <p className="text-zinc-400 uppercase tracking-widest text-xs font-bold">{net.label}</p>
+              </div>
             </div>
-            <div className="text-right">
-               <div className="text-xs text-zinc-600 font-mono">FREQ_ID: {net.id.slice(0,6)}</div>
-               <div className="text-xs text-zinc-600 font-mono">ENC: NONE</div>
+            <div className="text-right flex flex-col items-end gap-2">
+               <PermissionBadge canTx={canTx} minRankTx={net.min_rank_to_tx} minRankRx={net.min_rank_to_rx} />
+               <div className="text-[10px] text-zinc-600 font-mono tracking-widest">ID: {net.id.slice(0,8).toUpperCase()}</div>
             </div>
           </div>
-        </CardHeader>
         
-        <CardContent>
-           <div className="flex gap-4 mb-6">
-              <div className="flex-1 bg-zinc-900/50 p-3 rounded border border-zinc-800">
-                 <div className="text-[10px] text-zinc-500 uppercase mb-1">Linked Squad</div>
-                 <div className="text-zinc-200 font-bold text-sm">
-                    {net.linked_squad_id ? "ASSIGNED" : "OPEN / GLOBAL"}
+           <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-zinc-900/50 p-3 rounded-sm border border-zinc-800/50">
+                 <div className="text-[9px] text-zinc-500 uppercase mb-1 tracking-widest">Squad Assignment</div>
+                 <div className="text-zinc-200 font-bold text-sm font-mono">
+                    {net.linked_squad_id ? "DEDICATED LINK" : "GLOBAL / OPEN"}
                  </div>
               </div>
-              <div className="flex-1 bg-zinc-900/50 p-3 rounded border border-zinc-800">
-                 <div className="text-[10px] text-zinc-500 uppercase mb-1">Signal Strength</div>
-                 <div className="flex items-end gap-1 h-5">
-                    <div className="w-1 h-2 bg-emerald-500/50" />
-                    <div className="w-1 h-3 bg-emerald-500/50" />
-                    <div className="w-1 h-4 bg-emerald-500/50" />
-                    <div className="w-1 h-5 bg-emerald-500" />
+              <div className="bg-zinc-900/50 p-3 rounded-sm border border-zinc-800/50 flex justify-between items-center">
+                 <div>
+                   <div className="text-[9px] text-zinc-500 uppercase mb-1 tracking-widest">Carrier Signal</div>
+                   <div className="text-zinc-200 font-bold text-sm font-mono">OPTIMAL</div>
                  </div>
+                 <SignalStrength strength={4} className="h-6 gap-1" />
               </div>
            </div>
 
@@ -224,40 +228,39 @@ export default function ActiveNetPanel({ net, user, eventId }) {
              onMouseDown={handlePTT}
              disabled={!canTx}
              className={cn(
-               "w-full h-24 rounded-lg flex items-center justify-center gap-3 transition-all duration-100 relative overflow-hidden group",
+               "w-full h-32 rounded-sm flex items-center justify-center gap-4 transition-all duration-150 relative overflow-hidden group border-2",
                canTx 
                  ? isTransmitting 
-                    ? "bg-emerald-500 text-white shadow-[0_0_30px_rgba(16,185,129,0.4)] scale-[0.99]" 
-                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 border border-zinc-700"
-                 : "bg-zinc-900/50 text-zinc-600 cursor-not-allowed border border-zinc-800"
+                    ? "bg-emerald-600 text-white border-emerald-400 shadow-[0_0_50px_rgba(16,185,129,0.4)] scale-[0.98]" 
+                    : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500"
+                 : "bg-zinc-950/50 text-zinc-700 cursor-not-allowed border-zinc-900 border-dashed"
              )}
            >
              <div className={cn(
-               "absolute inset-0 opacity-10 pattern-grid-lg",
-               isTransmitting ? "bg-white" : "bg-transparent"
+               "absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]",
+               isTransmitting ? "opacity-10" : ""
              )} />
              
-             <Mic className={cn("w-8 h-8", isTransmitting && "animate-pulse")} />
-             <span className="font-black text-2xl tracking-widest">
-               {canTx ? (isTransmitting ? "TRANSMITTING" : "PUSH TO TALK") : "TX UNAUTHORIZED"}
-             </span>
+             <Mic className={cn("w-10 h-10", isTransmitting && "animate-pulse")} />
+             <div className="flex flex-col items-start">
+               <span className="font-black text-3xl tracking-widest leading-none">
+                 {canTx ? (isTransmitting ? "TRANSMITTING" : "PUSH TO TALK") : "UNAUTHORIZED"}
+               </span>
+               {canTx && !isTransmitting && (
+                 <span className="text-xs uppercase tracking-[0.3em] text-zinc-600 font-bold mt-1 group-hover:text-zinc-500">Hold to Broadcast</span>
+               )}
+             </div>
            </button>
-           
-           {!canTx && (
-             <p className="text-center text-[10px] text-red-500/70 mt-2 uppercase tracking-wider">
-               Insufficient Clearance (Req: {net.min_rank_to_tx})
-             </p>
-           )}
-        </CardContent>
-      </Card>
+        </div>
+      </TerminalCard>
 
       {/* Roster & Logs */}
-      <Card className="flex-1 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden">
+      <TerminalCard className="flex-1 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
             <NetRoster net={net} />
             <CommsLog eventId={eventId} />
          </ScrollArea>
-      </Card>
+      </TerminalCard>
     </div>
   );
 }

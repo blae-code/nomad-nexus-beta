@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { SignalStrength, PermissionBadge, TerminalCard, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 
 export default function CommsPanel({ eventId }) {
   const [selectedNetId, setSelectedNetId] = React.useState(null);
@@ -94,12 +95,12 @@ export default function CommsPanel({ eventId }) {
   if (isLoading) return <div className="h-32 bg-zinc-900/50 rounded animate-pulse" />;
 
   return (
-    <Card className="bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden">
+    <TerminalCard className="flex flex-col overflow-hidden">
       <CardHeader className="pb-2 bg-zinc-900/30 border-b border-zinc-800/50 pt-4">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-sm font-bold text-zinc-200 flex items-center gap-2 uppercase tracking-wider">
-            <Radio className="w-4 h-4 text-emerald-500" />
-            Tactical Comms
+          <CardTitle className="text-sm font-black text-zinc-100 flex items-center gap-2 uppercase tracking-widest font-mono">
+            <Radio className="w-3 h-3 text-emerald-500" />
+            Redscar Comms
           </CardTitle>
           <a href={createPageUrl(`CommsConsole?eventId=${eventId}`)}>
              <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-white">
@@ -110,98 +111,112 @@ export default function CommsPanel({ eventId }) {
       </CardHeader>
       
       <CardContent className="p-0">
-        {/* Selected Net Control */}
-        <div className="p-4 bg-zinc-900/20">
+        {/* Primary Net Interface */}
+        <div className="p-4 bg-zinc-900/20 relative">
            {selectedNet ? (
              <div className="space-y-4">
                 <div className="flex justify-between items-start">
                    <div>
-                      <div className="flex items-center gap-2">
-                         <h3 className="text-2xl font-black font-mono text-white tracking-tight">{selectedNet.code}</h3>
-                         {selectedNet.type === 'command' && <Lock className="w-3 h-3 text-red-500" />}
+                      <div className="flex items-center gap-2 mb-1">
+                         <NetTypeIcon type={selectedNet.type} />
+                         <h3 className="text-xl font-black font-mono text-white tracking-tighter leading-none">{selectedNet.code}</h3>
                       </div>
-                      <div className="text-xs text-zinc-500 uppercase font-bold">{selectedNet.label}</div>
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider pl-4">{selectedNet.label}</div>
                    </div>
-                   <div className="text-right">
-                      <Badge variant="outline" className={cn(
-                         "text-[10px] border-zinc-800",
-                         canTx ? "text-emerald-500 bg-emerald-950/10" : "text-red-500 bg-red-950/10"
-                      )}>
-                         {canTx ? "TX READY" : "RX ONLY"}
-                      </Badge>
+                   <div className="text-right flex flex-col items-end gap-1">
+                      <PermissionBadge 
+                        canTx={canTx} 
+                        minRankTx={selectedNet.min_rank_to_tx} 
+                        className="text-[9px] py-0 px-1.5 h-4" 
+                      />
+                      {!mutedNets[selectedNet.id] && (
+                        <SignalStrength strength={3} className="h-2 gap-[1px]" />
+                      )}
                    </div>
                 </div>
 
+                {/* Big PTT Button */}
                 <button
                   onMouseDown={handlePTT}
                   disabled={!canTx}
                   className={cn(
-                    "w-full py-3 rounded flex items-center justify-center gap-2 transition-all duration-100 relative overflow-hidden group border",
+                    "w-full py-4 rounded-sm flex items-center justify-center gap-3 transition-all duration-100 relative overflow-hidden group border",
                     canTx 
                       ? isTransmitting 
-                         ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" 
-                         : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white border-zinc-700"
-                      : "bg-zinc-900/50 text-zinc-600 cursor-not-allowed border-zinc-800"
+                         ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.3)] scale-[0.99]" 
+                         : "bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-300 hover:from-zinc-700 hover:to-zinc-800 hover:text-white border-zinc-700 shadow-lg"
+                      : "bg-zinc-950 text-zinc-700 cursor-not-allowed border-zinc-900 border-dashed opacity-70"
                   )}
                 >
-                  <Mic className={cn("w-4 h-4", isTransmitting && "animate-pulse")} />
-                  <span className="font-bold text-sm tracking-wider">
-                    {canTx ? (isTransmitting ? "TRANSMITTING..." : "PUSH TO TALK") : "UNAUTHORIZED"}
+                  {/* Button Texture */}
+                  <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
+                  
+                  <Mic className={cn("w-5 h-5", isTransmitting && "animate-pulse text-white")} />
+                  <span className={cn("font-black text-sm tracking-[0.2em]", isTransmitting && "text-white text-shadow")}>
+                    {canTx ? (isTransmitting ? "TRANSMITTING" : "PUSH TO TALK") : "UNAUTHORIZED"}
                   </span>
                 </button>
              </div>
            ) : (
-             <div className="text-center py-4 text-zinc-500 text-xs">Select a frequency below</div>
+             <div className="text-center py-8 flex flex-col items-center justify-center opacity-50">
+                <Radio className="w-8 h-8 mb-2 text-zinc-700" />
+                <div className="text-zinc-500 text-xs uppercase tracking-widest">No Frequency Locked</div>
+             </div>
            )}
         </div>
 
-        {/* Compact Net List */}
-        <div className="border-t border-zinc-800 max-h-[200px] overflow-y-auto custom-scrollbar">
-           {voiceNets.length === 0 && (
-              <div className="p-4 text-center text-xs text-zinc-500 italic">No active nets.</div>
-           )}
-           {voiceNets.map(net => (
-              <div 
-                key={net.id}
-                onClick={() => setSelectedNetId(net.id)}
-                className={cn(
-                   "flex items-center justify-between p-3 border-b border-zinc-800/50 cursor-pointer transition-colors",
-                   selectedNetId === net.id ? "bg-zinc-900/80" : "hover:bg-zinc-900/30"
-                )}
-              >
-                 <div className="flex items-center gap-3">
-                    <div className={cn(
-                       "w-1 h-6 rounded-full",
-                       net.type === 'command' ? "bg-red-500" :
-                       net.linked_squad_id && net.linked_squad_id === userSquadId ? "bg-emerald-500" :
-                       "bg-zinc-700"
-                    )} />
-                    <div>
-                       <div className={cn("text-xs font-bold font-mono", selectedNetId === net.id ? "text-white" : "text-zinc-400")}>
-                          {net.code}
-                       </div>
-                       <div className="text-[10px] text-zinc-600">{net.label}</div>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <button 
-                      onClick={(e) => toggleMute(net.id, e)}
-                      className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                       {mutedNets[net.id] ? <VolumeX className="w-3 h-3 text-red-500" /> : <Volume2 className="w-3 h-3" />}
-                    </button>
-                    {selectedNetId === net.id && !mutedNets[net.id] && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-                 </div>
-              </div>
-           ))}
+        {/* Compact Net List (Secondary) */}
+        <div className="border-t border-zinc-800/50">
+           <div className="px-3 py-2 bg-zinc-950 text-[9px] text-zinc-600 uppercase tracking-widest font-bold border-b border-zinc-900">
+             Available Frequencies
+           </div>
+           <div className="max-h-[180px] overflow-y-auto custom-scrollbar bg-zinc-950/50">
+             {voiceNets.length === 0 && (
+                <div className="p-4 text-center text-xs text-zinc-600 italic">No signal detected.</div>
+             )}
+             {voiceNets.map(net => {
+                const isSelected = selectedNetId === net.id;
+                return (
+                  <div 
+                    key={net.id}
+                    onClick={() => setSelectedNetId(net.id)}
+                    className={cn(
+                       "flex items-center justify-between p-2 border-b border-zinc-900/50 cursor-pointer transition-all group",
+                       isSelected ? "bg-zinc-900/80 border-l-2 border-l-emerald-500 pl-[calc(0.75rem-2px)]" : "hover:bg-zinc-900/30 border-l-2 border-l-transparent"
+                    )}
+                  >
+                     <div className="flex items-center gap-3">
+                        <div className={cn(
+                           "w-1 h-1 rounded-full",
+                           net.type === 'command' ? "bg-red-500" :
+                           net.type === 'general' ? "bg-emerald-500" : "bg-zinc-700"
+                        )} />
+                        <div>
+                           <div className={cn("text-xs font-bold font-mono leading-none mb-0.5", isSelected ? "text-white" : "text-zinc-500 group-hover:text-zinc-300")}>
+                              {net.code}
+                           </div>
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <button 
+                          onClick={(e) => toggleMute(net.id, e)}
+                          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-600 hover:text-zinc-300 transition-colors"
+                        >
+                           {mutedNets[net.id] ? <VolumeX className="w-3 h-3 text-red-900" /> : <Volume2 className="w-3 h-3" />}
+                        </button>
+                     </div>
+                  </div>
+                );
+             })}
+           </div>
         </div>
       </CardContent>
-      <CardFooter className="py-2 bg-zinc-900/50 border-t border-zinc-800">
-         <div className="w-full flex justify-between text-[10px] text-zinc-500 font-mono">
-            <span>SIG: {selectedNet ? "STRONG" : "NONE"}</span>
-            <span>ENC: OFF</span>
+      <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
+         <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
+            <span>STATUS: ONLINE</span>
+            <span>ENCRYPTION: NONE</span>
          </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </TerminalCard>
   );
 }

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Radio, Mic, Users, Lock, Volume2 } from "lucide-react";
+import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 
 export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode }) {
   // Filter nets based on view mode
