@@ -1,5 +1,5 @@
 import React from "react";
-import CriticalAlertsWidget from "@/components/dashboard/CriticalAlertsWidget";
+import OrgResourcesWidget from "@/components/dashboard/OrgResourcesWidget";
 import OrgStatusWidget from "@/components/dashboard/OrgStatusWidget";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
 import PersonalizedFeedWidget from "@/components/dashboard/PersonalizedFeedWidget";
@@ -37,9 +37,9 @@ export default function NomadOpsDashboard() {
               style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
          />
 
-         {/* 1. Critical Alerts (Top Left / Priority) - Spans full height on mobile, or large chunk on desktop */}
+         {/* 1. Left Column (Org Resources) */}
          <div className="col-span-12 md:col-span-4 lg:col-span-3 row-span-12 md:row-span-12">
-            <CriticalAlertsWidget />
+            <OrgResourcesWidget />
          </div>
 
          {/* 2. Main Center Area (Personalized Feed) */}
