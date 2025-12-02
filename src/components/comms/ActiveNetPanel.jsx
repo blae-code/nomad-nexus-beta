@@ -297,6 +297,14 @@ export default function ActiveNetPanel({ net, user, eventId }) {
             <NetRoster net={net} eventId={eventId} currentUserState={audioState} />
             <CommsLog eventId={eventId} />
          </ScrollArea>
+         <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
+            <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
+               <span className={connectionToken ? "text-emerald-900" : "text-zinc-700"}>
+                  STATUS: {connectionToken ? "CONNECTED (SECURE)" : "HANDSHAKE..."}
+               </span>
+               <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
+            </div>
+         </div>
       </TerminalCard>
     </div>
   );
