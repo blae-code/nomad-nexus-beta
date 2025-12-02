@@ -115,6 +115,33 @@ export default function CommsConsolePage() {
      setSelectedNet(null);
   }, [selectedEventId]);
 
+  // Access Control Check (Render Phase)
+  if (currentUser && !canAccessFocusedVoice(currentUser)) {
+     return (
+        <div className="h-full bg-black text-zinc-200 font-sans flex flex-col overflow-hidden">
+            {/* Toolbar Placeholder */}
+            <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
+               <div className="flex items-center gap-4">
+                  <Radio className="w-5 h-5 text-zinc-600" />
+                  <div><h2 className="font-bold text-zinc-500 tracking-wider text-sm uppercase">Comms Console // LOCKED</h2></div>
+               </div>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-700">
+               <div className="relative">
+                  <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full animate-pulse" />
+                  <Shield className="w-24 h-24 text-red-600 relative z-10" />
+               </div>
+               <div className="text-center space-y-2">
+                  <h1 className="text-4xl font-black uppercase tracking-[0.2em] text-red-600 text-shadow-lg">Access Denied</h1>
+                  <div className="h-px w-32 bg-red-900/50 mx-auto my-4" />
+                  <p className="text-sm font-mono text-red-400 tracking-widest">CLEARANCE INSUFFICIENT</p>
+                  <p className="text-[10px] font-mono text-zinc-600 uppercase">Required Rank: Scout+ // Protocol 77-B</p>
+               </div>
+            </div>
+        </div>
+     );
+  }
+
   return (
     <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
       
