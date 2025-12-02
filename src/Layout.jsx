@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { Terminal, Search, Clock, User } from 'lucide-react';
-import { Input } from "@/components/ui/input";
+import CommandPalette from "@/components/layout/CommandPalette";
 import ActivityBar from "@/components/layout/ActivityBar";
 import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
 import { base44 } from "@/api/base44Client";
@@ -97,32 +97,8 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Command Palette / Universal Search - Centered & Enhanced */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-4 pointer-events-none">
-          <div className="relative group pointer-events-auto">
-             {/* Glow Effect */}
-             <div className="absolute inset-0 bg-[#ea580c] blur-[40px] opacity-0 group-focus-within:opacity-10 transition-opacity duration-500" />
-
-             {/* Border Accents */}
-             <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
-             <div className="absolute -top-px -right-px w-2 h-2 border-t border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
-             <div className="absolute -bottom-px -left-px w-2 h-2 border-b border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
-             <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
-
-             <div className="relative flex items-center bg-zinc-950/80 backdrop-blur-sm border border-zinc-800 group-focus-within:border-[#ea580c]/50 transition-all duration-300 group-focus-within:shadow-[0_0_20px_rgba(234,88,12,0.1)]">
-                <div className="pl-4 pr-3 text-zinc-600 group-focus-within:text-[#ea580c] transition-colors">
-                   <Search className="w-4 h-4" />
-                </div>
-                <Input 
-                    className="h-10 border-none bg-transparent text-xs font-mono text-[#ea580c] placeholder:text-zinc-600 uppercase tracking-[0.15em] focus-visible:ring-0 p-0" 
-                    placeholder="INITIALIZE_SEARCH_PROTOCOL // ..." 
-                />
-                <div className="pr-3 flex gap-1.5">
-                   <div className="w-1 h-1 bg-zinc-800 rounded-full group-focus-within:bg-[#ea580c] animate-pulse" />
-                   <div className="w-1 h-1 bg-zinc-800 rounded-full group-focus-within:bg-[#ea580c] animate-pulse delay-75" />
-                   <div className="w-1 h-1 bg-zinc-800 rounded-full group-focus-within:bg-[#ea580c] animate-pulse delay-150" />
-                </div>
-             </div>
-          </div>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-4">
+           <CommandPalette />
         </div>
 
         {/* Time Tracker & Profile */}
