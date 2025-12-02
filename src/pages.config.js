@@ -1,4 +1,3 @@
-import Event from './pages/Event';
 import Events from './pages/Events';
 import Channels from './pages/Channels';
 import Treasury from './pages/Treasury';
@@ -9,7 +8,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Event": Event,
     "Events": Events,
     "Channels": Channels,
     "Treasury": Treasury,
@@ -19,7 +17,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Event",
+    mainPage: "Events",
     Pages: PAGES,
     Layout: __Layout,
 };
