@@ -12,7 +12,8 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Radio, Shield, Layout, Monitor, ListTree } from "lucide-react";
+import { Radio, Shield, Layout, Monitor, ListTree, Bot } from "lucide-react";
+import CommsAIAssistant from "@/components/ai/CommsAIAssistant";
 import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
@@ -32,6 +33,7 @@ export default function CommsConsolePage() {
   const [selectedChannel, setSelectedChannel] = React.useState(null);
   const [consoleMode, setConsoleMode] = React.useState("ops"); // 'ops' (Voice/Events) or 'lounge' (Text/ReadyRooms)
   const [viewMode, setViewMode] = React.useState("line"); // 'command' or 'line'
+  const [showAIAssistant, setShowAIAssistant] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
 
@@ -192,9 +194,19 @@ export default function CommsConsolePage() {
                </div>
                <div className="h-6 w-[1px] bg-zinc-800 mx-2" />
                {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
-            </div>
-         )}
-      </div>
+               </div>
+
+               <Button
+               variant="ghost"
+               size="sm"
+               onClick={() => setShowAIAssistant(!showAIAssistant)}
+               className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800 ml-2", showAIAssistant ? "bg-purple-500/10 text-purple-400 border-purple-500/30" : "text-zinc-500")}
+               >
+               <Bot className="w-3 h-3" />
+               AI Assistant
+               </Button>
+               )}
+               </div>
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
@@ -300,32 +312,40 @@ export default function CommsConsolePage() {
             </div>
          </main>
 
-         {/* Right Sidebar - AUX DATA */}
-         <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
-            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
-               <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                  <Monitor className="w-4 h-4" />
-                  <span>Aux Data</span>
+         {/* Right Sidebar - AUX DATA or AI ASSISTANT */}
+         {showAIAssistant ? (
+            <CommsAIAssistant 
+               eventId={selectedEventId} 
+               channelId={selectedChannel?.id} // If in lounge mode or relevant to net
+               user={currentUser} 
+            />
+         ) : (
+            <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
+               <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
+                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                     <Monitor className="w-4 h-4" />
+                     <span>Aux Data</span>
+                  </div>
                </div>
-            </div>
-            <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden overflow-y-auto custom-scrollbar">
-               {/* 1. Rescue Alert (Top) */}
-               <RescueAlertPanel />
+               <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden overflow-y-auto custom-scrollbar">
+                  {/* 1. Rescue Alert (Top) */}
+                  <RescueAlertPanel />
 
-               {/* 2. AI Tactical Inference */}
-               {selectedEventId && (
-                  <TacticalStatusReporter user={currentUser} eventId={selectedEventId} />
-               )}
+                  {/* 2. AI Tactical Inference */}
+                  {selectedEventId && (
+                     <TacticalStatusReporter user={currentUser} eventId={selectedEventId} />
+                  )}
 
-               {/* 3. Next Focused Event (Compact) */}
-               <EventProjectionPanel user={currentUser} compact={true} />
+                  {/* 3. Next Focused Event (Compact) */}
+                  <EventProjectionPanel user={currentUser} compact={true} />
 
-               {/* 4. Rank Visualizer (Bottom) */}
-               <div className="mt-auto pt-4">
-                  <RankVisualizer currentRank={currentUser?.rank || 'Vagrant'} />
+                  {/* 4. Rank Visualizer (Bottom) */}
+                  <div className="mt-auto pt-4">
+                     <RankVisualizer currentRank={currentUser?.rank || 'Vagrant'} />
+                  </div>
                </div>
-            </div>
-         </aside>
+            </aside>
+         )}
 
       </div>
     </div>

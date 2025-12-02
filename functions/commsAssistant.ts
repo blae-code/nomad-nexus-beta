@@ -1,0 +1,222 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+
+export default async function handler(req) {
+  const base44 = createClientFromRequest(req);
+  const { action, data } = await req.json();
+
+  const user = await base44.auth.me();
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    switch (action) {
+      case 'summarize_logs':
+        return await summarizeLogs(base44, data);
+      case 'scan_priority':
+        return await scanPriority(base44, data);
+      case 'suggest_nets':
+        return await suggestNets(base44, user, data);
+      case 'ask_comms':
+        return await askComms(base44, user, data);
+      default:
+        return Response.json({ error: 'Invalid action' }, { status: 400 });
+    }
+  } catch (error) {
+    console.error("AI Error:", error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+async function summarizeLogs(base44, { eventId, channelId, limit = 50 }) {
+  const filter = {};
+  if (eventId) {
+      // If summarizing an event, we might need to find relevant channels or use a convention
+      // For now, let's assume we look for logs in all channels linked to the event? 
+      // OR simpler: just summarizing a specific channel or net logs.
+      // Let's stick to channel_id for now, or if eventId is passed, look for messages with specific text patterns or look up nets.
+      // Actually, let's just fetch messages for the channel if provided.
+  }
+  if (channelId) filter.channel_id = channelId;
+
+  const messages = await base44.entities.Message.list({
+    filter,
+    sort: { created_date: -1 },
+    limit
+  });
+
+  if (messages.length === 0) {
+    return Response.json({ summary: "No recent communications to summarize." });
+  }
+
+  const transcript = messages.reverse().map(m => `User ${m.user_id}: ${m.content}`).join("\n");
+
+  const prompt = `
+    You are a military communications officer. Summarize the following communication transcript.
+    Highlight key tactical information, movements, and status changes.
+    Keep it brief and professional (military style).
+
+    TRANSCRIPT:
+    ${transcript}
+  `;
+
+  const res = await base44.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+        type: "object",
+        properties: {
+            summary: { type: "string" },
+            key_points: { type: "array", items: { type: "string" } }
+        }
+    }
+  });
+
+  return Response.json(res);
+}
+
+async function scanPriority(base44, { messageIds }) {
+  // If messageIds provided, scan specific messages. 
+  // Or scan recent messages in a channel.
+  // Let's assume we scan a specific new message or list of messages.
+  
+  // For this implementation, let's assume the frontend sends a list of recent messages to analyze
+  // Or we fetch them.
+  // Let's fetch the messages by ID.
+  
+  // Simplified: The frontend sends "content" to check, or we fetch recent.
+  // Better: Fetch recent 10 messages from a channel and flag them.
+  
+  const messages = await base44.entities.Message.list({
+     filter: { id: { "$in": messageIds } }
+  });
+  
+  if (!messages.length) return Response.json({ flagged: [] });
+
+  const contentList = messages.map(m => ({ id: m.id, content: m.content }));
+  
+  const prompt = `
+    Analyze the following messages for priority.
+    Flag messages that contain: Distress calls, Contact reports, High priority commands, Medical emergencies.
+    
+    Messages:
+    ${JSON.stringify(contentList)}
+  `;
+
+  const res = await base44.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+        type: "object",
+        properties: {
+            analysis: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                        is_priority: { type: "boolean" },
+                        reason: { type: "string" },
+                        tags: { type: "array", items: { type: "string" } }
+                    }
+                }
+            }
+        }
+    }
+  });
+
+  // Update messages with analysis
+  const updates = [];
+  for (const item of res.analysis) {
+      if (item.is_priority) {
+          updates.push(
+              base44.entities.Message.update(item.id, {
+                  ai_analysis: {
+                      is_priority: item.is_priority,
+                      summary: item.reason,
+                      tags: item.tags
+                  }
+              })
+          );
+      }
+  }
+  
+  await Promise.all(updates);
+
+  return Response.json(res);
+}
+
+async function suggestNets(base44, user, { eventId }) {
+  const [nets, playerStatus] = await Promise.all([
+    base44.entities.VoiceNet.list({ filter: { event_id: eventId } }),
+    base44.entities.PlayerStatus.list({ filter: { user_id: user.id, event_id: eventId } })
+  ]);
+
+  const status = playerStatus[0];
+  const userRole = status ? status.role : user.rank; // Fallback to rank if no role
+
+  const prompt = `
+    Given the following user profile and available voice nets, suggest the best net to join.
+    User Rank: ${user.rank}
+    User Role: ${userRole}
+    User Status: ${status ? status.status : 'UNKNOWN'}
+
+    Available Nets:
+    ${JSON.stringify(nets.map(n => ({ code: n.code, type: n.type, label: n.label, min_rank: n.min_rank_to_rx })))}
+
+    Return a recommendation.
+  `;
+
+  const res = await base44.integrations.Core.InvokeLLM({
+    prompt,
+    response_json_schema: {
+        type: "object",
+        properties: {
+            recommended_net_code: { type: "string" },
+            reason: { type: "string" }
+        }
+    }
+  });
+
+  return Response.json(res);
+}
+
+async function askComms(base44, user, { query, eventId }) {
+  // Gather context: Active Nets, Recent Important Logs, Player Statuses
+  const [nets, statuses, agents] = await Promise.all([
+      base44.entities.VoiceNet.list({ filter: { event_id: eventId } }),
+      base44.entities.PlayerStatus.list({ filter: { event_id: eventId } }),
+      base44.entities.AIAgentLog.list({ filter: { event_id: eventId }, sort: { created_date: -1 }, limit: 10 })
+  ]);
+
+  const context = `
+    Event Context:
+    Active Nets: ${nets.length}
+    personnel Online: ${statuses.length}
+    Personnel Statuses: ${JSON.stringify(statuses.map(s => ({ role: s.role, status: s.status, loc: s.current_location })))}
+    Recent AI Alerts: ${JSON.stringify(agents.map(a => a.summary))}
+  `;
+
+  const prompt = `
+    You are an AI Comms Officer. Answer the user's question based on the current operational picture.
+    User: ${query}
+
+    Context:
+    ${context}
+
+    Keep the answer tactical, concise, and helpful.
+  `;
+
+  const res = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: {
+          type: "object",
+          properties: {
+              answer: { type: "string" }
+          }
+      }
+  });
+
+  return Response.json(res);
+}
+
+// Deno wrapper
+Deno.serve(handler);
