@@ -51,17 +51,5 @@ export default function AUECWarningPanel() {
     );
   }
 
-  return (
-    <div className="border border-zinc-800 bg-zinc-900/30 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-           <Wallet className="w-5 h-5 text-zinc-500" />
-           <div className="text-zinc-400 font-bold uppercase tracking-widest text-sm">
-              Total Coffer Balance
-           </div>
-        </div>
-        <div className="font-mono text-xl text-white font-bold">
-           {totalBalance.toLocaleString()} aUEC
-        </div>
-    </div>
-  );
+  return null;
 }
