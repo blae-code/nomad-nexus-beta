@@ -2,6 +2,7 @@ import Event from './pages/Event';
 import Events from './pages/Events';
 import Channels from './pages/Channels';
 import OpsDashboard from './pages/OpsDashboard';
+import Treasury from './pages/Treasury';
 
 
 export const PAGES = {
@@ -9,6 +10,7 @@ export const PAGES = {
     "Events": Events,
     "Channels": Channels,
     "OpsDashboard": OpsDashboard,
+    "Treasury": Treasury,
 }
 
 export const pagesConfig = {

@@ -11,6 +11,7 @@ import { createPageUrl } from "@/utils";
 import { canEditEvent } from "@/components/permissions";
 import EventForm from "@/components/events/EventForm";
 import EventParticipants from "@/components/events/EventParticipants";
+import EventEconomy from "@/components/events/EventEconomy";
 
 export default function EventPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -159,6 +160,9 @@ export default function EventPage() {
             
             {/* Player Status */}
             <PlayerStatusSection eventId={event.id} />
+
+            {/* Economy Section */}
+            <EventEconomy eventId={event.id} />
 
             {/* Comms Panel Placeholder */}
             <div className="opacity-75 hover:opacity-100 transition-opacity">
