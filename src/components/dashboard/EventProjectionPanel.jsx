@@ -3,9 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
-import { Shield, Crosshair, Zap, AlertCircle, Calendar, Clock, MapPin, ChevronRight, Users, Hash } from "lucide-react";
-import { hasRole, hasMinRank } from "@/components/permissions";
-import { toLocalTime } from "@/components/utils/dateUtils";
+import { Shield, Crosshair, Zap, AlertCircle } from "lucide-react";
+import { createPageUrl } from "@/utils";
 
 export default function EventProjectionPanel({ user, compact = false }) {
   // Fetch next 2 relevant events
@@ -82,11 +81,15 @@ export default function EventProjectionPanel({ user, compact = false }) {
           const glowColor = isFocused ? "shadow-[0_0_30px_rgba(239,68,68,0.15)]" : "shadow-[0_0_30px_rgba(16,185,129,0.15)]";
           
           return (
-             <div key={event.id} className={cn(
-                "relative overflow-hidden border bg-black p-6 flex flex-col items-center justify-center text-center group transition-all",
-                isFocused ? "border-red-900/50" : "border-emerald-900/50",
-                glowColor
-             )}>
+             <a 
+                key={event.id} 
+                href={createPageUrl(`Events?id=${event.id}`)}
+                className={cn(
+                   "relative overflow-hidden border bg-black p-6 flex flex-col items-center justify-center text-center group transition-all hover:scale-[1.02] cursor-pointer",
+                   isFocused ? "border-red-900/50 hover:border-red-500/50" : "border-emerald-900/50 hover:border-emerald-500/50",
+                   glowColor
+                )}
+             >
                 {/* Header Bar */}
                 <div className={cn(
                    "absolute top-0 left-0 right-0 h-1 flex items-center justify-center",
@@ -106,7 +109,7 @@ export default function EventProjectionPanel({ user, compact = false }) {
                       {isFocused ? "/// COMBAT PROTOCOLS ///" : "/// CASUAL COMMS ///"}
                    </div>
                    
-                   <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none">
+                   <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none group-hover:text-[#ea580c] transition-colors">
                       {event.title}
                    </h3>
                    
@@ -116,18 +119,8 @@ export default function EventProjectionPanel({ user, compact = false }) {
                       </span>
                    </div>
 
-                   <div className="text-xs text-zinc-400 flex items-center justify-center gap-1.5 mt-1">
-                      <Clock className="w-3 h-3 text-[#ea580c]" />
-                      <span className="font-mono">
-                         {toLocalTime(event.start_time, 'HH:mm')} LCL
-                      </span>
-                   </div>
-                   <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                      {toLocalTime(event.start_time, 'EEE, MMM d')}
-                   </div>
-
                    <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-zinc-500 uppercase">
-                      <span>{toLocalTime(event.start_time, 'yyyy-MM-dd')}</span>
+                      <span>{new Date(event.start_time).toLocaleDateString()}</span>
                       <span className="text-zinc-700">|</span>
                       <span>{event.location || "CLASSIFIED"}</span>
                    </div>
@@ -138,7 +131,7 @@ export default function EventProjectionPanel({ user, compact = false }) {
                 <div className={cn("absolute top-2 right-2 w-2 h-2 border-t border-r opacity-50", isFocused ? "border-red-500" : "border-emerald-500")} />
                 <div className={cn("absolute bottom-2 left-2 w-2 h-2 border-b border-l opacity-50", isFocused ? "border-red-500" : "border-emerald-500")} />
                 <div className={cn("absolute bottom-2 right-2 w-2 h-2 border-b border-r opacity-50", isFocused ? "border-red-500" : "border-emerald-500")} />
-             </div>
+             </a>
           );
        })}
     </div>
