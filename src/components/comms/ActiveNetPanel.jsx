@@ -176,17 +176,21 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
 
+  const [livekitUrl, setLivekitUrl] = React.useState(null);
+
   // Simulate LiveKit Connection Handshake
   React.useEffect(() => {
     if (net && user) {
        // Reset token
        setConnectionToken(null);
+       setLivekitUrl(null);
        // Call backend to generate token
        base44.functions.invoke('generateLiveKitToken', {
           roomName: net.code,
           participantName: user.rsi_handle || user.full_name || 'Unknown'
        }).then(res => {
           setConnectionToken(res.data.token);
+          setLivekitUrl(res.data.livekitUrl);
        }).catch(err => console.error("LiveKit Handshake Failed:", err));
     }
   }, [net, user]);
@@ -302,7 +306,10 @@ export default function ActiveNetPanel({ net, user, eventId }) {
                <span className={connectionToken ? "text-emerald-900" : "text-zinc-700"}>
                   STATUS: {connectionToken ? "CONNECTED (SECURE)" : "HANDSHAKE..."}
                </span>
-               <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
+               <div className="flex gap-4">
+                  {livekitUrl && <span className="hidden md:inline text-zinc-800">UPLINK: {livekitUrl.split('://')[1]}</span>}
+                  <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
+               </div>
             </div>
          </div>
       </TerminalCard>
