@@ -6,6 +6,7 @@ import NetList from "@/components/comms/NetList";
 import ActiveNetPanel from "@/components/comms/ActiveNetPanel";
 import FleetHierarchy from "@/components/ops/FleetHierarchy";
 import FleetStatusSummary from "@/components/ops/FleetStatusSummary";
+import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -154,8 +155,9 @@ export default function CommsConsolePage() {
          
          {/* Sidebar */}
          <aside className="w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col">
-            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
                <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
+               {selectedEventId && <AIInsightsPanel eventId={selectedEventId} compact={true} />}
             </div>
             
             <div className="flex-1 p-4 overflow-hidden custom-scrollbar">

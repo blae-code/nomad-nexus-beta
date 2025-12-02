@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, RefreshCw, Radio, Activity, Sparkles } from "lucide-react";
-import { refreshAgent } from "@/utils/aiOrchestrator";
+import { refreshAgent } from "@/components/ai/aiOrchestrator";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 

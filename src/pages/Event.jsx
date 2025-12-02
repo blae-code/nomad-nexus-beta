@@ -13,6 +13,7 @@ import EventForm from "@/components/events/EventForm";
 import EventParticipants from "@/components/events/EventParticipants";
 import EventEconomy from "@/components/events/EventEconomy";
 import CommsConfig from "@/components/events/CommsConfig";
+import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 
 export default function EventPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -159,6 +160,9 @@ export default function EventPage() {
           {/* Sidebar / Comms Column */}
           <div className="space-y-6">
             
+            {/* AI Intelligence Layer */}
+            <AIInsightsPanel eventId={event.id} />
+
             {/* Comms Configuration (Leaders Only) */}
             {canEditEvent(currentUser, event) && (
               <CommsConfig eventId={event.id} />
