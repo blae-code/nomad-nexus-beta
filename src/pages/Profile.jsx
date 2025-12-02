@@ -22,6 +22,7 @@ export default function ProfilePage() {
         setValue("callsign", currentUser.callsign || "");
         setValue("rsi_handle", currentUser.rsi_handle || "");
         setValue("full_name", currentUser.full_name || "");
+        setValue("rank", currentUser.rank || "Vagrant");
       } catch (error) {
         console.error("Failed to load user", error);
       } finally {
@@ -35,7 +36,8 @@ export default function ProfilePage() {
     try {
       await base44.auth.updateMe({
         callsign: data.callsign,
-        rsi_handle: data.rsi_handle
+        rsi_handle: data.rsi_handle,
+        rank: data.rank // Saving rank from the override
       });
       
       toast.success("Profile updated successfully");
@@ -109,6 +111,22 @@ export default function ProfilePage() {
                         className="bg-zinc-900/50 border-zinc-800 text-zinc-300 font-mono"
                         placeholder="Your Star Citizen handle"
                       />
+                   </div>
+
+                   {/* Temporary Dev Override for Rank */}
+                   <div className="grid gap-2 pt-4 border-t border-zinc-900/50">
+                      <Label htmlFor="rank" className="text-xs uppercase text-zinc-500 font-bold">Clearance Level (Dev Override)</Label>
+                      <select 
+                        {...register("rank")}
+                        className="flex h-9 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ea580c] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="Vagrant">Vagrant</option>
+                        <option value="Scout">Scout</option>
+                        <option value="Voyager">Voyager</option>
+                        <option value="Founder">Founder</option>
+                        <option value="Pioneer">Pioneer (Admin)</option>
+                      </select>
+                      <p className="text-[10px] text-zinc-600">Set your rank manually to access restricted systems.</p>
                    </div>
 
                    <div className="pt-4 flex items-center justify-between border-t border-zinc-900">

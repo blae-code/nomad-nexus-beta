@@ -5,8 +5,7 @@ import CommsConsole from './pages/CommsConsole';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import Ranks from './pages/Ranks';
 import Profile from './pages/Profile';
-import RoleManager from './pages/RoleManager';
-import UserManager from './pages/UserManager';
+import Admin from './pages/Admin';
 import __Layout from './Layout.jsx';
 
 
@@ -18,8 +17,7 @@ export const PAGES = {
     "NomadOpsDashboard": NomadOpsDashboard,
     "Ranks": Ranks,
     "Profile": Profile,
-    "RoleManager": RoleManager,
-    "UserManager": UserManager,
+    "Admin": Admin,
 }
 
 export const pagesConfig = {
