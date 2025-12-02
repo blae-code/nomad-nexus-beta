@@ -98,7 +98,7 @@ export default function Layout({ children, currentPageName }) {
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-[#ea580c] transition-colors" />
              <Input 
                 className="h-8 bg-zinc-900 border-zinc-800 pl-9 text-xs font-mono uppercase tracking-wider text-zinc-300 placeholder:text-zinc-700 focus-visible:ring-0 focus-visible:border-[#ea580c]" 
-                placeholder="> ENTER COMMAND OR SEARCH..."
+                placeholder="> ENTER COMMAND OR SEARCH: // SHIP ID, EVENT ID, USER TAG..."
              />
           </div>
         </div>
