@@ -2,6 +2,7 @@ import React from "react";
 import CriticalAlertsWidget from "@/components/dashboard/CriticalAlertsWidget";
 import PersonalActivityWidget from "@/components/dashboard/PersonalActivityWidget";
 import OrgStatusWidget from "@/components/dashboard/OrgStatusWidget";
+import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
 import { Monitor, Terminal } from "lucide-react";
 
 export default function NomadOpsDashboard() {
@@ -53,9 +54,16 @@ export default function NomadOpsDashboard() {
             </div>
          </div>
 
-         {/* 3. Personal Activity (Right Side) */}
-         <div className="col-span-12 md:col-span-12 lg:col-span-3 row-span-6 md:row-span-4 lg:row-span-12">
-            <PersonalActivityWidget />
+         {/* 3. Right Column (Status & Personal) */}
+         <div className="col-span-12 md:col-span-12 lg:col-span-3 row-span-6 md:row-span-4 lg:row-span-12 flex flex-col gap-4">
+            {/* Top Right: Critical Alerts Widget */}
+            <div className="shrink-0">
+               <StatusAlertsWidget />
+            </div>
+            {/* Below: Personal Activity */}
+            <div className="flex-1 overflow-hidden">
+               <PersonalActivityWidget />
+            </div>
          </div>
 
          {/* 4. Bottom Center Info (Extra row for wide screens) */}
