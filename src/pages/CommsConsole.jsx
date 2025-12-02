@@ -223,7 +223,30 @@ export default function CommsConsolePage() {
             </div>
          </main>
 
+         {/* Right Sidebar */}
+         <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
+               <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                  <Monitor className="w-4 h-4" />
+                  <span>Aux Data</span>
+               </div>
+            </div>
+            <div className="flex-1 flex items-center justify-center text-zinc-700 text-xs font-mono flex-col gap-2">
+               <Shield className="w-8 h-8 opacity-20" />
+               <span className="opacity-50">AWAITING INPUT</span>
+            </div>
+         </aside>
+
       </div>
+
+      {/* Sticky Footer */}
+      <footer className="h-8 shrink-0 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between px-6 text-[10px] text-zinc-600 font-mono uppercase tracking-wider z-50">
+         <div className="flex items-center gap-4">
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> SYSTEM ONLINE</span>
+            <span className="text-zinc-500">LATENCY: 12ms</span>
+         </div>
+         <div className="text-zinc-500">SECURE CONNECTION // V.4.0.2</div>
+      </footer>
     </div>
   );
 }
