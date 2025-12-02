@@ -84,21 +84,22 @@ export default function CommsConsolePage() {
          
          {/* Sidebar */}
          <aside className="w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col">
-            <div className="p-4 border-b border-zinc-800">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
                <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
             </div>
             
-            <div className="flex-1 p-4 overflow-hidden">
+            <div className="flex-1 p-4 overflow-hidden custom-scrollbar">
                {!selectedEventId ? (
                   <div className="h-full flex flex-col items-center justify-center text-zinc-700 text-center space-y-4">
                      <Monitor className="w-12 h-12 opacity-20" />
-                     <p className="text-xs uppercase tracking-widest">Waiting for Uplink...</p>
+                     <p className="text-xs uppercase tracking-widest font-bold">Waiting for Uplink</p>
+                     <p className="text-[10px] text-zinc-600 font-mono">SELECT OPERATION //</p>
                   </div>
                ) : isLoading ? (
-                  <div className="text-center text-zinc-500 py-10">Scanning Frequencies...</div>
+                  <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING FREQUENCIES...</div>
                ) : voiceNets.length === 0 ? (
-                  <div className="text-center text-zinc-500 py-10 text-xs">
-                     No Active Nets Found.<br/>Initialize via Ops Board.
+                  <div className="text-center text-zinc-500 py-10 text-xs font-mono">
+                     NO ACTIVE NETS DETECTED.<br/>INITIALIZE VIA OPS BOARD.
                   </div>
                ) : (
                   <NetList 
@@ -113,9 +114,14 @@ export default function CommsConsolePage() {
          </aside>
 
          {/* Main Panel */}
-         <main className="flex-1 p-6 bg-zinc-950/50 relative">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/20 via-black to-black pointer-events-none" />
-            <div className="relative z-10 h-full max-w-4xl mx-auto">
+         <main className="flex-1 p-6 bg-black relative">
+            {/* Background grid & Vignette */}
+            <div className="absolute inset-0 opacity-[0.04] pointer-events-none" 
+                 style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+            />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
+            
+            <div className="relative z-10 h-full">
                {selectedEventId ? (
                   <ActiveNetPanel 
                      net={selectedNet} 
@@ -124,12 +130,15 @@ export default function CommsConsolePage() {
                   />
                ) : (
                   <div className="h-full flex items-center justify-center">
-                     <div className="text-center space-y-4 opacity-50">
-                        <div className="inline-block p-4 rounded-full bg-zinc-900 border border-zinc-800">
-                           <Layout className="w-8 h-8 text-zinc-500" />
+                     <div className="text-center space-y-6">
+                        <div className="inline-block p-6 rounded-full bg-zinc-950 border border-zinc-800 relative overflow-hidden group">
+                           <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
+                           <Shield className="w-16 h-16 text-zinc-800 group-hover:text-red-900 transition-colors" />
                         </div>
-                        <h2 className="text-xl font-bold text-zinc-300">System Idle</h2>
-                        <p className="text-zinc-500">Select an active operation to initialize comms interface.</p>
+                        <div>
+                           <h2 className="text-3xl font-black uppercase tracking-[0.3em] text-zinc-800 mb-2">System Idle</h2>
+                           <p className="text-zinc-700 font-mono text-xs tracking-widest">Awaiting Command Input //</p>
+                        </div>
                      </div>
                   </div>
                )}
