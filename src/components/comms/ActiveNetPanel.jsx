@@ -70,6 +70,7 @@ function NetRoster({ net, eventId, currentUserState }) {
     queryKey: ['net-roster-statuses', eventId],
     queryFn: () => base44.entities.PlayerStatus.list({ event_id: eventId }),
     enabled: !!eventId,
+    refetchInterval: 3000,
     initialData: []
   });
 
@@ -173,6 +174,22 @@ function NetRoster({ net, eventId, currentUserState }) {
 
 export default function ActiveNetPanel({ net, user, eventId }) {
   const [audioState, setAudioState] = React.useState(null);
+  const [connectionToken, setConnectionToken] = React.useState(null);
+
+  // Simulate LiveKit Connection Handshake
+  React.useEffect(() => {
+    if (net && user) {
+       // Reset token
+       setConnectionToken(null);
+       // Call backend to generate token
+       base44.functions.invoke('generateLiveKitToken', {
+          roomName: net.code,
+          participantName: user.rsi_handle || user.full_name || 'Unknown'
+       }).then(res => {
+          setConnectionToken(res.data.token);
+       }).catch(err => console.error("LiveKit Handshake Failed:", err));
+    }
+  }, [net, user]);
   
   const canTx = React.useMemo(() => {
     if (!user || !net) return false;
