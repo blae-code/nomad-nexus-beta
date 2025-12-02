@@ -162,7 +162,20 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Type</Label>
+              <div className="flex justify-between items-center">
+                <Label>Type</Label>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="xs" 
+                  className="h-5 px-1 text-[10px] text-emerald-500 hover:bg-emerald-950/30 hover:text-emerald-400"
+                  onClick={handleAISuggestMetadata}
+                  disabled={aiLoading}
+                >
+                  {aiLoading === 'metadata' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                  Auto-Classify
+                </Button>
+              </div>
               <Select 
                 onValueChange={(val) => setValue("event_type", val)} 
                 defaultValue={watch("event_type")}
@@ -177,7 +190,20 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
               </Select>
             </div>
             <div className="space-y-2">
-               <Label>Start Time</Label>
+               <div className="flex justify-between items-center">
+                 <Label>Start Time</Label>
+                 <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="xs" 
+                  className="h-5 px-1 text-[10px] text-emerald-500 hover:bg-emerald-950/30 hover:text-emerald-400"
+                  onClick={handleAISuggestSchedule}
+                  disabled={aiLoading}
+                >
+                  {aiLoading === 'schedule' ? <Loader2 className="w-3 h-3 animate-spin" /> : <BrainCircuit className="w-3 h-3 mr-1" />}
+                  Optimize
+                </Button>
+               </div>
                <Input 
                  type="datetime-local" 
                  {...register("start_time", { required: true })} 
@@ -192,8 +218,34 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
           </div>
 
           <div className="space-y-2">
-            <Label>Briefing</Label>
-            <Textarea {...register("description")} className="bg-zinc-900 border-zinc-800" placeholder="Mission details..." rows={4} />
+            <Label>Tags (comma separated)</Label>
+            <Input 
+              placeholder="Rescue, Industry, PVP..."
+              className="bg-zinc-900 border-zinc-800"
+              value={watch("tags")?.join(", ") || ""}
+              onChange={(e) => {
+                const tags = e.target.value.split(",").map(t => t.trim()).filter(Boolean);
+                setValue("tags", tags);
+              }}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label>Briefing</Label>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="xs" 
+                className="h-5 px-1 text-[10px] text-purple-500 hover:bg-purple-950/30 hover:text-purple-400"
+                onClick={handleAIDraftContent}
+                disabled={aiLoading}
+              >
+                {aiLoading === 'draft' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                Draft Briefing
+              </Button>
+            </div>
+            <Textarea {...register("description")} className="bg-zinc-900 border-zinc-800 min-h-[150px]" placeholder="Mission details..." />
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
