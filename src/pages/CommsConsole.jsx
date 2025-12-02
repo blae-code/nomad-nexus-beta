@@ -20,6 +20,7 @@ import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
+import CommsToolbox from "@/components/comms/CommsToolbox";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 
@@ -321,26 +322,7 @@ export default function CommsConsolePage() {
                user={currentUser} 
             />
          ) : (
-            <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
-               <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
-                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                     <Monitor className="w-4 h-4" />
-                     <span>Aux Data</span>
-                  </div>
-               </div>
-               <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden overflow-y-auto custom-scrollbar">
-                  {/* 1. Rescue Alert (Top) */}
-                  <RescueAlertPanel />
-
-                  {/* 2. AI Tactical Inference */}
-                  {selectedEventId && (
-                     <TacticalStatusReporter user={currentUser} eventId={selectedEventId} />
-                  )}
-
-                  {/* 3. Next Focused Event (Compact) */}
-                  <EventProjectionPanel user={currentUser} compact={true} />
-               </div>
-            </aside>
+            <CommsToolbox user={currentUser} eventId={selectedEventId} />
          )}
 
       </div>
