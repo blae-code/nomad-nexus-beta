@@ -6,6 +6,7 @@ import Treasury from './pages/Treasury';
 import CommsConsole from './pages/CommsConsole';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import Rescue from './pages/Rescue';
+import Home from './pages/Home';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "CommsConsole": CommsConsole,
     "NomadOpsDashboard": NomadOpsDashboard,
     "Rescue": Rescue,
+    "Home": Home,
 }
 
 export const pagesConfig = {

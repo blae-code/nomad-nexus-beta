@@ -139,8 +139,10 @@ export default function ActivityBar() {
         icon={Radio} 
         label="Comms" 
         page="CommsConsole" 
+        path={createPageUrl('CommsConsole')} 
         alertColor="bg-green-500"
         isAlertActive={isCommsConnected}
+        isActive={window.location.pathname.includes('CommsConsole') || window.location.pathname.endsWith('Home') || window.location.pathname === '/'}
       />
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />

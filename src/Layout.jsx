@@ -81,7 +81,7 @@ export default function Layout({ children, currentPageName }) {
         
         {/* Logo Section */}
         <div className="flex items-center gap-4 w-64">
-          <a href={createPageUrl('NomadOpsDashboard')} className="flex items-center gap-3 group cursor-pointer">
+          <a href={createPageUrl('Home')} className="flex items-center gap-3 group cursor-pointer">
             <div className="w-8 h-8 bg-[#ea580c] flex items-center justify-center group-hover:bg-[#c2410c] transition-colors">
               <Terminal className="w-5 h-5 text-black" />
             </div>
