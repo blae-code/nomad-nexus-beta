@@ -107,48 +107,43 @@ export default function CommsConsolePage() {
   }, [selectedEventId]);
 
   return (
-    <div className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col">
+    <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
       
-      {/* Top Bar */}
-      <header className="h-16 border-b border-zinc-800 bg-zinc-950 flex items-center px-6 justify-between">
+      {/* Toolbar */}
+      <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
          <div className="flex items-center gap-4">
-            <Radio className="w-6 h-6 text-emerald-500" />
+            <Radio className="w-5 h-5 text-emerald-500" />
             <div>
-               <h1 className="font-bold text-white tracking-wider text-lg uppercase">Comms Console</h1>
-               <div className="text-[10px] text-zinc-500 font-mono tracking-widest">SECURE UPLINK ESTABLISHED</div>
+               <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">Comms Console</h2>
             </div>
          </div>
-         
+
          <div className="flex items-center gap-4">
-            <div className="flex items-center bg-zinc-900 rounded-full border border-zinc-800 p-0.5">
+            <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5">
                <button 
                   onClick={() => setViewMode('line')}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold transition-colors ${viewMode === 'line' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'line' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                >
                   LINE
                </button>
                <button 
                   onClick={() => setViewMode('command')}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold transition-colors ${viewMode === 'command' ? 'bg-red-900 text-red-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'command' ? 'bg-red-900 text-red-100' : 'text-zinc-500 hover:text-zinc-300'}`}
                >
                   CMD
                </button>
                <button 
                   onClick={() => setViewMode('hierarchy')}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold transition-colors flex items-center gap-1 ${viewMode === 'hierarchy' ? 'bg-emerald-900 text-emerald-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'hierarchy' ? 'bg-emerald-900 text-emerald-100' : 'text-zinc-500 hover:text-zinc-300'}`}
                >
                   <ListTree className="w-3 h-3" />
                   ORG
                </button>
             </div>
-            <div className="h-8 w-[1px] bg-zinc-800 mx-2" />
+            <div className="h-6 w-[1px] bg-zinc-800 mx-2" />
             {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
-            <div className="text-right">
-               <div className="text-xs font-bold text-white">{currentUser?.rsi_handle || "Unknown Operator"}</div>
-               <div className="text-[10px] text-zinc-500 uppercase">{currentUser?.rank || "Vagrant"} Clearance</div>
             </div>
             </div>
-            </header>
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
@@ -239,14 +234,7 @@ export default function CommsConsolePage() {
 
       </div>
 
-      {/* Sticky Footer */}
-      <footer className="h-8 shrink-0 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between px-6 text-[10px] text-zinc-600 font-mono uppercase tracking-wider z-50">
-         <div className="flex items-center gap-4">
-            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> SYSTEM ONLINE</span>
-            <span className="text-zinc-500">LATENCY: 12ms</span>
-         </div>
-         <div className="text-zinc-500">SECURE CONNECTION // V.4.0.2</div>
-      </footer>
+
     </div>
   );
 }

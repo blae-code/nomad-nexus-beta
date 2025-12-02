@@ -3,34 +3,14 @@ import OrgResourcesWidget from "@/components/dashboard/OrgResourcesWidget";
 import OrgStatusWidget from "@/components/dashboard/OrgStatusWidget";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
 import PersonalizedFeedWidget from "@/components/dashboard/PersonalizedFeedWidget";
-import { Monitor, Terminal } from "lucide-react";
+import { Monitor } from "lucide-react";
 
 export default function NomadOpsDashboard() {
   return (
-    <div className="h-screen w-screen bg-[#09090b] text-zinc-200 overflow-hidden flex flex-col font-sans selection:bg-orange-500/30">
+    <div className="h-full w-full flex flex-col font-sans">
       
-      {/* Top Status Bar */}
-      <header className="h-12 shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center px-6 justify-between relative z-10">
-        <div className="flex items-center gap-3">
-           <div className="w-8 h-8 bg-orange-600 flex items-center justify-center rounded-sm">
-              <Terminal className="w-5 h-5 text-black" />
-           </div>
-           <div>
-              <h1 className="text-sm font-black uppercase tracking-[0.15em] text-white leading-none">Nomad Nexus</h1>
-              <div className="text-[9px] font-mono text-orange-500 tracking-widest opacity-80">OPS DASHBOARD V4.0</div>
-           </div>
-        </div>
-        <div className="flex items-center gap-6 font-mono text-[10px] text-zinc-500">
-           <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              <span>SYSTEM ONLINE</span>
-           </div>
-           <div>SERVER_TIME: <span className="text-zinc-300">{new Date().toLocaleTimeString()}</span></div>
-        </div>
-      </header>
-
       {/* Main Grid Content */}
-      <main className="flex-1 p-4 grid grid-cols-12 grid-rows-12 gap-4 relative">
+      <main className="flex-1 p-4 grid grid-cols-12 grid-rows-12 gap-4 relative h-full">
          
          {/* Background Grid Effect */}
          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 

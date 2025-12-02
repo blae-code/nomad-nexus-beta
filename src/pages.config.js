@@ -5,6 +5,7 @@ import OpsDashboard from './pages/OpsDashboard';
 import Treasury from './pages/Treasury';
 import CommsConsole from './pages/CommsConsole';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -20,4 +21,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Event",
     Pages: PAGES,
+    Layout: __Layout,
 };
