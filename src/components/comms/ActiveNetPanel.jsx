@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import StatusChip from "@/components/status/StatusChip";
+import AudioControls from "@/components/comms/AudioControls";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -52,12 +53,18 @@ function CommsLog({ eventId }) {
   );
 }
 
-function NetRoster({ net, eventId }) {
+function NetRoster({ net, eventId, currentUserState }) {
   const { data: allUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
     initialData: []
   });
+  
+  const currentUser = React.useMemo(() => {
+     // Just to get ID to match with props
+     // In real implementation we'd check auth.me()
+     return null;
+  }, []);
 
   const { data: statuses } = useQuery({
     queryKey: ['net-roster-statuses', eventId],
@@ -79,17 +86,16 @@ function NetRoster({ net, eventId }) {
     
     let relevantUsers = [];
 
-    // 1. If linked squad, show squad members
     if (net.linked_squad_id) {
        const memberIds = squadMembers.map(m => m.user_id);
        relevantUsers = allUsers.filter(u => memberIds.includes(u.id));
-    }
-    // 2. If command net, show high ranking
-    else if (net.type === 'command') {
+    } else if (net.type === 'command') {
        relevantUsers = allUsers.filter(u => hasMinRank(u, net.min_rank_to_tx));
+    } else {
+       // General net - show everyone
+       relevantUsers = allUsers;
     }
     
-    // Attach status
     return relevantUsers.map(u => {
        const status = statuses.find(s => s.user_id === u.id);
        return { 
@@ -98,11 +104,14 @@ function NetRoster({ net, eventId }) {
           role: status?.role || 'OTHER' 
        };
     }).sort((a, b) => {
-       // Sort distress/down to top
        const priority = { DISTRESS: 0, DOWN: 1, ENGAGED: 2, READY: 3, OFFLINE: 4 };
        return (priority[a.status] || 99) - (priority[b.status] || 99);
     });
   }, [net, allUsers, squadMembers, statuses]);
+
+  // Get current user ID
+  const [myId, setMyId] = useState(null);
+  React.useEffect(() => { base44.auth.me().then(u => setMyId(u?.id)) }, []);
 
   return (
     <div className="space-y-3">
@@ -113,34 +122,49 @@ function NetRoster({ net, eventId }) {
        
        {participants.length === 0 ? (
          <div className="text-center py-8 text-zinc-600 text-xs italic">
-           {net.type === 'general' ? "Open Frequency - Monitoring All Stations" : "No active carrier signal detected."}
+           {net.type === 'general' ? "Open Frequency" : "No active carrier signal detected."}
          </div>
        ) : (
          <div className="grid grid-cols-1 gap-2">
-           {participants.map(user => (
-             <div key={user.id} className={cn(
+           {participants.map(participant => {
+             // Determine Voice Status Color
+             let voiceStatusColor = "bg-zinc-700"; // Default Grey (Connected but Muted)
+             
+             if (participant.id === myId && currentUserState) {
+                if (currentUserState.isTransmitting) voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
+                else if (currentUserState.mode === 'PTT' && !currentUserState.isMuted) voiceStatusColor = "bg-orange-600";
+             } else {
+                // Mock random status for others for "Presence" demo
+                // In real LiveKit integration, this would come from participant.isSpeaking
+                if (Math.random() > 0.95) voiceStatusColor = "bg-green-500"; 
+             }
+
+             return (
+             <div key={participant.id} className={cn(
                "flex items-center justify-between bg-zinc-900/50 p-2 rounded border",
-               (user.status === 'DOWN' || user.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : "border-zinc-800/50"
+               (participant.status === 'DOWN' || participant.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : "border-zinc-800/50"
              )}>
                <div className="flex items-center gap-3 min-w-0">
-                  <div className={cn("w-2 h-2 rounded-full shrink-0", user.status === 'OFFLINE' ? "bg-zinc-700" : "bg-emerald-500")} />
+                  {/* Voice Status Indicator */}
+                  <div className={cn("w-2 h-2 rounded-full shrink-0 transition-all duration-200", voiceStatusColor)} />
+                  
                   <div className="truncate">
-                    <div className="text-sm text-zinc-300 font-bold truncate">{user.rsi_handle || user.full_name}</div>
+                    <div className="text-sm text-zinc-300 font-bold truncate">{participant.rsi_handle || participant.full_name}</div>
                     <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-2">
-                       <span>{user.rank}</span>
+                       <span>{participant.rank}</span>
                        <span className="text-zinc-700">•</span>
-                       <span>{user.role}</span>
+                       <span>{participant.role}</span>
                     </div>
                   </div>
                </div>
                <div className="flex items-center gap-2 shrink-0">
-                  <StatusChip status={user.status} size="xs" showLabel={false} />
-                  {hasMinRank(user, net.min_rank_to_tx) && (
+                  <StatusChip status={participant.status} size="xs" showLabel={false} />
+                  {hasMinRank(participant, net.min_rank_to_tx) && (
                     <Mic className="w-3 h-3 text-zinc-600" />
                   )}
                </div>
              </div>
-           ))}
+           )})}
          </div>
        )}
     </div>
@@ -148,75 +172,12 @@ function NetRoster({ net, eventId }) {
 }
 
 export default function ActiveNetPanel({ net, user, eventId }) {
-  const [isTransmitting, setIsTransmitting] = React.useState(false);
-  const queryClient = useQueryClient();
-
+  const [audioState, setAudioState] = React.useState(null);
+  
   const canTx = React.useMemo(() => {
     if (!user || !net) return false;
     return hasMinRank(user, net.min_rank_to_tx);
   }, [user, net]);
-
-  const pttMutation = useMutation({
-    mutationFn: async () => {
-      // Create log message
-      // Assuming we find/create a log channel for this event
-      // For now, we'll just create a message with a specific convention or fetch a system channel
-      // Let's use a 'fake' channel ID for display purposes if backend allows, or find a real one.
-      // Better: Create a message in the "General" channel if exists, or just log it.
-      // Since I can't easily find the channel ID without querying, I'll skip the DB write if I don't have a channel, 
-      // OR I will query for a channel named "general" or similar.
-      
-      // Fetch general channel
-      const channels = await base44.entities.Channel.list({ name: 'general' }, 1);
-      const channelId = channels.length > 0 ? channels[0].id : null;
-      
-      if (channelId) {
-        return base44.entities.Message.create({
-          channel_id: channelId,
-          user_id: user.id,
-          content: `[COMMS LOG] TX on ${net.code}: **SIMULATED TRANSMISSION**`,
-        });
-      }
-      return null;
-    }
-  });
-
-  // LiveKit Connection
-  const connectLiveKitMutation = useMutation({
-    mutationFn: async () => {
-      const roomName = net.livekit_room_name || net.code;
-      const res = await base44.functions.invoke('generateLiveKitToken', {
-         roomName: roomName,
-         userRole: user.rank,
-         userName: user.rsi_handle || user.full_name
-      });
-
-      if (res.data?.token) {
-         console.log("Received LiveKit Token:", res.data.token);
-         // NOTE: Client-side SDK logic would go here to connect
-         // await Room.connect('wss://...', res.data.token);
-         return res.data.token;
-      }
-      throw new Error("Failed to generate token");
-    }
-  });
-
-  const handlePTT = () => {
-    if (!canTx) return;
-
-    // Also trigger token generation for "Casual Voice" simulation if needed
-    if (!connectLiveKitMutation.data) {
-       connectLiveKitMutation.mutate();
-    }
-
-    setIsTransmitting(true);
-    pttMutation.mutate();
-
-    // Reset after 2 seconds
-    setTimeout(() => {
-      setIsTransmitting(false);
-    }, 2000);
-  };
 
   if (!net) {
     return (
@@ -228,6 +189,8 @@ export default function ActiveNetPanel({ net, user, eventId }) {
       </div>
     );
   }
+
+  const isTransmitting = audioState?.isTransmitting || false;
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -250,7 +213,7 @@ export default function ActiveNetPanel({ net, user, eventId }) {
                exit={{ opacity: 0 }}
                className="absolute top-0 left-0 right-0 bg-red-500/90 text-white text-center py-1 z-20 shadow-lg"
             >
-               <div className="text-xs font-black uppercase tracking-[0.5em] animate-pulse">Transmitting Sequence Active</div>
+               <div className="text-xs font-black uppercase tracking-[0.5em] animate-pulse">Live Transmission</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -300,41 +263,21 @@ export default function ActiveNetPanel({ net, user, eventId }) {
               </div>
            </div>
 
-           {/* PTT Button */}
-           <button
-             onMouseDown={handlePTT}
-             disabled={!canTx}
-             className={cn(
-               "w-full h-32 rounded-sm flex items-center justify-center gap-4 transition-all duration-150 relative overflow-hidden group border-2",
-               canTx 
-                 ? isTransmitting 
-                    ? "bg-emerald-600 text-white border-emerald-400 shadow-[0_0_50px_rgba(16,185,129,0.4)] scale-[0.98]" 
-                    : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500"
-                 : "bg-zinc-950/50 text-zinc-700 cursor-not-allowed border-zinc-900 border-dashed"
-             )}
-           >
-             <div className={cn(
-               "absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]",
-               isTransmitting ? "opacity-10" : ""
-             )} />
-             
-             <Mic className={cn("w-10 h-10", isTransmitting && "animate-pulse")} />
-             <div className="flex flex-col items-start">
-               <span className="font-black text-3xl tracking-widest leading-none">
-                 {canTx ? (isTransmitting ? "TRANSMITTING" : "PUSH TO TALK") : "UNAUTHORIZED"}
-               </span>
-               {canTx && !isTransmitting && (
-                 <span className="text-xs uppercase tracking-[0.3em] text-zinc-600 font-bold mt-1 group-hover:text-zinc-500">Hold to Broadcast</span>
-               )}
+           {/* Audio Controls */}
+           {canTx ? (
+             <AudioControls onStateChange={setAudioState} />
+           ) : (
+             <div className="p-4 bg-zinc-950/50 border-2 border-zinc-900 border-dashed rounded-sm text-center text-zinc-600 font-mono text-xs">
+                TRANSMISSION UNAUTHORIZED
              </div>
-           </button>
+           )}
         </div>
       </TerminalCard>
 
       {/* Roster & Logs */}
       <TerminalCard className="flex-1 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
-            <NetRoster net={net} eventId={eventId} />
+            <NetRoster net={net} eventId={eventId} currentUserState={audioState} />
             <CommsLog eventId={eventId} />
          </ScrollArea>
       </TerminalCard>

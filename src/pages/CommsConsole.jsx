@@ -17,6 +17,7 @@ import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RankVisualizer from "@/components/dashboard/RankVisualizer";
+import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import { canAccessFocusedVoice } from "@/components/permissions";
 
 export default function CommsConsolePage() {
@@ -33,7 +34,19 @@ export default function CommsConsolePage() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  // Access Control Check moved to render to prevent hook mismatch errors
+  // Access Control Check
+  if (currentUser && !canAccessFocusedVoice(currentUser)) {
+     return (
+        <div className="h-full flex flex-col items-center justify-center bg-black text-zinc-500 space-y-4">
+           <Shield className="w-16 h-16 text-red-900 opacity-50" />
+           <div className="text-center">
+              <h1 className="text-2xl font-black uppercase tracking-widest text-red-800">Access Denied</h1>
+              <p className="text-xs font-mono mt-2">CLEARANCE INSUFFICIENT FOR FOCUSED VOICE NETS</p>
+              <p className="text-[10px] font-mono mt-1 opacity-50">REQUIRED: SCOUT+</p>
+           </div>
+        </div>
+     );
+  }
 
   // Fetch squad assignment for this specific event
   useQuery({
@@ -115,42 +128,15 @@ export default function CommsConsolePage() {
      setSelectedNet(null);
   }, [selectedEventId]);
 
-  // Access Control Check (Render Phase)
-  if (currentUser && !canAccessFocusedVoice(currentUser)) {
-     return (
-        <div className="h-full bg-black text-zinc-200 font-sans flex flex-col overflow-hidden">
-            {/* Toolbar Placeholder */}
-            <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
-               <div className="flex items-center gap-4">
-                  <Radio className="w-5 h-5 text-zinc-600" />
-                  <div><h2 className="font-bold text-zinc-500 tracking-wider text-sm uppercase">Comms Console // LOCKED</h2></div>
-               </div>
-            </div>
-            <div className="flex-1 flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-700">
-               <div className="relative">
-                  <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full animate-pulse" />
-                  <Shield className="w-24 h-24 text-red-600 relative z-10" />
-               </div>
-               <div className="text-center space-y-2">
-                  <h1 className="text-4xl font-black uppercase tracking-[0.2em] text-red-600 text-shadow-lg">Access Denied</h1>
-                  <div className="h-px w-32 bg-red-900/50 mx-auto my-4" />
-                  <p className="text-sm font-mono text-red-400 tracking-widest">CLEARANCE INSUFFICIENT</p>
-                  <p className="text-[10px] font-mono text-zinc-600 uppercase">Required Rank: Scout+ // Protocol 77-B</p>
-               </div>
-            </div>
-        </div>
-     );
-  }
-
   return (
-    <div className="h-full bg-[#09090b] text-zinc-100 font-sans selection:bg-emerald-500/40 selection:text-emerald-100 flex flex-col overflow-hidden">
+    <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
       
       {/* Toolbar */}
-      <div className="h-12 border-b border-zinc-800/60 bg-zinc-900/80 flex items-center px-6 justify-between shrink-0">
+      <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
          <div className="flex items-center gap-4">
-            <Radio className="w-5 h-5 text-emerald-400" />
+            <Radio className="w-5 h-5 text-emerald-500" />
             <div>
-               <h2 className="font-bold text-zinc-200 tracking-wider text-sm uppercase">Comms Console</h2>
+               <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">Comms Console</h2>
             </div>
          </div>
 
@@ -185,8 +171,8 @@ export default function CommsConsolePage() {
       <div className="flex-1 flex overflow-hidden">
          
          {/* Sidebar - Event & Net Selection */}
-         <aside className="w-80 border-r border-zinc-800/60 bg-[#0c0c0e] flex flex-col">
-            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/30 space-y-4">
+         <aside className="w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
                <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
                {selectedEventId && <AIInsightsPanel eventId={selectedEventId} compact={true} />}
             </div>
@@ -223,12 +209,12 @@ export default function CommsConsolePage() {
          </aside>
 
          {/* Main Panel - Active Status Hub */}
-         <main className="flex-1 p-6 bg-zinc-950 relative flex flex-col gap-4">
+         <main className="flex-1 p-6 bg-black relative flex flex-col gap-4">
             {/* Background grid & Vignette */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-                 style={{ backgroundImage: 'linear-gradient(rgba(100,100,100,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(100,100,100,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+            <div className="absolute inset-0 opacity-[0.04] pointer-events-none" 
+                 style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
             />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
             
             <div className="relative z-10 h-full flex flex-col gap-4">
                {selectedEventId ? (
@@ -257,22 +243,27 @@ export default function CommsConsolePage() {
          </main>
 
          {/* Right Sidebar - AUX DATA */}
-         <aside className="w-80 border-l border-zinc-800/60 bg-[#0c0c0e] flex flex-col">
-            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/30">
-               <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+         <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
+               <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
                   <Monitor className="w-4 h-4" />
                   <span>Aux Data</span>
                </div>
             </div>
-            <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden">
+            <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden overflow-y-auto custom-scrollbar">
                {/* 1. Rescue Alert (Top) */}
                <RescueAlertPanel />
 
-               {/* 2. Next Focused Event (Compact) */}
+               {/* 2. AI Tactical Inference */}
+               {selectedEventId && (
+                  <TacticalStatusReporter user={currentUser} eventId={selectedEventId} />
+               )}
+
+               {/* 3. Next Focused Event (Compact) */}
                <EventProjectionPanel user={currentUser} compact={true} />
 
-               {/* 3. Rank Visualizer (Bottom) */}
-               <div className="mt-auto">
+               {/* 4. Rank Visualizer (Bottom) */}
+               <div className="mt-auto pt-4">
                   <RankVisualizer currentRank={currentUser?.rank || 'Vagrant'} />
                </div>
             </div>
