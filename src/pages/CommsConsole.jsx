@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Radio, Shield, Layout, Monitor } from "lucide-react";
 
 export default function CommsConsolePage() {
-  const [selectedEventId, setSelectedEventId] = React.useState("");
+  const [selectedEventId, setSelectedEventId] = React.useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('eventId') || "";
+  });
   const [selectedNet, setSelectedNet] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("line"); // 'command' or 'line'
   const [currentUser, setCurrentUser] = React.useState(null);
