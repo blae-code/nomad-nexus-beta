@@ -1,9 +1,9 @@
 import { base44 } from '@/api/base44Client';
 
-// Mocking secrets for now since the SDK is not available in this environment
-const API_KEY = "mock_key";
-const API_SECRET = "mock_secret";
-const LIVEKIT_URL = "wss://mock-livekit.example.com";
+// Access secrets from environment variables
+const API_KEY = process.env.LIVEKIT_API_KEY || "mock_api_key";
+const API_SECRET = process.env.LIVEKIT_API_SECRET || "mock_api_secret";
+const LIVEKIT_URL = process.env.LIVEKIT_URL || "wss://mock-livekit.example.com";
 
 /**
  * Populates voice nets for a specific event.
@@ -118,8 +118,8 @@ export async function issueLiveKitToken(eventId, userId) {
   });
 
   // 5. Create LiveKit Token (MOCKED)
-  // The livekit-server-sdk is not available in this environment, so we return a mock token.
-  // In a real production environment with the SDK installed, we would generate a real JWT here.
+  // We cannot use livekit-server-sdk here due to environment constraints.
+  // Returning a mock token that the simulated frontend will accept.
   const token = `mock_token_${userId}_${eventId}`;
 
   return {

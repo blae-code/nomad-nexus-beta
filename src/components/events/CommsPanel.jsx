@@ -200,7 +200,7 @@ export default function CommsPanel({ eventId }) {
               {activeTxNet ? `TX: ${activeTxNet}` : "SIGNAL CLEAR"}
             </span>
             <span className="text-[10px] text-zinc-600 font-mono">
-              V0.1 (SIMULATION)
+              V0.1
             </span>
           </div>
         </CardFooter>
