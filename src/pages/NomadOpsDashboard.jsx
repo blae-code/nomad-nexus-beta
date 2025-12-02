@@ -78,7 +78,7 @@ export default function NomadOpsDashboard() {
             </div>
 
             {/* Rank Progression */}
-            <div className="shrink-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
                <RankVisualizer currentRank={user?.rank || 'Vagrant'} />
             </div>
 

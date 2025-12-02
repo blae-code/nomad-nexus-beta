@@ -7,6 +7,7 @@ import CommsConsole from './pages/CommsConsole';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import Rescue from './pages/Rescue';
 import Home from './pages/Home';
+import Ranks from './pages/Ranks';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "NomadOpsDashboard": NomadOpsDashboard,
     "Rescue": Rescue,
     "Home": Home,
+    "Ranks": Ranks,
 }
 
 export const pagesConfig = {
