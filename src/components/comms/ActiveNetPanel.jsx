@@ -174,16 +174,20 @@ function NetRoster({ net, eventId, currentUserState, activeSpeakers = [] }) {
 export default function ActiveNetPanel({ net, user, eventId }) {
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
-
   const [livekitUrl, setLivekitUrl] = React.useState(null);
+  const [activeRoom, setActiveRoom] = React.useState(null);
+  const [activeSpeakers, setActiveSpeakers] = React.useState([]);
 
-  // Simulate LiveKit Connection Handshake
+  // 1. Get Token
   React.useEffect(() => {
     if (net && user) {
-       // Reset token
        setConnectionToken(null);
        setLivekitUrl(null);
-       // Call backend to generate token
+       if (activeRoom) {
+          activeRoom.disconnect();
+          setActiveRoom(null);
+       }
+       
        base44.functions.invoke('generateLiveKitToken', {
           roomName: net.code,
           participantName: user.rsi_handle || user.full_name || 'Unknown'
@@ -192,7 +196,57 @@ export default function ActiveNetPanel({ net, user, eventId }) {
           setLivekitUrl(res.data.livekitUrl);
        }).catch(err => console.error("LiveKit Handshake Failed:", err));
     }
+    return () => {
+       if (activeRoom) activeRoom.disconnect();
+    }
   }, [net, user]);
+
+  // 2. Connect to LiveKit
+  React.useEffect(() => {
+     if (!connectionToken || !livekitUrl) return;
+
+     const room = new Room();
+     
+     room
+      .on(RoomEvent.Connected, () => {
+         console.log("Connected to LiveKit Room:", room.name);
+      })
+      .on(RoomEvent.Disconnected, () => {
+         console.log("Disconnected from LiveKit Room");
+         setActiveRoom(null);
+      })
+      .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+         setActiveSpeakers(speakers.map(s => s.identity));
+      })
+      .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+         if (track.kind === 'audio') {
+            track.attach();
+         }
+      })
+      .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+         track.detach();
+      });
+
+     room.connect(livekitUrl, connectionToken).then(() => {
+        setActiveRoom(room);
+     }).catch(err => console.error("LiveKit Connect Error:", err));
+
+     return () => {
+        room.disconnect();
+     };
+  }, [connectionToken, livekitUrl]);
+
+  // 3. Handle Transmission (Mute/Unmute)
+  React.useEffect(() => {
+     if (!activeRoom || !activeRoom.localParticipant) return;
+
+     const shouldTransmit = audioState?.isTransmitting;
+     
+     activeRoom.localParticipant.setMicrophoneEnabled(shouldTransmit).catch(err => {
+        console.error("Failed to toggle microphone:", err);
+     });
+
+  }, [audioState?.isTransmitting, activeRoom]);
   
   const canTx = React.useMemo(() => {
     if (!user || !net) return false;
