@@ -10,7 +10,8 @@ import {
   Coins, 
   Users,
   Lock,
-  Rocket
+  Rocket,
+  Target
 } from "lucide-react";
 import {
   Tooltip,
@@ -158,6 +159,12 @@ export default function ActivityBar() {
         icon={Rocket} 
         label="Fleet" 
         page="FleetManager" 
+      />
+
+      <NavItem 
+        icon={Target} 
+        label="Missions" 
+        page="MissionControl" 
       />
 
       <NavItem 
