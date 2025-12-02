@@ -63,6 +63,41 @@ export default function CommsConsolePage() {
     initialData: []
   });
 
+  // Fetch recent comms activity for indicators
+  const { data: recentActivity } = useQuery({
+    queryKey: ['comms-activity', selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return {};
+      const msgs = await base44.entities.Message.list({
+        sort: { created_date: -1 },
+        limit: 20
+      });
+      
+      // Map net codes to last activity timestamp
+      const activity = {};
+      msgs.forEach(msg => {
+        if (msg.content.includes('[COMMS LOG]')) {
+           // Extract net code from message: "TX on ALPHA: ..."
+           const match = msg.content.match(/TX on ([^:]+):/);
+           if (match && match[1]) {
+             const code = match[1];
+             // Find net by code
+             const net = voiceNets.find(n => n.code === code);
+             if (net) {
+               if (!activity[net.id] || new Date(msg.created_date) > new Date(activity[net.id])) {
+                 activity[net.id] = msg.created_date;
+               }
+             }
+           }
+        }
+      });
+      return activity;
+    },
+    enabled: !!selectedEventId && voiceNets.length > 0,
+    refetchInterval: 3000,
+    initialData: {}
+  });
+
   // Reset selected net when event changes
   React.useEffect(() => {
      setSelectedNet(null);
@@ -128,6 +163,7 @@ export default function CommsConsolePage() {
                      onSelect={setSelectedNet}
                      userSquadId={userSquadId}
                      viewMode={viewMode}
+                     activityMap={recentActivity}
                   />
                )}
             </div>

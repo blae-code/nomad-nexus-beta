@@ -185,15 +185,36 @@ export default function ActiveNetPanel({ net, user, eventId }) {
            />
         )}
         
-        <div className="p-6">
+        {/* Transmission Overlay */}
+        <AnimatePresence>
+          {isTransmitting && (
+            <motion.div 
+               initial={{ opacity: 0, y: -20 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0 }}
+               className="absolute top-0 left-0 right-0 bg-red-500/90 text-white text-center py-1 z-20 shadow-lg"
+            >
+               <div className="text-xs font-black uppercase tracking-[0.5em] animate-pulse">Transmitting Sequence Active</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="p-6 pt-8">
           <div className="flex justify-between items-start mb-6">
             <div>
               <div className="flex items-center gap-4">
-                 <h2 className="text-4xl font-black font-mono text-white tracking-tighter leading-none text-shadow-sm">
+                 <h2 className={cn(
+                    "text-4xl font-black font-mono tracking-tighter leading-none transition-colors duration-150",
+                    isTransmitting ? "text-red-500 text-shadow-md" : "text-white text-shadow-sm"
+                 )}>
                     {net.code}
                  </h2>
                  {isTransmitting && (
-                   <Badge className="bg-red-500 text-white animate-pulse border-none font-mono tracking-widest">TX ACTIVE</Badge>
+                   <div className="flex gap-1">
+                      <div className="w-2 h-6 bg-red-500 animate-[pulse_0.5s_ease-in-out_infinite]" />
+                      <div className="w-2 h-6 bg-red-500 animate-[pulse_0.5s_ease-in-out_infinite_0.1s]" />
+                      <div className="w-2 h-6 bg-red-500 animate-[pulse_0.5s_ease-in-out_infinite_0.2s]" />
+                   </div>
                  )}
               </div>
               <div className="flex items-center gap-2 mt-2">

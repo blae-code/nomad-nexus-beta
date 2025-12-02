@@ -129,7 +129,7 @@ export default function CommsPanel({ eventId }) {
       
       <CardContent className="p-0">
         {/* Primary Net Interface */}
-        <div className="p-4 bg-zinc-900/20 relative">
+        <div className="p-4 bg-zinc-900/20 relative transition-colors duration-200" style={{ backgroundColor: isTransmitting ? 'rgba(127, 29, 29, 0.1)' : undefined }}>
            {selectedNet ? (
              <div className="space-y-4">
                 <div className="flex justify-between items-start">
@@ -184,8 +184,9 @@ export default function CommsPanel({ eventId }) {
 
         {/* Compact Net List (Secondary) */}
         <div className="border-t border-zinc-800/50">
-           <div className="px-3 py-2 bg-zinc-950 text-[9px] text-zinc-600 uppercase tracking-widest font-bold border-b border-zinc-900">
-             Available Frequencies
+           <div className="px-3 py-2 bg-zinc-950 text-[9px] text-zinc-600 uppercase tracking-widest font-bold border-b border-zinc-900 flex justify-between">
+             <span>Available Frequencies</span>
+             <span className="text-zinc-700">AUTO-SCAN</span>
            </div>
            <div className="max-h-[180px] overflow-y-auto custom-scrollbar bg-zinc-950/50">
              {voiceNets.length === 0 && (

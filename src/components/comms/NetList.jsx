@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Radio, Mic, Users, Lock, Volume2 } from "lucide-react";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 
-export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode }) {
+export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {} }) {
   // Filter nets based on view mode
   const displayNets = React.useMemo(() => {
     if (viewMode === 'command') return nets;
@@ -89,14 +89,22 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                          {net.type === 'command' && <Lock className="w-3 h-3 text-red-500/70" />}
                          {net.type === 'general' && <Users className="w-3 h-3 text-blue-500/70" />}
                       </div>
+                      {activityMap[net.id] && (
+                         <div className="text-[9px] text-emerald-500 font-mono animate-pulse">
+                            ACTV
+                         </div>
+                      )}
                       {selectedNetId === net.id ? (
                          <SignalStrength strength={4} className="opacity-100" />
                       ) : (
-                         <SignalStrength strength={1} className="opacity-20 group-hover:opacity-40 transition-opacity" />
+                         <SignalStrength strength={1} className={cn("transition-opacity", activityMap[net.id] ? "opacity-80" : "opacity-20 group-hover:opacity-40")} />
                       )}
-                   </div>
-                </div>
-              </div>
+                      </div>
+                      </div>
+                      {activityMap[net.id] && (
+                      <div className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping opacity-75" />
+                      )}
+                      </div>
             ))}
           </div>
         );
