@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 import { Shield, Crosshair, Zap, AlertCircle } from "lucide-react";
 
-export default function EventProjectionPanel({ user }) {
+export default function EventProjectionPanel({ user, compact = false }) {
   // Fetch next 2 relevant events
   const { data: events = [] } = useQuery({
     queryKey: ['projection-events', user?.role_tags],
@@ -40,10 +40,33 @@ export default function EventProjectionPanel({ user }) {
 
   if (events.length === 0) {
      return (
-        <div className="h-full border border-orange-900/30 bg-zinc-950 p-6 flex items-center justify-center text-center">
+        <div className={cn("h-full border border-orange-900/30 bg-zinc-950 flex items-center justify-center text-center", compact ? "p-4" : "p-6")}>
            <div className="space-y-2">
-              <div className="text-orange-900/50 uppercase tracking-widest font-black text-4xl">NO SIGNAL</div>
-              <div className="text-orange-900/50 font-mono text-xs">LONG RANGE SCANNERS CLEAR</div>
+              <div className={cn("text-orange-900/50 uppercase tracking-widest font-black", compact ? "text-xl" : "text-4xl")}>NO SIGNAL</div>
+              {!compact && <div className="text-orange-900/50 font-mono text-xs">LONG RANGE SCANNERS CLEAR</div>}
+           </div>
+        </div>
+     );
+  }
+
+  // Compact View for Sidebars
+  if (compact) {
+     const nextEvent = events[0];
+     const isFocused = nextEvent.event_type === 'focused';
+     return (
+        <div className={cn(
+           "border bg-black p-4 flex flex-col items-center text-center relative overflow-hidden",
+           isFocused ? "border-red-900/50" : "border-emerald-900/50"
+        )}>
+           <div className="text-[9px] font-mono uppercase text-zinc-500 mb-1 flex items-center gap-1">
+              <span className={cn("w-1.5 h-1.5 rounded-full", isFocused ? "bg-amber-500 animate-pulse" : "bg-zinc-700")} />
+              NEXT OPERATION
+           </div>
+           <div className="text-lg font-black text-white uppercase leading-none mb-1 truncate max-w-full">
+              {nextEvent.title}
+           </div>
+           <div className="text-xs font-mono font-bold text-zinc-400">
+              T-{getTimeRemaining(nextEvent.start_time)}
            </div>
         </div>
      );

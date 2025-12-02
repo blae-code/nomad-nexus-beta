@@ -11,6 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Radio, Shield, Layout, Monitor, ListTree } from "lucide-react";
+import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
+import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
+import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
+import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
+import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
+import RankVisualizer from "@/components/dashboard/RankVisualizer";
 
 export default function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
@@ -148,7 +154,7 @@ export default function CommsConsolePage() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
          
-         {/* Sidebar */}
+         {/* Sidebar - Event & Net Selection */}
          <aside className="w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col">
             <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
                <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
@@ -186,15 +192,15 @@ export default function CommsConsolePage() {
             </div>
          </aside>
 
-         {/* Main Panel */}
-         <main className="flex-1 p-6 bg-black relative">
+         {/* Main Panel - Active Status Hub */}
+         <main className="flex-1 p-6 bg-black relative flex flex-col gap-4">
             {/* Background grid & Vignette */}
             <div className="absolute inset-0 opacity-[0.04] pointer-events-none" 
                  style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
             
-            <div className="relative z-10 h-full">
+            <div className="relative z-10 h-full flex flex-col gap-4">
                {selectedEventId ? (
                   <ActiveNetPanel 
                      net={selectedNet} 
@@ -202,23 +208,25 @@ export default function CommsConsolePage() {
                      eventId={selectedEventId} 
                   />
                ) : (
-                  <div className="h-full flex items-center justify-center">
-                     <div className="text-center space-y-6">
-                        <div className="inline-block p-6 rounded-full bg-zinc-950 border border-zinc-800 relative overflow-hidden group">
-                           <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
-                           <Shield className="w-16 h-16 text-zinc-800 group-hover:text-red-900 transition-colors" />
-                        </div>
-                        <div>
-                           <h2 className="text-3xl font-black uppercase tracking-[0.3em] text-zinc-800 mb-2">System Idle</h2>
-                           <p className="text-zinc-700 font-mono text-xs tracking-widest">Awaiting Command Input //</p>
-                        </div>
+                  <>
+                     {/* Top Center: Current Status */}
+                     <CurrentStatusHeader user={currentUser} />
+
+                     {/* Center: Personalized Feed */}
+                     <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                        <PersonalLogPanel user={currentUser} />
                      </div>
-                  </div>
+
+                     {/* Bottom Center: AUEC Warning */}
+                     <div className="shrink-0">
+                        <AUECWarningPanel />
+                     </div>
+                  </>
                )}
             </div>
          </main>
 
-         {/* Right Sidebar */}
+         {/* Right Sidebar - AUX DATA */}
          <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
             <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
                <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
@@ -226,15 +234,21 @@ export default function CommsConsolePage() {
                   <span>Aux Data</span>
                </div>
             </div>
-            <div className="flex-1 flex items-center justify-center text-zinc-700 text-xs font-mono flex-col gap-2">
-               <Shield className="w-8 h-8 opacity-20" />
-               <span className="opacity-50">AWAITING INPUT</span>
+            <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden">
+               {/* 1. Rescue Alert (Top) */}
+               <RescueAlertPanel />
+
+               {/* 2. Next Focused Event (Compact) */}
+               <EventProjectionPanel user={currentUser} compact={true} />
+
+               {/* 3. Rank Visualizer (Bottom) */}
+               <div className="mt-auto">
+                  <RankVisualizer currentRank={currentUser?.rank || 'Vagrant'} />
+               </div>
             </div>
          </aside>
 
       </div>
-
-
     </div>
   );
 }

@@ -68,7 +68,7 @@ export default function ActivityBar() {
     }
   });
 
-  const NavItem = ({ icon: Icon, label, page, alertColor, isAlertActive, path }) => {
+  const NavItem = ({ icon: Icon, label, page, alertColor, isAlertActive, path, pulseFast }) => {
     const isActive = window.location.pathname.includes(page);
     
     return (
@@ -93,7 +93,7 @@ export default function ActivityBar() {
               {/* Status Indicator Light */}
               {isAlertActive && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", alertColor)}></span>
+                  <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", alertColor, pulseFast ? "animate-ping duration-500" : "animate-ping")}></span>
                   <span className={cn("relative inline-flex rounded-full h-3 w-3", alertColor)}></span>
                 </span>
               )}
@@ -123,8 +123,9 @@ export default function ActivityBar() {
         label="Rescue Ops" 
         page="CommsConsole" 
         path={createPageUrl('CommsConsole') + '?view=rescue'}
-        alertColor="bg-red-500"
+        alertColor="bg-red-600"
         isAlertActive={hasRescue}
+        pulseFast={true}
       />
 
       <NavItem 
@@ -139,7 +140,7 @@ export default function ActivityBar() {
         icon={Radio} 
         label="Comms" 
         page="CommsConsole" 
-        alertColor="bg-emerald-500"
+        alertColor="bg-green-500"
         isAlertActive={isCommsConnected}
       />
 
