@@ -56,75 +56,58 @@ export default function AudioControls({ onStateChange }) {
   }, [mode, isMuted, isTransmitting, onStateChange]);
 
   return (
-    <div className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-sm flex flex-col gap-4">
-      
-      {/* Status Indicator */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-            <div className={cn("w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] transition-colors duration-200", statusColor.split(' ')[0])} />
-            <span className={cn("text-xs font-black tracking-widest transition-colors duration-200", statusColor.split(' ')[1])}>
-                {statusLabel}
-            </span>
-        </div>
-        {mode === 'PTT' && (
-            <span className="text-[9px] text-zinc-600 font-mono uppercase">HOLD [SPACE] TO TALK</span>
-        )}
-      </div>
+    <div className="flex flex-col items-center justify-center py-4">
+       <div className="relative w-40 h-40 flex items-center justify-center select-none">
+          
+          {/* Status Ring */}
+          <div className={cn(
+             "absolute inset-0 rounded-full border-[6px] transition-all duration-500",
+             isMuted ? "border-zinc-800 opacity-30" : 
+             isTransmitting ? "border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)]" :
+             mode === 'PTT' ? "border-orange-500/30" : "border-emerald-500/30"
+          )} />
 
-      {/* Controls */}
-      <div className="grid grid-cols-2 gap-2">
-        
-        {/* Mic Toggle */}
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMuted(!isMuted)}
-            className={cn(
-                "border-zinc-700 hover:bg-zinc-800 transition-all",
-                isMuted ? "text-red-500 border-red-900/50 bg-red-950/10" : "text-zinc-300"
-            )}
-        >
-            {isMuted ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-            {isMuted ? "UNMUTE" : "MUTE MIC"}
-        </Button>
+          {/* Mode Toggle Button */}
+          <button
+             onClick={() => setMode(m => m === 'PTT' ? 'OPEN' : 'PTT')}
+             className={cn(
+                "absolute -top-3 px-3 py-0.5 rounded-full border bg-zinc-950 text-[10px] font-black tracking-widest transition-all z-10 hover:scale-105 flex items-center gap-2",
+                mode === 'PTT' ? "border-orange-900 text-orange-500 hover:border-orange-500" : "border-emerald-900 text-emerald-500 hover:border-emerald-500"
+             )}
+          >
+             {mode === 'PTT' ? <Radio className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
+             {mode}
+          </button>
 
-        {/* Mode Toggle */}
-        <div className="flex bg-zinc-950 border border-zinc-800 rounded-md p-1">
-            <button
-                onClick={() => setMode('PTT')}
-                className={cn(
-                    "flex-1 text-[10px] font-bold uppercase rounded-sm transition-all flex items-center justify-center gap-1",
-                    mode === 'PTT' ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-600 hover:text-zinc-400"
-                )}
-            >
-                <Radio className="w-3 h-3" />
-                PTT
-            </button>
-            <button
-                onClick={() => setMode('OPEN')}
-                className={cn(
-                    "flex-1 text-[10px] font-bold uppercase rounded-sm transition-all flex items-center justify-center gap-1",
-                    mode === 'OPEN' ? "bg-emerald-900/50 text-emerald-400 shadow-sm" : "text-zinc-600 hover:text-zinc-400"
-                )}
-            >
-                <Activity className="w-3 h-3" />
-                OPEN
-            </button>
-        </div>
-      </div>
-
-      {/* Visualizer Bar (Mock) */}
-      <div className="h-1.5 bg-zinc-950 rounded-full overflow-hidden flex items-end gap-0.5 opacity-50">
-         {[...Array(20)].map((_, i) => (
-            <div 
-                key={i} 
-                className={cn(
-                    "flex-1 bg-zinc-800 transition-all duration-75",
-                    isTransmitting && Math.random() > 0.3 ? "bg-emerald-500 h-full" : "h-[20%]"
-                )} 
-            />
-         ))}
-      </div>
+          {/* Center Button */}
+          <button
+             onClick={() => setIsMuted(!isMuted)}
+             className={cn(
+                "w-28 h-28 rounded-full flex flex-col items-center justify-center transition-all duration-200 z-0 group active:scale-95 border-4",
+                isMuted 
+                   ? "bg-zinc-900/80 border-zinc-800 text-zinc-600" 
+                   : "bg-zinc-900 border-zinc-700 text-white hover:border-zinc-500"
+             )}
+          >
+             {isMuted ? (
+                <MicOff className="w-8 h-8 mb-1 opacity-50" />
+             ) : (
+                <Mic className={cn("w-8 h-8 mb-1", isTransmitting ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "")} />
+             )}
+             <span className={cn("text-[9px] font-black uppercase tracking-widest", isMuted ? "opacity-50" : "")}>
+                {isMuted ? "MUTED" : isTransmitting ? "ON AIR" : "READY"}
+             </span>
+          </button>
+          
+          {/* PTT Instruction */}
+          <div className="absolute -bottom-8 text-center w-full">
+             {mode === 'PTT' && !isMuted && (
+                <span className={cn("text-[9px] font-mono uppercase tracking-wider", isPTTPressed ? "text-emerald-500 font-bold" : "text-zinc-600")}>
+                   {isPTTPressed ? "TRANSMITTING" : "HOLD [SPACE]"}
+                </span>
+             )}
+          </div>
+       </div>
     </div>
   );
 }
