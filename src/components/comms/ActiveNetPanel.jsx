@@ -37,7 +37,7 @@ function CommsLog({ eventId }) {
       </div>
       <div className="space-y-2">
          {logs.length === 0 ? (
-            <div className="text-[10px] text-zinc-700 italic pl-2">No recent traffic recorded.</div>
+            <div className="text-[10px] text-zinc-500 italic pl-2">No recent traffic recorded.</div>
          ) : (
             logs.map(log => (
                <div key={log.id} className="text-[10px] font-mono text-zinc-400 pl-2 border-l border-zinc-800">
@@ -302,12 +302,12 @@ export default function ActiveNetPanel({ net, user, eventId }) {
             <CommsLog eventId={eventId} />
          </ScrollArea>
          <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
-            <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
-               <span className={connectionToken ? "text-emerald-900" : "text-zinc-700"}>
+            <div className="w-full flex justify-between text-[9px] text-zinc-500 font-mono">
+               <span className={connectionToken ? "text-emerald-500" : "text-zinc-500"}>
                   STATUS: {connectionToken ? "CONNECTED (SECURE)" : "HANDSHAKE..."}
                </span>
                <div className="flex gap-4">
-                  {livekitUrl && <span className="hidden md:inline text-zinc-800">UPLINK: {livekitUrl.split('://')[1]}</span>}
+                  {livekitUrl && <span className="hidden md:inline text-zinc-500">UPLINK: {livekitUrl.split('://')[1]}</span>}
                   <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
                </div>
             </div>
