@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, ArrowRight, Users } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { canCreateEvent } from "@/components/permissions";
+import EventForm from "@/components/events/EventForm";
 
 export default function EventsPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -29,9 +31,15 @@ export default function EventsPage() {
             <p className="text-zinc-500 mt-1">Upcoming missions and deployments.</p>
           </div>
           {canCreateEvent(currentUser) && (
-            <Button className="bg-red-900 hover:bg-red-800 text-white">
-              Create Operation
-            </Button>
+            <>
+              <Button 
+                onClick={() => setIsCreateOpen(true)} 
+                className="bg-red-900 hover:bg-red-800 text-white"
+              >
+                Create Operation
+              </Button>
+              <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+            </>
           )}
         </div>
 

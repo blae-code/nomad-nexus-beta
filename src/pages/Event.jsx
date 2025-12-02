@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { canEditEvent } from "@/components/permissions";
+import EventForm from "@/components/events/EventForm";
+import EventParticipants from "@/components/events/EventParticipants";
 
 export default function EventPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -87,9 +90,19 @@ export default function EventPage() {
           
           {canEditEvent(currentUser, event) && (
             <div className="mb-4 flex justify-end">
-               <Badge className="bg-zinc-800 hover:bg-zinc-700 cursor-pointer text-zinc-300 border-zinc-700">
-                 Manage Operation
-               </Badge>
+               <Button 
+                 onClick={() => setIsEditOpen(true)}
+                 variant="outline" 
+                 size="sm"
+                 className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+               >
+                 Edit Mission
+               </Button>
+               <EventForm 
+                 event={event} 
+                 open={isEditOpen} 
+                 onOpenChange={setIsEditOpen} 
+               />
             </div>
           )}
         </div>
@@ -133,6 +146,9 @@ export default function EventPage() {
               </CardContent>
             </Card>
             
+            {/* Participants & Roles */}
+            <EventParticipants eventId={event.id} />
+
             {/* Squads Section */}
             <SquadSection eventId={event.id} />
 
