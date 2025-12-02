@@ -5,6 +5,8 @@ import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import ArmoryStatusPanel from "@/components/dashboard/ArmoryStatusPanel";
+import PioneerUplink from "@/components/dashboard/PioneerUplink";
+import RankVisualizer from "@/components/dashboard/RankVisualizer";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -59,14 +61,27 @@ export default function NomadOpsDashboard() {
 
          {/* 3. Right Column (Status & Org Overview) */}
          <div className="col-span-12 md:col-span-12 lg:col-span-3 row-span-12 md:row-span-12 flex flex-col gap-4 overflow-hidden">
-            {/* Top Right: Critical Alerts & Status */}
+            
+            {/* High Authority Uplink */}
+            <div className="shrink-0">
+               <PioneerUplink />
+            </div>
+
+            {/* Critical Alerts & Status */}
             <div className="shrink-0">
                <StatusAlertsWidget />
             </div>
-            {/* Below: Org Status Monitor */}
-            <div className="flex-1 overflow-hidden">
+
+            {/* Org Status Monitor */}
+            <div className="flex-1 overflow-hidden min-h-0">
                <OrgStatusWidget />
             </div>
+
+            {/* Rank Progression */}
+            <div className="shrink-0">
+               <RankVisualizer currentRank={user?.rank || 'Vagrant'} />
+            </div>
+
          </div>
 
       </main>
