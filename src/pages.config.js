@@ -4,6 +4,7 @@ import Treasury from './pages/Treasury';
 import CommsConsole from './pages/CommsConsole';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import Ranks from './pages/Ranks';
+import Profile from './pages/Profile';
 import __Layout from './Layout.jsx';
 
 
@@ -14,6 +15,7 @@ export const PAGES = {
     "CommsConsole": CommsConsole,
     "NomadOpsDashboard": NomadOpsDashboard,
     "Ranks": Ranks,
+    "Profile": Profile,
 }
 
 export const pagesConfig = {

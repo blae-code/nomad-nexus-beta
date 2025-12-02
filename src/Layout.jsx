@@ -1,148 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
-import { Terminal, Search, Clock } from 'lucide-react';
+import { Terminal, Search, Clock, User } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import ActivityBar from "@/components/layout/ActivityBar";
-import VoiceCommandInterface from "@/components/layout/VoiceCommandInterface";
-import HeaderStats from "@/components/layout/HeaderStats";
+import { base44 } from "@/api/base44Client";
 
 export default function Layout({ children, currentPageName }) {
   const [time, setTime] = useState(new Date());
-  const [isAppLoading, setIsAppLoading] = useState(true);
-  const [loadingText, setLoadingText] = useState("INITIALIZING SECURE UPLINK...");
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Simulate technical boot sequence
-    const bootSequence = async () => {
-       // Check persistent state
-       const lastPath = localStorage.getItem('redscar_last_path');
-       const currentPath = window.location.pathname;
-       
-       // Redirect if at root and we have a saved path
-       if (lastPath && lastPath !== currentPath && (currentPath === '/' || currentPath.endsWith('Home'))) {
-          // Only redirect if it's a valid internal path to prevent loops
-          if (lastPath.startsWith('/')) {
-             // Use native navigation to ensure fresh load state
-             window.location.href = lastPath;
-             return; 
-          }
-       }
-
-       // Loading text animation
-       setTimeout(() => setLoadingText("AUTHENTICATING NEURAL LINK..."), 800);
-       setTimeout(() => setLoadingText("SYNCING OPS DATA..."), 1600);
-       setTimeout(() => setLoadingText("ESTABLISHING ENCRYPTED TUNNEL..."), 2400);
-       setTimeout(() => {
-          setIsAppLoading(false);
-          localStorage.setItem('redscar_last_path', currentPath);
-       }, 3000);
-    };
-
-    bootSequence();
-
     const timer = setInterval(() => setTime(new Date()), 1000);
-
-    // PWA Manifest & Theme Configuration
-    const configurePWA = () => {
-      // Technical Hex Compass Icon
-      const iconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%2309090b'/><path d='M256 32 L480 144 L480 368 L256 480 L32 368 L32 144 Z' fill='none' stroke='%23ea580c' stroke-width='20'/><path d='M256 120 L290 220 L390 256 L290 292 L256 392 L222 292 L122 256 L222 220 Z' fill='%23ea580c'/><circle cx='256' cy='256' r='30' fill='%2309090b' stroke='%23ea580c' stroke-width='5'/></svg>`;
-      const iconUrl = `data:image/svg+xml;utf8,${iconSvg}`;
-
-      const manifest = {
-        name: "Redscar Nomad Ops",
-        short_name: "Redscar",
-        start_url: "/",
-        display: "standalone",
-        background_color: "#09090b",
-        theme_color: "#09090b",
-        orientation: "landscape",
-        icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }]
-      };
-
-      const stringManifest = JSON.stringify(manifest);
-      const blob = new Blob([stringManifest], {type: 'application/json'});
-      const manifestURL = URL.createObjectURL(blob);
-      
-      // Inject Manifest
-      let link = document.querySelector('link[rel="manifest"]');
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'manifest';
-        document.head.appendChild(link);
-      }
-      link.href = manifestURL;
-
-      // Inject Theme Color
-      let themeMeta = document.querySelector('meta[name="theme-color"]');
-      if (!themeMeta) {
-        themeMeta = document.createElement('meta');
-        themeMeta.name = 'theme-color';
-        document.head.appendChild(themeMeta);
-      }
-      themeMeta.content = '#09090b';
-
-      // Inject Apple Touch Icon
-      let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-      if (!appleIcon) {
-        appleIcon = document.createElement('link');
-        appleIcon.rel = 'apple-touch-icon';
-        document.head.appendChild(appleIcon);
-      }
-      appleIcon.href = iconUrl;
-    };
-
-    configurePWA();
-
+    base44.auth.me().then(setUser).catch(() => {});
     return () => clearInterval(timer);
   }, []);
-
-  // Save current path on change
-  useEffect(() => {
-     if (!isAppLoading && typeof window !== 'undefined') {
-        localStorage.setItem('redscar_last_path', window.location.pathname);
-     }
-  }, [children, isAppLoading]); // Dependencies could be better but this catches page changes via children rerender
-
-  if (isAppLoading) {
-     return (
-        <div className="fixed inset-0 bg-[#09090b] flex flex-col items-center justify-center z-[100]">
-           <style>{`
-              @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400&display=swap');
-              .tech-loader {
-                 width: 200px;
-                 height: 2px;
-                 background: #18181b;
-                 position: relative;
-                 overflow: hidden;
-              }
-              .tech-loader::after {
-                 content: '';
-                 position: absolute;
-                 top: 0;
-                 left: 0;
-                 height: 100%;
-                 width: 50%;
-                 background: #ea580c;
-                 animation: loading 1.5s infinite ease-in-out;
-              }
-              @keyframes loading {
-                 0% { transform: translateX(-100%); }
-                 100% { transform: translateX(200%); }
-              }
-           `}</style>
-           <div className="relative mb-8 animate-pulse">
-              <svg xmlns='http://www.w3.org/2000/svg' width="64" height="64" viewBox='0 0 512 512'>
-                 <path d='M256 32 L480 144 L480 368 L256 480 L32 368 L32 144 Z' fill='none' stroke='#ea580c' strokeWidth='20'/>
-                 <path d='M256 120 L290 220 L390 256 L290 292 L256 392 L222 292 L122 256 L222 220 Z' fill='#ea580c'/>
-              </svg>
-           </div>
-           <div className="tech-loader mb-4"></div>
-           <div className="text-[#ea580c] font-mono text-xs tracking-[0.3em] animate-pulse">
-              {loadingText}
-           </div>
-        </div>
-     );
-  }
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
@@ -213,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
         
         {/* Logo Section */}
         <div className="flex items-center gap-4 w-64">
-          <a href={createPageUrl('Home')} className="flex items-center gap-3 group cursor-pointer">
+          <a href={createPageUrl('NomadOpsDashboard')} className="flex items-center gap-3 group cursor-pointer">
             <div className="w-8 h-8 bg-[#ea580c] flex items-center justify-center group-hover:bg-[#c2410c] transition-colors">
               <Terminal className="w-5 h-5 text-black" />
             </div>
@@ -235,10 +106,9 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Time Tracker & Stats */}
-        <div className="flex items-center justify-end">
-           <HeaderStats />
-           <div className="flex flex-col items-end pl-4 border-l border-zinc-800">
+        {/* Time Tracker & Profile */}
+        <div className="flex items-center gap-6 w-64 justify-end">
+           <div className="flex flex-col items-end">
               <div className="flex items-center gap-2 text-xs font-bold text-zinc-300">
                  <Clock className="w-3 h-3 text-[#ea580c]" />
                  {time.toLocaleTimeString([], { hour12: false })} <span className="text-[10px] text-zinc-600">LCL</span>
@@ -247,6 +117,22 @@ export default function Layout({ children, currentPageName }) {
                  {time.toISOString().split('T')[1].split('.')[0]} <span className="text-zinc-700">UTC</span>
               </div>
            </div>
+
+           <div className="h-8 w-[1px] bg-zinc-800" />
+
+           <a href={createPageUrl('Profile')} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors">
+              <div className="text-right hidden md:block">
+                 <div className="text-xs font-bold text-zinc-300 group-hover:text-white">
+                    {user ? (user.rsi_handle || user.full_name || "OPERATIVE") : "GUEST"}
+                 </div>
+                 <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider group-hover:text-[#ea580c]">
+                    {user?.rank || "UNAUTHORIZED"}
+                 </div>
+              </div>
+              <div className="w-8 h-8 bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-[#ea580c] transition-colors">
+                 <User className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c]" />
+              </div>
+           </a>
         </div>
       </header>
 
@@ -257,7 +143,6 @@ export default function Layout({ children, currentPageName }) {
             {children}
          </div>
       </div>
-      <VoiceCommandInterface />
     </div>
   );
 }
