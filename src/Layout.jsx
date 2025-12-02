@@ -9,6 +9,58 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
+
+    // PWA Manifest & Theme Configuration
+    const configurePWA = () => {
+      // Technical Hex Compass Icon
+      const iconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%2309090b'/><path d='M256 32 L480 144 L480 368 L256 480 L32 368 L32 144 Z' fill='none' stroke='%23ea580c' stroke-width='20'/><path d='M256 120 L290 220 L390 256 L290 292 L256 392 L222 292 L122 256 L222 220 Z' fill='%23ea580c'/><circle cx='256' cy='256' r='30' fill='%2309090b' stroke='%23ea580c' stroke-width='5'/></svg>`;
+      const iconUrl = `data:image/svg+xml;utf8,${iconSvg}`;
+
+      const manifest = {
+        name: "Redscar Nomad Ops",
+        short_name: "Redscar",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#09090b",
+        theme_color: "#09090b",
+        orientation: "landscape",
+        icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }]
+      };
+
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], {type: 'application/json'});
+      const manifestURL = URL.createObjectURL(blob);
+      
+      // Inject Manifest
+      let link = document.querySelector('link[rel="manifest"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'manifest';
+        document.head.appendChild(link);
+      }
+      link.href = manifestURL;
+
+      // Inject Theme Color
+      let themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (!themeMeta) {
+        themeMeta = document.createElement('meta');
+        themeMeta.name = 'theme-color';
+        document.head.appendChild(themeMeta);
+      }
+      themeMeta.content = '#09090b';
+
+      // Inject Apple Touch Icon
+      let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+      if (!appleIcon) {
+        appleIcon = document.createElement('link');
+        appleIcon.rel = 'apple-touch-icon';
+        document.head.appendChild(appleIcon);
+      }
+      appleIcon.href = iconUrl;
+    };
+
+    configurePWA();
+
     return () => clearInterval(timer);
   }, []);
 
