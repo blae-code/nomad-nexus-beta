@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, User, Hash, Lock, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getRankColorClass } from "@/utils/rankUtils";
 
 export default function ChatInterface({ channel, user }) {
   const scrollRef = useRef(null);
@@ -109,7 +110,10 @@ export default function ChatInterface({ channel, user }) {
               <div key={msg.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
                 {showHeader && (
                    <div className="flex items-center gap-2 mb-1 mt-2">
-                      <span className={cn("text-xs font-bold", isMe ? "text-emerald-500" : "text-[#ea580c]")}>
+                      <span className={cn(
+                         "text-xs font-bold", 
+                         isMe ? "text-emerald-500" : getRankColorClass(author.rank, 'text')
+                      )}>
                          {author.callsign || author.full_name}
                       </span>
                       <span className="text-[9px] text-zinc-600 font-mono">

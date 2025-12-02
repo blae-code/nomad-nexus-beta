@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { Terminal, Search, Clock, User } from 'lucide-react';
 import CommandPalette from "@/components/layout/CommandPalette";
+import { getRankColorClass } from "@/utils/rankUtils";
+import { cn } from "@/lib/utils";
 import ActivityBar from "@/components/layout/ActivityBar";
 import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
 import { base44 } from "@/api/base44Client";
@@ -122,7 +124,10 @@ export default function Layout({ children, currentPageName }) {
                  <div className="text-xs font-bold text-zinc-300 group-hover:text-white">
                     {user ? (user.callsign || user.rsi_handle || user.full_name || "OPERATIVE") : "GUEST"}
                  </div>
-                 <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider group-hover:text-[#ea580c]">
+                 <div className={cn(
+                    "text-[9px] font-mono uppercase tracking-wider group-hover:text-white transition-colors",
+                    getRankColorClass(user?.rank, 'text')
+                 )}>
                     {user?.rank || "VAGRANT"}
                  </div>
               </div>

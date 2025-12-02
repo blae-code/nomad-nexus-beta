@@ -1,13 +1,15 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { ChevronUp, ChevronsUp, Star, Shield, Target, User } from "lucide-react";
+import { ChevronUp, ChevronsUp, Star, Shield, Target, User, Users } from "lucide-react";
+import { RANK_COLORS } from "@/utils/rankUtils";
 
 const RANKS = [
-  { name: "Pioneer", icon: Star, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/30" },
-  { name: "Founder", icon: ChevronsUp, color: "text-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/30" },
-  { name: "Voyager", icon: ChevronUp, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/30" },
-  { name: "Scout", icon: Target, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/30" },
-  { name: "Vagrant", icon: User, color: "text-zinc-500", bg: "bg-zinc-500/10", border: "border-zinc-500/30" }
+  { name: "Pioneer", icon: Star, ...RANK_COLORS['Pioneer'] },
+  { name: "Founder", icon: ChevronsUp, ...RANK_COLORS['Founder'] },
+  { name: "Voyager", icon: ChevronUp, ...RANK_COLORS['Voyager'] },
+  { name: "Scout", icon: Target, ...RANK_COLORS['Scout'] },
+  { name: "Vagrant", icon: User, ...RANK_COLORS['Vagrant'] },
+  // Affiliate is not in the ladder visually usually, but good to have if needed
 ];
 
 export default function RankVisualizer({ currentRank = "Vagrant" }) {

@@ -11,6 +11,7 @@ import { hasMinRank } from "@/components/permissions";
 import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
+import { getRankColorClass } from "@/utils/rankUtils";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -152,7 +153,7 @@ function NetRoster({ net, eventId, currentUserState }) {
                   <div className="truncate">
                     <div className="text-sm text-zinc-300 font-bold truncate">{participant.callsign || participant.rsi_handle || participant.full_name}</div>
                     <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-2">
-                       <span>{participant.rank}</span>
+                       <span className={cn("font-bold", getRankColorClass(participant.rank))}>{participant.rank}</span>
                        <span className="text-zinc-700">•</span>
                        <span>{participant.role}</span>
                     </div>
