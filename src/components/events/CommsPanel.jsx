@@ -18,6 +18,30 @@ export default function CommsPanel({ eventId }) {
   const [userSquadId, setUserSquadId] = React.useState(null);
   const [mutedNets, setMutedNets] = React.useState({});
 
+  // Fetch current user's event-specific squad assignment
+  useQuery({
+    queryKey: ['my-event-squad', eventId, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser || !eventId) return null;
+      const statuses = await base44.entities.PlayerStatus.list({ 
+        user_id: currentUser.id, 
+        event_id: eventId 
+      });
+      if (statuses.length > 0 && statuses[0].assigned_squad_id) {
+        setUserSquadId(statuses[0].assigned_squad_id);
+        return statuses[0].assigned_squad_id;
+      }
+      // Fallback to global squad
+      const memberships = await base44.entities.SquadMember.list({ user_id: currentUser.id });
+      if (memberships.length > 0) {
+        setUserSquadId(memberships[0].squad_id);
+        return memberships[0].squad_id;
+      }
+      return null;
+    },
+    enabled: !!currentUser && !!eventId
+  });
+
   const toggleMute = (netId, e) => {
     e.stopPropagation();
     setMutedNets(prev => ({
@@ -27,14 +51,7 @@ export default function CommsPanel({ eventId }) {
   };
 
   React.useEffect(() => {
-    base44.auth.me().then(u => {
-      setCurrentUser(u);
-      if (u) {
-         base44.entities.SquadMember.list({ user_id: u.id }).then(memberships => {
-            if (memberships.length > 0) setUserSquadId(memberships[0].squad_id);
-         });
-      }
-    }).catch(() => {});
+    base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
   const { data: voiceNets, isLoading } = useQuery({

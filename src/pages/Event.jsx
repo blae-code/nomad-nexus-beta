@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import CommsPanel from "@/components/events/CommsPanel";
-import SquadSection from "@/components/events/SquadSection";
+import SquadManager from "@/components/events/SquadManager";
 import PlayerStatusSection from "@/components/events/PlayerStatusSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -151,8 +151,8 @@ export default function EventPage() {
             {/* Participants & Roles */}
             <EventParticipants eventId={event.id} />
 
-            {/* Squads Section */}
-            <SquadSection eventId={event.id} />
+            {/* Squads / Assignments Manager */}
+            <SquadManager eventId={event.id} />
 
           </div>
 

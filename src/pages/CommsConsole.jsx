@@ -20,18 +20,38 @@ export default function CommsConsolePage() {
   const [userSquadId, setUserSquadId] = React.useState(null);
 
   React.useEffect(() => {
-    base44.auth.me().then(u => {
-      setCurrentUser(u);
-      // Fetch user's squad
-      if (u) {
-         base44.entities.SquadMember.list({ user_id: u.id }).then(memberships => {
-            if (memberships.length > 0) {
-               setUserSquadId(memberships[0].squad_id);
-            }
-         });
-      }
-    }).catch(() => {});
+    base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
+
+  // Fetch squad assignment for this specific event
+  useQuery({
+    queryKey: ['console-user-squad', selectedEventId, currentUser?.id],
+    queryFn: async () => {
+       if (!selectedEventId || !currentUser) return null;
+       
+       // 1. Check Event Assignment
+       const statuses = await base44.entities.PlayerStatus.list({ 
+          user_id: currentUser.id, 
+          event_id: selectedEventId 
+       });
+       
+       if (statuses.length > 0 && statuses[0].assigned_squad_id) {
+          setUserSquadId(statuses[0].assigned_squad_id);
+          return statuses[0].assigned_squad_id;
+       }
+
+       // 2. Fallback to Global Squad
+       const memberships = await base44.entities.SquadMember.list({ user_id: currentUser.id });
+       if (memberships.length > 0) {
+          setUserSquadId(memberships[0].squad_id);
+          return memberships[0].squad_id;
+       }
+       
+       setUserSquadId(null);
+       return null;
+    },
+    enabled: !!selectedEventId && !!currentUser
+  });
 
   const { data: voiceNets, isLoading } = useQuery({
     queryKey: ['voice-nets', selectedEventId],
