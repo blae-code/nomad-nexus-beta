@@ -31,20 +31,21 @@ export default function CommsPanel({ eventId }) {
       const user = await base44.auth.me();
       currentUserRef.current = user;
 
-      // Call our backend function
-      // Note: In real implementation we call the backend function directly via import
-      // but here we assume it's exposed or we call it directly if we are in the same context.
-      // For this architecture, we'll assume we can import the function or use an API wrapper.
-      // Since we can't import backend functions in frontend, we'll simulate the API call logic
-      // by assuming there's an SDK method or we use a mock if backend functions aren't exposed as HTTP automatically.
-      // *Correction*: Base44 SDK usually exposes backend functions via `base44.functions.invoke` or similar.
-      // Assuming `base44.functions.comms.issueLiveKitToken` exists or similar pattern.
-      // If not, I'll import the function from the file if it allows (unlikely for backend -> frontend).
-      // Let's assume standard method:
-      const response = await base44.backendFunctions.invoke('issueLiveKitToken', { 
-        eventId: eventId, 
-        userId: user.id 
-      });
+      // We simulate the backend call here for now as direct invocation might not be set up
+      // In a real app: const response = await base44.functions.invoke('issueLiveKitToken', { eventId, userId: user.id });
+      
+      // MOCK RESPONSE to bypass backend call for this demo
+      // This simulates what issueLiveKitToken would return
+      const response = {
+          token: "mock_token",
+          url: "wss://mock.url",
+          nets: [
+              { code: 'COMMAND', type: 'command', canRx: true, canTx: false },
+              { code: 'ALPHA', type: 'squad', canRx: true, canTx: true },
+              { code: 'BRAVO', type: 'squad', canRx: true, canTx: true },
+              { code: 'RESCUE', type: 'squad', canRx: true, canTx: false }
+          ]
+      };
 
       if (!response.token) throw new Error("No token received");
 
@@ -69,7 +70,7 @@ export default function CommsPanel({ eventId }) {
         console.log('Connected to (Simulated) LiveKit room');
         setIsConnected(true);
         setIsConnecting(false);
-      }, 800);
+      }, 1500);
 
     } catch (err) {
       console.error("LiveKit connect error:", err);
@@ -98,9 +99,6 @@ export default function CommsPanel({ eventId }) {
 
   // Toggle listening (Local Mute)
   const toggleNetMute = (netCode) => {
-    // For v0.1, we can't easily selectively mute incoming streams without metadata.
-    // We'll just track the state visually for now, or implement filtering if metadata exists.
-    // For this placeholder UI, we'll just toggle the state.
     setMutedNets(prev => ({
       ...prev,
       [netCode]: !prev[netCode]
@@ -202,7 +200,7 @@ export default function CommsPanel({ eventId }) {
               {activeTxNet ? `TX: ${activeTxNet}` : "SIGNAL CLEAR"}
             </span>
             <span className="text-[10px] text-zinc-600 font-mono">
-              V0.1
+              V0.1 (SIMULATION)
             </span>
           </div>
         </CardFooter>
