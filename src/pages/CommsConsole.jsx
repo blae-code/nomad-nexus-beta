@@ -21,6 +21,7 @@ import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RankVisualizer from "@/components/dashboard/RankVisualizer";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import { canAccessFocusedVoice } from "@/components/permissions";
+import { cn } from "@/lib/utils";
 
 export default function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
