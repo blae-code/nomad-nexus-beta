@@ -130,13 +130,30 @@ export default function CommsPanel({ eventId }) {
       <CardContent className="p-0">
         {/* Primary Net Interface */}
         <div className="p-4 bg-zinc-900/20 relative transition-colors duration-200" style={{ backgroundColor: isTransmitting ? 'rgba(127, 29, 29, 0.1)' : undefined }}>
+           {/* Transmit Overlay */}
+           <AnimatePresence>
+             {isTransmitting && (
+               <motion.div 
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: 1 }}
+                 exit={{ opacity: 0 }}
+                 className="absolute inset-0 border-2 border-red-500/50 pointer-events-none z-10"
+               />
+             )}
+           </AnimatePresence>
+
            {selectedNet ? (
-             <div className="space-y-4">
+             <div className="space-y-4 relative z-0">
                 <div className="flex justify-between items-start">
                    <div>
                       <div className="flex items-center gap-2 mb-1">
                          <NetTypeIcon type={selectedNet.type} />
-                         <h3 className="text-xl font-black font-mono text-white tracking-tighter leading-none">{selectedNet.code}</h3>
+                         <h3 className={cn(
+                            "text-xl font-black font-mono tracking-tighter leading-none transition-colors",
+                            isTransmitting ? "text-red-500 text-shadow" : "text-white"
+                         )}>
+                            {selectedNet.code}
+                         </h3>
                       </div>
                       <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider pl-4">{selectedNet.label}</div>
                    </div>
@@ -157,21 +174,24 @@ export default function CommsPanel({ eventId }) {
                   onMouseDown={handlePTT}
                   disabled={!canTx}
                   className={cn(
-                    "w-full py-4 rounded-sm flex items-center justify-center gap-3 transition-all duration-100 relative overflow-hidden group border",
+                    "w-full py-4 rounded-sm flex items-center justify-center gap-3 transition-all duration-75 relative overflow-hidden group border select-none",
                     canTx 
                       ? isTransmitting 
-                         ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.3)] scale-[0.99]" 
-                         : "bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-300 hover:from-zinc-700 hover:to-zinc-800 hover:text-white border-zinc-700 shadow-lg"
+                         ? "bg-red-600 text-white border-red-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] translate-y-[1px]" 
+                         : "bg-gradient-to-b from-zinc-800 to-zinc-900 text-zinc-300 hover:from-zinc-700 hover:to-zinc-800 hover:text-white border-zinc-700 shadow-lg active:scale-[0.98]"
                       : "bg-zinc-950 text-zinc-700 cursor-not-allowed border-zinc-900 border-dashed opacity-70"
                   )}
                 >
                   {/* Button Texture */}
                   <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
-                  
+
                   <Mic className={cn("w-5 h-5", isTransmitting && "animate-pulse text-white")} />
                   <span className={cn("font-black text-sm tracking-[0.2em]", isTransmitting && "text-white text-shadow")}>
                     {canTx ? (isTransmitting ? "TRANSMITTING" : "PUSH TO TALK") : "UNAUTHORIZED"}
                   </span>
+                  {isTransmitting && (
+                     <div className="absolute inset-0 bg-red-500/10 animate-pulse" />
+                  )}
                 </button>
              </div>
            ) : (
