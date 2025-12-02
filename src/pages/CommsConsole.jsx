@@ -170,6 +170,7 @@ export default function CommsConsolePage() {
          </div>
 
          {consoleMode === 'ops' && (
+            <>
             <div className="flex items-center gap-4">
                <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5">
                   <button 
@@ -205,6 +206,7 @@ export default function CommsConsolePage() {
                <Bot className="w-3 h-3" />
                AI Assistant
                </Button>
+               </>
                )}
                </div>
 
