@@ -143,14 +143,14 @@ export default function CommsConsolePage() {
   }
 
   return (
-    <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
+    <div className="h-full bg-[#09090b] text-zinc-100 font-sans selection:bg-emerald-500/40 selection:text-emerald-100 flex flex-col overflow-hidden">
       
       {/* Toolbar */}
-      <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
+      <div className="h-12 border-b border-zinc-800/60 bg-zinc-900/80 flex items-center px-6 justify-between shrink-0">
          <div className="flex items-center gap-4">
-            <Radio className="w-5 h-5 text-emerald-500" />
+            <Radio className="w-5 h-5 text-emerald-400" />
             <div>
-               <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">Comms Console</h2>
+               <h2 className="font-bold text-zinc-200 tracking-wider text-sm uppercase">Comms Console</h2>
             </div>
          </div>
 
@@ -185,8 +185,8 @@ export default function CommsConsolePage() {
       <div className="flex-1 flex overflow-hidden">
          
          {/* Sidebar - Event & Net Selection */}
-         <aside className="w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col">
-            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
+         <aside className="w-80 border-r border-zinc-800/60 bg-[#0c0c0e] flex flex-col">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/30 space-y-4">
                <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
                {selectedEventId && <AIInsightsPanel eventId={selectedEventId} compact={true} />}
             </div>
@@ -223,12 +223,12 @@ export default function CommsConsolePage() {
          </aside>
 
          {/* Main Panel - Active Status Hub */}
-         <main className="flex-1 p-6 bg-black relative flex flex-col gap-4">
+         <main className="flex-1 p-6 bg-zinc-950 relative flex flex-col gap-4">
             {/* Background grid & Vignette */}
-            <div className="absolute inset-0 opacity-[0.04] pointer-events-none" 
-                 style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+                 style={{ backgroundImage: 'linear-gradient(rgba(100,100,100,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(100,100,100,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
             />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
             
             <div className="relative z-10 h-full flex flex-col gap-4">
                {selectedEventId ? (
@@ -257,9 +257,9 @@ export default function CommsConsolePage() {
          </main>
 
          {/* Right Sidebar - AUX DATA */}
-         <aside className="w-80 border-l border-zinc-800 bg-zinc-950 flex flex-col">
-            <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
-               <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+         <aside className="w-80 border-l border-zinc-800/60 bg-[#0c0c0e] flex flex-col">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/30">
+               <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
                   <Monitor className="w-4 h-4" />
                   <span>Aux Data</span>
                </div>
