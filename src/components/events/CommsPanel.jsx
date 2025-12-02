@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Radio, Mic, ExternalLink, Volume2, Lock } from "lucide-react";
+import { Radio, Mic, ExternalLink, Volume2, VolumeX, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 import { createPageUrl } from "@/utils";
@@ -15,6 +15,15 @@ export default function CommsPanel({ eventId }) {
   const [isTransmitting, setIsTransmitting] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
+  const [mutedNets, setMutedNets] = React.useState({});
+
+  const toggleMute = (netId, e) => {
+    e.stopPropagation();
+    setMutedNets(prev => ({
+      ...prev,
+      [netId]: !prev[netId]
+    }));
+  };
 
   React.useEffect(() => {
     base44.auth.me().then(u => {
@@ -174,7 +183,15 @@ export default function CommsPanel({ eventId }) {
                        <div className="text-[10px] text-zinc-600">{net.label}</div>
                     </div>
                  </div>
-                 {selectedNetId === net.id && <Volume2 className="w-3 h-3 text-emerald-500" />}
+                 <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => toggleMute(net.id, e)}
+                      className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                       {mutedNets[net.id] ? <VolumeX className="w-3 h-3 text-red-500" /> : <Volume2 className="w-3 h-3" />}
+                    </button>
+                    {selectedNetId === net.id && !mutedNets[net.id] && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                 </div>
               </div>
            ))}
         </div>

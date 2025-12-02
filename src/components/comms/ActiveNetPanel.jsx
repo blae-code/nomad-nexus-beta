@@ -5,9 +5,50 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver } from "lucide-react";
+import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
+
+function CommsLog({ eventId }) {
+  const { data: messages } = useQuery({
+    queryKey: ['comms-messages', eventId],
+    queryFn: () => base44.entities.Message.list({ 
+      sort: { created_date: -1 }, 
+      limit: 50 
+    }),
+    refetchInterval: 5000
+  });
+
+  const logs = React.useMemo(() => {
+    if (!messages) return [];
+    return messages
+      .filter(m => m.content.includes('[COMMS LOG]'))
+      .slice(0, 6);
+  }, [messages]);
+
+  return (
+    <div className="space-y-3 pt-4 border-t border-zinc-800">
+      <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2">
+         <ScrollText className="w-3 h-3" />
+         Signal Log (Recent)
+      </div>
+      <div className="space-y-2">
+         {logs.length === 0 ? (
+            <div className="text-[10px] text-zinc-700 italic pl-2">No recent traffic recorded.</div>
+         ) : (
+            logs.map(log => (
+               <div key={log.id} className="text-[10px] font-mono text-zinc-400 pl-2 border-l border-zinc-800">
+                  <span className="text-emerald-700 opacity-70 mr-2">
+                    {new Date(log.created_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
+                  </span>
+                  <span className="text-zinc-300">{log.content.replace(/\[COMMS LOG\]|Tx on|: \*\*SIMULATED TRANSMISSION\*\*/g, '').trim()}</span>
+               </div>
+            ))
+         )}
+      </div>
+    </div>
+  );
+}
 
 function NetRoster({ net }) {
   const { data: allUsers } = useQuery({
@@ -46,7 +87,7 @@ function NetRoster({ net }) {
     <div className="space-y-3">
        <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 border-b border-zinc-800">
           <Users className="w-3 h-3" />
-          Monitoring Station ({participants.length})
+          Active Personnel ({participants.length})
        </div>
        
        {participants.length === 0 ? (
@@ -210,10 +251,11 @@ export default function ActiveNetPanel({ net, user, eventId }) {
         </CardContent>
       </Card>
 
-      {/* Roster */}
+      {/* Roster & Logs */}
       <Card className="flex-1 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
             <NetRoster net={net} />
+            <CommsLog eventId={eventId} />
          </ScrollArea>
       </Card>
     </div>
