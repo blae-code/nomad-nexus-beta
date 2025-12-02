@@ -55,7 +55,7 @@ function CommsLog({ eventId }) {
   );
 }
 
-function NetRoster({ net, eventId, currentUserState }) {
+function NetRoster({ net, eventId, currentUserState, onWhisper }) {
   const { data: allUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
