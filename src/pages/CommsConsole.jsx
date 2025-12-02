@@ -19,7 +19,6 @@ import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
-import RankVisualizer from "@/components/dashboard/RankVisualizer";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
@@ -340,11 +339,6 @@ export default function CommsConsolePage() {
 
                   {/* 3. Next Focused Event (Compact) */}
                   <EventProjectionPanel user={currentUser} compact={true} />
-
-                  {/* 4. Rank Visualizer (Bottom) */}
-                  <div className="mt-auto pt-4">
-                     <RankVisualizer currentRank={currentUser?.rank || 'Vagrant'} />
-                  </div>
                </div>
             </aside>
          )}
