@@ -4,6 +4,7 @@ import { Terminal, Search, Clock } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import ActivityBar from "@/components/layout/ActivityBar";
 import VoiceCommandInterface from "@/components/layout/VoiceCommandInterface";
+import HeaderStats from "@/components/layout/HeaderStats";
 
 export default function Layout({ children, currentPageName }) {
   const [time, setTime] = useState(new Date());
@@ -234,9 +235,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Time Tracker */}
-        <div className="flex items-center gap-6 w-64 justify-end">
-           <div className="flex flex-col items-end">
+        {/* Time Tracker & Stats */}
+        <div className="flex items-center justify-end">
+           <HeaderStats />
+           <div className="flex flex-col items-end pl-4 border-l border-zinc-800">
               <div className="flex items-center gap-2 text-xs font-bold text-zinc-300">
                  <Clock className="w-3 h-3 text-[#ea580c]" />
                  {time.toLocaleTimeString([], { hour12: false })} <span className="text-[10px] text-zinc-600">LCL</span>
