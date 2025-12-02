@@ -187,7 +187,7 @@ function NetRoster({ net, eventId, currentUserState }) {
 export default function ActiveNetPanel({ net, user, eventId }) {
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
-
+  const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
 
   // Simulate LiveKit Connection Handshake
@@ -196,16 +196,27 @@ export default function ActiveNetPanel({ net, user, eventId }) {
        // Reset token
        setConnectionToken(null);
        setLivekitUrl(null);
+       setWhisperTarget(null);
+       
        // Call backend to generate token
        base44.functions.invoke('generateLiveKitToken', {
-          roomName: net.code,
+          roomNames: [net.code],
           participantName: user.callsign || user.rsi_handle || user.full_name || 'Unknown'
        }).then(res => {
-          setConnectionToken(res.data.token);
+          const token = res.data.tokens ? res.data.tokens[net.code] : res.data.token;
+          setConnectionToken(token);
           setLivekitUrl(res.data.livekitUrl);
        }).catch(err => console.error("LiveKit Handshake Failed:", err));
     }
   }, [net, user]);
+
+  const handleWhisper = (targetUser) => {
+     if (whisperTarget?.id === targetUser.id) {
+        setWhisperTarget(null);
+     } else {
+        setWhisperTarget(targetUser);
+     }
+  };
   
   const canTx = React.useMemo(() => {
     if (!user || !net) return false;
