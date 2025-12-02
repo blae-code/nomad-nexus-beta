@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar as CalendarIcon, Target, User, Rocket, Flag, Plus, Trash2, CheckSquare, Square } from 'lucide-react';
+import ObjectiveEditor from './ObjectiveEditor';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -151,35 +152,12 @@ export default function MissionForm({ mission, open, onOpenChange }) {
           </div>
 
           {/* Objectives */}
-          <div className="space-y-2 bg-zinc-900/30 p-4 border border-zinc-800/50 rounded-sm">
-            <Label className="text-[10px] uppercase text-zinc-500 block mb-2">Tactical Objectives</Label>
-            <div className="flex gap-2 mb-2">
-              <Input 
-                value={newObjective} 
-                onChange={(e) => setNewObjective(e.target.value)} 
-                className="bg-zinc-900 border-zinc-800 h-8 text-xs" 
-                placeholder="Add new objective..."
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addObjective())}
-              />
-              <Button type="button" onClick={addObjective} size="sm" variant="outline" className="h-8 border-zinc-700">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto">
-              {objectives.map((obj, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-zinc-950 p-2 border border-zinc-900 text-xs">
-                  <span className="flex items-center gap-2">
-                     <Flag className="w-3 h-3 text-emerald-500" />
-                     {obj.text}
-                  </span>
-                  <Button type="button" variant="ghost" size="icon" className="h-4 w-4 text-zinc-500 hover:text-red-500" onClick={() => removeObjective(idx)}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-              {objectives.length === 0 && <div className="text-zinc-600 italic text-xs">No objectives defined.</div>}
-            </div>
-          </div>
+          <ObjectiveEditor 
+            objectives={objectives} 
+            onChange={setObjectives} 
+            users={users} 
+            assets={assets} 
+          />
 
           {/* Assignments */}
           <div className="grid grid-cols-2 gap-4">

@@ -150,9 +150,14 @@ function MissionDetailView({ mission, onEdit }) {
    const assignedAssets = allAssets.filter(a => mission.assigned_asset_ids?.includes(a.id));
 
    const updateObjectiveMutation = useMutation({
-      mutationFn: async ({ objectiveIndex, isCompleted }) => {
+      mutationFn: async ({ objectiveIndex, isCompleted, fullObject, ...updates }) => {
          const newObjectives = [...(mission.objectives || [])];
-         newObjectives[objectiveIndex] = { ...newObjectives[objectiveIndex], is_completed: isCompleted };
+         if (fullObject) {
+            // Merge any updates passed
+            newObjectives[objectiveIndex] = { ...newObjectives[objectiveIndex], ...updates };
+         } else {
+            newObjectives[objectiveIndex] = { ...newObjectives[objectiveIndex], is_completed: isCompleted };
+         }
          return base44.entities.Mission.update(mission.id, { objectives: newObjectives });
       },
       onSuccess: () => {
@@ -224,16 +229,20 @@ function MissionDetailView({ mission, onEdit }) {
                   <div className="bg-zinc-950 border border-zinc-800 divide-y divide-zinc-900">
                      {mission.objectives && mission.objectives.length > 0 ? (
                         mission.objectives.map((obj, idx) => (
-                           <div key={idx} className="p-3 flex items-start gap-3 hover:bg-zinc-900/30 transition-colors">
-                              <Checkbox 
-                                 checked={obj.is_completed} 
-                                 onCheckedChange={(checked) => updateObjectiveMutation.mutate({ objectiveIndex: idx, isCompleted: checked })}
-                                 className="mt-0.5 border-zinc-700 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                              />
-                              <div className={`text-sm ${obj.is_completed ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
-                                 {obj.text}
-                              </div>
-                           </div>
+                           <ObjectiveItem 
+                              key={obj.id || idx} 
+                              objective={obj} 
+                              index={idx} 
+                              onUpdate={(updates) => {
+                                 const newObjectives = [...mission.objectives];
+                                 newObjectives[idx] = { ...newObjectives[idx], ...updates };
+                                 // We use the mutation directly here but need to wrap it to match the prop signature expected by logic or just call mutation
+                                 // Since we are inside the component, let's abstract the update
+                                 updateObjectiveMutation.mutate({ objectiveIndex: idx, ...updates, fullObject: true });
+                              }}
+                              users={allUsers}
+                              assets={allAssets}
+                           />
                         ))
                      ) : (
                         <div className="p-4 text-zinc-600 text-xs italic">No objectives defined.</div>
@@ -327,6 +336,101 @@ function getProgressColor(status) {
 
 function calculateProgress(objectives) {
    if (!objectives || objectives.length === 0) return 0;
-   const completed = objectives.filter(o => o.is_completed).length;
-   return Math.round((completed / objectives.length) * 100);
+   
+   let total = 0;
+   let completed = 0;
+
+   objectives.forEach(obj => {
+      total++;
+      if (obj.is_completed) completed++;
+      
+      if (obj.sub_tasks && obj.sub_tasks.length > 0) {
+         obj.sub_tasks.forEach(sub => {
+            total++;
+            if (sub.is_completed) completed++;
+         });
+      }
+   });
+
+   if (total === 0) return 0;
+   return Math.round((completed / total) * 100);
+}
+
+function ObjectiveItem({ objective, index, onUpdate, users, assets }) {
+   const toggleSubTask = (subIndex, isChecked) => {
+      const newSubTasks = [...(objective.sub_tasks || [])];
+      newSubTasks[subIndex] = { ...newSubTasks[subIndex], is_completed: isChecked };
+      
+      // Optional: Auto-complete parent if all subs are done? 
+      // Let's keep it manual for now as requested ("must be completed for main... to be marked")
+      // but maybe we block main completion if subs aren't done? 
+      // For now, just update the subtask.
+      onUpdate({ sub_tasks: newSubTasks });
+   };
+
+   const assignedEntities = (objective.assignments || []).map(a => ({
+      ...a,
+      entity: a.type === 'USER' ? users.find(u => u.id === a.id) : assets.find(as => as.id === a.id)
+   })).filter(a => a.entity);
+
+   return (
+      <div className="group">
+         <div className="p-3 flex items-start gap-3 hover:bg-zinc-900/30 transition-colors">
+            <Checkbox 
+               checked={objective.is_completed} 
+               onCheckedChange={(checked) => onUpdate({ is_completed: checked })}
+               disabled={objective.sub_tasks?.some(s => !s.is_completed)} // Disable if subtasks pending
+               className="mt-0.5 border-zinc-700 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <div className="flex-1">
+               <div className="flex justify-between items-start">
+                  <span className={`text-sm font-medium ${objective.is_completed ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                     {objective.text}
+                  </span>
+                  {/* Assignments */}
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[150px]">
+                     {assignedEntities.map((assign, i) => (
+                        <div key={i} className="flex items-center gap-1 px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded-sm text-[9px] text-zinc-400">
+                           {assign.type === 'USER' ? <Users className="w-2 h-2" /> : <Rocket className="w-2 h-2" />}
+                           <span className="truncate max-w-[60px]">{assign.entity.callsign || assign.entity.name}</span>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+               
+               {/* Subtasks */}
+               {objective.sub_tasks && objective.sub_tasks.length > 0 && (
+                  <div className="mt-2 space-y-1 pl-2 border-l-2 border-zinc-800 ml-1">
+                     {objective.sub_tasks.map((sub, sIdx) => {
+                        const subAssignments = (sub.assignments || []).map(a => ({
+                           ...a,
+                           entity: a.type === 'USER' ? users.find(u => u.id === a.id) : assets.find(as => as.id === a.id)
+                        })).filter(a => a.entity);
+
+                        return (
+                           <div key={sub.id || sIdx} className="flex items-center gap-2 py-1">
+                              <Checkbox 
+                                 checked={sub.is_completed} 
+                                 onCheckedChange={(checked) => toggleSubTask(sIdx, checked)}
+                                 className="w-3 h-3 border-zinc-600 data-[state=checked]:bg-zinc-500 data-[state=checked]:border-zinc-500"
+                              />
+                              <span className={`text-xs ${sub.is_completed ? 'text-zinc-600 line-through' : 'text-zinc-400'}`}>
+                                 {sub.text}
+                              </span>
+                              {subAssignments.length > 0 && (
+                                 <div className="flex gap-1 ml-auto">
+                                    {subAssignments.map((assign, i) => (
+                                       <div key={i} title={assign.entity.callsign || assign.entity.name} className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
+                                    ))}
+                                 </div>
+                              )}
+                           </div>
+                        );
+                     })}
+                  </div>
+               )}
+            </div>
+         </div>
+      </div>
+   );
 }
