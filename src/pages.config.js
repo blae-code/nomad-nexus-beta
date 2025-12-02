@@ -6,6 +6,7 @@ import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import Ranks from './pages/Ranks';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import FleetManager from './pages/FleetManager';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "Ranks": Ranks,
     "Profile": Profile,
     "Admin": Admin,
+    "FleetManager": FleetManager,
 }
 
 export const pagesConfig = {

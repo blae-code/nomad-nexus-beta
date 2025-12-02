@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crosshair, Navigation, Map as MapIcon, Users, Radio, ShieldAlert } from 'lucide-react';
+import { Crosshair, Navigation, Map as MapIcon, Users, Radio, ShieldAlert, Rocket } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -27,6 +27,14 @@ export default function TacticalMap({ className }) {
     queryKey: ['tactical-distress'],
     queryFn: () => base44.entities.PlayerStatus.list({ filter: { status: 'DISTRESS' } }),
     refetchInterval: 2000,
+    initialData: []
+  });
+
+  // Fetch fleet assets for map
+  const { data: fleetAssets } = useQuery({
+    queryKey: ['tactical-fleet'],
+    queryFn: () => base44.entities.FleetAsset.list(),
+    refetchInterval: 5000,
     initialData: []
   });
 
@@ -107,6 +115,31 @@ export default function TacticalMap({ className }) {
            >
               <ShieldAlert className="w-6 h-6 text-red-500" />
               <div className="absolute top-full mt-1 text-[9px] font-bold text-red-500 bg-black px-1">DISTRESS</div>
+           </motion.div>
+        ))}
+
+        {/* Fleet Assets */}
+        {fleetAssets.map((asset) => (
+           <motion.div
+             key={asset.id}
+             className="absolute flex flex-col items-center group cursor-pointer z-20"
+             style={{ 
+                top: `${asset.coordinates?.y || 50}%`, 
+                left: `${asset.coordinates?.x || 50}%`,
+                transform: 'translate(-50%, -50%)'
+             }}
+             initial={{ opacity: 0, scale: 0 }}
+             animate={{ opacity: 1, scale: 1 }}
+           >
+              <div className={`w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[12px] 
+                 ${asset.type === 'VEHICLE' ? 'border-b-amber-500' : 'border-b-blue-500'} 
+                 ${asset.status === 'DESTROYED' ? 'border-b-red-600' : ''}
+                 drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]`} 
+              />
+              <div className="absolute top-full mt-1 bg-black/80 border border-zinc-800 px-1.5 py-0.5 whitespace-nowrap hidden group-hover:block">
+                 <div className="text-[9px] font-bold text-white uppercase">{asset.name}</div>
+                 <div className="text-[8px] text-zinc-400 uppercase">{asset.model}</div>
+              </div>
            </motion.div>
         ))}
 

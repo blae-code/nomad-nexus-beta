@@ -9,7 +9,8 @@ import {
   ShieldAlert, 
   Coins, 
   Users,
-  Lock
+  Lock,
+  Rocket
 } from "lucide-react";
 import {
   Tooltip,
@@ -151,6 +152,12 @@ export default function ActivityBar() {
         icon={Coins} 
         label="Treasury" 
         page="Treasury" 
+      />
+
+      <NavItem 
+        icon={Rocket} 
+        label="Fleet" 
+        page="FleetManager" 
       />
 
       <NavItem 
