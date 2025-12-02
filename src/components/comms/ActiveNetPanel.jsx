@@ -112,10 +112,6 @@ function NetRoster({ net, eventId, currentUserState }) {
     });
   }, [net, allUsers, squadMembers, statuses]);
 
-  // Get current user ID
-  const [myId, setMyId] = useState(null);
-  React.useEffect(() => { base44.auth.me().then(u => setMyId(u?.id)) }, []);
-
   return (
     <div className="space-y-3">
        <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 border-b border-zinc-800">
@@ -162,6 +158,20 @@ function NetRoster({ net, eventId, currentUserState }) {
                </div>
                <div className="flex items-center gap-2 shrink-0">
                   <StatusChip status={participant.status} size="xs" showLabel={false} />
+                  
+                  {/* Whisper Button */}
+                  {participant.id !== myId && (
+                     <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 hover:bg-zinc-800 text-zinc-500 hover:text-amber-500"
+                        onClick={() => onWhisper && onWhisper(participant)}
+                        title={`Whisper to ${participant.callsign}`}
+                     >
+                        <Ear className="w-3 h-3" />
+                     </Button>
+                  )}
+
                   {hasMinRank(participant, net.min_rank_to_tx) && (
                     <Mic className="w-3 h-3 text-zinc-600" />
                   )}
@@ -223,20 +233,28 @@ export default function ActiveNetPanel({ net, user, eventId }) {
            <motion.div 
              initial={{ opacity: 0 }}
              animate={{ opacity: 0.05 }}
-             className="absolute inset-0 bg-emerald-500 pointer-events-none"
+             className={cn(
+                "absolute inset-0 pointer-events-none",
+                whisperTarget ? "bg-amber-500" : "bg-emerald-500"
+             )}
            />
         )}
         
-        {/* Transmission Overlay */}
+        {/* Transmission/Whisper Overlay */}
         <AnimatePresence>
           {isTransmitting && (
             <motion.div 
                initial={{ opacity: 0, y: -20 }}
                animate={{ opacity: 1, y: 0 }}
                exit={{ opacity: 0 }}
-               className="absolute top-0 left-0 right-0 bg-red-500/90 text-white text-center py-1 z-20 shadow-lg"
+               className={cn(
+                  "absolute top-0 left-0 right-0 text-white text-center py-1 z-20 shadow-lg",
+                  whisperTarget ? "bg-amber-600/90" : "bg-red-500/90"
+               )}
             >
-               <div className="text-xs font-black uppercase tracking-[0.5em] animate-pulse">Live Transmission</div>
+               <div className="text-xs font-black uppercase tracking-[0.5em] animate-pulse">
+                  {whisperTarget ? `WHISPERING TO ${whisperTarget.callsign || 'UNKNOWN'}` : "LIVE TRANSMISSION"}
+               </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -263,9 +281,14 @@ export default function ActiveNetPanel({ net, user, eventId }) {
                  <NetTypeIcon type={net.type} />
                  <p className="text-zinc-400 uppercase tracking-widest text-xs font-bold">{net.label}</p>
               </div>
-            </div>
-            <div className="text-right flex flex-col items-end gap-2">
-               <PermissionBadge canTx={canTx} minRankTx={net.min_rank_to_tx} minRankRx={net.min_rank_to_rx} />
+              </div>
+              <div className="text-right flex flex-col items-end gap-2">
+              {whisperTarget && (
+                 <Badge className="bg-amber-950/50 text-amber-500 border-amber-900 animate-pulse">
+                    WHISPER TARGET LOCKED
+                 </Badge>
+              )}
+              <PermissionBadge canTx={canTx} minRankTx={net.min_rank_to_tx} minRankRx={net.min_rank_to_rx} />
                <div className="text-[10px] text-zinc-600 font-mono tracking-widest">ID: {net.id.slice(0,8).toUpperCase()}</div>
             </div>
           </div>
@@ -300,7 +323,12 @@ export default function ActiveNetPanel({ net, user, eventId }) {
       {/* Roster & Logs */}
       <TerminalCard className="flex-1 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
-            <NetRoster net={net} eventId={eventId} currentUserState={audioState} />
+            <NetRoster 
+              net={net} 
+              eventId={eventId} 
+              currentUserState={audioState} 
+              onWhisper={handleWhisper} 
+            />
             <CommsLog eventId={eventId} />
          </ScrollArea>
          <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">

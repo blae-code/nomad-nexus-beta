@@ -7,7 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 
-export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId }) {
+import { Headphones } from "lucide-react";
+
+export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor }) {
   // Fetch statuses to check for distress
   const { data: statuses } = useQuery({
     queryKey: ['net-list-statuses', eventId],
@@ -26,33 +28,6 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
     });
     return map;
   }, [statuses]);
-  // Fetch LiveKit room statuses
-  const { data: roomStatuses } = useQuery({
-    queryKey: ['comms-room-status'],
-    queryFn: async () => {
-      try {
-        const res = await base44.functions.invoke('getCommsRoomStatus', {});
-        return res.data?.statuses || [];
-      } catch (e) {
-        console.error("Failed to fetch room statuses", e);
-        return [];
-      }
-    },
-    refetchInterval: 5000,
-    initialData: []
-  });
-
-  // Map statuses to net IDs
-  const liveStatusMap = React.useMemo(() => {
-    const map = {};
-    roomStatuses.forEach(status => {
-      if (status.netId) {
-        map[status.netId] = status;
-      }
-    });
-    return map;
-  }, [roomStatuses]);
-
   // Filter nets based on view mode
   const displayNets = React.useMemo(() => {
     if (viewMode === 'command') return nets;
@@ -139,22 +114,26 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                    </div>
                    
                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-1">
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={cn(
+                               "h-5 w-5 p-0 hover:bg-zinc-800", 
+                               monitoredNetIds.includes(net.id) ? "text-blue-400" : "text-zinc-600 hover:text-zinc-400"
+                            )}
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               onToggleMonitor && onToggleMonitor(net.id);
+                            }}
+                            title="Monitor Frequency (RX Only)"
+                         >
+                            <Headphones className="w-3 h-3" />
+                         </Button>
                          {net.type === 'command' && <Lock className="w-3 h-3 text-red-500/70" />}
                          {net.type === 'general' && <Users className="w-3 h-3 text-blue-500/70" />}
                       </div>
-
-                      {/* LiveKit Status Indicator */}
-                      {liveStatusMap[net.id]?.isActive && (
-                         <div className="flex items-center gap-1 bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-900/50">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[9px] text-emerald-400 font-mono font-bold">
-                               {liveStatusMap[net.id].participantCount}
-                            </span>
-                         </div>
-                      )}
-
-                      {activityMap[net.id] && !liveStatusMap[net.id]?.isActive && (
+                      {activityMap[net.id] && (
                          <div className="text-[9px] text-emerald-500 font-mono animate-pulse">
                             ACTV
                          </div>
@@ -162,12 +141,15 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                       {selectedNetId === net.id ? (
                          <SignalStrength strength={4} className="opacity-100" />
                       ) : (
-                         <SignalStrength strength={1} className={cn("transition-opacity", (activityMap[net.id] || liveStatusMap[net.id]?.isActive) ? "opacity-80" : "opacity-20 group-hover:opacity-40")} />
+                         <SignalStrength strength={1} className={cn("transition-opacity", activityMap[net.id] ? "opacity-80" : "opacity-20 group-hover:opacity-40")} />
                       )}
                       </div>
                       </div>
-                      {activityMap[net.id] && (
-                      <div className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping opacity-75" />
+                      {(activityMap[net.id] || monitoredNetIds.includes(net.id)) && (
+                         <div className={cn(
+                            "absolute right-1 top-1 w-1.5 h-1.5 rounded-full animate-ping opacity-75",
+                            activityMap[net.id] ? "bg-emerald-500" : "bg-blue-500"
+                         )} />
                       )}
                       </div>
             ))}

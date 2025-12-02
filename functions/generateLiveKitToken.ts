@@ -11,31 +11,43 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { roomName, participantName } = await req.json();
-
-        if (!roomName || !participantName) {
-             return Response.json({ error: 'Missing roomName or participantName' }, { status: 400 });
+        const payload = await req.json();
+        // Support both legacy single room and new multi-room
+        let rooms = [];
+        
+        if (payload.roomNames && Array.isArray(payload.roomNames)) {
+            rooms = payload.roomNames;
+        } else if (payload.roomName) {
+            rooms = [payload.roomName];
+        } else {
+             return Response.json({ error: 'Missing roomNames or roomName' }, { status: 400 });
         }
+
+        const participantName = payload.participantName || user.callsign || user.rsi_handle || user.full_name || 'Unknown';
 
         const apiKey = Deno.env.get("LIVEKIT_API_KEY");
         const apiSecret = Deno.env.get("LIVEKIT_API_SECRET");
-        // wsUrl is mainly for the client to connect, but good to have if we do server-side operations later
 
         if (!apiKey || !apiSecret) {
             return Response.json({ error: 'Server misconfigured: Missing LiveKit credentials' }, { status: 500 });
         }
 
-        const at = new AccessToken(apiKey, apiSecret, {
-            identity: participantName,
-            name: participantName,
-        });
+        const tokens = {};
 
-        at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true });
+        // Generate a token for each room
+        for (const room of rooms) {
+            const at = new AccessToken(apiKey, apiSecret, {
+                identity: participantName,
+                name: participantName,
+            });
 
-        const token = await at.toJwt();
+            at.addGrant({ roomJoin: true, room: room, canPublish: true, canSubscribe: true });
+            tokens[room] = await at.toJwt();
+        }
+
         const livekitUrl = Deno.env.get("LIVEKIT_URL");
 
-        return Response.json({ token, livekitUrl });
+        return Response.json({ tokens, livekitUrl });
 
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });

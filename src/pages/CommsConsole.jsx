@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import CommsEventSelector from "@/components/comms/CommsEventSelector";
 import NetList from "@/components/comms/NetList";
 import ActiveNetPanel from "@/components/comms/ActiveNetPanel";
+import BackgroundNetMonitor from "@/components/comms/BackgroundNetMonitor";
 import ReadyRoomList from "@/components/comms/ReadyRoomList";
 import ChatInterface from "@/components/comms/ChatInterface";
 import FleetHierarchy from "@/components/ops/FleetHierarchy";
@@ -30,6 +31,8 @@ export default function CommsConsolePage() {
     return params.get('eventId') || "";
   });
   const [selectedNet, setSelectedNet] = React.useState(null);
+  // Stores IDs of nets being monitored (RX only)
+  const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
   const [consoleMode, setConsoleMode] = React.useState("ops"); // 'ops' (Voice/Events) or 'lounge' (Text/ReadyRooms)
   const [viewMode, setViewMode] = React.useState("line"); // 'command' or 'line'
@@ -133,7 +136,27 @@ export default function CommsConsolePage() {
   // Reset selected net when event changes
   React.useEffect(() => {
      setSelectedNet(null);
+     setMonitoredNetIds([]);
   }, [selectedEventId]);
+
+  const toggleMonitor = (netId) => {
+     if (monitoredNetIds.includes(netId)) {
+        setMonitoredNetIds(prev => prev.filter(id => id !== netId));
+     } else {
+        setMonitoredNetIds(prev => [...prev, netId]);
+     }
+  };
+
+  // Auto-join squad net logic
+  React.useEffect(() => {
+     if (userSquadId && voiceNets.length > 0 && !selectedNet) {
+        const squadNet = voiceNets.find(n => n.linked_squad_id === userSquadId);
+        if (squadNet) {
+           // Auto-select squad net as primary
+           // setSelectedNet(squadNet); // Optional: might be annoying if user wants to choose
+        }
+     }
+  }, [userSquadId, voiceNets]);
 
   return (
     <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
@@ -247,6 +270,8 @@ export default function CommsConsolePage() {
                               viewMode={viewMode}
                               activityMap={recentActivity}
                               eventId={selectedEventId}
+                              monitoredNetIds={monitoredNetIds}
+                              onToggleMonitor={toggleMonitor}
                            />
                         )
                      )}
@@ -313,6 +338,19 @@ export default function CommsConsolePage() {
                )}
             </div>
          </main>
+
+         {/* Background Monitors */}
+         {monitoredNetIds.map(netId => (
+            // Don't monitor if it's the selected net (ActiveNetPanel handles it)
+            selectedNet?.id !== netId && (
+               <BackgroundNetMonitor 
+                  key={netId} 
+                  netId={netId} 
+                  eventId={selectedEventId} 
+                  user={currentUser} 
+               />
+            )
+         ))}
 
          {/* Right Sidebar - AUX DATA or AI ASSISTANT */}
          {showAIAssistant ? (
