@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, ArrowRight, Users } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { canCreateEvent } from "@/utils/permissions";
+import { canCreateEvent } from "@/components/permissions";
 
 export default function EventsPage() {
   const [currentUser, setCurrentUser] = React.useState(null);

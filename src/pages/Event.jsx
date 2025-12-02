@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { canEditEvent } from "@/utils/permissions";
+import { canEditEvent } from "@/components/permissions";
 
 export default function EventPage() {
   const [currentUser, setCurrentUser] = React.useState(null);

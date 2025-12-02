@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Hash, Mic, EyeOff, Edit3 } from "lucide-react";
-import { canAccessChannel, canPostInChannel } from "@/utils/permissions";
+import { canAccessChannel, canPostInChannel } from "@/components/permissions";
 
 export default function ChannelsPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
