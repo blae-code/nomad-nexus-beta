@@ -17,6 +17,7 @@ import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RankVisualizer from "@/components/dashboard/RankVisualizer";
+import { canAccessFocusedVoice } from "@/components/permissions";
 
 export default function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
@@ -31,6 +32,20 @@ export default function CommsConsolePage() {
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
+
+  // Access Control Check
+  if (currentUser && !canAccessFocusedVoice(currentUser)) {
+     return (
+        <div className="h-full flex flex-col items-center justify-center bg-black text-zinc-500 space-y-4">
+           <Shield className="w-16 h-16 text-red-900 opacity-50" />
+           <div className="text-center">
+              <h1 className="text-2xl font-black uppercase tracking-widest text-red-800">Access Denied</h1>
+              <p className="text-xs font-mono mt-2">CLEARANCE INSUFFICIENT FOR FOCUSED VOICE NETS</p>
+              <p className="text-[10px] font-mono mt-1 opacity-50">REQUIRED: SCOUT+</p>
+           </div>
+        </div>
+     );
+  }
 
   // Fetch squad assignment for this specific event
   useQuery({

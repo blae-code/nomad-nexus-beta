@@ -8,9 +8,15 @@ import { Wallet, Coins, Shield, TrendingUp, Plus } from "lucide-react";
 import TransactionForm from "@/components/economy/TransactionForm";
 import TransactionHistory from "@/components/economy/TransactionHistory";
 import { cn } from "@/lib/utils";
+import { canEditResources } from "@/components/permissions";
 
 export default function TreasuryPage() {
   const [selectedCoffer, setSelectedCoffer] = React.useState(null);
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  React.useEffect(() => {
+     base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
   
   const { data: coffers, isLoading } = useQuery({
     queryKey: ['coffers'],
@@ -98,8 +104,8 @@ export default function TreasuryPage() {
                           </CardTitle>
                           <p className="text-xs text-zinc-500 mt-1">Recent transactions and movements</p>
                        </div>
-                       <TransactionForm cofferId={selectedCoffer.id} />
-                    </CardHeader>
+                       {canEditResources(currentUser) && <TransactionForm cofferId={selectedCoffer.id} />}
+                       </CardHeader>
                     <CardContent className="pt-6">
                        <TransactionHistory cofferId={selectedCoffer.id} />
                     </CardContent>

@@ -4,10 +4,11 @@
  */
 
 const RANK_VALUES = {
-  'Pioneer': 5,
-  'Founder': 4,
-  'Voyager': 3,
-  'Scout': 2,
+  'Pioneer': 6,
+  'Founder': 5,
+  'Voyager': 4,
+  'Scout': 3,
+  'Affiliate': 2, // Assigned arbitrary value, but handling explicitly below
   'Vagrant': 1
 };
 
@@ -24,6 +25,21 @@ export function hasMinRank(user, minRank) {
 export function hasRole(user, roleTag) {
   if (!user || !user.role_tags) return false;
   return user.role_tags.includes(roleTag);
+}
+
+// Focused Voice: Scout, Voyager, Founder, Affiliate, Pioneer
+export function canAccessFocusedVoice(user) {
+  if (!user || !user.rank) return false;
+  const allowedRanks = ['Scout', 'Voyager', 'Founder', 'Pioneer', 'Affiliate'];
+  return allowedRanks.includes(user.rank);
+}
+
+// Edit Armory/Coffer: Pioneer, Shaman
+export function canEditResources(user) {
+  if (!user) return false;
+  if (user.rank === 'Pioneer') return true;
+  if (user.is_shaman) return true;
+  return false;
 }
 
 export function canAccessChannel(user, channel) {
