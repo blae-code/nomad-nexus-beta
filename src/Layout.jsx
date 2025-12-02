@@ -81,8 +81,8 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Static Header (Top Control Bar) */}
-      <header className="h-12 shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center px-4 justify-between z-50">
-        
+      <header className="h-12 shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center px-4 justify-between z-50 relative">
+
         {/* Logo Section */}
         <div className="flex items-center gap-4 w-64">
           <a href={createPageUrl('NomadOpsDashboard')} className="flex items-center gap-3 group cursor-pointer">
@@ -96,14 +96,32 @@ export default function Layout({ children, currentPageName }) {
           </a>
         </div>
 
-        {/* Command Palette / Universal Search */}
-        <div className="flex-1 max-w-xl px-4">
-          <div className="relative group">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-[#ea580c] transition-colors" />
-             <Input 
-                className="h-8 bg-zinc-900 border-zinc-800 pl-9 text-xs font-mono uppercase tracking-wider text-zinc-300 placeholder:text-zinc-700 focus-visible:ring-0 focus-visible:border-[#ea580c]" 
-                placeholder="> ENTER COMMAND OR SEARCH: // SHIP ID, EVENT ID, USER TAG..."
-             />
+        {/* Command Palette / Universal Search - Centered & Enhanced */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-4 pointer-events-none">
+          <div className="relative group pointer-events-auto">
+             {/* Glow Effect */}
+             <div className="absolute inset-0 bg-[#ea580c] blur-[40px] opacity-0 group-focus-within:opacity-10 transition-opacity duration-500" />
+
+             {/* Border Accents */}
+             <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
+             <div className="absolute -top-px -right-px w-2 h-2 border-t border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
+             <div className="absolute -bottom-px -left-px w-2 h-2 border-b border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
+             <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors duration-300" />
+
+             <div className="relative flex items-center bg-zinc-950/80 backdrop-blur-sm border border-zinc-800 group-focus-within:border-[#ea580c]/50 transition-all duration-300 group-focus-within:shadow-[0_0_20px_rgba(234,88,12,0.1)]">
+                <div className="pl-4 pr-3 text-zinc-600 group-focus-within:text-[#ea580c] transition-colors">
+                   <Search className="w-4 h-4" />
+                </div>
+                <Input 
+                    className="h-10 border-none bg-transparent text-xs font-mono text-[#ea580c] placeholder:text-zinc-600 uppercase tracking-[0.15em] focus-visible:ring-0 p-0" 
+                    placeholder="INITIALIZE_SEARCH_PROTOCOL // ..." 
+                />
+                <div className="pr-3 flex gap-1.5">
+                   <div className="w-1 h-1 bg-zinc-800 rounded-full group-focus-within:bg-[#ea580c] animate-pulse" />
+                   <div className="w-1 h-1 bg-zinc-800 rounded-full group-focus-within:bg-[#ea580c] animate-pulse delay-75" />
+                   <div className="w-1 h-1 bg-zinc-800 rounded-full group-focus-within:bg-[#ea580c] animate-pulse delay-150" />
+                </div>
+             </div>
           </div>
         </div>
 
@@ -126,10 +144,10 @@ export default function Layout({ children, currentPageName }) {
            <a href={createPageUrl('Profile')} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors">
               <div className="text-right hidden md:block">
                  <div className="text-xs font-bold text-zinc-300 group-hover:text-white">
-                    {user ? (user.role === 'admin' ? "SYSTEM ADMIN" : (user.callsign || user.rsi_handle || user.full_name || "OPERATIVE")) : "GUEST"}
+                    {user ? (user.callsign || user.rsi_handle || user.full_name || "OPERATIVE") : "GUEST"}
                  </div>
                  <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider group-hover:text-[#ea580c]">
-                    {user?.role === 'admin' ? "COMMAND" : (user?.rank || "VAGRANT")}
+                    {user?.rank || "VAGRANT"}
                  </div>
               </div>
               <div className="w-8 h-8 bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-[#ea580c] transition-colors">
