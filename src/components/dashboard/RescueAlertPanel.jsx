@@ -1,21 +1,11 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, Radio } from "lucide-react";
+import { useActiveRescueOps } from "@/components/hooks/useDataPool";
 
 export default function RescueAlertPanel() {
-  const { data: activeRescue } = useQuery({
-    queryKey: ['rescue-alert-panel'],
-    queryFn: async () => {
-      const status = await base44.entities.PlayerStatus.list({
-        filter: { status: 'DISTRESS' },
-        limit: 1
-      });
-      return status.length > 0 ? status[0] : null;
-    },
-    refetchInterval: 5000
-  });
+  const { data: activeRescues } = useActiveRescueOps();
+  const activeRescue = activeRescues && activeRescues.length > 0 ? activeRescues[0] : null;
 
   if (activeRescue) {
     return (

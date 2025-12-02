@@ -115,7 +115,7 @@ export default function EventProjectionPanel({ user, compact = false }) {
                    </div>
 
                    <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-zinc-500 uppercase">
-                      <span>{new Date(event.start_time).toLocaleDateString()}</span>
+                      <span>{toLocalTime(event.start_time, 'yyyy-MM-dd')}</span>
                       <span className="text-zinc-700">|</span>
                       <span>{event.location || "CLASSIFIED"}</span>
                    </div>

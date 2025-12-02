@@ -104,14 +104,14 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
     if (event) {
       reset({
         ...event,
-        start_time: event.start_time ? new Date(event.start_time).toISOString().slice(0, 16) : ""
+        start_time: toInputDateTime(event.start_time)
       });
     } else {
       reset({
         title: "",
         description: "",
         event_type: "casual",
-        start_time: new Date().toISOString().slice(0, 16),
+        start_time: toInputDateTime(new Date().toISOString()),
         location: "",
         tags: []
       });

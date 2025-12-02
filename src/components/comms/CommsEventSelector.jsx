@@ -44,7 +44,7 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
              activeEvents.map(event => (
                <SelectItem key={event.id} value={event.id}>
                  <div className="flex items-center gap-2">
-                   <span className="font-mono text-zinc-500">[{new Date(event.start_time).toLocaleDateString()}]</span>
+                   <span className="font-mono text-zinc-500">[{toLocalTime(event.start_time, 'MM/dd')}]</span>
                    <span className="font-bold">{event.title}</span>
                  </div>
                </SelectItem>
