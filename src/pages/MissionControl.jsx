@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Target, Calendar, MapPin, Users, Rocket, Clock, CheckSquare, AlertTriangle, ArrowRight, RotateCw, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
-import MissionForm from './MissionForm';
+import MissionForm from '@/components/missions/MissionForm';
 import { toast } from 'sonner';
 
 export default function MissionControlPage() {
