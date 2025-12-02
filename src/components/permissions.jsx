@@ -17,19 +17,25 @@ export function getUserRankValue(rank) {
 }
 
 export function hasMinRank(user, minRank) {
-  if (!user || !user.rank) return false;
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (!user.rank) return false;
   if (!minRank) return true;
   return getUserRankValue(user.rank) >= getUserRankValue(minRank);
 }
 
 export function hasRole(user, roleTag) {
-  if (!user || !user.role_tags) return false;
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (!user.role_tags) return false;
   return user.role_tags.includes(roleTag);
 }
 
 // Focused Voice: Scout, Voyager, Founder, Affiliate, Pioneer
 export function canAccessFocusedVoice(user) {
-  if (!user || !user.rank) return false;
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (!user.rank) return false;
   const allowedRanks = ['Scout', 'Voyager', 'Founder', 'Pioneer', 'Affiliate'];
   return allowedRanks.includes(user.rank);
 }
@@ -37,6 +43,7 @@ export function canAccessFocusedVoice(user) {
 // Edit Armory/Coffer: Pioneer, Shaman
 export function canEditResources(user) {
   if (!user) return false;
+  if (user.role === 'admin') return true;
   if (user.rank === 'Pioneer') return true;
   if (user.is_shaman) return true;
   return false;
