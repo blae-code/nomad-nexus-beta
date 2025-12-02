@@ -121,8 +121,7 @@ export default function ActivityBar() {
       <NavItem 
         icon={ShieldAlert} 
         label="Rescue Ops" 
-        page="CommsConsole" 
-        path={createPageUrl('CommsConsole') + '?view=rescue'}
+        page="Rescue"
         alertColor="bg-red-600"
         isAlertActive={hasRescue}
         pulseFast={true}
