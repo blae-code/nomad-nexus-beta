@@ -3,6 +3,7 @@ import { createPageUrl } from '@/utils';
 import { Terminal, Search, Clock } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import ActivityBar from "@/components/layout/ActivityBar";
+import VoiceCommandInterface from "@/components/layout/VoiceCommandInterface";
 
 export default function Layout({ children, currentPageName }) {
   const [time, setTime] = useState(new Date());
@@ -254,6 +255,7 @@ export default function Layout({ children, currentPageName }) {
             {children}
          </div>
       </div>
+      <VoiceCommandInterface />
     </div>
   );
 }
