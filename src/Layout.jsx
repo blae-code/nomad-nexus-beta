@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { Terminal, Search, Clock } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import ActivityBar from "@/components/layout/ActivityBar";
 
 export default function Layout({ children, currentPageName }) {
   const [time, setTime] = useState(new Date());
@@ -118,7 +119,10 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Page Content */}
       <div className="flex-1 flex overflow-hidden relative">
-         {children}
+         <ActivityBar />
+         <div className="flex-1 relative overflow-hidden flex flex-col">
+            {children}
+         </div>
       </div>
     </div>
   );
