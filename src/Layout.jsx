@@ -3,6 +3,7 @@ import { createPageUrl } from '@/utils';
 import { Terminal, Search, Clock, User } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import ActivityBar from "@/components/layout/ActivityBar";
+import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
 import { base44 } from "@/api/base44Client";
 
 export default function Layout({ children, currentPageName }) {
@@ -107,7 +108,9 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Time Tracker & Profile */}
-        <div className="flex items-center gap-6 w-64 justify-end">
+        <div className="flex items-center gap-6 justify-end min-w-fit">
+           <NetworkStatusIndicator />
+           
            <div className="flex flex-col items-end">
               <div className="flex items-center gap-2 text-xs font-bold text-zinc-300">
                  <Clock className="w-3 h-3 text-[#ea580c]" />
