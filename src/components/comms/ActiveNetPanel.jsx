@@ -181,11 +181,35 @@ export default function ActiveNetPanel({ net, user, eventId }) {
     }
   });
 
+  // LiveKit Integration
+  const joinVoiceMutation = useMutation({
+    mutationFn: async () => {
+       // 1. Get Token
+       const { data } = await base44.functions.invoke('generateLiveKitToken', {
+          roomName: net.code, // Using net code as room name
+          userRole: user.rank,
+          userName: user.rsi_handle || user.full_name
+       });
+       return data.token;
+    },
+    onSuccess: (token) => {
+       console.log("LiveKit Token Received:", token);
+       // NOTE: actual LiveKit client is not installed in this environment.
+       // In a full implementation, we would do:
+       // await Room.connect(url, token);
+       alert(`Voice Uplink Established (Simulation)\nToken received for room: ${net.code}`);
+    },
+    onError: (err) => {
+       console.error("Voice Connection Failed:", err);
+       alert("Voice Uplink Failed: Check console or API secrets.");
+    }
+  });
+
   const handlePTT = () => {
     if (!canTx) return;
     setIsTransmitting(true);
     pttMutation.mutate();
-    
+
     // Reset after 2 seconds
     setTimeout(() => {
       setIsTransmitting(false);
@@ -301,8 +325,20 @@ export default function ActiveNetPanel({ net, user, eventId }) {
                  <span className="text-xs uppercase tracking-[0.3em] text-zinc-600 font-bold mt-1 group-hover:text-zinc-500">Hold to Broadcast</span>
                )}
              </div>
-           </button>
-        </div>
+             </button>
+
+             {/* Voice Channel Join Button */}
+             <div className="mt-4 flex justify-end">
+              <Button 
+                 onClick={() => joinVoiceMutation.mutate()} 
+                 disabled={joinVoiceMutation.isPending}
+                 variant="outline" 
+                 className="border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white hover:border-emerald-500 hover:bg-emerald-950/20 uppercase text-xs font-bold tracking-widest"
+              >
+                 {joinVoiceMutation.isPending ? "Establishing Uplink..." : "Initialize Voice Link"}
+              </Button>
+             </div>
+             </div>
       </TerminalCard>
 
       {/* Roster & Logs */}
