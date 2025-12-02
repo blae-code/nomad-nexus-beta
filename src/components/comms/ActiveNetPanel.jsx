@@ -11,6 +11,7 @@ import { hasMinRank } from "@/components/permissions";
 import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
+import { Room, RoomEvent } from "https://esm.sh/livekit-client@2.5.9";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -53,7 +54,7 @@ function CommsLog({ eventId }) {
   );
 }
 
-function NetRoster({ net, eventId, currentUserState }) {
+function NetRoster({ net, eventId, currentUserState, activeSpeakers = [] }) {
   const { data: allUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
@@ -61,8 +62,6 @@ function NetRoster({ net, eventId, currentUserState }) {
   });
   
   const currentUser = React.useMemo(() => {
-     // Just to get ID to match with props
-     // In real implementation we'd check auth.me()
      return null;
   }, []);
 
@@ -130,14 +129,14 @@ function NetRoster({ net, eventId, currentUserState }) {
            {participants.map(participant => {
              // Determine Voice Status Color
              let voiceStatusColor = "bg-zinc-700"; // Default Grey (Connected but Muted)
-             
+             const participantIdentity = participant.rsi_handle || participant.full_name || 'Unknown';
+             const isSpeaking = activeSpeakers.includes(participantIdentity);
+
              if (participant.id === myId && currentUserState) {
                 if (currentUserState.isTransmitting) voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
                 else if (currentUserState.mode === 'PTT' && !currentUserState.isMuted) voiceStatusColor = "bg-orange-600";
              } else {
-                // Mock random status for others for "Presence" demo
-                // In real LiveKit integration, this would come from participant.isSpeaking
-                if (Math.random() > 0.95) voiceStatusColor = "bg-green-500"; 
+                if (isSpeaking) voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
              }
 
              return (
@@ -298,17 +297,17 @@ export default function ActiveNetPanel({ net, user, eventId }) {
       {/* Roster & Logs */}
       <TerminalCard className="flex-1 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
-            <NetRoster net={net} eventId={eventId} currentUserState={audioState} />
+            <NetRoster net={net} eventId={eventId} currentUserState={audioState} activeSpeakers={activeSpeakers} />
             <CommsLog eventId={eventId} />
          </ScrollArea>
          <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
             <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
                <span className={connectionToken ? "text-emerald-900" : "text-zinc-700"}>
-                  STATUS: {connectionToken ? "CONNECTED (SECURE)" : "HANDSHAKE..."}
+                  STATUS: {activeRoom ? "LINK ESTABLISHED" : connectionToken ? "CONNECTING..." : "HANDSHAKE..."}
                </span>
                <div className="flex gap-4">
                   {livekitUrl && <span className="hidden md:inline text-zinc-800">UPLINK: {livekitUrl.split('://')[1]}</span>}
-                  <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
+                  <span>ENCRYPTION: {activeRoom ? "AES-256 (LIVE)" : "NONE"}</span>
                </div>
             </div>
          </div>
