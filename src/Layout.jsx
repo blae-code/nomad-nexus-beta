@@ -94,6 +94,54 @@ export default function Layout({ children, currentPageName }) {
     return () => clearInterval(timer);
   }, []);
 
+  // Save current path on change
+  useEffect(() => {
+     if (!isAppLoading && typeof window !== 'undefined') {
+        localStorage.setItem('redscar_last_path', window.location.pathname);
+     }
+  }, [children, isAppLoading]); // Dependencies could be better but this catches page changes via children rerender
+
+  if (isAppLoading) {
+     return (
+        <div className="fixed inset-0 bg-[#09090b] flex flex-col items-center justify-center z-[100]">
+           <style>{`
+              @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400&display=swap');
+              .tech-loader {
+                 width: 200px;
+                 height: 2px;
+                 background: #18181b;
+                 position: relative;
+                 overflow: hidden;
+              }
+              .tech-loader::after {
+                 content: '';
+                 position: absolute;
+                 top: 0;
+                 left: 0;
+                 height: 100%;
+                 width: 50%;
+                 background: #ea580c;
+                 animation: loading 1.5s infinite ease-in-out;
+              }
+              @keyframes loading {
+                 0% { transform: translateX(-100%); }
+                 100% { transform: translateX(200%); }
+              }
+           `}</style>
+           <div className="relative mb-8 animate-pulse">
+              <svg xmlns='http://www.w3.org/2000/svg' width="64" height="64" viewBox='0 0 512 512'>
+                 <path d='M256 32 L480 144 L480 368 L256 480 L32 368 L32 144 Z' fill='none' stroke='#ea580c' strokeWidth='20'/>
+                 <path d='M256 120 L290 220 L390 256 L290 292 L256 392 L222 292 L122 256 L222 220 Z' fill='#ea580c'/>
+              </svg>
+           </div>
+           <div className="tech-loader mb-4"></div>
+           <div className="text-[#ea580c] font-mono text-xs tracking-[0.3em] animate-pulse">
+              {loadingText}
+           </div>
+        </div>
+     );
+  }
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
       <style>{`
