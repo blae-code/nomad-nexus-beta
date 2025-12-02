@@ -8,20 +8,97 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles, BrainCircuit } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   const queryClient = useQueryClient();
-  const { register, handleSubmit, setValue, watch, reset } = useForm({
+  const [aiLoading, setAiLoading] = React.useState(null);
+  
+  const { register, handleSubmit, setValue, getValues, watch, reset } = useForm({
     defaultValues: event || {
       title: "",
       description: "",
       event_type: "casual",
-      start_time: new Date().toISOString().slice(0, 16), // simple datetime-local format
+      start_time: new Date().toISOString().slice(0, 16),
       location: "",
-      tags: []
+      tags: [] // Will be handled as comma-separated string in UI
     }
   });
+
+  const handleAISuggestMetadata = async () => {
+    const desc = getValues("description");
+    if (!desc) return;
+    
+    setAiLoading("metadata");
+    try {
+      const { data } = await base44.functions.invoke("eventAI", {
+        action: "suggest_metadata",
+        context: { description: desc }
+      });
+      
+      if (data.event_type) setValue("event_type", data.event_type);
+      // Handle tags - simple join for now
+      if (data.tags && Array.isArray(data.tags)) {
+        // We need to verify how tags are stored/displayed. 
+        // Assuming we'll add a tags input that takes a string.
+        const currentTags = getValues("tags") || [];
+        const newTags = [...new Set([...currentTags, ...data.tags])];
+        setValue("tags", newTags);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAISuggestSchedule = async () => {
+    const desc = getValues("description");
+    if (!desc) return;
+
+    setAiLoading("schedule");
+    try {
+      const { data } = await base44.functions.invoke("eventAI", {
+        action: "suggest_schedule",
+        context: { description: desc }
+      });
+      
+      if (data.start_time) {
+        setValue("start_time", new Date(data.start_time).toISOString().slice(0, 16));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAIDraftContent = async () => {
+    const title = getValues("title");
+    const currentDesc = getValues("description");
+    
+    setAiLoading("draft");
+    try {
+      const { data } = await base44.functions.invoke("eventAI", {
+        action: "draft_content",
+        context: { 
+          notes: `Title: ${title}\nNotes: ${currentDesc}`,
+          role: "Commander" // Could fetch actual user role
+        }
+      });
+      
+      if (data.description) setValue("description", data.description);
+      // We could also show the outreach message somewhere, maybe append it?
+      if (data.outreach_message) {
+         setValue("description", data.description + "\n\n--- OUTREACH MESSAGE ---\n" + data.outreach_message);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAiLoading(null);
+    }
+  };
 
   React.useEffect(() => {
     if (event) {
