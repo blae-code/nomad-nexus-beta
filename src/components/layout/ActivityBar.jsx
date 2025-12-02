@@ -162,12 +162,6 @@ export default function ActivityBar() {
       />
 
       <NavItem 
-        icon={Target} 
-        label="Missions" 
-        page="MissionControl" 
-      />
-
-      <NavItem 
         icon={Users} 
         label="Personnel" 
         page="Channels" // Assuming Channels or a roster page
