@@ -19,6 +19,7 @@ export default function ProfilePage() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        setValue("callsign", currentUser.callsign || "");
         setValue("rsi_handle", currentUser.rsi_handle || "");
         setValue("full_name", currentUser.full_name || "");
       } catch (error) {
@@ -32,12 +33,8 @@ export default function ProfilePage() {
 
   const onSubmit = async (data) => {
     try {
-      // We only update rsi_handle as full_name is built-in and read-only usually, 
-      // but updateMe might allow it if the provider allows. 
-      // However, rsi_handle is our custom display name.
-      // The user asked "can I be called...", so rsi_handle is the target.
-      
       await base44.auth.updateMe({
+        callsign: data.callsign,
         rsi_handle: data.rsi_handle
       });
       
@@ -95,14 +92,23 @@ export default function ProfilePage() {
                    </div>
 
                    <div className="grid gap-2">
-                      <Label htmlFor="rsi_handle" className="text-xs uppercase text-[#ea580c] font-bold">Callsign / Handle</Label>
+                      <Label htmlFor="callsign" className="text-xs uppercase text-[#ea580c] font-bold">Callsign / Display Name</Label>
+                      <Input 
+                        id="callsign" 
+                        {...register("callsign")} 
+                        className="bg-zinc-900 border-zinc-800 text-white font-mono focus:border-[#ea580c]"
+                        placeholder="e.g. System Admin, Maverick..."
+                      />
+                   </div>
+
+                   <div className="grid gap-2">
+                      <Label htmlFor="rsi_handle" className="text-xs uppercase text-zinc-500 font-bold">RSI Handle (In-Game)</Label>
                       <Input 
                         id="rsi_handle" 
                         {...register("rsi_handle")} 
-                        className="bg-zinc-900 border-zinc-800 text-white font-mono focus:border-[#ea580c]"
-                        placeholder="Enter your desired handle..."
+                        className="bg-zinc-900/50 border-zinc-800 text-zinc-300 font-mono"
+                        placeholder="Your Star Citizen handle"
                       />
-                      <p className="text-[10px] text-zinc-600">This name will be displayed across all Comms and Ops panels.</p>
                    </div>
 
                    <div className="pt-4 flex items-center justify-between border-t border-zinc-900">

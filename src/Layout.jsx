@@ -126,7 +126,7 @@ export default function Layout({ children, currentPageName }) {
            <a href={createPageUrl('Profile')} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors">
               <div className="text-right hidden md:block">
                  <div className="text-xs font-bold text-zinc-300 group-hover:text-white">
-                    {user ? (user.rsi_handle || user.full_name || "OPERATIVE") : "GUEST"}
+                    {user ? (user.callsign || user.rsi_handle || user.full_name || "OPERATIVE") : "GUEST"}
                  </div>
                  <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider group-hover:text-[#ea580c]">
                     {user?.rank || "UNAUTHORIZED"}
