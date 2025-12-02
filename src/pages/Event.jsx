@@ -8,8 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { canEditEvent } from "@/utils/permissions";
 
 export default function EventPage() {
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
   // Parse ID from URL
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
@@ -78,6 +84,14 @@ export default function EventPage() {
                </div>
              )}
           </div>
+          
+          {canEditEvent(currentUser, event) && (
+            <div className="mb-4 flex justify-end">
+               <Badge className="bg-zinc-800 hover:bg-zinc-700 cursor-pointer text-zinc-300 border-zinc-700">
+                 Manage Operation
+               </Badge>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">

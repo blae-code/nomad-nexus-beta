@@ -6,8 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, ArrowRight, Users } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { canCreateEvent } from "@/utils/permissions";
 
 export default function EventsPage() {
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
   const { data: events, isLoading } = useQuery({
     queryKey: ['events-list'],
     queryFn: () => base44.entities.Event.list({ sort: { start_time: -1 } }),
@@ -22,9 +28,11 @@ export default function EventsPage() {
             <h1 className="text-3xl font-black uppercase tracking-tight text-white">Operations Board</h1>
             <p className="text-zinc-500 mt-1">Upcoming missions and deployments.</p>
           </div>
-          <Button className="bg-red-900 hover:bg-red-800 text-white">
-            Create Operation
-          </Button>
+          {canCreateEvent(currentUser) && (
+            <Button className="bg-red-900 hover:bg-red-800 text-white">
+              Create Operation
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
