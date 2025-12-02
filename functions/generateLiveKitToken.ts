@@ -33,8 +33,9 @@ Deno.serve(async (req) => {
         at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true });
 
         const token = await at.toJwt();
+        const livekitUrl = Deno.env.get("LIVEKIT_URL");
 
-        return Response.json({ token });
+        return Response.json({ token, livekitUrl });
 
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
