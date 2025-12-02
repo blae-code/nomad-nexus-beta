@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Box, Syringe, AlertTriangle } from "lucide-react";
+import { Shield, Box, Syringe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ArmoryStatusPanel() {
