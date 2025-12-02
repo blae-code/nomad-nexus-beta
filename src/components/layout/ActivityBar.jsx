@@ -8,7 +8,8 @@ import {
   Calendar, 
   ShieldAlert, 
   Coins, 
-  Users 
+  Users,
+  Lock
 } from "lucide-react";
 import {
   Tooltip,
@@ -121,7 +122,8 @@ export default function ActivityBar() {
       <NavItem 
         icon={ShieldAlert} 
         label="Rescue Ops" 
-        page="Rescue"
+        page="CommsConsole" 
+        path={createPageUrl('CommsConsole') + '?view=rescue'}
         alertColor="bg-red-600"
         isAlertActive={hasRescue}
         pulseFast={true}
@@ -139,10 +141,8 @@ export default function ActivityBar() {
         icon={Radio} 
         label="Comms" 
         page="CommsConsole" 
-        path={createPageUrl('CommsConsole')} 
         alertColor="bg-green-500"
         isAlertActive={isCommsConnected}
-        isActive={window.location.pathname.includes('CommsConsole') || window.location.pathname.endsWith('Home') || window.location.pathname === '/'}
       />
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
@@ -157,6 +157,14 @@ export default function ActivityBar() {
         icon={Users} 
         label="Personnel" 
         page="Channels" // Assuming Channels or a roster page
+      />
+
+      <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
+
+      <NavItem 
+        icon={Lock} 
+        label="Admin" 
+        page="Admin" 
       />
 
     </aside>
