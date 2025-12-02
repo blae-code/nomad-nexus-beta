@@ -3,7 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
-import { Shield, Crosshair, Zap, AlertCircle } from "lucide-react";
+import { Shield, Crosshair, Zap, AlertCircle, Calendar, Clock, MapPin, ChevronRight, Users, Hash } from "lucide-react";
+import { hasRole, hasMinRank } from "@/components/permissions";
+import { toLocalTime } from "@/components/utils/dateUtils";
 
 export default function EventProjectionPanel({ user, compact = false }) {
   // Fetch next 2 relevant events
@@ -112,6 +114,16 @@ export default function EventProjectionPanel({ user, compact = false }) {
                       <span className={cn("font-mono text-xl md:text-2xl font-bold tabular-nums tracking-widest", statusColor)}>
                          T-{getTimeRemaining(event.start_time)}
                       </span>
+                   </div>
+
+                   <div className="text-xs text-zinc-400 flex items-center justify-center gap-1.5 mt-1">
+                      <Clock className="w-3 h-3 text-[#ea580c]" />
+                      <span className="font-mono">
+                         {toLocalTime(event.start_time, 'HH:mm')} LCL
+                      </span>
+                   </div>
+                   <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                      {toLocalTime(event.start_time, 'EEE, MMM d')}
                    </div>
 
                    <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-zinc-500 uppercase">
