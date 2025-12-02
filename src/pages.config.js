@@ -4,6 +4,7 @@ import Channels from './pages/Channels';
 import OpsDashboard from './pages/OpsDashboard';
 import Treasury from './pages/Treasury';
 import CommsConsole from './pages/CommsConsole';
+import NomadOpsDashboard from './pages/NomadOpsDashboard';
 
 
 export const PAGES = {
@@ -13,6 +14,7 @@ export const PAGES = {
     "OpsDashboard": OpsDashboard,
     "Treasury": Treasury,
     "CommsConsole": CommsConsole,
+    "NomadOpsDashboard": NomadOpsDashboard,
 }
 
 export const pagesConfig = {
