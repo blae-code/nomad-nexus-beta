@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Room, RoomEvent, createLocalAudioTrack } from 'livekit-client';
+// import { Room, RoomEvent, createLocalAudioTrack } from 'livekit-client'; // Not available in this environment
 import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,26 +61,15 @@ export default function CommsPanel({ eventId }) {
     }
   };
 
-  // 2. Connect to LiveKit
+  // 2. Connect to LiveKit (SIMULATED)
   const connectLiveKit = async (url, token, initialNets) => {
     try {
-      const room = new Room();
-      roomRef.current = room;
-
-      // Handle Tracks
-      room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-        if (track.kind === 'audio') {
-          const element = track.attach();
-          // We could manage volume/muting of this specific element based on metadata
-          // For v0.1: We just play everything.
-          // Advanced: Check participant metadata to see which "Net" they are talking on.
-        }
-      });
-
-      await room.connect(url, token);
-      console.log('Connected to LiveKit room', room.name);
-      setIsConnected(true);
-      setIsConnecting(false);
+      // SIMULATION: Connect delay
+      setTimeout(() => {
+        console.log('Connected to (Simulated) LiveKit room');
+        setIsConnected(true);
+        setIsConnecting(false);
+      }, 800);
 
     } catch (err) {
       console.error("LiveKit connect error:", err);
@@ -90,42 +79,21 @@ export default function CommsPanel({ eventId }) {
   };
 
   const disconnect = () => {
-    if (roomRef.current) {
-      roomRef.current.disconnect();
-    }
     setIsConnected(false);
     setActiveTxNet(null);
   };
 
-  // 3. Push to Talk Logic
+  // 3. Push to Talk Logic (SIMULATED)
   const startTx = async (net) => {
-    if (!roomRef.current || !net.canTx) return;
-    
-    try {
-      setActiveTxNet(net.code);
-      // Publish audio with the Net Code as the name/tag
-      const localTracks = await createLocalAudioTrack();
-      await roomRef.current.localParticipant.publishTrack(localTracks, {
-        name: net.code 
-      });
-    } catch (err) {
-      console.error("TX Error:", err);
-    }
+    if (!isConnected || !net.canTx) return;
+    setActiveTxNet(net.code);
+    console.log(`[SIMULATION] Transmitting on ${net.code}`);
   };
 
   const stopTx = async () => {
-    if (!roomRef.current) return;
-    
-    try {
-      setActiveTxNet(null);
-      const tracks = roomRef.current.localParticipant.audioTracks;
-      for (const [sid, pub] of tracks) {
-        await roomRef.current.localParticipant.unpublishTrack(pub.track);
-        pub.track.stop();
-      }
-    } catch (err) {
-      console.error("Stop TX Error:", err);
-    }
+    if (!isConnected) return;
+    setActiveTxNet(null);
+    console.log(`[SIMULATION] TX Stopped`);
   };
 
   // Toggle listening (Local Mute)
