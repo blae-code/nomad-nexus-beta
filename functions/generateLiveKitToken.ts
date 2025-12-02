@@ -1,11 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { AccessToken, RoomServiceClient } from 'npm:livekit-server-sdk';
+import { AccessToken } from 'npm:livekit-server-sdk@2.0.3';
 
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
-
+        
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -20,26 +20,29 @@ Deno.serve(async (req) => {
         const apiSecret = Deno.env.get("LIVEKIT_API_SECRET");
 
         if (!apiKey || !apiSecret) {
-             return Response.json({ error: 'Server misconfiguration: Missing LiveKit credentials' }, { status: 500 });
+             // For development/demo purposes, we'll return a mock token or error if secrets aren't set
+             // In production, this should be a strict error
+             console.error("LiveKit credentials missing");
+             return Response.json({ error: 'Server configuration error: LiveKit credentials missing' }, { status: 500 });
         }
 
-        // Define Permissions based on Role (Redscar Hierarchy)
-        // Pioneer, Founder, Voyager, Scout, Affiliate, Shaman -> Publish & Subscribe
-        // Vagrant -> Subscribe only (Listen only)
+        // Define permissions based on Rank/Role
+        // Pioneer, Founder, Voyager, Scout, Affiliate, Shaman -> Publish + Subscribe
+        // Vagrant -> Subscribe only
         
-        const canPublish = ['Pioneer', 'Founder', 'Voyager', 'Scout', 'Affiliate', 'Shaman'].includes(userRole || user.rank);
-        const canSubscribe = true; // Everyone can listen
+        // Check rank for publish permission
+        const canPublish = ['Pioneer', 'Founder', 'Voyager', 'Scout', 'Affiliate'].includes(user.rank) || user.is_shaman === true;
 
         const at = new AccessToken(apiKey, apiSecret, {
             identity: user.id,
-            name: user.full_name || user.rsi_handle || 'Unknown',
+            name: user.rsi_handle || user.full_name,
         });
 
         at.addGrant({
             roomJoin: true,
             room: roomName,
             canPublish: canPublish,
-            canSubscribe: canSubscribe,
+            canSubscribe: true,
             canPublishData: canPublish,
         });
 
