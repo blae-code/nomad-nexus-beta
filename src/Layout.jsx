@@ -123,6 +123,12 @@ export default function Layout({ children, currentPageName }) {
 
            <div className="h-8 w-[1px] bg-zinc-800" />
 
+           {isAdmin && (
+              <a href={createPageUrl('RoleManager')} className="flex items-center justify-center w-8 h-8 bg-zinc-900 border border-zinc-800 hover:border-[#ea580c] hover:text-[#ea580c] transition-all mr-2 group" title="Admin Command">
+                 <ShieldAlert className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c]" />
+              </a>
+           )}
+
            <a href={createPageUrl('Profile')} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors">
               <div className="text-right hidden md:block">
                  <div className="text-xs font-bold text-zinc-300 group-hover:text-white">
