@@ -3,6 +3,7 @@ import Events from './pages/Events';
 import Channels from './pages/Channels';
 import OpsDashboard from './pages/OpsDashboard';
 import Treasury from './pages/Treasury';
+import CommsConsole from './pages/CommsConsole';
 
 
 export const PAGES = {
@@ -11,6 +12,7 @@ export const PAGES = {
     "Channels": Channels,
     "OpsDashboard": OpsDashboard,
     "Treasury": Treasury,
+    "CommsConsole": CommsConsole,
 }
 
 export const pagesConfig = {
