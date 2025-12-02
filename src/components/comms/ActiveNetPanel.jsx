@@ -59,6 +59,13 @@ function NetRoster({ net, eventId }) {
     initialData: []
   });
 
+  const { data: statuses } = useQuery({
+    queryKey: ['net-roster-statuses', eventId],
+    queryFn: () => base44.entities.PlayerStatus.list({ event_id: eventId }),
+    enabled: !!eventId,
+    initialData: []
+  });
+
   const { data: squadMembers } = useQuery({
     queryKey: ['squad-members', net.linked_squad_id],
     queryFn: () => net.linked_squad_id ? base44.entities.SquadMember.list({ squad_id: net.linked_squad_id }) : [],
@@ -66,17 +73,10 @@ function NetRoster({ net, eventId }) {
     initialData: []
   });
 
-  const { data: statuses } = useQuery({
-    queryKey: ['roster-statuses', eventId],
-    queryFn: () => base44.entities.PlayerStatus.list({ event_id: eventId }),
-    enabled: !!eventId,
-    initialData: []
-  });
-
   // Filter users relevant to this net
   const participants = React.useMemo(() => {
     if (!net || !allUsers.length) return [];
-
+    
     let relevantUsers = [];
 
     // 1. If linked squad, show squad members
@@ -86,21 +86,21 @@ function NetRoster({ net, eventId }) {
     }
     // 2. If command net, show high ranking
     else if (net.type === 'command') {
-       relevantUsers = allUsers.filter(u => hasMinRank(u, net.min_rank_to_tx)); // Show those who can talk
+       relevantUsers = allUsers.filter(u => hasMinRank(u, net.min_rank_to_tx));
     }
-    // 3. For general/other nets, show users who have a status in this event
-    else {
-        const activeUserIds = statuses.map(s => s.user_id);
-        relevantUsers = allUsers.filter(u => activeUserIds.includes(u.id));
-    }
-
-    // Map status
+    
+    // Attach status
     return relevantUsers.map(u => {
        const status = statuses.find(s => s.user_id === u.id);
-       return {
-          ...u,
-          status: status?.status || 'OFFLINE'
+       return { 
+          ...u, 
+          status: status?.status || 'OFFLINE',
+          role: status?.role || 'OTHER' 
        };
+    }).sort((a, b) => {
+       // Sort distress/down to top
+       const priority = { DISTRESS: 0, DOWN: 1, ENGAGED: 2, READY: 3, OFFLINE: 4 };
+       return (priority[a.status] || 99) - (priority[b.status] || 99);
     });
   }, [net, allUsers, squadMembers, statuses]);
 
@@ -118,20 +118,27 @@ function NetRoster({ net, eventId }) {
        ) : (
          <div className="grid grid-cols-1 gap-2">
            {participants.map(user => (
-             <div key={user.id} className="flex items-center justify-between bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-               <div className="flex items-center gap-3 overflow-hidden">
+             <div key={user.id} className={cn(
+               "flex items-center justify-between bg-zinc-900/50 p-2 rounded border",
+               (user.status === 'DOWN' || user.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : "border-zinc-800/50"
+             )}>
+               <div className="flex items-center gap-3 min-w-0">
                   <div className={cn("w-2 h-2 rounded-full shrink-0", user.status === 'OFFLINE' ? "bg-zinc-700" : "bg-emerald-500")} />
-                  <div className="min-w-0">
+                  <div className="truncate">
                     <div className="text-sm text-zinc-300 font-bold truncate">{user.rsi_handle || user.full_name}</div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                       <StatusChip status={user.status} size="xs" />
-                       <span className="text-[9px] text-zinc-500 uppercase">{user.rank}</span>
+                    <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-2">
+                       <span>{user.rank}</span>
+                       <span className="text-zinc-700">•</span>
+                       <span>{user.role}</span>
                     </div>
                   </div>
                </div>
-               {hasMinRank(user, net.min_rank_to_tx) && (
-                 <Mic className="w-3 h-3 text-zinc-600 shrink-0" />
-               )}
+               <div className="flex items-center gap-2 shrink-0">
+                  <StatusChip status={user.status} size="xs" showLabel={false} />
+                  {hasMinRank(user, net.min_rank_to_tx) && (
+                    <Mic className="w-3 h-3 text-zinc-600" />
+                  )}
+               </div>
              </div>
            ))}
          </div>

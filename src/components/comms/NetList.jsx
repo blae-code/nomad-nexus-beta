@@ -2,10 +2,30 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Radio, Mic, Users, Lock, Volume2 } from "lucide-react";
+import { Radio, Mic, Users, Lock, Volume2, ShieldAlert } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 
-export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {} }) {
+export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId }) {
+  // Fetch statuses to check for distress
+  const { data: statuses } = useQuery({
+    queryKey: ['net-list-statuses', eventId],
+    queryFn: () => eventId ? base44.entities.PlayerStatus.list({ event_id: eventId }) : [],
+    enabled: !!eventId,
+    initialData: []
+  });
+
+  // Map squads to distress status
+  const squadDistressMap = React.useMemo(() => {
+    const map = {}; // squadId -> bool
+    statuses.forEach(s => {
+       if ((s.status === 'DOWN' || s.status === 'DISTRESS') && s.assigned_squad_id) {
+          map[s.assigned_squad_id] = true;
+       }
+    });
+    return map;
+  }, [statuses]);
   // Filter nets based on view mode
   const displayNets = React.useMemo(() => {
     if (viewMode === 'command') return nets;
@@ -53,12 +73,14 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                   "cursor-pointer relative overflow-hidden transition-all duration-200 border rounded-sm p-3 group",
                   selectedNetId === net.id 
                     ? "bg-zinc-900/80 border-emerald-900/50 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]" 
-                    : "bg-zinc-950/50 border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-900/30"
-                )}
-              >
-                {/* Active Indicator Strip */}
-                <div className={cn(
-                  "absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300",
+                    : "bg-zinc-950/50 border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-900/30",
+                    net.linked_squad_id && squadDistressMap[net.linked_squad_id] && "border-red-900/50 bg-red-950/10"
+                    )}
+                    >
+                    {/* Active Indicator Strip */}
+                    <div className={cn(
+                    "absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300",
+                    net.linked_squad_id && squadDistressMap[net.linked_squad_id] ? "bg-red-500 animate-pulse" : "",
                   selectedNetId === net.id ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-zinc-800 group-hover:bg-zinc-700",
                   net.type === 'command' && selectedNetId !== net.id ? "bg-red-900/50" : ""
                 )} />
@@ -66,6 +88,11 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                 <div className="flex justify-between items-start pl-3">
                    <div>
                       <div className="flex items-center gap-2 mb-1">
+                         {net.linked_squad_id && squadDistressMap[net.linked_squad_id] && (
+                            <div className="animate-pulse text-red-500" title="Unit Distress Signal">
+                               <ShieldAlert className="w-4 h-4" />
+                            </div>
+                         )}
                          <span className={cn(
                            "font-mono font-bold text-lg tracking-tighter leading-none",
                            selectedNetId === net.id ? "text-emerald-400 text-shadow-sm" : "text-zinc-300 group-hover:text-zinc-200"

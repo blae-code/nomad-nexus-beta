@@ -161,7 +161,7 @@ export default function EventParticipants({ eventId }) {
                            {participant.user.rsi_handle || participant.user.email}
                          </div>
                          <div className="mt-1">
-                           <StatusChip status={participant.status} size="xs" />
+                           <StatusChip status={participant.status} size="xs" className="border-0 bg-transparent p-0 h-auto" />
                          </div>
                        </div>
                      </div>
