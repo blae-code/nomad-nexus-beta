@@ -6,8 +6,38 @@ import ActivityBar from "@/components/layout/ActivityBar";
 
 export default function Layout({ children, currentPageName }) {
   const [time, setTime] = useState(new Date());
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [loadingText, setLoadingText] = useState("INITIALIZING SECURE UPLINK...");
 
   useEffect(() => {
+    // Simulate technical boot sequence
+    const bootSequence = async () => {
+       // Check persistent state
+       const lastPath = localStorage.getItem('redscar_last_path');
+       const currentPath = window.location.pathname;
+       
+       // Redirect if at root and we have a saved path
+       if (lastPath && lastPath !== currentPath && (currentPath === '/' || currentPath.endsWith('Home'))) {
+          // Only redirect if it's a valid internal path to prevent loops
+          if (lastPath.startsWith('/')) {
+             // Use native navigation to ensure fresh load state
+             window.location.href = lastPath;
+             return; 
+          }
+       }
+
+       // Loading text animation
+       setTimeout(() => setLoadingText("AUTHENTICATING NEURAL LINK..."), 800);
+       setTimeout(() => setLoadingText("SYNCING OPS DATA..."), 1600);
+       setTimeout(() => setLoadingText("ESTABLISHING ENCRYPTED TUNNEL..."), 2400);
+       setTimeout(() => {
+          setIsAppLoading(false);
+          localStorage.setItem('redscar_last_path', currentPath);
+       }, 3000);
+    };
+
+    bootSequence();
+
     const timer = setInterval(() => setTime(new Date()), 1000);
 
     // PWA Manifest & Theme Configuration
