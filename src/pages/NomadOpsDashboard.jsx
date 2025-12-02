@@ -1,8 +1,8 @@
 import React from "react";
 import CriticalAlertsWidget from "@/components/dashboard/CriticalAlertsWidget";
-import PersonalActivityWidget from "@/components/dashboard/PersonalActivityWidget";
 import OrgStatusWidget from "@/components/dashboard/OrgStatusWidget";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
+import PersonalizedFeedWidget from "@/components/dashboard/PersonalizedFeedWidget";
 import { Monitor, Terminal } from "lucide-react";
 
 export default function NomadOpsDashboard() {
@@ -42,27 +42,20 @@ export default function NomadOpsDashboard() {
             <CriticalAlertsWidget />
          </div>
 
-         {/* 2. Main Center Area (Org Status & Map Placeholder?) */}
-         <div className="col-span-12 md:col-span-8 lg:col-span-6 row-span-6 md:row-span-8 flex flex-col gap-4">
-            {/* Org Status occupying central visual space */}
-            <div className="flex-1">
-               <OrgStatusWidget />
-            </div>
-            {/* Placeholder for future map or additional data */}
-            <div className="h-1/3 bg-zinc-900/20 border border-zinc-800 border-dashed flex items-center justify-center text-zinc-700 text-xs uppercase tracking-widest">
-               Tactical Map [Offline]
-            </div>
+         {/* 2. Main Center Area (Personalized Feed) */}
+         <div className="col-span-12 md:col-span-8 lg:col-span-6 row-span-6 md:row-span-8">
+             <PersonalizedFeedWidget />
          </div>
 
-         {/* 3. Right Column (Status & Personal) */}
+         {/* 3. Right Column (Status & Org Overview) */}
          <div className="col-span-12 md:col-span-12 lg:col-span-3 row-span-6 md:row-span-4 lg:row-span-12 flex flex-col gap-4">
-            {/* Top Right: Critical Alerts Widget */}
+            {/* Top Right: Critical Alerts & Status */}
             <div className="shrink-0">
                <StatusAlertsWidget />
             </div>
-            {/* Below: Personal Activity */}
+            {/* Below: Org Status Monitor (Moved from Center) */}
             <div className="flex-1 overflow-hidden">
-               <PersonalActivityWidget />
+               <OrgStatusWidget />
             </div>
          </div>
 
