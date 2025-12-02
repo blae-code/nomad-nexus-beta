@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Swords, Crosshair, ShieldAlert, Box, Scan, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatusChip from "@/components/status/StatusChip";
 
 const ROLES = [
   { value: 'PILOT', icon: Crosshair, color: 'text-blue-400', bg: 'bg-blue-950/30 border-blue-900' },
@@ -159,8 +160,8 @@ export default function EventParticipants({ eventId }) {
                          <div className="text-xs font-medium text-zinc-300 truncate">
                            {participant.user.rsi_handle || participant.user.email}
                          </div>
-                         <div className="text-[9px] text-zinc-600 truncate">
-                           {participant.status}
+                         <div className="mt-1">
+                           <StatusChip status={participant.status} size="xs" />
                          </div>
                        </div>
                      </div>

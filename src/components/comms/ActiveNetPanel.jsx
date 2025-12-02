@@ -9,6 +9,7 @@ import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock } 
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
+import StatusChip from "@/components/status/StatusChip";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -51,7 +52,7 @@ function CommsLog({ eventId }) {
   );
 }
 
-function NetRoster({ net }) {
+function NetRoster({ net, eventId }) {
   const { data: allUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
@@ -65,24 +66,43 @@ function NetRoster({ net }) {
     initialData: []
   });
 
+  const { data: statuses } = useQuery({
+    queryKey: ['roster-statuses', eventId],
+    queryFn: () => base44.entities.PlayerStatus.list({ event_id: eventId }),
+    enabled: !!eventId,
+    initialData: []
+  });
+
   // Filter users relevant to this net
   const participants = React.useMemo(() => {
     if (!net || !allUsers.length) return [];
 
+    let relevantUsers = [];
+
     // 1. If linked squad, show squad members
     if (net.linked_squad_id) {
        const memberIds = squadMembers.map(m => m.user_id);
-       return allUsers.filter(u => memberIds.includes(u.id));
+       relevantUsers = allUsers.filter(u => memberIds.includes(u.id));
     }
-
     // 2. If command net, show high ranking
-    if (net.type === 'command') {
-       return allUsers.filter(u => hasMinRank(u, net.min_rank_to_tx)); // Show those who can talk
+    else if (net.type === 'command') {
+       relevantUsers = allUsers.filter(u => hasMinRank(u, net.min_rank_to_tx)); // Show those who can talk
+    }
+    // 3. For general/other nets, show users who have a status in this event
+    else {
+        const activeUserIds = statuses.map(s => s.user_id);
+        relevantUsers = allUsers.filter(u => activeUserIds.includes(u.id));
     }
 
-    // 3. Otherwise show empty or maybe online users (too broad for now, returning generic placeholders if empty)
-    return [];
-  }, [net, allUsers, squadMembers]);
+    // Map status
+    return relevantUsers.map(u => {
+       const status = statuses.find(s => s.user_id === u.id);
+       return {
+          ...u,
+          status: status?.status || 'OFFLINE'
+       };
+    });
+  }, [net, allUsers, squadMembers, statuses]);
 
   return (
     <div className="space-y-3">
@@ -99,15 +119,18 @@ function NetRoster({ net }) {
          <div className="grid grid-cols-1 gap-2">
            {participants.map(user => (
              <div key={user.id} className="flex items-center justify-between bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-               <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-zinc-600" />
-                  <div>
-                    <div className="text-sm text-zinc-300 font-bold">{user.rsi_handle || user.full_name}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase">{user.rank}</div>
+               <div className="flex items-center gap-3 overflow-hidden">
+                  <div className={cn("w-2 h-2 rounded-full shrink-0", user.status === 'OFFLINE' ? "bg-zinc-700" : "bg-emerald-500")} />
+                  <div className="min-w-0">
+                    <div className="text-sm text-zinc-300 font-bold truncate">{user.rsi_handle || user.full_name}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                       <StatusChip status={user.status} size="xs" />
+                       <span className="text-[9px] text-zinc-500 uppercase">{user.rank}</span>
+                    </div>
                   </div>
                </div>
                {hasMinRank(user, net.min_rank_to_tx) && (
-                 <Mic className="w-3 h-3 text-zinc-600" />
+                 <Mic className="w-3 h-3 text-zinc-600 shrink-0" />
                )}
              </div>
            ))}
@@ -278,7 +301,7 @@ export default function ActiveNetPanel({ net, user, eventId }) {
       {/* Roster & Logs */}
       <TerminalCard className="flex-1 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
-            <NetRoster net={net} />
+            <NetRoster net={net} eventId={eventId} />
             <CommsLog eventId={eventId} />
          </ScrollArea>
       </TerminalCard>

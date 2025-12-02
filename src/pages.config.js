@@ -16,6 +16,6 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "CommsConsole",
+    mainPage: "Event",
     Pages: PAGES,
 };

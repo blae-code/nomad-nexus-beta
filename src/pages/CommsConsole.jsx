@@ -4,6 +4,8 @@ import { base44 } from "@/api/base44Client";
 import CommsEventSelector from "@/components/comms/CommsEventSelector";
 import NetList from "@/components/comms/NetList";
 import ActiveNetPanel from "@/components/comms/ActiveNetPanel";
+import FleetHierarchy from "@/components/ops/FleetHierarchy";
+import FleetStatusSummary from "@/components/ops/FleetStatusSummary";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -16,6 +18,7 @@ export default function CommsConsolePage() {
   });
   const [selectedNet, setSelectedNet] = React.useState(null);
   const [viewMode, setViewMode] = React.useState("line"); // 'command' or 'line'
+  const [showHierarchy, setShowHierarchy] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
 
@@ -117,17 +120,43 @@ export default function CommsConsolePage() {
          </div>
          
          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2 bg-zinc-900 py-1 px-3 rounded-full border border-zinc-800">
-               <span className={`text-xs font-bold ${viewMode === 'line' ? 'text-white' : 'text-zinc-600'}`}>LINE</span>
-               <Switch 
-                  checked={viewMode === 'command'} 
-                  onCheckedChange={(c) => setViewMode(c ? 'command' : 'line')}
-                  className="data-[state=checked]:bg-red-900 data-[state=unchecked]:bg-emerald-900"
-               />
-               <span className={`text-xs font-bold ${viewMode === 'command' ? 'text-red-500' : 'text-zinc-600'}`}>COMMAND</span>
-            </div>
+            {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
+
             <div className="h-8 w-[1px] bg-zinc-800 mx-2" />
-            <div className="text-right">
+
+            <div className="flex items-center space-x-1 bg-zinc-900 p-1 rounded-full border border-zinc-800">
+               <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowHierarchy(false)}
+                  className={`h-6 text-[10px] rounded-full px-3 ${!showHierarchy ? 'bg-emerald-900/50 text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+               >
+                  NETS
+               </Button>
+               <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowHierarchy(true)}
+                  className={`h-6 text-[10px] rounded-full px-3 ${showHierarchy ? 'bg-blue-900/50 text-blue-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+               >
+                  HIERARCHY
+               </Button>
+            </div>
+
+            {!showHierarchy && (
+               <div className="flex items-center space-x-2 bg-zinc-900 py-1 px-3 rounded-full border border-zinc-800">
+                  <span className={`text-xs font-bold ${viewMode === 'line' ? 'text-white' : 'text-zinc-600'}`}>LINE</span>
+                  <Switch 
+                     checked={viewMode === 'command'} 
+                     onCheckedChange={(c) => setViewMode(c ? 'command' : 'line')}
+                     className="data-[state=checked]:bg-red-900 data-[state=unchecked]:bg-emerald-900"
+                  />
+                  <span className={`text-xs font-bold ${viewMode === 'command' ? 'text-red-500' : 'text-zinc-600'}`}>CMD</span>
+               </div>
+            )}
+
+            <div className="h-8 w-[1px] bg-zinc-800 mx-2" />
+            <div className="text-right hidden md:block">
                <div className="text-xs font-bold text-white">{currentUser?.rsi_handle || "Unknown Operator"}</div>
                <div className="text-[10px] text-zinc-500 uppercase">{currentUser?.rank || "Vagrant"} Clearance</div>
             </div>
@@ -176,14 +205,26 @@ export default function CommsConsolePage() {
                  style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
-            
+
             <div className="relative z-10 h-full">
                {selectedEventId ? (
-                  <ActiveNetPanel 
-                     net={selectedNet} 
-                     user={currentUser} 
-                     eventId={selectedEventId} 
-                  />
+                  showHierarchy ? (
+                     <div className="h-full flex flex-col">
+                        <div className="mb-4">
+                           <h2 className="text-2xl font-black font-mono text-white tracking-tighter uppercase">Tactical Overview</h2>
+                           <p className="text-zinc-500 text-xs font-mono">UNIT DISPOSITION & STATUS</p>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                           <FleetHierarchy eventId={selectedEventId} />
+                        </div>
+                     </div>
+                  ) : (
+                     <ActiveNetPanel 
+                        net={selectedNet} 
+                        user={currentUser} 
+                        eventId={selectedEventId} 
+                     />
+                  )
                ) : (
                   <div className="h-full flex items-center justify-center">
                      <div className="text-center space-y-6">
