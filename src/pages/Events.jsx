@@ -17,6 +17,8 @@ import EventParticipants from "@/components/events/EventParticipants";
 import EventEconomy from "@/components/events/EventEconomy";
 import CommsConfig from "@/components/events/CommsConfig";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
+import EventObjectives from "@/components/events/EventObjectives";
+import { Rocket } from "lucide-react";
 
 function EventDetail({ id }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -40,6 +42,9 @@ function EventDetail({ id }) {
     queryFn: () => base44.entities.User.get(event.created_by),
     enabled: !!event?.created_by
   });
+
+  const { data: allUsers } = useQuery({ queryKey: ['event-users-detail'], queryFn: () => base44.entities.User.list(), initialData: [] });
+  const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
   if (isLoading) {
     return <div className="min-h-screen bg-zinc-950 p-10 text-center text-zinc-500">Loading Intelligence...</div>;
@@ -76,6 +81,15 @@ function EventDetail({ id }) {
                   }>
                     {event.event_type.toUpperCase()}
                   </Badge>
+                  {event.priority && (
+                     <Badge variant="outline" className={
+                        event.priority === 'CRITICAL' ? "text-red-500 border-red-900 bg-red-950/20" :
+                        event.priority === 'HIGH' ? "text-orange-500 border-orange-900 bg-orange-950/20" :
+                        "text-zinc-500 border-zinc-800"
+                     }>
+                        {event.priority}
+                     </Badge>
+                  )}
                   <span className="text-zinc-500 text-xs font-mono tracking-widest">OP-ID: {event.id.slice(0,8)}</span>
                 </div>
                 <h1 className="text-4xl font-black uppercase tracking-tight text-white">
@@ -123,6 +137,36 @@ function EventDetail({ id }) {
               <CardContent className="text-zinc-400 space-y-6">
                 <p className="leading-relaxed">{event.description}</p>
                 
+                {/* Objectives */}
+                <EventObjectives 
+                   event={event} 
+                   users={allUsers} 
+                   assets={allAssets} 
+                   canEdit={true} 
+                />
+
+                {/* Assigned Assets */}
+                {event.assigned_asset_ids && event.assigned_asset_ids.length > 0 && (
+                   <div className="pt-4 border-t border-zinc-800/50">
+                      <h4 className="text-xs font-bold text-zinc-500 uppercase mb-3 flex items-center gap-2">
+                         <Rocket className="w-3 h-3" /> Deployed Assets
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                         {allAssets.filter(a => event.assigned_asset_ids.includes(a.id)).map(asset => (
+                            <div key={asset.id} className="flex items-center gap-3 p-2 bg-zinc-950/50 border border-zinc-800/50">
+                               <div className="w-8 h-8 bg-blue-900/10 flex items-center justify-center text-blue-500 border border-blue-900/20">
+                                  <Rocket className="w-4 h-4" />
+                               </div>
+                               <div>
+                                  <div className="text-xs font-bold text-zinc-200">{asset.name}</div>
+                                  <div className="text-[10px] text-zinc-500 uppercase">{asset.model}</div>
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-red-500" />
