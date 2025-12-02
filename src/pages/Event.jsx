@@ -12,6 +12,7 @@ import { canEditEvent } from "@/components/permissions";
 import EventForm from "@/components/events/EventForm";
 import EventParticipants from "@/components/events/EventParticipants";
 import EventEconomy from "@/components/events/EventEconomy";
+import CommsConfig from "@/components/events/CommsConfig";
 
 export default function EventPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -158,6 +159,11 @@ export default function EventPage() {
           {/* Sidebar / Comms Column */}
           <div className="space-y-6">
             
+            {/* Comms Configuration (Leaders Only) */}
+            {canEditEvent(currentUser, event) && (
+              <CommsConfig eventId={event.id} />
+            )}
+
             {/* Player Status */}
             <PlayerStatusSection eventId={event.id} />
 
