@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { ChevronUp, ChevronsUp, Star, Shield, Target, User, Users } from "lucide-react";
-import { RANK_COLORS } from "@/utils/rankUtils";
+import { RANK_COLORS } from "@/components/utils/rankUtils";
 
 const RANKS = [
   { name: "Pioneer", icon: Star, ...RANK_COLORS['Pioneer'] },

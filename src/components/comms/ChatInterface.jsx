@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, User, Hash, Lock, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getRankColorClass } from "@/utils/rankUtils";
+import { getRankColorClass } from "@/components/utils/rankUtils";
 
 export default function ChatInterface({ channel, user }) {
   const scrollRef = useRef(null);

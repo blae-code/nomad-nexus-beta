@@ -11,7 +11,7 @@ import { hasMinRank } from "@/components/permissions";
 import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
-import { getRankColorClass } from "@/utils/rankUtils";
+import { getRankColorClass } from "@/components/utils/rankUtils";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({

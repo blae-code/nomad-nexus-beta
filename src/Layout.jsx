@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { Terminal, Search, Clock, User } from 'lucide-react';
 import CommandPalette from "@/components/layout/CommandPalette";
-import { getRankColorClass } from "@/utils/rankUtils";
+import { getRankColorClass } from "@/components/utils/rankUtils";
 import { cn } from "@/lib/utils";
 import ActivityBar from "@/components/layout/ActivityBar";
 import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
