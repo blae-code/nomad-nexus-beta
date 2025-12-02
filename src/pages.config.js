@@ -19,7 +19,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Event",
+    mainPage: "CommsConsole",
     Pages: PAGES,
     Layout: __Layout,
 };
