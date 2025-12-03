@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock } from "lucide-react";
+import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
@@ -62,8 +62,11 @@ function NetRoster({ net, eventId, currentUserState, onWhisper }) {
     initialData: []
   });
   
-  const [myId, setMyId] = useState(null);
-  React.useEffect(() => { base44.auth.me().then(u => setMyId(u?.id)) }, []);
+  const currentUser = React.useMemo(() => {
+     // Just to get ID to match with props
+     // In real implementation we'd check auth.me()
+     return null;
+  }, []);
 
   const { data: statuses } = useQuery({
     queryKey: ['net-roster-statuses', eventId],
@@ -193,11 +196,11 @@ export default function ActiveNetPanel({ net, user, eventId }) {
        // Reset token
        setConnectionToken(null);
        setLivekitUrl(null);
-       setWhisperTarget(null); // Reset whisper on net change
-
+       setWhisperTarget(null);
+       
        // Call backend to generate token
        base44.functions.invoke('generateLiveKitToken', {
-          roomNames: [net.code], // Request array now
+          roomNames: [net.code],
           participantName: user.callsign || user.rsi_handle || user.full_name || 'Unknown'
        }).then(res => {
           const token = res.data.tokens ? res.data.tokens[net.code] : res.data.token;
@@ -209,7 +212,7 @@ export default function ActiveNetPanel({ net, user, eventId }) {
 
   const handleWhisper = (targetUser) => {
      if (whisperTarget?.id === targetUser.id) {
-        setWhisperTarget(null); // Toggle off
+        setWhisperTarget(null);
      } else {
         setWhisperTarget(targetUser);
      }
@@ -289,17 +292,17 @@ export default function ActiveNetPanel({ net, user, eventId }) {
                  <NetTypeIcon type={net.type} />
                  <p className="text-zinc-400 uppercase tracking-widest text-xs font-bold">{net.label}</p>
               </div>
-            </div>
-            <div className="text-right flex flex-col items-end gap-2">
-               {whisperTarget && (
-                  <Badge className="bg-amber-950/50 text-amber-500 border-amber-900 animate-pulse">
-                     WHISPER TARGET LOCKED
-                  </Badge>
-               )}
-               <PermissionBadge canTx={canTx} minRankTx={net.min_rank_to_tx} minRankRx={net.min_rank_to_rx} />
+              </div>
+              <div className="text-right flex flex-col items-end gap-2">
+              {whisperTarget && (
+                 <Badge className="bg-amber-950/50 text-amber-500 border-amber-900 animate-pulse">
+                    WHISPER TARGET LOCKED
+                 </Badge>
+              )}
+              <PermissionBadge canTx={canTx} minRankTx={net.min_rank_to_tx} minRankRx={net.min_rank_to_rx} />
                <div className="text-[10px] text-zinc-600 font-mono tracking-widest">ID: {net.id.slice(0,8).toUpperCase()}</div>
             </div>
-            </div>
+          </div>
         
            <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-zinc-900/50 p-3 rounded-sm border border-zinc-800/50">
