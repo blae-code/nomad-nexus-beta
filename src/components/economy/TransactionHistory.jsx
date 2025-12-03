@@ -46,7 +46,7 @@ export default function TransactionHistory({ cofferId, eventId, limit = 20 }) {
                  <div className="flex items-center gap-2 text-[10px] text-zinc-500">
                     <span className="flex items-center gap-1">
                        <Calendar className="w-3 h-3" />
-                       {new Date(tx.transaction_date).toLocaleDateString()}
+                       {tx.transaction_date ? new Date(tx.transaction_date).toLocaleDateString() : 'Unknown Date'}
                     </span>
                     {user && (
                        <span>• by {user.rsi_handle || user.email}</span>
