@@ -6,7 +6,6 @@ import { Radio, Mic, Users, Lock, Volume2, ShieldAlert } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
-
 import { Headphones } from "lucide-react";
 
 export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor }) {
@@ -146,10 +145,10 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                       </div>
                       </div>
                       {(activityMap[net.id] || monitoredNetIds.includes(net.id)) && (
-                         <div className={cn(
-                            "absolute right-1 top-1 w-1.5 h-1.5 rounded-full animate-ping opacity-75",
-                            activityMap[net.id] ? "bg-emerald-500" : "bg-blue-500"
-                         )} />
+                      <div className={cn(
+                         "absolute right-1 top-1 w-1.5 h-1.5 rounded-full animate-ping opacity-75",
+                         activityMap[net.id] ? "bg-emerald-500" : "bg-blue-500"
+                      )} />
                       )}
                       </div>
             ))}
