@@ -107,7 +107,7 @@ export default function StatusAlertsWidget() {
             </div>
 
             {/* AUEC Warning */}
-            {cofferWarning !== null && (
+            {cofferWarning !== null && cofferWarning !== undefined && (
                <div className="flex items-center justify-between pt-4 border-t border-zinc-800/50">
                   <div className="flex items-center gap-3">
                      <div className="p-2 rounded-full bg-amber-950/30 border border-amber-500/50 text-amber-500">
