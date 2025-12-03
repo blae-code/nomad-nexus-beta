@@ -66,7 +66,7 @@ export default function OrgResourcesWidget() {
                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-zinc-500 pt-1 border-t border-zinc-900">
                        <div>
                           <div className="text-zinc-600 mb-0.5">LOCAL</div>
-                          <div className="text-zinc-300">{new Date(nextMeeting.start_time).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+                          <div className="text-zinc-300">{nextMeeting.start_time ? new Date(nextMeeting.start_time).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'TBD'}</div>
                        </div>
                        <div>
                           <div className="text-zinc-600 mb-0.5">UTC</div>

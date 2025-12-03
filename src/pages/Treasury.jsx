@@ -85,7 +85,7 @@ export default function TreasuryPage() {
                           <Badge variant="outline" className="text-[10px] border-zinc-800 text-zinc-500 bg-zinc-950">{coffer.type}</Badge>
                        </div>
                        <div className="text-2xl font-mono font-bold text-zinc-200">
-                          {coffer.balance.toLocaleString()} <span className="text-amber-600 text-lg">¤</span>
+                          {(coffer.balance || 0).toLocaleString()} <span className="text-amber-600 text-lg">¤</span>
                        </div>
                        <div className="text-xs text-zinc-500 mt-1 line-clamp-1">{coffer.description}</div>
                     </CardContent>

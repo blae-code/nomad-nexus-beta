@@ -55,7 +55,7 @@ export default function TransactionHistory({ cofferId, eventId, limit = 20 }) {
                </div>
              </div>
              <div className={`font-mono font-bold ${isDeposit ? 'text-emerald-400' : 'text-red-400'}`}>
-                {isDeposit ? '+' : ''}{tx.amount.toLocaleString()} ¤
+                {isDeposit ? '+' : ''}{(tx.amount || 0).toLocaleString()} ¤
              </div>
           </div>
         );
