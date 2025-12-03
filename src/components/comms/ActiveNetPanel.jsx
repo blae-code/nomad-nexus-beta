@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+// UNCOMMENT FOR LOCAL DEV: import { Room, RoomEvent, Track } from "livekit-client";
 // livekit-client removed due to environment restrictions
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -193,11 +194,14 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
 
-  // LiveKit Connection Logic (SIMULATED)
+  // LiveKit Connection Logic (SIMULATED FOR PLATFORM, UNCOMMENT FOR LOCAL DEV)
   const [room, setRoom] = useState(null); // Mock room
+  // const roomRef = useRef(null); // UNCOMMENT FOR LOCAL DEV
 
   useEffect(() => {
     if (!net || !user) return;
+
+    // let currentRoom = null; // UNCOMMENT FOR LOCAL DEV
 
     const connect = async () => {
        try {
@@ -217,10 +221,43 @@ export default function ActiveNetPanel({ net, user, eventId }) {
           setConnectionToken(token);
           setLivekitUrl(url);
 
-          // Simulate active room connection
+          // -------------------------------------------------------
+          // START: SIMULATION (Remove this block for local dev)
           setTimeout(() => {
              setRoom({ simulated: true });
           }, 1000);
+          // END: SIMULATION
+          // -------------------------------------------------------
+
+          /* UNCOMMENT FOR LOCAL DEV
+          // 2. Initialize Room
+          currentRoom = new Room({
+             adaptiveStream: true,
+             dynacast: true,
+          });
+          
+          roomRef.current = currentRoom;
+
+          // 3. Setup Event Listeners
+          currentRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+             if (track.kind === 'audio') {
+                const element = track.attach();
+                document.body.appendChild(element);
+             }
+          });
+
+          currentRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+             track.detach().forEach(el => el.remove());
+          });
+
+          currentRoom.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+             setRoom(prev => Object.assign(Object.create(Object.getPrototypeOf(prev)), prev));
+          });
+          
+          // 4. Connect
+          await currentRoom.connect(url, token);
+          setRoom(currentRoom);
+          */
 
        } catch (err) {
           console.error("LiveKit Connection Failed:", err);
@@ -228,12 +265,40 @@ export default function ActiveNetPanel({ net, user, eventId }) {
     };
 
     connect();
-    return () => setRoom(null);
+    
+    return () => {
+       setRoom(null);
+       /* UNCOMMENT FOR LOCAL DEV
+       if (currentRoom) {
+          currentRoom.disconnect();
+          roomRef.current = null;
+       }
+       */
+    };
   }, [net, user]);
 
-  // Audio Handling (SIMULATED)
+  // Audio Handling
   useEffect(() => {
-     // No real audio handling possible without SDK
+     // No real audio handling possible without SDK in simulation
+     /* UNCOMMENT FOR LOCAL DEV
+     if (!room || !room.localParticipant) return;
+     
+     const handleAudioState = async () => {
+        if (audioState?.isTransmitting) {
+           // Ensure published and unmuted
+           const pub = room.localParticipant.getTrack(Track.Kind.Audio);
+           if (!pub) {
+              await room.localParticipant.setMicrophoneEnabled(true);
+           } else {
+              room.localParticipant.setMicrophoneEnabled(true);
+           }
+        } else {
+           // Mute
+           room.localParticipant.setMicrophoneEnabled(false);
+        }
+     };
+     handleAudioState();
+     */
   }, [audioState, room, whisperTarget]);
 
   const handleWhisper = (targetUser) => {
