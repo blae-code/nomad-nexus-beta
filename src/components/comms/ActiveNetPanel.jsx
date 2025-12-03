@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { Room, RoomEvent, createLocalTracks, Track } from "livekit-client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,18 +56,18 @@ function CommsLog({ eventId }) {
   );
 }
 
-function NetRoster({ net, eventId, currentUserState, onWhisper }) {
+function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   const { data: allUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
     initialData: []
   });
   
-  const currentUser = React.useMemo(() => {
-     // Just to get ID to match with props
-     // In real implementation we'd check auth.me()
-     return null;
+  const [currentUser, setCurrentUser] = React.useState(null);
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
+  const myId = currentUser?.id;
 
   const { data: statuses } = useQuery({
     queryKey: ['net-roster-statuses', eventId],
@@ -133,9 +134,18 @@ function NetRoster({ net, eventId, currentUserState, onWhisper }) {
                 if (currentUserState.isTransmitting) voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
                 else if (currentUserState.mode === 'PTT' && !currentUserState.isMuted) voiceStatusColor = "bg-orange-600";
              } else {
-                // Mock random status for others for "Presence" demo
-                // In real LiveKit integration, this would come from participant.isSpeaking
-                if (Math.random() > 0.95) voiceStatusColor = "bg-green-500"; 
+                // LiveKit Speaking Status
+                const isSpeaking = room?.participants.get(participant.identity)?.isSpeaking; // Map via identity or metadata in real app
+                // For now we rely on name matching or simplistic mapping
+                // In a full implementation, we'd map User ID to Participant Identity
+                
+                // Check active speakers list if available or simplify:
+                if (room) {
+                    const remoteP = Array.from(room.participants.values()).find(p => p.identity === (participant.callsign || participant.full_name));
+                    if (remoteP && remoteP.isSpeaking) {
+                         voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
+                    }
+                }
              }
 
              return (
@@ -190,25 +200,143 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
 
-  // Simulate LiveKit Connection Handshake
-  React.useEffect(() => {
-    if (net && user) {
-       // Reset token
-       setConnectionToken(null);
-       setLivekitUrl(null);
-       setWhisperTarget(null);
-       
-       // Call backend to generate token
-       base44.functions.invoke('generateLiveKitToken', {
-          roomNames: [net.code],
-          participantName: user.callsign || user.rsi_handle || user.full_name || 'Unknown'
-       }).then(res => {
+  // LiveKit Connection Logic
+  const [room, setRoom] = useState(null);
+  const roomRef = useRef(null);
+
+  useEffect(() => {
+    if (!net || !user) return;
+
+    let currentRoom = null;
+
+    const connect = async () => {
+       try {
+          setConnectionToken(null);
+          setLivekitUrl(null);
+          setWhisperTarget(null);
+
+          // 1. Get Token
+          const res = await base44.functions.invoke('generateLiveKitToken', {
+             roomNames: [net.code],
+             participantName: user.callsign || user.rsi_handle || user.full_name || 'Unknown'
+          });
+          
           const token = res.data.tokens ? res.data.tokens[net.code] : res.data.token;
+          const url = res.data.livekitUrl;
+          
           setConnectionToken(token);
-          setLivekitUrl(res.data.livekitUrl);
-       }).catch(err => console.error("LiveKit Handshake Failed:", err));
-    }
+          setLivekitUrl(url);
+
+          // 2. Initialize Room
+          currentRoom = new Room({
+             adaptiveStream: true,
+             dynacast: true,
+          });
+          
+          roomRef.current = currentRoom;
+
+          // 3. Setup Event Listeners
+          currentRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+             if (track.kind === 'audio') {
+                const element = track.attach();
+                document.body.appendChild(element);
+             }
+          });
+
+          currentRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+             track.detach().forEach(el => el.remove());
+          });
+
+          currentRoom.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+             // Force update to re-render roster with speaker status
+             setRoom(prev => Object.assign(Object.create(Object.getPrototypeOf(prev)), prev));
+          });
+          
+          // Whisper Data Handler
+          currentRoom.on(RoomEvent.DataReceived, (payload, participant) => {
+              try {
+                 const data = JSON.parse(new TextDecoder().decode(payload));
+                 if (data.type === 'WHISPER_TARGET') {
+                    // Check if I am the target
+                    const myIdentity = currentRoom.localParticipant.identity;
+                    // In real app, match by ID or Identity. Using Identity for simplicity here.
+                    // If NOT target, mute the participant
+                    // Note: This is client-side filtering (honesty system for MVP)
+                    const audioTrack = participant.getTrack(Track.Kind.Audio);
+                    if (audioTrack) {
+                       if (data.targetIdentity === myIdentity) {
+                          audioTrack.track?.attach(); // Ensure attached
+                          if (audioTrack.track?.mediaStreamTrack) audioTrack.track.mediaStreamTrack.enabled = true;
+                       } else {
+                          // Not for me
+                           if (audioTrack.track?.mediaStreamTrack) audioTrack.track.mediaStreamTrack.enabled = false;
+                       }
+                    }
+                 } else if (data.type === 'WHISPER_END') {
+                    // Unmute logic
+                    const audioTrack = participant.getTrack(Track.Kind.Audio);
+                    if (audioTrack && audioTrack.track?.mediaStreamTrack) {
+                       audioTrack.track.mediaStreamTrack.enabled = true;
+                    }
+                 }
+              } catch (e) { console.error("Data parse error", e); }
+          });
+
+          // 4. Connect
+          await currentRoom.connect(url, token);
+          setRoom(currentRoom);
+
+       } catch (err) {
+          console.error("LiveKit Connection Failed:", err);
+       }
+    };
+
+    connect();
+
+    return () => {
+       if (currentRoom) {
+          currentRoom.disconnect();
+          roomRef.current = null;
+       }
+    };
   }, [net, user]);
+
+  // Audio Handling (Mute/Unmute/Publish)
+  useEffect(() => {
+     if (!room) return;
+     
+     const handleAudioState = async () => {
+        if (audioState?.isTransmitting) {
+           // Ensure published and unmuted
+           const pub = room.localParticipant.getTrack(Track.Kind.Audio);
+           if (!pub) {
+              // Publish mic
+              await room.localParticipant.setMicrophoneEnabled(true);
+           } else {
+              room.localParticipant.setMicrophoneEnabled(true);
+           }
+
+           // Handle Whisper Metadata
+           if (whisperTarget) {
+              const data = JSON.stringify({ 
+                 type: 'WHISPER_TARGET', 
+                 targetIdentity: whisperTarget.callsign || whisperTarget.full_name // simplified matching
+              });
+              room.localParticipant.publishData(new TextEncoder().encode(data), { reliable: true });
+           } else {
+              // Normal broadcast, ensure everyone hears (send END whisper to reset others)
+              const data = JSON.stringify({ type: 'WHISPER_END' });
+              room.localParticipant.publishData(new TextEncoder().encode(data), { reliable: true });
+           }
+
+        } else {
+           // Mute
+           room.localParticipant.setMicrophoneEnabled(false);
+        }
+     };
+
+     handleAudioState();
+  }, [audioState, room, whisperTarget]);
 
   const handleWhisper = (targetUser) => {
      if (whisperTarget?.id === targetUser.id) {
@@ -338,7 +466,8 @@ export default function ActiveNetPanel({ net, user, eventId }) {
               net={net} 
               eventId={eventId} 
               currentUserState={audioState} 
-              onWhisper={handleWhisper} 
+              onWhisper={handleWhisper}
+              room={room}
             />
             <CommsLog eventId={eventId} />
          </ScrollArea>
