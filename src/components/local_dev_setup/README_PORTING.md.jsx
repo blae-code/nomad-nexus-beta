@@ -32,8 +32,12 @@ The configuration files are currently located in `components/local_dev_setup/` d
    npm run dev
    ```
 
-6. **LiveKit Backend**
-   - The backend function `functions/generateLiveKitToken.js` uses `Deno` syntax. You will need to convert this to a Node.js Express route or Next.js API route using the `livekit-server-sdk` (included in dependencies).
+6. **Backend Server (Node.js)**
+   - I have created a `server.js` file (originally in `components/local_dev_setup/server.js`) that replicates the Base44 backend logic using Express.
+   - Move `server.js` to your project root.
+   - Run it with: `node server.js`
+   - This server listens on port 3000 and handles the `generateLiveKitToken` endpoint.
+   - **Important**: You will need to update your frontend API client (currently mocked or pointing to Base44) to point to `http://localhost:3000/functions/...` for local testing.
 
 ## Folder Structure
 - `pages/`: Application pages
