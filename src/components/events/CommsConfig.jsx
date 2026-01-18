@@ -168,13 +168,11 @@ export default function CommsConfig({ eventId }) {
   const queryClient = useQueryClient();
   const [editingNet, setEditingNet] = React.useState(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [autoInitialized, setAutoInitialized] = React.useState(false);
 
   const { data: voiceNets } = useQuery({
     queryKey: ['voice-nets', eventId],
-    queryFn: () => base44.entities.VoiceNet.list({ 
-      filter: { event_id: eventId }, 
-      sort: { priority: 1, code: 1 } 
-    }),
+    queryFn: () => base44.entities.VoiceNet.filter({ event_id: eventId }, 'priority'),
     initialData: []
   });
 
@@ -191,44 +189,21 @@ export default function CommsConfig({ eventId }) {
 
   const autoGenMutation = useMutation({
     mutationFn: async () => {
-      // 1. Command Net
-      await base44.entities.VoiceNet.create({
-        event_id: eventId,
-        code: "COMMAND",
-        label: "Mission Command",
-        type: "command",
-        priority: 1,
-        min_rank_to_tx: "Voyager",
-        min_rank_to_rx: "Scout"
-      });
-      
-      // 2. Nets for each squad
-      const promises = squads.map(squad => {
-        const code = squad.name.split(' ')[0].toUpperCase().substring(0, 8);
-        return base44.entities.VoiceNet.create({
-          event_id: eventId,
-          code: code,
-          label: `${squad.name} Comms`,
-          type: "squad",
-          priority: 2,
-          linked_squad_id: squad.id,
-          is_default_for_squad: true
-        });
-      });
-      
-      // 3. General
-      promises.push(base44.entities.VoiceNet.create({
-        event_id: eventId,
-        code: "GENERAL",
-        label: "General Chatter",
-        type: "general",
-        priority: 3
-      }));
-
-      await Promise.all(promises);
+      const res = await base44.functions.invoke('initializeEventComms', { eventId });
+      return res.data;
     },
-    onSuccess: () => queryClient.invalidateQueries(['voice-nets', eventId])
+    onSuccess: () => {
+      queryClient.invalidateQueries(['voice-nets', eventId]);
+      setAutoInitialized(true);
+    }
   });
+
+  // Auto-initialize on mount if no nets exist
+  React.useEffect(() => {
+    if (voiceNets.length === 0 && !autoInitialized && !autoGenMutation.isPending) {
+      autoGenMutation.mutate();
+    }
+  }, [voiceNets.length, autoInitialized]);
 
   const handleEdit = (net) => {
     setEditingNet(net);
@@ -270,9 +245,15 @@ export default function CommsConfig({ eventId }) {
       </CardHeader>
       <CardContent className="pt-4">
         <div className="space-y-2">
-           {voiceNets.length === 0 && (
+           {voiceNets.length === 0 && autoGenMutation.isPending && (
+              <div className="text-xs text-emerald-500 italic text-center py-6 flex items-center justify-center gap-2">
+                 <Radio className="w-4 h-4 animate-pulse" />
+                 Establishing secure channels...
+              </div>
+           )}
+           {voiceNets.length === 0 && !autoGenMutation.isPending && (
               <div className="text-xs text-zinc-500 italic text-center py-4">
-                 No active nets configured. Initialize comms plan.
+                 No active nets configured.
               </div>
            )}
            {voiceNets.map(net => (
