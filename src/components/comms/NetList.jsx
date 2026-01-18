@@ -12,7 +12,7 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
   // Fetch statuses to check for distress
   const { data: statuses } = useQuery({
     queryKey: ['net-list-statuses', eventId],
-    queryFn: () => eventId ? base44.entities.PlayerStatus.list({ event_id: eventId }) : [],
+    queryFn: () => eventId ? base44.entities.PlayerStatus.filter({ event_id: eventId }) : [],
     enabled: !!eventId,
     initialData: []
   });
