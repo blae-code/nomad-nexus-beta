@@ -30,10 +30,7 @@ export default function EventParticipants({ eventId }) {
 
   const { data: statuses } = useQuery({
     queryKey: ['player-statuses', eventId],
-    queryFn: () => base44.entities.PlayerStatus.list({ 
-        filter: { event_id: eventId },
-        sort: { last_updated: -1 }
-    }),
+    queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }, '-last_updated', 100),
     initialData: []
   });
 

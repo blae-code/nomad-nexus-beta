@@ -33,7 +33,7 @@ export default function SquadManager({ eventId }) {
 
   const { data: playerStatuses } = useQuery({
     queryKey: ['player-statuses', eventId],
-    queryFn: () => base44.entities.PlayerStatus.list({ event_id: eventId }),
+    queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }),
     initialData: []
   });
 

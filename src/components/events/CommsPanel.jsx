@@ -23,7 +23,7 @@ export default function CommsPanel({ eventId }) {
     queryKey: ['my-event-squad', eventId, currentUser?.id],
     queryFn: async () => {
       if (!currentUser || !eventId) return null;
-      const statuses = await base44.entities.PlayerStatus.list({ 
+      const statuses = await base44.entities.PlayerStatus.filter({ 
         user_id: currentUser.id, 
         event_id: eventId 
       });
@@ -32,7 +32,7 @@ export default function CommsPanel({ eventId }) {
         return statuses[0].assigned_squad_id;
       }
       // Fallback to global squad
-      const memberships = await base44.entities.SquadMember.list({ user_id: currentUser.id });
+      const memberships = await base44.entities.SquadMember.filter({ user_id: currentUser.id });
       if (memberships.length > 0) {
         setUserSquadId(memberships[0].squad_id);
         return memberships[0].squad_id;
@@ -56,10 +56,7 @@ export default function CommsPanel({ eventId }) {
 
   const { data: voiceNets, isLoading } = useQuery({
     queryKey: ['voice-nets', eventId],
-    queryFn: () => base44.entities.VoiceNet.list({ 
-      filter: { event_id: eventId },
-      sort: { priority: 1 } 
-    }),
+    queryFn: () => base44.entities.VoiceNet.filter({ event_id: eventId }, 'priority', 100),
     initialData: []
   });
 
@@ -91,7 +88,7 @@ export default function CommsPanel({ eventId }) {
   const pttMutation = useMutation({
     mutationFn: async () => {
       // Log simulated transmission
-      const channels = await base44.entities.Channel.list({ name: 'general' }, 1);
+      const channels = await base44.entities.Channel.filter({ name: 'general' }, null, 1);
       if (channels.length > 0) {
         return base44.entities.Message.create({
           channel_id: channels[0].id,
