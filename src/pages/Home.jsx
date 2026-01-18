@@ -1,2 +1,3 @@
-import CommsConsolePage from './CommsConsole';
-export default CommsConsolePage;
+
+import HubPage from './Hub';
+export default HubPage;
