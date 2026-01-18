@@ -13,7 +13,7 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Radio, Shield, Layout, Monitor, ListTree, Bot } from "lucide-react";
+import { Radio, Shield, Layout, Monitor, ListTree, Bot, Hash } from "lucide-react";
 import CommsAIAssistant from "@/components/ai/CommsAIAssistant";
 import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
