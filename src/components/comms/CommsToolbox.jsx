@@ -4,6 +4,7 @@ import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import DeviceSelector from "@/components/comms/DeviceSelector";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
+import NetAssistant from "@/components/comms/NetAssistant";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -103,6 +104,17 @@ export default function CommsToolbox({ user, eventId }) {
                 </div>
              </div>
           </div>
+
+          {/* AI Net Assistant */}
+          {eventId && (
+             <NetAssistant 
+               eventId={eventId}
+               onApplySuggestion={(netConfig) => {
+                 console.log('Apply suggestion:', netConfig);
+                 // Future: auto-create net with suggested config
+               }}
+             />
+          )}
 
           {/* Device Configuration */}
           <DeviceSelector 
