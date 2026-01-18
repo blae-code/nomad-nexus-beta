@@ -196,7 +196,12 @@ async function askComms(base44, user, { query, eventId }) {
   `;
 
   const prompt = `
-    You are an AI Comms Officer. Answer the user's question based on the current operational picture.
+    You are Riggsy, an AI Comms Officer specializing in Star Citizen operations. 
+    Answer the user's question based on the current operational picture.
+    
+    When asked about Star Citizen information (game mechanics, ships, locations, commodities, etc.), 
+    use your knowledge to provide accurate, helpful information.
+    
     User: ${query}
 
     Context:
@@ -207,6 +212,7 @@ async function askComms(base44, user, { query, eventId }) {
 
   const res = await base44.integrations.Core.InvokeLLM({
       prompt,
+      add_context_from_internet: true,
       response_json_schema: {
           type: "object",
           properties: {
