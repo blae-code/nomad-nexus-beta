@@ -4,26 +4,74 @@ import { base44 } from "@/api/base44Client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, User, Hash, Lock, Clock } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Send, User, Hash, Lock, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 
 export default function ChatInterface({ channel, user }) {
   const scrollRef = useRef(null);
   const [newMessage, setNewMessage] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const queryClient = useQueryClient();
 
-  // Fetch Messages
+  // Fetch Messages with Real-Time Subscription
   const { data: messages } = useQuery({
     queryKey: ['channel-messages', channel.id],
     queryFn: () => base44.entities.Message.list({
       filter: { channel_id: channel.id },
       sort: { created_date: 1 },
-      limit: 50
+      limit: 100
     }),
-    refetchInterval: 3000,
     initialData: []
   });
+
+  // Real-time subscription for new messages
+  useEffect(() => {
+    if (!channel?.id) return;
+    
+    const unsubscribe = base44.entities.Message.subscribe((event) => {
+      if (event.type === 'create' && event.data.channel_id === channel.id) {
+        queryClient.invalidateQueries(['channel-messages', channel.id]);
+      }
+    });
+    
+    return unsubscribe;
+  }, [channel?.id, queryClient]);
+
+  // Update presence - mark user as online in this channel
+  useEffect(() => {
+    if (!channel?.id || !user?.id) return;
+    
+    // Simulate online presence by storing timestamp
+    const markPresence = () => {
+      localStorage.setItem(`presence_${channel.id}_${user.id}`, Date.now().toString());
+    };
+    
+    markPresence();
+    const interval = setInterval(markPresence, 30000); // Update every 30s
+    
+    return () => clearInterval(interval);
+  }, [channel?.id, user?.id]);
+
+  // Track online users (based on recent activity)
+  useEffect(() => {
+    if (!channel?.id || !messages) return;
+    
+    const now = Date.now();
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
+    
+    // Get unique users who sent messages in the last 5 minutes
+    const recentUsers = new Set();
+    messages.forEach(msg => {
+      const msgTime = new Date(msg.created_date).getTime();
+      if (msgTime > fiveMinutesAgo) {
+        recentUsers.add(msg.user_id);
+      }
+    });
+    
+    setOnlineUsers(Array.from(recentUsers));
+  }, [messages, channel?.id]);
 
   // Fetch Authors (for names)
   const { data: authors } = useQuery({
@@ -84,9 +132,16 @@ export default function ChatInterface({ channel, user }) {
              {channel.description || "Ready Room Channel"}
           </div>
         </div>
-        <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase border border-zinc-800 px-2 py-1 rounded bg-zinc-950">
-           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-           Live Feed
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase">
+            <Users className="w-3 h-3" />
+            <span className="text-emerald-500 font-bold">{onlineUsers.length}</span>
+            <span>Online</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase border border-zinc-800 px-2 py-1 rounded bg-zinc-950">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            Live Feed
+          </div>
         </div>
       </div>
 
@@ -105,29 +160,54 @@ export default function ChatInterface({ channel, user }) {
             const isMe = msg.user_id === user?.id;
             const author = authors[msg.user_id] || { full_name: 'Unknown', callsign: 'Unknown' };
             const showHeader = idx === 0 || messages[idx-1].user_id !== msg.user_id || (new Date(msg.created_date) - new Date(messages[idx-1].created_date) > 300000);
+            const isOnline = onlineUsers.includes(msg.user_id);
 
             return (
-              <div key={msg.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                {showHeader && (
-                   <div className="flex items-center gap-2 mb-1 mt-2">
-                      <span className={cn(
-                         "text-xs font-bold", 
-                         isMe ? "text-emerald-500" : getRankColorClass(author.rank, 'text')
+              <div key={msg.id} className="flex gap-3 group hover:bg-zinc-900/30 -mx-2 px-2 py-1 rounded transition-colors">
+                {/* Avatar */}
+                {showHeader ? (
+                  <div className="relative shrink-0 mt-1">
+                    <Avatar className="w-8 h-8 border border-zinc-800">
+                      <AvatarFallback className={cn(
+                        "text-xs font-bold",
+                        isMe ? "bg-emerald-950 text-emerald-400" : "bg-zinc-900 text-zinc-400"
                       )}>
-                         {author.callsign || author.full_name}
-                      </span>
-                      <span className="text-[9px] text-zinc-600 font-mono">
-                         {new Date(msg.created_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </span>
-                   </div>
+                        {(author.callsign || author.full_name || 'U')[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-zinc-950" />
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-8 shrink-0" />
                 )}
-                <div className={cn(
-                   "px-3 py-2 max-w-[80%] text-sm break-words",
-                   isMe 
-                     ? "bg-emerald-900/20 text-emerald-100 border border-emerald-900/50 rounded-l-lg rounded-tr-lg" 
-                     : "bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-r-lg rounded-tl-lg"
-                )}>
-                   {msg.content}
+
+                <div className="flex-1 min-w-0">
+                  {showHeader && (
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={cn(
+                        "text-sm font-bold", 
+                        isMe ? "text-emerald-400" : getRankColorClass(author.rank, 'text')
+                      )}>
+                        {author.callsign || author.full_name}
+                      </span>
+                      <span className="text-[10px] text-zinc-600 font-mono">
+                        {new Date(msg.created_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second: '2-digit'})}
+                      </span>
+                    </div>
+                  )}
+                  <div className={cn(
+                    "text-sm text-zinc-200 break-words",
+                    !showHeader && "pl-0"
+                  )}>
+                    {msg.content}
+                  </div>
+                </div>
+
+                {/* Timestamp on hover */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-zinc-600 font-mono self-start mt-1">
+                  {new Date(msg.created_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>
               </div>
             );
