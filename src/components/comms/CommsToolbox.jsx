@@ -104,6 +104,14 @@ export default function CommsToolbox({ user, eventId }) {
              </div>
           </div>
 
+          {/* Device Configuration */}
+          <DeviceSelector 
+            onDeviceChange={(devices) => {
+              localStorage.setItem('audio_devices', JSON.stringify(devices));
+            }}
+            onTest={() => console.log('Audio test completed')}
+          />
+
           {/* Status Reporting */}
           {eventId && (
              <TacticalStatusReporter user={user} eventId={eventId} />
