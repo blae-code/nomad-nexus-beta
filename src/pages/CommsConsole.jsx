@@ -90,10 +90,7 @@ export default function CommsConsolePage() {
 
   const { data: voiceNets, isLoading } = useQuery({
     queryKey: ['voice-nets', selectedEventId],
-    queryFn: () => base44.entities.VoiceNet.list({ 
-      filter: { event_id: selectedEventId },
-      sort: { priority: 1 } 
-    }),
+    queryFn: () => base44.entities.VoiceNet.filter({ event_id: selectedEventId }, 'priority', 50),
     enabled: !!selectedEventId,
     initialData: []
   });

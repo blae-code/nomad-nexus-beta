@@ -17,6 +17,16 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   const queryClient = useQueryClient();
   const [objectives, setObjectives] = React.useState(event?.objectives || []);
   
+  const formatDateTimeLocal = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const { register, handleSubmit, setValue, watch, reset } = useForm({
     defaultValues: event || {
       title: "",
@@ -24,7 +34,7 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
       event_type: "casual",
       priority: "STANDARD",
       status: "scheduled",
-      start_time: new Date().toISOString().slice(0, 16),
+      start_time: formatDateTimeLocal(new Date()),
       location: "",
       tags: [],
       assigned_asset_ids: []
@@ -51,7 +61,7 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
         ...event,
         priority: event.priority || "STANDARD",
         status: event.status || "scheduled",
-        start_time: event.start_time ? new Date(event.start_time).toISOString().slice(0, 16) : "",
+        start_time: event.start_time ? formatDateTimeLocal(event.start_time) : "",
         assigned_asset_ids: event.assigned_asset_ids || []
       });
     } else {
@@ -62,7 +72,7 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
         event_type: "casual",
         priority: "STANDARD",
         status: "scheduled",
-        start_time: new Date().toISOString().slice(0, 16),
+        start_time: formatDateTimeLocal(new Date()),
         location: "",
         tags: [],
         assigned_asset_ids: []
@@ -81,7 +91,34 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
       if (event?.id) {
         return base44.entities.Event.update(event.id, payload);
       } else {
-        return base44.entities.Event.create(payload);
+        const newEvent = await base44.entities.Event.create(payload);
+        
+        // Initialize default comms nets for focused events
+        if (data.event_type === 'focused') {
+          await base44.entities.VoiceNet.create({
+            event_id: newEvent.id,
+            code: 'COMMAND',
+            label: 'Command Net',
+            type: 'command',
+            priority: 1,
+            min_rank_to_tx: 'Voyager',
+            min_rank_to_rx: 'Vagrant',
+            status: 'active'
+          });
+          
+          await base44.entities.VoiceNet.create({
+            event_id: newEvent.id,
+            code: 'ALPHA',
+            label: 'Ground Team Alpha',
+            type: 'squad',
+            priority: 2,
+            min_rank_to_tx: 'Vagrant',
+            min_rank_to_rx: 'Vagrant',
+            status: 'active'
+          });
+        }
+        
+        return newEvent;
       }
     },
     onSuccess: () => {

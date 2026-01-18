@@ -16,9 +16,7 @@ export default function TacticalDashboard({ eventId }) {
 
   const { data: voiceNets } = useQuery({
     queryKey: ['dashboard-nets', eventId],
-    queryFn: () => base44.entities.VoiceNet.list({ 
-      filter: { event_id: eventId } 
-    }),
+    queryFn: () => base44.entities.VoiceNet.filter({ event_id: eventId }),
     refetchInterval: 5000,
     initialData: []
   });
@@ -32,20 +30,17 @@ export default function TacticalDashboard({ eventId }) {
 
   const { data: playerStatuses } = useQuery({
     queryKey: ['dashboard-personnel', eventId],
-    queryFn: () => base44.entities.PlayerStatus.list({ 
-      filter: { event_id: eventId } 
-    }),
+    queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }),
     refetchInterval: 3000,
     initialData: []
   });
 
   const { data: alerts } = useQuery({
     queryKey: ['dashboard-alerts', eventId],
-    queryFn: () => base44.entities.AIAgentLog.list({ 
-      filter: { event_id: eventId, type: 'ALERT' },
-      sort: { created_date: -1 },
-      limit: 5
-    }),
+    queryFn: () => base44.entities.AIAgentLog.filter({ 
+      event_id: eventId, 
+      type: 'ALERT' 
+    }, '-created_date', 5),
     refetchInterval: 5000,
     initialData: []
   });
