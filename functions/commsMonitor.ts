@@ -16,11 +16,7 @@ Deno.serve(async (req) => {
         }
 
         // Fetch recent comms traffic
-        const messages = await base44.entities.Message.list({
-            filter: {},
-            sort: { created_date: -1 },
-            limit: timeWindow || 50
-        });
+        const messages = await base44.entities.Message.list('-created_date', timeWindow || 50);
 
         // Filter comms logs
         const commsLogs = messages.filter(m => 
