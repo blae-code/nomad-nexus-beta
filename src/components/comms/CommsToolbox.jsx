@@ -2,6 +2,7 @@ import React from "react";
 import { ShieldAlert, Settings2, Mic2, Ear, Users, Radio, Volume2 } from "lucide-react";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
+import DeviceSelector from "@/components/comms/DeviceSelector";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

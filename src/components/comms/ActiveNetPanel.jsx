@@ -209,14 +209,19 @@ export default function ActiveNetPanel({ net, user, eventId }) {
           setLivekitUrl(null);
           setWhisperTarget(null);
 
-          // 1. Get Token (Simulating backend handshake)
+          // 1. Get Token with permission enforcement
           const res = await base44.functions.invoke('generateLiveKitToken', {
-             roomNames: [net.code],
-             participantName: user.callsign || user.rsi_handle || user.full_name || 'Unknown'
+             eventId: eventId,
+             netIds: [net.id]
           });
           
-          const token = res.data.tokens ? res.data.tokens[net.code] : res.data.token;
+          const token = res.data.tokens[net.id];
           const url = res.data.livekitUrl;
+          
+          if (!token) {
+             console.error('Access denied to net');
+             return;
+          }
           
           setConnectionToken(token);
           setLivekitUrl(url);
