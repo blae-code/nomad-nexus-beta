@@ -6,6 +6,7 @@ import { getRankColorClass } from "@/components/utils/rankUtils";
 import { cn } from "@/lib/utils";
 import ActivityBar from "@/components/layout/ActivityBar";
 import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { base44 } from "@/api/base44Client";
 
 export default function Layout({ children, currentPageName }) {
@@ -106,7 +107,9 @@ export default function Layout({ children, currentPageName }) {
         {/* Time Tracker & Profile */}
         <div className="flex items-center gap-6 justify-end min-w-fit">
            <NetworkStatusIndicator />
-           
+
+           <NotificationCenter user={user} />
+
            <div className="flex flex-col items-end">
               <div className="flex items-center gap-2 text-xs font-bold text-zinc-300">
                  <Clock className="w-3 h-3 text-[#ea580c]" />
