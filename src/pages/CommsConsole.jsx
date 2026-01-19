@@ -13,7 +13,7 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Radio, Shield, Layout, Monitor, ListTree, Bot, Hash } from "lucide-react";
+import { Radio, Shield, Layout, Monitor, ListTree, Bot, Hash, Search, Activity } from "lucide-react";
 import CommsAIAssistant from "@/components/ai/CommsAIAssistant";
 import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
@@ -25,6 +25,7 @@ import CommsToolbox from "@/components/comms/CommsToolbox";
 import TacticalDashboard from "@/components/comms/TacticalDashboard";
 import VoiceDiagnostics from "@/components/comms/VoiceDiagnostics";
 import OperationalEventFeed from "@/components/comms/OperationalEventFeed";
+import CommsSearch from "@/components/comms/CommsSearch";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 
@@ -39,11 +40,24 @@ export default function CommsConsolePage() {
   const [consoleMode, setConsoleMode] = React.useState("ops"); // 'ops' (Voice/Events) or 'lounge' (Text/ReadyRooms)
   const [viewMode, setViewMode] = React.useState("line"); // 'command', 'line', 'hierarchy', 'tactical', or 'diagnostics'
   const [showAIAssistant, setShowAIAssistant] = React.useState(false);
+  const [showSearch, setShowSearch] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
+
+  // Keyboard shortcut for search (Ctrl+K or Cmd+K)
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Access Control Check
@@ -56,9 +70,22 @@ export default function CommsConsolePage() {
               <p className="text-xs font-mono mt-2">CLEARANCE INSUFFICIENT FOR FOCUSED VOICE NETS</p>
               <p className="text-[10px] font-mono mt-1 opacity-50">REQUIRED: SCOUT+</p>
            </div>
-        </div>
-     );
-  }
+
+           {/* Search Dialog */}
+           <CommsSearch
+             isOpen={showSearch}
+             onClose={() => setShowSearch(false)}
+             eventId={selectedEventId}
+             onSelectNet={setSelectedNet}
+             onSelectEvent={setSelectedEventId}
+             onSelectMessage={(msg) => {
+               // Future: Jump to message in chat
+               console.log("Selected message:", msg);
+             }}
+           />
+           </div>
+           );
+           }
 
   // Fetch squad assignment for this specific event
   useQuery({
@@ -155,9 +182,23 @@ export default function CommsConsolePage() {
       {/* Toolbar */}
       <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-               <Radio className="w-5 h-5 text-[#ea580c]" />
-               <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">Comms Console</h2>
+            <div className="flex items-center gap-4">
+               <div className="flex items-center gap-2">
+                  <Radio className="w-5 h-5 text-[#ea580c]" />
+                  <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">Comms Console</h2>
+               </div>
+
+               <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSearch(true)}
+                  className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
+               >
+                  <Search className="w-4 h-4" />
+                  <kbd className="hidden md:inline px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono">
+                     ⌘K
+                  </kbd>
+               </Button>
             </div>
 
             {/* Console Mode Switcher */}
