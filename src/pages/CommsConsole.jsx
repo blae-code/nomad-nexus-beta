@@ -362,15 +362,21 @@ export default function CommsConsolePage() {
             )
          ))}
 
-         {/* Right Sidebar - AUX DATA or AI ASSISTANT */}
-         {showAIAssistant ? (
-            <CommsAIAssistant 
-               eventId={selectedEventId} 
-               channelId={selectedChannel?.id} // If in lounge mode or relevant to net
-               user={currentUser} 
-            />
-         ) : (
-            <CommsToolbox user={currentUser} eventId={selectedEventId} />
+         {/* Right Sidebar - Event Feed, AI Assistant, or Toolbox */}
+         {consoleMode === 'ops' && (
+            <div className="w-96 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
+               {viewMode === 'tactical' ? (
+                  <OperationalEventFeed eventId={selectedEventId} selectedNet={selectedNet} />
+               ) : showAIAssistant ? (
+                  <CommsAIAssistant 
+                     eventId={selectedEventId} 
+                     channelId={selectedChannel?.id}
+                     user={currentUser} 
+                  />
+               ) : (
+                  <CommsToolbox user={currentUser} eventId={selectedEventId} />
+               )}
+            </div>
          )}
 
       </div>
