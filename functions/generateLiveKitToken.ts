@@ -48,13 +48,18 @@ Deno.serve(async (req) => {
             // Check TX permissions
             const canTx = !net.min_rank_to_tx || hasMinRank(user, net.min_rank_to_tx);
             
-            // Generate stable room name: evt_<eventId_short>__<netCode>
-            const eventShort = eventId.slice(0, 8);
-            const roomName = `evt_${eventShort}__${net.code}`;
+            // Use unique room name per event - prevents cross-talk between events
+            let roomName = net.livekit_room_name;
             
-            // Store room name on VoiceNet if not set
-            if (!net.livekit_room_name) {
-                await base44.entities.VoiceNet.update(net.id, { livekit_room_name: roomName });
+            // Fallback/Migration: Generate unique room name if not set
+            if (!roomName) {
+                // Format: redscar_evt_{eventId_short}_net_{netId_short}
+                const eventShort = eventId.slice(0, 8);
+                const netShort = net.id.slice(0, 8);
+                roomName = `redscar_evt_${eventShort}_net_${netShort}`;
+                
+                // Store for future use
+                await base44.asServiceRole.entities.VoiceNet.update(net.id, { livekit_room_name: roomName });
             }
 
             const at = new AccessToken(apiKey, apiSecret, {

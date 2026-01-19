@@ -29,6 +29,10 @@ Deno.serve(async (req) => {
         const squads = await base44.entities.Squad.list();
 
         const netsCreated = [];
+        const eventShort = eventId.slice(0, 8);
+
+        // Helper to generate unique room name
+        const genRoomName = (netCode) => `redscar_evt_${eventShort}_${netCode.toLowerCase()}`;
 
         // 1. Command Net
         const commandNet = await base44.entities.VoiceNet.create({
@@ -39,7 +43,8 @@ Deno.serve(async (req) => {
             priority: 1,
             min_rank_to_tx: "Voyager",
             min_rank_to_rx: "Scout",
-            status: "active"
+            status: "active",
+            livekit_room_name: genRoomName("COMMAND")
         });
         netsCreated.push(commandNet);
         
@@ -54,7 +59,8 @@ Deno.serve(async (req) => {
                 priority: 2,
                 linked_squad_id: squad.id,
                 is_default_for_squad: true,
-                status: "active"
+                status: "active",
+                livekit_room_name: genRoomName(code)
             });
             netsCreated.push(squadNet);
         }
@@ -66,7 +72,8 @@ Deno.serve(async (req) => {
             label: "General Chatter",
             type: "general",
             priority: 3,
-            status: "active"
+            status: "active",
+            livekit_room_name: genRoomName("GENERAL")
         });
         netsCreated.push(generalNet);
 
