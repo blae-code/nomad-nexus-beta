@@ -198,6 +198,16 @@ export default function CommsConfig({ eventId }) {
     }
   });
 
+  const provisionFromFormationMutation = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('provisionCommsFromFormation', { eventId });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['voice-nets', eventId]);
+    }
+  });
+
   // Auto-initialize on mount if no nets exist
   React.useEffect(() => {
     if (voiceNets.length === 0 && !autoInitialized && !autoGenMutation.isPending) {
@@ -224,15 +234,26 @@ export default function CommsConfig({ eventId }) {
         </CardTitle>
         <div className="flex gap-2">
           {voiceNets.length === 0 && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => autoGenMutation.mutate()}
-              disabled={autoGenMutation.isPending}
-              className="h-7 text-xs border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700"
-            >
-               <Wand2 className="w-3 h-3 mr-2" /> Auto-Init
-            </Button>
+            <>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => autoGenMutation.mutate()}
+                disabled={autoGenMutation.isPending}
+                className="h-7 text-xs border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700"
+              >
+                <Wand2 className="w-3 h-3 mr-2" /> Auto-Init
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => provisionFromFormationMutation.mutate()}
+                disabled={provisionFromFormationMutation.isPending}
+                className="h-7 text-xs border-emerald-700 bg-emerald-950 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900"
+              >
+                <Wand2 className="w-3 h-3 mr-2" /> From Formation
+              </Button>
+            </>
           )}
           <Button 
             size="sm" 
@@ -245,10 +266,10 @@ export default function CommsConfig({ eventId }) {
       </CardHeader>
       <CardContent className="pt-4">
         <div className="space-y-2">
-           {voiceNets.length === 0 && autoGenMutation.isPending && (
+           {voiceNets.length === 0 && (autoGenMutation.isPending || provisionFromFormationMutation.isPending) && (
               <div className="text-xs text-emerald-500 italic text-center py-6 flex items-center justify-center gap-2">
                  <Radio className="w-4 h-4 animate-pulse" />
-                 Establishing secure channels...
+                 {provisionFromFormationMutation.isPending ? 'Provisioning from formation hierarchy...' : 'Establishing secure channels...'}
               </div>
            )}
            {voiceNets.length === 0 && !autoGenMutation.isPending && (
