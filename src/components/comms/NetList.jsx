@@ -14,11 +14,19 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
   const { data: roomStatuses } = useQuery({
     queryKey: ['room-status', eventId],
     queryFn: async () => {
-      if (!eventId) return {};
-      const res = await base44.functions.invoke('getLiveKitRoomStatus', { eventId });
-      return res.data.roomStatuses || {};
+      const roomNames = nets.map(n => n.livekit_room_name).filter(Boolean);
+      if (roomNames.length === 0) return {};
+      const res = await base44.functions.invoke('getLiveKitRoomStatus', { rooms: roomNames });
+      // Map roomName back to netId for lookup
+      const byNetId = {};
+      nets.forEach(net => {
+        if (net.livekit_room_name && res.data[net.livekit_room_name]) {
+          byNetId[net.id] = res.data[net.livekit_room_name];
+        }
+      });
+      return byNetId;
     },
-    enabled: !!eventId,
+    enabled: nets.length > 0,
     refetchInterval: 5000,
     initialData: {}
   });
