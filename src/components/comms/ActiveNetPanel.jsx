@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-// UNCOMMENT FOR LOCAL DEV: import { Room, RoomEvent, Track } from "livekit-client";
-// livekit-client removed due to environment restrictions
+import { Room, RoomEvent, Track } from "livekit-client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear } from "lucide-react";
+import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
@@ -193,18 +192,25 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   const [connectionToken, setConnectionToken] = React.useState(null);
   const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
+  const [connectionState, setConnectionState] = React.useState("disconnected");
+  const [connectionError, setConnectionError] = React.useState(null);
+  const [micPermissionDenied, setMicPermissionDenied] = React.useState(false);
 
-  // LiveKit Connection Logic (SIMULATED FOR PLATFORM, UNCOMMENT FOR LOCAL DEV)
-  const [room, setRoom] = useState(null); // Mock room
-  // const roomRef = useRef(null); // UNCOMMENT FOR LOCAL DEV
+  const [room, setRoom] = useState(null);
+  const roomRef = useRef(null);
 
   useEffect(() => {
     if (!net || !user) return;
 
-    // let currentRoom = null; // UNCOMMENT FOR LOCAL DEV
+    let currentRoom = null;
+    let mounted = true;
 
     const connect = async () => {
        try {
+          if (!mounted) return;
+          setConnectionState("connecting");
+          setConnectionError(null);
+          setMicPermissionDenied(false);
           setConnectionToken(null);
           setLivekitUrl(null);
           setWhisperTarget(null);
@@ -215,15 +221,17 @@ export default function ActiveNetPanel({ net, user, eventId }) {
              netIds: [net.id]
           });
           
+          if (!mounted) return;
+
           // Handle errors and warnings
           if (res.data.errors && res.data.errors.length > 0) {
              console.error('LiveKit token errors:', res.data.errors);
-             // User-friendly error display (could show in UI)
-             res.data.errors.forEach(err => console.warn(`[COMMS] ${err}`));
+             setConnectionError(res.data.errors[0]);
+             setConnectionState("failed");
+             return;
           }
           
           if (res.data.warnings && res.data.warnings.length > 0) {
-             console.warn('LiveKit token warnings:', res.data.warnings);
              res.data.warnings.forEach(warn => console.info(`[COMMS] ${warn}`));
           }
           
@@ -232,21 +240,14 @@ export default function ActiveNetPanel({ net, user, eventId }) {
           
           if (!token) {
              console.error('No token received for net - insufficient permissions');
+             setConnectionError('Insufficient permissions for this net');
+             setConnectionState("failed");
              return;
           }
           
           setConnectionToken(token);
           setLivekitUrl(url);
 
-          // -------------------------------------------------------
-          // START: SIMULATION (Remove this block for local dev)
-          setTimeout(() => {
-             setRoom({ simulated: true });
-          }, 1000);
-          // END: SIMULATION
-          // -------------------------------------------------------
-
-          /* UNCOMMENT FOR LOCAL DEV
           // 2. Initialize Room
           currentRoom = new Room({
              adaptiveStream: true,
@@ -257,66 +258,104 @@ export default function ActiveNetPanel({ net, user, eventId }) {
 
           // 3. Setup Event Listeners
           currentRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-             if (track.kind === 'audio') {
+             if (track.kind === Track.Kind.Audio) {
                 const element = track.attach();
+                element.style.display = 'none';
                 document.body.appendChild(element);
+                console.log(`[COMMS] Subscribed to audio from ${participant.identity}`);
              }
           });
 
           currentRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
              track.detach().forEach(el => el.remove());
+             console.log(`[COMMS] Unsubscribed from ${participant.identity}`);
           });
 
-          currentRoom.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
-             setRoom(prev => Object.assign(Object.create(Object.getPrototypeOf(prev)), prev));
+          currentRoom.on(RoomEvent.Reconnecting, () => {
+             if (mounted) setConnectionState("reconnecting");
+          });
+
+          currentRoom.on(RoomEvent.Reconnected, () => {
+             if (mounted) setConnectionState("connected");
+          });
+
+          currentRoom.on(RoomEvent.Disconnected, (reason) => {
+             console.log(`[COMMS] Disconnected: ${reason}`);
+             if (mounted && connectionState !== "disconnected") {
+                setConnectionState("failed");
+                setConnectionError("Connection lost");
+             }
+          });
+
+          currentRoom.on(RoomEvent.ParticipantConnected, (participant) => {
+             console.log(`[COMMS] Participant joined: ${participant.identity}`);
+             if (mounted) setRoom({ ...currentRoom });
+          });
+
+          currentRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
+             console.log(`[COMMS] Participant left: ${participant.identity}`);
+             if (mounted) setRoom({ ...currentRoom });
           });
           
           // 4. Connect
           await currentRoom.connect(url, token);
+          
+          if (!mounted) {
+             currentRoom.disconnect();
+             return;
+          }
+
           setRoom(currentRoom);
-          */
+          setConnectionState("connected");
+          console.log(`[COMMS] Connected to ${net.code}`);
 
        } catch (err) {
           console.error("LiveKit Connection Failed:", err);
+          if (mounted) {
+             setConnectionError(err.message || 'Connection failed');
+             setConnectionState("failed");
+          }
        }
     };
 
     connect();
     
     return () => {
-       setRoom(null);
-       /* UNCOMMENT FOR LOCAL DEV
+       mounted = false;
        if (currentRoom) {
           currentRoom.disconnect();
           roomRef.current = null;
        }
-       */
+       setRoom(null);
+       setConnectionState("disconnected");
     };
-  }, [net, user]);
+  }, [net?.id, user?.id, eventId]);
 
-  // Audio Handling
+  // Audio Handling - Mic Publish/Unpublish
   useEffect(() => {
-     // No real audio handling possible without SDK in simulation
-     /* UNCOMMENT FOR LOCAL DEV
      if (!room || !room.localParticipant) return;
      
      const handleAudioState = async () => {
-        if (audioState?.isTransmitting) {
-           // Ensure published and unmuted
-           const pub = room.localParticipant.getTrack(Track.Kind.Audio);
-           if (!pub) {
+        try {
+           if (audioState?.isTransmitting) {
+              // Enable microphone
               await room.localParticipant.setMicrophoneEnabled(true);
+              setMicPermissionDenied(false);
            } else {
-              room.localParticipant.setMicrophoneEnabled(true);
+              // Mute microphone
+              await room.localParticipant.setMicrophoneEnabled(false);
            }
-        } else {
-           // Mute
-           room.localParticipant.setMicrophoneEnabled(false);
+        } catch (err) {
+           console.error('[COMMS] Microphone error:', err);
+           // Check if it's a permission error
+           if (err.name === 'NotAllowedError' || err.message.includes('Permission')) {
+              setMicPermissionDenied(true);
+           }
         }
      };
+     
      handleAudioState();
-     */
-  }, [audioState, room, whisperTarget]);
+  }, [audioState?.isTransmitting, room]);
 
   const handleWhisper = (targetUser) => {
      if (whisperTarget?.id === targetUser.id) {
@@ -343,9 +382,49 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   }
 
   const isTransmitting = audioState?.isTransmitting || false;
+  const participantCount = room?.remoteParticipants?.size || 0;
 
   return (
     <div className="h-full flex flex-col gap-6">
+      
+      {/* Connection Error Banner */}
+      <AnimatePresence>
+        {connectionError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-red-950/50 border border-red-900 p-3 rounded flex items-center gap-3"
+          >
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            <div className="flex-1">
+              <div className="text-xs font-bold text-red-400 uppercase">Connection Failed</div>
+              <div className="text-[10px] text-red-300 mt-0.5">{connectionError}</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Microphone Permission Banner */}
+      <AnimatePresence>
+        {micPermissionDenied && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-amber-950/50 border border-amber-900 p-3 rounded flex items-center gap-3"
+          >
+            <Mic className="w-4 h-4 text-amber-500 shrink-0" />
+            <div className="flex-1">
+              <div className="text-xs font-bold text-amber-400 uppercase">Microphone Access Required</div>
+              <div className="text-[10px] text-amber-300 mt-0.5">
+                Please allow microphone access in your browser to transmit. Check the address bar for permissions.
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header Card */}
       <TerminalCard className="relative overflow-hidden" active={isTransmitting}>
         {isTransmitting && (
@@ -453,10 +532,22 @@ export default function ActiveNetPanel({ net, user, eventId }) {
          </ScrollArea>
          <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
             <div className="w-full flex justify-between text-[9px] text-zinc-500 font-mono">
-               <span className={connectionToken ? "text-emerald-500" : "text-zinc-500"}>
-                  STATUS: {connectionToken ? "CONNECTED (SECURE)" : "HANDSHAKE..."}
+               <span className={cn(
+                  connectionState === "connected" ? "text-emerald-500" :
+                  connectionState === "reconnecting" ? "text-amber-500 animate-pulse" :
+                  connectionState === "failed" ? "text-red-500" :
+                  "text-zinc-500"
+               )}>
+                  STATUS: {
+                     connectionState === "connected" ? "CONNECTED (SECURE)" :
+                     connectionState === "reconnecting" ? "RECONNECTING..." :
+                     connectionState === "failed" ? "FAILED" :
+                     connectionState === "connecting" ? "HANDSHAKE..." :
+                     "OFFLINE"
+                  }
                </span>
                <div className="flex gap-4">
+                  {connectionState === "connected" && <span className="text-emerald-600">PEERS: {participantCount + 1}</span>}
                   {livekitUrl && <span className="hidden md:inline text-zinc-500">UPLINK: {livekitUrl.split('://')[1]}</span>}
                   <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
                </div>
