@@ -145,10 +145,10 @@ Deno.serve(async (req) => {
             console.log(`[LiveKit Token] Generated token for ${net.code} (${roomName}): RX=true TX=${canTx}`);
         }
 
-        // Consistent response shape
+        // Consistent response shape with canonical URL field
         const response = {
             tokens,
-            livekitUrl,
+            url: livekitUrl, // Single canonical URL field
             errors: errors.length > 0 ? errors : undefined,
             warnings: warnings.length > 0 ? warnings : undefined
         };
