@@ -12,3 +12,16 @@ export function getRankColorClass(rank, type = 'text') {
   const config = RANK_COLORS[rank] || RANK_COLORS['Guest'];
   return config[type] || config.text;
 }
+
+const RANK_VALUES = {
+  'Pioneer': 6,
+  'Founder': 5,
+  'Voyager': 4,
+  'Scout': 3,
+  'Affiliate': 2,
+  'Vagrant': 1
+};
+
+export function getUserRankValue(rank) {
+  return RANK_VALUES[rank] || 0;
+}
