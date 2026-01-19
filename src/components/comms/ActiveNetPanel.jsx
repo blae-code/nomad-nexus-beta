@@ -212,6 +212,8 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const [connectionError, setConnectionError] = React.useState(null);
   const [micPermissionDenied, setMicPermissionDenied] = React.useState(false);
   const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0 });
+  const [accessDenied, setAccessDenied] = React.useState(false);
+  const [accessReason, setAccessReason] = React.useState("");
 
   const [room, setRoom] = useState(null);
   const roomRef = useRef(null);
@@ -494,6 +496,34 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
     );
   }
 
+  // Access denied state
+  if (accessDenied) {
+    return (
+       <div className="flex-1 flex items-center justify-center h-full">
+          <div className="text-center space-y-4 max-w-md">
+             <Shield className="w-16 h-16 mx-auto text-red-900 opacity-50" />
+             <div>
+                <h3 className="text-lg font-black uppercase tracking-widest text-red-800">Access Denied</h3>
+                <p className="text-xs font-mono mt-2 text-zinc-500">{accessReason}</p>
+             </div>
+             <div className="p-4 bg-zinc-950 border border-zinc-800 text-left space-y-2">
+                <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Net Details</div>
+                <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                   <span className="text-zinc-500">Code:</span>
+                   <span className="text-zinc-300">{net.code}</span>
+                   <span className="text-zinc-500">Discipline:</span>
+                   <span className={net.discipline === 'focused' ? "text-red-400" : "text-emerald-400"}>
+                      {net.discipline?.toUpperCase() || 'FOCUSED'}
+                   </span>
+                   <span className="text-zinc-500">Min RX Rank:</span>
+                   <span className="text-amber-400">{net.min_rank_to_rx || 'Vagrant'}</span>
+                </div>
+             </div>
+          </div>
+       </div>
+    );
+  }
+
   const isTransmitting = audioState?.isTransmitting || false;
   const participantCount = room?.remoteParticipants?.size || 0;
 
@@ -589,8 +619,18 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                  )}
               </div>
               <div className="flex items-center gap-2 mt-2">
-                 <NetTypeIcon type={net.type} />
+                 <NetworkTypeIcon type={net.type} />
                  <p className="text-zinc-400 uppercase tracking-widest text-xs font-bold">{net.label}</p>
+                 {net.discipline === 'casual' && (
+                    <span className="text-[9px] px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold uppercase tracking-wider ml-2">
+                       CASUAL
+                    </span>
+                 )}
+                 {net.discipline === 'focused' && (
+                    <span className="text-[9px] px-2 py-0.5 bg-red-950 text-red-400 border border-red-800 font-bold uppercase tracking-wider ml-2">
+                       FOCUSED
+                    </span>
+                 )}
               </div>
               </div>
               <div className="text-right flex flex-col items-end gap-2">
