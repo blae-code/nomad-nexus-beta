@@ -2,11 +2,11 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Radio, Mic, Users, Lock, Volume2, ShieldAlert } from "lucide-react";
+import { Radio, Mic, Users, Lock, Volume2, ShieldAlert, Phone, PhoneOff, Headphones } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
-import { Headphones } from "lucide-react";
+import VoiceCallIndicator from "./VoiceCallIndicator";
 
 export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor }) {
   
@@ -123,6 +123,7 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                          )}>
                            {net.code}
                          </span>
+                         <VoiceCallIndicator net={net} compact={true} />
                          {net.linked_squad_id && (
                            <Badge variant="outline" className="text-[9px] h-3.5 px-1 border-zinc-800 text-zinc-600 font-mono rounded-sm">
                              LINKED
@@ -146,6 +147,29 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                              {roomStatuses[net.id].participantCount}
                            </Badge>
                          )}
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           className={cn(
+                             "h-6 w-6 p-0 hover:bg-zinc-800",
+                             selectedNetId === net.id ? "text-red-500" : "text-emerald-600 hover:text-emerald-400"
+                           )}
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             if (selectedNetId === net.id) {
+                               onSelect(null);
+                             } else {
+                               onSelect(net);
+                             }
+                           }}
+                           title={selectedNetId === net.id ? "Leave Call" : "Join Voice"}
+                         >
+                           {selectedNetId === net.id ? (
+                             <PhoneOff className="w-3 h-3" />
+                           ) : (
+                             <Phone className="w-3 h-3" />
+                           )}
+                         </Button>
                          <Button 
                             variant="ghost" 
                             size="icon" 

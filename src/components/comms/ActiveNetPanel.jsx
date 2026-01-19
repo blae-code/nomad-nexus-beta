@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle } from "lucide-react";
+import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/co
 import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
 import HailQueue from "@/components/comms/HailQueue";
+import VoiceCallIndicator from "./VoiceCallIndicator";
 import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
 
 function CommsLog({ eventId }) {
@@ -629,6 +630,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
               <div className="flex items-center gap-2 mt-2">
                  <NetTypeIcon type={net.type} />
                  <p className="text-zinc-400 uppercase tracking-widest text-xs font-bold">{net.label}</p>
+                 <VoiceCallIndicator net={net} compact={false} />
                  {net.discipline === 'casual' && (
                     <span className="text-[9px] px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold uppercase tracking-wider ml-2">
                        CASUAL
