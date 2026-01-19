@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 export default function ModerationPanel({ channel, currentUser }) {
   const queryClient = useQueryClient();
-  const [muteUserId, setMuteUserId] = useState("");
+  const [muteUserId, setMuteUserId] = useState("none");
   const [muteReason, setMuteReason] = useState("");
   const [muteDuration, setMuteDuration] = useState("1h");
 
@@ -49,7 +49,7 @@ export default function ModerationPanel({ channel, currentUser }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel-mutes'] });
       toast.success("User muted successfully");
-      setMuteUserId("");
+      setMuteUserId("none");
       setMuteReason("");
     }
   });
@@ -86,7 +86,7 @@ export default function ModerationPanel({ channel, currentUser }) {
   }
 
   const handleMuteUser = () => {
-    if (!muteUserId) {
+    if (!muteUserId || muteUserId === "none") {
       toast.error("Please select a user");
       return;
     }
@@ -172,6 +172,7 @@ export default function ModerationPanel({ channel, currentUser }) {
                 <SelectValue placeholder="Select user to mute" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">Select user to mute</SelectItem>
                 {users.map(user => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.callsign || user.rsi_handle || user.full_name}
