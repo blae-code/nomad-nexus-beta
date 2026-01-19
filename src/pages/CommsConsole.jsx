@@ -130,11 +130,14 @@ export default function CommsConsolePage() {
     initialData: {}
   });
 
-  // Reset selected net when event changes
+  // Reset selected net when event changes to prevent stale connections
   React.useEffect(() => {
      setSelectedNet(null);
      setMonitoredNetIds([]);
   }, [selectedEventId]);
+
+  // Memoize nets to prevent unnecessary rerenders
+  const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
 
   const toggleMonitor = (netId) => {
      if (monitoredNetIds.includes(netId)) {
@@ -256,7 +259,7 @@ export default function CommsConsolePage() {
                            <FleetHierarchy eventId={selectedEventId} />
                         ) : (
                            <NetList 
-                              nets={voiceNets} 
+                              nets={memoizedNets} 
                               selectedNetId={selectedNet?.id} 
                               onSelect={setSelectedNet}
                               userSquadId={userSquadId}

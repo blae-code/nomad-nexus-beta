@@ -4,6 +4,7 @@ import CommsConsole from './pages/CommsConsole';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Home from './pages/Home';
+import Hub from './pages/Hub';
 import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import Profile from './pages/Profile';
@@ -12,7 +13,6 @@ import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
 import Treasury from './pages/Treasury';
 import UserManager from './pages/UserManager';
-import Hub from './pages/Hub';
 import __Layout from './Layout.jsx';
 
 
@@ -23,6 +23,7 @@ export const PAGES = {
     "Events": Events,
     "FleetManager": FleetManager,
     "Home": Home,
+    "Hub": Hub,
     "MissionControl": MissionControl,
     "NomadOpsDashboard": NomadOpsDashboard,
     "Profile": Profile,
@@ -31,7 +32,6 @@ export const PAGES = {
     "RoleManager": RoleManager,
     "Treasury": Treasury,
     "UserManager": UserManager,
-    "Hub": Hub,
 }
 
 export const pagesConfig = {

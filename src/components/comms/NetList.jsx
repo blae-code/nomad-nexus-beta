@@ -9,11 +9,26 @@ import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsCompo
 import { Headphones } from "lucide-react";
 
 export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor }) {
+  
+  // Fetch room statuses for participant counts
+  const { data: roomStatuses } = useQuery({
+    queryKey: ['room-status', eventId],
+    queryFn: async () => {
+      if (!eventId) return {};
+      const res = await base44.functions.invoke('getLiveKitRoomStatus', { eventId });
+      return res.data.roomStatuses || {};
+    },
+    enabled: !!eventId,
+    refetchInterval: 5000,
+    initialData: {}
+  });
+
   // Fetch statuses to check for distress
   const { data: statuses } = useQuery({
     queryKey: ['net-list-statuses', eventId],
     queryFn: () => eventId ? base44.entities.PlayerStatus.filter({ event_id: eventId }) : [],
     enabled: !!eventId,
+    refetchInterval: 10000,
     initialData: []
   });
 
@@ -113,7 +128,16 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
                    </div>
                    
                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
+                         {roomStatuses[net.id]?.participantCount > 0 && (
+                           <Badge variant="outline" className={cn(
+                             "h-4 px-1.5 text-[9px] font-mono border-zinc-700",
+                             selectedNetId === net.id ? "bg-emerald-950/30 text-emerald-400 border-emerald-800" : "bg-zinc-900 text-zinc-400"
+                           )}>
+                             <Users className="w-2.5 h-2.5 mr-0.5" />
+                             {roomStatuses[net.id].participantCount}
+                           </Badge>
+                         )}
                          <Button 
                             variant="ghost" 
                             size="icon" 
