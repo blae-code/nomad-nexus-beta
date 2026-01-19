@@ -57,61 +57,79 @@ function CommsLog({ eventId }) {
 }
 
 function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
-  const { data: allUsers } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
-  
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [activeSpeakers, setActiveSpeakers] = React.useState(new Set());
+  
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
   const myId = currentUser?.id;
 
+  // Track active speakers from LiveKit
+  React.useEffect(() => {
+    if (!room || !room.on) return;
+
+    const handleSpeakersChanged = (speakers) => {
+      const speakerIds = new Set(speakers.map(p => p.identity));
+      setActiveSpeakers(speakerIds);
+    };
+
+    room.on(RoomEvent.ActiveSpeakersChanged, handleSpeakersChanged);
+    
+    return () => {
+      room.off(RoomEvent.ActiveSpeakersChanged, handleSpeakersChanged);
+    };
+  }, [room]);
+
   const { data: statuses } = useQuery({
     queryKey: ['net-roster-statuses', eventId],
-    queryFn: () => base44.entities.PlayerStatus.list({ event_id: eventId }),
+    queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }),
     enabled: !!eventId,
     refetchInterval: 3000,
     initialData: []
   });
 
-  const { data: squadMembers } = useQuery({
-    queryKey: ['squad-members', net.linked_squad_id],
-    queryFn: () => net.linked_squad_id ? base44.entities.SquadMember.list({ squad_id: net.linked_squad_id }) : [],
-    enabled: !!net.linked_squad_id,
+  // Fetch user records for all connected participants
+  const participantIds = React.useMemo(() => {
+    if (!room || !room.remoteParticipants) return [];
+    const ids = Array.from(room.remoteParticipants.values()).map(p => p.identity);
+    if (room.localParticipant) {
+      ids.push(room.localParticipant.identity);
+    }
+    return ids;
+  }, [room, room?.remoteParticipants?.size, room?.localParticipant]);
+
+  const { data: participantUsers } = useQuery({
+    queryKey: ['roster-users', participantIds],
+    queryFn: async () => {
+      if (participantIds.length === 0) return [];
+      const users = await Promise.all(
+        participantIds.map(id => base44.entities.User.get(id).catch(() => null))
+      );
+      return users.filter(u => u !== null);
+    },
+    enabled: participantIds.length > 0,
     initialData: []
   });
 
-  // Filter users relevant to this net
+  // Build participants list from room
   const participants = React.useMemo(() => {
-    if (!net || !allUsers.length) return [];
+    if (!room || !participantUsers) return [];
     
-    let relevantUsers = [];
-
-    if (net.linked_squad_id) {
-       const memberIds = squadMembers.map(m => m.user_id);
-       relevantUsers = allUsers.filter(u => memberIds.includes(u.id));
-    } else if (net.type === 'command') {
-       relevantUsers = allUsers.filter(u => hasMinRank(u, net.min_rank_to_tx));
-    } else {
-       // General net - show everyone
-       relevantUsers = allUsers;
-    }
-    
-    return relevantUsers.map(u => {
+    return participantUsers.map(u => {
        const status = statuses.find(s => s.user_id === u.id);
+       const isSpeaking = activeSpeakers.has(u.id);
        return { 
           ...u, 
-          status: status?.status || 'OFFLINE',
-          role: status?.role || 'OTHER' 
+          status: status?.status || 'READY',
+          role: status?.role || 'OTHER',
+          isSpeaking
        };
     }).sort((a, b) => {
        const priority = { DISTRESS: 0, DOWN: 1, ENGAGED: 2, READY: 3, OFFLINE: 4 };
        return (priority[a.status] || 99) - (priority[b.status] || 99);
     });
-  }, [net, allUsers, squadMembers, statuses]);
+  }, [room, participantUsers, statuses, activeSpeakers]);
 
   return (
     <div className="space-y-3">
@@ -127,18 +145,15 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
        ) : (
          <div className="grid grid-cols-1 gap-2">
            {participants.map(participant => {
-             // Determine Voice Status Color
+             // Determine Voice Status Color based on real speaking state
              let voiceStatusColor = "bg-zinc-700"; // Default Grey (Connected but Muted)
              
              if (participant.id === myId && currentUserState) {
                 if (currentUserState.isTransmitting) voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
                 else if (currentUserState.mode === 'PTT' && !currentUserState.isMuted) voiceStatusColor = "bg-orange-600";
-             } else {
-                // SIMULATED Speaking Status
-                // In a real app, we would use room.participants...isSpeaking
-                if (Math.random() > 0.95) {
-                   voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
-                }
+             } else if (participant.isSpeaking) {
+                // Real speaking detection from LiveKit
+                voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
              }
 
              return (
