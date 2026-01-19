@@ -10,10 +10,11 @@ import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, E
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
-import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
+import { TerminalCard, SignalStrength, PermissionBadge, NetworkTypeIcon } from "@/components/comms/SharedCommsComponents";
 import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
-import { getRankColorClass } from "@/components/utils/rankUtils";
+import HailQueue from "@/components/comms/HailQueue";
+import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -214,6 +215,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0 });
   const [accessDenied, setAccessDenied] = React.useState(false);
   const [accessReason, setAccessReason] = React.useState("");
+  const [hasTemporaryTx, setHasTemporaryTx] = React.useState(false);
 
   const [room, setRoom] = useState(null);
   const roomRef = useRef(null);
@@ -482,8 +484,14 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   
   const canTx = React.useMemo(() => {
     if (!user || !net) return false;
+    // Stage mode: only temporary TX grants allowed (unless commander)
+    if (net.stage_mode) {
+      const isCommander = user.rank === 'Pioneer' || user.rank === 'Founder' || user.role === 'admin';
+      return isCommander || hasTemporaryTx;
+    }
+    // Normal mode: rank-based
     return hasMinRank(user, net.min_rank_to_tx);
-  }, [user, net]);
+  }, [user, net, hasTemporaryTx]);
 
   if (!net) {
     return (
@@ -668,16 +676,38 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                defaultMode={net.discipline === 'focused' ? 'PTT' : 'OPEN'}
                isFocused={net.discipline === 'focused'}
              />
+           ) : net.stage_mode ? (
+             <div className="p-4 bg-amber-950/20 border border-amber-800/50 rounded-sm text-center space-y-2">
+                <div className="text-amber-400 font-mono text-xs font-bold uppercase tracking-wider">
+                   Stage Mode Active
+                </div>
+                <div className="text-[10px] text-amber-300">
+                   Request permission to speak from commanders
+                </div>
+             </div>
            ) : (
              <div className="p-4 bg-zinc-950/50 border-2 border-zinc-900 border-dashed rounded-sm text-center text-zinc-600 font-mono text-xs">
                 TRANSMISSION UNAUTHORIZED
              </div>
            )}
-        </div>
-      </TerminalCard>
+           </div>
+           </TerminalCard>
 
-      {/* Roster & Logs */}
-      <TerminalCard className="flex-1 flex flex-col overflow-hidden">
+           {/* Stage Mode Hail Queue */}
+           {net.stage_mode && room && (
+           <HailQueue 
+           netId={net.id}
+           eventId={eventId}
+           user={user}
+           room={room}
+           onGrantTx={(granted) => setHasTemporaryTx(granted)}
+           onRevokeTx={() => setHasTemporaryTx(false)}
+           hasTemporaryTx={hasTemporaryTx}
+           />
+           )}
+
+           {/* Roster & Logs */}
+           <TerminalCard className="flex-1 flex flex-col overflow-hidden">
          <ScrollArea className="flex-1 p-4">
             <NetRoster 
               net={net} 
