@@ -5,9 +5,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Hash, Mic, EyeOff } from "lucide-react";
 import { canAccessChannel, canPostInChannel } from "@/components/permissions";
+import ChannelSearch from "@/components/channels/ChannelSearch";
 
 export default function ChannelsPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [searchResults, setSearchResults] = React.useState([]);
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -19,16 +21,35 @@ export default function ChannelsPage() {
     initialData: []
   });
 
+  // Display search results if available, otherwise show all accessible channels
+  const displayChannels = searchResults.length > 0 ? searchResults : channels;
+
   if (isLoading) return <div className="p-10 text-zinc-500">Loading Channels...</div>;
   if (!currentUser) return <div className="p-10 text-zinc-500">Please log in to view channels.</div>;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <div className="container mx-auto max-w-4xl">
-        <h1 className="text-3xl font-black uppercase tracking-tight mb-8 text-white">Comms Channels</h1>
-        
-        <div className="grid gap-4">
-          {channels.map(channel => {
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6 overflow-auto">
+      <div className="container mx-auto max-w-4xl space-y-6">
+         <div>
+           <h1 className="text-3xl font-black uppercase tracking-tight mb-2 text-white">Comms Channels</h1>
+           <p className="text-zinc-500 text-sm font-mono">Search and access available communication channels</p>
+         </div>
+
+         {/* Search Component */}
+         <ChannelSearch 
+           channels={channels}
+           onResultsChange={setSearchResults}
+         />
+
+         {/* Results Count */}
+         {searchResults.length > 0 && (
+           <div className="text-xs text-zinc-500 font-mono">
+             Found {displayChannels.length} channel{displayChannels.length !== 1 ? 's' : ''}
+           </div>
+         )}
+
+         <div className="grid gap-4">
+           {displayChannels.map(channel => {
             const accessible = canAccessChannel(currentUser, channel);
             const canPost = canPostInChannel(currentUser, channel);
             
