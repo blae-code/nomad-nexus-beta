@@ -225,14 +225,14 @@ export default function VoiceNetForm({ eventId }) {
             <div className="space-y-2">
               <Label className="text-xs text-zinc-400">Linked Squad (Optional)</Label>
               <Select
-                value={formData.linked_squad_id}
-                onValueChange={(value) => setFormData({ ...formData, linked_squad_id: value })}
+                value={formData.linked_squad_id || "none"}
+                onValueChange={(value) => setFormData({ ...formData, linked_squad_id: value === "none" ? "" : value })}
               >
                 <SelectTrigger className="bg-zinc-900 border-zinc-800">
                   <SelectValue placeholder="None" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {squads.map(squad => (
                     <SelectItem key={squad.id} value={squad.id}>
                       {squad.name}
