@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Rocket, User } from "lucide-react";
+import { Loader2, Rocket, User, AlertCircle } from "lucide-react";
 import ObjectiveEditor from "@/components/missions/ObjectiveEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,6 +16,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   const queryClient = useQueryClient();
   const [objectives, setObjectives] = React.useState(event?.objectives || []);
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
   
   // Convert ISO string to datetime-local format (preserves local time)
   const formatDateTimeLocal = (isoString) => {
@@ -108,11 +113,16 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
         }
       }
 
+      // Determine initial status based on user rank
+      const canAutoApprove = currentUser?.rank === 'Pioneer' || currentUser?.rank === 'Founder' || currentUser?.role === 'admin';
+      const initialStatus = canAutoApprove ? 'scheduled' : 'pending_approval';
+
       const payload = {
         ...data,
         start_time: parseLocalDateTime(data.start_time),
         end_time: data.end_time ? parseLocalDateTime(data.end_time) : undefined,
-        objectives: objectives
+        objectives: objectives,
+        status: event?.id ? data.status : initialStatus // Preserve status on edit
       };
       
       if (event?.id) {
@@ -170,6 +180,15 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+          {!event && currentUser?.rank !== 'Pioneer' && currentUser?.rank !== 'Founder' && currentUser?.role !== 'admin' && (
+            <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-sm flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+              <div className="text-xs text-amber-400">
+                <span className="font-bold">Approval Required:</span> Event requests from Vagrant/Scout/Voyager ranks require Pioneer oversight before becoming active.
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Operation Title *</Label>
             <Input {...register("title", { required: true })} className="bg-zinc-900 border-zinc-800 font-bold" placeholder="Operation Name" />

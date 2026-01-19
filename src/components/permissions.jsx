@@ -76,8 +76,15 @@ export function canPostInChannel(user, channel) {
 }
 
 export function canCreateEvent(user) {
-  // Only Scout and above can create events
-  return hasMinRank(user, 'Scout');
+  // Vagrant, Scout, Voyager can create event requests
+  return hasMinRank(user, 'Vagrant');
+}
+
+export function canApproveEvent(user) {
+  // Pioneer, Founder, and Admin have oversight to approve events
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return hasMinRank(user, 'Pioneer');
 }
 
 export function canEditEvent(user, event) {

@@ -1,9 +1,10 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock } from "lucide-react";
 import RoleManager from "@/components/auth/RoleManager";
 import SystemChecklist from "@/components/admin/SystemChecklist";
+import EventApprovalQueue from "@/components/admin/EventApprovalQueue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminPage() {
@@ -39,8 +40,14 @@ export default function AdminPage() {
              </div>
           </header>
 
-          <Tabs defaultValue="checklist" className="space-y-6">
+          <Tabs defaultValue="approvals" className="space-y-6">
            <TabsList className="bg-zinc-900 border border-zinc-800 rounded-none p-0 h-auto w-full justify-start">
+             <TabsTrigger 
+               value="approvals"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+             >
+               <Clock className="w-4 h-4 mr-2" /> Event Approvals
+             </TabsTrigger>
              <TabsTrigger 
                value="checklist"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
@@ -60,6 +67,10 @@ export default function AdminPage() {
                <Users className="w-4 h-4 mr-2" /> User Assignment
              </TabsTrigger>
            </TabsList>
+
+           <TabsContent value="approvals">
+              {currentUser && <EventApprovalQueue user={currentUser} />}
+           </TabsContent>
 
            <TabsContent value="checklist">
               {currentUser && <SystemChecklist user={currentUser} />}
