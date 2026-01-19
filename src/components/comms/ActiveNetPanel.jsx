@@ -203,7 +203,7 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   );
 }
 
-export default function ActiveNetPanel({ net, user, eventId }) {
+export default function ActiveNetPanel({ net, user, eventId, onConnectionChange }) {
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
   const [whisperTarget, setWhisperTarget] = React.useState(null);
@@ -211,15 +211,19 @@ export default function ActiveNetPanel({ net, user, eventId }) {
   const [connectionState, setConnectionState] = React.useState("disconnected");
   const [connectionError, setConnectionError] = React.useState(null);
   const [micPermissionDenied, setMicPermissionDenied] = React.useState(false);
+  const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0 });
 
   const [room, setRoom] = useState(null);
   const roomRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const reconnectTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!net || !user) return;
 
     let currentRoom = null;
     let mounted = true;
+    let qualityInterval = null;
 
     const connect = async () => {
        try {
@@ -298,8 +302,28 @@ export default function ActiveNetPanel({ net, user, eventId }) {
           currentRoom.on(RoomEvent.Disconnected, (reason) => {
              console.log(`[COMMS] Disconnected: ${reason}`);
              if (mounted && connectionState !== "disconnected") {
-                setConnectionState("failed");
-                setConnectionError("Connection lost");
+                // Attempt auto-reconnect with exponential backoff
+                const attemptReconnect = () => {
+                   if (!mounted) return;
+                   
+                   reconnectAttempts.current += 1;
+                   const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
+                   
+                   console.log(`[COMMS] Reconnect attempt ${reconnectAttempts.current} in ${backoffDelay}ms`);
+                   setConnectionState("reconnecting");
+                   setConnectionError(`Reconnecting... (attempt ${reconnectAttempts.current})`);
+                   
+                   reconnectTimeoutRef.current = setTimeout(() => {
+                      if (mounted && reconnectAttempts.current < 5) {
+                         connect();
+                      } else {
+                         setConnectionState("failed");
+                         setConnectionError("Connection lost - max retries reached");
+                      }
+                   }, backoffDelay);
+                };
+                
+                attemptReconnect();
              }
           });
 
@@ -323,7 +347,37 @@ export default function ActiveNetPanel({ net, user, eventId }) {
 
           setRoom(currentRoom);
           setConnectionState("connected");
+          reconnectAttempts.current = 0; // Reset on successful connection
+          onConnectionChange?.(net.id, true);
           console.log(`[COMMS] Connected to ${net.code}`);
+
+          // Monitor connection quality
+          qualityInterval = setInterval(() => {
+             if (!currentRoom || !currentRoom.localParticipant) return;
+             
+             // Get stats from local participant
+             const stats = currentRoom.localParticipant.lastConnectionQuality;
+             
+             // Estimate packet loss and latency from connection quality
+             // LiveKit provides: excellent, good, poor
+             let packetLoss = 0;
+             let latency = 0;
+             
+             if (stats === 'poor') {
+                packetLoss = 5; // Estimated 5%+ loss
+                latency = 200; // High latency
+             } else if (stats === 'good') {
+                packetLoss = 1; // ~1% loss
+                latency = 100;
+             } else {
+                packetLoss = 0;
+                latency = 50;
+             }
+             
+             if (mounted) {
+                setConnectionQuality({ packetLoss, latency, quality: stats });
+             }
+          }, 3000);
 
        } catch (err) {
           console.error("LiveKit Connection Failed:", err);
@@ -338,12 +392,16 @@ export default function ActiveNetPanel({ net, user, eventId }) {
     
     return () => {
        mounted = false;
+       if (qualityInterval) clearInterval(qualityInterval);
+       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
        if (currentRoom) {
           currentRoom.disconnect();
           roomRef.current = null;
        }
        setRoom(null);
        setConnectionState("disconnected");
+       reconnectAttempts.current = 0;
+       onConnectionChange?.(net?.id, false);
     };
   }, [net?.id, user?.id, eventId]);
 
@@ -567,7 +625,22 @@ export default function ActiveNetPanel({ net, user, eventId }) {
                   }
                </span>
                <div className="flex gap-4">
-                  {connectionState === "connected" && <span className="text-emerald-600">PEERS: {participantCount + 1}</span>}
+                  {connectionState === "connected" && (
+                     <>
+                        <span className="text-emerald-600">PEERS: {participantCount + 1}</span>
+                        <span className={cn(
+                           connectionQuality.quality === 'excellent' ? "text-emerald-600" :
+                           connectionQuality.quality === 'good' ? "text-yellow-600" :
+                           connectionQuality.quality === 'poor' ? "text-red-600" :
+                           "text-zinc-600"
+                        )}>
+                           Q: {connectionQuality.quality?.toUpperCase() || 'UNKNOWN'}
+                        </span>
+                        {connectionQuality.packetLoss > 2 && (
+                           <span className="text-amber-600 animate-pulse">LOSS: {connectionQuality.packetLoss}%</span>
+                        )}
+                     </>
+                  )}
                   {livekitUrl && <span className="hidden md:inline text-zinc-500">UPLINK: {livekitUrl.split('://')[1]}</span>}
                   <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
                </div>
