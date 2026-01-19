@@ -24,6 +24,7 @@ import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import CommsToolbox from "@/components/comms/CommsToolbox";
 import TacticalDashboard from "@/components/comms/TacticalDashboard";
 import VoiceDiagnostics from "@/components/comms/VoiceDiagnostics";
+import OperationalEventFeed from "@/components/comms/OperationalEventFeed";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 
