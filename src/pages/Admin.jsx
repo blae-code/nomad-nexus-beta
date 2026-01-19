@@ -13,6 +13,7 @@ import { hasMinRank } from "@/components/permissions";
 
 export default function AdminPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [activeTab, setActiveTab] = React.useState("approvals");
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -44,7 +45,7 @@ export default function AdminPage() {
              </div>
           </header>
 
-          <Tabs defaultValue="approvals" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
            <TabsList className="bg-zinc-900 border border-zinc-800 rounded-none p-0 h-auto w-full justify-start">
              <TabsTrigger 
                value="approvals"
