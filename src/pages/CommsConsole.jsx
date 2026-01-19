@@ -37,6 +37,7 @@ export default function CommsConsolePage() {
   const [selectedNet, setSelectedNet] = React.useState(null);
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
+  const [activeNetConnection, setActiveNetConnection] = React.useState(null); // Guard against multiple active connections
   const [consoleMode, setConsoleMode] = React.useState("ops"); // 'ops' (Voice/Events) or 'lounge' (Text/ReadyRooms)
   const [viewMode, setViewMode] = React.useState("line"); // 'command', 'line', 'hierarchy', 'tactical', or 'diagnostics'
   const [showAIAssistant, setShowAIAssistant] = React.useState(false);
@@ -311,7 +312,14 @@ export default function CommsConsolePage() {
                            <NetList 
                               nets={memoizedNets} 
                               selectedNetId={selectedNet?.id} 
-                              onSelect={setSelectedNet}
+                              onSelect={(net) => {
+                                // Prevent joining multiple nets simultaneously
+                                if (activeNetConnection && activeNetConnection !== net.id) {
+                                  console.warn('[COMMS] Switching nets - disconnecting from previous net');
+                                }
+                                setSelectedNet(net);
+                                setActiveNetConnection(net.id);
+                              }}
                               userSquadId={userSquadId}
                               viewMode={viewMode}
                               activityMap={recentActivity}
@@ -361,7 +369,14 @@ export default function CommsConsolePage() {
                        <ActiveNetPanel 
                           net={selectedNet} 
                           user={currentUser} 
-                          eventId={selectedEventId} 
+                          eventId={selectedEventId}
+                          onConnectionChange={(netId, isConnected) => {
+                            if (isConnected) {
+                              setActiveNetConnection(netId);
+                            } else if (activeNetConnection === netId) {
+                              setActiveNetConnection(null);
+                            }
+                          }}
                        />
                     )
                   ) : (
