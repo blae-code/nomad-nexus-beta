@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export default function VoiceNetForm({ eventId }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    event_id: eventId || "",
+    event_id: eventId || "none",
     code: "",
     label: "",
     type: "squad",
@@ -45,7 +45,7 @@ export default function VoiceNetForm({ eventId }) {
       toast.success("Voice Net created successfully");
       // Reset form
       setFormData({
-        event_id: eventId || "",
+        event_id: eventId || "none",
         code: "",
         label: "",
         type: "squad",
@@ -66,7 +66,7 @@ export default function VoiceNetForm({ eventId }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!formData.event_id || !formData.code || !formData.label) {
+    if (!formData.event_id || formData.event_id === "none" || !formData.code || !formData.label) {
       toast.error("Event, Code, and Label are required");
       return;
     }
@@ -95,12 +95,13 @@ export default function VoiceNetForm({ eventId }) {
               <Label className="text-xs text-zinc-400">Event *</Label>
               <Select
                 value={formData.event_id}
-                onValueChange={(value) => setFormData({ ...formData, event_id: value })}
+                onValueChange={(value) => setFormData({ ...formData, event_id: value === "none" ? "" : value })}
               >
                 <SelectTrigger className="bg-zinc-900 border-zinc-800">
                   <SelectValue placeholder="Select event" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Select an event...</SelectItem>
                   {events.map(event => (
                     <SelectItem key={event.id} value={event.id}>
                       {event.title}
