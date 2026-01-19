@@ -6,9 +6,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shield, Users, GripVertical, UserPlus, AlertCircle } from "lucide-react";
+import { Shield, Users, GripVertical, UserPlus, AlertCircle, Star } from "lucide-react";
 import { hasMinRank, canEditEvent } from "@/components/permissions";
 import { cn } from "@/lib/utils";
+import DutyAssignmentPanel from "@/components/events/DutyAssignmentPanel";
 
 export default function SquadManager({ eventId }) {
   const queryClient = useQueryClient();
@@ -29,6 +30,12 @@ export default function SquadManager({ eventId }) {
     queryKey: ['squads'],
     queryFn: () => base44.entities.Squad.list(),
     initialData: []
+  });
+
+  const { data: dutyAssignments = [] } = useQuery({
+    queryKey: ['duty-assignments', eventId],
+    queryFn: () => base44.entities.EventDutyAssignment.filter({ event_id: eventId }),
+    enabled: !!eventId
   });
 
   const { data: playerStatuses } = useQuery({
@@ -69,7 +76,19 @@ export default function SquadManager({ eventId }) {
   // Organize Data
   const organizedData = React.useMemo(() => {
     const map = { unassigned: [] };
-    squads.forEach(s => map[s.id] = []);
+    const dutyMap = new Map();
+    
+    // Build duty map
+    dutyAssignments.forEach(d => {
+      if (!dutyMap.has(d.unit_id)) dutyMap.set(d.unit_id, []);
+      dutyMap.get(d.unit_id).push(d);
+    });
+
+    squads.forEach(s => {
+      map[s.id] = [];
+      // Attach duty assignments to squad
+      map[s.id].duties = dutyMap.get(s.id) || [];
+    });
 
     playerStatuses.forEach(status => {
       const user = users.find(u => u.id === status.user_id);
@@ -84,7 +103,7 @@ export default function SquadManager({ eventId }) {
     });
 
     return map;
-  }, [squads, playerStatuses, users]);
+  }, [squads, playerStatuses, users, dutyAssignments]);
 
   const canEdit = canEditEvent(currentUser, event);
 
@@ -142,6 +161,9 @@ export default function SquadManager({ eventId }) {
          )}
       </div>
 
+      {/* Duty Assignment Panel */}
+      {canEdit && <DutyAssignmentPanel eventId={eventId} />}
+
       <DragDropContext onDragEnd={onDragEnd}>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             
@@ -180,15 +202,44 @@ export default function SquadManager({ eventId }) {
             </div>
 
             {/* Squad Columns */}
-            {squads.map(squad => (
+            {squads.map(squad => {
+               const squadDuties = organizedData[squad.id]?.duties || [];
+               const leaders = squadDuties.filter(d => ['Fleet Commander', 'Wing Lead', 'Squad Lead'].includes(d.duty_role));
+               
+               return (
                <div key={squad.id} className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between px-1">
-                     <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider truncate pr-2">
-                        {squad.name}
-                     </span>
-                     <Badge variant="secondary" className="text-[9px] bg-zinc-800 text-zinc-400 border-none">
-                        {organizedData[squad.id].length}
-                     </Badge>
+                  <div className="space-y-1">
+                     <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center gap-2">
+                           <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider truncate">
+                              {squad.name}
+                           </span>
+                           <Badge variant="outline" className={cn(
+                              "text-[9px] px-1.5 py-0",
+                              squad.hierarchy_level === 'fleet' && "border-amber-700 text-amber-400",
+                              squad.hierarchy_level === 'wing' && "border-cyan-700 text-cyan-400",
+                              (!squad.hierarchy_level || squad.hierarchy_level === 'squad') && "border-emerald-700 text-emerald-400"
+                           )}>
+                              {squad.hierarchy_level || 'squad'}
+                           </Badge>
+                        </div>
+                        <Badge variant="secondary" className="text-[9px] bg-zinc-800 text-zinc-400 border-none">
+                           {organizedData[squad.id].length}
+                        </Badge>
+                     </div>
+                     {leaders.length > 0 && (
+                        <div className="px-1 flex items-center gap-2">
+                           {leaders.map(duty => {
+                              const user = users.find(u => u.id === duty.user_id);
+                              return user ? (
+                                 <div key={duty.id} className="flex items-center gap-1 text-[10px] text-amber-400">
+                                    <Star className="w-2.5 h-2.5 fill-amber-500" />
+                                    <span className="font-mono">{user.callsign || user.rsi_handle}</span>
+                                 </div>
+                              ) : null;
+                           })}
+                        </div>
+                     )}
                   </div>
                   <Droppable droppableId={squad.id}>
                      {(provided, snapshot) => (
@@ -211,9 +262,10 @@ export default function SquadManager({ eventId }) {
                            )}
                         </div>
                      )}
-                  </Droppable>
-               </div>
-            ))}
+                     </Droppable>
+                     </div>
+                     );
+                     })}
 
          </div>
       </DragDropContext>
