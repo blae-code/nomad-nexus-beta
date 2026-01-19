@@ -1,10 +1,11 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio } from "lucide-react";
 import RoleManager from "@/components/auth/RoleManager";
 import SystemChecklist from "@/components/admin/SystemChecklist";
 import EventApprovalQueue from "@/components/admin/EventApprovalQueue";
+import CommsCapabilityContract from "@/components/comms/CommsCapabilityContract";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminPage() {
@@ -66,7 +67,13 @@ export default function AdminPage() {
              >
                <Users className="w-4 h-4 mr-2" /> User Assignment
              </TabsTrigger>
-           </TabsList>
+             <TabsTrigger 
+               value="comms-diagnostics"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+             >
+               <Radio className="w-4 h-4 mr-2" /> Comms Diagnostics
+             </TabsTrigger>
+             </TabsList>
 
            <TabsContent value="approvals">
               {currentUser && <EventApprovalQueue user={currentUser} />}
@@ -86,6 +93,10 @@ export default function AdminPage() {
                  <br/>
                  <span className="text-xs mt-2 block">(Use Role Manager to define roles first)</span>
               </div>
+           </TabsContent>
+
+           <TabsContent value="comms-diagnostics">
+              <CommsCapabilityContract />
            </TabsContent>
           </Tabs>
        </div>
