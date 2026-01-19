@@ -225,6 +225,41 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
     let mounted = true;
     let qualityInterval = null;
 
+    // Check access based on discipline mode
+    const checkAccess = () => {
+      const isCasual = net.discipline === 'casual';
+      const isFocused = net.discipline === 'focused';
+      
+      // Casual: Anyone can join
+      if (isCasual) {
+        setAccessDenied(false);
+        return true;
+      }
+      
+      // Focused: Enforce rank checks
+      if (isFocused) {
+        const minRankRx = net.min_rank_to_rx || 'Vagrant';
+        const userRankValue = getUserRankValue(user.rank);
+        const minRankValue = getUserRankValue(minRankRx);
+        
+        if (userRankValue < minRankValue) {
+          setAccessDenied(true);
+          setAccessReason(`Focused net requires ${minRankRx}+ to receive`);
+          return false;
+        }
+        
+        setAccessDenied(false);
+        return true;
+      }
+      
+      // Default fallback
+      return true;
+    };
+
+    if (!checkAccess()) {
+      return;
+    }
+
     const connect = async () => {
        try {
           if (!mounted) return;
@@ -587,7 +622,12 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
 
            {/* Audio Controls */}
            {canTx ? (
-             <AudioControls onStateChange={setAudioState} room={room} />
+             <AudioControls 
+               onStateChange={setAudioState} 
+               room={room}
+               defaultMode={net.discipline === 'focused' ? 'PTT' : 'OPEN'}
+               isFocused={net.discipline === 'focused'}
+             />
            ) : (
              <div className="p-4 bg-zinc-950/50 border-2 border-zinc-900 border-dashed rounded-sm text-center text-zinc-600 font-mono text-xs">
                 TRANSMISSION UNAUTHORIZED

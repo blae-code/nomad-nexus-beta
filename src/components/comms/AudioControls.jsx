@@ -6,8 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-export default function AudioControls({ onStateChange, room }) {
-  const [mode, setMode] = useState("PTT"); // 'OPEN', 'PTT'
+export default function AudioControls({ onStateChange, room, defaultMode = "PTT", isFocused = false }) {
+  const [mode, setMode] = useState(defaultMode); // 'OPEN', 'PTT'
   const [isMuted, setIsMuted] = useState(false);
   const [isPTTPressed, setIsPTTPressed] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
