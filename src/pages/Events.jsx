@@ -100,7 +100,7 @@ function EventDetail({ id }) {
              {creator && (
                <div className="text-right">
                  <div className="text-xs text-zinc-500 uppercase tracking-wider">Commanding Officer</div>
-                 <div className="text-sm font-bold text-zinc-300">{creator.rsi_handle || creator.email}</div>
+                 <div className="text-sm font-bold text-zinc-300">{creator.callsign || creator.rsi_handle || creator.email}</div>
                </div>
              )}
           </div>
@@ -172,16 +172,31 @@ function EventDetail({ id }) {
                     <Calendar className="w-4 h-4 text-red-500" />
                     <div>
                       <div className="text-[10px] text-zinc-500 uppercase">Date</div>
-                      <div className="text-sm text-zinc-200">{new Date(event.start_time).toLocaleDateString()}</div>
+                      <div className="text-sm text-zinc-200">
+                        {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-4 h-4 text-red-500" />
                     <div>
-                      <div className="text-[10px] text-zinc-500 uppercase">Time</div>
-                      <div className="text-sm text-zinc-200">{new Date(event.start_time).toLocaleTimeString()}</div>
+                      <div className="text-[10px] text-zinc-500 uppercase">Start Time</div>
+                      <div className="text-sm text-zinc-200">
+                        {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </div>
                     </div>
                   </div>
+                  {event.end_time && (
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                      <div>
+                        <div className="text-[10px] text-zinc-500 uppercase">End Time</div>
+                        <div className="text-sm text-zinc-200">
+                          {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 col-span-full">
                     <MapPin className="w-4 h-4 text-red-500" />
                     <div>
@@ -249,6 +264,42 @@ export default function EventsPage() {
     initialData: []
   });
 
+  const { data: allUsers } = useQuery({
+    queryKey: ['users-for-events'],
+    queryFn: () => base44.entities.User.list(),
+    initialData: []
+  });
+
+  // Helper to get event status
+  const getEventStatus = (event) => {
+    const now = new Date();
+    const start = new Date(event.start_time);
+    const end = event.end_time ? new Date(event.end_time) : null;
+    
+    if (event.status === 'cancelled' || event.status === 'failed' || event.status === 'aborted') {
+      return { label: event.status.toUpperCase(), color: 'text-zinc-500 border-zinc-800' };
+    }
+    if (event.status === 'completed') {
+      return { label: 'COMPLETED', color: 'text-emerald-500 border-emerald-900 bg-emerald-950/10' };
+    }
+    if (event.status === 'active' || (now >= start && (!end || now <= end))) {
+      return { label: 'ACTIVE', color: 'text-red-500 border-red-900 bg-red-950/10' };
+    }
+    if (now < start) {
+      return { label: 'UPCOMING', color: 'text-blue-500 border-blue-900 bg-blue-950/10' };
+    }
+    return { label: 'SCHEDULED', color: 'text-zinc-500 border-zinc-800' };
+  };
+
+  // Helper to format time consistently
+  const formatEventTime = (dateString) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    };
+  };
+
   // Render Detail View if ID is present
   if (id) {
     return <EventDetail id={id} />;
@@ -285,51 +336,60 @@ export default function EventsPage() {
                 <p className="text-zinc-500">No active operations found.</p>
               </div>
             ) : (
-              events.map((event) => (
-                <Card key={event.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors group">
-                  <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Badge variant="outline" className={
-                          event.event_type === 'focused' 
-                            ? "text-red-500 border-red-900 bg-red-950/10" 
-                            : "text-emerald-500 border-emerald-900 bg-emerald-950/10"
-                        }>
-                          {event.event_type.toUpperCase()}
-                        </Badge>
-                        <span className="text-zinc-600 text-xs font-mono">
-                          {new Date(event.start_time).toLocaleDateString()} • {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-zinc-100 mb-2 group-hover:text-red-500 transition-colors">
-                        {event.title}
-                      </h3>
-                      <p className="text-zinc-400 text-sm line-clamp-2 max-w-2xl">
-                        {event.description}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 md:w-auto w-full justify-between md:justify-end">
-                      <div className="text-right hidden md:block">
-                        <div className="flex items-center justify-end gap-2 text-zinc-500 text-xs mb-1">
-                          <MapPin className="w-3 h-3" />
-                          {event.location || "TBD"}
+              events.map((event) => {
+                const creator = allUsers.find(u => u.id === event.created_by);
+                const eventTime = formatEventTime(event.start_time);
+                const status = getEventStatus(event);
+                
+                return (
+                  <Card key={event.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors group">
+                    <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge variant="outline" className={status.color}>
+                            {status.label}
+                          </Badge>
+                          <Badge variant="outline" className={
+                            event.event_type === 'focused' 
+                              ? "text-red-500 border-red-900 bg-red-950/10" 
+                              : "text-emerald-500 border-emerald-900 bg-emerald-950/10"
+                          }>
+                            {event.event_type.toUpperCase()}
+                          </Badge>
+                          <span className="text-zinc-600 text-xs font-mono">
+                            {eventTime.date} • {eventTime.time}
+                          </span>
                         </div>
-                        <div className="flex items-center justify-end gap-2 text-zinc-500 text-xs">
-                           <Users className="w-3 h-3" />
-                           Host: {event.created_by || "Command"}
-                        </div>
+                        <h3 className="text-xl font-bold text-zinc-100 mb-2 group-hover:text-red-500 transition-colors">
+                          {event.title}
+                        </h3>
+                        <p className="text-zinc-400 text-sm line-clamp-2 max-w-2xl">
+                          {event.description}
+                        </p>
                       </div>
                       
-                      <a href={createPageUrl(`Events?id=${event.id}`)}>
-                        <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 hover:text-white">
-                          View Intel <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      <div className="flex items-center gap-4 md:w-auto w-full justify-between md:justify-end">
+                        <div className="text-right hidden md:block">
+                          <div className="flex items-center justify-end gap-2 text-zinc-500 text-xs mb-1">
+                            <MapPin className="w-3 h-3" />
+                            {event.location || "TBD"}
+                          </div>
+                          <div className="flex items-center justify-end gap-2 text-zinc-500 text-xs">
+                             <Users className="w-3 h-3" />
+                             {creator ? (creator.callsign || creator.rsi_handle || creator.email) : "Command"}
+                          </div>
+                        </div>
+                        
+                        <a href={createPageUrl(`Events?id=${event.id}`)}>
+                          <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 hover:text-white">
+                            View Intel <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         )}
