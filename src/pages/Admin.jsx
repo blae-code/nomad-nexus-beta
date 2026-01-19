@@ -1,13 +1,15 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus } from "lucide-react";
 import RoleManager from "@/components/auth/RoleManager";
 import SystemChecklist from "@/components/admin/SystemChecklist";
 import EventApprovalQueue from "@/components/admin/EventApprovalQueue";
 import CommsCapabilityContract from "@/components/comms/CommsCapabilityContract";
 import CommsTestPanel from "@/components/admin/CommsTestPanel";
+import VoiceNetForm from "@/components/comms/VoiceNetForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { hasMinRank } from "@/components/permissions";
 
 export default function AdminPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -75,12 +77,20 @@ export default function AdminPage() {
                <Radio className="w-4 h-4 mr-2" /> Comms Diagnostics
              </TabsTrigger>
              <TabsTrigger 
-               value="comms-provision"
-               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
-             >
-               <TestTube className="w-4 h-4 mr-2" /> Provision & Test
-             </TabsTrigger>
-             </TabsList>
+                value="comms-provision"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+              >
+                <TestTube className="w-4 h-4 mr-2" /> Provision & Test
+              </TabsTrigger>
+              {currentUser && hasMinRank(currentUser, 'Scout') && (
+                <TabsTrigger 
+                  value="create-net"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Create Voice Net
+                </TabsTrigger>
+              )}
+              </TabsList>
 
            <TabsContent value="approvals">
               {currentUser && <EventApprovalQueue user={currentUser} />}
@@ -109,6 +119,12 @@ export default function AdminPage() {
            <TabsContent value="comms-provision">
               <CommsTestPanel />
            </TabsContent>
+
+           {currentUser && hasMinRank(currentUser, 'Scout') && (
+             <TabsContent value="create-net">
+               <VoiceNetForm />
+             </TabsContent>
+           )}
           </Tabs>
        </div>
     </div>
