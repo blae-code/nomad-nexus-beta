@@ -215,11 +215,23 @@ export default function ActiveNetPanel({ net, user, eventId }) {
              netIds: [net.id]
           });
           
-          const token = res.data.tokens[net.id];
+          // Handle errors and warnings
+          if (res.data.errors && res.data.errors.length > 0) {
+             console.error('LiveKit token errors:', res.data.errors);
+             // User-friendly error display (could show in UI)
+             res.data.errors.forEach(err => console.warn(`[COMMS] ${err}`));
+          }
+          
+          if (res.data.warnings && res.data.warnings.length > 0) {
+             console.warn('LiveKit token warnings:', res.data.warnings);
+             res.data.warnings.forEach(warn => console.info(`[COMMS] ${warn}`));
+          }
+          
+          const token = res.data.tokens?.[net.id];
           const url = res.data.livekitUrl;
           
           if (!token) {
-             console.error('Access denied to net');
+             console.error('No token received for net - insufficient permissions');
              return;
           }
           
