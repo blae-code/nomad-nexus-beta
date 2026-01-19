@@ -17,14 +17,24 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   const queryClient = useQueryClient();
   const [objectives, setObjectives] = React.useState(event?.objectives || []);
   
-  const formatDateTimeLocal = (date) => {
-    const d = new Date(date);
+  // Convert ISO string to datetime-local format (preserves local time)
+  const formatDateTimeLocal = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Convert datetime-local to ISO (treats input as local time)
+  const parseLocalDateTime = (localDateTimeStr) => {
+    if (!localDateTimeStr) return null;
+    // Create date from local time string (no timezone shift)
+    const d = new Date(localDateTimeStr);
+    return d.toISOString();
   };
 
   const { register, handleSubmit, setValue, watch, reset } = useForm({
@@ -62,6 +72,7 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
         priority: event.priority || "STANDARD",
         status: event.status || "scheduled",
         start_time: event.start_time ? formatDateTimeLocal(event.start_time) : "",
+        end_time: event.end_time ? formatDateTimeLocal(event.end_time) : "",
         assigned_asset_ids: event.assigned_asset_ids || []
       });
     } else {
@@ -82,9 +93,25 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
 
   const mutation = useMutation({
     mutationFn: async (data) => {
+      // Validation
+      if (!data.title || data.title.trim() === '') {
+        throw new Error('Title is required');
+      }
+      if (!data.start_time) {
+        throw new Error('Start time is required');
+      }
+      if (data.end_time) {
+        const start = new Date(data.start_time);
+        const end = new Date(data.end_time);
+        if (end <= start) {
+          throw new Error('End time must be after start time');
+        }
+      }
+
       const payload = {
         ...data,
-        start_time: new Date(data.start_time).toISOString(),
+        start_time: parseLocalDateTime(data.start_time),
+        end_time: data.end_time ? parseLocalDateTime(data.end_time) : undefined,
         objectives: objectives
       };
       
@@ -143,16 +170,25 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+          <div className="space-y-2">
+            <Label>Operation Title *</Label>
+            <Input {...register("title", { required: true })} className="bg-zinc-900 border-zinc-800 font-bold" placeholder="Operation Name" />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Operation Title</Label>
-              <Input {...register("title", { required: true })} className="bg-zinc-900 border-zinc-800 font-bold" placeholder="Operation Name" />
-            </div>
-            <div className="space-y-2">
-               <Label>Start Time</Label>
+               <Label>Start Time *</Label>
                <Input 
                  type="datetime-local" 
                  {...register("start_time", { required: true })} 
+                 className="bg-zinc-900 border-zinc-800" 
+               />
+            </div>
+            <div className="space-y-2">
+               <Label>End Time</Label>
+               <Input 
+                 type="datetime-local" 
+                 {...register("end_time")} 
                  className="bg-zinc-900 border-zinc-800" 
                />
             </div>
