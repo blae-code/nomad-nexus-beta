@@ -8,36 +8,61 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, User, Hash, Lock, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRankColorClass } from "@/components/utils/rankUtils";
+import MessageBubble from "@/components/comms/MessageBubble";
+import FileUploadButton from "@/components/comms/FileUploadButton";
 
 export default function ChatInterface({ channel, user }) {
   const scrollRef = useRef(null);
   const [newMessage, setNewMessage] = useState("");
+  const [attachments, setAttachments] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const queryClient = useQueryClient();
 
   // Fetch Messages with Real-Time Subscription
   const { data: messages } = useQuery({
     queryKey: ['channel-messages', channel.id],
-    queryFn: () => base44.entities.Message.list({
-      filter: { channel_id: channel.id },
-      sort: { created_date: 1 },
-      limit: 100
-    }),
+    queryFn: () => base44.entities.Message.filter(
+      { channel_id: channel.id },
+      'created_date',
+      100
+    ),
     initialData: []
   });
 
-  // Real-time subscription for new messages
+  // Real-time subscription for new messages and updates
   useEffect(() => {
     if (!channel?.id) return;
     
     const unsubscribe = base44.entities.Message.subscribe((event) => {
-      if (event.type === 'create' && event.data.channel_id === channel.id) {
-        queryClient.invalidateQueries(['channel-messages', channel.id]);
+      if ((event.type === 'create' || event.type === 'update') && event.data.channel_id === channel.id) {
+        queryClient.invalidateQueries({ queryKey: ['channel-messages', channel.id] });
       }
     });
     
     return unsubscribe;
   }, [channel?.id, queryClient]);
+
+  // Mark messages as read
+  useEffect(() => {
+    if (!messages.length || !user?.id) return;
+
+    const markAsRead = async () => {
+      const unreadMessages = messages.filter(
+        msg => msg.user_id !== user.id && (!msg.read_by || !msg.read_by.includes(user.id))
+      );
+
+      for (const msg of unreadMessages) {
+        const readBy = msg.read_by || [];
+        if (!readBy.includes(user.id)) {
+          await base44.entities.Message.update(msg.id, {
+            read_by: [...readBy, user.id]
+          }).catch(() => {});
+        }
+      }
+    };
+
+    markAsRead();
+  }, [messages, user?.id]);
 
   // Update presence - mark user as online in this channel
   useEffect(() => {
@@ -101,22 +126,35 @@ export default function ChatInterface({ channel, user }) {
   }, [messages]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: (content) => base44.entities.Message.create({
+    mutationFn: (payload) => base44.entities.Message.create({
       channel_id: channel.id,
       user_id: user.id,
-      content: content,
-      attachments: []
+      content: payload.content,
+      attachments: payload.attachments,
+      read_by: [user.id]
     }),
     onSuccess: () => {
       setNewMessage("");
-      queryClient.invalidateQueries(['channel-messages', channel.id]);
+      setAttachments([]);
+      queryClient.invalidateQueries({ queryKey: ['channel-messages', channel.id] });
     }
   });
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-    sendMessageMutation.mutate(newMessage);
+    if (!newMessage.trim() && attachments.length === 0) return;
+    sendMessageMutation.mutate({
+      content: newMessage || "(File only)",
+      attachments: attachments
+    });
+  };
+
+  const handleFilesSelected = (fileUrls) => {
+    setAttachments(prev => [...prev, ...fileUrls]);
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 
   return (
@@ -156,67 +194,47 @@ export default function ChatInterface({ channel, user }) {
              <p className="text-xs font-mono uppercase">Channel Empty. Initialize Comms.</p>
           </div>
         ) : (
-          messages.map((msg, idx) => {
+          messages.map((msg) => {
             const isMe = msg.user_id === user?.id;
             const author = authors[msg.user_id] || { full_name: 'Unknown', callsign: 'Unknown' };
-            const showHeader = idx === 0 || messages[idx-1].user_id !== msg.user_id || (new Date(msg.created_date) - new Date(messages[idx-1].created_date) > 300000);
             const isOnline = onlineUsers.includes(msg.user_id);
+            const isRead = msg.read_by && msg.read_by.includes(user?.id);
 
             return (
-              <div key={msg.id} className="flex gap-3 group hover:bg-zinc-900/30 -mx-2 px-2 py-1 rounded transition-colors">
-                {/* Avatar */}
-                {showHeader ? (
-                  <div className="relative shrink-0 mt-1">
-                    <Avatar className="w-8 h-8 border border-zinc-800">
-                      <AvatarFallback className={cn(
-                        "text-xs font-bold",
-                        isMe ? "bg-emerald-950 text-emerald-400" : "bg-zinc-900 text-zinc-400"
-                      )}>
-                        {(author.callsign || author.full_name || 'U')[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-zinc-950" />
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-8 shrink-0" />
-                )}
-
-                <div className="flex-1 min-w-0">
-                  {showHeader && (
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className={cn(
-                        "text-sm font-bold", 
-                        isMe ? "text-emerald-400" : getRankColorClass(author.rank, 'text')
-                      )}>
-                        {author.callsign || author.full_name}
-                      </span>
-                      <span className="text-[10px] text-zinc-600 font-mono">
-                        {new Date(msg.created_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second: '2-digit'})}
-                      </span>
-                    </div>
-                  )}
-                  <div className={cn(
-                    "text-sm text-zinc-200 break-words",
-                    !showHeader && "pl-0"
-                  )}>
-                    {msg.content}
-                  </div>
-                </div>
-
-                {/* Timestamp on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-zinc-600 font-mono self-start mt-1">
-                  {new Date(msg.created_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                </div>
-              </div>
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                author={author}
+                isMe={isMe}
+                isOnline={isOnline}
+                isRead={isRead}
+                onlineUsers={onlineUsers}
+              />
             );
           })
         )}
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-zinc-800 bg-zinc-900/30">
+      <div className="p-4 border-t border-zinc-800 bg-zinc-900/30 space-y-2">
+        {/* Attachments Preview */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((url, idx) => (
+              <div key={idx} className="relative inline-flex items-center gap-2 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-[11px] text-zinc-400">
+                <span className="truncate max-w-[100px]">{url.split('/').pop()}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(idx)}
+                  className="text-zinc-600 hover:text-[#ea580c]"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <form onSubmit={handleSend} className="flex gap-2">
            <Input 
               value={newMessage}
@@ -224,16 +242,20 @@ export default function ChatInterface({ channel, user }) {
               placeholder={`Message #${channel.name}...`}
               className="bg-zinc-950 border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-[#ea580c]"
            />
+           <FileUploadButton 
+              onFilesSelected={handleFilesSelected}
+              disabled={sendMessageMutation.isPending}
+           />
            <Button 
               type="submit" 
               size="icon"
-              disabled={!newMessage.trim() || sendMessageMutation.isPending}
+              disabled={(!newMessage.trim() && attachments.length === 0) || sendMessageMutation.isPending}
               className="bg-[#ea580c] hover:bg-[#c2410c] text-white shrink-0"
            >
               <Send className="w-4 h-4" />
            </Button>
         </form>
-        <div className="text-[9px] text-zinc-600 font-mono mt-2 flex justify-between">
+        <div className="text-[9px] text-zinc-600 font-mono flex justify-between">
            <span>SECURE CHANNEL // ENCRYPTION: STANDARD</span>
            <span>RETURN TO SEND</span>
         </div>
