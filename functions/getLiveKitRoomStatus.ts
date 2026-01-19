@@ -10,10 +10,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { eventId } = await req.json();
+    const { rooms } = await req.json();
 
-    if (!eventId) {
-      return Response.json({ error: 'eventId required' }, { status: 400 });
+    if (!rooms || !Array.isArray(rooms) || rooms.length === 0) {
+      return Response.json({}, { status: 200 }); // Empty result for no rooms
     }
 
     // Get LiveKit credentials
@@ -25,48 +25,30 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'LiveKit not configured' }, { status: 500 });
     }
 
-    // Fetch all voice nets for this event
-    const nets = await base44.entities.VoiceNet.filter({ event_id: eventId });
-
     // Initialize LiveKit Room Service Client
     const roomClient = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
 
-    // Get participant counts for all rooms
+    // Get participant counts for requested rooms
+    // Returns object mapping roomName -> { participantCount, isActive }
     const roomStatuses = {};
 
-    for (const net of nets) {
-      const roomName = `event-${eventId}-net-${net.code}`;
-      
+    for (const roomName of rooms) {
       try {
         const participants = await roomClient.listParticipants(roomName);
-        roomStatuses[net.id] = {
-          netId: net.id,
-          netCode: net.code,
-          roomName,
+        roomStatuses[roomName] = {
           participantCount: participants.length,
-          participants: participants.map(p => ({
-            identity: p.identity,
-            isSpeaking: p.isSpeaker,
-            joinedAt: p.joinedAt
-          }))
+          isActive: participants.length > 0
         };
       } catch (err) {
         // Room doesn't exist or is empty
-        roomStatuses[net.id] = {
-          netId: net.id,
-          netCode: net.code,
-          roomName,
+        roomStatuses[roomName] = {
           participantCount: 0,
-          participants: []
+          isActive: false
         };
       }
     }
 
-    return Response.json({ 
-      eventId,
-      roomStatuses,
-      totalParticipants: Object.values(roomStatuses).reduce((sum, r) => sum + r.participantCount, 0)
-    });
+    return Response.json(roomStatuses);
 
   } catch (error) {
     console.error('LiveKit room status error:', error);
