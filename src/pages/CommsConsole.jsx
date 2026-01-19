@@ -23,6 +23,7 @@ import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import CommsToolbox from "@/components/comms/CommsToolbox";
 import TacticalDashboard from "@/components/comms/TacticalDashboard";
+import VoiceDiagnostics from "@/components/comms/VoiceDiagnostics";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +36,7 @@ export default function CommsConsolePage() {
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
   const [consoleMode, setConsoleMode] = React.useState("ops"); // 'ops' (Voice/Events) or 'lounge' (Text/ReadyRooms)
-  const [viewMode, setViewMode] = React.useState("line"); // 'command', 'line', 'hierarchy', or 'tactical'
+  const [viewMode, setViewMode] = React.useState("line"); // 'command', 'line', 'hierarchy', 'tactical', or 'diagnostics'
   const [showAIAssistant, setShowAIAssistant] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
@@ -211,6 +212,13 @@ export default function CommsConsolePage() {
                   <Monitor className="w-3 h-3" />
                   TAC
                </button>
+               <button 
+                  onClick={() => setViewMode('diagnostics')}
+                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'diagnostics' ? 'bg-purple-900 text-purple-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+               >
+                  <Activity className="w-3 h-3" />
+                  TEST
+               </button>
                </div>
                <div className="h-6 w-[1px] bg-zinc-800 mx-2" />
                {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
@@ -303,15 +311,17 @@ export default function CommsConsolePage() {
                {consoleMode === 'ops' ? (
                   // OPS MODE
                   selectedEventId ? (
-                     viewMode === 'tactical' ? (
-                        <TacticalDashboard eventId={selectedEventId} />
-                     ) : (
-                        <ActiveNetPanel 
-                           net={selectedNet} 
-                           user={currentUser} 
-                           eventId={selectedEventId} 
-                        />
-                     )
+                    viewMode === 'tactical' ? (
+                       <TacticalDashboard eventId={selectedEventId} />
+                    ) : viewMode === 'diagnostics' ? (
+                       <VoiceDiagnostics user={currentUser} eventId={selectedEventId} />
+                    ) : (
+                       <ActiveNetPanel 
+                          net={selectedNet} 
+                          user={currentUser} 
+                          eventId={selectedEventId} 
+                       />
+                    )
                   ) : (
                      <>
                         {/* Dashboard Widgets */}
