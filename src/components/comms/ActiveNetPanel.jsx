@@ -347,15 +347,19 @@ export default function ActiveNetPanel({ net, user, eventId }) {
     };
   }, [net?.id, user?.id, eventId]);
 
-  // Audio Handling - Mic Publish/Unpublish
+  // Audio Handling - Mic Publish/Unpublish with audio processing
   useEffect(() => {
      if (!room || !room.localParticipant) return;
      
      const handleAudioState = async () => {
         try {
            if (audioState?.isTransmitting) {
-              // Enable microphone
-              await room.localParticipant.setMicrophoneEnabled(true);
+              // Enable microphone with audio processing
+              await room.localParticipant.setMicrophoneEnabled(true, {
+                echoCancellation: audioState?.echoCancellation !== false,
+                noiseSuppression: audioState?.noiseSuppression !== false,
+                autoGainControl: true
+              });
               setMicPermissionDenied(false);
            } else {
               // Mute microphone
@@ -371,7 +375,7 @@ export default function ActiveNetPanel({ net, user, eventId }) {
      };
      
      handleAudioState();
-  }, [audioState?.isTransmitting, room]);
+  }, [audioState?.isTransmitting, audioState?.echoCancellation, audioState?.noiseSuppression, room]);
 
   const handleWhisper = (targetUser) => {
      if (whisperTarget?.id === targetUser.id) {
@@ -525,7 +529,7 @@ export default function ActiveNetPanel({ net, user, eventId }) {
 
            {/* Audio Controls */}
            {canTx ? (
-             <AudioControls onStateChange={setAudioState} />
+             <AudioControls onStateChange={setAudioState} room={room} />
            ) : (
              <div className="p-4 bg-zinc-950/50 border-2 border-zinc-900 border-dashed rounded-sm text-center text-zinc-600 font-mono text-xs">
                 TRANSMISSION UNAUTHORIZED
