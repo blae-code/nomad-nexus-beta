@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import {
@@ -22,6 +23,8 @@ import {
   Activity,
   Rocket,
   MessageSquare,
+  Star,
+  Clock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -60,16 +63,18 @@ export default function CommandPaletteV3() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [user, setUser] = useState(null);
   const [recentCommands, setRecentCommands] = useState([]);
+  const [pinnedCommands, setPinnedCommands] = useState([]);
   const [confirmingDistress, setConfirmingDistress] = useState(false);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const location = useLocation();
 
   // Fetch user
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Load recents from localStorage
+  // Load recents and pinned from localStorage
   useEffect(() => {
     const stored = localStorage.getItem('recentCommands');
     if (stored) {
@@ -79,6 +84,15 @@ export default function CommandPaletteV3() {
         console.error('Failed to load recent commands:', e);
       }
     }
+
+    const pinned = localStorage.getItem('pinnedCommands');
+    if (pinned) {
+      try {
+        setPinnedCommands(JSON.parse(pinned));
+      } catch (e) {
+        console.error('Failed to load pinned commands:', e);
+      }
+    }
   }, []);
 
   // Filter commands by user clearance
@@ -86,22 +100,49 @@ export default function CommandPaletteV3() {
     return filterCommandsByUser(user);
   }, [user]);
 
-  // Search/filter
+  // Toggle pin
+  const togglePin = (cmdId) => {
+    const newPinned = pinnedCommands.includes(cmdId)
+      ? pinnedCommands.filter((id) => id !== cmdId)
+      : [...pinnedCommands, cmdId].slice(0, 5);
+    setPinnedCommands(newPinned);
+    localStorage.setItem('pinnedCommands', JSON.stringify(newPinned));
+  };
+
+  // Search/filter with sections
   const displayCommands = useMemo(() => {
     if (!query.trim()) {
+      const result = {};
+
+      // Pinned section
+      if (pinnedCommands.length > 0) {
+        const pinnedCmds = pinnedCommands
+          .map((id) => availableCommands.find((c) => c.id === id))
+          .filter(Boolean);
+        if (pinnedCmds.length > 0) {
+          result['📌 PINNED COMMANDS'] = pinnedCmds;
+        }
+      }
+
+      // Recent operations section
       if (recentCommands.length > 0) {
-        const recentIds = recentCommands.slice(0, 5);
+        const recentIds = recentCommands.slice(0, 4);
         const recentCmds = recentIds
           .map((id) => availableCommands.find((c) => c.id === id))
           .filter(Boolean);
-        return groupCommandsBySection(recentCmds);
+        if (recentCmds.length > 0) {
+          result['⏱ RECENT OPERATIONS'] = recentCmds;
+        }
       }
-      return groupCommandsBySection(availableCommands);
+
+      // All grouped by section
+      const allGrouped = groupCommandsBySection(availableCommands);
+      return { ...result, ...allGrouped };
     }
 
     const filtered = searchCommands(query, availableCommands);
     return groupCommandsBySection(filtered);
-  }, [query, availableCommands, recentCommands]);
+  }, [query, availableCommands, recentCommands, pinnedCommands]);
 
   // Flatten for keyboard nav
   const flatCommands = useMemo(() => {
@@ -209,6 +250,21 @@ export default function CommandPaletteV3() {
     return iconMap[iconName] || Command;
   };
 
+  // Get current page breadcrumb
+  const getCurrentBreadcrumb = () => {
+    const path = location.pathname.toLowerCase();
+    const breadcrumbs = {
+      '/hub': 'COMMAND HUB',
+      '/nomadopsdashboard': 'NOMAD OPS',
+      '/events': 'OPERATIONS BOARD',
+      '/commsconsole': 'COMMS ARRAY',
+      '/intelligence': 'INTELLIGENCE',
+      '/adminconsole': 'SYSTEM ADMIN',
+      '/admin': 'SYSTEM ADMIN',
+    };
+    return breadcrumbs[path] || 'OPERATIONS';
+  };
+
   return (
     <div ref={containerRef} className="relative max-w-sm">
       {/* Main Input */}
@@ -258,7 +314,18 @@ export default function CommandPaletteV3() {
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.1 }}
             className="absolute top-full left-0 right-0 mt-2 bg-zinc-950 border border-zinc-800 shadow-xl overflow-hidden z-50"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)',
+              backgroundSize: '100% 2px',
+            }}
           >
+            {/* Breadcrumb */}
+            <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 flex items-center gap-2">
+              <span className="text-[7px] text-zinc-700">[</span>
+              <span className="text-zinc-400">{getCurrentBreadcrumb()}</span>
+              <span className="text-[7px] text-zinc-700">]</span>
+            </div>
+
             <div className="max-h-[50vh] overflow-y-auto">
               {flatCommands.length === 0 ? (
                 <div className="p-8 text-center text-zinc-600 text-xs">
@@ -274,6 +341,7 @@ export default function CommandPaletteV3() {
                       {cmds.map((cmd, idx) => {
                         const globalIdx = flatCommands.indexOf(cmd);
                         const isSelected = globalIdx === selectedIndex;
+                        const isPinned = pinnedCommands.includes(cmd.id);
                         const Icon = getIcon(cmd.icon);
 
                         return (
@@ -285,14 +353,27 @@ export default function CommandPaletteV3() {
                             }}
                             onMouseEnter={() => setSelectedIndex(globalIdx)}
                             className={cn(
-                              'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors',
+                              'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors group',
                               isSelected
                                 ? 'bg-zinc-900 text-[#ea580c] border-l-2 border-[#ea580c]'
                                 : 'text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent'
                             )}
                           >
                             <Icon className="w-3 h-3 shrink-0" />
-                            <span className="text-xs flex-1">{cmd.label}</span>
+                            <span className="text-xs flex-1 font-mono">{cmd.label}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePin(cmd.id);
+                              }}
+                              className={cn(
+                                'shrink-0 p-1 rounded transition-opacity',
+                                isPinned ? 'text-[#ea580c]' : 'text-zinc-600 group-hover:text-zinc-500'
+                              )}
+                              title={isPinned ? 'Unpin' : 'Pin'}
+                            >
+                              <Star className={cn('w-3 h-3', isPinned && 'fill-[#ea580c]')} />
+                            </button>
                             {isSelected && <ArrowRight className="w-3 h-3 text-[#ea580c]" />}
                           </button>
                         );
