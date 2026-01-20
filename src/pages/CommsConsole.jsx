@@ -306,13 +306,7 @@ function CommsConsolePage() {
                   </div>
                   
                   <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
-                     {!selectedEventId ? (
-                        <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-center space-y-4">
-                           <Monitor className="w-12 h-12 opacity-20" />
-                           <p className="text-xs uppercase tracking-widest font-bold text-zinc-400">Waiting for Uplink</p>
-                           <p className="text-[10px] text-zinc-500 font-mono">SELECT OPERATION //</p>
-                        </div>
-                     ) : isLoading ? (
+                     {isLoading ? (
                         <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING FREQUENCIES...</div>
                      ) : voiceNets.length === 0 ? (
                         <div className="text-center text-zinc-500 py-10 text-xs font-mono">
