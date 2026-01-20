@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Phone, Star, Plus, X } from 'lucide-react';
+import { Phone, Star, Plus, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const statusColors = {
