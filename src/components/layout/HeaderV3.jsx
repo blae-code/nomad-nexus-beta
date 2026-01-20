@@ -273,6 +273,43 @@ export default function HeaderV3() {
         </button>
       </div>
 
+      {/* CENTER-RIGHT: Ops Context Strip + Readiness Meter */}
+      <div className="hidden lg:flex items-center gap-2 shrink-0">
+       {/* Ops Context */}
+       <button
+         onClick={() => setDiagnosticsOpen(true)}
+         className="flex items-center gap-1.5 px-2.5 h-10 border border-zinc-800 bg-zinc-900/30 rounded-sm hover:border-zinc-700 transition-colors group"
+         title="Click for diagnostics"
+       >
+         <div className="flex flex-col gap-0.5 items-start">
+           <span className="text-[9px] font-mono text-zinc-500 leading-tight">{opsContext.label}</span>
+           <span className="text-xs font-semibold text-zinc-300 group-hover:text-zinc-100 leading-tight">{opsContext.value}</span>
+         </div>
+       </button>
+
+       {/* Readiness Meter */}
+       <button
+         onClick={() => setDiagnosticsOpen(true)}
+         className={cn(
+           'flex items-center gap-1 px-2.5 h-10 border rounded-sm transition-colors shrink-0',
+           readinessState === 'green' && 'border-emerald-700/40 bg-emerald-950/20 hover:border-emerald-600/60',
+           readinessState === 'amber' && 'border-yellow-700/40 bg-yellow-950/20 hover:border-yellow-600/60',
+           readinessState === 'red' && 'border-red-700/40 bg-red-950/20 hover:border-red-600/60'
+         )}
+         title="System readiness: comms, permissions, health"
+       >
+         <div className={cn('w-1.5 h-1.5 rounded-full', readinessColors[readinessState])} />
+         <span className={cn(
+           'text-[9px] font-mono font-bold uppercase hidden sm:inline',
+           readinessState === 'green' && 'text-emerald-300',
+           readinessState === 'amber' && 'text-yellow-300',
+           readinessState === 'red' && 'text-red-300'
+         )}>
+           {readinessState === 'green' ? 'NOMINAL' : readinessState === 'amber' ? 'CAUTION' : 'ALERT'}
+         </span>
+       </button>
+      </div>
+
       {/* RIGHT: Telemetry + Online Count + Time + User Menu */}
       <div className="flex items-center gap-3 shrink-0">
         {/* NET Status with data tick effect */}
