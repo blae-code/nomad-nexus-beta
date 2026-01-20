@@ -13,7 +13,7 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Radio, Shield, Layout, Monitor, ListTree, Bot, Hash, Search, Activity } from "lucide-react";
+import { Radio, Shield, Layout, Monitor, ListTree, Bot, Hash, Search, Activity, AlertTriangle } from "lucide-react";
 import CommsAIAssistant from "@/components/ai/CommsAIAssistant";
 import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
@@ -50,6 +50,8 @@ function CommsConsolePage() {
   const [showSearch, setShowSearch] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
+  const [incidentFormOpen, setIncidentFormOpen] = React.useState(false);
+  const [selectedIncident, setSelectedIncident] = React.useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -429,11 +431,28 @@ function CommsConsolePage() {
             )
          ))}
 
-         {/* Right Sidebar - Event Feed, AI Assistant, or Toolbox */}
+         {/* Right Sidebar - Incidents, Event Feed, AI Assistant, or Toolbox */}
          {consoleMode === 'ops' && (
             <div className="w-96 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
                {viewMode === 'tactical' ? (
-                  <OperationalEventFeed eventId={selectedEventId} selectedNet={selectedNet} />
+                  <div className="h-full flex flex-col">
+                     <div className="flex-1 overflow-hidden">
+                        <IncidentDashboard 
+                           eventId={selectedEventId} 
+                           onSelectIncident={setSelectedIncident}
+                        />
+                     </div>
+                     <div className="p-3 border-t border-zinc-800">
+                        <Button 
+                           size="sm" 
+                           onClick={() => setIncidentFormOpen(true)}
+                           className="w-full bg-red-600 hover:bg-red-700 gap-2"
+                        >
+                           <AlertTriangle className="w-4 h-4" />
+                           Log New Incident
+                        </Button>
+                     </div>
+                  </div>
                ) : showAIAssistant ? (
                   <CommsAIAssistant 
                      eventId={selectedEventId} 
@@ -447,6 +466,15 @@ function CommsConsolePage() {
          )}
 
       </div>
+
+      {/* Dialogs */}
+      {showSearch && <CommsSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />}
+      <IncidentForm 
+        isOpen={incidentFormOpen} 
+        onClose={() => setIncidentFormOpen(false)}
+        eventId={selectedEventId}
+        user={currentUser}
+      />
     </div>
   );
 }
