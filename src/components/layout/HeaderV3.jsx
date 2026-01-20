@@ -66,7 +66,10 @@ export default function HeaderV3() {
 
         // Fetch or create user presence
         const presences = await base44.entities.UserPresence.list();
-        let userPres = presences.find((p) => p.user_id === currentUser.id);
+        const userIds = new Set(users.map(u => u.id));
+        const validPresences = presences.filter(p => userIds.has(p.user_id));
+
+        let userPres = validPresences.find((p) => p.user_id === currentUser.id);
 
         // Create if doesn't exist
         if (!userPres) {
@@ -78,8 +81,8 @@ export default function HeaderV3() {
         }
         setUserPresence(userPres);
 
-        // Update online count
-        const online = presences.filter((p) => p.status !== 'offline').length;
+        // Update online count (only count valid presences)
+        const online = validPresences.filter((p) => p.status !== 'offline').length;
         setOnlineCount(online);
       } catch (e) {
         console.error('Failed to initialize presence:', e);
