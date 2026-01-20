@@ -763,7 +763,7 @@ export default function CommandPaletteV3() {
                   <button
                     key={status}
                     onClick={() => handleStatusChange(status)}
-                    className="w-full px-2 py-1.5 text-xs text-left text-zinc-300 hover:bg-zinc-800 border border-transparent hover:border-zinc-700"
+                    className="w-full px-2 py-1 text-xs text-left text-zinc-300 hover:bg-zinc-800 border border-transparent hover:border-zinc-700 transition-colors duration-150 focus:outline-none focus:bg-zinc-800 focus:border-zinc-700"
                   >
                     <span className={cn(
                       'inline-block w-2 h-2 rounded-full mr-2',
