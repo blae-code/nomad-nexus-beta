@@ -786,7 +786,7 @@ export default function CommandPaletteV3() {
                 <div className="flex gap-2 justify-center">
                   <button
                     onClick={() => setConfirmingDistress(false)}
-                    className="px-2 py-1 text-xs border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
+                    className="px-2 py-1 text-xs border border-zinc-700 text-zinc-300 hover:bg-zinc-900 focus:outline-none focus:border-zinc-600 transition-colors duration-150"
                   >
                     Cancel
                   </button>
@@ -796,7 +796,7 @@ export default function CommandPaletteV3() {
                       setIsOpen(false);
                       setConfirmingDistress(false);
                     }}
-                    className="px-2 py-1 text-xs bg-red-900 text-red-100 hover:bg-red-800"
+                    className="px-2 py-1 text-xs bg-red-900 text-red-100 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 transition-colors duration-150"
                   >
                     Confirm Send
                   </button>
