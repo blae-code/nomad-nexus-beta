@@ -19,11 +19,13 @@ export default function UserManagerPage() {
   const { data: users = [] } = useQuery({
     queryKey: ['users-manage'],
     queryFn: () => base44.entities.User.list(),
+    enabled: isAdmin
   });
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: () => base44.entities.Role.list(),
+    enabled: isAdmin
   });
 
   const updateUserMutation = useMutation({
