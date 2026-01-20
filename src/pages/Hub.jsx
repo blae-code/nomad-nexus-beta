@@ -35,9 +35,9 @@ export default function HubPage() {
   ];
 
   return (
-    <div className="h-full bg-zinc-950 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4 space-y-2">
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto page-shell">
+        <div className="space-y-[var(--gutter)]">
         
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -86,14 +86,10 @@ export default function HubPage() {
             <RescueAlertPanel />
 
             {/* Upcoming Operations */}
-            <div className="border border-zinc-800 bg-zinc-900/50">
-              <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800">
-                <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Mission Projection</h2>
-              </div>
-              <div className="p-3">
-                <EventProjectionPanel user={user} />
-              </div>
-            </div>
+               <div className="panel">
+                 <div className="font-black uppercase tracking-widest text-zinc-400 text-xs mb-[var(--gutter)]">Mission Projection</div>
+                 <EventProjectionPanel user={user} />
+               </div>
           </div>
 
           {/* Right Column */}
@@ -130,11 +126,9 @@ export default function HubPage() {
          </div>
 
          {/* Tactical Map */}
-         <div className="border border-zinc-800 bg-zinc-900/50">
-           <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800">
-             <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Theater Map</h2>
-           </div>
-           <div style={{ height: '400px' }} className="p-3">
+         <div className="panel p-0">
+           <div className="font-black uppercase tracking-widest text-zinc-400 text-xs p-[var(--space-lg)] border-b border-[var(--divider-color)]">Theater Map</div>
+           <div style={{ height: '400px' }} className="p-[var(--space-lg)]">
              <OpsMap eventId={null} readOnly={true} />
            </div>
          </div>
