@@ -36,8 +36,8 @@ export default function HubPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto page-shell">
-        <div className="space-y-[var(--gutter)]">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="space-y-[var(--gutter)] p-[var(--gutter)]">
         
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -134,7 +134,7 @@ export default function HubPage() {
          </div>
 
         </div>
-      </div>
-    </div>
-  );
-}
+        </div>
+        </div>
+        );
+        }
