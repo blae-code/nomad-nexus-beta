@@ -137,7 +137,7 @@ export default function PlayerStatusRoster({ eventId }) {
               </div>
             ) : (
               filteredStatuses.map(status => {
-                const user = users.find(u => u.id === status.user_id);
+                const user = userById[status.user_id];
                 const statusColor = STATUS_COLORS[status.status] || 'bg-zinc-600';
                 
                 return (
