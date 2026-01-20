@@ -28,7 +28,7 @@ export default function HubPage() {
   return (
     <div className="h-full bg-zinc-950 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4 space-y-3">
+        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4 space-y-2">
         
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -44,7 +44,7 @@ export default function HubPage() {
         </div>
 
         {/* Quick Access Links */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {quickLinks.map((link, idx) => (
             <a key={idx} href={link.href} className="block group">
               <div className={`p-3 lg:p-4 border ${link.bg} hover:bg-opacity-50 transition-all flex items-center gap-2 lg:gap-3`}>
@@ -59,38 +59,38 @@ export default function HubPage() {
           ))}
         </div>
 
+        {/* Event Calendar View */}
+        <EventCalendarView />
+
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
           
           {/* Left Column */}
-          <div className="lg:col-span-8 space-y-4 lg:space-y-6">
+          <div className="lg:col-span-8 space-y-3">
             {/* Rescue Alert */}
             <RescueAlertPanel />
 
             {/* Upcoming Operations */}
             <div className="border border-zinc-800 bg-zinc-900/50">
-              <div className="bg-zinc-900 px-4 py-2 border-b border-zinc-800">
+              <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800">
                 <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Mission Projection</h2>
               </div>
-              <div className="p-4">
+              <div className="p-3">
                 <EventProjectionPanel user={user} />
               </div>
             </div>
           </div>
 
           {/* Right Column */}
-          <div className="lg:col-span-4 space-y-4 lg:space-y-6">
+          <div className="lg:col-span-4 space-y-3">
             <StatusAlertsWidget />
             <PersonalActivityWidget />
             <ArmoryStatusPanel />
           </div>
         </div>
 
-        {/* Event Calendar View */}
-        <EventCalendarView />
-
         {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2">
             <OrgResourcesWidget />
           </div>
