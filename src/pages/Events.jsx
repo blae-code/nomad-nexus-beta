@@ -70,18 +70,17 @@ function EventDetail({ id }) {
   const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
   if (isLoading) {
-    return <div className="h-full flex items-center justify-center bg-zinc-950 text-zinc-500">RETRIEVING DATA...</div>;
+    return <div className="h-full flex items-center justify-center bg-zinc-950"><LoadingState message="LOADING OPERATION..." /></div>;
   }
 
   if (!event) {
     return (
-      <div className="h-full flex items-center justify-center bg-zinc-950 text-center">
-        <div>
-          <h1 className="text-xl text-zinc-300 mb-4">OPERATION NOT FOUND</h1>
-           <a href={createPageUrl('Events')}>
-              <Badge variant="outline" className="hover:bg-zinc-800 cursor-pointer">RETURN TO BOARD</Badge>
-           </a>
-        </div>
+      <div className="h-full flex items-center justify-center bg-zinc-950">
+        <EmptyState
+          title="Operation Not Found"
+          description="This operation may have been archived or deleted."
+          action={<a href={createPageUrl('Events')}><Badge variant="outline" className="hover:bg-zinc-800 cursor-pointer">RETURN TO BOARD</Badge></a>}
+        />
       </div>
     );
   }
