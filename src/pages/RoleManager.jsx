@@ -19,6 +19,7 @@ export default function RoleManagerPage() {
   const { data: roles = [], isLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: () => base44.entities.Role.list(),
+    enabled: isAdmin
   });
 
   const createMutation = useMutation({
