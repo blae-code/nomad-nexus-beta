@@ -59,7 +59,7 @@ function EventDetail({ id }) {
     enabled: !!id
   });
 
-  const { users: allUsers, userById } = useUserDirectory(event?.created_by ? [event.created_by] : null);
+  const { users: allUsers, userById } = useUserDirectory();
   const creator = event?.created_by ? userById[event.created_by] : null;
   const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
