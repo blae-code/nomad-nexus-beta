@@ -41,10 +41,10 @@ export default function HubPage() {
       subtitle={`Welcome, ${user?.callsign || user?.rsi_handle || 'Operative'}`}
       className="bg-zinc-950"
     >
-      {/* Layout with sidebar */}
+      {/* Layout with left content and right panel */}
       <div className="flex gap-[var(--gutter)] h-full overflow-hidden p-[var(--gutter)]">
         {/* Main content */}
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1">
           <div className="space-y-[var(--gutter)]">
            {/* Quick Access Tiles */}
            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
