@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import {
   Command,
   Search,
@@ -65,14 +66,30 @@ export default function CommandPaletteV3() {
   const [recentCommands, setRecentCommands] = useState([]);
   const [pinnedCommands, setPinnedCommands] = useState([]);
   const [confirmingDistress, setConfirmingDistress] = useState(false);
+  const [statusMenu, setStatusMenu] = useState(false);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Fetch user
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  // Fetch most recent event for comms join
+  const { data: recentEvent } = useQuery({
+    queryKey: ['palette-recent-event'],
+    queryFn: async () => {
+      const events = await base44.entities.Event.filter(
+        { status: ['active', 'pending', 'scheduled'] },
+        '-updated_date',
+        1
+      );
+      return events?.[0] || null;
+    },
+    staleTime: 2 * 60 * 1000, // 2 min cache
+  });
 
   // Load recents and pinned from localStorage
   useEffect(() => {
