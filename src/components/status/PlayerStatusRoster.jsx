@@ -43,16 +43,12 @@ export default function PlayerStatusRoster({ eventId }) {
     initialData: []
   });
 
-  const { data: users } = useQuery({
-    queryKey: ['users-for-roster'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const { users, userById } = useUserDirectory();
 
   // Filter statuses
   const filteredStatuses = React.useMemo(() => {
     return statuses.filter(status => {
-      const user = users.find(u => u.id === status.user_id);
+      const user = userById[status.user_id];
       
       // Filter by rank
       if (filterRank !== 'all' && user?.rank !== filterRank) return false;
