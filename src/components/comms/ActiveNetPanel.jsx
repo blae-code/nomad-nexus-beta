@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Room, RoomEvent, Track } from "livekit-client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -498,8 +497,9 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           roomRef.current = currentRoom;
 
           // 3. Setup Event Listeners BEFORE connect
-          currentRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-             if (track.kind === Track.Kind.Audio) {
+          if (currentRoom.on && typeof currentRoom.on === 'function') {
+            currentRoom.on('trackSubscribed', (track, publication, participant) => {
+             if (track?.kind === 'audio') {
                 try {
                    const elements = track.attach();
                    // Handle attachment result safely
@@ -530,10 +530,10 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 } catch (attachErr) {
                    console.error(`[COMMS] Failed to attach audio track from ${participant.identity}:`, attachErr.message);
                 }
-             }
-          });
+                }
+                });
 
-          currentRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+                currentRoom.on('trackUnsubscribed', (track, publication, participant) => {
              try {
                 const elements = track.detach();
                 if (!elements) return;
@@ -548,17 +548,17 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 console.error(`[COMMS] Failed to detach audio track from ${participant.identity}:`, detachErr.message);
              }
              console.log(`[COMMS] Unsubscribed from ${participant.identity}`);
-          });
+             });
 
-          currentRoom.on(RoomEvent.Reconnecting, () => {
+             currentRoom.on('reconnecting', () => {
              if (mounted) setConnectionState("reconnecting");
-          });
+             });
 
-          currentRoom.on(RoomEvent.Reconnected, () => {
+             currentRoom.on('reconnected', () => {
              if (mounted) setConnectionState("connected");
-          });
+             });
 
-          currentRoom.on(RoomEvent.Disconnected, (reason) => {
+             currentRoom.on('disconnected', (reason) => {
              console.log(`[COMMS] Disconnected: ${reason}`);
              if (mounted && connectionState !== "disconnected") {
                 // Attempt auto-reconnect with exponential backoff
@@ -583,18 +583,19 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 };
 
                 attemptReconnect();
-             }
-          });
+                }
+                });
 
-          currentRoom.on(RoomEvent.ParticipantConnected, (participant) => {
-             console.log(`[COMMS] Participant joined: ${participant.identity}`);
-             if (mounted) setRoom({ ...currentRoom });
-          });
+                currentRoom.on('participantConnected', (participant) => {
+                console.log(`[COMMS] Participant joined: ${participant.identity}`);
+                if (mounted) setRoom({ ...currentRoom });
+                });
 
-          currentRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
-             console.log(`[COMMS] Participant left: ${participant.identity}`);
-             if (mounted) setRoom({ ...currentRoom });
-          });
+                currentRoom.on('participantDisconnected', (participant) => {
+                console.log(`[COMMS] Participant left: ${participant.identity}`);
+                if (mounted) setRoom({ ...currentRoom });
+                });
+                }
 
           // 4. Connect
           console.log(`[COMMS] Connecting to LiveKit: ${url} with token length: ${token.length}`);
