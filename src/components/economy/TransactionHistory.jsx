@@ -18,7 +18,7 @@ export default function TransactionHistory({ cofferId, eventId, limit = 20 }) {
 
   const { data: users } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => base44.entities.User.filter({}),
     initialData: []
   });
 
