@@ -9,6 +9,7 @@ import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
 import PersonalActivityWidget from "@/components/dashboard/PersonalActivityWidget";
 import OrgResourcesWidget from "@/components/dashboard/OrgResourcesWidget";
 import ArmoryStatusPanel from "@/components/dashboard/ArmoryStatusPanel";
+import EventCalendarView from "@/components/dashboard/EventCalendarView";
 
 export default function HubPage() {
   const [user, setUser] = useState(null);
@@ -84,6 +85,9 @@ export default function HubPage() {
             <ArmoryStatusPanel />
           </div>
         </div>
+
+        {/* Event Calendar View */}
+        <EventCalendarView />
 
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
