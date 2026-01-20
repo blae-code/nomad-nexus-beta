@@ -10,6 +10,7 @@ import { hasMinRank } from "@/components/permissions";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignalStrength, PermissionBadge, TerminalCard, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
+import { typographyClasses } from "@/components/utils/typography";
 
 export default function CommsPanel({ eventId }) {
   const [selectedNetId, setSelectedNetId] = React.useState(null);
@@ -140,20 +141,21 @@ export default function CommsPanel({ eventId }) {
            </AnimatePresence>
 
            {selectedNet ? (
-             <div className="space-y-4 relative z-0">
-                <div className="flex justify-between items-start">
-                   <div>
-                      <div className="flex items-center gap-2 mb-1">
-                         <NetTypeIcon type={selectedNet.type} />
-                         <h3 className={cn(
-                            "text-xl font-black font-mono tracking-tighter leading-none transition-colors",
-                            isTransmitting ? "text-red-500 text-shadow" : "text-white"
-                         )}>
-                            {selectedNet.code}
-                         </h3>
-                      </div>
-                      <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider pl-4">{selectedNet.label}</div>
-                   </div>
+           <div className="space-y-4 relative z-0">
+            <div className="flex justify-between items-start">
+               <div>
+                  <div className="flex items-center gap-2 mb-1">
+                     <NetTypeIcon type={selectedNet.type} />
+                     <h3 className={cn(
+                        typographyClasses.netCode,
+                        "transition-colors",
+                        isTransmitting ? "text-red-500" : "text-white"
+                     )}>
+                        {selectedNet.code}
+                     </h3>
+                  </div>
+                  <div className={cn(typographyClasses.labelSecondary, "pl-4")}>{selectedNet.label}</div>
+               </div>
                    <div className="text-right flex flex-col items-end gap-1">
                       <PermissionBadge 
                         canTx={canTx} 
@@ -222,15 +224,15 @@ export default function CommsPanel({ eventId }) {
                   >
                      <div className="flex items-center gap-3">
                         <div className={cn(
-                           "w-1 h-1 rounded-full",
-                           net.type === 'command' ? "bg-red-500" :
-                           net.type === 'general' ? "bg-emerald-500" : "bg-zinc-700"
-                        )} />
-                        <div>
-                           <div className={cn("text-xs font-bold font-mono leading-none mb-0.5", isSelected ? "text-white" : "text-zinc-500 group-hover:text-zinc-300")}>
-                              {net.code}
-                           </div>
-                        </div>
+                                 "w-1 h-1 rounded-full",
+                                 net.type === 'command' ? "bg-red-500" :
+                                 net.type === 'general' ? "bg-emerald-500" : "bg-zinc-700"
+                              )} />
+                              <div>
+                                 <div className={cn(typographyClasses.netCodeSmall, "mb-0.5", isSelected ? "text-white" : "text-zinc-400 group-hover:text-zinc-300")}>
+                                    {net.code}
+                                 </div>
+                              </div>
                      </div>
                      <div className="flex items-center gap-2">
                         <button 
