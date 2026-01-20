@@ -10,103 +10,201 @@ import { cn } from '@/lib/utils';
  * Displays celestial bodies with relative positioning for tactical reference
  */
 
-const STANTON_SYSTEM = {
-  name: 'Stanton System',
-  center: [0, 0],
-  zoom: 2,
-  celestialBodies: [
-    // Primary Star
-    {
-      id: 'stanton',
-      name: 'Stanton (Primary Star)',
-      position: [0, 0],
-      type: 'star',
-      radius: 696000,
-      displayRadius: 800000, // Scaled for visibility
-      color: '#ffaa00',
-      description: 'Class G2V Main Sequence Star',
-      children: []
-    },
-
-    // Planetary System - Crusader (Gas Giant)
-    {
-      id: 'crusader',
-      name: 'Crusader',
-      position: [0, 150000000],
-      type: 'planet',
-      radius: 82000000,
-      displayRadius: 35000000,
-      color: '#4488ff',
-      description: 'Gas Giant - Primary Trade Hub',
-      moons: [
-        { name: 'Usea', position: [0, 165000000], type: 'moon', color: '#888888' },
-        { name: 'Caliban', position: [15000000, 155000000], type: 'moon', color: '#666666' },
-        { name: 'Daymar', position: [-20000000, 150000000], type: 'moon', color: '#aa8844' },
-        { name: 'Yela', position: [10000000, 145000000], type: 'moon', color: '#cccccc' }
-      ]
-    },
-
-    // Planetary System - Stanton (Terrestrial)
-    {
-      id: 'stanton-planet',
-      name: 'Stanton (Planet)',
-      position: [0, 60000000],
-      type: 'planet',
-      radius: 6400000,
-      displayRadius: 8000000,
-      color: '#228844',
-      description: 'Terrestrial Planet',
-      moons: []
-    },
-
-    // Planetary System - Hurston (Terrestrial)
-    {
-      id: 'hurston',
-      name: 'Hurston',
-      position: [80000000, 0],
-      type: 'planet',
-      radius: 6480000,
-      displayRadius: 8000000,
-      color: '#664488',
-      description: 'Terrestrial Planet - UEE Space'
-    },
-
-    // Planetary System - ArcCorp (Terrestrial)
-    {
-      id: 'arccorp',
-      name: 'ArcCorp',
-      position: [-80000000, 0],
-      type: 'planet',
-      radius: 6300000,
-      displayRadius: 8000000,
-      color: '#444488',
-      description: 'Terrestrial Planet - Corporate Hub'
-    },
-
-    // Planetary System - Microtech (Terrestrial)
-    {
-      id: 'microtech',
-      name: 'Microtech',
-      position: [0, -60000000],
-      type: 'planet',
-      radius: 5400000,
-      displayRadius: 7000000,
-      color: '#00dddd',
-      description: 'Terrestrial Planet - Tech Center'
-    },
-
-    // Planetary System - Davien (Binary Companion)
-    {
-      id: 'davien',
-      name: 'Davien (Binary Star)',
-      position: [200000000, 200000000],
-      type: 'star',
-      radius: 500000,
-      displayRadius: 600000,
-      color: '#ff6600',
-      description: 'Class K2 Binary Companion'
-    }
-  ]
+const STAR_SYSTEMS = {
+  stanton: {
+    name: 'Stanton System',
+    center: [0, 0],
+    zoom: 2,
+    description: 'UEE Core System',
+    celestialBodies: [
+      {
+        id: 'stanton',
+        name: 'Stanton (Primary Star)',
+        position: [0, 0],
+        type: 'star',
+        radius: 696000,
+        displayRadius: 800000,
+        color: '#ffaa00',
+        description: 'Class G2V Main Sequence Star'
+      },
+      {
+        id: 'crusader',
+        name: 'Crusader',
+        position: [0, 150000000],
+        type: 'planet',
+        radius: 82000000,
+        displayRadius: 35000000,
+        color: '#4488ff',
+        description: 'Gas Giant - Primary Trade Hub',
+        moons: [
+          { name: 'Usea', position: [0, 165000000], type: 'moon', color: '#888888' },
+          { name: 'Caliban', position: [15000000, 155000000], type: 'moon', color: '#666666' },
+          { name: 'Daymar', position: [-20000000, 150000000], type: 'moon', color: '#aa8844' },
+          { name: 'Yela', position: [10000000, 145000000], type: 'moon', color: '#cccccc' }
+        ]
+      },
+      {
+        id: 'stanton-planet',
+        name: 'Stanton (Planet)',
+        position: [0, 60000000],
+        type: 'planet',
+        radius: 6400000,
+        displayRadius: 8000000,
+        color: '#228844',
+        description: 'Terrestrial Planet',
+        moons: []
+      },
+      {
+        id: 'hurston',
+        name: 'Hurston',
+        position: [80000000, 0],
+        type: 'planet',
+        radius: 6480000,
+        displayRadius: 8000000,
+        color: '#664488',
+        description: 'Terrestrial Planet - UEE Space'
+      },
+      {
+        id: 'arccorp',
+        name: 'ArcCorp',
+        position: [-80000000, 0],
+        type: 'planet',
+        radius: 6300000,
+        displayRadius: 8000000,
+        color: '#444488',
+        description: 'Terrestrial Planet - Corporate Hub'
+      },
+      {
+        id: 'microtech',
+        name: 'Microtech',
+        position: [0, -60000000],
+        type: 'planet',
+        radius: 5400000,
+        displayRadius: 7000000,
+        color: '#00dddd',
+        description: 'Terrestrial Planet - Tech Center'
+      },
+      {
+        id: 'davien',
+        name: 'Davien (Binary Star)',
+        position: [200000000, 200000000],
+        type: 'star',
+        radius: 500000,
+        displayRadius: 600000,
+        color: '#ff6600',
+        description: 'Class K2 Binary Companion'
+      }
+    ]
+  },
+  pyro: {
+    name: 'Pyro System',
+    center: [0, 0],
+    zoom: 2,
+    description: 'Lawless System - High Risk',
+    celestialBodies: [
+      {
+        id: 'pyro-star',
+        name: 'Pyro (Primary Star)',
+        position: [0, 0],
+        type: 'star',
+        radius: 720000,
+        displayRadius: 850000,
+        color: '#ff3333',
+        description: 'Class M1 Red Dwarf - Unstable'
+      },
+      {
+        id: 'pyro-i',
+        name: 'Pyro I',
+        position: [0, 120000000],
+        type: 'planet',
+        radius: 4200000,
+        displayRadius: 6000000,
+        color: '#ff6600',
+        description: 'Asteroid Belt / Debris Field'
+      },
+      {
+        id: 'pyro-ii',
+        name: 'Pyro II',
+        position: [100000000, 80000000],
+        type: 'planet',
+        radius: 5800000,
+        displayRadius: 7500000,
+        color: '#ccaa00',
+        description: 'Terrestrial Planet - Mining Operations',
+        moons: [
+          { name: 'Wala', position: [110000000, 85000000], type: 'moon', color: '#999966' }
+        ]
+      },
+      {
+        id: 'pyro-iii',
+        name: 'Pyro III',
+        position: [-90000000, 70000000],
+        type: 'planet',
+        radius: 6100000,
+        displayRadius: 8000000,
+        color: '#884444',
+        description: 'Terrestrial Planet - Pirate Haven',
+        moons: [
+          { name: 'Hara', position: [-95000000, 75000000], type: 'moon', color: '#665555' },
+          { name: 'Ita', position: [-85000000, 65000000], type: 'moon', color: '#775555' }
+        ]
+      }
+    ]
+  },
+  nyx: {
+    name: 'Nyx System',
+    center: [0, 0],
+    zoom: 2,
+    description: 'Mysterious System - Limited Access',
+    celestialBodies: [
+      {
+        id: 'nyx-star',
+        name: 'Nyx (Primary Star)',
+        position: [0, 0],
+        type: 'star',
+        radius: 650000,
+        displayRadius: 780000,
+        color: '#6600ff',
+        description: 'Class B9 Blue-White Star'
+      },
+      {
+        id: 'nyx-i',
+        name: 'Nyx I',
+        position: [0, 100000000],
+        type: 'planet',
+        radius: 4900000,
+        displayRadius: 6500000,
+        color: '#4444ff',
+        description: 'Terrestrial Planet - Ice World',
+        moons: [
+          { name: 'Tyche', position: [0, 110000000], type: 'moon', color: '#ccccdd' }
+        ]
+      },
+      {
+        id: 'nyx-ii',
+        name: 'Nyx II',
+        position: [110000000, -60000000],
+        type: 'planet',
+        radius: 6200000,
+        displayRadius: 8200000,
+        color: '#aa00ff',
+        description: 'Gas Giant - Unstable Atmosphere'
+      },
+      {
+        id: 'nyx-iii',
+        name: 'Nyx III',
+        position: [-120000000, 40000000],
+        type: 'planet',
+        radius: 5500000,
+        displayRadius: 7200000,
+        color: '#00ff99',
+        description: 'Terrestrial Planet - Exotic Minerals',
+        moons: [
+          { name: 'Ares', position: [-128000000, 45000000], type: 'moon', color: '#44dd88' }
+        ]
+      }
+    ]
+  }
 };
 
 const ZoomControls = () => {
@@ -140,7 +238,9 @@ const ZoomControls = () => {
 };
 
 export default function StarCitizenMap({ interactive = true }) {
+  const [selectedSystem, setSelectedSystem] = useState('stanton');
   const [selectedBody, setSelectedBody] = useState(null);
+  const currentSystem = STAR_SYSTEMS[selectedSystem];
 
   const createBodyIcon = (type, color) => {
     const svg = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -159,12 +259,30 @@ export default function StarCitizenMap({ interactive = true }) {
   return (
     <div className="w-full h-full flex flex-col bg-zinc-900 border border-zinc-800 rounded">
       {/* Header */}
-      <div className="flex gap-2 p-3 border-b border-zinc-800 bg-zinc-950 items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex gap-2 p-3 border-b border-zinc-800 bg-zinc-950 items-center justify-between flex-wrap">
+        <div className="flex items-center gap-3">
           <Navigation className="w-4 h-4 text-[#ea580c]" />
           <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-            Stanton System Tactical Map
+            {currentSystem.name}
           </span>
+          <div className="flex gap-1 border-l border-zinc-700 pl-3">
+            {Object.entries(STAR_SYSTEMS).map(([key, system]) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setSelectedSystem(key);
+                  setSelectedBody(null);
+                }}
+                className={`px-2 py-1 text-[9px] font-bold uppercase transition-all ${
+                  selectedSystem === key
+                    ? 'bg-[#ea580c] text-black'
+                    : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
+                }`}
+              >
+                {system.name.split(' ')[0]}
+              </button>
+            ))}
+          </div>
         </div>
         {selectedBody && (
           <div className="text-[10px] text-zinc-400 font-mono">
@@ -191,7 +309,7 @@ export default function StarCitizenMap({ interactive = true }) {
           />
 
           {/* Render celestial bodies */}
-          {STANTON_SYSTEM.celestialBodies.map((body) => (
+          {currentSystem.celestialBodies.map((body) => (
             <React.Fragment key={body.id}>
               {/* Planet/Star circle */}
               <Circle
@@ -268,7 +386,7 @@ export default function StarCitizenMap({ interactive = true }) {
 
       {/* Info Footer */}
       <div className="bg-zinc-950 border-t border-zinc-800 px-3 py-2 text-[9px] text-zinc-500 font-mono">
-        <div>Stanton System • Scale adjusted for tactical display • Use zoom controls to navigate</div>
+        <div>{currentSystem.name} • {currentSystem.description} • Scale adjusted for tactical display • Use zoom controls to navigate</div>
       </div>
 
       <style>{`
