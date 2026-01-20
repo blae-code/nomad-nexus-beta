@@ -9,7 +9,7 @@ export default function EventEconomy({ eventId }) {
   // Calculate event totals
   const { data: transactions } = useQuery({
     queryKey: ['transactions', null, eventId],
-    queryFn: () => base44.entities.CofferTransaction.list({ filter: { event_id: eventId } }),
+    queryFn: () => base44.entities.CofferTransaction.filter({ event_id: eventId }),
     initialData: []
   });
 
