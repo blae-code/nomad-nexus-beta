@@ -160,7 +160,7 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   // Build participants list from room
   const participants = React.useMemo(() => {
     if (!room || !participantUsers) return [];
-    
+
     return participantUsers.map(u => {
        const status = statuses.find(s => s.user_id === u.id);
        const isSpeaking = activeSpeakers.has(u.id);
@@ -178,6 +178,11 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
        return (priority[a.status] || 99) - (priority[b.status] || 99);
     });
   }, [room, participantUsers, statuses, activeSpeakers, voiceMutes]);
+
+  // Get transmitting users for activity indicator
+  const transmittingUsers = React.useMemo(() => {
+    return participants.filter(p => p.isSpeaking);
+  }, [participants]);
 
   return (
     <div className="space-y-3">
