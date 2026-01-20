@@ -17,20 +17,20 @@ const STATUS_COLORS = {
 };
 
 export default function RealtimeTeamStatus() {
-  const { data: presences } = useQuery({
-    queryKey: ['team-status'],
-    queryFn: () => base44.entities.UserPresence.list(),
-    initialData: [],
-    refetchInterval: 2000
-  });
+   const { data: presences } = useQuery({
+     queryKey: ['team-status'],
+     queryFn: () => base44.entities.UserPresence.list(),
+     initialData: [],
+     refetchInterval: 2000
+   });
 
-  const userIds = React.useMemo(() => presences.map(p => p.user_id).filter(Boolean), [presences]);
-  const { userById, users: userList } = useUserDirectory(userIds.length > 0 ? userIds : null);
+   const presenceUserIds = presences.map(p => p.user_id).filter(Boolean);
+   const { userById, users } = useUserDirectory(presenceUserIds.length > 0 ? presenceUserIds : null);
 
-  const onlineCount = presences.filter(p => p.status !== 'offline').length;
-  const transmittingCount = presences.filter(p => p.is_transmitting).length;
+   const onlineCount = presences.filter(p => p.status !== 'offline').length;
+   const transmittingCount = presences.filter(p => p.is_transmitting).length;
 
-  const getUser = (userId) => userById[userId];
+   const getUser = (userId) => userById[userId];
 
   return (
     <OpsPanel>
@@ -41,7 +41,7 @@ export default function RealtimeTeamStatus() {
             TEAM STATUS
           </span>
           <span className="text-[9px] font-mono text-emerald-400">
-            {onlineCount}/{userList.length}
+            {onlineCount}/{users.length}
           </span>
         </OpsPanelTitle>
       </OpsPanelHeader>
