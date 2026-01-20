@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Users, Filter, Activity, MapPin, Clock } from "lucide-react";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 const STATUS_COLORS = {
   READY: 'bg-emerald-500',
