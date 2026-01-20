@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import VoiceNetForm from '@/components/comms/VoiceNetForm';
 import VoiceNetList from '@/components/comms/VoiceNetList';
+import VoiceNetFilters from '@/components/comms/VoiceNetFilters';
 import NetChannelManager from '@/components/comms/NetChannelManager';
 
 export default function VoiceNetManager() {
