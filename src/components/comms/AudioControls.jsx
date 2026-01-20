@@ -276,18 +276,27 @@ export default function AudioControls({ onStateChange, room, defaultMode = "PTT"
                <Mic className="w-3 h-3" />
                Input Device
              </Label>
-             <Select value={selectedMic} onValueChange={setSelectedMic}>
-               <SelectTrigger className="h-8 text-xs font-mono bg-zinc-900 border-zinc-800">
-                 <SelectValue placeholder="Select microphone" />
-               </SelectTrigger>
-               <SelectContent>
-                 {audioInputDevices.map(device => (
-                   <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs font-mono">
-                     {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
+             {audioInputDevices.length === 0 ? (
+               <div className="h-8 px-3 py-2 rounded border border-zinc-800 bg-zinc-950 text-[10px] text-amber-600 font-mono uppercase tracking-wider flex items-center">
+                 ⚠ No devices / Check permissions
+               </div>
+             ) : (
+               <Select value={selectedMic || 'default'} onValueChange={setSelectedMic}>
+                 <SelectTrigger className="h-8 text-xs font-mono bg-zinc-900 border-zinc-800">
+                   <SelectValue placeholder="Select microphone" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="default" className="text-xs font-mono">
+                     System Default
                    </SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
+                   {audioInputDevices.map(device => (
+                     <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs font-mono">
+                       {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             )}
            </div>
 
            {/* Output Selection */}
