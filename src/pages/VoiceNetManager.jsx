@@ -5,15 +5,18 @@ import { ArrowLeft, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import VoiceNetForm from '@/components/comms/VoiceNetForm';
 import VoiceNetList from '@/components/comms/VoiceNetList';
+import NetChannelManager from '@/components/comms/NetChannelManager';
 
 export default function VoiceNetManager() {
   const [showForm, setShowForm] = useState(false);
   const [editingNet, setEditingNet] = useState(null);
   const [netActivity, setNetActivity] = useState({});
+  const [selectedNetForChannels, setSelectedNetForChannels] = useState(null);
   const queryClient = useQueryClient();
 
   // Check admin access
@@ -159,7 +162,22 @@ export default function VoiceNetManager() {
 
       {/* Content */}
       <div className="flex-1 overflow-hidden px-6 py-6">
-        {showForm ? (
+        {selectedNetForChannels ? (
+          <div className="h-full flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedNetForChannels(null)}
+                className="text-[#ea580c] hover:text-[#c2410c] transition-colors"
+              >
+                ← Back to Nets
+              </button>
+              <h2 className="text-lg font-bold text-white">
+                Manage Channels: {selectedNetForChannels.code}
+              </h2>
+            </div>
+            <NetChannelManager netId={selectedNetForChannels.id} />
+          </div>
+        ) : showForm ? (
           <VoiceNetForm
             net={editingNet}
             squads={squads}
@@ -183,17 +201,39 @@ export default function VoiceNetManager() {
 
             <div className="flex-1 overflow-y-auto">
               <TabsContent value="active" className="m-0">
-                <VoiceNetList
-                  nets={activeNets}
-                  netActivity={netActivity}
-                  onEdit={(net) => {
-                    setEditingNet(net);
-                    setShowForm(true);
-                  }}
-                  onDelete={(netId) => deleteMutation.mutate(netId)}
-                  onArchive={(netId) => archiveMutation.mutate(netId)}
-                  isLoading={deleteMutation.isPending || archiveMutation.isPending}
-                />
+                <div className="space-y-4">
+                  <VoiceNetList
+                    nets={activeNets}
+                    netActivity={netActivity}
+                    onEdit={(net) => {
+                      setEditingNet(net);
+                      setShowForm(true);
+                    }}
+                    onDelete={(netId) => deleteMutation.mutate(netId)}
+                    onArchive={(netId) => archiveMutation.mutate(netId)}
+                    isLoading={deleteMutation.isPending || archiveMutation.isPending}
+                  />
+                  {activeNets.length > 0 && (
+                    <Card className="bg-zinc-900 border-zinc-800">
+                      <CardContent className="p-4">
+                        <div className="text-sm font-semibold text-zinc-300 mb-3">Manage Channels</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {activeNets.map(net => (
+                            <Button
+                              key={net.id}
+                              onClick={() => setSelectedNetForChannels(net)}
+                              variant="outline"
+                              className="justify-start gap-2 text-xs h-8"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              {net.code} Channels
+                            </Button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="archived" className="m-0">
