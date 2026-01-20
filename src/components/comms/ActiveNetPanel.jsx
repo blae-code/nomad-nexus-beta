@@ -1082,7 +1082,6 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
          </TerminalCard>
          )}
          </div>
-         </TerminalCard>
          </div>
          );
          }
