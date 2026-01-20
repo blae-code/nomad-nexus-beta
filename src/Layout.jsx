@@ -138,8 +138,8 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <div className="w-8 h-8 bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-[#ea580c] transition-colors">
                  <User className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c]" />
-              </div>
-           </a>
+                 </div>
+                 </button>
         </div>
       </header>
 
