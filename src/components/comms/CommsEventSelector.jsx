@@ -25,7 +25,7 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
 
   return (
     <div className="w-full">
-      <Select value={selectedEventId} onValueChange={onSelect}>
+      <Select value={selectedEventId || "none"} onValueChange={(val) => onSelect(val === "none" ? null : val)}>
         <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-zinc-100 h-12">
            <div className="flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full ${selectedEventId ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
@@ -33,18 +33,15 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
            </div>
         </SelectTrigger>
         <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-          {activeEvents.length === 0 ? (
-             <SelectItem value="__no_events__" disabled>No Active Signals</SelectItem>
-          ) : (
-             activeEvents.map(event => (
-               <SelectItem key={event.id} value={event.id || "__invalid__"}>
-                 <div className="flex items-center gap-2">
-                   <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
-                   <span className="font-bold">{event.title}</span>
-                 </div>
-               </SelectItem>
-             ))
-          )}
+          <SelectItem value="none">No Operation Selected</SelectItem>
+          {activeEvents.map(event => (
+            <SelectItem key={event.id} value={event.id}>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
+                <span className="font-bold">{event.title}</span>
+              </div>
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
