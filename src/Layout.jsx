@@ -46,6 +46,10 @@ export default function Layout({ children, currentPageName }) {
           --font-sans: 'Rajdhani', sans-serif;
           --font-mono: 'JetBrains Mono', monospace;
           --radius: 0px !important;
+          --rail-w-collapsed: 72px;
+          --rail-w-expanded: 240px;
+          --gutter: 16px;
+          --divider-color: #27272a;
         }
 
         body {
