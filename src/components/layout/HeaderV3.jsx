@@ -122,28 +122,25 @@ export default function HeaderV3() {
     window.headerFetchPresence = fetchPresence;
   }, [user]);
 
-  // Ping for latency (pauses if hidden)
-  useEffect(() => {
-    const ping = async () => {
-      const start = performance.now();
-      try {
-        await base44.auth.me();
-        setLatency(Math.round(performance.now() - start));
-        setConnectionStatus('OPTIMAL');
-        // Trigger data tick effect
-        setNetDataTickActive(true);
-        setTimeout(() => setNetDataTickActive(false), 150);
-      } catch (e) {
-        setConnectionStatus('DEGRADED');
-      }
-    };
-
-    if (isVisible) {
-      ping();
-      const interval = setInterval(ping, 30000);
-      return () => clearInterval(interval);
+  // Ping for latency on demand (called from voice channel events)
+  const ping = async () => {
+    const start = performance.now();
+    try {
+      await base44.auth.me();
+      setLatency(Math.round(performance.now() - start));
+      setConnectionStatus('OPTIMAL');
+      // Trigger data tick effect
+      setNetDataTickActive(true);
+      setTimeout(() => setNetDataTickActive(false), 150);
+    } catch (e) {
+      setConnectionStatus('DEGRADED');
     }
-  }, [isVisible]);
+  };
+
+  // Expose for manual triggering from voice events
+  useEffect(() => {
+    window.headerPing = ping;
+  }, []);
 
   const handleLogout = () => {
     setUserMenuOpen(false);
