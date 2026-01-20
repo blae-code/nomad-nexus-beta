@@ -240,16 +240,20 @@ export default function HeaderV3() {
   }, []);
 
   const handleStatusChange = async (newStatus) => {
-    if (!userPresence) return;
+    if (!userPresence?.id) {
+      console.error('No presence record to update');
+      return;
+    }
     try {
-      await base44.entities.UserPresence.update(userPresence.id, { 
+      const updated = await base44.entities.UserPresence.update(userPresence.id, { 
         status: newStatus,
         last_activity: new Date().toISOString(),
       });
-      setUserPresence({ ...userPresence, status: newStatus });
+      setUserPresence(updated);
       setStatusMenuOpen(false);
     } catch (e) {
       console.error('Failed to update status:', e);
+      alert(`Failed to update status: ${e.message}`);
     }
   };
 
