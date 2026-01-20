@@ -1,4 +1,19 @@
-/* Layout Specification & Grid Variables */
+/* ============================================================
+   NO-SCROLL CONTRACT: Prevent browser scrollbar globally
+   ============================================================ */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================================
+   Layout Specification & Grid Variables
+   ============================================================ */
 :root {
   /* Core dimensions */
   --rail-w: 72px;
