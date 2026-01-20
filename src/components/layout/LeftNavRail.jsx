@@ -10,21 +10,25 @@ export default function LeftNavRail({ currentPage, user }) {
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [userRank, setUserRank] = useState('Vagrant');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [navSections, setNavSections] = useState([]);
+  const [moreItems, setMoreItems] = useState([]);
 
-  // Fetch user data to determine permissions
+  // Fetch user data to determine permissions and update nav
   useEffect(() => {
     if (user) {
       setUserRank(user.rank || 'Vagrant');
       setIsAdmin(user.role === 'admin');
     }
-  }, [user]);
 
-  // Get nav items filtered by user permissions
-  const navSections = PAGES_CONFIG.getNavItemsForUser(userRank, isAdmin);
-  const moreItems = PAGES_CONFIG.getMoreItemsForUser(userRank, isAdmin);
+    // Update navigation items when rank/admin status changes
+    if (PAGES_CONFIG?.getNavItemsForUser) {
+      setNavSections(PAGES_CONFIG.getNavItemsForUser(userRank, isAdmin));
+      setMoreItems(PAGES_CONFIG.getMoreItemsForUser(userRank, isAdmin));
+    }
+  }, [user, userRank, isAdmin]);
 
   // Flatten primary nav items for easier access
-  const allNavItems = navSections.flatMap(section => section.items);
+  const allNavItems = navSections.flatMap(section => section.items || []);
 
   return (
     <nav className="w-20 bg-zinc-950 border-r border-zinc-800 flex flex-col items-center gap-2 py-4 shrink-0 relative">
