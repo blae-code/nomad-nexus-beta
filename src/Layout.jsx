@@ -10,6 +10,7 @@ import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import LeftNavRail from "@/components/layout/LeftNavRail";
 import ContextPanel from "@/components/layout/ContextPanel";
+import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken, clearAccessToken } from "@/components/hooks/useAccessToken";
 
@@ -165,7 +166,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </header>
 
-      {/* Page Content - OpsShell Layout */}
+      {/* Page Content - AppShell Grid Layout */}
       <div className="flex-1 flex overflow-hidden relative">
          {/* Left Nav Rail */}
          <LeftNavRail currentPage={currentPage} user={user} />
@@ -173,7 +174,7 @@ export default function Layout({ children, currentPageName }) {
          {/* Main Content with Activity Bar */}
          <div className="flex-1 flex overflow-hidden flex-col">
             <ActivityBar />
-            <div className="flex-1 relative overflow-hidden flex flex-col">
+            <div className="flex-1 relative overflow-hidden flex flex-col page-shell">
                {children}
             </div>
          </div>
@@ -181,6 +182,9 @@ export default function Layout({ children, currentPageName }) {
          {/* Right Context Panel */}
          <ContextPanel currentPage={currentPage} user={user} />
       </div>
+
+      {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
+      <LayoutDebugMode />
     </div>
   );
 }
