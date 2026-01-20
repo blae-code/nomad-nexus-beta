@@ -18,6 +18,7 @@ const pageMap = {
   '/nomadopsdashboard': 'mission',
   '/events': 'events',
   '/commsconsole': 'comms',
+  '/intelligence': 'intelligence',
   '/admin': 'admin',
   '/': 'hub',
 };
