@@ -66,28 +66,28 @@ export default function TreasuryPage() {
                  </div>
               )}
               {coffersWithBalance.map(coffer => (
-                 <Card 
+                 <button
                    key={coffer.id} 
                    onClick={() => setSelectedCoffer(coffer)}
                    className={cn(
-                      "cursor-pointer transition-all hover:border-amber-900/50 group relative overflow-hidden",
-                      selectedCoffer?.id === coffer.id ? "bg-zinc-900 border-amber-700 shadow-[0_0_15px_rgba(180,83,9,0.1)]" : "bg-zinc-900 border-zinc-800"
+                      "w-full text-left p-3 border transition-all duration-100",
+                      selectedCoffer?.id === coffer.id 
+                         ? "bg-zinc-900/60 border-[#ea580c]/50" 
+                         : "bg-zinc-950 border-zinc-800/50 hover:border-zinc-700/50"
                    )}
                  >
-                    <CardContent className="p-4">
-                       <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                             <Coins className={cn("w-4 h-4", selectedCoffer?.id === coffer.id ? "text-amber-500" : "text-zinc-600")} />
-                             <h4 className={cn("font-bold", selectedCoffer?.id === coffer.id ? "text-white" : "text-zinc-300")}>{coffer.name}</h4>
-                          </div>
-                          <Badge variant="outline" className="text-[10px] border-zinc-800 text-zinc-500 bg-zinc-950">{coffer.type}</Badge>
+                    <div className="flex justify-between items-start mb-2">
+                       <div className="flex items-center gap-2">
+                          <Coins className={cn("w-3.5 h-3.5", selectedCoffer?.id === coffer.id ? "text-[#ea580c]" : "text-zinc-600")} />
+                          <h4 className={cn("text-xs font-bold", selectedCoffer?.id === coffer.id ? "text-white" : "text-zinc-300")}>{coffer.name}</h4>
                        </div>
-                       <div className="text-2xl font-mono font-bold text-zinc-200">
-                          {(coffer.balance || 0).toLocaleString()} <span className="text-amber-600 text-lg">¤</span>
-                       </div>
-                       <div className="text-xs text-zinc-500 mt-1 line-clamp-1">{coffer.description}</div>
-                    </CardContent>
-                 </Card>
+                       <span className="text-[9px] font-mono uppercase text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 border border-zinc-800">{coffer.type}</span>
+                    </div>
+                    <div className="text-lg font-mono font-bold text-zinc-200">
+                       {(coffer.balance || 0).toLocaleString()} <span className="text-[#ea580c] text-sm">¤</span>
+                    </div>
+                    {coffer.description && <div className="text-[9px] text-zinc-600 mt-1 line-clamp-1">{coffer.description}</div>}
+                 </button>
               ))}
            </div>
 
