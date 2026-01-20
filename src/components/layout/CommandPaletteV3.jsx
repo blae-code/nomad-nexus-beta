@@ -780,8 +780,8 @@ export default function CommandPaletteV3() {
             )}
 
             {/* Distress confirmation */}
-            {confirmingDistress && (
-              <div className="border-t border-zinc-800 bg-red-950/20 p-3 text-center">
+             {confirmingDistress && (
+               <div className="border-t border-zinc-800 bg-red-950/20 p-2 text-center">
                 <p className="text-xs text-red-400 mb-2 font-bold">CONFIRM DISTRESS SIGNAL?</p>
                 <div className="flex gap-2 justify-center">
                   <button
