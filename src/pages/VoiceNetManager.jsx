@@ -122,6 +122,59 @@ export default function VoiceNetManager() {
     }
   });
 
+  // Bulk archive mutation
+  const bulkArchiveMutation = useMutation({
+    mutationFn: (netIds) =>
+      Promise.all(netIds.map(id => base44.entities.VoiceNet.update(id, { status: 'inactive' }))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-voice-nets'] });
+      toast.success('Nets archived');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to archive nets');
+    }
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (netIds) =>
+      Promise.all(netIds.map(id => base44.entities.VoiceNet.delete(id))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-voice-nets'] });
+      toast.success('Nets deleted');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete nets');
+    }
+  });
+
+  // Set net as default mutation
+  const setDefaultMutation = useMutation({
+    mutationFn: async (netId) => {
+      const net = nets.find(n => n.id === netId);
+      if (!net) throw new Error('Net not found');
+      
+      // Clear previous defaults for this squad
+      if (net.linked_squad_id) {
+        const otherNets = nets.filter(n => 
+          n.linked_squad_id === net.linked_squad_id && n.id !== netId && n.is_default_for_squad
+        );
+        await Promise.all(
+          otherNets.map(n => base44.entities.VoiceNet.update(n.id, { is_default_for_squad: false }))
+        );
+      }
+      
+      return base44.entities.VoiceNet.update(netId, { is_default_for_squad: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-voice-nets'] });
+      toast.success('Default net set');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to set default net');
+    }
+  });
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="h-full flex items-center justify-center bg-zinc-950">
