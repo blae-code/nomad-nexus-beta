@@ -451,9 +451,9 @@ export default function HeaderV3() {
               backgroundSize: '100% 2px',
             }}
           >
-            <div className="px-2.5 py-1.5 border-b border-zinc-800/40 bg-zinc-900/50">
+            <div className="px-3 py-2 border-b border-zinc-800/40 bg-zinc-900/50">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">diagnostics</span>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">diagnostics</span>
                 <button
                   onClick={() => setDiagnosticsOpen(false)}
                   className="text-zinc-600 hover:text-zinc-400 text-sm leading-none"
@@ -462,7 +462,7 @@ export default function HeaderV3() {
                 </button>
               </div>
             </div>
-            <div className="p-2.5 space-y-1.5 text-[8px] font-mono">
+            <div className="p-3 space-y-2 text-[9px] font-mono">
               <div className="flex justify-between text-zinc-500">
                 <span className="uppercase tracking-wider">CONN</span>
                 <span className={connectionStatus === 'OPTIMAL' ? 'text-emerald-400' : 'text-red-400'}>{connectionStatus}</span>
