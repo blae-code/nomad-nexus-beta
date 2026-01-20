@@ -584,7 +584,7 @@ export default function CommandPaletteV3() {
 
         <div
           className={cn(
-            'relative flex items-center h-8 bg-zinc-900 border transition-all duration-300 overflow-hidden',
+            'relative flex items-center h-8 bg-zinc-900 border transition-all duration-200 overflow-hidden focus-within:border-[#ea580c] focus-within:shadow-[0_0_20px_rgba(234,88,12,0.2)]',
             isOpen ? 'border-[#ea580c] shadow-[0_0_20px_rgba(234,88,12,0.2)]' : 'border-zinc-800 hover:border-zinc-700'
           )}
         >
