@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Plus, Loader2, AlertCircle, Radio, Activity, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { typographyClasses } from '@/components/utils/typography';
 
 const typeIcons = {
   STATUS: Activity,
@@ -162,19 +164,19 @@ export default function EventTimeline({ eventId }) {
                   <div className="flex items-start gap-2 mb-1">
                     <Icon className="w-3 h-3 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-zinc-100 truncate">{log.summary}</div>
-                      <div className="text-zinc-500 font-mono text-[9px] mt-0.5">
-                        {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-[8px] shrink-0">
-                      {log.type}
-                    </Badge>
+                       <div className={cn(typographyClasses.logContent, "text-zinc-100 truncate")}>{log.summary}</div>
+                       <div className={cn(typographyClasses.logTimestamp, "mt-0.5")}>
+                         {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                       </div>
+                     </div>
+                     <Badge variant="outline" className={cn(typographyClasses.netCodeSmall, "text-[8px] shrink-0")}>
+                       {log.type}
+                     </Badge>
                   </div>
                   {log.details && typeof log.details === 'object' && Object.keys(log.details).length > 0 && (
-                    <div className="mt-2 text-[8px] text-zinc-500 pl-5 font-mono">
+                    <div className={cn(typographyClasses.logEntry, "mt-2 pl-5")}>
                       {Object.entries(log.details).slice(0, 2).map(([k, v]) => (
-                        <div key={k}>{k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
+                        <div key={k} className={typographyClasses.timestamp}>{k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
                       ))}
                     </div>
                   )}
