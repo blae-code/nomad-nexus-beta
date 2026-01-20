@@ -388,14 +388,14 @@ export default function HeaderV3() {
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className={cn(
-              'flex items-center justify-center w-8 h-8 border text-[9px] font-mono transition-all duration-100',
+              'flex items-center justify-center w-9 h-9 border text-[10px] font-mono transition-all duration-100',
               userMenuOpen
                 ? 'bg-[#ea580c]/20 border-[#ea580c]/60 text-[#ea580c]'
                 : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-500 hover:border-zinc-700/50 hover:text-zinc-400'
             )}
             title="User Menu"
           >
-            <Cog className="w-3.5 h-3.5" />
+            <Cog className="w-4 h-4" />
           </button>
 
           {userMenuOpen && (
