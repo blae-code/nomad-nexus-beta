@@ -384,6 +384,9 @@ export default function HeaderV3() {
 
       {/* RIGHT: Telemetry + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Time Clocks */}
+        <TimeClock />
+
         {/* Connection Status / Diagnostics Trigger */}
         <button
           onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
