@@ -17,6 +17,7 @@ import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
+import Intelligence from './pages/Intelligence';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "UniverseMap": UniverseMap,
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
+    "Intelligence": Intelligence,
 }
 
 export const pagesConfig = {
