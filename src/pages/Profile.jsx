@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Shield, Tag, Save, History, AlertTriangle, MessageSquare, Pin } from "lucide-react";
+import { User, Shield, Tag, Save, History, AlertTriangle, MessageSquare, Pin, Radio } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRankColorClass } from "@/components/utils/rankUtils";
@@ -76,6 +76,24 @@ export default function ProfilePage() {
     enabled: !!user?.assigned_role_ids
   });
 
+  // Fetch current voice channel status
+  const { data: voiceStatus } = useQuery({
+    queryKey: ['voice-status', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      // Check if user has an active voice net connection
+      // This would be populated by the voice system when user joins
+      const playerStatus = await base44.entities.PlayerStatus.filter({ 
+        user_id: user.id 
+      });
+      
+      return playerStatus[0] || null;
+    },
+    enabled: !!user,
+    refetchInterval: 5000
+  });
+
   const onSubmit = async (data) => {
     try {
       await base44.auth.updateMe({
@@ -140,6 +158,36 @@ export default function ProfilePage() {
 
              {/* Profile Tab */}
              <TabsContent value="profile" className="space-y-6">
+                {/* Voice Channel Status */}
+                {voiceStatus && (
+                   <Card className="bg-zinc-950 border-zinc-800">
+                      <CardHeader className="border-b border-zinc-900 bg-emerald-950/20">
+                         <CardTitle className="text-lg font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-2">
+                            <Radio className="w-4 h-4 animate-pulse" />
+                            Active Voice Connection
+                         </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                         <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                               <div className="text-zinc-500 text-xs mb-1">Status</div>
+                               <div className="font-bold text-white">{voiceStatus.status || 'READY'}</div>
+                            </div>
+                            <div>
+                               <div className="text-zinc-500 text-xs mb-1">Role</div>
+                               <div className="font-bold text-white">{voiceStatus.role || 'OTHER'}</div>
+                            </div>
+                            {voiceStatus.current_location && (
+                               <div className="col-span-2">
+                                  <div className="text-zinc-500 text-xs mb-1">Current Location</div>
+                                  <div className="font-mono text-zinc-300 text-xs">{voiceStatus.current_location}</div>
+                               </div>
+                            )}
+                         </div>
+                      </CardContent>
+                   </Card>
+                )}
+
                 <Card className="bg-zinc-950 border-zinc-800">
                    <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
                       <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">

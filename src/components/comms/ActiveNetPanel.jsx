@@ -15,6 +15,7 @@ import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
 import HailQueue from "@/components/comms/HailQueue";
 import VoiceCallIndicator from "./VoiceCallIndicator";
+import VolumeControls from "@/components/comms/VolumeControls";
 import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
 
 function CommsLog({ eventId }) {
@@ -61,6 +62,7 @@ function CommsLog({ eventId }) {
 function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [activeSpeakers, setActiveSpeakers] = React.useState(new Set());
+  const [expandedUser, setExpandedUser] = React.useState(null);
   
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -159,47 +161,72 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
                 voiceStatusColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
              }
 
+             const isExpanded = expandedUser === participant.id;
+             const remoteParticipant = room?.remoteParticipants?.get(participant.id);
+
              return (
              <div key={participant.id} className={cn(
-               "flex items-center justify-between bg-zinc-900/50 p-2 rounded border",
+               "bg-zinc-900/50 p-2 rounded border transition-all",
                (participant.status === 'DOWN' || participant.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : "border-zinc-800/50"
              )}>
-               <div className="flex items-center gap-3 min-w-0">
-                  {/* Voice Status Indicator */}
-                  <div className={cn("w-2 h-2 rounded-full shrink-0 transition-all duration-200", voiceStatusColor)} />
-                  
-                  <div className="truncate">
-                    <div className="text-sm text-zinc-300 font-bold truncate">{participant.callsign || participant.rsi_handle || participant.full_name}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-2">
-                       <span className={cn("font-bold", getRankColorClass(participant.rank))}>{participant.rank}</span>
-                       <span className="text-zinc-700">•</span>
-                       <span>{participant.role}</span>
-                    </div>
-                  </div>
-               </div>
-               <div className="flex items-center gap-2 shrink-0">
-                  <StatusChip status={participant.status} size="xs" showLabel={false} />
-                  
-                  {/* Whisper Button */}
-                  {participant.id !== myId && (
-                     <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 hover:bg-zinc-800 text-zinc-500 hover:text-amber-500"
-                        onClick={() => onWhisper && onWhisper(participant)}
-                        title={`Whisper to ${participant.callsign}`}
-                     >
-                        <Ear className="w-3 h-3" />
-                     </Button>
-                  )}
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-3 min-w-0">
+                    {/* Voice Status Indicator */}
+                    <div className={cn("w-2 h-2 rounded-full shrink-0 transition-all duration-200", voiceStatusColor)} />
 
-                  {hasMinRank(participant, net.min_rank_to_tx) && (
-                    <Mic className="w-3 h-3 text-zinc-600" />
-                  )}
+                    <div className="truncate">
+                      <div className="text-sm text-zinc-300 font-bold truncate">{participant.callsign || participant.rsi_handle || participant.full_name}</div>
+                      <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-2">
+                         <span className={cn("font-bold", getRankColorClass(participant.rank))}>{participant.rank}</span>
+                         <span className="text-zinc-700">•</span>
+                         <span>{participant.role}</span>
+                      </div>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2 shrink-0">
+                    <StatusChip status={participant.status} size="xs" showLabel={false} />
+
+                    {/* Volume Control Button for Remote Participants */}
+                    {participant.id !== myId && remoteParticipant && (
+                       <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 hover:bg-zinc-800 text-zinc-500 hover:text-blue-500"
+                          onClick={() => setExpandedUser(isExpanded ? null : participant.id)}
+                          title="Volume control"
+                       >
+                          <Volume2 className="w-3 h-3" />
+                       </Button>
+                    )}
+
+                    {/* Whisper Button */}
+                    {participant.id !== myId && (
+                       <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 hover:bg-zinc-800 text-zinc-500 hover:text-amber-500"
+                          onClick={() => onWhisper && onWhisper(participant)}
+                          title={`Whisper to ${participant.callsign}`}
+                       >
+                          <Ear className="w-3 h-3" />
+                       </Button>
+                    )}
+
+                    {hasMinRank(participant, net.min_rank_to_tx) && (
+                      <Mic className="w-3 h-3 text-zinc-600" />
+                    )}
+                 </div>
                </div>
+
+               {/* Volume Controls - Expanded */}
+               {isExpanded && remoteParticipant && (
+                 <div className="mt-2 pl-5">
+                   <VolumeControls room={room} participant={remoteParticipant} />
+                 </div>
+               )}
              </div>
-           )})}
-         </div>
+             )})}
+             </div>
        )}
     </div>
   );
