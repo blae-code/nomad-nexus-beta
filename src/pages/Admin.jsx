@@ -1,13 +1,14 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText } from "lucide-react";
 import RoleManager from "@/components/auth/RoleManager";
 import SystemChecklist from "@/components/admin/SystemChecklist";
 import EventApprovalQueue from "@/components/admin/EventApprovalQueue";
 import CommsCapabilityContract from "@/components/comms/CommsCapabilityContract";
 import CommsTestPanel from "@/components/admin/CommsTestPanel";
 import VoiceNetForm from "@/components/comms/VoiceNetForm";
+import AuditLogViewer from "@/components/admin/AuditLogViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasMinRank } from "@/components/permissions";
 
@@ -91,6 +92,12 @@ export default function AdminPage() {
                   <Plus className="w-4 h-4 mr-2" /> Create Voice Net
                 </TabsTrigger>
               )}
+              <TabsTrigger 
+                value="audit-logs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+              >
+                <FileText className="w-4 h-4 mr-2" /> Audit Logs
+              </TabsTrigger>
               </TabsList>
 
            <TabsContent value="approvals">
@@ -126,6 +133,10 @@ export default function AdminPage() {
                <VoiceNetForm />
              </TabsContent>
            )}
+
+           <TabsContent value="audit-logs">
+             <AuditLogViewer />
+           </TabsContent>
           </Tabs>
        </div>
     </div>

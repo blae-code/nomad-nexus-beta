@@ -1,6 +1,7 @@
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { AuditLogger } from "@/components/utils/auditLogger";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Pin, PinOff } from "lucide-react";
@@ -18,11 +19,24 @@ export default function MessageActions({ message, channelId, currentUser }) {
   const isPinned = pinnedMessages.some(pm => pm.message_id === message.id);
 
   const deleteMutation = useMutation({
-    mutationFn: () => base44.entities.Message.update(message.id, {
-      is_deleted: true,
-      deleted_by: currentUser.id,
-      deleted_at: new Date().toISOString()
-    }),
+    mutationFn: async () => {
+      const result = await base44.entities.Message.update(message.id, {
+        is_deleted: true,
+        deleted_by: currentUser.id,
+        deleted_at: new Date().toISOString()
+      });
+      
+      // Log message deletion
+      await AuditLogger.logMessageDelete(
+        currentUser.id,
+        currentUser.full_name || currentUser.email,
+        message.id,
+        'Channel',
+        'Deleted by moderator'
+      );
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       toast.success("Message deleted");

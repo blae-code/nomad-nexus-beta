@@ -7,13 +7,13 @@ import Home from './pages/Home';
 import Hub from './pages/Hub';
 import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
+import NotificationSettings from './pages/NotificationSettings';
 import Profile from './pages/Profile';
 import Ranks from './pages/Ranks';
 import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
 import Treasury from './pages/Treasury';
 import UserManager from './pages/UserManager';
-import NotificationSettings from './pages/NotificationSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -27,13 +27,13 @@ export const PAGES = {
     "Hub": Hub,
     "MissionControl": MissionControl,
     "NomadOpsDashboard": NomadOpsDashboard,
+    "NotificationSettings": NotificationSettings,
     "Profile": Profile,
     "Ranks": Ranks,
     "Rescue": Rescue,
     "RoleManager": RoleManager,
     "Treasury": Treasury,
     "UserManager": UserManager,
-    "NotificationSettings": NotificationSettings,
 }
 
 export const pagesConfig = {
