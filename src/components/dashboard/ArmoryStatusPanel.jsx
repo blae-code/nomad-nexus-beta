@@ -8,10 +8,7 @@ export default function ArmoryStatusPanel() {
   const { data: items = [] } = useQuery({
     queryKey: ['armory-status-gauge'],
     queryFn: async () => {
-      return base44.entities.ArmoryItem.list({
-        sort: { quantity: 1 },
-        limit: 4
-      });
+      return base44.entities.ArmoryItem.filter({}, 'quantity', 4);
     }
   });
 

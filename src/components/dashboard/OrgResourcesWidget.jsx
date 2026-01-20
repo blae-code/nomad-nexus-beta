@@ -12,10 +12,7 @@ export default function OrgResourcesWidget() {
   const { data: nextMeeting } = useQuery({
     queryKey: ['next-bonfire'],
     queryFn: async () => {
-      const events = await base44.entities.Event.list({
-        filter: { status: 'scheduled' },
-        sort: { start_time: 1 }
-      });
+      const events = await base44.entities.Event.filter({ status: 'scheduled' }, 'start_time');
       // Find first event with 'Bonfire' in title
       return events.find(e => e.title.toLowerCase().includes('bonfire')) || null;
     }

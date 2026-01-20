@@ -16,7 +16,7 @@ export default function EventCalendarView() {
 
   const { data: events = [] } = useQuery({
     queryKey: ['calendar-events'],
-    queryFn: () => base44.entities.Event.list(),
+    queryFn: () => base44.entities.Event.filter({}),
     initialData: []
   });
 
