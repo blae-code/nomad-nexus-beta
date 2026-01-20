@@ -26,42 +26,42 @@ export default function HubPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-zinc-950">
-      <div className="container mx-auto max-w-[1800px] p-6 space-y-6">
+      <div className="container mx-auto max-w-7xl p-4 lg:p-6 space-y-4 lg:space-y-6">
         
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-black uppercase tracking-tight text-white flex items-center gap-3">
-              <Terminal className="w-10 h-10 text-[#ea580c]" />
+            <h1 className="text-2xl lg:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 lg:gap-3">
+              <Terminal className="w-7 h-7 lg:w-9 lg:h-9 text-[#ea580c]" />
               Command Hub
             </h1>
-            <p className="text-zinc-500 mt-1 font-mono text-sm">
+            <p className="text-zinc-500 mt-1 font-mono text-xs lg:text-sm">
               Welcome back, <span className="text-[#ea580c]">{user?.callsign || user?.rsi_handle || "Operative"}</span>
             </p>
           </div>
         </div>
 
         {/* Quick Access Links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
           {quickLinks.map((link, idx) => (
             <a key={idx} href={link.href} className="block group">
-              <div className={`p-4 border ${link.bg} hover:bg-opacity-50 transition-all flex items-center gap-3`}>
-                <link.icon className={`w-6 h-6 ${link.color}`} />
-                <div className="flex-1">
-                  <div className="text-sm font-bold text-white group-hover:text-[#ea580c] transition-colors">{link.label}</div>
-                  <div className="text-[10px] text-zinc-600 font-mono">QUICK ACCESS</div>
+              <div className={`p-3 lg:p-4 border ${link.bg} hover:bg-opacity-50 transition-all flex items-center gap-2 lg:gap-3`}>
+                <link.icon className={`w-5 h-5 lg:w-6 lg:h-6 ${link.color}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs lg:text-sm font-bold text-white group-hover:text-[#ea580c] transition-colors truncate">{link.label}</div>
+                  <div className="text-[9px] lg:text-[10px] text-zinc-600 font-mono">QUICK ACCESS</div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors" />
+                <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
               </div>
             </a>
           ))}
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           
           {/* Left Column */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-4 lg:space-y-6">
             {/* Rescue Alert */}
             <RescueAlertPanel />
 
@@ -77,7 +77,7 @@ export default function HubPage() {
           </div>
 
           {/* Right Column */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-4 lg:space-y-6">
             <StatusAlertsWidget />
             <PersonalActivityWidget />
             <ArmoryStatusPanel />

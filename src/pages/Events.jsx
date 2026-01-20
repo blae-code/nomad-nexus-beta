@@ -307,8 +307,8 @@ export default function EventsPage() {
 
   // Render List View
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <div className="container mx-auto max-w-6xl">
+    <div className="h-full overflow-y-auto bg-zinc-950 text-zinc-100">
+      <div className="container mx-auto max-w-6xl p-4 lg:p-6">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight text-white">Operations Board</h1>

@@ -194,7 +194,7 @@ function CommsConsolePage() {
     <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
       
       {/* Toolbar */}
-      <div className="h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-6 justify-between shrink-0">
+      <div className="h-10 lg:h-12 border-b border-zinc-800 bg-zinc-900/50 flex items-center px-3 lg:px-6 justify-between shrink-0">
          <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
                <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ function CommsConsolePage() {
       <div className="flex-1 flex overflow-hidden">
          
          {/* Sidebar */}
-         <aside className="w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col">
+         <aside className="w-64 lg:w-72 xl:w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col overflow-hidden">
             {consoleMode === 'ops' ? (
                <>
                   <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
@@ -367,7 +367,7 @@ function CommsConsolePage() {
          </aside>
 
          {/* Main Panel */}
-         <main className="flex-1 p-6 bg-black relative flex flex-col gap-4">
+         <main className="flex-1 p-3 lg:p-6 bg-black relative flex flex-col gap-3 lg:gap-4 overflow-hidden">
             {/* Background grid & Vignette */}
             <div className="absolute inset-0 opacity-[0.04] pointer-events-none" 
                  style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
@@ -437,7 +437,7 @@ function CommsConsolePage() {
 
          {/* Right Sidebar - Incidents, Event Feed, AI Assistant, or Toolbox */}
          {consoleMode === 'ops' && (
-            <div className="w-96 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
+            <div className="w-72 lg:w-80 xl:w-96 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
                {viewMode === 'tactical' ? (
                   <div className="h-full flex flex-col">
                      <div className="flex-1 overflow-hidden">
