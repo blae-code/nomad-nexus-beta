@@ -1,3 +1,4 @@
-module.exports = {
+
+export const pagesConfig = {
   mainPage: 'MissionControl'
 };
