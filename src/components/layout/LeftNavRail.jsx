@@ -6,6 +6,12 @@ import { cn } from '@/lib/utils';
 import { pagesConfig as PAGES_CONFIG } from '@/pages.config';
 import { base44 } from '@/api/base44Client';
 
+/**
+ * ⚠️ DEPRECATED: LeftNavRail (Legacy)
+ * 
+ * Do not use this component. The app now uses AppShellV3 with HeaderV3.
+ * This component will be removed in a future version.
+ */
 export default function LeftNavRail({ currentPage, user }) {
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [userRank, setUserRank] = useState('Vagrant');

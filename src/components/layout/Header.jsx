@@ -8,6 +8,11 @@ import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { Link } from 'react-router-dom';
 
 /**
+ * ⚠️ DEPRECATED: Header (Legacy)
+ * 
+ * Do not use this component. Use HeaderV3 instead.
+ * This component will be removed in a future version.
+ * 
  * Header v2: Canonical grid-aligned top bar (56px)
  * - Matches AppShell grid columns exactly (rail / main / right)
  * - Perfect 1px dividers at seams only (no double borders)

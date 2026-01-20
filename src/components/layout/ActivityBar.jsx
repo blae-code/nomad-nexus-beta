@@ -24,6 +24,12 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+/**
+ * ⚠️ DEPRECATED: ActivityBar (Legacy)
+ * 
+ * Do not use this component. The app now uses AppShellV3.
+ * This component will be removed in a future version.
+ */
 export default function ActivityBar() {
   // 1. Rescue Check
   const { data: hasRescue } = useQuery({

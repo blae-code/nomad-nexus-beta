@@ -6,6 +6,11 @@ import Header from '@/components/layout/Header';
 import NoScrollGuard from '@/components/layout/NoScrollGuard';
 
 /**
+ * ⚠️ DEPRECATED: AppShell (Legacy)
+ * 
+ * Do not use this component. Use AppShellV3 instead.
+ * This component will be removed in a future version.
+ * 
  * AppShell: Canonical 3-column grid layout
  * Col A: NavRail (fixed width, collapsible)
  * Col B: Main content (flexible)
