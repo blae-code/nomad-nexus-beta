@@ -8,7 +8,7 @@ import ActivityBar from "@/components/layout/ActivityBar";
 import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { base44 } from "@/api/base44Client";
-import { initializeAccessToken } from "@/components/hooks/useAccessToken";
+import { initializeAccessToken, clearAccessToken } from "@/components/hooks/useAccessToken";
 
 export default function Layout({ children, currentPageName }) {
   const [time, setTime] = useState(new Date());
