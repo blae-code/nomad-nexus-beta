@@ -130,6 +130,8 @@ export default function HeaderV3() {
       const presences = await base44.entities.UserPresence.list();
       const online = presences.filter((p) => p.status !== 'offline').length;
       setOnlineCount(online);
+      // Store total for display
+      window.headerTotalUsers = presences.length;
 
       // Get current user's presence
       if (user) {
