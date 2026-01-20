@@ -101,6 +101,9 @@ export default function HeaderV3() {
         await base44.auth.me();
         setLatency(Math.round(performance.now() - start));
         setConnectionStatus('OPTIMAL');
+        // Trigger data tick effect
+        setNetDataTickActive(true);
+        setTimeout(() => setNetDataTickActive(false), 150);
       } catch (e) {
         setConnectionStatus('DEGRADED');
       }
