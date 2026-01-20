@@ -433,6 +433,30 @@ export default function CommandPaletteV3() {
               )}
             </div>
 
+            {/* Status menu */}
+            {statusMenu && (
+              <div className="border-t border-zinc-800 bg-zinc-900/50 p-3 space-y-1">
+                <p className="text-[9px] text-zinc-500 uppercase font-bold mb-2">SET STATUS</p>
+                {['online', 'idle', 'in-call', 'away', 'offline'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className="w-full px-2 py-1.5 text-xs text-left text-zinc-300 hover:bg-zinc-800 border border-transparent hover:border-zinc-700"
+                  >
+                    <span className={cn(
+                      'inline-block w-2 h-2 rounded-full mr-2',
+                      status === 'online' && 'bg-green-500',
+                      status === 'idle' && 'bg-yellow-500',
+                      status === 'in-call' && 'bg-blue-500',
+                      status === 'away' && 'bg-orange-500',
+                      status === 'offline' && 'bg-zinc-600'
+                    )} />
+                    {status.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Distress confirmation */}
             {confirmingDistress && (
               <div className="border-t border-zinc-800 bg-red-950/20 p-3 text-center">
