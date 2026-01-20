@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, AlertCircle, Activity } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function TopStatusBar() {
   const [time, setTime] = useState(new Date());
