@@ -53,9 +53,28 @@ export default function HeaderV3() {
     return 'UNKNOWN OPERATIVE';
   }, [user, userById]);
 
-  // Fetch user
+  // Fetch user and initialize presence
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(async (currentUser) => {
+      setUser(currentUser);
+      // Fetch or create user presence
+      try {
+        const presences = await base44.entities.UserPresence.list();
+        let userPres = presences.find((p) => p.user_id === currentUser.id);
+        
+        // Create if doesn't exist
+        if (!userPres) {
+          userPres = await base44.entities.UserPresence.create({
+            user_id: currentUser.id,
+            status: 'online',
+            last_activity: new Date().toISOString(),
+          });
+        }
+        setUserPresence(userPres);
+      } catch (e) {
+        console.error('Failed to initialize presence:', e);
+      }
+    }).catch(() => {});
   }, []);
 
   // Listen for profile updates
