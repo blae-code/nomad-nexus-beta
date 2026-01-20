@@ -27,9 +27,7 @@ export default function AppShellV3({ children, currentPage, user, showRightPanel
             <div className="w-72 h-full overflow-hidden border-l border-zinc-800 flex flex-col shrink-0 pt-14">
               <div className="flex-1 min-h-0 overflow-y-auto space-y-3 p-3">
                 <ContextPanel currentPage={currentPage} user={user} />
-                <div className="border-t border-zinc-800/50 pt-3">
-                  <LiveSystemMetrics />
-                </div>
+                <LiveSystemMetrics />
               </div>
             </div>
           )}
