@@ -140,9 +140,13 @@ export default function ProfilePage() {
         ...(data.rank !== user?.rank && { rank: data.rank })
       });
 
-      toast.success("Profile updated successfully");
       const updatedUser = await base44.auth.me();
       setUser(updatedUser);
+      
+      // Notify header to refresh user data
+      window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: updatedUser }));
+      
+      toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Update failed", error);
       toast.error("Failed to update profile");
