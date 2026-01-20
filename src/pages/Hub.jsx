@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
-import { Radio, Calendar, Shield, Coins, AlertCircle, Users, Zap, Plus } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Radio, Calendar, Shield, Coins, AlertCircle, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TYPOGRAPHY } from "@/components/utils/typographySystem";
-import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
-import Divider from "@/components/layout/Divider";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
-import EventCalendarView from "@/components/dashboard/EventCalendarView";
 import LiveOperationsFeed from "@/components/dashboard/LiveOperationsFeed";
 import LiveIncidentCenter from "@/components/incidents/LiveIncidentCenter";
 
