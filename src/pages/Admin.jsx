@@ -39,20 +39,11 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="h-full bg-zinc-950 text-zinc-200 flex flex-col overflow-hidden">
-       <div className="flex-1 overflow-y-auto">
-         <div className="max-w-7xl mx-auto space-y-6 px-4 py-4">
-           <header className="flex items-center gap-4 pb-4 border-b border-zinc-800">
-              <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                 <Lock className="w-5 h-5 text-[#ea580c]" />
-              </div>
-              <div>
-                 <h1 className="text-2xl font-black uppercase tracking-tighter text-white">System Administration</h1>
-                 <p className="text-zinc-500 font-mono text-xs tracking-widest">CONTROL PANEL</p>
-              </div>
-           </header>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+    <PageShell
+      title="System Administration"
+      subtitle="CONTROL PANEL"
+    >
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="px-6 py-6 space-y-6">
            <TabsList className="bg-zinc-900 border border-zinc-800 rounded-none p-0 h-auto w-full justify-start">
              <TabsTrigger 
                value="approvals"
