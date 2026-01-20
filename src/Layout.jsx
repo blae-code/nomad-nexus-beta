@@ -140,6 +140,11 @@ export default function Layout({ children, currentPageName }) {
                  <User className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c]" />
                  </div>
                  </button>
+                 <a href={createPageUrl('Profile')} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors">
+                 <div className="w-8 h-8 bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-[#ea580c] transition-colors">
+                 <User className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c]" />
+                 </div>
+                 </a>
         </div>
       </header>
 
