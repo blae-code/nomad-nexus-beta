@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi } from 'lucide-react';
+import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ import { getRankColorClass } from '@/components/utils/rankUtils';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * HeaderV3: "Living intranet" command surface
