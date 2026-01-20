@@ -140,13 +140,16 @@ export default function HeaderV3() {
         base44.entities.User.list()
       ]);
 
-      const online = presences.filter((p) => p.status !== 'offline').length;
+      const userIds = new Set(users.map(u => u.id));
+      const validPresences = presences.filter(p => userIds.has(p.user_id));
+      const online = validPresences.filter((p) => p.status !== 'offline').length;
+
       setOnlineCount(online);
       window.headerTotalUsers = users.length;
 
       // Get current user's presence
       if (user) {
-        const userPres = presences.find((p) => p.user_id === user.id);
+        const userPres = validPresences.find((p) => p.user_id === user.id);
         setUserPresence(userPres || null);
       }
     } catch (e) {
