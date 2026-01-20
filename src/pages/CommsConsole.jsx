@@ -121,8 +121,13 @@ function CommsConsolePage() {
 
   const { data: voiceNets, isLoading } = useQuery({
     queryKey: ['voice-nets', selectedEventId],
-    queryFn: () => base44.entities.VoiceNet.filter({ event_id: selectedEventId }, 'priority', 50),
-    enabled: !!selectedEventId,
+    queryFn: async () => {
+      // Fetch event-specific nets if event selected, otherwise fetch global nets
+      const filter = selectedEventId 
+        ? { event_id: selectedEventId }
+        : { event_id: null };
+      return base44.entities.VoiceNet.filter(filter, 'priority', 50);
+    },
     initialData: []
   });
 
