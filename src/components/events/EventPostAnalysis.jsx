@@ -13,7 +13,7 @@ export default function EventPostAnalysis({ event, canEdit }) {
     lessons_learned: event?.lessons_learned || '',
     casualties: event?.casualties || 0,
     objectives_completed: event?.objectives_completed || 0,
-    total_objectives: event?.objectives?.length || 0,
+    total_objectives: Array.isArray(event?.objectives) ? event.objectives.length : 0,
     success_rate: event?.success_rate || 0
   });
 

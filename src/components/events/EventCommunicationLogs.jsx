@@ -10,9 +10,11 @@ export default function EventCommunicationLogs({ eventId }) {
     queryFn: async () => {
       const channels = await base44.entities.Channel.list();
       const allMessages = await base44.entities.Message.list();
+      if (!Array.isArray(allMessages)) return [];
       return allMessages.filter(m => channels.some(c => c.id === m.channel_id)).slice(0, 20);
     },
-    enabled: !!eventId
+    enabled: !!eventId,
+    initialData: []
   });
 
   return (
