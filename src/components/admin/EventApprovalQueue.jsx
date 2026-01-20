@@ -42,8 +42,6 @@ export default function EventApprovalQueue({ user }) {
     }
   });
 
-  const canApprove = canApproveEvent(user);
-
   if (!canApprove) {
     return (
       <Card className="bg-zinc-950 border-zinc-800">
