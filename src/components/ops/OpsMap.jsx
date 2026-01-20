@@ -7,9 +7,13 @@ import { Trash2, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import MapDrawingTools from './MapDrawingTools';
 import MapDrawingLayer from './MapDrawingLayer';
+import { createTacticalMarkerIcon, TACTICAL_ICON_CATEGORIES } from '@/components/utils/tacticalsIcons';
 
-// Custom SVG markers
+// Legacy marker fallback
 const createMarkerIcon = (type, color = '#ea580c') => {
+  const tacticalIcon = createTacticalMarkerIcon(type);
+  if (tacticalIcon) return tacticalIcon;
+
   const iconMap = {
     objective: '🎯',
     hazard: '⚠️',
@@ -47,12 +51,13 @@ function MapClickHandler({ onMapClick }) {
 export default function OpsMap({ eventId, readOnly = false }) {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showNewMarkerForm, setShowNewMarkerForm] = useState(false);
-  const [markerType, setMarkerType] = useState('waypoint');
+  const [markerType, setMarkerType] = useState('objective_primary');
   const [markerLabel, setMarkerLabel] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [drawMode, setDrawMode] = useState(null);
   const [drawnShapes, setDrawnShapes] = useState([]);
   const [drawnPaths, setDrawnPaths] = useState([]);
+  const [showIconPalette, setShowIconPalette] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -287,47 +292,89 @@ export default function OpsMap({ eventId, readOnly = false }) {
       {/* New Marker Form */}
       {showNewMarkerForm && !readOnly && (
         <div className="border-t border-zinc-800 bg-zinc-950 p-3 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
+            <Button
+              size="sm"
+              variant={showIconPalette ? 'default' : 'outline'}
+              onClick={() => setShowIconPalette(!showIconPalette)}
+              className="h-7 text-[10px] w-full"
+            >
+              Select Tactical Icon {showIconPalette ? '▼' : '▶'}
+            </Button>
+            {showIconPalette && (
+              <div className="grid grid-cols-4 gap-1 bg-zinc-900 p-2 border border-zinc-800 max-h-48 overflow-y-auto">
+                {Object.entries(TACTICAL_ICON_CATEGORIES).map(([category, icons]) => (
+                  <div key={category} className="col-span-4">
+                    <div className="text-[8px] font-bold text-zinc-500 uppercase px-1 py-1">
+                      {category}
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {icons.map((iconKey) => (
+                        <button
+                          key={iconKey}
+                          onClick={() => {
+                            setMarkerType(iconKey);
+                            setShowIconPalette(false);
+                          }}
+                          className={`p-1 border rounded text-center text-[9px] transition-all ${
+                            markerType === iconKey
+                              ? 'border-[#ea580c] bg-[#ea580c]/10'
+                              : 'border-zinc-700 hover:border-zinc-600'
+                          }`}
+                          title={iconKey}
+                        >
+                          {iconKey.split('_').pop()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <select
               value={markerType}
               onChange={(e) => setMarkerType(e.target.value)}
-              className="col-span-2 bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs p-2"
+              className="col-span-1 bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs p-2"
             >
-              <option value="waypoint">Waypoint</option>
-              <option value="objective">Objective</option>
-              <option value="hazard">Hazard</option>
-              <option value="rally">Rally Point</option>
-              <option value="checkpoint">Checkpoint</option>
-              <option value="extraction">Extraction</option>
-              <option value="insertion">Insertion</option>
-              <option value="note">Note</option>
+              {Object.entries(TACTICAL_ICON_CATEGORIES).map(([category, icons]) => (
+                <optgroup key={category} label={category}>
+                  {icons.map((iconKey) => (
+                    <option key={iconKey} value={iconKey}>
+                      {iconKey.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
             <input
               type="text"
               placeholder="Label..."
               value={markerLabel}
               onChange={(e) => setMarkerLabel(e.target.value)}
-              className="col-span-2 bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs p-2 placeholder-zinc-600"
+              className="col-span-1 bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs p-2 placeholder-zinc-600"
             />
-            <Button
-              size="sm"
-              onClick={handleAddMarker}
-              disabled={!selectedLocation || !markerLabel.trim()}
-              className="h-7 text-[10px] bg-[#ea580c] hover:bg-[#c2410c]"
-            >
-              Place
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowNewMarkerForm(false);
-                setSelectedLocation(null);
-              }}
-              className="h-7 text-[10px]"
-            >
-              Cancel
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                size="sm"
+                onClick={handleAddMarker}
+                disabled={!selectedLocation || !markerLabel.trim()}
+                className="h-7 text-[10px] bg-[#ea580c] hover:bg-[#c2410c]"
+              >
+                Place
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowNewMarkerForm(false);
+                  setSelectedLocation(null);
+                  setShowIconPalette(false);
+                }}
+                className="h-7 text-[10px]"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}
