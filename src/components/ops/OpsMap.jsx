@@ -5,6 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import MapDrawingTools from './MapDrawingTools';
+import MapDrawingLayer from './MapDrawingLayer';
 
 // Custom SVG markers
 const createMarkerIcon = (type, color = '#ea580c') => {
@@ -48,6 +50,9 @@ export default function OpsMap({ eventId, readOnly = false }) {
   const [markerType, setMarkerType] = useState('waypoint');
   const [markerLabel, setMarkerLabel] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [drawMode, setDrawMode] = useState(null);
+  const [drawnShapes, setDrawnShapes] = useState([]);
+  const [drawnPaths, setDrawnPaths] = useState([]);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -108,30 +113,74 @@ export default function OpsMap({ eventId, readOnly = false }) {
     refetchMarkers();
   };
 
+  // Handle shape/path creation
+  const handleShapeCreated = async (shape) => {
+    if (shape.type === 'polygon') {
+      setDrawnShapes(prev => [...prev, { ...shape, color: '#3b82f6' }]);
+      setDrawMode(null);
+    } else if (shape.type === 'circle') {
+      // For circles, we need radius - would be calculated from drag distance
+      setDrawnShapes(prev => [...prev, { ...shape, color: '#10b981' }]);
+      setDrawMode(null);
+    } else if (shape.type === 'path') {
+      const pathData = { ...shape, color: '#f59e0b' };
+      setDrawnPaths(prev => [...prev, pathData]);
+      setDrawMode(null);
+
+      // Persist path as event log
+      await base44.entities.EventLog.create({
+        event_id: eventId,
+        type: 'SYSTEM',
+        severity: 'LOW',
+        summary: 'Movement path drawn on tactical map',
+        details: {
+          waypoints: shape.points.length,
+          path_id: `path-${Date.now()}`
+        }
+      });
+    }
+  };
+
+  const handleClearDrawings = () => {
+    setDrawnShapes([]);
+    setDrawnPaths([]);
+    setDrawMode(null);
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-zinc-900 border border-zinc-800 rounded">
       {/* Map Toolbar */}
-      <div className="flex gap-2 p-3 border-b border-zinc-800 bg-zinc-950 flex-wrap items-center">
-        <span className="text-xs font-bold text-zinc-500 uppercase">Tactical Display</span>
+      <div className="flex gap-2 p-3 border-b border-zinc-800 bg-zinc-950 flex-wrap items-center justify-between">
+        <div className="flex gap-2 items-center flex-wrap">
+          <span className="text-xs font-bold text-zinc-500 uppercase">Tactical Display</span>
+          {!readOnly && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setShowNewMarkerForm(!showNewMarkerForm);
+                  setSelectedLocation(null);
+                }}
+                className="h-7 text-[10px] gap-1"
+                variant={showNewMarkerForm ? 'default' : 'outline'}
+              >
+                <Plus className="w-3 h-3" /> Add Pin
+              </Button>
+              {selectedLocation && (
+                <span className="text-[10px] text-amber-500 font-mono">
+                  Click map to place pin at {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
+                </span>
+              )}
+            </>
+          )}
+        </div>
         {!readOnly && (
-          <>
-            <Button
-              size="sm"
-              onClick={() => {
-                setShowNewMarkerForm(!showNewMarkerForm);
-                setSelectedLocation(null);
-              }}
-              className="h-7 text-[10px] gap-1"
-              variant={showNewMarkerForm ? 'default' : 'outline'}
-            >
-              <Plus className="w-3 h-3" /> Add Pin
-            </Button>
-            {selectedLocation && (
-              <span className="text-[10px] text-amber-500 font-mono">
-                Click map to place pin at {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
-              </span>
-            )}
-          </>
+          <MapDrawingTools
+            drawMode={drawMode}
+            setDrawMode={setDrawMode}
+            onClearDrawings={handleClearDrawings}
+            canDraw={true}
+          />
         )}
       </div>
 
@@ -222,9 +271,17 @@ export default function OpsMap({ eventId, readOnly = false }) {
             </Marker>
           ))}
 
+          {/* Drawing layer */}
+          <MapDrawingLayer
+            drawMode={drawMode}
+            onShapeCreated={handleShapeCreated}
+            shapes={drawnShapes}
+            paths={drawnPaths}
+          />
+
           {/* Click handler */}
           <MapClickHandler onMapClick={handleMapClick} />
-        </MapContainer>
+          </MapContainer>
       </div>
 
       {/* New Marker Form */}
