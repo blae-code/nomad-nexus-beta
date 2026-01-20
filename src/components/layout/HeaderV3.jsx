@@ -227,32 +227,34 @@ export default function HeaderV3() {
       </div>
 
       {/* RIGHT: Telemetry + Online Count + Time + User Menu */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* NET Status with refresh pulse */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* NET Status with data tick effect */}
         <div
           className={cn(
-            'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-200',
+            'flex items-center gap-1.5 px-3 h-10 border rounded-sm text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-150',
             connectionStatus === 'OPTIMAL'
-              ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300'
-              : 'bg-red-950/30 border-red-700/50 text-red-300'
+              ? 'bg-emerald-950/20 border-emerald-700/40 text-emerald-300'
+              : 'bg-red-950/20 border-red-700/40 text-red-300',
+            netDataTickActive && 'border-[#ea580c]/60 bg-[#ea580c]/5'
           )}
         >
-          <Wifi className={cn('w-2.5 h-2.5', connectionStatus === 'OPTIMAL' && 'animate-pulse')} />
+          <Wifi className="w-2.5 h-2.5" />
           <span>{connectionStatus}</span>
-          <span className="text-[8px] opacity-60">{latency}ms</span>
+          <span className="text-[8px] opacity-70">{latency}ms</span>
         </div>
 
         {/* Online Count */}
-        <div className="flex items-center gap-1.5 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono hidden md:flex focus-within:border-cyan-600 transition-colors">
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="font-bold text-zinc-300">ONLINE: {onlineCount}</span>
+        <div className="flex items-center gap-1.5 px-3 h-10 border border-zinc-800 bg-zinc-900/30 rounded-sm text-[9px] font-mono hidden md:flex focus-within:border-zinc-700 transition-colors">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+          <span className="font-bold text-zinc-300">ONLINE</span>
+          <span className="text-zinc-500">{onlineCount}</span>
         </div>
 
         {/* Time: Local + UTC in 24h digital style */}
-        <div className="hidden xl:flex items-center gap-1 px-3 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono text-zinc-400 hover:border-zinc-600 transition-colors group">
+        <div className="hidden xl:flex items-center gap-1.5 px-3 h-10 border border-zinc-800 bg-zinc-900/30 rounded-sm text-[9px] font-mono text-zinc-400 hover:border-zinc-700 transition-colors">
           <Clock className="w-2.5 h-2.5" />
-          <div className="flex flex-col gap-0.5">
-            <span className="font-bold tracking-wider">{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+          <div className="flex flex-col gap-0">
+            <span className="font-bold tracking-wider text-zinc-300">{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
             <span className="text-[7px] text-zinc-500 tracking-widest">UTC {time.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
           </div>
         </div>
@@ -265,10 +267,10 @@ export default function HeaderV3() {
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className={cn(
-              'flex items-center gap-1 px-2 h-7 border transition-colors font-bold text-[9px]',
+              'flex items-center gap-1.5 px-3 h-10 border rounded-sm transition-colors font-bold text-[9px]',
               userMenuOpen
                 ? 'bg-zinc-800 border-[#ea580c] text-[#ea580c]'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
             )}
             title={user?.full_name}
           >
