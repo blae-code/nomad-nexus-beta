@@ -47,7 +47,7 @@ function EventDetail({ id }) {
   const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
   if (isLoading) {
-    return <div className="min-h-screen bg-zinc-950 p-10 text-center text-zinc-500">Loading Intelligence...</div>;
+    return <div className="h-full flex items-center justify-center bg-zinc-950 text-zinc-500">Loading Intelligence...</div>;
   }
 
   if (!event) {
@@ -64,8 +64,9 @@ function EventDetail({ id }) {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-zinc-950 text-zinc-100">
-      <div className="container mx-auto max-w-6xl p-4 lg:p-6">
+    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto max-w-6xl p-4 lg:p-6">
         
         {/* Header / Nav */}
         <div className="mb-8">
@@ -243,6 +244,7 @@ function EventDetail({ id }) {
           </div>
 
         </div>
+          </div>
         </div>
       </div>
     </div>
