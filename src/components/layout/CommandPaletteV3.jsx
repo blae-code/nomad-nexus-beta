@@ -588,7 +588,7 @@ export default function CommandPaletteV3() {
             isOpen ? 'border-[#ea580c] shadow-[0_0_20px_rgba(234,88,12,0.2)]' : 'border-zinc-800 hover:border-zinc-700'
           )}
         >
-          <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600" />
+          <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
 
           <input
           ref={inputRef}
@@ -603,7 +603,7 @@ export default function CommandPaletteV3() {
           className="flex-1 h-full bg-transparent border-none text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
           />
 
-          <div className="mr-2 flex items-center gap-1 text-[9px] font-mono text-zinc-600">
+          <div className="mr-2 flex items-center gap-1 text-[9px] font-mono text-zinc-600 pointer-events-none">
             <Command className="w-2 h-2" />
             <span>K</span>
           </div>
