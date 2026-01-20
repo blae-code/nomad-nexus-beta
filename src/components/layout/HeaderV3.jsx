@@ -56,6 +56,25 @@ export default function HeaderV3() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Determine readiness state based on connection/comms health
+  useEffect(() => {
+    let state = 'green';
+    
+    // Check connection status
+    if (connectionStatus !== 'OPTIMAL') {
+      state = 'red';
+    }
+    
+    // Check latency (>150ms = amber, >300ms = red)
+    if (latency > 300) {
+      state = state === 'red' ? 'red' : 'red';
+    } else if (latency > 150) {
+      state = state === 'red' ? 'red' : 'amber';
+    }
+    
+    setReadinessState(state);
+  }, [connectionStatus, latency]);
+
   // Track page visibility to pause polling
   useEffect(() => {
     const handleVisibilityChange = () => {
