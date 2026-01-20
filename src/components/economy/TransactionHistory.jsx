@@ -12,11 +12,7 @@ export default function TransactionHistory({ cofferId, eventId, limit = 20 }) {
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ['transactions', cofferId, eventId],
-    queryFn: () => base44.entities.CofferTransaction.list({ 
-      filter, 
-      sort: { transaction_date: -1 },
-      limit 
-    }),
+    queryFn: () => base44.entities.CofferTransaction.filter(filter, '-transaction_date', limit),
     initialData: []
   });
 

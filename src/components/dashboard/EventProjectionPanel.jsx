@@ -11,23 +11,19 @@ export default function EventProjectionPanel({ user, compact = false }) {
   const { data: events = [] } = useQuery({
     queryKey: ['projection-events', user?.role_tags],
     queryFn: async () => {
-      const allEvents = await base44.entities.Event.list({
-        filter: { status: 'scheduled' },
-        sort: { start_time: 1 },
-        limit: 10
-      });
-      
-      // Filter for relevance if user has roles
-      let relevant = allEvents;
-      if (user?.role_tags?.length > 0) {
-         relevant = allEvents.filter(e => 
-            !e.tags || e.tags.length === 0 || e.tags.some(t => user.role_tags.includes(t))
-         );
-      }
-      
-      // Fallback to all if no matches, take top 2
-      return (relevant.length > 0 ? relevant : allEvents).slice(0, 2);
-    },
+       const allEvents = await base44.entities.Event.filter({ status: 'scheduled' }, 'start_time', 10);
+
+       // Filter for relevance if user has roles
+       let relevant = allEvents;
+       if (user?.role_tags?.length > 0) {
+          relevant = allEvents.filter(e => 
+             !e.tags || e.tags.length === 0 || e.tags.some(t => user.role_tags.includes(t))
+          );
+       }
+
+       // Fallback to all if no matches, take top 2
+       return (relevant.length > 0 ? relevant : allEvents).slice(0, 2);
+     },
     enabled: !!user
   });
 
