@@ -15,18 +15,24 @@ import EventForm from "@/components/events/EventForm";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 
        // Imports specific to Detail View
-       import CommsPanel from "@/components/events/CommsPanel";
-import SquadManager from "@/components/events/SquadManager";
-import PlayerStatusSection from "@/components/events/PlayerStatusSection";
-import EventParticipants from "@/components/events/EventParticipants";
-import EventEconomy from "@/components/events/EventEconomy";
-import CommsConfig from "@/components/events/CommsConfig";
-import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
-import EventObjectives from "@/components/events/EventObjectives";
-import EventTimeline from "@/components/events/EventTimeline";
-import EventAAR from "@/components/events/EventAAR";
-import OpsMap from "@/components/ops/OpsMap";
-import { Rocket } from "lucide-react";
+                    import CommsPanel from "@/components/events/CommsPanel";
+             import SquadManager from "@/components/events/SquadManager";
+             import PlayerStatusSection from "@/components/events/PlayerStatusSection";
+             import EventParticipants from "@/components/events/EventParticipants";
+             import EventEconomy from "@/components/events/EventEconomy";
+             import CommsConfig from "@/components/events/CommsConfig";
+             import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
+             import EventObjectives from "@/components/events/EventObjectives";
+             import EventTimeline from "@/components/events/EventTimeline";
+             import EventAAR from "@/components/events/EventAAR";
+             import OpsMap from "@/components/ops/OpsMap";
+             import EventPhaseGates from "@/components/events/EventPhaseGates";
+             import EventCommandStaff from "@/components/events/EventCommandStaff";
+             import EventReadinessChecklist from "@/components/events/EventReadinessChecklist";
+             import AITacticalAdvisor from "@/components/ai/AITacticalAdvisor";
+             import AIAfterActionReportGenerator from "@/components/ai/AIAfterActionReportGenerator";
+             import NetDisciplineSystem from "@/components/comms/NetDisciplineSystem";
+             import { Rocket } from "lucide-react";
 
 function EventDetail({ id }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -239,14 +245,23 @@ function EventDetail({ id }) {
                   {/* Participants & Roles */}
                   <EventParticipants eventId={event.id} />
 
-                  {/* Squads / Assignments Manager */}
-                  <SquadManager eventId={event.id} />
+                  {/* Phase Gates & Readiness */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <EventPhaseGates event={event} canEdit={canEditEvent(currentUser, event)} />
+                          <EventReadinessChecklist event={event} canEdit={canEditEvent(currentUser, event)} />
+                        </div>
 
-                  {/* Communication Logs */}
-                  <EventCommunicationLogs eventId={event.id} />
+                        {/* Command Staff & Squads */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <EventCommandStaff event={event} canEdit={canEditEvent(currentUser, event)} />
+                          <SquadManager eventId={event.id} />
+                        </div>
 
-                  {/* Post-Event Analysis */}
-                  <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+                        {/* Communication Logs */}
+                        <EventCommunicationLogs eventId={event.id} />
+
+                        {/* Post-Event Analysis */}
+                        <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
                   </>
                   )}
 
@@ -310,15 +325,18 @@ function EventDetail({ id }) {
 
                   {/* AAR Tab */}
                   {activeTab === 'aar' && (
-                  <OpsPanel>
-                  <OpsPanelHeader>
-                  <OpsPanelTitle>After Action Report</OpsPanelTitle>
-                  </OpsPanelHeader>
-                  <OpsPanelContent>
-                  <EventAAR eventId={event.id} eventTitle={event.title} />
-                </OpsPanelContent>
-                </OpsPanel>
-                )}
+                    <div className="space-y-3">
+                      <OpsPanel>
+                        <OpsPanelHeader>
+                          <OpsPanelTitle>After Action Report</OpsPanelTitle>
+                        </OpsPanelHeader>
+                        <OpsPanelContent>
+                          <EventAAR eventId={event.id} eventTitle={event.title} />
+                        </OpsPanelContent>
+                      </OpsPanel>
+                      <AIAfterActionReportGenerator eventId={event.id} eventTitle={event.title} />
+                    </div>
+                  )}
 
                 {/* Map Tab */}
                 {activeTab === 'map' && (
@@ -329,9 +347,12 @@ function EventDetail({ id }) {
 
                 </div>
 
-          {/* Sidebar / Comms Column */}
+          {/* Sidebar / Comms & AI Column */}
           <div className="space-y-3">
-            
+
+            {/* AI Tactical Advisor */}
+            <AITacticalAdvisor eventId={event.id} />
+
             {/* AI Intelligence Layer */}
             <AIInsightsPanel eventId={event.id} />
 
@@ -346,7 +367,7 @@ function EventDetail({ id }) {
             {/* Economy Section */}
             <EventEconomy eventId={event.id} />
 
-            {/* Comms Panel Placeholder */}
+            {/* Comms Panel */}
             <div className="opacity-75 hover:opacity-100 transition-opacity">
                <CommsPanel eventId={event.id} />
             </div>
