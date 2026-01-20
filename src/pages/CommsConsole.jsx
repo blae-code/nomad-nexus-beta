@@ -2,7 +2,6 @@ import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
-import { cn } from "@/lib/utils";
 import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
 import Divider from "@/components/layout/Divider";
 import CommsEventSelector from "@/components/comms/CommsEventSelector";
