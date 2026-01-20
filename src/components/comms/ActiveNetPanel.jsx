@@ -17,7 +17,9 @@ import AudioControls from "@/components/comms/AudioControls";
 import HailQueue from "@/components/comms/HailQueue";
 import VoiceCallIndicator from "./VoiceCallIndicator";
 import VolumeControls from "@/components/comms/VolumeControls";
+import UserPresencePanel from "./UserPresencePanel";
 import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
+import { usePresence } from "./usePresence";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -330,6 +332,9 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const reconnectAttempts = useRef(0);
   const reconnectTimeoutRef = useRef(null);
 
+  // Track user presence on this net
+  const { setTransmitting } = usePresence(user?.id, net?.id, eventId);
+
   // Check if user is admin-muted
   const { data: myVoiceMute } = useQuery({
     queryKey: ['my-voice-mute', net?.id, user?.id],
@@ -577,6 +582,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
            // Force mute if admin-muted
            if (isAdminMuted) {
               await room.localParticipant.setMicrophoneEnabled(false);
+              setTransmitting(false);
               return;
            }
 
@@ -587,14 +593,15 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 noiseSuppression: audioState?.noiseSuppression !== false,
                 autoGainControl: true
               });
+              setTransmitting(true);
               setMicPermissionDenied(false);
            } else {
               // Mute microphone
               await room.localParticipant.setMicrophoneEnabled(false);
+              setTransmitting(false);
            }
         } catch (err) {
            console.error('[COMMS] Microphone error:', err);
-           // Check if it's a permission error
            if (err.name === 'NotAllowedError' || err.message.includes('Permission')) {
               setMicPermissionDenied(true);
            }
@@ -602,7 +609,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
      };
      
      handleAudioState();
-  }, [audioState?.isTransmitting, audioState?.echoCancellation, audioState?.noiseSuppression, room, isAdminMuted]);
+  }, [audioState?.isTransmitting, audioState?.echoCancellation, audioState?.noiseSuppression, room, isAdminMuted, setTransmitting]);
 
   const handleWhisper = (targetUser) => {
      if (whisperTarget?.id === targetUser.id) {
@@ -869,16 +876,30 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
 
            {/* Roster & Logs */}
            <TerminalCard className="flex-1 flex flex-col overflow-hidden">
-         <ScrollArea className="flex-1 p-4">
-            <NetRoster 
-              net={net} 
-              eventId={eventId} 
-              currentUserState={audioState} 
-              onWhisper={handleWhisper}
-              room={room}
-            />
-            <CommsLog eventId={eventId} />
-         </ScrollArea>
+           <ScrollArea className="flex-1 p-4">
+            <div className="space-y-6">
+               {/* Active Users on This Net */}
+               <div>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 mb-3 border-b border-zinc-800">
+                     <Radio className="w-3 h-3" />
+                     Active on Frequency
+                  </div>
+                  <UserPresencePanel netId={net.id} eventId={eventId} />
+               </div>
+
+               {/* Roster */}
+               <NetRoster 
+                  net={net} 
+                  eventId={eventId} 
+                  currentUserState={audioState} 
+                  onWhisper={handleWhisper}
+                  room={room}
+               />
+
+               {/* Comms Log */}
+               <CommsLog eventId={eventId} />
+            </div>
+           </ScrollArea>
          <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
             <div className="w-full flex justify-between text-[9px] text-zinc-500 font-mono">
                <span className={cn(
