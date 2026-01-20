@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Circle, Mic, Radio, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
+import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 const STATUS_ICONS = {
   online: { icon: Circle, color: 'text-emerald-500' },
