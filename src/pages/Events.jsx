@@ -85,26 +85,26 @@ function EventDetail({ id }) {
           </a>
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-             <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Badge variant="outline" className={getSeverityBadge(
-                      event.event_type === 'focused' ? 'critical' : 'nominal'
-                  )}>
-                    {event.event_type.toUpperCase()}
-                  </Badge>
-                  {event.priority && (
-                     <Badge variant="outline" className={getSeverityBadge(
-                        getPrioritySeverity(event.priority)
-                     )}>
-                        {event.priority}
-                     </Badge>
-                  )}
-                  <span className="text-zinc-500 text-xs font-mono tracking-widest">OP-ID: {event.id.slice(0,8)}</span>
-                </div>
-                <h1 className="text-4xl font-black uppercase tracking-tight text-white">
-                  {event.title}
-                </h1>
-             </div>
+               <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge variant="outline" className={getSeverityBadge(
+                        event.event_type === 'focused' ? 'critical' : 'nominal'
+                    )}>
+                      {event.event_type.toUpperCase()}
+                    </Badge>
+                    {event.priority && (
+                       <Badge variant="outline" className={getSeverityBadge(
+                          getPrioritySeverity(event.priority)
+                       )}>
+                          {event.priority}
+                       </Badge>
+                    )}
+                    <span className={`${TYPOGRAPHY.TIMESTAMP_LG} text-zinc-500`}>OP-ID: {event.id.slice(0,8)}</span>
+                  </div>
+                  <h1 className={TYPOGRAPHY.H1 + ' text-white'}>
+                    {event.title}
+                  </h1>
+               </div>
              
              {creator && (
                <div className="text-right">
