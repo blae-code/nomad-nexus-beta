@@ -114,8 +114,8 @@ export default function CommsPanel({ eventId }) {
       <OpsPanelHeader className="bg-zinc-900/30 pt-4">
         <div className="flex justify-between items-center w-full">
           <OpsPanelTitle className="flex items-center gap-2">
-            <Radio className="w-3 h-3 text-emerald-500" />
-            Redscar Comms
+          <Radio className="w-3 h-3 text-emerald-500" />
+          COMMS NET
           </OpsPanelTitle>
           <a href={createPageUrl(`CommsConsole?eventId=${eventId}`)}>
              <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-white">
@@ -195,8 +195,8 @@ export default function CommsPanel({ eventId }) {
              </div>
            ) : (
              <div className="text-center py-8 flex flex-col items-center justify-center opacity-50">
-                <Radio className="w-8 h-8 mb-2 text-zinc-700" />
-                <div className="text-zinc-500 text-xs uppercase tracking-widest">No Frequency Locked</div>
+              <Radio className="w-8 h-8 mb-2 text-zinc-700" />
+              <div className="text-zinc-500 text-xs uppercase tracking-widest">NO NET SELECTED</div>
              </div>
            )}
         </div>
@@ -204,12 +204,12 @@ export default function CommsPanel({ eventId }) {
         {/* Compact Net List (Secondary) */}
         <div className="border-t border-zinc-800/50">
            <div className="px-3 py-2 bg-zinc-950 text-[9px] text-zinc-600 uppercase tracking-widest font-bold border-b border-zinc-900 flex justify-between">
-             <span>Available Frequencies</span>
-             <span className="text-zinc-700">AUTO-SCAN</span>
+             <span>AVAILABLE NETS</span>
+             <span className="text-zinc-700">SCANNING</span>
            </div>
            <div className="max-h-[180px] overflow-y-auto custom-scrollbar bg-zinc-950/50">
              {voiceNets.length === 0 && (
-                <div className="p-4 text-center text-xs text-zinc-600 italic">No signal detected.</div>
+                <div className="p-4 text-center text-xs text-zinc-600 uppercase font-mono">NO NETS DETECTED</div>
              )}
              {voiceNets.map(net => {
                 const isSelected = selectedNetId === net.id;

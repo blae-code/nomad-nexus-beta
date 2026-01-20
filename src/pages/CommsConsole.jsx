@@ -234,7 +234,7 @@ function CommsConsolePage() {
             <div className="flex items-center gap-4">
                <div className="flex items-center gap-2">
                   <Radio className="w-5 h-5 text-[#ea580c]" />
-                  <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">Comms Console</h2>
+                  <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">COMMS ARRAY</h2>
                </div>
 
                <Button
@@ -258,18 +258,18 @@ function CommsConsolePage() {
                      "px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-all",
                      consoleMode === 'ops' ? "bg-[#ea580c] text-white shadow-lg" : "text-zinc-500 hover:text-zinc-300"
                   )}
-               >
-                  Active Ops
-               </button>
+                  >
+                  OPS
+                  </button>
                <button
                   onClick={() => setConsoleMode('lounge')}
                   className={cn(
                      "px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-all",
                      consoleMode === 'lounge' ? "bg-zinc-100 text-black" : "text-zinc-500 hover:text-zinc-300"
                   )}
-               >
-                  Ready Rooms
-               </button>
+                  >
+                  READY ROOMS
+                  </button>
             </div>
          </div>
 
@@ -322,7 +322,7 @@ function CommsConsolePage() {
                className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800 ml-2", showAIAssistant ? "bg-purple-500/10 text-purple-400 border-purple-500/30" : "text-zinc-500")}
                >
                <Bot className="w-3 h-3" />
-               Chat with Riggsy
+               AI ASSIST
                </Button>
                </>
                )}
@@ -343,7 +343,7 @@ function CommsConsolePage() {
                   
                   <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
                      {isLoading ? (
-                        <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING FREQUENCIES...</div>
+                        <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING NETS...</div>
                      ) : isProvisioningNets ? (
                         <div className="text-center text-yellow-500 py-10 text-xs font-mono animate-pulse">
                            PROVISIONING COMMS...<br/><span className="text-[10px] text-zinc-600">Auto-refreshing nets</span>
@@ -383,8 +383,8 @@ function CommsConsolePage() {
                   {/* Ready Rooms Sidebar */}
                   <div className="p-3 border-b border-zinc-800 bg-zinc-900/20 space-y-2">
                      <div>
-                        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Ready Rooms</div>
-                        <div className="text-[10px] text-zinc-600 font-mono">CASUAL & PUBLIC CHANNELS</div>
+                        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">CHANNELS</div>
+                        <div className="text-[10px] text-zinc-600 font-mono">PUBLIC COMMS</div>
                      </div>
                      <ChannelManager user={currentUser} />
                   </div>
@@ -486,7 +486,7 @@ function CommsConsolePage() {
                            className="w-full bg-red-600 hover:bg-red-700 gap-2"
                         >
                            <AlertTriangle className="w-4 h-4" />
-                           Log New Incident
+                           REPORT INCIDENT
                         </Button>
                      </div>
                   </div>

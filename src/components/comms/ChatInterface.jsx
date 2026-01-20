@@ -153,7 +153,7 @@ export default function ChatInterface({ channel, user }) {
             {channel.name}
           </div>
           <div className="text-xs text-zinc-500 font-mono uppercase tracking-wider mt-1">
-             {channel.description || "Ready Room Channel"}
+             {channel.description || "PUBLIC CHANNEL"}
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -164,7 +164,7 @@ export default function ChatInterface({ channel, user }) {
           </div>
           <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase border border-zinc-800 px-2 py-1 rounded bg-zinc-950">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            Live Feed
+            ACTIVE
           </div>
         </div>
       </div>
@@ -177,7 +177,7 @@ export default function ChatInterface({ channel, user }) {
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-zinc-600 opacity-50">
              <Hash className="w-12 h-12 mb-2" />
-             <p className="text-xs font-mono uppercase">Channel Empty. Initialize Comms.</p>
+             <p className="text-xs font-mono uppercase">NO COMMUNICATIONS</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -261,8 +261,8 @@ export default function ChatInterface({ channel, user }) {
            </Button>
         </form>
         <div className="text-[9px] text-zinc-600 font-mono flex justify-between">
-           <span>SECURE CHANNEL // ENCRYPTION: STANDARD</span>
-           <span>RETURN TO SEND</span>
+           <span>ENCRYPTION: ACTIVE</span>
+           <span>ENTER TO SEND</span>
         </div>
       </div>
     </div>
