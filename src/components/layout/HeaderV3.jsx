@@ -406,35 +406,35 @@ export default function HeaderV3() {
               }}
             >
               {user && (
-                <div className="px-2.5 py-1.5 border-b border-zinc-800/40">
-                  <div className="text-[9px] font-bold text-white uppercase tracking-tight">{userCallsign}</div>
-                  <div className={cn('text-[8px] font-mono', getRankColorClass(user.rank, 'text'))}>
-                    {user.rank || 'VAGRANT'}
-                  </div>
-                </div>
+              <div className="px-3 py-2 border-b border-zinc-800/40">
+              <div className="text-[10px] font-bold text-white uppercase tracking-tight">{userCallsign}</div>
+              <div className={cn('text-[9px] font-mono', getRankColorClass(user.rank, 'text'))}>
+                {user.rank || 'VAGRANT'}
+              </div>
+              </div>
               )}
               <Link
-                to={createPageUrl('Profile')}
-                onClick={() => setUserMenuOpen(false)}
-                className="flex items-center gap-2 px-2.5 py-1.5 text-[9px] text-zinc-400 hover:bg-zinc-900/50 transition-colors whitespace-nowrap border-b border-zinc-800/40"
+              to={createPageUrl('Profile')}
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-[10px] text-zinc-400 hover:bg-zinc-900/50 transition-colors whitespace-nowrap border-b border-zinc-800/40"
               >
-                <UserIcon className="w-3 h-3" />
-                Profile
+              <UserIcon className="w-3.5 h-3.5" />
+              Profile
               </Link>
               <Link
-                to={createPageUrl('Profile')}
-                onClick={() => setUserMenuOpen(false)}
-                className="flex items-center gap-2 px-2.5 py-1.5 text-[9px] text-zinc-400 hover:bg-zinc-900/50 transition-colors whitespace-nowrap border-b border-zinc-800/40"
+              to={createPageUrl('Profile')}
+              onClick={() => setUserMenuOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-[10px] text-zinc-400 hover:bg-zinc-900/50 transition-colors whitespace-nowrap border-b border-zinc-800/40"
               >
-                <Settings className="w-3 h-3" />
-                Settings
+              <Settings className="w-3.5 h-3.5" />
+              Settings
               </Link>
               <button
-                onClick={handleLogout}
-                className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 text-[9px] text-zinc-400 hover:bg-zinc-900/50 transition-colors"
+              onClick={handleLogout}
+              className="w-full text-left flex items-center gap-2 px-3 py-2 text-[10px] text-zinc-400 hover:bg-zinc-900/50 transition-colors"
               >
-                <LogOut className="w-3 h-3" />
-                Sign Out
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
               </button>
             </div>
           )}
