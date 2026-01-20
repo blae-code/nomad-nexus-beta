@@ -34,6 +34,9 @@ import IncidentDashboard from "@/components/incidents/IncidentDashboard";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { usePTT } from "@/components/hooks/usePTT";
+import PTTHud from "@/components/comms/PTTHud";
+import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
@@ -54,6 +57,8 @@ function CommsConsolePage() {
   const [incidentFormOpen, setIncidentFormOpen] = React.useState(false);
   const [selectedIncident, setSelectedIncident] = React.useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = React.useState(true);
+  const [userPreferences, setUserPreferences] = React.useState({});
+  const { isTransmitting, pttKey } = usePTT(null, userPreferences);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -65,6 +70,7 @@ function CommsConsolePage() {
         }
         const user = await base44.auth.me();
         setCurrentUser(user);
+        setUserPreferences(user?.commsPreferences || {});
       } catch (error) {
         console.error('Auth error:', error);
         base44.auth.redirectToLogin(window.location.pathname + window.location.search);
@@ -142,7 +148,7 @@ function CommsConsolePage() {
     refetchInterval: isProvisioningNets ? 1000 : false
   });
 
-  // Fetch recent comms activity for indicators
+  // Fetch recent comms activity for indicators (reduced polling)
   const { data: recentActivity } = useQuery({
     queryKey: ['comms-activity', selectedEventId],
     queryFn: async () => {
@@ -172,7 +178,7 @@ function CommsConsolePage() {
       }
     },
     enabled: voiceNets.length > 0,
-    refetchInterval: 3000,
+    refetchInterval: 10000,
     initialData: {}
   });
 
@@ -506,14 +512,24 @@ function CommsConsolePage() {
         eventId={selectedEventId}
         user={currentUser}
       />
-    </div>
-  );
-}
 
-export default function CommsConsoleWithErrorBoundary() {
-  return (
-    <ErrorBoundary>
+      {/* PTT HUD */}
+      <PTTHud isTransmitting={isTransmitting && selectedNet} pttKey={pttKey} isMuted={!selectedNet} />
+
+      {/* Net Switch Overlay */}
+      <NetSwitchOverlay 
+        nets={memoizedNets} 
+        selectedNet={selectedNet} 
+        onSelectNet={setSelectedNet}
+      />
+      </div>
+      );
+      }
+
+      export default function CommsConsoleWithErrorBoundary() {
+      return (
+      <ErrorBoundary>
       <CommsConsolePage />
-    </ErrorBoundary>
-  );
-}
+      </ErrorBoundary>
+      );
+      }
