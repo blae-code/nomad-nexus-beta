@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createPageUrl } from '@/utils';
-import AudioDeviceSettings from '@/components/comms/settings/AudioDeviceSettings';
-import AudioLevelControls from '@/components/comms/settings/AudioLevelControls';
-import PTTKeybindConfig from '@/components/comms/settings/PTTKeybindConfig';
-import NotificationSoundManager from '@/components/comms/settings/NotificationSoundManager';
+import AudioDeviceSettings from '@/components/comms/settings/AudioDeviceSettings.jsx';
+import AudioLevelControls from '@/components/comms/settings/AudioLevelControls.jsx';
+import PTTKeybindConfig from '@/components/comms/settings/PTTKeybindConfig.jsx';
+import NotificationSoundManager from '@/components/comms/settings/NotificationSoundManager.jsx';
 
 export default function CommsSettings() {
   const [isSaving, setIsSaving] = useState(false);
