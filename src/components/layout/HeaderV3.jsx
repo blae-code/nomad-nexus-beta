@@ -263,14 +263,42 @@ export default function HeaderV3() {
         <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
 
         {/* Presence Pill */}
-        <div className={cn(
-          'flex items-center gap-1.5 px-3 h-10 border rounded-sm text-[9px] font-mono font-bold uppercase shrink-0',
-          presenceInfo.color
-        )}>
-          <div className={cn('w-1.5 h-1.5 rounded-full transition-opacity', presenceInfo.dotColor, 
-            userPresence?.is_transmitting && 'animate-pulse'
-          )} />
-          <span className="hidden md:inline">{presenceInfo.label}</span>
+        <div className="relative">
+          <button
+            onClick={() => setStatusMenuOpen(!statusMenuOpen)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 h-10 border rounded-sm text-[9px] font-mono font-bold uppercase shrink-0 transition-colors',
+              presenceInfo.color,
+              'hover:opacity-80'
+            )}
+            title="Click to change status"
+          >
+            <div className={cn('w-1.5 h-1.5 rounded-full transition-opacity', presenceInfo.dotColor, 
+              userPresence?.is_transmitting && 'animate-pulse'
+            )} />
+            <span className="hidden md:inline">{presenceInfo.label}</span>
+          </button>
+
+          {statusMenuOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-800 z-50 min-w-max shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {['online', 'idle', 'away', 'offline'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => handleStatusChange(status)}
+                  className={cn(
+                    'w-full text-left px-3 py-2 text-xs font-mono uppercase transition-colors',
+                    userPresence?.status === status
+                      ? 'bg-[#ea580c]/20 text-[#ea580c] border-l-2 border-[#ea580c]'
+                      : 'text-zinc-300 hover:bg-zinc-800'
+                  )}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
