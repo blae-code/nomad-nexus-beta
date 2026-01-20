@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import AppShell from "@/components/layout/AppShell";
+import AppShellV3 from "@/components/layout/AppShellV3";
 import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
@@ -97,10 +97,10 @@ export default function Layout({ children, currentPageName }) {
 
 
 
-      {/* AppShell: 3-column grid layout */}
-      <AppShell currentPage={currentPage} user={user}>
+      {/* AppShellV3: No left rail, palette-driven nav */}
+      <AppShellV3 currentPage={currentPage} user={user}>
         {children}
-      </AppShell>
+      </AppShellV3>
 
       {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
       <LayoutDebugMode />
