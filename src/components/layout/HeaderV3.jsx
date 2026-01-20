@@ -360,7 +360,7 @@ export default function HeaderV3() {
         <button
           onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
           className={cn(
-            'flex items-center gap-1 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100 cursor-pointer',
+            'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100 cursor-pointer',
             connectionStatus === 'OPTIMAL'
               ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-400 hover:border-emerald-600/70'
               : 'bg-red-950/30 border-red-700/50 text-red-400 hover:border-red-600/70',
@@ -368,13 +368,13 @@ export default function HeaderV3() {
           )}
           title="Click for detailed diagnostics"
         >
-          <Wifi className="w-2 h-2" />
+          <Wifi className="w-2.5 h-2.5" />
           <span>{latency}ms</span>
         </button>
 
         {/* Online Count */}
-        <div className="flex items-center gap-1 px-2 py-1.5 border border-zinc-800/50 bg-zinc-900/40 text-[8px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
-          <div className="w-1 h-1 rounded-full bg-cyan-500" />
+        <div className="flex items-center gap-1.5 px-2.5 py-2 border border-zinc-800/50 bg-zinc-900/40 text-[9px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
           <span className="font-bold uppercase tracking-wider">{onlineCount}/{window.headerTotalUsers || onlineCount}</span>
         </div>
 
