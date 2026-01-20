@@ -300,24 +300,33 @@ export default function AudioControls({ onStateChange, room, defaultMode = "PTT"
            </div>
 
            {/* Output Selection */}
-           {audioOutputDevices.length > 0 && typeof HTMLMediaElement.prototype.setSinkId !== 'undefined' && (
+           {typeof HTMLMediaElement.prototype.setSinkId !== 'undefined' && (
              <div className="space-y-1.5">
                <Label className="text-[10px] text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                  <Headphones className="w-3 h-3" />
                  Output Device
                </Label>
-               <Select value={selectedOutput} onValueChange={setSelectedOutput}>
-                 <SelectTrigger className="h-8 text-xs font-mono bg-zinc-900 border-zinc-800">
-                   <SelectValue placeholder="Select output" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   {audioOutputDevices.map(device => (
-                     <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs font-mono">
-                       {device.label || `Speaker ${device.deviceId.slice(0, 8)}`}
+               {audioOutputDevices.length === 0 ? (
+                 <div className="h-8 px-3 py-2 rounded border border-zinc-800 bg-zinc-950 text-[10px] text-amber-600 font-mono uppercase tracking-wider flex items-center">
+                   ⚠ No devices / Check permissions
+                 </div>
+               ) : (
+                 <Select value={selectedOutput || 'default'} onValueChange={setSelectedOutput}>
+                   <SelectTrigger className="h-8 text-xs font-mono bg-zinc-900 border-zinc-800">
+                     <SelectValue placeholder="Select output" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="default" className="text-xs font-mono">
+                       System Default
                      </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
+                     {audioOutputDevices.map(device => (
+                       <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs font-mono">
+                         {device.label || `Speaker ${device.deviceId.slice(0, 8)}`}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               )}
              </div>
            )}
 
