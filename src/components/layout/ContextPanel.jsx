@@ -1,4 +1,5 @@
 import React from 'react';
+import VoiceControlToolkit from '@/components/voice/VoiceControlToolkit';
 
 export default function ContextPanel({ currentPage, user }) {
   const renderContent = () => {
@@ -6,15 +7,18 @@ export default function ContextPanel({ currentPage, user }) {
       case 'hub':
         return (
           <div className="space-y-4">
-            <div>
-              <div className="text-xs uppercase font-bold text-zinc-500 mb-2">Active Status</div>
-              <div className="text-sm text-zinc-300">
-                {user?.rank || 'VAGRANT'} • {user?.callsign || 'OPERATIVE'}
+            <VoiceControlToolkit />
+            <div className="pt-4 border-t border-zinc-800">
+              <div>
+                <div className="text-xs uppercase font-bold text-zinc-500 mb-2">Active Status</div>
+                <div className="text-sm text-zinc-300">
+                  {user?.rank || 'VAGRANT'} • {user?.callsign || 'OPERATIVE'}
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-xs uppercase font-bold text-zinc-500 mb-2">Current Role</div>
-              <div className="text-sm text-zinc-300">{user?.role === 'admin' ? 'ADMINISTRATOR' : 'USER'}</div>
+              <div className="mt-3">
+                <div className="text-xs uppercase font-bold text-zinc-500 mb-2">Current Role</div>
+                <div className="text-sm text-zinc-300">{user?.role === 'admin' ? 'ADMINISTRATOR' : 'USER'}</div>
+              </div>
             </div>
           </div>
         );
