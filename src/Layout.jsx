@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Terminal, Search, Clock, User } from 'lucide-react';
+import { Terminal, Clock, User } from 'lucide-react';
 import CommandPalette from "@/components/layout/CommandPalette";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import { cn } from "@/lib/utils";
-import ActivityBar from "@/components/layout/ActivityBar";
 import NetworkStatusIndicator from "@/components/layout/NetworkStatusIndicator";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
-import LeftNavRail from "@/components/layout/LeftNavRail";
-import ContextPanel from "@/components/layout/ContextPanel";
+import AppShell from "@/components/layout/AppShell";
 import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken, clearAccessToken } from "@/components/hooks/useAccessToken";
@@ -166,22 +164,10 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </header>
 
-      {/* Page Content - AppShell Grid Layout */}
-      <div className="flex-1 flex overflow-hidden relative">
-         {/* Left Nav Rail */}
-         <LeftNavRail currentPage={currentPage} user={user} />
-
-         {/* Main Content with Activity Bar */}
-         <div className="flex-1 flex overflow-hidden flex-col">
-            <ActivityBar />
-            <div className="flex-1 relative overflow-hidden flex flex-col page-shell">
-               {children}
-            </div>
-         </div>
-
-         {/* Right Context Panel */}
-         <ContextPanel currentPage={currentPage} user={user} />
-      </div>
+      {/* AppShell: 3-column grid layout */}
+      <AppShell currentPage={currentPage} user={user}>
+        {children}
+      </AppShell>
 
       {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
       <LayoutDebugMode />

@@ -1,3 +1,4 @@
+import AdminConsole from './pages/AdminConsole';
 import Channels from './pages/Channels';
 import CommsConsole from './pages/CommsConsole';
 import CommsSettings from './pages/CommsSettings';
@@ -5,6 +6,7 @@ import Diagnostics from './pages/Diagnostics';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
+import Intelligence from './pages/Intelligence';
 import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
@@ -16,12 +18,11 @@ import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
-import Intelligence from './pages/Intelligence';
-import AdminConsole from './pages/AdminConsole';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminConsole": AdminConsole,
     "Channels": Channels,
     "CommsConsole": CommsConsole,
     "CommsSettings": CommsSettings,
@@ -29,6 +30,7 @@ export const PAGES = {
     "Events": Events,
     "FleetManager": FleetManager,
     "Hub": Hub,
+    "Intelligence": Intelligence,
     "MissionControl": MissionControl,
     "NomadOpsDashboard": NomadOpsDashboard,
     "NotificationSettings": NotificationSettings,
@@ -40,8 +42,6 @@ export const PAGES = {
     "UniverseMap": UniverseMap,
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
-    "Intelligence": Intelligence,
-    "AdminConsole": AdminConsole,
 }
 
 export const pagesConfig = {
