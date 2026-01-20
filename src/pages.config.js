@@ -294,4 +294,9 @@ export const PAGES_CONFIG = {
   },
 };
 
+// Named exports for flexibility
+export { PAGES_CONFIG };
+export const pagesConfig = PAGES_CONFIG;
+
+// Default export
 export default PAGES_CONFIG;
