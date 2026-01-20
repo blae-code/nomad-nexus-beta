@@ -123,7 +123,7 @@ export default function UserContactBook() {
   };
 
   const getFilteredUsers = () => {
-    const userList = presences.filter(p => p.user_id !== currentUser?.id);
+    const userList = presences.filter(p => p.user_id !== currentUser?.id && userDirectory[p.user_id]);
 
     if (activeTab === 'all') return userList;
     if (activeTab === 'favorites') return userList.filter(p => favorites.has(p.user_id));
