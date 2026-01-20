@@ -41,6 +41,7 @@ export const commands = [
     icon: 'LayoutGrid',
     route: 'Hub',
     shortcut: 'Cmd+Shift+H',
+    description: 'Central command dashboard',
     minRank: 'Vagrant',
   },
   {
@@ -75,6 +76,7 @@ export const commands = [
     icon: 'Calendar',
     route: 'Events',
     shortcut: 'Cmd+Shift+E',
+    description: 'View and manage scheduled operations',
     minRank: 'Vagrant',
   },
   {
@@ -109,6 +111,7 @@ export const commands = [
     icon: 'Radio',
     route: 'CommsConsole',
     shortcut: 'Cmd+Shift+C',
+    description: 'Join voice nets and manage communications',
     minRank: 'Vagrant',
   },
   {
@@ -156,6 +159,7 @@ export const commands = [
     keywords: ['new', 'event', 'mission', 'operation'],
     icon: 'Plus',
     handler: 'createEvent',
+    description: 'Initialize a new operation',
     minRank: 'Voyager',
   },
   {
@@ -166,6 +170,7 @@ export const commands = [
     keywords: ['status', 'presence', 'state'],
     icon: 'RotateCcw',
     handler: 'setStatus',
+    description: 'Set your presence: Online, In-Call, Transmitting, Away, Offline',
     minRank: 'Vagrant',
   },
   {
@@ -176,6 +181,7 @@ export const commands = [
     keywords: ['distress', 'emergency', 'help', 'rescue'],
     icon: 'AlertCircle',
     handler: 'sendDistress',
+    description: 'Broadcast emergency distress beacon',
     minRank: 'Vagrant',
     requiresConfirm: true,
   },
