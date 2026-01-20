@@ -240,7 +240,7 @@ export default function UserManagement() {
               />
             </div>
 
-            <Select value={rankFilter} onValueChange={setRankFilter}>
+            <Select value={rankFilter || "all"} onValueChange={setRankFilter}>
               <SelectTrigger className="bg-zinc-900 border-zinc-800">
                 <SelectValue placeholder="Filter by Rank" />
               </SelectTrigger>

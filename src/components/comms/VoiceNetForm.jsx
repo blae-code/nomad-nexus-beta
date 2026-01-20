@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export default function VoiceNetForm({ eventId }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    event_id: eventId || "__no_event__",
+    event_id: eventId || null,
     code: "",
     label: "",
     type: "squad",
@@ -22,7 +22,7 @@ export default function VoiceNetForm({ eventId }) {
     priority: 2,
     min_rank_to_tx: "Vagrant",
     min_rank_to_rx: "Vagrant",
-    linked_squad_id: "__no_squad__",
+    linked_squad_id: null,
     status: "active"
   });
 
@@ -45,7 +45,7 @@ export default function VoiceNetForm({ eventId }) {
       toast.success("Voice Net created successfully");
       // Reset form
       setFormData({
-        event_id: eventId || "__no_event__",
+        event_id: eventId || null,
         code: "",
         label: "",
         type: "squad",
@@ -54,7 +54,7 @@ export default function VoiceNetForm({ eventId }) {
         priority: 2,
         min_rank_to_tx: "Vagrant",
         min_rank_to_rx: "Vagrant",
-        linked_squad_id: "__no_squad__",
+        linked_squad_id: null,
         status: "active"
       });
     },
@@ -66,7 +66,7 @@ export default function VoiceNetForm({ eventId }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!formData.event_id || formData.event_id === "__no_event__" || !formData.code || !formData.label) {
+    if (!formData.event_id || !formData.code || !formData.label) {
       toast.error("Event, Code, and Label are required");
       return;
     }
@@ -76,7 +76,7 @@ export default function VoiceNetForm({ eventId }) {
     
     const cleanedData = {
       ...formData,
-      linked_squad_id: formData.linked_squad_id === "__no_squad__" ? "" : formData.linked_squad_id,
+      linked_squad_id: formData.linked_squad_id || undefined,
       livekit_room_name: roomName
     };
     
@@ -97,16 +97,16 @@ export default function VoiceNetForm({ eventId }) {
             <div className="space-y-2">
               <Label className="text-xs text-zinc-400">Event *</Label>
               <Select
-                value={formData.event_id}
-                onValueChange={(value) => setFormData({ ...formData, event_id: value })}
+                value={formData.event_id || "__none__"}
+                onValueChange={(value) => setFormData({ ...formData, event_id: value === "__none__" ? null : value })}
               >
                 <SelectTrigger className="bg-zinc-900 border-zinc-800">
                   <SelectValue placeholder="Select event" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__no_event__">Select an event...</SelectItem>
+                  <SelectItem value="__none__">Select an event...</SelectItem>
                   {events.map(event => (
-                    <SelectItem key={event.id} value={event.id || "__invalid__"}>
+                    <SelectItem key={event.id} value={event.id}>
                       {event.title}
                     </SelectItem>
                   ))}
@@ -229,16 +229,16 @@ export default function VoiceNetForm({ eventId }) {
             <div className="space-y-2">
               <Label className="text-xs text-zinc-400">Linked Squad (Optional)</Label>
               <Select
-                value={formData.linked_squad_id || "__no_squad__"}
-                onValueChange={(value) => setFormData({ ...formData, linked_squad_id: value })}
+                value={formData.linked_squad_id || "__none__"}
+                onValueChange={(value) => setFormData({ ...formData, linked_squad_id: value === "__none__" ? null : value })}
               >
                 <SelectTrigger className="bg-zinc-900 border-zinc-800">
                   <SelectValue placeholder="None" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__no_squad__">None</SelectItem>
+                  <SelectItem value="__none__">None</SelectItem>
                   {squads.map(squad => (
-                    <SelectItem key={squad.id} value={squad.id || "__invalid__"}>
+                    <SelectItem key={squad.id} value={squad.id}>
                       {squad.name}
                     </SelectItem>
                   ))}
