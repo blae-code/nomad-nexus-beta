@@ -324,6 +324,10 @@ function CommsConsolePage() {
                   <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
                      {isLoading ? (
                         <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING FREQUENCIES...</div>
+                     ) : isProvisioningNets ? (
+                        <div className="text-center text-yellow-500 py-10 text-xs font-mono animate-pulse">
+                           PROVISIONING COMMS...<br/><span className="text-[10px] text-zinc-600">Auto-refreshing nets</span>
+                        </div>
                      ) : voiceNets.length === 0 ? (
                         <div className="text-center text-zinc-500 py-10 text-xs font-mono">
                            NO ACTIVE NETS DETECTED.<br/>INITIALIZE VIA OPS BOARD.
