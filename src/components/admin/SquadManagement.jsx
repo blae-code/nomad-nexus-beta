@@ -93,7 +93,7 @@ function SquadDialog({ squad, trigger, mode = 'create' }) {
 
             <div className="space-y-2">
               <Label className="text-xs text-zinc-400 uppercase">Icon</Label>
-              <Select value={formData.icon} onValueChange={(v) => setFormData({ ...formData, icon: v })}>
+              <Select value={formData.icon || 'Shield'} onValueChange={(v) => setFormData({ ...formData, icon: v })}>
                 <SelectTrigger className="bg-zinc-900 border-zinc-800">
                   <SelectValue />
                 </SelectTrigger>
@@ -107,7 +107,7 @@ function SquadDialog({ squad, trigger, mode = 'create' }) {
 
             <div className="space-y-2">
               <Label className="text-xs text-zinc-400 uppercase">Hierarchy Level</Label>
-              <Select value={formData.hierarchy_level} onValueChange={(v) => setFormData({ ...formData, hierarchy_level: v })}>
+              <Select value={formData.hierarchy_level || 'squad'} onValueChange={(v) => setFormData({ ...formData, hierarchy_level: v })}>
                 <SelectTrigger className="bg-zinc-900 border-zinc-800">
                   <SelectValue />
                 </SelectTrigger>
