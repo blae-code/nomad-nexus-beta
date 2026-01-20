@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Swords, Crosshair, ShieldAlert, Box, Scan, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StatusChip from "@/components/status/StatusChip";
+import { typographyClasses } from "@/components/utils/typography";
 
 const ROLES = [
   { value: 'PILOT', icon: Crosshair, color: 'text-blue-400', bg: 'bg-blue-950/30 border-blue-900' },
@@ -97,12 +98,12 @@ export default function EventParticipants({ eventId }) {
          <OpsPanelContent className="pt-4">
            {/* RSVP Action */}
            <div className="flex items-center gap-4 mb-6 p-4 bg-zinc-950/50 rounded border border-zinc-800 border-dashed">
-             <div className="flex-1">
-               <div className="text-sm font-bold text-zinc-300 mb-1">
-                 {myStatus ? 'Update Your Role' : 'Join Operation'}
-               </div>
-               <p className="text-xs text-zinc-500">Select your primary role for this mission.</p>
+           <div className="flex-1">
+             <div className={cn(typographyClasses.labelPrimary, "mb-1")}>
+               {myStatus ? 'Update Your Role' : 'Join Operation'}
              </div>
+             <p className={typographyClasses.descriptionSmall}>Select your primary role for this mission.</p>
+           </div>
              <Select 
                value={myStatus?.role} 
                onValueChange={(val) => rsvpMutation.mutate(val)}
@@ -129,8 +130,8 @@ export default function EventParticipants({ eventId }) {
                  const count = participantsByRole[role.value]?.length || 0;
                  return (
                    <div key={role.value} className={`flex flex-col items-center p-2 rounded border ${count > 0 ? role.bg : 'bg-zinc-900/20 border-zinc-800/50 opacity-50'}`}>
-                      <span className={`text-lg font-bold ${role.color}`}>{count}</span>
-                      <span className="text-[9px] text-zinc-500 font-bold tracking-wider uppercase">{role.value}</span>
+                      <span className={cn("text-lg font-bold", role.color)}>{count}</span>
+                      <span className={cn(typographyClasses.labelSecondary, "text-[9px]")}>{role.value}</span>
                    </div>
                  );
               })}
@@ -140,7 +141,7 @@ export default function EventParticipants({ eventId }) {
            <div className="space-y-4">
              {ROLES.filter(r => participantsByRole[r.value]?.length > 0).map(role => (
                <div key={role.value}>
-                 <h4 className={`text-xs font-bold mb-2 flex items-center gap-2 ${role.color}`}>
+                 <h4 className={cn("flex items-center gap-2 mb-2", typographyClasses.labelPrimary, role.color)}>
                    <role.icon className="w-3 h-3" />
                    {role.value}S ({participantsByRole[role.value].length})
                  </h4>
@@ -154,7 +155,7 @@ export default function EventParticipants({ eventId }) {
                           </AvatarFallback>
                        </Avatar>
                        <div className="overflow-hidden">
-                         <div className="text-xs font-medium text-zinc-300 truncate">
+                         <div className={cn(typographyClasses.callsignSmall, "truncate")}>
                            {participant.user.rsi_handle || participant.user.email}
                          </div>
                          <div className="mt-1">
