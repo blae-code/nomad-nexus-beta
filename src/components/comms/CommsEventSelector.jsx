@@ -24,7 +24,11 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
   });
 
   // Safety: ensure we have valid events with IDs before rendering
-  const validEvents = activeEvents.filter(e => e?.id && String(e.id).trim() !== '');
+  const validEvents = activeEvents.filter(e => {
+    if (!e || !e.id) return false;
+    const idStr = String(e.id).trim();
+    return idStr !== '' && idStr !== 'undefined' && idStr !== 'null';
+  });
 
   return (
     <div className="w-full">
@@ -37,14 +41,21 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
         </SelectTrigger>
         <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
           <SelectItem value="none">No Operation Selected</SelectItem>
-          {validEvents.map(event => (
-            <SelectItem key={event.id} value={String(event.id)}>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
-                <span className="font-bold">{event.title}</span>
-              </div>
-            </SelectItem>
-          ))}
+          {validEvents.length > 0 ? validEvents.map(event => {
+            const eventId = String(event.id).trim();
+            if (!eventId || eventId === '' || eventId === 'undefined' || eventId === 'null') return null;
+            
+            return (
+              <SelectItem key={eventId} value={eventId}>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
+                  <span className="font-bold">{event.title}</span>
+                </div>
+              </SelectItem>
+            );
+          }).filter(Boolean) : (
+            <SelectItem value="no-events-placeholder" disabled>No active operations</SelectItem>
+          )}
         </SelectContent>
       </Select>
     </div>
