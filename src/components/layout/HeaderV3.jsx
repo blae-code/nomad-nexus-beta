@@ -399,6 +399,56 @@ export default function HeaderV3() {
           )}
         </div>
       </div>
+
+      {/* Diagnostics Drawer */}
+      {diagnosticsOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setDiagnosticsOpen(false)}>
+          <div className="absolute right-0 top-14 w-96 max-h-[calc(100vh-56px)] bg-zinc-900 border border-zinc-800 border-t-0 overflow-y-auto shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 border-b border-zinc-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-white">SYSTEM DIAGNOSTICS</span>
+                <button
+                  onClick={() => setDiagnosticsOpen(false)}
+                  className="text-zinc-400 hover:text-zinc-300 text-lg leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="space-y-1 text-[9px] font-mono text-zinc-400">
+                <div className="flex justify-between">
+                  <span>CONNECTION:</span>
+                  <span className={connectionStatus === 'OPTIMAL' ? 'text-emerald-400' : 'text-red-400'}>{connectionStatus}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>LATENCY:</span>
+                  <span className={latency > 300 ? 'text-red-400' : latency > 150 ? 'text-yellow-400' : 'text-emerald-400'}>{latency}ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>READINESS:</span>
+                  <span className={
+                    readinessState === 'green' ? 'text-emerald-400' :
+                    readinessState === 'amber' ? 'text-yellow-400' : 'text-red-400'
+                  }>
+                    {readinessState === 'green' ? 'NOMINAL' : readinessState === 'amber' ? 'CAUTION' : 'ALERT'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>ONLINE:</span>
+                  <span className="text-cyan-400">{onlineCount}</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-3 space-y-1 text-[8px] text-zinc-500 font-mono">
+              <p>📡 Monitor connection health and system status.</p>
+              <p>🟢 GREEN: All systems nominal</p>
+              <p>🟡 AMBER: Performance degraded (high latency)</p>
+              <p>🔴 RED: Critical issues detected</p>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
