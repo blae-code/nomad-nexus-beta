@@ -13,7 +13,7 @@ import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventCalendarView from "@/components/dashboard/EventCalendarView";
 import LiveOperationsFeed from "@/components/dashboard/LiveOperationsFeed";
 import LiveIncidentCenter from "@/components/incidents/LiveIncidentCenter";
-import VoiceControlToolkit from "@/components/voice/VoiceControlToolkit";
+
 
 export default function HubPage() {
   const [user, setUser] = useState(null);
@@ -129,10 +129,6 @@ export default function HubPage() {
           </div>
           </ScrollArea>
 
-          {/* Right sidebar - Voice Toolkit */}
-          <div className="w-72 shrink-0 overflow-y-auto">
-            <VoiceControlToolkit />
-          </div>
           </div>
           </PageLayout>
           );
