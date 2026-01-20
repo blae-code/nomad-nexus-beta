@@ -10,6 +10,7 @@ import { Users, Swords, Crosshair, ShieldAlert, Box, Scan, User } from "lucide-r
 import { cn } from "@/lib/utils";
 import StatusChip from "@/components/status/StatusChip";
 import { typographyClasses } from "@/components/utils/typography";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 const ROLES = [
   { value: 'PILOT', icon: Crosshair, color: 'text-blue-400', bg: 'bg-blue-950/30 border-blue-900' },
@@ -35,11 +36,8 @@ export default function EventParticipants({ eventId }) {
     initialData: []
   });
 
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const userIds = statuses.map(s => s.user_id).filter(Boolean);
+  const { userById } = useUserDirectory(userIds.length > 0 ? userIds : null);
 
   const myStatus = statuses.find(s => s.user_id === currentUser?.id);
 
@@ -66,18 +64,18 @@ export default function EventParticipants({ eventId }) {
   });
 
   // Group by Role
-  const participantsByRole = React.useMemo(() => {
-    const grouped = {};
-    ROLES.forEach(r => grouped[r.value] = []);
-    
-    statuses.forEach(status => {
-      const role = status.role || 'OTHER';
-      if (!grouped[role]) grouped[role] = [];
-      const user = users.find(u => u.id === status.user_id);
-      if (user) grouped[role].push({ ...status, user });
-    });
-    return grouped;
-  }, [statuses, users]);
+   const participantsByRole = React.useMemo(() => {
+     const grouped = {};
+     ROLES.forEach(r => grouped[r.value] = []);
+
+     statuses.forEach(status => {
+       const role = status.role || 'OTHER';
+       if (!grouped[role]) grouped[role] = [];
+       const user = userById[status.user_id];
+       if (user) grouped[role].push({ ...status, user });
+     });
+     return grouped;
+   }, [statuses, userById]);
 
   const totalParticipants = statuses.length;
 
