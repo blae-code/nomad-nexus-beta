@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Plus, Loader2, AlertCircle, Radio, Activity, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { typographyClasses } from '@/components/utils/typography';
+import { motionLogEntry } from '@/components/utils/motionSystem';
 
 const typeIcons = {
   STATUS: Activity,
