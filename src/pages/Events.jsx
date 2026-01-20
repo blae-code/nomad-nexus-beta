@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-react";
@@ -150,18 +150,18 @@ function EventDetail({ id }) {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          
+
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-3">
-            
+
             {/* Mission Details */}
             {activeTab === 'briefing' && (
               <>
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Mission Briefing</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-zinc-400 space-y-6">
+                <OpsPanel>
+                  <OpsPanelHeader>
+                    <OpsPanelTitle>Mission Briefing</OpsPanelTitle>
+                  </OpsPanelHeader>
+                  <OpsPanelContent className="text-zinc-400 space-y-6">
                     <p className="leading-relaxed">{event.description}</p>
 
                     {/* Objectives */}
@@ -232,30 +232,30 @@ function EventDetail({ id }) {
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </OpsPanelContent>
+                  </OpsPanel>
 
-                {/* Participants & Roles */}
-                <EventParticipants eventId={event.id} />
+                  {/* Participants & Roles */}
+                  <EventParticipants eventId={event.id} />
 
-                {/* Squads / Assignments Manager */}
-                <SquadManager eventId={event.id} />
+                  {/* Squads / Assignments Manager */}
+                  <SquadManager eventId={event.id} />
 
-                {/* Communication Logs */}
-                <EventCommunicationLogs eventId={event.id} />
+                  {/* Communication Logs */}
+                  <EventCommunicationLogs eventId={event.id} />
 
-                {/* Post-Event Analysis */}
-                <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
-              </>
-            )}
+                  {/* Post-Event Analysis */}
+                  <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+                  </>
+                  )}
 
             {/* Timeline Tab */}
             {activeTab === 'timeline' && (
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Operational Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
+              <OpsPanel>
+                <OpsPanelHeader>
+                  <OpsPanelTitle>Operational Timeline</OpsPanelTitle>
+                </OpsPanelHeader>
+                <OpsPanelContent>
                   <EventTimeline 
                     eventId={event.id}
                     onAddNote={() => setShowNoteForm(!showNoteForm)}
@@ -303,30 +303,30 @@ function EventDetail({ id }) {
                       </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                  </OpsPanelContent>
+                  </OpsPanel>
+                  )}
 
-            {/* AAR Tab */}
-            {activeTab === 'aar' && (
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">After Action Report</CardTitle>
-                </CardHeader>
-                <CardContent>
+                  {/* AAR Tab */}
+                  {activeTab === 'aar' && (
+                  <OpsPanel>
+                  <OpsPanelHeader>
+                  <OpsPanelTitle>After Action Report</OpsPanelTitle>
+                  </OpsPanelHeader>
+                  <OpsPanelContent>
                   <EventAAR eventId={event.id} eventTitle={event.title} />
-                </CardContent>
-              </Card>
-            )}
+                </OpsPanelContent>
+                </OpsPanel>
+                )}
 
-            {/* Map Tab */}
-            {activeTab === 'map' && (
-              <div style={{ height: '600px' }}>
+                {/* Map Tab */}
+                {activeTab === 'map' && (
+                <div style={{ height: '600px' }}>
                 <OpsMap eventId={event.id} readOnly={false} />
-              </div>
-            )}
+                </div>
+                )}
 
-            </div>
+                </div>
 
           {/* Sidebar / Comms Column */}
           <div className="space-y-3">
@@ -452,8 +452,8 @@ export default function EventsPage() {
                 const status = getEventStatus(event);
                 
                 return (
-                  <Card key={event.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors group">
-                    <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+                  <OpsPanel key={event.id} className="hover:border-zinc-700 transition-colors group">
+                    <div className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <Badge variant="outline" className={status.color}>
@@ -492,10 +492,10 @@ export default function EventsPage() {
                           <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 hover:text-white">
                             View Intel <ArrowRight className="w-4 h-4 ml-2" />
                           </Button>
-                        </a>
-                      </div>
-                    </CardContent>
-                  </Card>
+                          </a>
+                          </div>
+                          </div>
+                          </OpsPanel>
                 );
               })
             )}
