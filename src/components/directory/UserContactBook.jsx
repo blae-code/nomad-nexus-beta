@@ -166,28 +166,53 @@ export default function UserContactBook() {
   const renderUserRow = (presence) => {
     const user = userDirectory[presence.user_id];
     const callsign = user?.callsign || 'UNKNOWN';
+    const rank = user?.rank || 'VAGRANT';
     const isFav = favorites.has(presence.user_id);
+    const isTransmitting = presence.is_transmitting;
 
     return (
-      <div key={presence.user_id} className="bg-zinc-900/50 border border-zinc-800 p-1.5 text-[9px] space-y-1">
-        <div className="flex items-center gap-2">
-          <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', statusColors[presence.status])} />
-          <span className="font-bold text-zinc-300 truncate flex-1">{callsign}</span>
-          <button
-            onClick={() => toggleFavorite(presence.user_id)}
-            className={cn('transition-colors', isFav ? 'text-yellow-400' : 'text-zinc-600 hover:text-zinc-400')}
-          >
-            <Star className="w-3 h-3" fill={isFav ? 'currentColor' : 'none'} />
-          </button>
+      <button
+        key={presence.user_id}
+        className={cn(
+          'w-full text-left flex items-center gap-2 px-3 py-1.5 transition-colors duration-150 border-l-2',
+          presence.status === 'offline'
+            ? 'border-l-zinc-700 bg-zinc-950/30 hover:bg-zinc-900/50'
+            : 'border-l-transparent bg-zinc-900/50 hover:border-l-[#ea580c] hover:bg-zinc-900/60'
+        )}
+      >
+        {/* Status Indicator */}
+        <div className={cn(
+          'w-1.5 h-1.5 rounded-full shrink-0 transition-opacity',
+          statusColors[presence.status],
+          isTransmitting && 'animate-pulse'
+        )} />
+
+        {/* Callsign + Rank */}
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-mono font-bold text-white truncate">{callsign}</div>
+          <div className="text-[8px] text-zinc-500 font-mono truncate">{rank}</div>
         </div>
 
-        <div className="flex gap-1 pt-1 border-t border-zinc-800/50">
-          <button className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 bg-emerald-900/30 border border-emerald-800/50 hover:bg-emerald-900/50 transition-colors text-emerald-300 text-[8px]">
-            <Phone className="w-2 h-2" />
-            HAIL
-          </button>
+        {/* Status Badge */}
+        <div className="text-[8px] font-mono uppercase text-zinc-600 shrink-0 px-1.5 py-0.5 border border-zinc-700/50 bg-zinc-900/50">
+          {statusLabels[presence.status]}
         </div>
-      </div>
+
+        {/* Favorite Star */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(presence.user_id);
+          }}
+          className={cn(
+            'shrink-0 transition-colors ml-1',
+            isFav ? 'text-yellow-400' : 'text-zinc-600 hover:text-zinc-400'
+          )}
+          title={isFav ? 'Unpin' : 'Pin'}
+        >
+          <Star className="w-3 h-3" fill={isFav ? 'currentColor' : 'none'} />
+        </button>
+      </button>
     );
   };
 
