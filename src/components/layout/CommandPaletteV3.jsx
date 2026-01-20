@@ -232,7 +232,7 @@ export default function CommandPaletteV3() {
     }
 
     if (cmd.type === 'NAV') {
-      window.location.href = createPageUrl(cmd.route);
+      navigate(createPageUrl(cmd.route));
     } else if (cmd.type === 'ACTION') {
       handleAction(cmd.handler);
     }
@@ -243,22 +243,54 @@ export default function CommandPaletteV3() {
   };
 
   // Action handlers
-  const handleAction = (handler) => {
+  const handleAction = async (handler) => {
     switch (handler) {
       case 'logout':
         base44.auth.logout();
         break;
+      
       case 'setStatus':
-        console.log('Set Status - TODO');
+        setStatusMenu(true);
         break;
+      
       case 'sendDistress':
         console.log('Distress sent');
         break;
+      
       case 'createEvent':
-        console.log('Create Event - TODO');
+        navigate(createPageUrl('Events'));
+        // Allow UI to render, then trigger form
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openCreateEventForm'));
+        }, 100);
         break;
+      
+      case 'joinComms':
+        if (recentEvent) {
+          navigate(createPageUrl('CommsConsole') + `?eventId=${recentEvent.id}`);
+        } else {
+          alert('No active operations found');
+        }
+        break;
+      
       default:
         console.warn('Unknown handler:', handler);
+    }
+  };
+
+  const handleStatusChange = async (status) => {
+    try {
+      const presenceData = {
+        user_id: user.id,
+        status,
+        last_activity: new Date().toISOString(),
+      };
+      await base44.functions.invoke('updateUserPresence', presenceData);
+      setStatusMenu(false);
+      setIsOpen(false);
+      setQuery('');
+    } catch (error) {
+      console.error('Failed to update presence:', error);
     }
   };
 
