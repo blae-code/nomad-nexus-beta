@@ -646,49 +646,52 @@ export default function CommandPaletteV3() {
                       {section}
                     </div>
                     <div className="space-y-0">
-                      {cmds.map((cmd, idx) => {
-                        const globalIdx = flatCommands.indexOf(cmd);
-                        const isSelected = globalIdx === selectedIndex;
-                        const isPinned = pinnedCommands.includes(cmd.id);
-                        const Icon = getIcon(cmd.icon);
+                       {cmds.map((cmd, idx) => {
+                         const globalIdx = flatCommands.indexOf(cmd);
+                         const isSelected = globalIdx === selectedIndex;
+                         const isPinned = pinnedCommands.includes(cmd.id);
+                         const isContext = section === 'CONTEXT';
+                         const Icon = getIcon(cmd.icon);
 
-                        return (
-                          <button
-                            key={cmd.id}
-                            onClick={() => {
-                              setSelectedIndex(globalIdx);
-                              setSelectedCommand(cmd);
-                              executeCommand(cmd);
-                            }}
-                            onMouseEnter={() => {
-                              setSelectedIndex(globalIdx);
-                              setSelectedCommand(cmd);
-                            }}
-                            className={cn(
-                              'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors group',
-                              isSelected
-                                ? 'bg-zinc-900 text-[#ea580c] border-l-2 border-[#ea580c]'
-                                : 'text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent'
-                            )}
-                          >
-                            <Icon className="w-3 h-3 shrink-0" />
-                            <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                togglePin(cmd.id);
-                              }}
-                              className={cn(
-                                'shrink-0 p-1 rounded transition-opacity',
-                                isPinned ? 'text-[#ea580c]' : 'text-zinc-600 group-hover:text-zinc-500'
-                              )}
-                              title={isPinned ? 'Unpin' : 'Pin'}
-                            >
-                              <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} />
-                            </button>
-                          </button>
-                        );
-                      })}
+                         return (
+                           <button
+                             key={cmd.id}
+                             onClick={() => {
+                               setSelectedIndex(globalIdx);
+                               setSelectedCommand(cmd);
+                               executeCommand(cmd);
+                             }}
+                             onMouseEnter={() => {
+                               setSelectedIndex(globalIdx);
+                               setSelectedCommand(cmd);
+                             }}
+                             className={cn(
+                               'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors group relative',
+                               isContext && 'bg-[#ea580c]/5 border-l-2 border-[#ea580c]/30',
+                               isSelected
+                                 ? cn('bg-zinc-900 text-[#ea580c] border-l-2 border-[#ea580c]', isContext && 'bg-[#ea580c]/20')
+                                 : cn('text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-[#ea580c]/10')
+                             )}
+                           >
+                             <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-[#ea580c]')} />
+                             <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
+                             {isContext && <span className="text-[7px] text-[#ea580c] uppercase font-bold">CTX</span>}
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 togglePin(cmd.id);
+                               }}
+                               className={cn(
+                                 'shrink-0 p-1 rounded transition-opacity',
+                                 isPinned ? 'text-[#ea580c]' : 'text-zinc-600 group-hover:text-zinc-500'
+                               )}
+                               title={isPinned ? 'Unpin' : 'Pin'}
+                             >
+                               <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} />
+                             </button>
+                           </button>
+                         );
+                       })}
                     </div>
                   </div>
                 ))
