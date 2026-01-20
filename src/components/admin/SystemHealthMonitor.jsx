@@ -39,7 +39,8 @@ export default function SystemHealthMonitor() {
         };
       }
     },
-    refetchInterval: 30000 // Every 30 seconds
+    refetchInterval: 30000,
+    enabled: isAdmin
   });
 
   // Check database connectivity
@@ -63,7 +64,8 @@ export default function SystemHealthMonitor() {
         };
       }
     },
-    refetchInterval: 30000
+    refetchInterval: 30000,
+    enabled: isAdmin
   });
 
   // Check backend functions
@@ -87,21 +89,24 @@ export default function SystemHealthMonitor() {
         };
       }
     },
-    refetchInterval: 30000
+    refetchInterval: 30000,
+    enabled: isAdmin
   });
 
   // Active voice nets stats
   const { data: activeNets = [] } = useQuery({
     queryKey: ['active-nets-health'],
     queryFn: () => base44.entities.VoiceNet.filter({ status: 'active' }),
-    refetchInterval: 10000
+    refetchInterval: 10000,
+    enabled: isAdmin
   });
 
   // Recent audit log activity
   const { data: recentAudits = [] } = useQuery({
     queryKey: ['recent-audits-health'],
     queryFn: () => base44.entities.AuditLog.list('-created_date', 10),
-    refetchInterval: 15000
+    refetchInterval: 15000,
+    enabled: isAdmin
   });
 
   const handleRefreshAll = () => {
