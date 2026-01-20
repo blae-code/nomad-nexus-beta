@@ -354,19 +354,21 @@ export default function HeaderV3() {
 
       {/* RIGHT: Telemetry + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Connection Status */}
-        <div
+        {/* Connection Status / Diagnostics Trigger */}
+        <button
+          onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
           className={cn(
-            'flex items-center gap-1 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100',
+            'flex items-center gap-1 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100 cursor-pointer',
             connectionStatus === 'OPTIMAL'
-              ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-400'
-              : 'bg-red-950/30 border-red-700/50 text-red-400',
+              ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-400 hover:border-emerald-600/70'
+              : 'bg-red-950/30 border-red-700/50 text-red-400 hover:border-red-600/70',
             netDataTickActive && 'border-[#ea580c]/50 bg-[#ea580c]/10'
           )}
+          title="Click for detailed diagnostics"
         >
           <Wifi className="w-2 h-2" />
           <span>{latency}ms</span>
-        </div>
+        </button>
 
         {/* Online Count */}
         <div className="flex items-center gap-1 px-2 py-1.5 border border-zinc-800/50 bg-zinc-900/40 text-[8px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
