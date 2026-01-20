@@ -23,6 +23,9 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
     return end > new Date(new Date().getTime() - 24 * 60 * 60 * 1000); // Ended less than 24h ago or future
   });
 
+  // Safety: ensure we have valid events with IDs before rendering
+  const validEvents = activeEvents.filter(e => e?.id && String(e.id).trim() !== '');
+
   return (
     <div className="w-full">
       <Select value={selectedEventId || "none"} onValueChange={(val) => onSelect(val === "none" ? null : val)}>
@@ -34,8 +37,8 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
         </SelectTrigger>
         <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
           <SelectItem value="none">No Operation Selected</SelectItem>
-          {activeEvents.filter(e => e.id && String(e.id).trim()).map(event => (
-            <SelectItem key={event.id} value={String(event.id).trim()}>
+          {validEvents.map(event => (
+            <SelectItem key={event.id} value={String(event.id)}>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
                 <span className="font-bold">{event.title}</span>
