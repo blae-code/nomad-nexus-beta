@@ -30,8 +30,9 @@ import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
 import AICriticalAlertsMonitor from "@/components/comms/AICriticalAlertsMonitor";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
-export default function CommsConsolePage() {
+function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('eventId') || null;
@@ -441,5 +442,13 @@ export default function CommsConsolePage() {
 
       </div>
     </div>
+  );
+}
+
+export default function CommsConsoleWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <CommsConsolePage />
+    </ErrorBoundary>
   );
 }
