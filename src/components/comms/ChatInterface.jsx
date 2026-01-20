@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import MessageBubble from "@/components/comms/MessageBubble";
 import FileUploadButton from "@/components/comms/FileUploadButton";
+import AIResponseSuggestions from "@/components/comms/AIResponseSuggestions";
 
 export default function ChatInterface({ channel, user }) {
   const scrollRef = useRef(null);
@@ -217,6 +218,15 @@ export default function ChatInterface({ channel, user }) {
 
       {/* Input Area */}
       <div className="p-4 border-t border-zinc-800 bg-zinc-900/30 space-y-2">
+        {/* AI Response Suggestions */}
+        {messages.length >= 2 && (
+          <AIResponseSuggestions
+            recentMessages={messages.slice(-5)}
+            context={`#${channel.name}`}
+            onSelectSuggestion={(text) => setNewMessage(text)}
+          />
+        )}
+
         {/* Attachments Preview */}
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2">
