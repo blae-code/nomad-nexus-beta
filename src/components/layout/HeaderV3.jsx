@@ -172,9 +172,9 @@ export default function HeaderV3() {
       }}
     >
       {/* LEFT: Brand + Callsign + Presence Pill */}
-      <div className="flex items-center gap-2 min-w-0">
-        {/* Brand: "NOMAD NEXUS // REDSCAR OPS" */}
-        <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-3 min-w-0 shrink-0">
+        {/* Brand Mark */}
+        <div className="flex items-center gap-1.5 shrink-0 h-10">
           <Radio className="w-4 h-4 text-[#ea580c]" />
           <span className="text-[9px] font-black uppercase text-zinc-400 hidden sm:inline tracking-wider">
             NOMAD NEXUS
@@ -184,13 +184,13 @@ export default function HeaderV3() {
         {/* Divider */}
         <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
 
-        {/* Callsign Block */}
-        <div className="hidden sm:flex items-center gap-2 min-w-0">
-          <div>
-            <div className="text-[9px] font-bold text-zinc-200 uppercase truncate">
+        {/* Callsign + Rank (stacked, baseline-aligned) */}
+        <div className="hidden sm:flex items-center h-10 min-w-0">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-zinc-100 uppercase truncate leading-tight">
               {userCallsign}
             </div>
-            <div className={cn('text-[8px] uppercase font-mono', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-600')}>
+            <div className={cn('text-[9px] uppercase font-mono leading-tight', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-500')}>
               {user?.rank || 'VAGRANT'}
             </div>
           </div>
@@ -199,13 +199,13 @@ export default function HeaderV3() {
         {/* Divider */}
         <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
 
-        {/* Presence Pill: Online/In-Call/Transmitting with pulsing dot */}
+        {/* Presence Pill */}
         <div className={cn(
-          'flex items-center gap-1.5 px-2 h-7 border text-[9px] font-mono font-bold uppercase shrink-0',
+          'flex items-center gap-1.5 px-3 h-10 border rounded-sm text-[9px] font-mono font-bold uppercase shrink-0',
           presenceInfo.color
         )}>
-          <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor, 
-            ['in-call', 'transmitting'].includes(userPresence?.status || '') && 'animate-pulse'
+          <div className={cn('w-1.5 h-1.5 rounded-full transition-opacity', presenceInfo.dotColor, 
+            userPresence?.is_transmitting && 'animate-pulse'
           )} />
           <span className="hidden md:inline">{presenceInfo.label}</span>
         </div>
