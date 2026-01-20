@@ -135,8 +135,8 @@ export default function ActivityBar() {
       />
 
       <NavItem 
-        icon={Calendar} 
-        label="Events" 
+        icon={Target} 
+        label="Operations" 
         page="Events" 
         alertColor="bg-amber-500"
         isAlertActive={hasEventSoon}
@@ -162,12 +162,6 @@ export default function ActivityBar() {
         icon={Rocket} 
         label="Fleet" 
         page="FleetManager" 
-      />
-
-      <NavItem 
-        icon={Target} 
-        label="Missions" 
-        page="MissionControl" 
       />
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
