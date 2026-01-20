@@ -261,18 +261,27 @@ export default function VoiceNetManager() {
             </TabsList>
 
             <div className="flex-1 overflow-y-auto">
-              <TabsContent value="active" className="m-0">
+              <TabsContent value="active" className="m-0 space-y-4">
+                <VoiceNetFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  squads={squads}
+                />
                 <div className="space-y-4">
                   <VoiceNetList
                     nets={activeNets}
                     netActivity={netActivity}
+                    filters={filters}
                     onEdit={(net) => {
                       setEditingNet(net);
                       setShowForm(true);
                     }}
                     onDelete={(netId) => deleteMutation.mutate(netId)}
                     onArchive={(netId) => archiveMutation.mutate(netId)}
-                    isLoading={deleteMutation.isPending || archiveMutation.isPending}
+                    onBulkArchive={(netIds) => bulkArchiveMutation.mutate(netIds)}
+                    onBulkDelete={(netIds) => bulkDeleteMutation.mutate(netIds)}
+                    onSetDefault={(netId) => setDefaultMutation.mutate(netId)}
+                    isLoading={deleteMutation.isPending || archiveMutation.isPending || bulkArchiveMutation.isPending || bulkDeleteMutation.isPending}
                   />
                   {activeNets.length > 0 && (
                     <Card className="bg-zinc-900 border-zinc-800">
