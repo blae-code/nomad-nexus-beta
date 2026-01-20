@@ -8,19 +8,23 @@ import { canAccessChannel } from "@/components/permissions";
 export default function ReadyRoomList({ selectedChannelId, onSelect, user }) {
   const { data: channels, isLoading } = useQuery({
     queryKey: ['ready-room-channels'],
-    queryFn: () => base44.entities.Channel.list({
-      // We want casual channels, and maybe public ones.
-      // The API filter matches exact values usually.
-      // For now let's fetch all and filter client side for flexibility since list is small
-    }),
+    queryFn: async () => {
+      try {
+        return await base44.entities.Channel.filter({});
+      } catch (error) {
+        console.error('[READYROOM] Channel fetch error:', error);
+        return [];
+      }
+    },
     initialData: []
   });
 
   const readyRooms = React.useMemo(() => {
+     if (!channels?.length) return [];
      return channels.filter(c => 
-        (c.category === 'casual' || c.category === 'public') && 
+        c && (c.category === 'casual' || c.category === 'public') && 
         c.type === 'text'
-     ).sort((a,b) => a.name.localeCompare(b.name));
+     ).sort((a,b) => (a?.name || '').localeCompare(b?.name || ''));
   }, [channels]);
 
   if (isLoading) {

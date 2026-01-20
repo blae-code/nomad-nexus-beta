@@ -94,27 +94,32 @@ function CommsConsolePage() {
     queryKey: ['console-user-squad', selectedEventId, currentUser?.id],
     queryFn: async () => {
        if (!selectedEventId || !currentUser) return null;
-       
-       // 1. Check Event Assignment
-       const statuses = await base44.entities.PlayerStatus.list({ 
-          user_id: currentUser.id, 
-          event_id: selectedEventId 
-       });
-       
-       if (statuses.length > 0 && statuses[0].assigned_squad_id) {
-          setUserSquadId(statuses[0].assigned_squad_id);
-          return statuses[0].assigned_squad_id;
-       }
 
-       // 2. Fallback to Global Squad
-       const memberships = await base44.entities.SquadMembership.filter({ user_id: currentUser.id });
-       if (memberships.length > 0) {
-          setUserSquadId(memberships[0].squad_id);
-          return memberships[0].squad_id;
+       try {
+          // 1. Check Event Assignment
+          const statuses = await base44.entities.PlayerStatus.filter({ 
+             user_id: currentUser.id, 
+             event_id: selectedEventId 
+          });
+
+          if (statuses?.length > 0 && statuses[0]?.assigned_squad_id) {
+             setUserSquadId(statuses[0].assigned_squad_id);
+             return statuses[0].assigned_squad_id;
+          }
+
+          // 2. Fallback to Global Squad
+          const memberships = await base44.entities.SquadMembership.filter({ user_id: currentUser.id });
+          if (memberships?.length > 0) {
+             setUserSquadId(memberships[0].squad_id);
+             return memberships[0].squad_id;
+          }
+
+          setUserSquadId(null);
+          return null;
+       } catch (error) {
+          console.error('[COMMS] Squad lookup error:', error);
+          return null;
        }
-       
-       setUserSquadId(null);
-       return null;
     },
     enabled: !!selectedEventId && !!currentUser
   });
@@ -138,25 +143,30 @@ function CommsConsolePage() {
   const { data: recentActivity } = useQuery({
     queryKey: ['comms-activity', selectedEventId],
     queryFn: async () => {
-      const msgs = await base44.entities.Message.filter({}, '-created_date', 20);
-      
-      // Map net codes to last activity timestamp
-      const activity = {};
-      msgs.forEach(msg => {
-        if (msg.content.includes('[COMMS LOG]')) {
-           const match = msg.content.match(/TX on ([^:]+):/);
-           if (match && match[1]) {
-             const code = match[1];
-             const net = voiceNets.find(n => n.code === code);
-             if (net) {
-               if (!activity[net.id] || new Date(msg.created_date) > new Date(activity[net.id])) {
-                 activity[net.id] = msg.created_date;
+      try {
+        const msgs = await base44.entities.Message.filter({}, '-created_date', 20);
+
+        // Map net codes to last activity timestamp
+        const activity = {};
+        msgs?.forEach(msg => {
+          if (msg?.content?.includes('[COMMS LOG]')) {
+             const match = msg.content.match(/TX on ([^:]+):/);
+             if (match && match[1]) {
+               const code = match[1];
+               const net = voiceNets.find(n => n?.code === code);
+               if (net) {
+                 if (!activity[net.id] || new Date(msg.created_date) > new Date(activity[net.id])) {
+                   activity[net.id] = msg.created_date;
+                 }
                }
              }
-           }
-        }
-      });
-      return activity;
+          }
+        });
+        return activity;
+      } catch (error) {
+        console.error('[COMMS] Activity fetch error:', error);
+        return {};
+      }
     },
     enabled: voiceNets.length > 0,
     refetchInterval: 3000,

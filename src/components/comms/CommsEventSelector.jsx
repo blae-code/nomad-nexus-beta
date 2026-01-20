@@ -8,13 +8,19 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
   const { data: events } = useQuery({
     queryKey: ['ops-events'],
     queryFn: async () => {
-      return base44.entities.Event.filter({}, 'start_time', 10);
+      try {
+        return await base44.entities.Event.filter({}, 'start_time', 10);
+      } catch (error) {
+        console.error('[EVENTSEL] Event fetch error:', error);
+        return [];
+      }
     },
     initialData: []
   });
 
   // Filter in memory for active/upcoming
-  const activeEvents = events.filter(e => {
+  const activeEvents = (events || []).filter(e => {
+    if (!e?.start_time) return false;
     const end = e.end_time ? new Date(e.end_time) : new Date(new Date(e.start_time).getTime() + 4 * 60 * 60 * 1000);
     return end > new Date(new Date().getTime() - 24 * 60 * 60 * 1000); // Ended less than 24h ago or future
   });
