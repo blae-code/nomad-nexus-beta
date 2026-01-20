@@ -1,5 +1,6 @@
-// Typography System - Strict hierarchy for REDSCAR OpsShell
-// Font definitions and utility classes for consistent typographic hierarchy
+// Typography System - Single source of truth for typographic hierarchy
+// Use TYPOGRAPHY constants in all pages/components for consistency
+// Replaces deprecated typographyClasses object
 
 export const TYPOGRAPHY = {
   // Font families
@@ -48,3 +49,6 @@ export const TYPOGRAPHY = {
 export function typographyClass(typeClass, colorClass = '') {
   return `${typeClass} ${colorClass}`.trim();
 }
+
+// Export old name for backward compatibility during migration
+export const typographyClasses = TYPOGRAPHY;
