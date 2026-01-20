@@ -86,6 +86,16 @@ export default function CommandPaletteV3() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Extract context from URL
+  const contextParams = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      eventId: params.get('id') || params.get('eventId'),
+      userId: params.get('userId'),
+      channelId: params.get('channelId'),
+    };
+  }, [location.search]);
+
   // Fetch most recent event for comms join
   const { data: recentEvent } = useQuery({
     queryKey: ['palette-recent-event'],
@@ -98,6 +108,21 @@ export default function CommandPaletteV3() {
       return events?.[0] || null;
     },
     staleTime: 2 * 60 * 1000, // 2 min cache
+  });
+
+  // Fetch current context entity (event or user)
+  const { data: contextEntity } = useQuery({
+    queryKey: ['palette-context', contextParams.eventId, contextParams.userId],
+    queryFn: async () => {
+      if (contextParams.eventId) {
+        return { type: 'event', data: await base44.entities.Event.get(contextParams.eventId) };
+      }
+      if (contextParams.userId) {
+        return { type: 'user', data: { id: contextParams.userId } };
+      }
+      return null;
+    },
+    enabled: !!(contextParams.eventId || contextParams.userId),
   });
 
   // Load recents and pinned from localStorage
