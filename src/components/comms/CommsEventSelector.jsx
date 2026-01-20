@@ -8,11 +8,7 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
   const { data: events } = useQuery({
     queryKey: ['ops-events'],
     queryFn: async () => {
-      return base44.entities.Event.list({ 
-        filter: {},
-        sort: { start_time: 1 },
-        limit: 10
-      });
+      return base44.entities.Event.filter({}, 'start_time', 10);
     },
     initialData: []
   });
