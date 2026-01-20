@@ -350,22 +350,21 @@ export default function HeaderV3() {
         <CommandPaletteV3 />
       </div>
 
-      {/* CENTER-RIGHT: Ops Context Strip + Readiness Meter */}
-      <div className="hidden lg:flex items-center gap-2 shrink-0">
-       {/* Ops Context + Readiness Meter */}
-       <button
-         onClick={() => setDiagnosticsOpen(true)}
-         className={cn(
-           'flex items-center gap-2 px-2.5 h-10 border rounded-sm transition-colors group',
-           readinessState === 'green' && 'border-emerald-700/40 bg-emerald-950/20 hover:border-emerald-600/60',
-           readinessState === 'amber' && 'border-yellow-700/40 bg-yellow-950/20 hover:border-yellow-600/60',
-           readinessState === 'red' && 'border-red-700/40 bg-red-950/20 hover:border-red-600/60'
-         )}
-         title="System diagnostics: comms, readiness, health"
-       >
-         <div className={cn('w-1.5 h-1.5 rounded-full', readinessColors[readinessState])} />
-         <span className="text-[9px] font-mono text-zinc-500">{opsContext.label}</span>
-       </button>
+      {/* CENTER-RIGHT: Readiness Indicator */}
+      <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={() => setDiagnosticsOpen(true)}
+          className={cn(
+            'flex items-center gap-1.5 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase transition-all duration-100',
+            readinessState === 'green' && 'border-emerald-700/50 bg-emerald-950/30 hover:border-emerald-600/70 text-emerald-400',
+            readinessState === 'amber' && 'border-yellow-700/50 bg-yellow-950/30 hover:border-yellow-600/70 text-yellow-400',
+            readinessState === 'red' && 'border-red-700/50 bg-red-950/30 hover:border-red-600/70 text-red-400'
+          )}
+          title="System diagnostics"
+        >
+          <div className={cn('w-1 h-1 rounded-full', readinessColors[readinessState])} />
+          <span className="tracking-wider hidden xl:inline">READY</span>
+        </button>
       </div>
 
       {/* RIGHT: Telemetry + Online Count + Time + User Menu */}
