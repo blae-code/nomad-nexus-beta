@@ -235,7 +235,7 @@ function EventDetail({ id }) {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Participants & Roles */}
             <EventParticipants eventId={event.id} />
 
@@ -247,7 +247,6 @@ function EventDetail({ id }) {
 
             {/* Post-Event Analysis */}
              <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
-            </Card>
             )}
 
             {/* Timeline Tab */}
