@@ -4,7 +4,10 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Radio, Calendar, Shield, Coins, AlertCircle, Users, Zap, Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
+import Divider from "@/components/layout/Divider";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventCalendarView from "@/components/dashboard/EventCalendarView";
@@ -40,31 +43,31 @@ export default function HubPage() {
       {/* Single scrollable content region */}
       <ScrollArea className="p-[var(--gutter)]">
         <div className="space-y-[var(--gutter)] max-w-6xl">
-          {/* Band 1: Top widgets (4 quick access tiles) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {quickLinks.map((link, idx) => {
-              const Icon = link.icon;
-              return (
-                <a key={idx} href={link.href} className="block group">
-                  <Panel className="h-20 flex flex-col items-center justify-center text-center hover:bg-zinc-900 transition-colors">
-                    <Icon className={`w-5 h-5 ${link.color} mb-1`} />
-                    <div className="text-[11px] font-bold text-zinc-300 group-hover:text-[#ea580c]">{link.label}</div>
-                  </Panel>
-                </a>
-              );
-            })}
-          </div>
+           {/* Quick Access Tiles */}
+           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+             {quickLinks.map((link, idx) => {
+               const Icon = link.icon;
+               return (
+                 <a key={idx} href={link.href} className="block group">
+                   <Panel className="h-20 flex flex-col items-center justify-center text-center hover:bg-zinc-900 transition-colors">
+                     <Icon className={cn("w-5 h-5 mb-1", link.color)} />
+                     <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-300 group-hover:text-[#ea580c]")}>{link.label}</div>
+                   </Panel>
+                 </a>
+               );
+             })}
+           </div>
 
-          {/* Band 2: Tabbed work area */}
+          {/* Tabbed Work Area */}
           <Tabs defaultValue="ops" className="w-full">
             <TabsList className="bg-zinc-900 border border-zinc-800 w-full justify-start">
               <TabsTrigger value="ops">Operations</TabsTrigger>
               <TabsTrigger value="alerts">Alerts</TabsTrigger>
               <TabsTrigger value="incidents">Incidents</TabsTrigger>
-              <TabsTrigger value="comms">Comms Feed</TabsTrigger>
+              <TabsTrigger value="comms">Feed</TabsTrigger>
             </TabsList>
 
-            {/* Operations Tab */}
+            {/* Ops */}
             <TabsContent value="ops" className="h-80 mt-0">
               <Panel title="Mission Projection" className="h-full">
                 <ScrollArea className="h-full">
@@ -73,7 +76,7 @@ export default function HubPage() {
               </Panel>
             </TabsContent>
 
-            {/* Alerts Tab */}
+            {/* Alerts */}
             <TabsContent value="alerts" className="h-80 mt-0">
               <Panel title="Status Alerts" className="h-full">
                 <ScrollArea className="h-full">
@@ -82,7 +85,7 @@ export default function HubPage() {
               </Panel>
             </TabsContent>
 
-            {/* Incidents Tab */}
+            {/* Incidents */}
             <TabsContent value="incidents" className="h-80 mt-0">
               <Panel title="Live Incidents" className="h-full">
                 <ScrollArea className="h-full">
@@ -91,9 +94,9 @@ export default function HubPage() {
               </Panel>
             </TabsContent>
 
-            {/* Comms Feed Tab */}
+            {/* Feed */}
             <TabsContent value="comms" className="h-80 mt-0">
-              <Panel title="Live Operations Feed" className="h-full">
+              <Panel title="Feed" className="h-full">
                 <ScrollArea className="h-full">
                   <LiveOperationsFeed eventId={null} limit={20} />
                 </ScrollArea>
@@ -101,7 +104,7 @@ export default function HubPage() {
             </TabsContent>
           </Tabs>
 
-          {/* Quick Actions Menu (compact) */}
+          {/* Quick Actions */}
           <Panel title="Quick Actions">
             <div className="grid grid-cols-3 gap-2">
               {quickActions.map((action, idx) => {
