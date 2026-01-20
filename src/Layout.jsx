@@ -19,6 +19,7 @@ const pageMap = {
   '/events': 'events',
   '/commsconsole': 'comms',
   '/intelligence': 'intelligence',
+  '/adminconsole': 'admin',
   '/admin': 'admin',
   '/': 'hub',
 };
