@@ -140,17 +140,27 @@ export default function UserContactBook() {
     const onlineUsers = userList.filter(p => p.status !== 'offline');
     const offlineUsers = userList.filter(p => p.status === 'offline');
 
+    // Sort alphabetically by callsign
+    const sortByCallsign = (a, b) => {
+      const callsignA = (userDirectory[a.user_id]?.callsign || '').toUpperCase();
+      const callsignB = (userDirectory[b.user_id]?.callsign || '').toUpperCase();
+      return callsignA.localeCompare(callsignB);
+    };
+
+    const sortedOnline = onlineUsers.sort(sortByCallsign);
+    const sortedOffline = offlineUsers.sort(sortByCallsign);
+
     // Apply tab filters
-    let filtered = onlineUsers;
+    let filtered = sortedOnline;
     if (activeTab === 'all') {
-      filtered = onlineUsers;
+      filtered = sortedOnline;
     } else if (activeTab === 'favorites') {
-      filtered = userList.filter(p => favorites.has(p.user_id));
+      filtered = userList.filter(p => favorites.has(p.user_id)).sort(sortByCallsign);
     } else if (groups[activeTab]) {
-      filtered = userList.filter(p => groups[activeTab].includes(p.user_id));
+      filtered = userList.filter(p => groups[activeTab].includes(p.user_id)).sort(sortByCallsign);
     }
 
-    return { online: filtered.filter(p => p.status !== 'offline'), offline: offlineUsers };
+    return { online: filtered.filter(p => p.status !== 'offline'), offline: sortedOffline };
   };
 
   const renderUserRow = (presence) => {
