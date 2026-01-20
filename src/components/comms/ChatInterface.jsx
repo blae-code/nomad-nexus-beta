@@ -100,25 +100,7 @@ export default function ChatInterface({ channel, user }) {
     setOnlineUsers(Array.from(recentUsers));
   }, [messages, channel?.id]);
 
-  // Fetch Authors (for names)
-  const { data: authors } = useQuery({
-    queryKey: ['chat-authors', messages],
-    queryFn: async () => {
-      const userIds = [...new Set(messages.map(m => m.user_id))];
-      if (userIds.length === 0) return {};
-      
-      // In a real app we might batch fetch or use a cache
-      // For now we'll just list all users and map them (inefficient but works for small scale)
-      const allUsers = await base44.entities.User.list(); 
-      const authorMap = {};
-      allUsers.forEach(u => {
-         authorMap[u.id] = u;
-      });
-      return authorMap;
-    },
-    enabled: messages.length > 0,
-    initialData: {}
-  });
+  const { userById } = useUserDirectory();
 
   // Scroll to bottom on new messages
   useEffect(() => {
