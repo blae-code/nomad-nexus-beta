@@ -11,6 +11,9 @@ import OrgResourcesWidget from "@/components/dashboard/OrgResourcesWidget";
 import ArmoryStatusPanel from "@/components/dashboard/ArmoryStatusPanel";
 import EventCalendarView from "@/components/dashboard/EventCalendarView";
 import OpsMap from "@/components/ops/OpsMap";
+import QuickActionStrip from "@/components/dashboard/QuickActionStrip";
+import LiveOperationsFeed from "@/components/dashboard/LiveOperationsFeed";
+import PersonalReadinessPanel from "@/components/dashboard/PersonalReadinessPanel";
 
 export default function HubPage() {
   const [user, setUser] = useState(null);
@@ -45,20 +48,26 @@ export default function HubPage() {
         </div>
 
         {/* Quick Access Links */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          {quickLinks.map((link, idx) => (
-            <a key={idx} href={link.href} className="block group">
-              <div className={`p-3 lg:p-4 border ${link.bg} hover:bg-opacity-50 transition-all flex items-center gap-2 lg:gap-3`}>
-                <link.icon className={`w-5 h-5 lg:w-6 lg:h-6 ${link.color}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs lg:text-sm font-bold text-white group-hover:text-[#ea580c] transition-colors truncate">{link.label}</div>
-                  <div className="text-[9px] lg:text-[10px] text-zinc-600 font-mono">QUICK ACCESS</div>
-                </div>
-                <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
-              </div>
-            </a>
-          ))}
-        </div>
+         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+           {quickLinks.map((link, idx) => (
+             <a key={idx} href={link.href} className="block group">
+               <div className={`p-3 lg:p-4 border ${link.bg} hover:bg-opacity-50 transition-all flex items-center gap-2 lg:gap-3`}>
+                 <link.icon className={`w-5 h-5 lg:w-6 lg:h-6 ${link.color}`} />
+                 <div className="flex-1 min-w-0">
+                   <div className="text-xs lg:text-sm font-bold text-white group-hover:text-[#ea580c] transition-colors truncate">{link.label}</div>
+                   <div className="text-[9px] lg:text-[10px] text-zinc-600 font-mono">QUICK ACCESS</div>
+                 </div>
+                 <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
+               </div>
+             </a>
+           ))}
+         </div>
+
+         {/* Quick Action Strip & Personal Readiness */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+           <QuickActionStrip />
+           <PersonalReadinessPanel />
+         </div>
 
         {/* Event Calendar View */}
         <EventCalendarView />
@@ -87,6 +96,11 @@ export default function HubPage() {
             <StatusAlertsWidget />
             <PersonalActivityWidget />
             <ArmoryStatusPanel />
+          </div>
+
+          {/* Live Operations Feed */}
+          <div className="lg:col-span-12">
+            <LiveOperationsFeed eventId={null} limit={15} />
           </div>
         </div>
 
