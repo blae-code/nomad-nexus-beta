@@ -34,14 +34,13 @@ export default function HeaderV3() {
   const [userPresence, setUserPresence] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
-  const [presenceList, setPresenceList] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('OPTIMAL');
   const [latency, setLatency] = useState(0);
   const [isVisible, setIsVisible] = useState(!document.hidden);
   const location = useLocation();
   
   // Safe callsign/rank resolution via directory
-  const { userById, getDisplayName } = useUserDirectory(user?.id ? [user.id] : []);
+  const { userById } = useUserDirectory(user?.id ? [user.id] : []);
   const userCallsign = useMemo(() => {
     if (user?.callsign) return user.callsign;
     if (user?.id && userById[user.id]) return userById[user.id].callsign || user.full_name?.split(' ')[0];
@@ -75,7 +74,6 @@ export default function HeaderV3() {
         const presences = await base44.entities.UserPresence.list();
         const online = presences.filter((p) => p.status !== 'offline').length;
         setOnlineCount(online);
-        setPresenceList(presences.slice(0, 5)); // Keep 5 for avatar dots
         
         // Get current user's presence
         if (user) {
@@ -188,8 +186,8 @@ export default function HeaderV3() {
             <div className="text-[9px] font-bold text-zinc-200 uppercase truncate">
               {userCallsign}
             </div>
-            <div className="text-[8px] text-zinc-600 uppercase font-mono">
-              {user?.rank ? getRankColorClass(user.rank, 'text') : 'VAGRANT'}
+            <div className={cn('text-[8px] uppercase font-mono', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-600')}>
+              {user?.rank || 'VAGRANT'}
             </div>
           </div>
         </div>
@@ -240,13 +238,13 @@ export default function HeaderV3() {
           <span className="text-[8px] opacity-60">{latency}ms</span>
         </div>
 
-        {/* Online Count with avatar pips */}
+        {/* Online Count */}
         <div className="flex items-center gap-1.5 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono hidden md:flex">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
           <span className="font-bold text-zinc-300">ONLINE: {onlineCount}</span>
         </div>
 
-        {/* Time: Local + UTC */}
+        {/* Time: Local */}
         <div className="hidden xl:flex items-center gap-1 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono text-zinc-400">
           <Clock className="w-2.5 h-2.5" />
           <span>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
