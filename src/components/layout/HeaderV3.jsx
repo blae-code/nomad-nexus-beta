@@ -269,24 +269,24 @@ export default function HeaderV3() {
       {/* LEFT: Brand + Callsign + Presence */}
       <div className="flex items-center gap-2.5 min-w-0 shrink-0">
         {/* Brand */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Radio className="w-3.5 h-3.5 text-[#ea580c]" />
-          <span className="text-[8px] font-black uppercase text-zinc-500 hidden sm:inline tracking-widest">NEXUS</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <Radio className="w-4 h-4 text-[#ea580c]" />
+          <span className="text-[9px] font-black uppercase text-zinc-500 hidden sm:inline tracking-widest">NEXUS</span>
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-zinc-800/50 hidden sm:block" />
+        <div className="w-px h-6 bg-zinc-800/50 hidden sm:block" />
 
         {/* Callsign + Rank */}
-        <div className="hidden sm:flex items-baseline gap-1.5 min-w-0">
-          <span className="text-[10px] font-bold uppercase text-zinc-100 truncate tracking-tight">{userCallsign}</span>
-          <span className={cn('text-[8px] font-mono', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-600')}>
+        <div className="hidden sm:flex items-baseline gap-2 min-w-0">
+          <span className="text-[11px] font-bold uppercase text-zinc-100 truncate tracking-tight">{userCallsign}</span>
+          <span className={cn('text-[9px] font-mono', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-600')}>
             {user?.rank || 'VAGRANT'}
           </span>
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-zinc-800/50 hidden sm:block" />
+        <div className="w-px h-6 bg-zinc-800/50 hidden sm:block" />
 
         {/* Status Pill */}
         <div className="relative">
