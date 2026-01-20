@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import '@/globals.css';
 import AppShellV3 from "@/components/layout/AppShellV3";
 import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
 import { base44 } from "@/api/base44Client";

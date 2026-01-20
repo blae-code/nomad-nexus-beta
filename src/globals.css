@@ -17,6 +17,14 @@
   /* Colors for dividers */
   --divider-color: #27272a; /* zinc-700 */
   --divider-color-subtle: #18181b; /* zinc-900 */
+
+  /* Typography */
+  --font-sans: 'Rajdhani', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Layout-specific tokens */
+  --rail-w-collapsed: 72px;
+  --rail-w-expanded: 240px;
 }
 
 /* AppShell Grid Container */
