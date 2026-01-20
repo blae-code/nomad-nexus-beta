@@ -1,4 +1,3 @@
-import Admin from './pages/Admin';
 import Channels from './pages/Channels';
 import CommsConsole from './pages/CommsConsole';
 import CommsSettings from './pages/CommsSettings';
@@ -23,7 +22,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Admin": Admin,
     "Channels": Channels,
     "CommsConsole": CommsConsole,
     "CommsSettings": CommsSettings,
