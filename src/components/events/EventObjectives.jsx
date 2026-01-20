@@ -55,9 +55,9 @@ function ObjectiveItem({ objective, index, onUpdate, users, assets, canEdit }) {
    };
 
    const assignedEntities = (objective.assignments || []).map(a => ({
-      ...a,
-      entity: a.type === 'USER' ? users.find(u => u.id === a.id) : assets.find(as => as.id === a.id)
-   })).filter(a => a.entity);
+       ...a,
+       entity: a.type === 'USER' ? (Array.isArray(users) ? users.find(u => u.id === a.id) : undefined) : (Array.isArray(assets) ? assets.find(as => as.id === a.id) : undefined)
+    })).filter(a => a.entity);
 
    return (
       <div className="group">
@@ -90,7 +90,7 @@ function ObjectiveItem({ objective, index, onUpdate, users, assets, canEdit }) {
                      {objective.sub_tasks.map((sub, sIdx) => {
                         const subAssignments = (sub.assignments || []).map(a => ({
                            ...a,
-                           entity: a.type === 'USER' ? users.find(u => u.id === a.id) : assets.find(as => as.id === a.id)
+                           entity: a.type === 'USER' ? (Array.isArray(users) ? users.find(u => u.id === a.id) : undefined) : (Array.isArray(assets) ? assets.find(as => as.id === a.id) : undefined)
                         })).filter(a => a.entity);
 
                         return (
