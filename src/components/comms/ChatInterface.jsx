@@ -11,6 +11,7 @@ import { getRankColorClass } from "@/components/utils/rankUtils";
 import MessageBubble from "@/components/comms/MessageBubble";
 import FileUploadButton from "@/components/comms/FileUploadButton";
 import AIResponseSuggestions from "@/components/comms/AIResponseSuggestions";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 export default function ChatInterface({ channel, user }) {
   const scrollRef = useRef(null);
