@@ -348,6 +348,7 @@ export default function UserManagement() {
 
                   <UserEditDialog
                     user={user}
+                    isAdmin={isAdmin}
                     trigger={
                       <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-[#ea580c]">
                         <Edit className="w-4 h-4 mr-1" />
