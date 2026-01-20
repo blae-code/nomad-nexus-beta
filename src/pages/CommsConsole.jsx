@@ -21,13 +21,11 @@ import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
-import CommsToolbox from "@/components/comms/CommsToolbox";
 import TacticalDashboard from "@/components/comms/TacticalDashboard";
-import VoiceDiagnostics from "@/components/comms/VoiceDiagnostics";
-import OperationalEventFeed from "@/components/comms/OperationalEventFeed";
 import CommsSearch from "@/components/comms/CommsSearch";
 import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
-import AICriticalAlertsMonitor from "@/components/comms/AICriticalAlertsMonitor";
+import CommsToolbar from "@/components/comms/CommsToolbar";
+import CommsAdvancedDrawer from "@/components/comms/CommsAdvancedDrawer";
 import ChannelManager from "@/components/comms/ChannelManager";
 import IncidentForm from "@/components/incidents/IncidentForm";
 import IncidentDashboard from "@/components/incidents/IncidentDashboard";
@@ -63,7 +61,8 @@ function CommsConsolePage() {
   const [selectedIncident, setSelectedIncident] = React.useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = React.useState(true);
   const [userPreferences, setUserPreferences] = React.useState({});
-  const { isTransmitting, pttKey } = usePTT(null, userPreferences);
+  const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
+  const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -234,26 +233,24 @@ function CommsConsolePage() {
     <div className="h-full bg-zinc-950 text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
       
       {/* Toolbar */}
-      <div className="h-10 lg:h-12 border-b border-zinc-800 bg-zinc-900 flex items-center px-3 lg:px-6 justify-between shrink-0 z-40">
-         <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-2">
-                  <Radio className="w-5 h-5 text-[#ea580c]" />
-                  <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">COMMS ARRAY</h2>
-               </div>
-
-               <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSearch(true)}
-                  className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
-               >
-                  <Search className="w-4 h-4" />
-                  <kbd className="hidden md:inline px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono">
-                     ⌘K
-                  </kbd>
-               </Button>
+      <div className="h-10 lg:h-12 border-b border-zinc-800 bg-zinc-900 flex items-center px-3 lg:px-6 justify-between shrink-0 z-40 gap-4">
+         <div className="flex items-center gap-6 flex-1">
+            <div className="flex items-center gap-2">
+               <Radio className="w-5 h-5 text-[#ea580c]" />
+               <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">COMMS ARRAY</h2>
             </div>
+
+            <Button
+               variant="ghost"
+               size="sm"
+               onClick={() => setShowSearch(true)}
+               className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
+            >
+               <Search className="w-4 h-4" />
+               <kbd className="hidden md:inline px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono">
+                  ⌘K
+               </kbd>
+            </Button>
 
             {/* Console Mode Switcher */}
             <div className="flex bg-zinc-950 border border-zinc-800 rounded-sm p-0.5">
@@ -265,7 +262,7 @@ function CommsConsolePage() {
                   )}
                   >
                   OPS
-                  </button>
+               </button>
                <button
                   onClick={() => setConsoleMode('lounge')}
                   className={cn(
@@ -274,64 +271,62 @@ function CommsConsolePage() {
                   )}
                   >
                   READY ROOMS
-                  </button>
+               </button>
             </div>
          </div>
 
          {consoleMode === 'ops' && (
-            <>
             <div className="flex items-center gap-4">
                <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5">
                   <button 
                      onClick={() => setViewMode('line')}
-                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'line' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                  LINE
-               </button>
-               <button 
-                  onClick={() => setViewMode('command')}
-                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'command' ? 'bg-red-900 text-red-100' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                  CMD
-               </button>
-               <button 
-                  onClick={() => setViewMode('hierarchy')}
-                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'hierarchy' ? 'bg-emerald-900 text-emerald-100' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                  <ListTree className="w-3 h-3" />
-                  ORG
-               </button>
-               <button 
-                  onClick={() => setViewMode('tactical')}
-                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'tactical' ? 'bg-[#ea580c] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                  <Monitor className="w-3 h-3" />
-                  TAC
-               </button>
-               <button 
-                  onClick={() => setViewMode('diagnostics')}
-                  className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'diagnostics' ? 'bg-purple-900 text-purple-100' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                  <Activity className="w-3 h-3" />
-                  TEST
-               </button>
+                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'line' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                     LINE
+                  </button>
+                  <button 
+                     onClick={() => setViewMode('command')}
+                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'command' ? 'bg-red-900 text-red-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                     CMD
+                  </button>
+                  <button 
+                     onClick={() => setViewMode('hierarchy')}
+                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'hierarchy' ? 'bg-emerald-900 text-emerald-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                     <ListTree className="w-3 h-3" />
+                     ORG
+                  </button>
+                  <button 
+                     onClick={() => setViewMode('tactical')}
+                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'tactical' ? 'bg-[#ea580c] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                     <Monitor className="w-3 h-3" />
+                     TAC
+                  </button>
+                  <button 
+                     onClick={() => setViewMode('diagnostics')}
+                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'diagnostics' ? 'bg-purple-900 text-purple-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                     <Activity className="w-3 h-3" />
+                     TEST
+                  </button>
                </div>
                <div className="h-6 w-[1px] bg-zinc-800 mx-2" />
                {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
-               </div>
 
                <Button
-               variant="ghost"
-               size="sm"
-               onClick={() => setShowAIAssistant(!showAIAssistant)}
-               className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800 ml-2", showAIAssistant ? "bg-purple-500/10 text-purple-400 border-purple-500/30" : "text-zinc-500")}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAIAssistant(!showAIAssistant)}
+                  className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800", showAIAssistant ? "bg-purple-500/10 text-purple-400 border-purple-500/30" : "text-zinc-500")}
                >
-               <Bot className="w-3 h-3" />
-               AI ASSIST
+                  <Bot className="w-3 h-3" />
+                  AI ASSIST
                </Button>
-               </>
-               )}
-               </div>
+            </div>
+         )}
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
@@ -409,38 +404,65 @@ function CommsConsolePage() {
             
             <div className="h-full flex flex-col gap-2 lg:gap-3">
                {consoleMode === 'ops' ? (
-                  // OPS MODE
-                  selectedEventId ? (
-                    viewMode === 'tactical' ? (
-                       <TacticalDashboard eventId={selectedEventId} />
-                    ) : viewMode === 'diagnostics' ? (
-                       <VoiceDiagnostics user={currentUser} eventId={selectedEventId} />
-                    ) : (
-                       <ActiveNetPanel 
-                          net={selectedNet} 
-                          user={currentUser} 
-                          eventId={selectedEventId}
-                          onConnectionChange={(netId, isConnected) => {
-                            if (isConnected) {
-                              setActiveNetConnection(netId);
-                            } else if (activeNetConnection === netId) {
-                              setActiveNetConnection(null);
-                            }
-                          }}
-                       />
-                    )
-                  ) : (
-                     <>
-                        {/* Dashboard Widgets */}
-                        <CurrentStatusHeader user={currentUser} />
-                        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                           <PersonalLogPanel user={currentUser} />
-                        </div>
-                        <div className="shrink-0">
-                           <AUECWarningPanel />
-                        </div>
-                     </>
-                  )
+                     // OPS MODE - Primary Active Net Panel
+                     selectedEventId ? (
+                       viewMode === 'tactical' ? (
+                          <TacticalDashboard eventId={selectedEventId} />
+                       ) : (
+                          <>
+                             {/* Comms Toolbar - Single source of truth for net actions */}
+                             <CommsToolbar
+                                selectedNet={selectedNet}
+                                onSelectNet={(net) => {
+                                  if (net) {
+                                    setSelectedNet(net);
+                                    setActiveNetConnection(net.id);
+                                  } else {
+                                    setSelectedNet(null);
+                                    setActiveNetConnection(null);
+                                  }
+                                }}
+                                isConnected={activeNetConnection === selectedNet?.id}
+                                isTransmitting={isTransmitting}
+                                onOpenAdvanced={() => setShowAdvancedDrawer(true)}
+                                className="shrink-0"
+                             />
+                             {/* Active Net Chat/Info */}
+                             {selectedNet ? (
+                                <ActiveNetPanel 
+                                   net={selectedNet} 
+                                   user={currentUser} 
+                                   eventId={selectedEventId}
+                                   onConnectionChange={(netId, isConnected) => {
+                                     if (isConnected) {
+                                       setActiveNetConnection(netId);
+                                     } else if (activeNetConnection === netId) {
+                                       setActiveNetConnection(null);
+                                     }
+                                   }}
+                                />
+                             ) : (
+                                <div className="flex-1 flex items-center justify-center text-zinc-600">
+                                   <div className="text-center">
+                                      <Radio className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                      <p className="text-sm uppercase tracking-widest">SELECT A NET TO BEGIN</p>
+                                   </div>
+                                </div>
+                             )}
+                          </>
+                       )
+                     ) : (
+                        <>
+                           {/* Dashboard Widgets */}
+                           <CurrentStatusHeader user={currentUser} />
+                           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                              <PersonalLogPanel user={currentUser} />
+                           </div>
+                           <div className="shrink-0">
+                              <AUECWarningPanel />
+                           </div>
+                        </>
+                     )
                ) : (
                   // LOUNGE MODE (Ready Rooms)
                   selectedChannel ? (
@@ -468,7 +490,7 @@ function CommsConsolePage() {
             )
          ))}
 
-         {/* Right Sidebar - Incidents, Event Feed, AI Assistant, or Toolbox */}
+         {/* Right Sidebar - Context-specific panels (no toolbox here anymore) */}
          {consoleMode === 'ops' && (
             <div className="w-64 lg:w-72 xl:w-80 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
                {viewMode === 'tactical' ? (
@@ -504,21 +526,26 @@ function CommsConsolePage() {
                      <RallyPointManager eventId={selectedEventId} currentNetId={selectedNet?.id} />
                      <NetDisciplineQueue netId={selectedNet?.id} />
                   </div>
-               ) : (
-                  <CommsToolbox user={currentUser} eventId={selectedEventId} />
-               )}
+               ) : null}
             </div>
          )}
 
       </div>
 
-      {/* Dialogs */}
+      {/* Dialogs & Drawers */}
       {showSearch && <CommsSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />}
       <IncidentForm 
         isOpen={incidentFormOpen} 
         onClose={() => setIncidentFormOpen(false)}
         eventId={selectedEventId}
         user={currentUser}
+      />
+      <CommsAdvancedDrawer
+        isOpen={showAdvancedDrawer}
+        onOpenChange={setShowAdvancedDrawer}
+        user={currentUser}
+        eventId={selectedEventId}
+        selectedNet={selectedNet}
       />
 
       {/* PTT HUD */}
