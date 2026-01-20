@@ -293,13 +293,13 @@ export default function HeaderV3() {
           <button
             onClick={() => setStatusMenuOpen(!statusMenuOpen)}
             className={cn(
-              'flex items-center gap-1 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
+              'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
               presenceInfo.color,
               'hover:shadow-sm'
             )}
             title="Click to change status"
           >
-            <div className={cn('w-1 h-1 rounded-full', presenceInfo.dotColor, 
+            <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor, 
               userPresence?.is_transmitting && 'animate-pulse'
             )} />
             <span className="hidden md:inline">{presenceInfo.label}</span>
