@@ -1,12 +1,12 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw, Terminal } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Terminal, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, copied: false };
   }
 
   static getDerivedStateFromError(error) {
@@ -40,6 +40,25 @@ class ErrorBoundary extends React.Component {
     
     return 'Runtime error - see console for details';
   }
+
+  copyDiagnostics = async () => {
+    const timestamp = new Date().toISOString();
+    const route = window.location.pathname;
+    const text = `DIAGNOSTIC REPORT
+Route: ${route}
+Timestamp: ${timestamp}
+Error: ${this.state.error?.toString() || 'Unknown'}
+
+View full diagnostics: /diagnostics`;
+    
+    try {
+      await navigator.clipboard.writeText(text);
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
 
   render() {
     if (this.state.hasError) {
@@ -104,6 +123,23 @@ class ErrorBoundary extends React.Component {
 
               {/* Actions */}
               <div className="pt-4 border-t border-zinc-800 flex gap-3">
+                <Button
+                  onClick={this.copyDiagnostics}
+                  variant="outline"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-2"
+                >
+                  {this.state.copied ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy Diagnostics
+                    </>
+                  )}
+                </Button>
                 <Button
                   onClick={() => window.location.reload()}
                   className="flex-1 bg-red-950 hover:bg-red-900 text-red-100 border border-red-900"
