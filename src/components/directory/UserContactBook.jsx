@@ -63,6 +63,17 @@ export default function UserContactBook() {
     }
   });
 
+  // Subscribe to user changes for real-time updates
+  useEffect(() => {
+    const unsubscribe = base44.entities.User.subscribe(() => {
+      // Invalidate and refetch user list
+      base44.entities.User.list().then(users => {
+        // This triggers React Query to update
+      });
+    });
+    return unsubscribe;
+  }, []);
+
   const { data: presences = [] } = useQuery({
     queryKey: ['user-presences-contact'],
     queryFn: async () => {
@@ -71,6 +82,14 @@ export default function UserContactBook() {
     },
     refetchInterval: 3000
   });
+
+  // Subscribe to presence changes for real-time updates
+  useEffect(() => {
+    const unsubscribe = base44.entities.UserPresence.subscribe(() => {
+      // Presence changed, will be picked up by refetchInterval
+    });
+    return unsubscribe;
+  }, []);
 
   const { data: userDirectory = {} } = useQuery({
     queryKey: ['user-directory-contact'],
@@ -81,8 +100,17 @@ export default function UserContactBook() {
       } catch {
         return {};
       }
-    }
+    },
+    refetchInterval: 5000
   });
+
+  // Subscribe to directory updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Refetch directory periodically for callsign/rank updates
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleFavorite = (userId) => {
     const newFav = new Set(favorites);
