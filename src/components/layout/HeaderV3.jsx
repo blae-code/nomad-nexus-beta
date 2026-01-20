@@ -59,11 +59,11 @@ export default function HeaderV3() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        
+
         // Fetch or create user presence
         const presences = await base44.entities.UserPresence.list();
         let userPres = presences.find((p) => p.user_id === currentUser.id);
-        
+
         // Create if doesn't exist
         if (!userPres) {
           userPres = await base44.entities.UserPresence.create({
@@ -73,11 +73,16 @@ export default function HeaderV3() {
           });
         }
         setUserPresence(userPres);
+
+        // Update online count
+        const online = presences.filter((p) => p.status !== 'offline').length;
+        setOnlineCount(online);
+        window.headerTotalUsers = presences.length;
       } catch (e) {
         console.error('Failed to initialize presence:', e);
       }
     };
-    
+
     initUser();
   }, []);
 
