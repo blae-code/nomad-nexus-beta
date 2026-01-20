@@ -127,7 +127,7 @@ export default function VoiceControlToolkit() {
             {/* Latency */}
             <div className="flex items-center justify-between">
               <span className="text-[9px] text-zinc-500">Latency</span>
-              <span className={cn('text-[9px] font-mono', getLatencyColor())}>{latency}ms</span>
+              <span className={cn('text-[9px] font-mono', getLatencyColor())}>{Math.round(latency)}ms</span>
             </div>
           </div>
         </div>
