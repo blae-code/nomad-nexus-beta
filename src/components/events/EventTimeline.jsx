@@ -82,8 +82,9 @@ export default function EventTimeline({ eventId }) {
       <CardContent className="space-y-3">
         
         {/* Add Note Section */}
-        {isAddingNote && (
-          <div className="p-3 border border-zinc-700 bg-zinc-950/50 rounded">
+         <AnimatePresence>
+           {isAddingNote && (
+             <motion.div {...motionStateChange} className="p-3 border border-zinc-700 bg-zinc-950/50 rounded">
             <textarea
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
@@ -111,8 +112,9 @@ export default function EventTimeline({ eventId }) {
                 Cancel
               </Button>
             </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Filters */}
         <div className="flex gap-2">
@@ -154,38 +156,41 @@ export default function EventTimeline({ eventId }) {
             No events to display
           </div>
         ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {filteredLogs.map((log) => {
-              const Icon = typeIcons[log.type] || FileText;
-              const timestamp = new Date(log.timestamp || log.created_date);
-              return (
-                <div
-                  key={log.id}
-                  className={`p-3 border rounded text-xs ${severityColors[log.severity]}`}
-                >
-                  <div className="flex items-start gap-2 mb-1">
-                    <Icon className="w-3 h-3 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                       <div className={cn(typographyClasses.logContent, "text-zinc-100 truncate")}>{log.summary}</div>
-                       <div className={cn(typographyClasses.logTimestamp, "mt-0.5")}>
-                         {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          <AnimatePresence mode="popLayout">
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredLogs.map((log) => {
+                const Icon = typeIcons[log.type] || FileText;
+                const timestamp = new Date(log.timestamp || log.created_date);
+                return (
+                  <motion.div
+                    key={log.id}
+                    {...motionLogEntry}
+                    className={`p-3 border rounded text-xs ${severityColors[log.severity]}`}
+                  >
+                    <div className="flex items-start gap-2 mb-1">
+                      <Icon className="w-3 h-3 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                         <div className={cn(typographyClasses.logContent, "text-zinc-100 truncate")}>{log.summary}</div>
+                         <div className={cn(typographyClasses.logTimestamp, "mt-0.5")}>
+                           {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                         </div>
                        </div>
-                     </div>
-                     <Badge variant="outline" className={cn(typographyClasses.netCodeSmall, "text-[8px] shrink-0")}>
-                       {log.type}
-                     </Badge>
-                  </div>
-                  {log.details && typeof log.details === 'object' && Object.keys(log.details).length > 0 && (
-                    <div className={cn(typographyClasses.logEntry, "mt-2 pl-5")}>
-                      {Object.entries(log.details).slice(0, 2).map(([k, v]) => (
-                        <div key={k} className={typographyClasses.timestamp}>{k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
-                      ))}
+                       <Badge variant="outline" className={cn(typographyClasses.netCodeSmall, "text-[8px] shrink-0")}>
+                         {log.type}
+                       </Badge>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {log.details && typeof log.details === 'object' && Object.keys(log.details).length > 0 && (
+                      <div className={cn(typographyClasses.logEntry, "mt-2 pl-5")}>
+                        {Object.entries(log.details).slice(0, 2).map(([k, v]) => (
+                          <div key={k} className={typographyClasses.timestamp}>{k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </AnimatePresence>
         )}
       </CardContent>
     </Card>
