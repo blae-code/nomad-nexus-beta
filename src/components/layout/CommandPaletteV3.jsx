@@ -437,7 +437,7 @@ export default function CommandPaletteV3() {
   };
 
   // Action handlers
-  const handleAction = async (handler) => {
+  const handleAction = async (handler, contextId) => {
     switch (handler) {
       case 'logout':
         base44.auth.logout();
@@ -459,7 +459,6 @@ export default function CommandPaletteV3() {
       
       case 'createEvent':
         navigate(createPageUrl('Events'));
-        // Allow UI to render, then trigger form
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('openCreateEventForm'));
         }, 100);
@@ -471,6 +470,51 @@ export default function CommandPaletteV3() {
         } else {
           alert('No active operations found');
         }
+        break;
+
+      // Context-aware event handlers
+      case 'editEventDetails':
+        navigate(createPageUrl(`Events?id=${contextId}`));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openEditEventForm', { detail: { eventId: contextId } }));
+        }, 100);
+        break;
+
+      case 'inviteAttendees':
+        navigate(createPageUrl(`Events?id=${contextId}`));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openInviteAttendees', { detail: { eventId: contextId } }));
+        }, 100);
+        break;
+
+      case 'configureComms':
+        navigate(createPageUrl(`CommsConsole?eventId=${contextId}`));
+        break;
+
+      case 'viewMap':
+        navigate(createPageUrl(`Events?id=${contextId}`));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('focusTab', { detail: { tab: 'map' } }));
+        }, 100);
+        break;
+
+      // Context-aware user handlers
+      case 'viewUserProfile':
+        navigate(createPageUrl(`Profile?userId=${contextId}`));
+        break;
+
+      case 'sendDM':
+        navigate(createPageUrl(`Channels?userId=${contextId}`));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: contextId } }));
+        }, 100);
+        break;
+
+      case 'inviteToEvent':
+        navigate(createPageUrl('Events'));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openCreateEventForm', { detail: { inviteUserId: contextId } }));
+        }, 100);
         break;
       
       default:
