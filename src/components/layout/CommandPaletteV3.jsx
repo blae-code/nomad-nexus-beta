@@ -618,7 +618,7 @@ export default function CommandPaletteV3() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.1 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-zinc-950 border border-zinc-800 shadow-xl overflow-hidden z-50 flex"
+            className="absolute top-full left-0 right-0 mt-1 bg-zinc-950 border border-zinc-800 shadow-xl overflow-hidden z-50 flex"
             style={{
               maxHeight: '60vh',
               backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)',
