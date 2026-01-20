@@ -52,8 +52,7 @@ export default function CommsConsolePage() {
       .then(setCurrentUser)
       .catch((error) => {
         console.error('Auth error:', error);
-        // Redirect to login if not authenticated
-        base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+        setCurrentUser(null);
       });
   }, []);
 
@@ -166,7 +165,14 @@ export default function CommsConsolePage() {
       <div className="h-full bg-black text-zinc-200 flex items-center justify-center">
         <div className="text-center">
           <Radio className="w-12 h-12 text-[#ea580c] animate-pulse mx-auto mb-4" />
-          <p className="text-sm font-mono text-zinc-500">AUTHENTICATING...</p>
+          <p className="text-sm font-mono text-zinc-500 mb-4">AUTHENTICATING...</p>
+          <Button 
+            variant="outline" 
+            onClick={() => base44.auth.redirectToLogin(window.location.pathname + window.location.search)}
+            className="text-xs"
+          >
+            Login to Access Comms Console
+          </Button>
         </div>
       </div>
     );
