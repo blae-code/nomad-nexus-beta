@@ -244,10 +244,13 @@ export default function HeaderV3() {
           <span className="font-bold text-zinc-300">ONLINE: {onlineCount}</span>
         </div>
 
-        {/* Time: Local */}
-        <div className="hidden xl:flex items-center gap-1 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono text-zinc-400">
+        {/* Time: Local + UTC in 24h digital style */}
+        <div className="hidden xl:flex items-center gap-1 px-3 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono text-zinc-400 hover:border-zinc-600 transition-colors group">
           <Clock className="w-2.5 h-2.5" />
-          <span>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold tracking-wider">{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+            <span className="text-[7px] text-zinc-500 tracking-widest">UTC {time.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+          </div>
         </div>
 
         {/* Notifications */}
