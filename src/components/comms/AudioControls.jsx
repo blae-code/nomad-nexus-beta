@@ -29,18 +29,29 @@ export default function AudioControls({ onStateChange, room, defaultMode = "PTT"
     const getDevices = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const audioInputs = devices.filter(d => d.kind === 'audioinput');
-        const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+        // Filter out devices with empty/missing deviceIds
+        const audioInputs = devices
+          .filter(d => d.kind === 'audioinput' && d.deviceId && d.deviceId.trim() !== '');
+        const audioOutputs = devices
+          .filter(d => d.kind === 'audiooutput' && d.deviceId && d.deviceId.trim() !== '');
         
         setAudioInputDevices(audioInputs);
         setAudioOutputDevices(audioOutputs);
         
-        // Set defaults if not already set
-        if (!selectedMic && audioInputs.length > 0) {
-          setSelectedMic(audioInputs[0].deviceId);
+        // Set safe defaults: prefer "default" if available, else first valid device
+        if (!selectedMic || selectedMic === '') {
+          if (audioInputs.some(d => d.deviceId === 'default')) {
+            setSelectedMic('default');
+          } else if (audioInputs.length > 0) {
+            setSelectedMic(audioInputs[0].deviceId);
+          }
         }
-        if (!selectedOutput && audioOutputs.length > 0) {
-          setSelectedOutput(audioOutputs[0].deviceId);
+        if (!selectedOutput || selectedOutput === '') {
+          if (audioOutputs.some(d => d.deviceId === 'default')) {
+            setSelectedOutput('default');
+          } else if (audioOutputs.length > 0) {
+            setSelectedOutput(audioOutputs[0].deviceId);
+          }
         }
       } catch (err) {
         console.error('[AUDIO] Device enumeration failed:', err);
