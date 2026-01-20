@@ -168,7 +168,7 @@ export default function HeaderV3() {
       }}
     >
       {/* LEFT: Brand + Callsign + Presence Pill */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
         {/* Brand: "NOMAD NEXUS // REDSCAR OPS" */}
         <div className="flex items-center gap-1.5 shrink-0">
           <Radio className="w-4 h-4 text-[#ea580c]" />
