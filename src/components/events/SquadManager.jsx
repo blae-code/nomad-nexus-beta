@@ -46,7 +46,13 @@ export default function SquadManager({ eventId }) {
 
   const { data: users } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      if (user.role === 'admin' || user.rank === 'Pioneer' || user.rank === 'Founder') {
+        return base44.entities.User.list();
+      }
+      return [];
+    },
     initialData: []
   });
 

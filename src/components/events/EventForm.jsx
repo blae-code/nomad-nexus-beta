@@ -67,7 +67,13 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   
   const { data: users } = useQuery({
     queryKey: ['event-users-assign'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      if (user.role === 'admin' || user.rank === 'Pioneer' || user.rank === 'Founder') {
+        return base44.entities.User.list();
+      }
+      return [];
+    },
     initialData: []
   });
 
