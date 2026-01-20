@@ -9,7 +9,7 @@ import { FileText, Plus, Loader2, AlertCircle, Radio, Activity, Zap } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { typographyClasses } from '@/components/utils/typography';
-import { motionLogEntry } from '@/components/utils/motionSystem';
+import { motionLogEntry, motionStateChange } from '@/components/utils/motionSystem';
 
 const typeIcons = {
   STATUS: Activity,
