@@ -182,6 +182,16 @@ export const commands = [
 
   // ===== UTILITY =====
   {
+    id: 'action-diagnostics',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.UTILITY,
+    label: 'System Diagnostics',
+    keywords: ['diagnostics', 'health', 'status', 'system'],
+    icon: 'Activity',
+    handler: 'openDiagnostics',
+    roles: ['admin'],
+  },
+  {
     id: 'util-sign-out',
     type: 'ACTION',
     section: COMMAND_SECTIONS.UTILITY,
