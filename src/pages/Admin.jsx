@@ -161,8 +161,6 @@ export default function AdminPage() {
              <AuditLogViewer />
            </TabsContent>
           </Tabs>
-          </div>
-          </div>
-          </div>
+          </PageShell>
           );
-}
+          }
