@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Users, Filter, Activity, MapPin, Clock, Circle, Mic, Radio } from 'lucide-react';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import { getRankColorClass } from '@/components/utils/rankUtils';
+import EmptyState from '@/components/feedback/EmptyState';
 
 const STATUS_COLORS = {
   READY: 'bg-emerald-500',
