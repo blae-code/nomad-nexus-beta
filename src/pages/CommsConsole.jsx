@@ -38,20 +38,22 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('eventId') || null;
+    const eventId = params.get('eventId');
+    return eventId && eventId !== 'undefined' && eventId !== 'null' ? eventId : null;
   });
   const [selectedNet, setSelectedNet] = React.useState(null);
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
-  const [activeNetConnection, setActiveNetConnection] = React.useState(null); // Guard against multiple active connections
-  const [consoleMode, setConsoleMode] = React.useState("ops"); // 'ops' (Voice/Events) or 'lounge' (Text/ReadyRooms)
-  const [viewMode, setViewMode] = React.useState("line"); // 'command', 'line', 'hierarchy', 'tactical', or 'diagnostics'
+  const [activeNetConnection, setActiveNetConnection] = React.useState(null);
+  const [consoleMode, setConsoleMode] = React.useState("ops");
+  const [viewMode, setViewMode] = React.useState("line");
   const [showAIAssistant, setShowAIAssistant] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
   const [incidentFormOpen, setIncidentFormOpen] = React.useState(false);
   const [selectedIncident, setSelectedIncident] = React.useState(null);
+  const [isLoadingAuth, setIsLoadingAuth] = React.useState(true);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -66,6 +68,8 @@ function CommsConsolePage() {
       } catch (error) {
         console.error('Auth error:', error);
         base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      } finally {
+        setIsLoadingAuth(false);
       }
     };
     loadUser();
@@ -175,7 +179,7 @@ function CommsConsolePage() {
   };
 
   // Show loading state while authenticating
-  if (!currentUser) {
+  if (isLoadingAuth || !currentUser) {
     return (
       <div className="h-full bg-black text-zinc-200 flex items-center justify-center">
         <div className="text-center">
