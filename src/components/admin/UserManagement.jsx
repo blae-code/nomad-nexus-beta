@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
-function UserEditDialog({ user, trigger }) {
+function UserEditDialog({ user, trigger, isAdmin }) {
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState({});
   const queryClient = useQueryClient();
@@ -32,7 +32,8 @@ function UserEditDialog({ user, trigger }) {
 
   const { data: allRoles = [] } = useQuery({
     queryKey: ['all-roles'],
-    queryFn: () => base44.entities.Role.list()
+    queryFn: () => base44.entities.Role.list(),
+    enabled: isAdmin
   });
 
   const updateMutation = useMutation({
