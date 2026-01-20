@@ -239,8 +239,8 @@ export default function HeaderV3() {
         </div>
 
         {/* Online Count */}
-        <div className="flex items-center gap-1.5 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono hidden md:flex">
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+        <div className="flex items-center gap-1.5 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono hidden md:flex focus-within:border-cyan-600 transition-colors">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           <span className="font-bold text-zinc-300">ONLINE: {onlineCount}</span>
         </div>
 
