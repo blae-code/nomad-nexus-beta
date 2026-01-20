@@ -16,9 +16,7 @@ export function useVoiceAudio() {
   const dataArrayRef = useRef(null);
   const audioContextRef = useRef(null);
   const mediaStreamRef = useRef(null);
-  const oscillatorRef = useRef(null);
-
-  const { localParticipant } = useLocalParticipant();
+  const sourceRef = useRef(null);
 
   // Initialize audio context and analyser
   useEffect(() => {
