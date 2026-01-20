@@ -58,17 +58,17 @@ function EventDetail({ id }) {
   const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
   if (isLoading) {
-    return <div className="h-full flex items-center justify-center bg-zinc-950 text-zinc-500">Loading Intelligence...</div>;
+    return <div className="h-full flex items-center justify-center bg-zinc-950 text-zinc-500">RETRIEVING DATA...</div>;
   }
 
   if (!event) {
     return (
       <div className="h-full flex items-center justify-center bg-zinc-950 text-center">
         <div>
-          <h1 className="text-xl text-zinc-300 mb-4">Operation Not Found</h1>
-          <a href={createPageUrl('Events')}>
-             <Badge variant="outline" className="hover:bg-zinc-800 cursor-pointer">Return to Operations Board</Badge>
-          </a>
+          <h1 className="text-xl text-zinc-300 mb-4">OPERATION NOT FOUND</h1>
+           <a href={createPageUrl('Events')}>
+              <Badge variant="outline" className="hover:bg-zinc-800 cursor-pointer">RETURN TO BOARD</Badge>
+           </a>
         </div>
       </div>
     );
@@ -123,7 +123,7 @@ function EventDetail({ id }) {
                  size="sm"
                  className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                >
-                 Edit Mission
+                 MODIFY
                </Button>
                <EventForm 
                  event={event} 
@@ -290,7 +290,7 @@ function EventDetail({ id }) {
                             }}
                             className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[10px] h-7"
                           >
-                            POST NOTE
+                            RECORD
                           </Button>
                           <Button
                             size="sm"
@@ -430,21 +430,21 @@ export default function EventsPage() {
               <Button 
                 onClick={() => setIsCreateOpen(true)} 
                 className="bg-red-900 hover:bg-red-800 text-white"
-              >
-                Create Operation
-              </Button>
+                >
+                INITIALIZE OPERATION
+                </Button>
               <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
             </>
           )}
         </div>
 
         {isLoading ? (
-          <div className="text-center py-10 text-zinc-500">Loading operations...</div>
-        ) : (
+           <div className="text-center py-10 text-zinc-500">RETRIEVING OPERATIONS...</div>
+         ) : (
           <div className="grid gap-4">
             {events.length === 0 ? (
               <div className="text-center py-20 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-800">
-                <p className="text-zinc-500">No active operations found.</p>
+                <p className="text-zinc-500">NO SCHEDULED OPERATIONS</p>
               </div>
             ) : (
               events.map((event) => {
@@ -490,10 +490,10 @@ export default function EventsPage() {
                         </div>
                         
                         <a href={createPageUrl(`Events?id=${event.id}`)}>
-                          <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 hover:text-white">
-                            View Intel <ArrowRight className="w-4 h-4 ml-2" />
-                          </Button>
-                          </a>
+                           <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 hover:text-white">
+                             ACCESS <ArrowRight className="w-4 h-4 ml-2" />
+                           </Button>
+                           </a>
                           </div>
                           </div>
                           </OpsPanel>

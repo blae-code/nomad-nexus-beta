@@ -39,7 +39,7 @@ export default function RescueAlertPanel() {
     )}>
        <Radio className={cn("w-6 h-6", getSeverityColor(SEVERITY_LEVELS.NOMINAL, 'text'))} />
        <div className="text-zinc-400 font-bold uppercase tracking-widest text-xs">
-          [SIGNAL STATUS: NOMAD WATCH ONLINE]
+          WATCH STATUS: ACTIVE
        </div>
     </div>
   );

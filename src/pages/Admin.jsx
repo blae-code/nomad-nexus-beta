@@ -56,13 +56,13 @@ export default function AdminPage() {
                value="approvals"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <Clock className="w-4 h-4 mr-2" /> Event Approvals
+               <Clock className="w-4 h-4 mr-2" /> APPROVALS
              </TabsTrigger>
              <TabsTrigger 
                value="checklist"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <CheckCircle className="w-4 h-4 mr-2" /> System Checklist
+               <CheckCircle className="w-4 h-4 mr-2" /> CHECKLIST
              </TabsTrigger>
              <TabsTrigger 
                value="roles"
@@ -74,19 +74,19 @@ export default function AdminPage() {
                value="users"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <Users className="w-4 h-4 mr-2" /> User Management
+               <Users className="w-4 h-4 mr-2" /> USERS
              </TabsTrigger>
              <TabsTrigger 
                value="voice-controls"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <Settings className="w-4 h-4 mr-2" /> Voice Net Controls
+               <Settings className="w-4 h-4 mr-2" /> VOICE NETS
              </TabsTrigger>
              <TabsTrigger 
                value="health"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <Activity className="w-4 h-4 mr-2" /> System Health
+               <Activity className="w-4 h-4 mr-2" /> HEALTH
              </TabsTrigger>
              <TabsTrigger 
                value="squads"
@@ -98,27 +98,27 @@ export default function AdminPage() {
                value="comms-diagnostics"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <Radio className="w-4 h-4 mr-2" /> Comms Diagnostics
+               <Radio className="w-4 h-4 mr-2" /> DIAGNOSTICS
              </TabsTrigger>
              <TabsTrigger 
                 value="comms-provision"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
               >
-                <TestTube className="w-4 h-4 mr-2" /> Provision & Test
+                <TestTube className="w-4 h-4 mr-2" /> PROVISION
               </TabsTrigger>
               {currentUser && hasMinRank(currentUser, 'Scout') && (
                 <TabsTrigger 
                   value="create-net"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
                 >
-                  <Plus className="w-4 h-4 mr-2" /> Create Voice Net
+                  <Plus className="w-4 h-4 mr-2" /> NEW NET
                 </TabsTrigger>
               )}
               <TabsTrigger 
                 value="audit-logs"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
               >
-                <FileText className="w-4 h-4 mr-2" /> Audit Logs
+                <FileText className="w-4 h-4 mr-2" /> LOGS
               </TabsTrigger>
               </TabsList>
 
