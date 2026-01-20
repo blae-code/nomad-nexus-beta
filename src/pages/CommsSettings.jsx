@@ -10,6 +10,7 @@ import AudioDeviceSettings from '@/components/comms/settings/AudioDeviceSettings
 import AudioLevelControls from '@/components/comms/settings/AudioLevelControls.jsx';
 import PTTKeybindConfig from '@/components/comms/settings/PTTKeybindConfig.jsx';
 import NotificationSoundManager from '@/components/comms/settings/NotificationSoundManager.jsx';
+import AdvancedAudioSettings from '@/components/comms/settings/AdvancedAudioSettings.jsx';
 
 export default function CommsSettings() {
   const [isSaving, setIsSaving] = useState(false);
@@ -25,7 +26,13 @@ export default function CommsSettings() {
     soundEnabled: true,
     mentionSound: 'chime',
     netJoinSound: 'beep',
-    transmitSound: 'click'
+    transmitSound: 'click',
+    echoCancellation: true,
+    noiseSuppression: true,
+    voiceActivityDetection: true,
+    autoGainControl: true,
+    vadThreshold: 30,
+    noiseFloor: 20
   });
 
   // Fetch user's current preferences
@@ -94,9 +101,10 @@ export default function CommsSettings() {
       {/* Settings Tabs */}
       <div className="flex-1 overflow-hidden px-6 py-6">
         <Tabs defaultValue="audio" className="h-full flex flex-col">
-          <TabsList className="bg-zinc-900 border border-zinc-800 grid w-full grid-cols-4 mb-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800 grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="audio">Audio Devices</TabsTrigger>
             <TabsTrigger value="levels">Audio Levels</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
             <TabsTrigger value="ptt">Push-to-Talk</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
@@ -108,6 +116,10 @@ export default function CommsSettings() {
 
             <TabsContent value="levels" className="m-0">
               <AudioLevelControls preferences={preferences} setPreferences={setPreferences} />
+            </TabsContent>
+
+            <TabsContent value="advanced" className="m-0">
+              <AdvancedAudioSettings preferences={preferences} setPreferences={setPreferences} />
             </TabsContent>
 
             <TabsContent value="ptt" className="m-0">

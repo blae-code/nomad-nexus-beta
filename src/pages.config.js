@@ -1,6 +1,7 @@
 import Admin from './pages/Admin';
 import Channels from './pages/Channels';
 import CommsConsole from './pages/CommsConsole';
+import CommsSettings from './pages/CommsSettings';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
@@ -12,7 +13,6 @@ import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
 import Treasury from './pages/Treasury';
 import UserManager from './pages/UserManager';
-import CommsSettings from './pages/CommsSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +20,7 @@ export const PAGES = {
     "Admin": Admin,
     "Channels": Channels,
     "CommsConsole": CommsConsole,
+    "CommsSettings": CommsSettings,
     "Events": Events,
     "FleetManager": FleetManager,
     "Hub": Hub,
@@ -31,7 +32,6 @@ export const PAGES = {
     "RoleManager": RoleManager,
     "Treasury": Treasury,
     "UserManager": UserManager,
-    "CommsSettings": CommsSettings,
 }
 
 export const pagesConfig = {
