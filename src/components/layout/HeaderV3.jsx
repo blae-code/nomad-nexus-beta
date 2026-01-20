@@ -55,10 +55,12 @@ export default function HeaderV3() {
 
   // Fetch user and initialize presence
   useEffect(() => {
-    base44.auth.me().then(async (currentUser) => {
-      setUser(currentUser);
-      // Fetch or create user presence
+    const initUser = async () => {
       try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        
+        // Fetch or create user presence
         const presences = await base44.entities.UserPresence.list();
         let userPres = presences.find((p) => p.user_id === currentUser.id);
         
@@ -74,7 +76,9 @@ export default function HeaderV3() {
       } catch (e) {
         console.error('Failed to initialize presence:', e);
       }
-    }).catch(() => {});
+    };
+    
+    initUser();
   }, []);
 
   // Listen for profile updates
