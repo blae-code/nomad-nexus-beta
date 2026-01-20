@@ -212,6 +212,18 @@ export default function UserManagement() {
     enabled: isAdmin
   });
 
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center space-y-4">
+          <Lock className="w-16 h-16 text-red-900 mx-auto opacity-50" />
+          <h1 className="text-lg font-black uppercase tracking-widest text-red-800">Access Denied</h1>
+          <p className="text-xs font-mono text-zinc-500">ADMIN CLEARANCE REQUIRED</p>
+        </div>
+      </div>
+    );
+  }
+
   const filteredUsers = users.filter(user => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
