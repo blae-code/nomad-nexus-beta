@@ -189,40 +189,40 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
                   bgColor
                 )}
               >
-            <CardContent className="p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    {isCritical && <AlertTriangle className={cn("w-4 h-4", textColor)} />}
-                    {isWarning && <AlertCircle className={cn("w-4 h-4", textColor)} />}
-                    {isActive && <Info className={cn("w-4 h-4", textColor)} />}
-                    <Badge variant="outline" className="text-[9px] h-4 uppercase">
-                      {alert.type.replace(/_/g, ' ')}
-                    </Badge>
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        {isCritical && <AlertTriangle className={cn("w-4 h-4", textColor)} />}
+                        {isWarning && <AlertCircle className={cn("w-4 h-4", textColor)} />}
+                        {isActive && <Info className={cn("w-4 h-4", textColor)} />}
+                        <Badge variant="outline" className="text-[9px] h-4 uppercase">
+                          {alert.type.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                      <div className="text-xs font-bold text-zinc-200">{alert.message}</div>
+                      {alert.action && (
+                        <div className="text-[10px] text-zinc-400">→ {alert.action}</div>
+                      )}
+                      <div className="text-[9px] text-zinc-600 font-mono">
+                        {new Date(alert.timestamp).toLocaleTimeString()}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => dismissAlert(alert.id)}
+                      className="h-6 w-6 shrink-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
                   </div>
-                  <div className="text-xs font-bold text-zinc-200">{alert.message}</div>
-                  {alert.action && (
-                    <div className="text-[10px] text-zinc-400">→ {alert.action}</div>
-                  )}
-                  <div className="text-[9px] text-zinc-600 font-mono">
-                    {new Date(alert.timestamp).toLocaleTimeString()}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => dismissAlert(alert.id)}
-                  className="h-6 w-6 shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             </motion.div>
-            );
-            })}
-            </AnimatePresence>
-            </div>
-            );
-            }
+          );
+        })}
+      </AnimatePresence>
+    </div>
+  );
+}
