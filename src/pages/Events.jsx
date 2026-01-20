@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import PageShell from "@/components/layout/PageShell";
 import ActionBar from "@/components/layout/ActionBar";
 import EventForm from "@/components/events/EventForm";
+import EventCard from "@/components/events/EventCard";
+import EventActionBar from "@/components/events/EventActionBar";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 
@@ -123,23 +125,17 @@ function EventDetail({ id }) {
              )}
           </div>
           
-          {canEditEvent(currentUser, event) && (
-            <div className="mb-4 flex justify-end">
-               <Button 
-                 onClick={() => setIsEditOpen(true)}
-                 variant="outline" 
-                 size="sm"
-                 className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-               >
-                 MODIFY
-               </Button>
-               <EventForm 
-                 event={event} 
-                 open={isEditOpen} 
-                 onOpenChange={setIsEditOpen} 
-               />
-            </div>
-          )}
+          <EventActionBar
+            event={event}
+            currentUser={currentUser}
+            onModify={() => setIsEditOpen(true)}
+            className="mb-4"
+          />
+          <EventForm 
+            event={event} 
+            open={isEditOpen} 
+            onOpenChange={setIsEditOpen} 
+          />
         </div>
 
         {/* Tabs */}
@@ -468,54 +464,13 @@ export default function EventsPage() {
             ) : (
               events.map((event) => {
                 const creator = allUsers.find(u => u.id === event.created_by);
-                const eventTime = formatEventTime(event.start_time);
-                const status = getEventStatus(event);
-                
                 return (
-                  <OpsPanel key={event.id} className="hover:border-zinc-700 transition-colors group">
-                    <div className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge variant="outline" className={status.color}>
-                            {status.label}
-                          </Badge>
-                          <Badge variant="outline" className={getSeverityBadge(
-                            event.event_type === 'focused' ? 'critical' : 'nominal'
-                          )}>
-                            {event.event_type.toUpperCase()}
-                          </Badge>
-                          <span className="text-zinc-600 text-xs font-mono">
-                            {eventTime.date} • {eventTime.time}
-                          </span>
-                        </div>
-                        <h3 className={cn("text-xl mb-2 group-hover:text-red-500 transition-colors", typographyClasses.commandSubtitle)}>
-                          {event.title}
-                        </h3>
-                        <p className={cn(typographyClasses.bodySmall, "line-clamp-2 max-w-2xl")}>
-                          {event.description}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 md:w-auto w-full justify-between md:justify-end">
-                        <div className="text-right hidden md:block">
-                          <div className={cn(typographyClasses.labelSecondary, "flex items-center justify-end gap-2 mb-1")}>
-                            <MapPin className="w-3 h-3" />
-                            {event.location || "TBD"}
-                          </div>
-                          <div className={cn(typographyClasses.labelSecondary, "flex items-center justify-end gap-2")}>
-                               <Users className="w-3 h-3" />
-                               {creator ? (creator.callsign || creator.rsi_handle || creator.email) : "Command"}
-                          </div>
-                        </div>
-                        
-                        <a href={createPageUrl(`Events?id=${event.id}`)}>
-                           <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 hover:text-white">
-                             ACCESS <ArrowRight className="w-4 h-4 ml-2" />
-                           </Button>
-                           </a>
-                          </div>
-                          </div>
-                          </OpsPanel>
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    creator={creator}
+                    onActionClick={(evt) => window.location.href = createPageUrl(`Events?id=${evt.id}`)}
+                  />
                 );
               })
             )}
