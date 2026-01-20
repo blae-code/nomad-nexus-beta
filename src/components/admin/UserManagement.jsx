@@ -179,6 +179,13 @@ function UserEditDialog({ user, trigger }) {
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [rankFilter, setRankFilter] = useState("all");
+  const [currentUser, setCurrentUser] = useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['all-users'],
@@ -201,7 +208,8 @@ export default function UserManagement() {
       );
       
       return usersWithRoles;
-    }
+    },
+    enabled: isAdmin
   });
 
   const filteredUsers = users.filter(user => {
