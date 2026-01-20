@@ -38,7 +38,7 @@ export const RANK_HIERARCHY = {
  * Each page can be navigated to directly (via createPageUrl)
  * Pages in "more" section are not shown in primary nav but are still accessible via deep links
  */
-export const PAGES_CONFIG = {
+const PAGES_CONFIG = {
   sections: [
     {
       id: 'mission-control',
@@ -294,9 +294,5 @@ export const PAGES_CONFIG = {
   },
 };
 
-// Named exports for flexibility
-export { PAGES_CONFIG };
 export const pagesConfig = PAGES_CONFIG;
-
-// Default export
 export default PAGES_CONFIG;
