@@ -138,29 +138,12 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
       } else {
         const newEvent = await base44.entities.Event.create(payload);
         
-        // Initialize default comms nets for focused events
-        if (data.event_type === 'focused') {
-          await base44.entities.VoiceNet.create({
-            event_id: newEvent.id,
-            code: 'COMMAND',
-            label: 'Command Net',
-            type: 'command',
-            priority: 1,
-            min_rank_to_tx: 'Voyager',
-            min_rank_to_rx: 'Vagrant',
-            status: 'active'
-          });
-          
-          await base44.entities.VoiceNet.create({
-            event_id: newEvent.id,
-            code: 'ALPHA',
-            label: 'Ground Team Alpha',
-            type: 'squad',
-            priority: 2,
-            min_rank_to_tx: 'Vagrant',
-            min_rank_to_rx: 'Vagrant',
-            status: 'active'
-          });
+        // Invoke backend function to initialize canonical comms nets
+        try {
+          await base44.functions.invoke('initializeEventComms', { eventId: newEvent.id });
+        } catch (error) {
+          console.error('Failed to initialize event comms:', error);
+          // Non-blocking: comms init failure doesn't prevent event creation
         }
         
         return newEvent;
