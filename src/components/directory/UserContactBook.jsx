@@ -165,9 +165,9 @@ export default function UserContactBook() {
   const allTabs = ['all', 'favorites', ...Object.keys(groups)];
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col h-full space-y-2">
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-2 border-b border-zinc-800">
+      <div className="flex gap-1 overflow-x-auto pb-2 border-b border-zinc-800 shrink-0">
         {allTabs.map(tab => (
           <button
             key={tab}
@@ -223,7 +223,7 @@ export default function UserContactBook() {
       )}
 
       {/* User List */}
-      <div className="space-y-1.5 max-h-80 overflow-y-auto">
+      <div className="flex-1 min-h-0 space-y-1.5 overflow-y-auto">
         {filteredUsers.length === 0 ? (
           <div className="text-[10px] text-zinc-600 px-1 py-2">
             {activeTab === 'favorites' ? 'No favorites yet' : 'No users online'}
@@ -235,7 +235,7 @@ export default function UserContactBook() {
 
       {/* Group Management Dropdown */}
       {activeTab !== 'all' && activeTab !== 'favorites' && groups[activeTab] && (
-        <div className="pt-2 border-t border-zinc-800/50">
+        <div className="pt-2 border-t border-zinc-800/50 shrink-0">
           <div className="flex items-center justify-between">
             <span className="text-[9px] text-zinc-500">{groups[activeTab].length} members</span>
             <button
