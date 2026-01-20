@@ -264,46 +264,40 @@ export default function HeaderV3() {
         backgroundSize: '100% 2px',
       }}
     >
-      {/* LEFT: Brand + Callsign + Presence Pill */}
-      <div className="flex items-center gap-3 min-w-0 shrink-0">
-        {/* Brand Mark */}
-        <div className="flex items-center gap-1.5 shrink-0 h-10">
-          <Radio className="w-4 h-4 text-[#ea580c]" />
-          <span className="text-[9px] font-black uppercase text-zinc-400 hidden sm:inline tracking-wider">
-            NOMAD NEXUS
+      {/* LEFT: Brand + Callsign + Presence */}
+      <div className="flex items-center gap-2.5 min-w-0 shrink-0">
+        {/* Brand */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Radio className="w-3.5 h-3.5 text-[#ea580c]" />
+          <span className="text-[8px] font-black uppercase text-zinc-500 hidden sm:inline tracking-widest">NEXUS</span>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-zinc-800/50 hidden sm:block" />
+
+        {/* Callsign + Rank */}
+        <div className="hidden sm:flex items-baseline gap-1.5 min-w-0">
+          <span className="text-[10px] font-bold uppercase text-zinc-100 truncate tracking-tight">{userCallsign}</span>
+          <span className={cn('text-[8px] font-mono', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-600')}>
+            {user?.rank || 'VAGRANT'}
           </span>
         </div>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
+        <div className="w-px h-5 bg-zinc-800/50 hidden sm:block" />
 
-        {/* Callsign + Rank (stacked, baseline-aligned) */}
-        <div className="hidden sm:flex items-center h-10 min-w-0">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-zinc-100 uppercase truncate leading-tight">
-              {userCallsign}
-            </div>
-            <div className={cn('text-[9px] uppercase font-mono leading-tight', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-500')}>
-              {user?.rank || 'VAGRANT'}
-            </div>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
-
-        {/* Presence Pill */}
+        {/* Status Pill */}
         <div className="relative">
           <button
             onClick={() => setStatusMenuOpen(!statusMenuOpen)}
             className={cn(
-              'flex items-center gap-1.5 px-3 h-10 border rounded-sm text-[9px] font-mono font-bold uppercase shrink-0 transition-colors',
+              'flex items-center gap-1 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
               presenceInfo.color,
-              'hover:opacity-80'
+              'hover:shadow-sm'
             )}
             title="Click to change status"
           >
-            <div className={cn('w-1.5 h-1.5 rounded-full transition-opacity', presenceInfo.dotColor, 
+            <div className={cn('w-1 h-1 rounded-full', presenceInfo.dotColor, 
               userPresence?.is_transmitting && 'animate-pulse'
             )} />
             <span className="hidden md:inline">{presenceInfo.label}</span>
