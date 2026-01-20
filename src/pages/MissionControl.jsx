@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Radio, Plus, Zap, AlertTriangle, Phone, User, FileText, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
@@ -114,13 +115,14 @@ export default function MissionControlPage() {
       <div className="flex-1 overflow-hidden flex gap-2 p-2">
         
         {/* LEFT COLUMN: Next Operation + Quick Actions */}
-        <div className="w-72 lg:w-80 border border-zinc-800 bg-zinc-950/50 flex flex-col overflow-hidden shrink-0">
-          <div className="bg-zinc-900 px-3 py-2 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Next Operation</h2>
+        <OpsPanel className="w-72 lg:w-80 flex flex-col overflow-hidden shrink-0">
+          <OpsPanelHeader>
+            <OpsPanelTitle>Next Operation</OpsPanelTitle>
             {eventLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />}
-          </div>
+          </OpsPanelHeader>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+            <OpsPanelContent>
             {nextEvent ? (
               <div
                 className="p-3 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] transition-colors cursor-pointer"
@@ -144,9 +146,10 @@ export default function MissionControlPage() {
                 NO SCHEDULED<br/>OPERATIONS
               </div>
             )}
+            </OpsPanelContent>
 
             {/* Quick Actions */}
-            <div className="border-t border-zinc-800 pt-3 space-y-2">
+            <OpsPanelContent className="border-t border-zinc-800 space-y-2">
               {quickActions.map((action, idx) => {
                 const Icon = action.icon;
                 const content = (
@@ -165,43 +168,48 @@ export default function MissionControlPage() {
                   </button>
                 );
               })}
-            </div>
+            </OpsPanelContent>
           </div>
-        </div>
+        </OpsPanel>
 
         {/* CENTER COLUMN: Live Ops Feed */}
-        <div className="flex-1 border border-zinc-800 bg-zinc-950/50 flex flex-col overflow-hidden">
-          <div className="bg-zinc-900 px-3 py-2 border-b border-zinc-800">
-            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Live Ops Feed</h2>
-          </div>
+        <OpsPanel className="flex-1 flex flex-col overflow-hidden">
+          <OpsPanelHeader>
+            <OpsPanelTitle>Live Ops Feed</OpsPanelTitle>
+          </OpsPanelHeader>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <OpsPanelContent className="flex-1 overflow-y-auto space-y-2">
             {/* Rescue Alerts */}
             <RescueAlertPanel />
             
             {/* Critical Alerts */}
             {selectedEventId && (
-              <div className="border border-zinc-800 bg-zinc-900/50 p-3">
-                <div className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-2">
-                  <AlertTriangle className="w-3 h-3 text-red-500" />
-                  CRITICAL ALERTS
-                </div>
-                <AIInsightsPanel eventId={selectedEventId} />
-              </div>
+              <OpsPanel>
+                <OpsPanelHeader>
+                  <OpsPanelTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-3 h-3 text-red-500" />
+                    CRITICAL ALERTS
+                  </OpsPanelTitle>
+                </OpsPanelHeader>
+                <OpsPanelContent>
+                  <AIInsightsPanel eventId={selectedEventId} />
+                </OpsPanelContent>
+              </OpsPanel>
             )}
             
             {/* Status Alerts */}
             <StatusAlertsWidget />
-          </div>
-        </div>
+          </OpsPanelContent>
+        </OpsPanel>
 
         {/* RIGHT COLUMN: Personal Status + Notifications */}
-        <div className="w-72 lg:w-80 border border-zinc-800 bg-zinc-950/50 flex flex-col overflow-hidden shrink-0">
-          <div className="bg-zinc-900 px-3 py-2 border-b border-zinc-800">
-            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Personal Status</h2>
-          </div>
+        <OpsPanel className="w-72 lg:w-80 flex flex-col overflow-hidden shrink-0">
+          <OpsPanelHeader>
+            <OpsPanelTitle>Personal Status</OpsPanelTitle>
+          </OpsPanelHeader>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+            <OpsPanelContent>
             {/* User Card */}
             {user && (
               <div className="p-3 border border-zinc-700 bg-zinc-900/50">
@@ -231,18 +239,19 @@ export default function MissionControlPage() {
                 <div>AUDIO: Nominal</div>
               </div>
             </div>
+            </OpsPanelContent>
 
             {/* Quick Nav */}
-            <div className="border-t border-zinc-800 pt-3 space-y-2">
+            <OpsPanelContent className="border-t border-zinc-800 space-y-2">
               <a href={createPageUrl('Admin')} className="block p-2 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] text-[9px] font-mono text-zinc-400 hover:text-[#ea580c] transition-colors">
                 Admin Panel →
               </a>
               <a href={createPageUrl('Events')} className="block p-2 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] text-[9px] font-mono text-zinc-400 hover:text-[#ea580c] transition-colors">
                 All Ops →
               </a>
-            </div>
+            </OpsPanelContent>
           </div>
-        </div>
+        </OpsPanel>
       </div>
     </div>
   );
