@@ -393,7 +393,7 @@ export default function EventsPage() {
 
   const { data: events, isLoading } = useQuery({
     queryKey: ['events-list'],
-    queryFn: () => base44.entities.Event.list({ sort: { start_time: -1 } }),
+    queryFn: () => base44.entities.Event.list(),
     initialData: []
   });
 
