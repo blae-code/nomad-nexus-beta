@@ -60,6 +60,10 @@ export default function HeaderV3() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
 
+        // Fetch all users for total count
+        const users = await base44.entities.User.list();
+        window.headerTotalUsers = users.length;
+
         // Fetch or create user presence
         const presences = await base44.entities.UserPresence.list();
         let userPres = presences.find((p) => p.user_id === currentUser.id);
@@ -77,7 +81,6 @@ export default function HeaderV3() {
         // Update online count
         const online = presences.filter((p) => p.status !== 'offline').length;
         setOnlineCount(online);
-        window.headerTotalUsers = presences.length;
       } catch (e) {
         console.error('Failed to initialize presence:', e);
       }
