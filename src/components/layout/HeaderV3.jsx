@@ -216,6 +216,17 @@ export default function HeaderV3() {
     }
   }, []);
 
+  const handleStatusChange = async (newStatus) => {
+   if (!userPresence) return;
+   try {
+     await base44.entities.UserPresence.update(userPresence.id, { status: newStatus });
+     setUserPresence({ ...userPresence, status: newStatus });
+     setStatusMenuOpen(false);
+   } catch (e) {
+     console.error('Failed to update status:', e);
+   }
+  };
+
   return (
     <header className="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0"
       style={{
