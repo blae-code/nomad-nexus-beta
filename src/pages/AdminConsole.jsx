@@ -24,9 +24,9 @@ import { hasMinRank } from "@/components/permissions";
 import { PERMISSIONS, PERMISSION_LABELS } from "@/components/auth/permissionConstants";
 import PageShell from "@/components/layout/PageShell";
 
-export default function AdminConsolePage() {
+export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [currentUser, setCurrentUser] = React.useState(null);
-  const [activeTab, setActiveTab] = React.useState("approvals");
+  const [activeTab, setActiveTab] = React.useState(initialTab);
   const [search, setSearch] = React.useState("");
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [editingRole, setEditingRole] = React.useState(null);
@@ -90,7 +90,7 @@ export default function AdminConsolePage() {
   // Access denied check
   if (currentUser && !isAdmin) {
     return (
-      <div className="min-h-screen bg-black text-zinc-200 flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-zinc-950">
         <div className="text-center space-y-4">
           <Lock className="w-16 h-16 text-red-900 mx-auto opacity-50" />
           <h1 className="text-2xl font-black uppercase tracking-widest text-red-800">Access Denied</h1>
