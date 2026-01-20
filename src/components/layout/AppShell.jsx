@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import NavRail from '@/components/nav/NavRail';
 import ContextPanel from '@/components/layout/ContextPanel';
 import Header from '@/components/layout/Header';
+import NoScrollGuard from '@/components/layout/NoScrollGuard';
 
 /**
  * AppShell: Canonical 3-column grid layout
