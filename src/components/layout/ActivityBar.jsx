@@ -11,7 +11,10 @@ import {
   Users,
   Lock,
   Rocket,
-  Target
+  Target,
+  MessageSquare,
+  Medal,
+  UserCircle
 } from "lucide-react";
 import {
   Tooltip,
@@ -162,12 +165,32 @@ export default function ActivityBar() {
       />
 
       <NavItem 
-        icon={Users} 
-        label="Personnel" 
-        page="Channels" // Assuming Channels or a roster page
+        icon={Target} 
+        label="Missions" 
+        page="MissionControl" 
       />
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
+
+      <NavItem 
+        icon={MessageSquare} 
+        label="Channels" 
+        page="Channels" 
+      />
+
+      <NavItem 
+        icon={Medal} 
+        label="Ranks" 
+        page="Ranks" 
+      />
+
+      <NavItem 
+        icon={UserCircle} 
+        label="Profile" 
+        page="Profile" 
+      />
+
+      <div className="flex-1" />
 
       <NavItem 
         icon={Lock} 
