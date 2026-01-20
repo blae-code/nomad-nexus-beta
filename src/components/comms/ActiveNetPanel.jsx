@@ -19,7 +19,7 @@ import VoiceCallIndicator from "./VoiceCallIndicator";
 import VolumeControls from "@/components/comms/VolumeControls";
 import UserPresencePanel from "./UserPresencePanel";
 import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
-import { usePresence } from "./usePresence";
+import { usePresence } from "@/components/comms/usePresence";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
