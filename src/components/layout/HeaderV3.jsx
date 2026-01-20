@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
@@ -340,20 +340,19 @@ export default function HeaderV3() {
         {/* Notifications */}
         <NotificationCenter user={user} />
 
-        {/* User Menu */}
+        {/* Settings Gear */}
         <div className="relative">
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className={cn(
-              'flex items-center gap-1.5 px-3 h-10 border rounded-sm transition-colors font-bold text-[9px]',
+              'flex items-center justify-center h-10 w-10 border transition-colors',
               userMenuOpen
-                ? 'bg-zinc-800 border-[#ea580c] text-[#ea580c]'
-                : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                ? 'bg-[#ea580c]/20 border-[#ea580c]/60 text-[#ea580c]'
+                : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-400'
             )}
-            title={user?.full_name}
+            title="Settings & Profile"
           >
-            <UserIcon className="w-3 h-3" />
-            <span className="hidden sm:inline uppercase">{userCallsign}</span>
+            <Cog className="w-4 h-4" />
           </button>
 
           {userMenuOpen && (
