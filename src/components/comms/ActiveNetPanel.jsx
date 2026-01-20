@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone, MicOff, Volume2 } from "lucide-react";
+import NetStatusBar from "@/components/comms/NetStatusBar";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
@@ -953,6 +954,15 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
            />
            )}
 
+           {/* Net Status Bar */}
+           <NetStatusBar 
+             net={net}
+             activeUsers={participants.length}
+             transmittingCount={transmittingUsers.length}
+             connectionQuality={connectionQuality.quality}
+             isConnected={connectionState === 'connected'}
+           />
+
            {/* Roster & Logs */}
            <TerminalCard className="flex-1 flex flex-col overflow-hidden">
            <ScrollArea className="flex-1 p-4">
@@ -961,7 +971,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                <div>
                   <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 mb-3 border-b border-zinc-800">
                      <Radio className="w-3 h-3" />
-                     Active on Frequency
+                     Active on Frequency ({participants.length})
                   </div>
                   <UserPresencePanel netId={net.id} eventId={eventId} />
                </div>
