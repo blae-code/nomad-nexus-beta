@@ -9,6 +9,7 @@ import { refreshAgent } from "@/components/ai/aiOrchestrator";
 import AgentRuleManager from "@/components/ai/AgentRuleManager";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
+import { getSeverityColor, SEVERITY_LEVELS } from "@/components/utils/severitySystem";
 
 export default function AIInsightsPanel({ eventId, compact = false }) {
   const queryClient = useQueryClient();
@@ -60,11 +61,11 @@ export default function AIInsightsPanel({ eventId, compact = false }) {
     return map;
   }, [agents, logs]);
 
-  const getSeverityColor = (sev) => {
+  const mapSeverityToLevel = (sev) => {
     switch(sev) {
-      case 'HIGH': return "text-red-500 border-red-900/50 bg-red-950/10";
-      case 'MEDIUM': return "text-amber-500 border-amber-900/50 bg-amber-950/10";
-      default: return "text-zinc-400 border-zinc-800 bg-zinc-900/30";
+      case 'HIGH': return SEVERITY_LEVELS.CRITICAL;
+      case 'MEDIUM': return SEVERITY_LEVELS.WARNING;
+      default: return SEVERITY_LEVELS.INFO;
     }
   };
 
@@ -120,16 +121,26 @@ export default function AIInsightsPanel({ eventId, compact = false }) {
                    </div>
                  ) : findings.length > 0 ? (
                    <div className="space-y-2">
-                      {findings.map(f => (
-                        <div key={f.id} className={cn("flex gap-2 p-2 rounded border text-xs", getSeverityColor(f.severity))}>
-                           <div className="mt-0.5 shrink-0">{getTypeIcon(f.type)}</div>
-                           <div>
-                             <div className="font-bold leading-none mb-1">{f.summary}</div>
-                             <div className="opacity-80 font-mono leading-tight">{f.details || f.content}</div>
-                             <div className="mt-1 text-[9px] opacity-50 uppercase">{new Date(f.created_date).toLocaleTimeString()}</div>
-                           </div>
-                        </div>
-                      ))}
+                      {findings.map(f => {
+                        const level = mapSeverityToLevel(f.severity);
+                        const isCritical = level === SEVERITY_LEVELS.CRITICAL;
+                        return (
+                          <div key={f.id} className={cn(
+                            "flex gap-2 p-2 border text-xs",
+                            getSeverityColor(level, 'text'),
+                            getSeverityColor(level, 'border'),
+                            getSeverityColor(level, 'bg'),
+                            isCritical && getSeverityColor(level, 'animate')
+                          )}>
+                             <div className="mt-0.5 shrink-0">{getTypeIcon(f.type)}</div>
+                             <div>
+                               <div className="font-bold leading-none mb-1">{f.summary}</div>
+                               <div className="opacity-80 font-mono leading-tight">{f.details || f.content}</div>
+                               <div className="mt-1 text-[9px] opacity-50 uppercase">{new Date(f.created_date).toLocaleTimeString()}</div>
+                             </div>
+                          </div>
+                        );
+                      })}
                    </div>
                  ) : (
                    <div className="text-zinc-600 italic text-center py-2 text-xs">
