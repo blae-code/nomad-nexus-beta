@@ -356,13 +356,13 @@ export default function HeaderV3() {
           {userMenuOpen && (
             <div className="absolute top-full right-0 mt-1 bg-zinc-900 border border-zinc-800 z-50 min-w-max shadow-lg">
               {user && (
-                <div className="px-3 py-2 border-b border-zinc-800">
-                  <div className="text-xs font-bold text-white">{user.full_name || 'Unknown'}</div>
-                  <div className={cn('text-[9px] font-mono', getRankColorClass(user.rank, 'text'))}>
-                    {user.rank || 'VAGRANT'}
-                  </div>
-                </div>
-              )}
+                    <div className="px-3 py-2 border-b border-zinc-800">
+                      <div className="text-xs font-bold text-white">{userCallsign}</div>
+                      <div className={cn('text-[9px] font-mono', getRankColorClass(user.rank, 'text'))}>
+                        {user.rank || 'VAGRANT'}
+                      </div>
+                    </div>
+                  )}
               <Link
                 to={createPageUrl('Profile')}
                 onClick={() => setUserMenuOpen(false)}
