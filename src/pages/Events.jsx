@@ -8,11 +8,11 @@ import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-re
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import EventForm from "@/components/events/EventForm";
-import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
-import EventPostAnalysis from "@/components/events/EventPostAnalysis";
+       import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
+       import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 
-// Imports specific to Detail View
-import CommsPanel from "@/components/events/CommsPanel";
+       // Imports specific to Detail View
+       import CommsPanel from "@/components/events/CommsPanel";
 import SquadManager from "@/components/events/SquadManager";
 import PlayerStatusSection from "@/components/events/PlayerStatusSection";
 import EventParticipants from "@/components/events/EventParticipants";
@@ -21,12 +21,15 @@ import CommsConfig from "@/components/events/CommsConfig";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import EventObjectives from "@/components/events/EventObjectives";
 import EventTimeline from "@/components/events/EventTimeline";
-import AARPanel from "@/components/events/AARPanel";
+import EventAAR from "@/components/events/EventAAR";
 import { Rocket } from "lucide-react";
 
 function EventDetail({ id }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState('briefing');
+  const [showNoteForm, setShowNoteForm] = React.useState(false);
+  const [noteText, setNoteText] = React.useState('');
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -131,12 +134,30 @@ function EventDetail({ id }) {
           )}
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-1 mb-4 border-b border-zinc-800 overflow-x-auto">
+          {['briefing', 'timeline', 'aar'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+                activeTab === tab
+                  ? 'text-[#ea580c] border-b-2 border-[#ea580c]'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {tab === 'briefing' ? 'Mission Briefing' : tab === 'timeline' ? 'Timeline' : 'After Action Report'}
+            </button>
+          ))}
+        </div>
+
         <div className="grid gap-4 lg:grid-cols-3">
           
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-3">
             
             {/* Mission Details */}
+            {activeTab === 'briefing' && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Mission Briefing</CardTitle>
@@ -222,16 +243,82 @@ function EventDetail({ id }) {
             <SquadManager eventId={event.id} />
 
             {/* Communication Logs */}
-             <EventCommunicationLogs eventId={event.id} />
-
-            {/* Event Timeline */}
-            <EventTimeline eventId={event.id} />
-
-            {/* After Action Report */}
-            <AARPanel eventId={event.id} eventTitle={event.title} />
+            <EventCommunicationLogs eventId={event.id} />
 
             {/* Post-Event Analysis */}
-            <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+             <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+            </Card>
+            )}
+
+            {/* Timeline Tab */}
+            {activeTab === 'timeline' && (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Operational Timeline</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EventTimeline 
+                    eventId={event.id}
+                    onAddNote={() => setShowNoteForm(!showNoteForm)}
+                  />
+                  {showNoteForm && (
+                    <div className="mt-4 pt-4 border-t border-zinc-700">
+                      <div className="space-y-2">
+                        <textarea
+                          value={noteText}
+                          onChange={(e) => setNoteText(e.target.value)}
+                          placeholder="Add operational note..."
+                          className="w-full bg-zinc-950 border border-zinc-700 text-white p-2 text-sm font-mono rounded"
+                          rows="3"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              if (noteText.trim()) {
+                                await base44.entities.EventLog.create({
+                                  event_id: event.id,
+                                  type: 'NOTE',
+                                  severity: 'LOW',
+                                  actor_user_id: currentUser.id,
+                                  summary: noteText.slice(0, 100),
+                                  details: { full_note: noteText }
+                                });
+                                setNoteText('');
+                                setShowNoteForm(false);
+                              }
+                            }}
+                            className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[10px] h-7"
+                          >
+                            POST NOTE
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowNoteForm(false)}
+                            className="text-[10px] h-7"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* AAR Tab */}
+            {activeTab === 'aar' && (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">After Action Report</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EventAAR eventId={event.id} eventTitle={event.title} />
+                </CardContent>
+              </Card>
+            )}
 
             </div>
 
