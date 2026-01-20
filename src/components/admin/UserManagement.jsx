@@ -14,9 +14,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
-function UserEditDialog({ user, trigger, isAdmin }) {
+function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState({});
+  const [pioneerError, setPioneerError] = useState(null);
+  const [validatingPioneer, setValidatingPioneer] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -25,7 +27,8 @@ function UserEditDialog({ user, trigger, isAdmin }) {
         rank: user.rank || 'Vagrant',
         role_tags: user.role_tags || [],
         assigned_role_ids: user.assigned_role_ids || [],
-        is_shaman: user.is_shaman || false
+        is_shaman: user.is_shaman || false,
+        is_system_administrator: user.is_system_administrator || false
       });
     }
   }, [user]);
@@ -38,11 +41,27 @@ function UserEditDialog({ user, trigger, isAdmin }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
+      // Validate Pioneer uniqueness before submit
+      if (data.rank === 'Pioneer' && existingPioneer?.id !== user.id) {
+        setValidatingPioneer(true);
+        const response = await base44.functions.invoke('validatePioneerUniqueness', {
+          userId: user.id,
+          newRank: 'Pioneer'
+        });
+        setValidatingPioneer(false);
+
+        if (!response.data.valid) {
+          setPioneerError(response.data.error);
+          throw new Error(response.data.error);
+        }
+      }
+
       await base44.asServiceRole.entities.User.update(user.id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
       toast.success('User updated successfully');
+      setPioneerError(null);
       setOpen(false);
     },
     onError: (error) => {
@@ -52,7 +71,13 @@ function UserEditDialog({ user, trigger, isAdmin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setPioneerError(null);
     updateMutation.mutate(editData);
+  };
+
+  const handleRankChange = (newRank) => {
+    setPioneerError(null);
+    setEditData({ ...editData, rank: newRank });
   };
 
   const availableTags = ['MEDIC', 'PILOT', 'ENGINEER', 'GUNNER', 'LEAD', 'RESCUE', 'RANGER', 'LOGISTICS'];
@@ -89,8 +114,8 @@ function UserEditDialog({ user, trigger, isAdmin }) {
 
           <div className="space-y-2">
             <Label className="text-xs text-[#ea580c] uppercase font-bold">Rank / Clearance</Label>
-            <Select value={editData.rank || 'Vagrant'} onValueChange={(v) => setEditData({ ...editData, rank: v })}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800">
+            <Select value={editData.rank || 'Vagrant'} onValueChange={handleRankChange}>
+              <SelectTrigger className={`bg-zinc-900 border-zinc-800 ${editData.rank === 'Pioneer' && existingPioneer?.id !== user.id && existingPioneer ? 'border-red-700' : ''}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -98,9 +123,31 @@ function UserEditDialog({ user, trigger, isAdmin }) {
                 <SelectItem value="Scout">Scout</SelectItem>
                 <SelectItem value="Voyager">Voyager</SelectItem>
                 <SelectItem value="Founder">Founder</SelectItem>
-                <SelectItem value="Pioneer">Pioneer</SelectItem>
+                <SelectItem value="Pioneer" disabled={existingPioneer?.id !== user.id && !!existingPioneer}>
+                  Pioneer {existingPioneer?.id !== user.id && existingPioneer && `(assigned to ${existingPioneer.callsign || existingPioneer.email})`}
+                </SelectItem>
               </SelectContent>
             </Select>
+            {pioneerError && (
+              <div className="text-xs text-red-500 bg-red-950/20 border border-red-900/50 rounded p-2">
+                {pioneerError}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-zinc-400 uppercase">System Administrator</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={editData.is_system_administrator || false}
+                onChange={(e) => setEditData({ ...editData, is_system_administrator: e.target.checked })}
+                className="w-4 h-4 cursor-pointer"
+              />
+              <Label className="text-xs text-zinc-400 cursor-pointer">
+                Grant System Administrator privileges (independent from rank)
+              </Label>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -167,8 +214,12 @@ function UserEditDialog({ user, trigger, isAdmin }) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending} className="bg-[#ea580c] hover:bg-[#c2410c]">
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            <Button 
+              type="submit" 
+              disabled={updateMutation.isPending || validatingPioneer} 
+              className="bg-[#ea580c] hover:bg-[#c2410c]"
+            >
+              {updateMutation.isPending || validatingPioneer ? 'Validating...' : 'Save Changes'}
             </Button>
           </div>
         </form>
