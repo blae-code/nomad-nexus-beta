@@ -54,7 +54,7 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
               </SelectItem>
             );
           }).filter(Boolean) : (
-            <SelectItem value="no-events-placeholder" disabled>No active operations</SelectItem>
+            <SelectItem value="none" disabled>No active operations</SelectItem>
           )}
         </SelectContent>
       </Select>
