@@ -159,95 +159,97 @@ function EventDetail({ id }) {
             
             {/* Mission Details */}
             {activeTab === 'briefing' && (
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Mission Briefing</CardTitle>
-              </CardHeader>
-              <CardContent className="text-zinc-400 space-y-6">
-                <p className="leading-relaxed">{event.description}</p>
-                
-                {/* Objectives */}
-                <EventObjectives 
-                   event={event} 
-                   users={allUsers} 
-                   assets={allAssets} 
-                   canEdit={true} 
-                />
+              <>
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Mission Briefing</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-zinc-400 space-y-6">
+                    <p className="leading-relaxed">{event.description}</p>
 
-                {/* Assigned Assets */}
-                {event.assigned_asset_ids && event.assigned_asset_ids.length > 0 && (
-                   <div className="pt-4 border-t border-zinc-800/50">
-                      <h4 className="text-xs font-bold text-zinc-500 uppercase mb-3 flex items-center gap-2">
-                         <Rocket className="w-3 h-3" /> Deployed Assets
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                         {allAssets.filter(a => event.assigned_asset_ids.includes(a.id)).map(asset => (
-                            <div key={asset.id} className="flex items-center gap-3 p-2 bg-zinc-950/50 border border-zinc-800/50">
-                               <div className="w-8 h-8 bg-blue-900/10 flex items-center justify-center text-blue-500 border border-blue-900/20">
-                                  <Rocket className="w-4 h-4" />
-                               </div>
-                               <div>
-                                  <div className="text-xs font-bold text-zinc-200">{asset.name}</div>
-                                  <div className="text-[10px] text-zinc-500 uppercase">{asset.model}</div>
-                               </div>
+                    {/* Objectives */}
+                    <EventObjectives 
+                       event={event} 
+                       users={allUsers} 
+                       assets={allAssets} 
+                       canEdit={true} 
+                    />
+
+                    {/* Assigned Assets */}
+                    {event.assigned_asset_ids && event.assigned_asset_ids.length > 0 && (
+                       <div className="pt-4 border-t border-zinc-800/50">
+                          <h4 className="text-xs font-bold text-zinc-500 uppercase mb-3 flex items-center gap-2">
+                             <Rocket className="w-3 h-3" /> Deployed Assets
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                             {allAssets.filter(a => event.assigned_asset_ids.includes(a.id)).map(asset => (
+                                <div key={asset.id} className="flex items-center gap-3 p-2 bg-zinc-950/50 border border-zinc-800/50">
+                                   <div className="w-8 h-8 bg-blue-900/10 flex items-center justify-center text-blue-500 border border-blue-900/20">
+                                      <Rocket className="w-4 h-4" />
+                                   </div>
+                                   <div>
+                                      <div className="text-xs font-bold text-zinc-200">{asset.name}</div>
+                                      <div className="text-[10px] text-zinc-500 uppercase">{asset.model}</div>
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-red-500" />
+                        <div>
+                          <div className="text-[10px] text-zinc-500 uppercase">Date</div>
+                          <div className="text-sm text-zinc-200">
+                            {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-4 h-4 text-red-500" />
+                        <div>
+                          <div className="text-[10px] text-zinc-500 uppercase">Start Time</div>
+                          <div className="text-sm text-zinc-200">
+                            {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                          </div>
+                        </div>
+                      </div>
+                      {event.end_time && (
+                        <div className="flex items-center gap-3">
+                          <Clock className="w-4 h-4 text-amber-500" />
+                          <div>
+                            <div className="text-[10px] text-zinc-500 uppercase">End Time</div>
+                            <div className="text-sm text-zinc-200">
+                              {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </div>
-                         ))}
-                      </div>
-                   </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-red-500" />
-                    <div>
-                      <div className="text-[10px] text-zinc-500 uppercase">Date</div>
-                      <div className="text-sm text-zinc-200">
-                        {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-red-500" />
-                    <div>
-                      <div className="text-[10px] text-zinc-500 uppercase">Start Time</div>
-                      <div className="text-sm text-zinc-200">
-                        {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                      </div>
-                    </div>
-                  </div>
-                  {event.end_time && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-amber-500" />
-                      <div>
-                        <div className="text-[10px] text-zinc-500 uppercase">End Time</div>
-                        <div className="text-sm text-zinc-200">
-                          {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 col-span-full">
+                        <MapPin className="w-4 h-4 text-red-500" />
+                        <div>
+                          <div className="text-[10px] text-zinc-500 uppercase">Location</div>
+                          <div className="text-sm text-zinc-200">{event.location || "Classified"}</div>
                         </div>
                       </div>
                     </div>
-                  )}
-                  <div className="flex items-center gap-3 col-span-full">
-                    <MapPin className="w-4 h-4 text-red-500" />
-                    <div>
-                      <div className="text-[10px] text-zinc-500 uppercase">Location</div>
-                      <div className="text-sm text-zinc-200">{event.location || "Classified"}</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            {/* Participants & Roles */}
-            <EventParticipants eventId={event.id} />
+                {/* Participants & Roles */}
+                <EventParticipants eventId={event.id} />
 
-            {/* Squads / Assignments Manager */}
-            <SquadManager eventId={event.id} />
+                {/* Squads / Assignments Manager */}
+                <SquadManager eventId={event.id} />
 
-            {/* Communication Logs */}
-            <EventCommunicationLogs eventId={event.id} />
+                {/* Communication Logs */}
+                <EventCommunicationLogs eventId={event.id} />
 
-            {/* Post-Event Analysis */}
-             <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+                {/* Post-Event Analysis */}
+                <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+              </>
             )}
 
             {/* Timeline Tab */}
