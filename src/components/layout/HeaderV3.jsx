@@ -379,7 +379,9 @@ export default function HeaderV3() {
         </div>
 
         {/* Notifications */}
-        <NotificationCenter user={user} />
+        <div className="scale-125 origin-right">
+          <NotificationCenter user={user} />
+        </div>
 
         {/* User Menu */}
         <div className="relative">
