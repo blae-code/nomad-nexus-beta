@@ -135,21 +135,15 @@ function CommsConsolePage() {
   const { data: recentActivity } = useQuery({
     queryKey: ['comms-activity', selectedEventId],
     queryFn: async () => {
-      if (!selectedEventId) return {};
-      const msgs = await base44.entities.Message.list({
-        sort: { created_date: -1 },
-        limit: 20
-      });
+      const msgs = await base44.entities.Message.filter({}, '-created_date', 20);
       
       // Map net codes to last activity timestamp
       const activity = {};
       msgs.forEach(msg => {
         if (msg.content.includes('[COMMS LOG]')) {
-           // Extract net code from message: "TX on ALPHA: ..."
            const match = msg.content.match(/TX on ([^:]+):/);
            if (match && match[1]) {
              const code = match[1];
-             // Find net by code
              const net = voiceNets.find(n => n.code === code);
              if (net) {
                if (!activity[net.id] || new Date(msg.created_date) > new Date(activity[net.id])) {
@@ -161,7 +155,7 @@ function CommsConsolePage() {
       });
       return activity;
     },
-    enabled: !!selectedEventId && voiceNets.length > 0,
+    enabled: voiceNets.length > 0,
     refetchInterval: 3000,
     initialData: {}
   });
