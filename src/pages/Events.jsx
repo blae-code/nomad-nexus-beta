@@ -440,26 +440,22 @@ export default function EventsPage() {
 
   // Render List View
   return (
-    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-white">Operations Board</h1>
-            <p className="text-zinc-500 mt-1">Upcoming missions and deployments.</p>
-          </div>
-          {canCreateEvent(currentUser) && (
-            <>
-              <Button 
-                onClick={() => setIsCreateOpen(true)} 
-                className="bg-red-900 hover:bg-red-800 text-white"
-                >
-                INITIALIZE OPERATION
-                </Button>
-              <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
-            </>
-          )}
-        </div>
+    <PageShell
+      title="Operations Board"
+      subtitle="Upcoming missions and deployments."
+      actions={canCreateEvent(currentUser) && (
+        <>
+          <Button 
+            onClick={() => setIsCreateOpen(true)} 
+            className="bg-red-900 hover:bg-red-800 text-white"
+          >
+            INITIALIZE OPERATION
+          </Button>
+          <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+        </>
+      )}
+    >
+      <div className="px-6 py-6">
 
         {isLoading ? (
            <div className="text-center py-10 text-zinc-500">RETRIEVING OPERATIONS...</div>
