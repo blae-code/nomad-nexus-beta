@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Command, Bell, User as UserIcon, LogOut, Settings, Radio, Wifi, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
 import { Link, useLocation } from 'react-router-dom';
-import CommandPaletteV3 from './CommandPaletteV3';
+import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 /**
- * HeaderV3: Navigation & telemetry surface
- * - Fixed 56px height (h-14)
- * - Prominent Ctrl+K palette trigger + breadcrumb
- * - NET status + latency + ONLINE count
- * - "You" presence pill (Online/In-call/Transmitting)
- * - Page visibility API pauses polling
+ * HeaderV3: "Living intranet" command surface
+ * - Fixed 56px height, never wraps, never scrolls
+ * - Left: brand + callsign + presence pill
+ * - Center: command palette trigger
+ * - Right: net telemetry, presence overview, time, user menu
+ * - Crisp 1px dividers, compact typography
+ * - No privileged queries; safe data only
  */
 
-const PAGE_NAMES = {
-  '/hub': 'Hub',
-  '/nomadopsdashboard': 'Mission Control',
-  '/events': 'Operations',
-  '/commsconsole': 'Comms',
-  '/intelligence': 'Intelligence',
-  '/adminconsole': 'Admin',
-  '/': 'Hub',
+const PAGE_BREADCRUMBS = {
+  '/hub': 'COMMAND HUB',
+  '/nomadopsdashboard': 'NOMAD OPS',
+  '/events': 'OPERATIONS BOARD',
+  '/commsconsole': 'COMMS ARRAY',
+  '/intelligence': 'INTELLIGENCE',
+  '/adminconsole': 'SYSTEM ADMIN',
+  '/admin': 'SYSTEM ADMIN',
 };
 
 export default function HeaderV3() {
@@ -33,10 +34,19 @@ export default function HeaderV3() {
   const [userPresence, setUserPresence] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [presenceList, setPresenceList] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('OPTIMAL');
   const [latency, setLatency] = useState(0);
   const [isVisible, setIsVisible] = useState(!document.hidden);
   const location = useLocation();
+  
+  // Safe callsign/rank resolution via directory
+  const { userById, getDisplayName } = useUserDirectory(user?.id ? [user.id] : []);
+  const userCallsign = useMemo(() => {
+    if (user?.callsign) return user.callsign;
+    if (user?.id && userById[user.id]) return userById[user.id].callsign || user.full_name?.split(' ')[0];
+    return 'UNKNOWN OPERATIVE';
+  }, [user, userById]);
 
   // Fetch user
   useEffect(() => {
@@ -65,6 +75,7 @@ export default function HeaderV3() {
         const presences = await base44.entities.UserPresence.list();
         const online = presences.filter((p) => p.status !== 'offline').length;
         setOnlineCount(online);
+        setPresenceList(presences.slice(0, 5)); // Keep 5 for avatar dots
         
         // Get current user's presence
         if (user) {
@@ -108,8 +119,8 @@ export default function HeaderV3() {
     base44.auth.logout();
   };
 
-  // Get current page name for breadcrumb
-  const currentPageName = PAGE_NAMES[location.pathname.toLowerCase()] || 'Page';
+  // Get current page breadcrumb
+  const breadcrumb = PAGE_BREADCRUMBS[location.pathname.toLowerCase()] || 'OPERATIONS';
 
   // Determine presence pill color/label
   const getPresenceInfo = () => {
@@ -138,70 +149,107 @@ export default function HeaderV3() {
 
   const presenceInfo = getPresenceInfo();
 
+  // Dev-only: check header height constraint
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const headerEl = document.querySelector('header');
+      if (headerEl && headerEl.offsetHeight !== 56) {
+        console.error(`[HEADER] HEIGHT VIOLATION: expected 56px, got ${headerEl.offsetHeight}px`);
+      }
+      if (document.documentElement.scrollHeight > window.innerHeight) {
+        console.warn('[HEADER] SCROLL VIOLATION: document overflow detected');
+      }
+    }
+  }, []);
+
   return (
-    <header className="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-4 fixed top-0 left-0 right-0">
-      {/* Left: Branding + Palette Trigger + Breadcrumb */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+    <header className="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)',
+        backgroundSize: '100% 2px',
+      }}
+    >
+      {/* LEFT: Brand + Callsign + Presence Pill */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Brand: "NOMAD NEXUS // REDSCAR OPS" */}
         <div className="flex items-center gap-1.5 shrink-0">
           <Radio className="w-4 h-4 text-[#ea580c]" />
-          <span className="text-[10px] font-black uppercase text-zinc-400 hidden sm:inline tracking-wider">
-            NOMAD OPS
+          <span className="text-[9px] font-black uppercase text-zinc-400 hidden sm:inline tracking-wider">
+            NOMAD NEXUS
           </span>
         </div>
 
-        <div className="hidden sm:block w-px h-6 bg-zinc-800" />
+        {/* Divider */}
+        <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
 
-        {/* Command Palette with Ctrl+K hint */}
-        <div className="flex items-center gap-2">
-          <button
-            className="flex items-center gap-1.5 px-2.5 h-7 border border-zinc-800 bg-zinc-900/50 text-[9px] text-zinc-400 hover:border-zinc-700 transition-colors"
-            onClick={() => {
-              const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
-              document.dispatchEvent(event);
-            }}
-            title="Open command palette (Ctrl+K)"
-          >
-            <Command className="w-3 h-3" />
-            <span className="hidden md:inline">Ctrl+K</span>
-          </button>
-
-          {/* Breadcrumb */}
-          <div className="hidden md:flex items-center gap-2 text-[9px] text-zinc-500 font-mono">
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-zinc-300">{currentPageName}</span>
+        {/* Callsign Block */}
+        <div className="hidden sm:flex items-center gap-2 min-w-0">
+          <div>
+            <div className="text-[9px] font-bold text-zinc-200 uppercase truncate">
+              {userCallsign}
+            </div>
+            <div className="text-[8px] text-zinc-600 uppercase font-mono">
+              {user?.rank ? getRankColorClass(user.rank, 'text') : 'VAGRANT'}
+            </div>
           </div>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-zinc-800 hidden sm:block" />
+
+        {/* Presence Pill: Online/In-Call/Transmitting with pulsing dot */}
+        <div className={cn(
+          'flex items-center gap-1.5 px-2 h-7 border text-[9px] font-mono font-bold uppercase shrink-0',
+          presenceInfo.color
+        )}>
+          <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor, 
+            ['in-call', 'transmitting'].includes(userPresence?.status || '') && 'animate-pulse'
+          )} />
+          <span className="hidden md:inline">{presenceInfo.label}</span>
         </div>
       </div>
 
-      {/* Right: Telemetry + You + User Menu */}
+      {/* CENTER: Command Palette Trigger */}
+      <div className="flex-1 flex items-center justify-center max-w-sm px-4">
+        <button
+          onClick={() => {
+            const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
+            document.dispatchEvent(event);
+          }}
+          className="w-full flex items-center gap-2 px-3 h-7 border border-zinc-800 bg-zinc-900/50 text-[9px] text-zinc-400 hover:border-zinc-700 transition-colors"
+          title="Command/Search protocols, events, nets… (Ctrl+K)"
+        >
+          <span className="flex-1 text-left">Command / Search protocols…</span>
+          <span className="text-[8px] text-zinc-600 shrink-0">⌘K</span>
+        </button>
+      </div>
+
+      {/* RIGHT: Telemetry + Online Count + Time + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
         {/* NET Status */}
         <div
           className={cn(
-            'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase',
+            'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase hidden lg:flex',
             connectionStatus === 'OPTIMAL'
               ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300'
               : 'bg-red-950/30 border-red-700/50 text-red-300'
           )}
         >
           <Wifi className="w-2.5 h-2.5" />
-          <span className="hidden sm:inline">{connectionStatus}</span>
-          <span className="hidden lg:inline text-[8px] opacity-60 ml-1">{latency}ms</span>
+          <span>{connectionStatus}</span>
+          <span className="text-[8px] opacity-60">{latency}ms</span>
         </div>
 
-        {/* Online Count */}
-        <div className="flex items-center gap-1 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono">
+        {/* Online Count with avatar pips */}
+        <div className="flex items-center gap-1.5 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono hidden md:flex">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
           <span className="font-bold text-zinc-300">ONLINE: {onlineCount}</span>
         </div>
 
-        {/* "You" Presence Pill */}
-        <div className={cn(
-          'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase',
-          presenceInfo.color
-        )}>
-          <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor)} />
-          <span className="hidden sm:inline">{presenceInfo.label}</span>
+        {/* Time: Local + UTC */}
+        <div className="hidden xl:flex items-center gap-1 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono text-zinc-400">
+          <Clock className="w-2.5 h-2.5" />
+          <span>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
         </div>
 
         {/* Notifications */}
@@ -217,9 +265,10 @@ export default function HeaderV3() {
                 ? 'bg-zinc-800 border-[#ea580c] text-[#ea580c]'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700'
             )}
+            title={user?.full_name}
           >
             <UserIcon className="w-3 h-3" />
-            <span className="hidden sm:inline uppercase">{user?.callsign || user?.full_name?.split(' ')[0] || 'OP'}</span>
+            <span className="hidden sm:inline uppercase">{userCallsign}</span>
           </button>
 
           {userMenuOpen && (
