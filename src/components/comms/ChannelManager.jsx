@@ -29,7 +29,14 @@ export default function ChannelManager({ user }) {
 
   const { data: channels = [] } = useQuery({
     queryKey: ['manageable-channels'],
-    queryFn: () => base44.entities.Channel.list(),
+    queryFn: async () => {
+      try {
+        return await base44.entities.Channel.filter({});
+      } catch (error) {
+        console.error('[CHANNEL] Fetch error:', error);
+        return [];
+      }
+    },
     enabled: canManageChannels
   });
 

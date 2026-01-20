@@ -73,7 +73,7 @@ export default function DeviceSelector({ onDeviceChange, onTest }) {
         <div className="flex items-center gap-2">
           <Mic className="w-3 h-3 text-zinc-500" />
           <div className="text-[10px] text-zinc-500 uppercase w-20">Input</div>
-          <Select value={selectedInput} onValueChange={(val) => {
+          <Select value={selectedInput ?? "default"} onValueChange={(val) => {
             setSelectedInput(val);
             onDeviceChange && onDeviceChange({ input: val, output: selectedOutput });
           }}>
@@ -82,8 +82,8 @@ export default function DeviceSelector({ onDeviceChange, onTest }) {
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
               <SelectItem value="default">System Default</SelectItem>
-              {audioInputs.map(d => (
-                <SelectItem key={d.deviceId} value={d.deviceId}>
+              {audioInputs?.map(d => (
+                d?.deviceId && <SelectItem key={d.deviceId} value={d.deviceId}>
                   {d.label || `Microphone ${d.deviceId.slice(0,8)}`}
                 </SelectItem>
               ))}
@@ -94,7 +94,7 @@ export default function DeviceSelector({ onDeviceChange, onTest }) {
         <div className="flex items-center gap-2">
           <Volume2 className="w-3 h-3 text-zinc-500" />
           <div className="text-[10px] text-zinc-500 uppercase w-20">Output</div>
-          <Select value={selectedOutput} onValueChange={(val) => {
+          <Select value={selectedOutput ?? "default"} onValueChange={(val) => {
             setSelectedOutput(val);
             onDeviceChange && onDeviceChange({ input: selectedInput, output: val });
           }}>
@@ -103,8 +103,8 @@ export default function DeviceSelector({ onDeviceChange, onTest }) {
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
               <SelectItem value="default">System Default</SelectItem>
-              {audioOutputs.map(d => (
-                <SelectItem key={d.deviceId} value={d.deviceId}>
+              {audioOutputs?.map(d => (
+                d?.deviceId && <SelectItem key={d.deviceId} value={d.deviceId}>
                   {d.label || `Speaker ${d.deviceId.slice(0,8)}`}
                 </SelectItem>
               ))}

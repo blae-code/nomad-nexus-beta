@@ -34,7 +34,7 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
 
   return (
     <div className="w-full">
-      <Select value={selectedEventId || "none"} onValueChange={(val) => onSelect(val === "none" ? null : val)}>
+      <Select value={selectedEventId ?? "none"} onValueChange={(val) => onSelect(val === "none" ? null : val)}>
         <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-zinc-100 h-12">
            <div className="flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full ${selectedEventId ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
@@ -44,9 +44,9 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
         <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
           <SelectItem value="none">No Operation Selected</SelectItem>
           {validEvents.length > 0 ? validEvents.map(event => {
-            const eventId = String(event.id).trim();
-            if (!eventId || eventId === '' || eventId === 'undefined' || eventId === 'null') return null;
-            
+            const eventId = String(event.id ?? '').trim();
+            if (!eventId || eventId === 'undefined' || eventId === 'null') return null;
+
             return (
               <SelectItem key={eventId} value={eventId}>
                 <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
               </SelectItem>
             );
           }).filter(Boolean) : (
-            <SelectItem value="none" disabled>No active operations</SelectItem>
+            <SelectItem value="placeholder" disabled>No active operations</SelectItem>
           )}
         </SelectContent>
       </Select>
