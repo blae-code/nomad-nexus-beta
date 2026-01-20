@@ -520,7 +520,8 @@ export default function EventsPage() {
               })
             )}
           </div>
-        )}
-        </PageShell>
-        );
-        }
+          )}
+          </div>
+          </PageShell>
+          );
+          }
