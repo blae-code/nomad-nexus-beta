@@ -19,6 +19,7 @@ import EmptyState from "@/components/feedback/EmptyState";
 import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
 import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 import { useUserDirectory } from "@/components/hooks/useUserDirectory";
+import EventDeleteDialog from "@/components/events/EventDeleteDialog";
 import CommsPanel from "@/components/events/CommsPanel";
 import SquadManager from "@/components/events/SquadManager";
 import PlayerStatusSection from "@/components/events/PlayerStatusSection";
