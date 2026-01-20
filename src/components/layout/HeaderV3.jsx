@@ -280,23 +280,47 @@ export default function HeaderV3() {
           </button>
 
           {statusMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-800 z-50 min-w-max shadow-lg"
+            <div className="absolute top-full left-0 mt-1 bg-zinc-950 border border-zinc-800 z-50 min-w-max shadow-xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)',
+                backgroundSize: '100% 2px',
+              }}
             >
-              {['online', 'idle', 'away', 'offline'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => handleStatusChange(status)}
-                  className={cn(
-                    'w-full text-left px-3 py-2 text-xs font-mono uppercase transition-colors',
-                    userPresence?.status === status
-                      ? 'bg-[#ea580c]/20 text-[#ea580c] border-l-2 border-[#ea580c]'
-                      : 'text-zinc-300 hover:bg-zinc-800'
-                  )}
-                >
-                  {status}
-                </button>
-              ))}
+              {/* Header */}
+              <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50 text-[9px] font-mono text-zinc-500">
+                SET PRESENCE
+              </div>
+
+              {/* Status Options */}
+              <div className="space-y-0">
+                {['online', 'idle', 'away', 'offline'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors duration-150 border-l-2',
+                      userPresence?.status === status
+                        ? 'bg-zinc-900 text-[#ea580c] border-l-[#ea580c]'
+                        : 'text-zinc-400 hover:bg-zinc-900/50 border-l-transparent hover:text-zinc-300'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-1.5 h-1.5 rounded-full shrink-0',
+                      status === 'online' && 'bg-emerald-500',
+                      status === 'idle' && 'bg-yellow-500',
+                      status === 'away' && 'bg-orange-500',
+                      status === 'offline' && 'bg-zinc-600'
+                    )} />
+                    <span className="font-mono uppercase">{status}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1 text-[8px] text-zinc-600 font-mono">
+                ↵ select • esc close
+              </div>
             </div>
           )}
         </div>
