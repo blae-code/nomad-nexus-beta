@@ -87,7 +87,7 @@ export default function Layout({ children, currentPageName }) {
       <header className="h-12 shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center px-4 justify-between z-50 relative">
 
         {/* Logo Section */}
-        <div className="flex items-center gap-4 w-64">
+        <div className="flex items-center gap-4 shrink-0">
           <a href={createPageUrl('NomadOpsDashboard')} className="flex items-center gap-3 group cursor-pointer">
             <div className="w-8 h-8 bg-[#ea580c] flex items-center justify-center group-hover:bg-[#c2410c] transition-colors">
               <Terminal className="w-5 h-5 text-black" />
@@ -99,13 +99,13 @@ export default function Layout({ children, currentPageName }) {
           </a>
         </div>
 
-        {/* Command Palette / Universal Search - Centered & Enhanced */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-4">
+        {/* Command Palette / Universal Search - Centered */}
+        <div className="flex-1 flex justify-center px-4 max-w-2xl mx-auto">
            <CommandPalette />
         </div>
 
         {/* Time Tracker & Profile */}
-        <div className="flex items-center gap-6 justify-end min-w-fit">
+        <div className="flex items-center gap-6 justify-end shrink-0">
            <NetworkStatusIndicator />
 
            <NotificationCenter user={user} />
