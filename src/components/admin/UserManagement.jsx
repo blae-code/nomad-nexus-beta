@@ -25,6 +25,7 @@ function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
     if (user) {
       setEditData({
         rank: user.rank || 'Vagrant',
+        voyager_number: user.voyager_number || null,
         role_tags: user.role_tags || [],
         assigned_role_ids: user.assigned_role_ids || [],
         is_shaman: user.is_shaman || false,
@@ -47,6 +48,22 @@ function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
         const response = await base44.functions.invoke('validatePioneerUniqueness', {
           userId: user.id,
           newRank: 'Pioneer'
+        });
+        setValidatingPioneer(false);
+
+        if (!response.data.valid) {
+          setPioneerError(response.data.error);
+          throw new Error(response.data.error);
+        }
+      }
+
+      // Validate Voyager Number uniqueness before submit
+      if (data.rank === 'Voyager') {
+        setValidatingPioneer(true);
+        const response = await base44.functions.invoke('validateVoyagerNumber', {
+          userId: user.id,
+          newRank: 'Voyager',
+          voyagerNumber: data.voyager_number
         });
         setValidatingPioneer(false);
 
@@ -134,6 +151,27 @@ function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
               </div>
             )}
           </div>
+
+          {editData.rank === 'Voyager' && (
+            <div className="space-y-2">
+              <Label className="text-xs text-[#ea580c] uppercase font-bold">Voyager Number</Label>
+              <Input
+                type="number"
+                min="10"
+                max="99"
+                placeholder="10-99"
+                value={editData.voyager_number || ''}
+                onChange={(e) => {
+                  setPioneerError(null);
+                  setEditData({ ...editData, voyager_number: e.target.value ? parseInt(e.target.value) : null });
+                }}
+                className="bg-zinc-900 border-zinc-800"
+              />
+              <div className="text-xs text-zinc-500 italic">
+                Unique two-digit identifier. Required for Voyager rank.
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label className="text-xs text-zinc-400 uppercase">System Administrator</Label>
