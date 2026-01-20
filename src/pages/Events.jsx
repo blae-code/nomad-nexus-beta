@@ -45,6 +45,11 @@ function EventDetail({ id }) {
   const [activeTab, setActiveTab] = React.useState('briefing');
   const [showNoteForm, setShowNoteForm] = React.useState(false);
   const [noteText, setNoteText] = React.useState('');
+  const [expandedSections, setExpandedSections] = React.useState({
+    objectives: false,
+    assets: false,
+    participants: false
+  });
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -78,13 +83,6 @@ function EventDetail({ id }) {
       </div>
     );
   }
-
-  // Collapse state for long sections
-  const [expandedSections, setExpandedSections] = useState({
-    objectives: false,
-    assets: false,
-    participants: false
-  });
 
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
