@@ -43,15 +43,15 @@ export default function TreasuryPage() {
   if (isLoading) return <div className="min-h-screen bg-zinc-950 p-10 text-zinc-500">Loading Treasury...</div>;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <div className="container mx-auto max-w-6xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 p-6 pt-20 overflow-auto">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
            <div>
-             <h1 className="text-3xl font-black uppercase tracking-tight text-white flex items-center gap-3">
-               <Shield className="w-8 h-8 text-amber-600" /> 
-               Treasury & Armory
+             <h1 className="text-4xl font-black uppercase tracking-tighter text-white flex items-center gap-2">
+               <Shield className="w-8 h-8 text-[#ea580c]" /> 
+               TREASURY
              </h1>
-             <p className="text-zinc-500 mt-1">Manage squad funds, loot distribution, and logistical assets.</p>
+             <p className="text-xs font-mono text-zinc-600 mt-2 tracking-widest">SQUAD FUNDS & ARMORY MANAGEMENT</p>
            </div>
         </div>
 
