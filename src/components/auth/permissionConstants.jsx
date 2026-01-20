@@ -1,8 +1,10 @@
+
 export const PERMISSIONS = {
   // Administrative
   MANAGE_ROLES: "MANAGE_ROLES",
   MANAGE_USERS: "MANAGE_USERS",
   VIEW_ADMIN_PANEL: "VIEW_ADMIN_PANEL",
+  SYSTEM_ADMINISTRATOR: "SYSTEM_ADMINISTRATOR",
 
   // Comms / Nets
   MANAGE_NETS: "MANAGE_NETS",
@@ -24,6 +26,7 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.MANAGE_ROLES]: "Manage Roles & Permissions",
   [PERMISSIONS.MANAGE_USERS]: "Manage Users",
   [PERMISSIONS.VIEW_ADMIN_PANEL]: "Access Admin Panel",
+  [PERMISSIONS.SYSTEM_ADMINISTRATOR]: "System Administrator",
   [PERMISSIONS.MANAGE_NETS]: "Create/Edit Voice Nets",
   [PERMISSIONS.TRANSMIT_AUDIO]: "Transmit on Nets",
   [PERMISSIONS.LISTEN_AUDIO]: "Listen to Nets",
