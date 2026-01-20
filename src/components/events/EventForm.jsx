@@ -12,6 +12,8 @@ import { Loader2, Rocket, User, AlertCircle } from "lucide-react";
 import ObjectiveEditor from "@/components/missions/ObjectiveEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import AIFleetAssignmentSuggestions from "@/components/events/AIFleetAssignmentSuggestions";
+import AIMissionBriefingGenerator from "@/components/events/AIMissionBriefingGenerator";
 
 export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   const queryClient = useQueryClient();
@@ -277,6 +279,22 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
             <Textarea {...register("description")} className="bg-zinc-900 border-zinc-800" placeholder="Mission details..." rows={3} />
           </div>
 
+          {/* AI Mission Briefing Generator */}
+          {watch("title") && watch("location") && (
+            <AIMissionBriefingGenerator 
+              event={{
+                title: watch("title"),
+                event_type: watch("event_type"),
+                priority: watch("priority"),
+                location: watch("location"),
+                description: watch("description"),
+                tags: watch("tags"),
+                objectives: objectives
+              }}
+              onApplyBriefing={(briefingText) => setValue("description", briefingText)}
+            />
+          )}
+
           {/* Objectives Editor */}
           <ObjectiveEditor 
              objectives={objectives} 
@@ -284,6 +302,22 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
              users={users} 
              assets={assets} 
           />
+
+          {/* AI Fleet Assignment Suggestions */}
+          {watch("title") && watch("location") && assets.length > 0 && (
+            <AIFleetAssignmentSuggestions 
+              event={{
+                title: watch("title"),
+                event_type: watch("event_type"),
+                priority: watch("priority"),
+                location: watch("location"),
+                description: watch("description"),
+                tags: watch("tags")
+              }}
+              assets={assets}
+              onApplySuggestions={(assetIds) => setValue("assigned_asset_ids", assetIds)}
+            />
+          )}
 
           {/* Asset Assignment */}
           <div className="space-y-2">
