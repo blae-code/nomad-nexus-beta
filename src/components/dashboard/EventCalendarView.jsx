@@ -68,38 +68,38 @@ export default function EventCalendarView() {
 
   return (
     <Card className="bg-zinc-900 border-zinc-800 lg:col-span-full">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col gap-4">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg text-zinc-200">Operation Calendar</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" onClick={prevMonth} className="w-8 h-8">
-                <ChevronLeft className="w-4 h-4" />
+            <CardTitle className="text-base text-zinc-200">Operation Calendar</CardTitle>
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="ghost" onClick={prevMonth} className="w-6 h-6">
+                <ChevronLeft className="w-3 h-3" />
               </Button>
-              <span className="text-sm font-bold text-zinc-300 min-w-[150px] text-center">{monthName}</span>
-              <Button size="icon" variant="ghost" onClick={nextMonth} className="w-8 h-8">
-                <ChevronRight className="w-4 h-4" />
+              <span className="text-xs font-bold text-zinc-300 min-w-[120px] text-center">{monthName}</span>
+              <Button size="icon" variant="ghost" onClick={nextMonth} className="w-6 h-6">
+                <ChevronRight className="w-3 h-3" />
               </Button>
             </div>
           </div>
 
           {/* Search and Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5">
             <div className="relative">
-              <Search className="absolute left-2 top-2 w-4 h-4 text-zinc-500" />
+              <Search className="absolute left-1.5 top-1.5 w-3 h-3 text-zinc-500" />
               <Input
-                placeholder="Search operations..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-zinc-800 border-zinc-700 text-zinc-100 pl-8 h-8 text-sm"
+                className="bg-zinc-800 border-zinc-700 text-zinc-100 pl-6 h-7 text-xs"
               />
             </div>
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 text-zinc-100 rounded px-3 h-8 text-sm"
+              className="bg-zinc-800 border border-zinc-700 text-zinc-100 rounded px-2 h-7 text-xs"
             >
-              <option value="all">All Priorities</option>
+              <option value="all">Priority</option>
               <option value="CRITICAL">Critical</option>
               <option value="HIGH">High</option>
               <option value="STANDARD">Standard</option>
@@ -108,32 +108,32 @@ export default function EventCalendarView() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 text-zinc-100 rounded px-3 h-8 text-sm"
+              className="bg-zinc-800 border border-zinc-700 text-zinc-100 rounded px-2 h-7 text-xs"
             >
-              <option value="all">All Types</option>
+              <option value="all">Type</option>
               <option value="focused">Focused</option>
               <option value="casual">Casual</option>
             </select>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3">
         {/* Calendar Grid */}
-        <div className="space-y-3">
+        <div className="space-y-1.5">
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-xs font-bold text-zinc-500 py-2">
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+              <div key={day} className="text-center text-[10px] font-bold text-zinc-500 py-1">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Calendar days */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1">
             {/* Empty cells for days before month starts */}
             {emptyDays.map((_, i) => (
-              <div key={`empty-${i}`} className="aspect-square bg-zinc-950/50 rounded-lg" />
+              <div key={`empty-${i}`} className="aspect-square bg-zinc-950/50 rounded" />
             ))}
 
             {/* Days of the month */}
@@ -144,27 +144,27 @@ export default function EventCalendarView() {
               return (
                 <div
                   key={day}
-                  className={`aspect-square border rounded-lg p-1 flex flex-col overflow-hidden transition-colors ${
+                  className={`aspect-square border rounded p-0.5 flex flex-col overflow-hidden transition-colors ${
                     isToday ? 'border-red-500 bg-red-950/20' : 'border-zinc-800 bg-zinc-950/50 hover:bg-zinc-950/80'
                   }`}
                 >
-                  <div className={`text-xs font-bold mb-1 ${isToday ? 'text-red-500' : 'text-zinc-400'}`}>
+                  <div className={`text-[10px] font-bold leading-none ${isToday ? 'text-red-500' : 'text-zinc-400'}`}>
                     {day}
                   </div>
-                  <div className="flex-1 overflow-y-auto space-y-0.5">
-                    {dayEvents.slice(0, 2).map(event => (
+                  <div className="flex-1 overflow-hidden space-y-0">
+                    {dayEvents.slice(0, 1).map(event => (
                       <a
                         key={event.id}
                         href={createPageUrl(`Events?id=${event.id}`)}
-                        className={`text-[9px] px-1 py-0.5 rounded border truncate block hover:opacity-80 transition-opacity cursor-pointer ${typeColors[event.event_type]}`}
+                        className={`text-[7px] px-0.5 py-0.5 rounded truncate block hover:opacity-80 transition-opacity cursor-pointer ${typeColors[event.event_type]}`}
                         title={event.title}
                       >
                         {event.title}
                       </a>
                     ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-[8px] text-zinc-500 px-1">
-                        +{dayEvents.length - 2} more
+                    {dayEvents.length > 1 && (
+                      <div className="text-[6px] text-zinc-500 px-0.5 leading-none">
+                        +{dayEvents.length - 1}
                       </div>
                     )}
                   </div>
@@ -176,33 +176,33 @@ export default function EventCalendarView() {
 
         {/* Event List for Selected Month */}
         {filteredEvents.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-zinc-800">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase mb-3">Filtered Operations ({filteredEvents.length})</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {filteredEvents.map(event => (
+          <div className="mt-2 pt-2 border-t border-zinc-800">
+            <h3 className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Operations ({filteredEvents.length})</h3>
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {filteredEvents.slice(0, 5).map(event => (
                 <a
                   key={event.id}
                   href={createPageUrl(`Events?id=${event.id}`)}
-                  className="block p-2 bg-zinc-950/50 border border-zinc-800 hover:border-zinc-700 rounded transition-colors"
+                  className="block p-1 bg-zinc-950/50 border border-zinc-800 hover:border-zinc-700 rounded transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-1">
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-zinc-200 truncate">{event.title}</div>
-                      <div className="text-xs text-zinc-500 mt-1">
-                        {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      <div className="text-[10px] font-bold text-zinc-200 truncate">{event.title}</div>
+                      <div className="text-[8px] text-zinc-500">
+                        {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Badge variant="outline" className={`text-[10px] px-1 py-0 h-5 flex items-center ${priorityColors[event.priority]}`}>
-                        {event.priority}
-                      </Badge>
-                      <Badge variant="outline" className={`text-[10px] px-1 py-0 h-5 flex items-center ${event.event_type === 'focused' ? 'text-red-500 border-red-900 bg-red-950/10' : 'text-emerald-500 border-emerald-900 bg-emerald-950/10'}`}>
-                        {event.event_type}
+                    <div className="flex gap-0.5 shrink-0">
+                      <Badge variant="outline" className={`text-[7px] px-1 py-0 h-4 flex items-center ${priorityColors[event.priority]}`}>
+                        {event.priority.slice(0, 3)}
                       </Badge>
                     </div>
                   </div>
                 </a>
               ))}
+              {filteredEvents.length > 5 && (
+                <div className="text-[8px] text-zinc-500 px-1">+{filteredEvents.length - 5} more</div>
+              )}
             </div>
           </div>
         )}
