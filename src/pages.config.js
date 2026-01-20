@@ -15,6 +15,7 @@ import Treasury from './pages/Treasury';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
 import MissionControl from './pages/MissionControl';
+import Diagnostics from './pages/Diagnostics';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
     "MissionControl": MissionControl,
+    "Diagnostics": Diagnostics,
 }
 
 export const pagesConfig = {
