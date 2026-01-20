@@ -16,14 +16,13 @@ export default function RescueAlertPanel() {
   });
 
   if (activeRescue) {
-    const severityClasses = cn(
-      "border-2 p-4 flex flex-col items-center text-center gap-2",
-      getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'border'),
-      getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'bg'),
-      "animate-pulse shadow-lg shadow-red-950/50"
-    );
     return (
-      <div className={severityClasses}>
+      <div className={cn(
+        "border-2 p-4 flex flex-col items-center text-center gap-2",
+        getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'border'),
+        getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'bg'),
+        getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'animate')
+      )}>
          <ShieldAlert className={cn("w-8 h-8", getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'text'))} />
          <div className={cn("text-[10px] font-mono", getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'text'))}>
             IMMEDIATE RESPONSE REQUIRED
@@ -33,9 +32,13 @@ export default function RescueAlertPanel() {
   }
 
   return (
-    <div className={cn("border p-4 flex flex-col items-center text-center gap-2", getSeverityColor(SEVERITY_LEVELS.NOMINAL, 'border'), getSeverityColor(SEVERITY_LEVELS.NOMINAL, 'bg'))}>
+    <div className={cn(
+      "border p-4 flex flex-col items-center text-center gap-2",
+      getSeverityColor(SEVERITY_LEVELS.NOMINAL, 'border'),
+      "bg-zinc-900/30"
+    )}>
        <Radio className={cn("w-6 h-6", getSeverityColor(SEVERITY_LEVELS.NOMINAL, 'text'))} />
-       <div className={cn("font-bold uppercase tracking-widest text-xs", getSeverityColor(SEVERITY_LEVELS.NOMINAL, 'text'))}>
+       <div className="text-zinc-400 font-bold uppercase tracking-widest text-xs">
           [SIGNAL STATUS: NOMAD WATCH ONLINE]
        </div>
     </div>

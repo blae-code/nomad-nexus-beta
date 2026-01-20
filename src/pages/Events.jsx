@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
+import { getEventSeverity, getPrioritySeverity, getSeverityBadge } from "@/components/utils/severitySystem";
 import EventForm from "@/components/events/EventForm";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
@@ -85,19 +86,13 @@ function EventDetail({ id }) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
              <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <Badge variant="outline" className={
-                      event.event_type === 'focused' 
-                      ? "text-red-500 border-red-900 bg-red-950/10" 
-                      : "text-emerald-500 border-emerald-900 bg-emerald-950/10"
-                  }>
+                  <Badge variant="outline" className={getSeverityBadge(
+                      event.event_type === 'focused' ? 'critical' : 'nominal'
+                  )}>
                     {event.event_type.toUpperCase()}
                   </Badge>
                   {event.priority && (
-                     <Badge variant="outline" className={
-                        event.priority === 'CRITICAL' ? "text-red-500 border-red-900 bg-red-950/20" :
-                        event.priority === 'HIGH' ? "text-orange-500 border-orange-900 bg-orange-950/20" :
-                        "text-zinc-500 border-zinc-800"
-                     }>
+                     <Badge variant="outline" className={getSeverityBadge(getPrioritySeverity(event.priority))}>
                         {event.priority}
                      </Badge>
                   )}
@@ -386,25 +381,32 @@ export default function EventsPage() {
     initialData: []
   });
 
-  // Helper to get event status
+  // Helper to get event status using severity system
   const getEventStatus = (event) => {
     const now = new Date();
     const start = new Date(event.start_time);
     const end = event.end_time ? new Date(event.end_time) : null;
     
+    let statusLabel, severity;
+    
     if (event.status === 'cancelled' || event.status === 'failed' || event.status === 'aborted') {
-      return { label: event.status.toUpperCase(), color: 'text-zinc-500 border-zinc-800' };
+      statusLabel = event.status.toUpperCase();
+      severity = getEventSeverity(event.status);
+    } else if (event.status === 'completed') {
+      statusLabel = 'COMPLETED';
+      severity = getEventSeverity(event.status);
+    } else if (event.status === 'active' || (now >= start && (!end || now <= end))) {
+      statusLabel = 'ACTIVE';
+      severity = getEventSeverity('active');
+    } else if (now < start) {
+      statusLabel = 'UPCOMING';
+      severity = getEventSeverity('scheduled');
+    } else {
+      statusLabel = 'SCHEDULED';
+      severity = getEventSeverity('scheduled');
     }
-    if (event.status === 'completed') {
-      return { label: 'COMPLETED', color: 'text-emerald-500 border-emerald-900 bg-emerald-950/10' };
-    }
-    if (event.status === 'active' || (now >= start && (!end || now <= end))) {
-      return { label: 'ACTIVE', color: 'text-red-500 border-red-900 bg-red-950/10' };
-    }
-    if (now < start) {
-      return { label: 'UPCOMING', color: 'text-blue-500 border-blue-900 bg-blue-950/10' };
-    }
-    return { label: 'SCHEDULED', color: 'text-zinc-500 border-zinc-800' };
+    
+    return { label: statusLabel, badge: getSeverityBadge(severity) };
   };
 
   // Helper to format time consistently
@@ -463,16 +465,14 @@ export default function EventsPage() {
                     <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge variant="outline" className={status.color}>
-                            {status.label}
-                          </Badge>
-                          <Badge variant="outline" className={
-                            event.event_type === 'focused' 
-                              ? "text-red-500 border-red-900 bg-red-950/10" 
-                              : "text-emerald-500 border-emerald-900 bg-emerald-950/10"
-                          }>
-                            {event.event_type.toUpperCase()}
-                          </Badge>
+                            <Badge variant="outline" className={status.badge}>
+                              {status.label}
+                            </Badge>
+                            <Badge variant="outline" className={getSeverityBadge(
+                              event.event_type === 'focused' ? 'critical' : 'nominal'
+                            )}>
+                              {event.event_type.toUpperCase()}
+                            </Badge>
                           <span className="text-zinc-600 text-xs font-mono">
                             {eventTime.date} • {eventTime.time}
                           </span>
