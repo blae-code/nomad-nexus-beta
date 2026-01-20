@@ -1,34 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
-import { Radio, Calendar, Shield, Coins, AlertCircle, Plus } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Radio, Calendar, Shield, Coins, AlertCircle, Plus, Zap, Users, Target, TrendingUp, Star, Clock, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from 'framer-motion';
+import { getRankColorClass } from '@/components/utils/rankUtils';
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import LiveOperationsFeed from "@/components/dashboard/LiveOperationsFeed";
 import LiveIncidentCenter from "@/components/incidents/LiveIncidentCenter";
 
+const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 
 export default function HubPage() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('ops');
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const quickLinks = [
-    { icon: Radio, label: "Comms", href: createPageUrl('CommsConsole') },
-    { icon: Calendar, label: "Ops", href: createPageUrl('Events') },
-    { icon: Shield, label: "Fleet", href: createPageUrl('FleetManager') },
-    { icon: Coins, label: "Treasury", href: createPageUrl('Treasury') },
-  ];
+  // Fetch user's events and memberships
+  const { data: userEvents = [] } = useQuery({
+    queryKey: ['hub-user-events', user?.id],
+    queryFn: () => user ? base44.entities.Event.filter({ status: ['active', 'pending', 'scheduled'] }, '-updated_date', 5) : Promise.resolve([]),
+    enabled: !!user,
+  });
 
-  const quickActions = [
-    { icon: Plus, label: "New Event", action: () => alert('Create Event') },
-    { icon: Radio, label: "Join Comms", action: () => alert('Join Comms') },
-    { icon: AlertCircle, label: "Distress", action: () => alert('Send Distress') },
-  ];
+  const { data: squadMemberships = [] } = useQuery({
+    queryKey: ['hub-squad-memberships', user?.id],
+    queryFn: () => user ? base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }) : Promise.resolve([]),
+    enabled: !!user,
+  });
+
+  // Fetch squad details
+  const { data: userSquads = [] } = useQuery({
+    queryKey: ['hub-squads', squadMemberships.map(m => m.squad_id).join(',')],
+    queryFn: async () => {
+      if (squadMemberships.length === 0) return [];
+      const squads = await Promise.all(
+        squadMemberships.map(m => base44.entities.Squad.get(m.squad_id).catch(() => null))
+      );
+      return squads.filter(Boolean);
+    },
+    enabled: squadMemberships.length > 0,
+  });
+
+  // Get user rank index
+  const userRankIndex = useMemo(() => {
+    return rankHierarchy.indexOf(user?.rank || 'Vagrant');
+  }, [user?.rank]);
+
+  // Determine which features to show based on rank
+  const showAdminFeatures = user?.role === 'admin';
+  const canCreateEvents = userRankIndex >= rankHierarchy.indexOf('Voyager');
+  const canManageFleet = userRankIndex >= rankHierarchy.indexOf('Scout');
+  const canAccessTreasury = userRankIndex >= rankHierarchy.indexOf('Scout');
+  const canAccessIntelligence = userRankIndex >= rankHierarchy.indexOf('Scout');
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 p-6 overflow-auto">
