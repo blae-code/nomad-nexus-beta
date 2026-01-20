@@ -46,7 +46,13 @@ export default function CommsConsolePage() {
   const [userSquadId, setUserSquadId] = React.useState(null);
 
   React.useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => {});
+    base44.auth.me()
+      .then(setCurrentUser)
+      .catch((error) => {
+        console.error('Auth error:', error);
+        // Redirect to login if not authenticated
+        base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      });
   }, []);
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
@@ -151,6 +157,18 @@ export default function CommsConsolePage() {
         setMonitoredNetIds(prev => [...prev, netId]);
      }
   };
+
+  // Show loading state while authenticating
+  if (!currentUser) {
+    return (
+      <div className="h-full bg-black text-zinc-200 flex items-center justify-center">
+        <div className="text-center">
+          <Radio className="w-12 h-12 text-[#ea580c] animate-pulse mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-500">AUTHENTICATING...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-black text-zinc-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 flex flex-col overflow-hidden">
