@@ -424,7 +424,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           }
           
           const token = res.data.tokens?.[net.id];
-          const url = res.data.url || res.data.livekitUrl;
+          let url = res.data.url || res.data.livekitUrl;
 
           if (!token) {
              console.error('[COMMS] No token received for net - insufficient permissions');
@@ -440,17 +440,29 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
              return;
           }
 
-          // Validate token and URL formats
-          if (typeof token !== 'string' || token.length === 0) {
-             console.error('[COMMS] Invalid token format:', typeof token);
-             setConnectionError('Invalid authentication token');
+          // Validate and normalize URL
+          if (typeof url !== 'string' || url.length === 0) {
+             console.error('[COMMS] Invalid URL format:', typeof url, url);
+             setConnectionError('Invalid server URL');
              setConnectionState("failed");
              return;
           }
 
-          if (typeof url !== 'string' || url.length === 0) {
-             console.error('[COMMS] Invalid URL format:', typeof url, url);
-             setConnectionError('Invalid server URL');
+          // Ensure URL is properly formatted (wss:// for WebSocket)
+          url = url.trim();
+          if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
+             if (url.startsWith('http://')) {
+                url = 'ws://' + url.substring(7);
+             } else if (url.startsWith('https://')) {
+                url = 'wss://' + url.substring(8);
+             } else {
+                url = 'wss://' + url;
+             }
+          }
+
+          if (typeof token !== 'string' || token.length === 0) {
+             console.error('[COMMS] Invalid token format:', typeof token);
+             setConnectionError('Invalid authentication token');
              setConnectionState("failed");
              return;
           }
