@@ -19,6 +19,7 @@ import LoadingState from "@/components/feedback/LoadingState";
 import EmptyState from "@/components/feedback/EmptyState";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
+       import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
        // Imports specific to Detail View
                     import CommsPanel from "@/components/events/CommsPanel";
@@ -60,13 +61,8 @@ function EventDetail({ id }) {
     enabled: !!id
   });
 
-  const { data: creator } = useQuery({
-    queryKey: ['event-creator', event?.created_by],
-    queryFn: () => base44.entities.User.get(event.created_by),
-    enabled: !!event?.created_by
-  });
-
-  const { data: allUsers } = useQuery({ queryKey: ['event-users-detail'], queryFn: () => base44.entities.User.list(), initialData: [] });
+  const { users: allUsers, userById } = useUserDirectory(event?.created_by ? [event.created_by] : null);
+  const creator = event?.created_by ? userById[event.created_by] : null;
   const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
   if (isLoading) {
@@ -398,11 +394,7 @@ export default function EventsPage() {
     initialData: []
   });
 
-  const { data: allUsers } = useQuery({
-    queryKey: ['users-for-events'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const { users: allUsers, userById } = useUserDirectory();
 
   // Helper to get event status using severity system
   const getEventStatus = (event) => {
@@ -471,9 +463,9 @@ export default function EventsPage() {
           />
          ) : (
           <div className="grid gap-4">
-            {events.map((event) => {
-              const creator = allUsers.find(u => u.id === event.created_by);
-              return (
+             {events.map((event) => {
+               const creator = userById[event.created_by];
+               return (
                 <EventCard
                   key={event.id}
                   event={event}
