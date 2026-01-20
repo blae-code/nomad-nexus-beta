@@ -40,6 +40,7 @@ import { Rocket } from "lucide-react";
 function EventDetail({ id }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('briefing');
   const [showNoteForm, setShowNoteForm] = React.useState(false);
   const [noteText, setNoteText] = React.useState('');
