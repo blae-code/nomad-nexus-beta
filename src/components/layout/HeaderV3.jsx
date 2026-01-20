@@ -108,12 +108,40 @@ export default function HeaderV3() {
     base44.auth.logout();
   };
 
-  const utcTime = new Date(time.toLocaleString('en-US', { timeZone: 'UTC' }));
+  // Get current page name for breadcrumb
+  const currentPageName = PAGE_NAMES[location.pathname.toLowerCase()] || 'Page';
+
+  // Determine presence pill color/label
+  const getPresenceInfo = () => {
+    if (!userPresence) return { label: 'OFFLINE', color: 'bg-zinc-600', dotColor: 'bg-zinc-500' };
+    
+    const status = userPresence.status || 'online';
+    const transmitting = userPresence.is_transmitting;
+    
+    if (transmitting) {
+      return { label: 'TRANSMITTING', color: 'bg-red-950/30 border-red-700/50 text-red-300', dotColor: 'bg-red-500' };
+    }
+    
+    switch (status) {
+      case 'in-call':
+        return { label: 'IN-CALL', color: 'bg-blue-950/30 border-blue-700/50 text-blue-300', dotColor: 'bg-blue-500' };
+      case 'online':
+        return { label: 'ONLINE', color: 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300', dotColor: 'bg-emerald-500' };
+      case 'idle':
+        return { label: 'IDLE', color: 'bg-yellow-950/30 border-yellow-700/50 text-yellow-300', dotColor: 'bg-yellow-500' };
+      case 'away':
+        return { label: 'AWAY', color: 'bg-orange-950/30 border-orange-700/50 text-orange-300', dotColor: 'bg-orange-500' };
+      default:
+        return { label: 'OFFLINE', color: 'bg-zinc-900/50 border-zinc-700 text-zinc-300', dotColor: 'bg-zinc-600' };
+    }
+  };
+
+  const presenceInfo = getPresenceInfo();
 
   return (
-    <header className="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3">
-      {/* Left: Branding + Palette */}
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-4 fixed top-0 left-0 right-0">
+      {/* Left: Branding + Palette Trigger + Breadcrumb */}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <div className="flex items-center gap-1.5 shrink-0">
           <Radio className="w-4 h-4 text-[#ea580c]" />
           <span className="text-[10px] font-black uppercase text-zinc-400 hidden sm:inline tracking-wider">
@@ -123,13 +151,29 @@ export default function HeaderV3() {
 
         <div className="hidden sm:block w-px h-6 bg-zinc-800" />
 
-        {/* Command Palette */}
-        <div className="flex-1 max-w-sm">
-          <CommandPaletteV3 />
+        {/* Command Palette with Ctrl+K hint */}
+        <div className="flex items-center gap-2">
+          <button
+            className="flex items-center gap-1.5 px-2.5 h-7 border border-zinc-800 bg-zinc-900/50 text-[9px] text-zinc-400 hover:border-zinc-700 transition-colors"
+            onClick={() => {
+              const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
+              document.dispatchEvent(event);
+            }}
+            title="Open command palette (Ctrl+K)"
+          >
+            <Command className="w-3 h-3" />
+            <span className="hidden md:inline">Ctrl+K</span>
+          </button>
+
+          {/* Breadcrumb */}
+          <div className="hidden md:flex items-center gap-2 text-[9px] text-zinc-500 font-mono">
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-zinc-300">{currentPageName}</span>
+          </div>
         </div>
       </div>
 
-      {/* Right: Telemetry + User */}
+      {/* Right: Telemetry + You + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
         {/* NET Status */}
         <div
@@ -145,20 +189,23 @@ export default function HeaderV3() {
           <span className="hidden lg:inline text-[8px] opacity-60 ml-1">{latency}ms</span>
         </div>
 
-        {/* Presence */}
+        {/* Online Count */}
         <div className="flex items-center gap-1 px-2 h-7 border border-zinc-700 bg-zinc-900/50 text-[9px] font-mono">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
           <span className="font-bold text-zinc-300">ONLINE: {onlineCount}</span>
         </div>
 
+        {/* "You" Presence Pill */}
+        <div className={cn(
+          'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase',
+          presenceInfo.color
+        )}>
+          <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor)} />
+          <span className="hidden sm:inline">{presenceInfo.label}</span>
+        </div>
+
         {/* Notifications */}
         <NotificationCenter user={user} />
-
-        {/* Time */}
-        <div className="hidden lg:flex items-center gap-1 px-2 h-7 border border-zinc-800 bg-zinc-900/50 text-[8px] text-zinc-500 font-mono">
-          <Clock className="w-2.5 h-2.5" />
-          <span>{time.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
 
         {/* User Menu */}
         <div className="relative">
