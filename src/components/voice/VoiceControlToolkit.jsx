@@ -85,7 +85,12 @@ export default function VoiceControlToolkit() {
         {/* PTT Section */}
         <div className="px-3 py-2 border-b border-zinc-800/50 space-y-1.5">
           <button
-            onClick={() => setVoiceActive(!voiceActive)}
+            onMouseDown={() => {
+              setMicEnabled(true);
+              setVoiceActive(true);
+            }}
+            onMouseUp={() => setVoiceActive(false)}
+            onMouseLeave={() => setVoiceActive(false)}
             className={cn(
               'w-full h-10 font-bold uppercase text-xs transition-all border flex items-center justify-center gap-2',
               voiceActive
@@ -96,6 +101,15 @@ export default function VoiceControlToolkit() {
             <Mic className="w-3 h-3" />
             {voiceActive ? 'TRANSMITTING' : 'PTT (Ctrl+V)'}
           </button>
+          {/* Input Level Bar */}
+          {micEnabled && (
+            <div className="h-1 bg-zinc-900/50 border border-zinc-800 overflow-hidden">
+              <div
+                className="h-full bg-[#ea580c] transition-all"
+                style={{ width: `${Math.min(inputLevel, 255) / 255 * 100}%` }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Diagnostics Section */}
