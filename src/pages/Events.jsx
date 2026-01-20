@@ -244,7 +244,6 @@ function EventDetail({ id }) {
           </div>
 
         </div>
-          </div>
         </div>
       </div>
     </div>
