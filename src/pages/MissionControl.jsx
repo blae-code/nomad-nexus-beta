@@ -2,18 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Radio, Plus, Zap, AlertTriangle, Phone, User, FileText, Loader2 } from "lucide-react";
+import { Radio, Plus, AlertTriangle, Phone, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
-import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
 import PersonalActivityWidget from "@/components/dashboard/PersonalActivityWidget";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
-import NotificationCenter from "@/components/notifications/NotificationCenter";
 
-export default function MissionControlPage() {
+function MissionControlPage() {
   const [user, setUser] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null);
 
@@ -90,67 +89,56 @@ export default function MissionControlPage() {
     },
   ];
 
-  return (
-    <div className="h-full bg-[#09090b] flex flex-col overflow-hidden">
-      {/* Mission Control Header */}
-      <div className="h-12 border-b border-zinc-800 bg-zinc-950 flex items-center px-4 justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <Radio className="w-5 h-5 text-[#ea580c] animate-pulse" />
-          <h1 className="text-sm font-black uppercase tracking-widest text-white">MISSION CONTROL</h1>
-          <div className="text-[9px] font-mono text-zinc-600 ml-4">
-            {new Date().toLocaleTimeString([], { hour12: false })}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {criticalCount > 0 && (
-            <div className="flex items-center gap-2 px-2 py-1 bg-red-950/50 border border-red-900/50 text-red-400 text-[10px] font-mono">
-              <AlertTriangle className="w-3 h-3" />
-              {criticalCount} CRITICAL
-            </div>
-          )}
-          <NotificationCenter user={user} />
-        </div>
-      </div>
+  // Critical alert status header
+  const headerStatus = criticalCount > 0 ? (
+    <div className="flex items-center gap-2 px-2 py-1 bg-red-950/50 border border-red-900/50 text-red-400 text-[10px] font-mono">
+      <AlertTriangle className="w-3 h-3" />
+      {criticalCount} CRITICAL
+    </div>
+  ) : null;
 
+  return (
+    <PageLayout
+      title="Mission Control"
+      actions={headerStatus}
+    >
       {/* Main 3-Column Layout */}
-      <div className="flex-1 overflow-hidden flex gap-2 p-2">
+      <div className="h-full overflow-hidden flex gap-[var(--gutter)] p-[var(--gutter)]">
         
         {/* LEFT COLUMN: Next Operation + Quick Actions */}
-        <OpsPanel className="w-72 lg:w-80 flex flex-col overflow-hidden shrink-0">
-          <OpsPanelHeader>
-            <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Next Operation</OpsPanelTitle>
-            {eventLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />}
-          </OpsPanelHeader>
-          
-          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
-            <OpsPanelContent>
-            {nextEvent ? (
-              <div
-                className="p-3 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] transition-colors cursor-pointer"
-                onClick={() => setSelectedEventId(nextEvent.id)}
-              >
-                <div className={TYPOGRAPHY.CALLSIGN}>{nextEvent.title}</div>
-                <div className={TYPOGRAPHY.TIMESTAMP_LG}>
-                  {new Date(nextEvent.start_time).toLocaleString([], { 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+        <div className="w-72 flex flex-col gap-[var(--gutter)] shrink-0 min-h-0">
+          <Panel title="Next Operation" className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 space-y-3 p-[var(--space-lg)]">
+              {nextEvent ? (
+                <div
+                  className="p-3 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] transition-colors cursor-pointer"
+                  onClick={() => setSelectedEventId(nextEvent.id)}
+                >
+                  <div className={TYPOGRAPHY.CALLSIGN}>{nextEvent.title}</div>
+                  <div className={TYPOGRAPHY.TIMESTAMP_LG}>
+                    {new Date(nextEvent.start_time).toLocaleString([], { 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                  <div className={`${TYPOGRAPHY.STATUS_SM} px-2 py-1 bg-zinc-800 text-zinc-400`}>
+                    {nextEvent.status.toUpperCase()}
+                  </div>
                 </div>
-                <div className={`${TYPOGRAPHY.STATUS_SM} px-2 py-1 bg-zinc-800 text-zinc-400`}>
-                  {nextEvent.status.toUpperCase()}
+              ) : (
+                <div className="text-center text-zinc-600 text-[10px] py-6 font-mono">
+                  NO SCHEDULED<br/>OPERATIONS
                 </div>
-              </div>
-            ) : (
-              <div className="text-center text-zinc-600 text-[10px] py-6 font-mono">
-                NO SCHEDULED<br/>OPERATIONS
-              </div>
-            )}
-            </OpsPanelContent>
+              )}
+              {eventLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />}
+            </ScrollArea>
+          </Panel>
 
-            {/* Quick Actions */}
-            <OpsPanelContent className="border-t border-zinc-800 space-y-2">
+          {/* Quick Actions */}
+          <Panel title="Quick Actions" className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 space-y-2 p-[var(--space-lg)]">
               {quickActions.map((action, idx) => {
                 const Icon = action.icon;
                 const content = (
@@ -169,91 +157,85 @@ export default function MissionControlPage() {
                   </button>
                 );
               })}
-            </OpsPanelContent>
-          </div>
-        </OpsPanel>
+            </ScrollArea>
+          </Panel>
+        </div>
 
         {/* CENTER COLUMN: Live Ops Feed */}
-        <OpsPanel className="flex-1 flex flex-col overflow-hidden">
-          <OpsPanelHeader>
-            <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Live Ops Feed</OpsPanelTitle>
-          </OpsPanelHeader>
-          
-          <OpsPanelContent className="flex-1 overflow-y-auto space-y-2">
+        <Panel title="Live Ops Feed" className="flex-1 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 space-y-2 p-[var(--space-lg)]">
             {/* Rescue Alerts */}
             <RescueAlertPanel />
             
             {/* Critical Alerts */}
             {selectedEventId && (
-              <OpsPanel>
-                <OpsPanelHeader>
-                  <OpsPanelTitle className="flex items-center gap-2">
-                    <AlertTriangle className="w-3 h-3 text-red-500" />
-                    CRITICAL ALERTS
-                  </OpsPanelTitle>
-                </OpsPanelHeader>
-                <OpsPanelContent>
+              <div className="border border-zinc-700 bg-zinc-900/50">
+                <div className="flex items-center gap-2 px-[var(--space-lg)] py-[var(--space-md)] border-b border-zinc-700">
+                  <AlertTriangle className="w-3 h-3 text-red-500" />
+                  <span className="text-xs font-bold uppercase text-zinc-400">Critical Alerts</span>
+                </div>
+                <div className="p-[var(--space-lg)]">
                   <AIInsightsPanel eventId={selectedEventId} />
-                </OpsPanelContent>
-              </OpsPanel>
+                </div>
+              </div>
             )}
             
             {/* Status Alerts */}
             <StatusAlertsWidget />
-          </OpsPanelContent>
-        </OpsPanel>
+          </ScrollArea>
+        </Panel>
 
-        {/* RIGHT COLUMN: Personal Status + Notifications */}
-        <OpsPanel className="w-72 lg:w-80 flex flex-col overflow-hidden shrink-0">
-          <OpsPanelHeader>
-            <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Personal Status</OpsPanelTitle>
-          </OpsPanelHeader>
-          
-          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
-            <OpsPanelContent>
-            {/* User Card */}
-            {user && (
+        {/* RIGHT COLUMN: Personal Status */}
+        <div className="w-72 flex flex-col gap-[var(--gutter)] shrink-0 min-h-0">
+          <Panel title="Personal Status" className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 space-y-3 p-[var(--space-lg)]">
+              {/* User Card */}
+              {user && (
+                <div className="p-3 border border-zinc-700 bg-zinc-900/50">
+                  <div className={TYPOGRAPHY.CALLSIGN}>
+                    {user.callsign || user.rsi_handle || 'OPERATIVE'}
+                  </div>
+                  <div className={TYPOGRAPHY.STATUS_SM + ' text-zinc-500 mb-2'}>
+                    Rank: {user.rank || 'VAGRANT'}
+                  </div>
+                  <a href={createPageUrl('Profile')} className="text-[9px] text-[#ea580c] hover:underline font-mono">
+                    View Profile →
+                  </a>
+                </div>
+              )}
+
+              {/* Activity Widget */}
+              <PersonalActivityWidget />
+
+              {/* Voice Status */}
               <div className="p-3 border border-zinc-700 bg-zinc-900/50">
-                <div className={TYPOGRAPHY.CALLSIGN}>
-                  {user.callsign || user.rsi_handle || 'OPERATIVE'}
+                <div className={TYPOGRAPHY.LABEL_SM + ' text-zinc-300 mb-2 flex items-center gap-2'}>
+                  <Phone className="w-3 h-3 text-emerald-500" />
+                  Voice Status
                 </div>
-                <div className={TYPOGRAPHY.STATUS_SM + ' text-zinc-500 mb-2'}>
-                  Rank: {user.rank || 'VAGRANT'}
+                <div className={TYPOGRAPHY.LOG}>
+                  <div>MODE: Open Push-to-Talk</div>
+                  <div>AUDIO: Nominal</div>
                 </div>
-                <a href={createPageUrl('Profile')} className="text-[9px] text-[#ea580c] hover:underline font-mono">
-                  View Profile →
-                </a>
               </div>
-            )}
+            </ScrollArea>
+          </Panel>
 
-            {/* Activity Widget */}
-            <PersonalActivityWidget />
-
-            {/* Voice Status */}
-            <div className="p-3 border border-zinc-700 bg-zinc-900/50">
-              <div className={TYPOGRAPHY.LABEL_SM + ' text-zinc-300 mb-2 flex items-center gap-2'}>
-                <Phone className="w-3 h-3 text-emerald-500" />
-                Voice Status
-              </div>
-              <div className={TYPOGRAPHY.LOG}>
-                <div>MODE: Open Push-to-Talk</div>
-                <div>AUDIO: Nominal</div>
-              </div>
-            </div>
-            </OpsPanelContent>
-
-            {/* Quick Nav */}
-            <OpsPanelContent className="border-t border-zinc-800 space-y-2">
+          {/* Quick Nav */}
+          <Panel title="Navigation" className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 space-y-2 p-[var(--space-lg)]">
               <a href={createPageUrl('Admin')} className="block p-2 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] text-[9px] font-mono text-zinc-400 hover:text-[#ea580c] transition-colors">
                 Admin Panel →
               </a>
               <a href={createPageUrl('Events')} className="block p-2 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] text-[9px] font-mono text-zinc-400 hover:text-[#ea580c] transition-colors">
                 All Ops →
               </a>
-            </OpsPanelContent>
-          </div>
-        </OpsPanel>
+            </ScrollArea>
+          </Panel>
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
+
+export default MissionControlPage;
