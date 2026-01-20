@@ -36,6 +36,7 @@ import {
   searchCommands,
   groupCommandsBySection,
 } from '@/components/nav/commands';
+import DiagnosticsDrawer from '@/components/diagnostics/DiagnosticsDrawer';
 
 // Icon map for dynamic icon rendering
 const iconMap = {
@@ -67,6 +68,7 @@ export default function CommandPaletteV3() {
   const [pinnedCommands, setPinnedCommands] = useState([]);
   const [confirmingDistress, setConfirmingDistress] = useState(false);
   const [statusMenu, setStatusMenu] = useState(false);
+  const [diagOpen, setDiagOpen] = useState(false);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const location = useLocation();
@@ -257,6 +259,12 @@ export default function CommandPaletteV3() {
         console.log('Distress sent');
         break;
       
+      case 'openDiagnostics':
+        setDiagOpen(true);
+        setIsOpen(false);
+        setQuery('');
+        break;
+      
       case 'createEvent':
         navigate(createPageUrl('Events'));
         // Allow UI to render, then trigger form
@@ -315,7 +323,8 @@ export default function CommandPaletteV3() {
   };
 
   return (
-    <div ref={containerRef} className="relative max-w-sm">
+    <>
+      <div ref={containerRef} className="relative max-w-sm">
       {/* Main Input */}
       <div className="relative group">
         <div
@@ -490,6 +499,10 @@ export default function CommandPaletteV3() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+
+      {/* Diagnostics Drawer */}
+      <DiagnosticsDrawer isOpen={diagOpen} onClose={() => setDiagOpen(false)} />
+    </>
   );
 }
