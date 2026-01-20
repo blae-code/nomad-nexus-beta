@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Volume2, Settings, Radio, Zap } from 'lucide-react';
+import { Mic, Volume2, Settings, Radio, Zap, Activity, AlertCircle, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,11 @@ export default function VoiceControlToolkit() {
   const [speakerVolume, setSpeakerVolume] = useState(75);
   const [voiceActive, setVoiceActive] = useState(false);
   const [listeningActive, setListeningActive] = useState(false);
+  const [noiseGate, setNoiseGate] = useState(true);
+  const [echoCancellation, setEchoCancellation] = useState(true);
+  const [autoGain, setAutoGain] = useState(true);
+  const [latency, setLatency] = useState(28);
+  const [signalQuality, setSignalQuality] = useState('good');
 
   // PTT activation
   useEffect(() => {
