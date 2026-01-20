@@ -373,7 +373,7 @@ export default function HeaderV3() {
         {/* Online Count */}
         <div className="flex items-center gap-1 px-2 py-1.5 border border-zinc-800/50 bg-zinc-900/40 text-[8px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
           <div className="w-1 h-1 rounded-full bg-cyan-500" />
-          <span className="font-bold uppercase tracking-wider">+{onlineCount}</span>
+          <span className="font-bold uppercase tracking-wider">{onlineCount}/{presences.length}</span>
         </div>
 
         {/* Notifications */}
