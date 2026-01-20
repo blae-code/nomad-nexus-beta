@@ -26,6 +26,8 @@ import TacticalDashboard from "@/components/comms/TacticalDashboard";
 import VoiceDiagnostics from "@/components/comms/VoiceDiagnostics";
 import OperationalEventFeed from "@/components/comms/OperationalEventFeed";
 import CommsSearch from "@/components/comms/CommsSearch";
+import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
+import AICriticalAlertsMonitor from "@/components/comms/AICriticalAlertsMonitor";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 
@@ -282,7 +284,8 @@ export default function CommsConsolePage() {
                <>
                   <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
                      <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
-                     {selectedEventId && <AIInsightsPanel eventId={selectedEventId} compact={true} />}
+                     {selectedEventId && <AICriticalAlertsMonitor eventId={selectedEventId} />}
+                     {selectedEventId && <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />}
                   </div>
                   
                   <div className="flex-1 p-4 overflow-hidden custom-scrollbar">
