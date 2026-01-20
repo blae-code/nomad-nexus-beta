@@ -7,6 +7,7 @@ import {
   Command,
   Search,
   ArrowRight,
+  ChevronRight,
   LayoutGrid,
   Calendar,
   Radio,
@@ -26,6 +27,8 @@ import {
   MessageSquare,
   Star,
   Clock,
+  HelpCircle,
+  AtSign,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -69,6 +72,10 @@ export default function CommandPaletteV3() {
   const [confirmingDistress, setConfirmingDistress] = useState(false);
   const [statusMenu, setStatusMenu] = useState(false);
   const [diagOpen, setDiagOpen] = useState(false);
+  const [commandMode, setCommandMode] = useState(false);
+  const [helpMode, setHelpMode] = useState(false);
+  const [peopleMode, setPeopleMode] = useState(false);
+  const [selectedCommand, setSelectedCommand] = useState(null);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const location = useLocation();
@@ -128,9 +135,36 @@ export default function CommandPaletteV3() {
     localStorage.setItem('pinnedCommands', JSON.stringify(newPinned));
   };
 
+  // Parse command grammar
+  const parseQuery = () => {
+    const trimmed = query.trim();
+    if (trimmed.startsWith('>')) {
+      return { mode: 'command', term: trimmed.slice(1).trim() };
+    } else if (trimmed.startsWith('?')) {
+      return { mode: 'help', term: trimmed.slice(1).trim() };
+    } else if (trimmed.startsWith('@')) {
+      return { mode: 'people', term: trimmed.slice(1).trim() };
+    }
+    return { mode: 'search', term: trimmed };
+  };
+
+  const parsedQuery = parseQuery();
+
   // Search/filter with sections
   const displayCommands = useMemo(() => {
-    if (!query.trim()) {
+    // Help mode
+    if (parsedQuery.mode === 'help') {
+      return {
+        'HELP': [
+          { id: 'help-ctrl-k', label: 'Ctrl/Cmd+K', keywords: ['open'], icon: 'Command', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Open/close command palette' },
+          { id: 'help-slash', label: '/', keywords: ['command'], icon: 'Radio', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Enter command mode (actions first)' },
+          { id: 'help-question', label: '?', keywords: ['help'], icon: 'HelpCircle', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Show this help' },
+          { id: 'help-at', label: '@', keywords: ['people'], icon: 'At', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Filter by people/presence' },
+        ]
+      };
+    }
+
+    if (!parsedQuery.term) {
       const result = {};
 
       // Pinned section
@@ -139,7 +173,7 @@ export default function CommandPaletteV3() {
           .map((id) => availableCommands.find((c) => c.id === id))
           .filter(Boolean);
         if (pinnedCmds.length > 0) {
-          result['📌 PINNED COMMANDS'] = pinnedCmds;
+          result['PINNED'] = pinnedCmds;
         }
       }
 
@@ -150,7 +184,7 @@ export default function CommandPaletteV3() {
           .map((id) => availableCommands.find((c) => c.id === id))
           .filter(Boolean);
         if (recentCmds.length > 0) {
-          result['⏱ RECENT OPERATIONS'] = recentCmds;
+          result['RECENT'] = recentCmds;
         }
       }
 
@@ -159,9 +193,20 @@ export default function CommandPaletteV3() {
       return { ...result, ...allGrouped };
     }
 
-    const filtered = searchCommands(query, availableCommands);
+    const filtered = searchCommands(parsedQuery.term, availableCommands);
+    
+    // In command mode, prioritize actions
+    if (parsedQuery.mode === 'command') {
+      const grouped = groupCommandsBySection(filtered);
+      const actions = grouped[COMMAND_SECTIONS.ACTIONS] || [];
+      const rest = Object.entries(grouped)
+        .filter(([key]) => key !== COMMAND_SECTIONS.ACTIONS)
+        .reduce((acc, [key, cmds]) => ({ ...acc, [key]: cmds }), {});
+      return { 'ACTIONS': actions, ...rest };
+    }
+
     return groupCommandsBySection(filtered);
-  }, [query, availableCommands, recentCommands, pinnedCommands]);
+  }, [parsedQuery, availableCommands, recentCommands, pinnedCommands]);
 
   // Flatten for keyboard nav
   const flatCommands = useMemo(() => {
@@ -176,15 +221,34 @@ export default function CommandPaletteV3() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ctrl/Cmd+K: open/close palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
+        setIsOpen(!isOpen);
+        if (!isOpen) {
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }
+      }
+      // "/" to open palette in command mode (if not in input)
+      else if (e.key === '/' && !isOpen && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
         setIsOpen(true);
+        setQuery('>');
+        setCommandMode(true);
         setTimeout(() => inputRef.current?.focus(), 0);
-      } else if (e.key === 'Escape' && isOpen) {
+      }
+      // Escape: close
+      else if (e.key === 'Escape' && isOpen) {
+        e.preventDefault();
         setIsOpen(false);
         setQuery('');
         setConfirmingDistress(false);
-      } else if (isOpen && flatCommands.length > 0) {
+        setCommandMode(false);
+        setHelpMode(false);
+        setPeopleMode(false);
+      }
+      // Arrow keys: navigate
+      else if (isOpen && flatCommands.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           setSelectedIndex((prev) => (prev + 1) % flatCommands.length);
@@ -348,12 +412,16 @@ export default function CommandPaletteV3() {
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600" />
 
           <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsOpen(true)}
-            placeholder="Search commands…"
-            className="flex-1 h-full bg-transparent border-none text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+          ref={inputRef}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedIndex(0);
+            setSelectedCommand(null);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Search / > commands / ? help / @ people"
+          className="flex-1 h-full bg-transparent border-none text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
           />
 
           <div className="mr-2 flex items-center gap-1 text-[9px] font-mono text-zinc-600">
@@ -363,7 +431,7 @@ export default function CommandPaletteV3() {
         </div>
       </div>
 
-      {/* Dropdown */}
+      {/* Dropdown - 2-column layout */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -371,20 +439,23 @@ export default function CommandPaletteV3() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.1 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-zinc-950 border border-zinc-800 shadow-xl overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-2 bg-zinc-950 border border-zinc-800 shadow-xl overflow-hidden z-50 flex"
             style={{
+              maxHeight: '60vh',
               backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)',
               backgroundSize: '100% 2px',
             }}
           >
-            {/* Breadcrumb */}
-            <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 flex items-center gap-2">
-              <span className="text-[7px] text-zinc-700">[</span>
-              <span className="text-zinc-400">{getCurrentBreadcrumb()}</span>
-              <span className="text-[7px] text-zinc-700">]</span>
-            </div>
+            {/* LEFT: Command List */}
+            <div className="flex-1 border-r border-zinc-800 flex flex-col">
+              {/* Context Line */}
+              <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 flex items-center gap-2 shrink-0">
+                <span className="text-[7px] text-zinc-700">[</span>
+                <span className="text-zinc-400">{getCurrentBreadcrumb()}</span>
+                <span className="text-[7px] text-zinc-700">]</span>
+              </div>
 
-            <div className="max-h-[50vh] overflow-y-auto">
+              <div className="flex-1 overflow-y-auto min-w-0">
               {flatCommands.length === 0 ? (
                 <div className="p-8 text-center text-zinc-600 text-xs">
                   <p>No commands found</p>
@@ -392,7 +463,7 @@ export default function CommandPaletteV3() {
               ) : (
                 Object.entries(displayCommands).map(([section, cmds]) => (
                   <div key={section}>
-                    <div className="px-3 py-2 text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+                    <div className="px-3 py-2 text-[9px] font-bold text-zinc-600 uppercase tracking-wider border-t border-zinc-800/50">
                       {section}
                     </div>
                     <div className="space-y-0">
@@ -407,9 +478,13 @@ export default function CommandPaletteV3() {
                             key={cmd.id}
                             onClick={() => {
                               setSelectedIndex(globalIdx);
+                              setSelectedCommand(cmd);
                               executeCommand(cmd);
                             }}
-                            onMouseEnter={() => setSelectedIndex(globalIdx)}
+                            onMouseEnter={() => {
+                              setSelectedIndex(globalIdx);
+                              setSelectedCommand(cmd);
+                            }}
                             className={cn(
                               'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors group',
                               isSelected
@@ -418,7 +493,7 @@ export default function CommandPaletteV3() {
                             )}
                           >
                             <Icon className="w-3 h-3 shrink-0" />
-                            <span className="text-xs flex-1 font-mono">{cmd.label}</span>
+                            <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -430,15 +505,71 @@ export default function CommandPaletteV3() {
                               )}
                               title={isPinned ? 'Unpin' : 'Pin'}
                             >
-                              <Star className={cn('w-3 h-3', isPinned && 'fill-[#ea580c]')} />
+                              <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} />
                             </button>
-                            {isSelected && <ArrowRight className="w-3 h-3 text-[#ea580c]" />}
                           </button>
                         );
                       })}
                     </div>
                   </div>
                 ))
+              )}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[9px] text-zinc-600 font-mono flex items-center justify-between shrink-0">
+                <span>↑↓ nav • ↵ select • esc close</span>
+                <span>READY</span>
+              </div>
+            </div>
+
+            {/* RIGHT: Preview Pane */}
+            <div className="w-64 border-l border-zinc-800 bg-zinc-900/50 flex flex-col shrink-0 hidden lg:flex">
+              {selectedCommand ? (
+                <>
+                  <div className="px-4 py-3 border-b border-zinc-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      {(() => {
+                        const Icon = getIcon(selectedCommand.icon);
+                        return <Icon className="w-4 h-4 text-[#ea580c]" />;
+                      })()}
+                      <span className="text-xs font-bold text-white">{selectedCommand.label}</span>
+                    </div>
+                    <p className="text-[9px] text-zinc-400 leading-relaxed">
+                      {selectedCommand.description || 'Execute this command (↵)'}
+                    </p>
+                  </div>
+
+                  {selectedCommand.shortcut && (
+                    <div className="px-4 py-2 border-b border-zinc-800/50">
+                      <span className="text-[8px] text-zinc-600 uppercase">Shortcut</span>
+                      <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.shortcut}</div>
+                    </div>
+                  )}
+
+                  <div className="px-4 py-2 border-b border-zinc-800/50">
+                    <span className="text-[8px] text-zinc-600 uppercase">Type</span>
+                    <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.type}</div>
+                  </div>
+
+                  {selectedCommand.minRank && (
+                    <div className="px-4 py-2 border-b border-zinc-800/50">
+                      <span className="text-[8px] text-zinc-600 uppercase">Min Rank</span>
+                      <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.minRank}</div>
+                    </div>
+                  )}
+
+                  {selectedCommand.route && (
+                    <div className="px-4 py-2">
+                      <span className="text-[8px] text-zinc-600 uppercase">Route</span>
+                      <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.route}</div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center px-4 text-center">
+                  <div className="text-[9px] text-zinc-600">Select a command to see details</div>
+                </div>
               )}
             </div>
 
@@ -454,7 +585,7 @@ export default function CommandPaletteV3() {
                   >
                     <span className={cn(
                       'inline-block w-2 h-2 rounded-full mr-2',
-                      status === 'online' && 'bg-green-500',
+                      status === 'online' && 'bg-emerald-500',
                       status === 'idle' && 'bg-yellow-500',
                       status === 'in-call' && 'bg-blue-500',
                       status === 'away' && 'bg-orange-500',
@@ -490,12 +621,6 @@ export default function CommandPaletteV3() {
                 </div>
               </div>
             )}
-
-            {/* Footer */}
-            <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[9px] text-zinc-600 font-mono flex items-center justify-between">
-              <span>↑↓ navigate • ↵ select • esc close</span>
-              <span>READY</span>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
