@@ -66,7 +66,7 @@ function EventDetail({ id }) {
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto max-w-6xl p-4 lg:p-6">
+        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4">
         
         {/* Header / Nav */}
         <div className="mb-4">
