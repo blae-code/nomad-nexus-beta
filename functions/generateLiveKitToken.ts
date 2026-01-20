@@ -112,9 +112,10 @@ Deno.serve(async (req) => {
             
             // Fallback/Migration: Generate unique room name if not set
             if (!roomName) {
-                const eventShort = eventId.slice(0, 8);
-                const netShort = net.id.slice(0, 8);
-                roomName = `redscar_evt_${eventShort}_net_${netShort}`;
+                // Sanitize IDs: only alphanumeric, hyphens, underscores
+                const eventShort = eventId.slice(0, 8).replace(/[^a-zA-Z0-9-_]/g, '-');
+                const netShort = net.id.slice(0, 8).replace(/[^a-zA-Z0-9-_]/g, '-');
+                roomName = `redscar-evt-${eventShort}-net-${netShort}`;
                 
                 console.log(`[LiveKit Token] Migrating net ${net.code} to room ${roomName}`);
                 
@@ -124,6 +125,14 @@ Deno.serve(async (req) => {
                 } catch (updateErr) {
                     console.error(`[LiveKit Token] Failed to update room name for net ${net.id}:`, updateErr.message);
                 }
+            }
+
+            // Validate room name format
+            if (!/^[a-zA-Z0-9-_]+$/.test(roomName)) {
+                const msg = `Invalid room name format: ${roomName}`;
+                errors.push(msg);
+                console.error(`[LiveKit Token] ${msg}`);
+                continue;
             }
 
             // Generate token with enforced permissions

@@ -474,32 +474,43 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           currentRoom = new Room({
              adaptiveStream: true,
              dynacast: true,
+             autoSubscribe: false  // Explicitly manage subscriptions
           });
 
           roomRef.current = currentRoom;
 
-          // 3. Setup Event Listeners
+          // 3. Setup Event Listeners BEFORE connect
           currentRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
              if (track.kind === Track.Kind.Audio) {
                 try {
                    const elements = track.attach();
-                   // Ensure we have valid elements
-                   if (elements && Array.isArray(elements)) {
-                      elements.forEach(el => {
-                         if (el instanceof HTMLElement) {
-                            el.style.display = 'none';
-                            el.style.visibility = 'hidden';
-                            document.body.appendChild(el);
-                         }
-                      });
-                   } else if (elements instanceof HTMLElement) {
-                      elements.style.display = 'none';
-                      elements.style.visibility = 'hidden';
-                      document.body.appendChild(elements);
+                   // Handle attachment result safely
+                   if (!elements) {
+                      console.warn(`[COMMS] track.attach() returned null for ${participant.identity}`);
+                      return;
                    }
+
+                   const elementsArray = Array.isArray(elements) ? elements : [elements];
+                   elementsArray.forEach(el => {
+                      if (el && el instanceof HTMLElement) {
+                         el.style.display = 'none';
+                         el.style.visibility = 'hidden';
+                         el.style.height = '0';
+                         el.style.width = '0';
+                         // Use a dedicated container instead of body
+                         let audioContainer = document.getElementById('livekit-audio-container');
+                         if (!audioContainer) {
+                            audioContainer = document.createElement('div');
+                            audioContainer.id = 'livekit-audio-container';
+                            audioContainer.style.display = 'none';
+                            document.body.appendChild(audioContainer);
+                         }
+                         audioContainer.appendChild(el);
+                      }
+                   });
                    console.log(`[COMMS] Subscribed to audio from ${participant.identity}`);
                 } catch (attachErr) {
-                   console.error(`[COMMS] Failed to attach audio track:`, attachErr);
+                   console.error(`[COMMS] Failed to attach audio track from ${participant.identity}:`, attachErr.message);
                 }
              }
           });
@@ -507,17 +518,16 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           currentRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
              try {
                 const elements = track.detach();
-                if (elements && Array.isArray(elements)) {
-                   elements.forEach(el => {
-                      if (el instanceof HTMLElement) {
-                         el.remove();
-                      }
-                   });
-                } else if (elements instanceof HTMLElement) {
-                   elements.remove();
-                }
+                if (!elements) return;
+
+                const elementsArray = Array.isArray(elements) ? elements : [elements];
+                elementsArray.forEach(el => {
+                   if (el && el instanceof HTMLElement && el.parentNode) {
+                      el.remove();
+                   }
+                });
              } catch (detachErr) {
-                console.error(`[COMMS] Failed to detach audio track:`, detachErr);
+                console.error(`[COMMS] Failed to detach audio track from ${participant.identity}:`, detachErr.message);
              }
              console.log(`[COMMS] Unsubscribed from ${participant.identity}`);
           });
