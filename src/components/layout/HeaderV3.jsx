@@ -350,37 +350,43 @@ export default function HeaderV3() {
         <CommandPaletteV3 />
       </div>
 
-      {/* RIGHT: Telemetry + Online Count + Time + User Menu */}
-      <div className="flex items-center gap-3 shrink-0">
-        {/* NET Status with data tick effect */}
+      {/* CENTER-RIGHT: Readiness Indicator */}
+      <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={() => setDiagnosticsOpen(true)}
+          className={cn(
+            'flex items-center gap-1.5 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase transition-all duration-100',
+            readinessState === 'green' && 'border-emerald-700/50 bg-emerald-950/30 hover:border-emerald-600/70 text-emerald-400',
+            readinessState === 'amber' && 'border-yellow-700/50 bg-yellow-950/30 hover:border-yellow-600/70 text-yellow-400',
+            readinessState === 'red' && 'border-red-700/50 bg-red-950/30 hover:border-red-600/70 text-red-400'
+          )}
+          title="System diagnostics"
+        >
+          <div className={cn('w-1 h-1 rounded-full', readinessColors[readinessState])} />
+          <span className="tracking-wider hidden xl:inline">READY</span>
+        </button>
+      </div>
+
+      {/* RIGHT: Telemetry + User Menu */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Connection Status */}
         <div
           className={cn(
-            'flex items-center gap-1.5 px-3 h-10 border rounded-sm text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-150',
+            'flex items-center gap-1 px-2 py-1.5 border text-[8px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100',
             connectionStatus === 'OPTIMAL'
-              ? 'bg-emerald-950/20 border-emerald-700/40 text-emerald-300'
-              : 'bg-red-950/20 border-red-700/40 text-red-300',
-            netDataTickActive && 'border-[#ea580c]/60 bg-[#ea580c]/5'
+              ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-400'
+              : 'bg-red-950/30 border-red-700/50 text-red-400',
+            netDataTickActive && 'border-[#ea580c]/50 bg-[#ea580c]/10'
           )}
         >
-          <Wifi className="w-2.5 h-2.5" />
-          <span>{connectionStatus}</span>
-          <span className="text-[8px] opacity-70">{latency}ms</span>
+          <Wifi className="w-2 h-2" />
+          <span>{latency}ms</span>
         </div>
 
         {/* Online Count */}
-        <div className="flex items-center gap-1.5 px-3 h-10 border border-zinc-800 bg-zinc-900/30 rounded-sm text-[9px] font-mono hidden md:flex focus-within:border-zinc-700 transition-colors">
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-          <span className="font-bold text-zinc-300">ONLINE</span>
-          <span className="text-zinc-500">{onlineCount}</span>
-        </div>
-
-        {/* Time: Local + UTC in 24h digital style */}
-        <div className="hidden xl:flex items-center gap-1.5 px-3 h-10 border border-zinc-800 bg-zinc-900/30 rounded-sm text-[9px] font-mono text-zinc-400 hover:border-zinc-700 transition-colors">
-          <Clock className="w-2.5 h-2.5" />
-          <div className="flex flex-col gap-0">
-            <span className="font-bold tracking-wider text-zinc-300">{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
-            <span className="text-[7px] text-zinc-500 tracking-widest">UTC {time.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
-          </div>
+        <div className="flex items-center gap-1 px-2 py-1.5 border border-zinc-800/50 bg-zinc-900/40 text-[8px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
+          <div className="w-1 h-1 rounded-full bg-cyan-500" />
+          <span className="font-bold uppercase tracking-wider">+{onlineCount}</span>
         </div>
 
         {/* Notifications */}
