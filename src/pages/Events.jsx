@@ -123,12 +123,19 @@ function EventDetail({ id }) {
               event={event}
               currentUser={currentUser}
               onModify={() => setIsEditOpen(true)}
+              onDelete={() => setIsDeleteOpen(true)}
               className="inline-flex gap-2"
             />
             <EventForm 
               event={event} 
               open={isEditOpen} 
               onOpenChange={setIsEditOpen} 
+            />
+            <EventDeleteDialog
+              event={event}
+              open={isDeleteOpen}
+              onOpenChange={setIsDeleteOpen}
+              onSuccess={() => window.location.href = createPageUrl('Events')}
             />
           </div>
 
