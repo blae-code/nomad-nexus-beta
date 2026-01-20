@@ -4,24 +4,36 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { TYPOGRAPHY } from '@/components/utils/typographySystem';
+import { useVoiceAudio } from '@/components/hooks/useVoiceAudio';
 
 export default function VoiceControlToolkit() {
-  const [micEnabled, setMicEnabled] = useState(false);
-  const [micVolume, setMicVolume] = useState(75);
-  const [speakerVolume, setSpeakerVolume] = useState(75);
+  const {
+    micEnabled,
+    setMicEnabled,
+    micVolume,
+    setMicVolume,
+    speakerVolume,
+    setSpeakerVolume,
+    inputLevel,
+    latency,
+    signalQuality,
+    noiseGate,
+    setNoiseGate,
+    echoCancellation,
+    setEchoCancellation,
+    autoGain,
+    setAutoGain,
+  } = useVoiceAudio();
+
   const [voiceActive, setVoiceActive] = useState(false);
   const [listeningActive, setListeningActive] = useState(false);
-  const [noiseGate, setNoiseGate] = useState(true);
-  const [echoCancellation, setEchoCancellation] = useState(true);
-  const [autoGain, setAutoGain] = useState(true);
-  const [latency, setLatency] = useState(28);
-  const [signalQuality, setSignalQuality] = useState('good');
 
   // PTT activation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'v' && e.ctrlKey) {
         e.preventDefault();
+        setMicEnabled(true);
         setVoiceActive(true);
       }
     };
