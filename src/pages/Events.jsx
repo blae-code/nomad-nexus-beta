@@ -349,106 +349,90 @@ function EventDetail({ id }) {
 }
 
 export default function EventsPage() {
-  const [currentUser, setCurrentUser] = React.useState(null);
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-  
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
   // Check for Detail View
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
+  // Only fetch events if user can view them (permission check)
   const { data: events, isLoading } = useQuery({
     queryKey: ['events-list'],
     queryFn: () => base44.entities.Event.list(),
-    initialData: []
+    initialData: [],
+    enabled: !!currentUser
   });
 
   const { users: allUsers, userById } = useUserDirectory();
-
-  // Helper to get event status using severity system
-  const getEventStatus = (event) => {
-    const now = new Date();
-    const start = new Date(event.start_time);
-    const end = event.end_time ? new Date(event.end_time) : null;
-    
-    const statusLabel = 
-      event.status === 'cancelled' || event.status === 'failed' || event.status === 'aborted' ? event.status.toUpperCase() :
-      event.status === 'completed' ? 'COMPLETED' :
-      event.status === 'active' || (now >= start && (!end || now <= end)) ? 'ACTIVE' :
-      now < start ? 'UPCOMING' : 'SCHEDULED';
-    
-    const severity = getEventSeverity(event.status);
-    
-    return { label: statusLabel, color: getSeverityBadge(severity) };
-  };
-
-  // Helper to format time consistently
-  const formatEventTime = (dateString) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-    };
-  };
 
   // Render Detail View if ID is present
   if (id) {
     return <EventDetail id={id} />;
   }
 
-  // Render List View
+  // Render List View - Compact layout for 1440p
   return (
-    <PageShell
-      title="Operations Board"
-      subtitle="Upcoming missions and deployments."
-      actions={canCreateEvent(currentUser) && (
-        <>
-          <Button 
-            onClick={() => setIsCreateOpen(true)} 
-            className="bg-red-900 hover:bg-red-800 text-white"
-          >
-            INITIALIZE OPERATION
-          </Button>
-          <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
-        </>
-      )}
-    >
-      <div className="px-6 py-6">
+    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden pt-14">
+      {/* Header */}
+      <div className="shrink-0 border-b border-zinc-800 px-4 py-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div>
+            <h2 className={cn(typographyClasses.commandTitle, "text-xl")}>Operations Board</h2>
+            <p className={cn(typographyClasses.labelSecondary, "text-[10px]")}>Upcoming missions and deployments</p>
+          </div>
+          {canCreateEvent(currentUser) && (
+            <Button 
+              onClick={() => setIsCreateOpen(true)} 
+              className="bg-red-900 hover:bg-red-800 text-white text-xs h-7 px-3"
+            >
+              INITIALIZE OPERATION
+            </Button>
+          )}
+        </div>
+      </div>
 
-        {isLoading ? (
-           <LoadingState message="RETRIEVING OPERATIONS..." />
-         ) : events.length === 0 ? (
-          <EmptyState
-            title="No Scheduled Operations"
-            description="Initialize a new operation to begin planning."
-            action={canCreateEvent(currentUser) && (
-              <Button 
-                onClick={() => setIsCreateOpen(true)} 
-                className="bg-red-900 hover:bg-red-800 text-white text-xs"
-              >
-                INITIALIZE OPERATION
-              </Button>
-            )}
-          />
-         ) : (
-          <div className="grid gap-4">
-             {events.map((event) => {
-               const creator = userById[event.created_by];
-               return (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  creator={creator}
-                  onActionClick={(evt) => window.location.href = createPageUrl(`Events?id=${evt.id}`)}
-                />
-              );
-            })}
-          </div>
-         )}
-          </div>
-          </PageShell>
-          );
-          }
+      {/* Content - No scroll at 1440p */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          {isLoading ? (
+            <LoadingState message="RETRIEVING OPERATIONS..." />
+          ) : events.length === 0 ? (
+            <EmptyState
+              title="No Scheduled Operations"
+              description="Initialize a new operation to begin planning."
+              action={canCreateEvent(currentUser) && (
+                <Button 
+                  onClick={() => setIsCreateOpen(true)} 
+                  className="bg-red-900 hover:bg-red-800 text-white text-xs"
+                >
+                  INITIALIZE OPERATION
+                </Button>
+              )}
+            />
+          ) : (
+            <div className="grid gap-2">
+              {events.map((event) => {
+                const creator = userById[event.created_by];
+                return (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    creator={creator}
+                    onActionClick={(evt) => window.location.href = createPageUrl(`Events?id=${evt.id}`)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+    </div>
+  );
+}
