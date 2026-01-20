@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings } from "lucide-react";
 import RoleManager from "@/components/auth/RoleManager";
 import SystemChecklist from "@/components/admin/SystemChecklist";
 import EventApprovalQueue from "@/components/admin/EventApprovalQueue";
@@ -9,6 +9,9 @@ import CommsCapabilityContract from "@/components/comms/CommsCapabilityContract"
 import CommsTestPanel from "@/components/admin/CommsTestPanel";
 import VoiceNetForm from "@/components/comms/VoiceNetForm";
 import AuditLogViewer from "@/components/admin/AuditLogViewer";
+import UserManagement from "@/components/admin/UserManagement";
+import VoiceNetControls from "@/components/admin/VoiceNetControls";
+import SystemHealthMonitor from "@/components/admin/SystemHealthMonitor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasMinRank } from "@/components/permissions";
 
@@ -70,7 +73,19 @@ export default function AdminPage() {
                value="users"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
-               <Users className="w-4 h-4 mr-2" /> User Assignment
+               <Users className="w-4 h-4 mr-2" /> User Management
+             </TabsTrigger>
+             <TabsTrigger 
+               value="voice-controls"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+             >
+               <Settings className="w-4 h-4 mr-2" /> Voice Net Controls
+             </TabsTrigger>
+             <TabsTrigger 
+               value="health"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+             >
+               <Activity className="w-4 h-4 mr-2" /> System Health
              </TabsTrigger>
              <TabsTrigger 
                value="comms-diagnostics"
@@ -113,11 +128,15 @@ export default function AdminPage() {
            </TabsContent>
 
            <TabsContent value="users">
-              <div className="p-12 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono">
-                 USER MANAGEMENT MODULE INITIALIZING...
-                 <br/>
-                 <span className="text-xs mt-2 block">(Use Role Manager to define roles first)</span>
-              </div>
+              <UserManagement />
+           </TabsContent>
+
+           <TabsContent value="voice-controls">
+              <VoiceNetControls />
+           </TabsContent>
+
+           <TabsContent value="health">
+              <SystemHealthMonitor />
            </TabsContent>
 
            <TabsContent value="comms-diagnostics">
