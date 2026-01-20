@@ -8,9 +8,11 @@ import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-re
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import EventForm from "@/components/events/EventForm";
+      import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
+      import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 
-// Imports specific to Detail View
-import CommsPanel from "@/components/events/CommsPanel";
+      // Imports specific to Detail View
+      import CommsPanel from "@/components/events/CommsPanel";
 import SquadManager from "@/components/events/SquadManager";
 import PlayerStatusSection from "@/components/events/PlayerStatusSection";
 import EventParticipants from "@/components/events/EventParticipants";
@@ -217,7 +219,13 @@ function EventDetail({ id }) {
             {/* Squads / Assignments Manager */}
             <SquadManager eventId={event.id} />
 
-          </div>
+            {/* Communication Logs */}
+            <EventCommunicationLogs eventId={event.id} />
+
+            {/* Post-Event Analysis */}
+            <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+
+            </div>
 
           {/* Sidebar / Comms Column */}
           <div className="space-y-3">
