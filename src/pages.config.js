@@ -12,6 +12,7 @@ import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
 import Treasury from './pages/Treasury';
 import UserManager from './pages/UserManager';
+import CommsSettings from './pages/CommsSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "RoleManager": RoleManager,
     "Treasury": Treasury,
     "UserManager": UserManager,
+    "CommsSettings": CommsSettings,
 }
 
 export const pagesConfig = {
