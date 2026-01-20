@@ -264,6 +264,9 @@ export default function UserManagement() {
     enabled: isAdmin
   });
 
+  // Find current Pioneer
+  const existingPioneer = users.find(u => u.rank === 'Pioneer');
+
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -366,6 +369,9 @@ export default function UserManagement() {
                       {user.is_shaman && (
                         <Badge className="bg-yellow-900 text-yellow-400 text-[10px]">SHAMAN</Badge>
                       )}
+                      {user.is_system_administrator && (
+                        <Badge className="bg-purple-900 text-purple-400 text-[10px]">SYS ADMIN</Badge>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -400,6 +406,7 @@ export default function UserManagement() {
                   <UserEditDialog
                     user={user}
                     isAdmin={isAdmin}
+                    existingPioneer={existingPioneer}
                     trigger={
                       <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-[#ea580c]">
                         <Edit className="w-4 h-4 mr-1" />
