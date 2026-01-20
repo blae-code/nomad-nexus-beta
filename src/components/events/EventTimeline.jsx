@@ -1,127 +1,189 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { AlertTriangle, Radio, Activity, Settings, FileText, Plus, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Plus, Loader2, AlertCircle, Radio, Activity, Zap } from 'lucide-react';
 
 const typeIcons = {
   STATUS: Activity,
   COMMS: Radio,
-  RESCUE: AlertTriangle,
-  SYSTEM: Settings,
+  RESCUE: AlertCircle,
+  SYSTEM: Zap,
   NOTE: FileText
 };
 
-const severityColor = {
-  HIGH: 'text-red-400',
-  MEDIUM: 'text-yellow-400',
-  LOW: 'text-blue-400'
+const severityColors = {
+  LOW: 'text-zinc-500 border-zinc-700 bg-zinc-900/30',
+  MEDIUM: 'text-amber-500 border-amber-900 bg-amber-950/30',
+  HIGH: 'text-red-500 border-red-900 bg-red-950/30'
 };
 
-export default function EventTimeline({ eventId, onAddNote }) {
-  const [typeFilter, setTypeFilter] = useState('ALL');
-  const [severityFilter, setSeverityFilter] = useState('ALL');
+export default function EventTimeline({ eventId }) {
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [newNote, setNewNote] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data: logs = [], isLoading, refetch } = useQuery({
+  const { data: logs = [], isLoading } = useQuery({
     queryKey: ['event-logs', eventId],
     queryFn: () => base44.entities.EventLog.filter({ event_id: eventId }, '-created_date', 100),
     enabled: !!eventId,
     refetchInterval: 5000
   });
 
+  const addNoteMutation = useMutation({
+    mutationFn: async () => {
+      if (!newNote.trim()) return;
+      await base44.entities.EventLog.create({
+        event_id: eventId,
+        type: 'NOTE',
+        severity: 'LOW',
+        summary: newNote.trim(),
+        details: { note_type: 'user_note' }
+      });
+    },
+    onSuccess: () => {
+      setNewNote('');
+      setIsAddingNote(false);
+      queryClient.invalidateQueries({ queryKey: ['event-logs', eventId] });
+    }
+  });
+
   const filteredLogs = logs.filter(log => {
-    const typeMatch = typeFilter === 'ALL' || log.type === typeFilter;
-    const severityMatch = severityFilter === 'ALL' || log.severity === severityFilter;
-    return typeMatch && severityMatch;
+    if (typeFilter !== 'all' && log.type !== typeFilter) return false;
+    if (severityFilter !== 'all' && log.severity !== severityFilter) return false;
+    return true;
   });
 
   return (
-    <div className="space-y-3">
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-center text-xs">
-        <span className="text-zinc-500 font-mono">FILTER:</span>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="bg-zinc-900 border border-zinc-700 text-white px-2 py-1 font-mono text-[10px]"
-        >
-          <option value="ALL">ALL TYPES</option>
-          <option value="STATUS">STATUS</option>
-          <option value="COMMS">COMMS</option>
-          <option value="RESCUE">RESCUE</option>
-          <option value="SYSTEM">SYSTEM</option>
-          <option value="NOTE">NOTE</option>
-        </select>
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          className="bg-zinc-900 border border-zinc-700 text-white px-2 py-1 font-mono text-[10px]"
-        >
-          <option value="ALL">ALL SEVERITY</option>
-          <option value="HIGH">HIGH</option>
-          <option value="MEDIUM">MEDIUM</option>
-          <option value="LOW">LOW</option>
-        </select>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onAddNote && onAddNote()}
-          className="text-[10px] h-7 gap-1"
-        >
-          <Plus className="w-3 h-3" />
-          Add Note
-        </Button>
-      </div>
+    <Card className="bg-zinc-900 border-zinc-800">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg text-zinc-200 uppercase tracking-wide">Event Timeline</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsAddingNote(!isAddingNote)}
+            className="text-xs"
+          >
+            <Plus className="w-3 h-3 mr-1" />
+            Add Note
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        
+        {/* Add Note Section */}
+        {isAddingNote && (
+          <div className="p-3 border border-zinc-700 bg-zinc-950/50 rounded">
+            <textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Add operational note..."
+              className="w-full text-sm bg-zinc-900 border border-zinc-700 text-zinc-100 p-2 rounded"
+              rows="2"
+            />
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                onClick={() => addNoteMutation.mutate()}
+                disabled={!newNote.trim() || addNoteMutation.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {addNoteMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save Note'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setIsAddingNote(false);
+                  setNewNote('');
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
-      {/* Timeline */}
-      <div className="border border-zinc-700 bg-zinc-900/30 p-3">
+        {/* Filters */}
+        <div className="flex gap-2">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-32 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="STATUS">Status</SelectItem>
+              <SelectItem value="COMMS">Comms</SelectItem>
+              <SelectItem value="RESCUE">Rescue</SelectItem>
+              <SelectItem value="SYSTEM">System</SelectItem>
+              <SelectItem value="NOTE">Note</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={severityFilter} onValueChange={setSeverityFilter}>
+            <SelectTrigger className="w-32 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Severity</SelectItem>
+              <SelectItem value="LOW">Low</SelectItem>
+              <SelectItem value="MEDIUM">Medium</SelectItem>
+              <SelectItem value="HIGH">High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Timeline */}
         {isLoading ? (
-          <div className="flex items-center gap-2 text-zinc-500 text-sm py-4">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center justify-center py-6 text-zinc-500">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
             Loading timeline...
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="text-center text-zinc-600 text-xs py-4 font-mono">
-            NO LOGS RECORDED
+          <div className="text-center py-6 text-zinc-600 text-sm">
+            No events to display
           </div>
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {filteredLogs.map((log) => {
               const Icon = typeIcons[log.type] || FileText;
-              const timestamp = new Date(log.timestamp || log.created_date).toLocaleString([], {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-              });
-
+              const timestamp = new Date(log.timestamp || log.created_date);
               return (
-                <div key={log.id} className="border border-zinc-700 bg-zinc-900/50 p-2 text-xs hover:border-[#ea580c] transition-colors">
+                <div
+                  key={log.id}
+                  className={`p-3 border rounded text-xs ${severityColors[log.severity]}`}
+                >
                   <div className="flex items-start gap-2 mb-1">
-                    <Icon className={`w-3 h-3 mt-0.5 flex-shrink-0 ${severityColor[log.severity] || 'text-zinc-500'}`} />
+                    <Icon className="w-3 h-3 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-mono text-[9px] text-zinc-400">{timestamp}</div>
-                      <div className="text-white font-bold truncate">{log.summary}</div>
-                      {log.details && typeof log.details === 'object' && (
-                        <div className="text-zinc-500 mt-1 font-mono text-[8px]">
-                          {Object.entries(log.details)
-                            .slice(0, 2)
-                            .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-                            .join(' | ')}
-                        </div>
-                      )}
+                      <div className="font-bold text-zinc-100 truncate">{log.summary}</div>
+                      <div className="text-zinc-500 font-mono text-[9px] mt-0.5">
+                        {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
                     </div>
-                    <div className={`px-1.5 py-0.5 bg-zinc-800 text-[8px] font-mono uppercase flex-shrink-0 ${severityColor[log.severity] || 'text-zinc-400'}`}>
-                      {log.severity}
-                    </div>
+                    <Badge variant="outline" className="text-[8px] shrink-0">
+                      {log.type}
+                    </Badge>
                   </div>
+                  {log.details && typeof log.details === 'object' && Object.keys(log.details).length > 0 && (
+                    <div className="mt-2 text-[8px] text-zinc-500 pl-5 font-mono">
+                      {Object.entries(log.details).slice(0, 2).map(([k, v]) => (
+                        <div key={k}>{k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

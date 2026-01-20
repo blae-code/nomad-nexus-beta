@@ -8,11 +8,11 @@ import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-re
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import EventForm from "@/components/events/EventForm";
-      import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
-      import EventPostAnalysis from "@/components/events/EventPostAnalysis";
+import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
+import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 
-      // Imports specific to Detail View
-      import CommsPanel from "@/components/events/CommsPanel";
+// Imports specific to Detail View
+import CommsPanel from "@/components/events/CommsPanel";
 import SquadManager from "@/components/events/SquadManager";
 import PlayerStatusSection from "@/components/events/PlayerStatusSection";
 import EventParticipants from "@/components/events/EventParticipants";
@@ -20,6 +20,8 @@ import EventEconomy from "@/components/events/EventEconomy";
 import CommsConfig from "@/components/events/CommsConfig";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import EventObjectives from "@/components/events/EventObjectives";
+import EventTimeline from "@/components/events/EventTimeline";
+import AARPanel from "@/components/events/AARPanel";
 import { Rocket } from "lucide-react";
 
 function EventDetail({ id }) {
@@ -220,7 +222,13 @@ function EventDetail({ id }) {
             <SquadManager eventId={event.id} />
 
             {/* Communication Logs */}
-            <EventCommunicationLogs eventId={event.id} />
+             <EventCommunicationLogs eventId={event.id} />
+
+            {/* Event Timeline */}
+            <EventTimeline eventId={event.id} />
+
+            {/* After Action Report */}
+            <AARPanel eventId={event.id} eventTitle={event.title} />
 
             {/* Post-Event Analysis */}
             <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
