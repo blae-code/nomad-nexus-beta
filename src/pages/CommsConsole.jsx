@@ -455,41 +455,40 @@ function CommsConsolePage() {
          )}
 
          </div>
+
+         {/* Dialogs & Drawers */}
+         {showSearch && <CommsSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />}
+         <IncidentForm 
+           isOpen={incidentFormOpen} 
+           onClose={() => setIncidentFormOpen(false)}
+           eventId={selectedEventId}
+           user={currentUser}
+         />
+         <CommsAdvancedDrawer
+           isOpen={showAdvancedDrawer}
+           onOpenChange={setShowAdvancedDrawer}
+           user={currentUser}
+           eventId={selectedEventId}
+           selectedNet={selectedNet}
+         />
+
+         {/* PTT HUD */}
+         <PTTHud isTransmitting={isTransmitting && selectedNet} pttKey={pttKey} isMuted={!selectedNet} />
+
+         {/* Net Switch Overlay */}
+         <NetSwitchOverlay 
+           nets={memoizedNets} 
+           selectedNet={selectedNet} 
+           onSelectNet={setSelectedNet}
+         />
          </PageLayout>
+         );
+         }
 
-      {/* Dialogs & Drawers */}
-      {showSearch && <CommsSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />}
-      <IncidentForm 
-        isOpen={incidentFormOpen} 
-        onClose={() => setIncidentFormOpen(false)}
-        eventId={selectedEventId}
-        user={currentUser}
-      />
-      <CommsAdvancedDrawer
-        isOpen={showAdvancedDrawer}
-        onOpenChange={setShowAdvancedDrawer}
-        user={currentUser}
-        eventId={selectedEventId}
-        selectedNet={selectedNet}
-      />
-
-      {/* PTT HUD */}
-      <PTTHud isTransmitting={isTransmitting && selectedNet} pttKey={pttKey} isMuted={!selectedNet} />
-
-      {/* Net Switch Overlay */}
-      <NetSwitchOverlay 
-        nets={memoizedNets} 
-        selectedNet={selectedNet} 
-        onSelectNet={setSelectedNet}
-      />
-      </div>
-      );
-      }
-
-      export default function CommsConsoleWithErrorBoundary() {
-      return (
-      <ErrorBoundary>
-      <CommsConsolePage />
-      </ErrorBoundary>
-      );
-      }
+         export default function CommsConsoleWithErrorBoundary() {
+         return (
+         <ErrorBoundary>
+         <CommsConsolePage />
+         </ErrorBoundary>
+         );
+         }
