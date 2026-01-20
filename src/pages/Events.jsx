@@ -265,9 +265,9 @@ function EventDetail({ id }) {
                     <div className="mt-4 pt-4 border-t border-zinc-700">
                       <div className="space-y-2">
                         <textarea
-                          value={noteText}
-                          onChange={(e) => setNoteText(e.target.value)}
-                          placeholder="Add operational note..."
+                           value={noteText}
+                           onChange={(e) => setNoteText(e.target.value)}
+                           placeholder="RECORD ENTRY..."
                           className="w-full bg-zinc-950 border border-zinc-700 text-white p-2 text-sm font-mono rounded"
                           rows="3"
                         />
@@ -298,7 +298,7 @@ function EventDetail({ id }) {
                             onClick={() => setShowNoteForm(false)}
                             className="text-[10px] h-7"
                           >
-                            Cancel
+                            DISMISS
                           </Button>
                         </div>
                       </div>
