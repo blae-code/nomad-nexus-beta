@@ -30,12 +30,12 @@ Deno.serve(async (req) => {
       return Response.json({ valid: true });
     }
 
-    // Validate number format: 10-99
+    // Validate number format: 01-99
     const num = parseInt(voyagerNumber, 10);
-    if (isNaN(num) || num < 10 || num > 99) {
+    if (isNaN(num) || num < 1 || num > 99) {
       return Response.json({
         valid: false,
-        error: 'Voyager Number must be a two-digit number (10-99)'
+        error: 'Voyager Number must be between 01-99'
       });
     }
 

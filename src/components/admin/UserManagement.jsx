@@ -157,9 +157,9 @@ function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
               <Label className="text-xs text-[#ea580c] uppercase font-bold">Voyager Number</Label>
               <Input
                 type="number"
-                min="10"
+                min="1"
                 max="99"
-                placeholder="10-99"
+                placeholder="01-99"
                 value={editData.voyager_number || ''}
                 onChange={(e) => {
                   setPioneerError(null);
@@ -168,7 +168,7 @@ function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
                 className="bg-zinc-900 border-zinc-800"
               />
               <div className="text-xs text-zinc-500 italic">
-                Unique two-digit identifier. Required for Voyager rank.
+                Unique two-digit identifier (01-99). Required for Voyager rank.
               </div>
             </div>
           )}
