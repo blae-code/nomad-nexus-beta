@@ -16,16 +16,16 @@ export default function TacticalMapDisplay({ eventId }) {
   });
 
   const { data: playerStatuses } = useQuery({
-    queryKey: ['tactical-personnel', eventId],
-    queryFn: () => base44.entities.PlayerStatus.list({ 
-      filter: { event_id: eventId } 
-    }),
-    refetchInterval: 3000,
-    initialData: []
-  });
+     queryKey: ['tactical-personnel', eventId],
+     queryFn: () => base44.entities.PlayerStatus.list({ 
+       filter: { event_id: eventId } 
+     }),
+     refetchInterval: 3000,
+     initialData: []
+   });
 
-  const userIds = React.useMemo(() => playerStatuses.map(p => p.user_id).filter(Boolean), [playerStatuses]);
-  const { userById } = useUserDirectory(userIds.length > 0 ? userIds : null);
+   const statusUserIds = playerStatuses.map(p => p.user_id).filter(Boolean);
+   const { userById } = useUserDirectory(statusUserIds.length > 0 ? statusUserIds : null);
 
   const distressPersonnel = playerStatuses.filter(p => p.status === 'DISTRESS');
   const engagedPersonnel = playerStatuses.filter(p => p.status === 'ENGAGED');
