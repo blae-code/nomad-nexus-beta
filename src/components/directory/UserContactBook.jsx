@@ -125,14 +125,32 @@ export default function UserContactBook() {
   };
 
   const getFilteredUsers = () => {
-    const userList = presences.filter(p => p.user_id !== currentUser?.id && userDirectory[p.user_id]);
+    let userList = presences.filter(p => p.user_id !== currentUser?.id && userDirectory[p.user_id]);
 
-    if (activeTab === 'all') return userList;
-    if (activeTab === 'favorites') return userList.filter(p => favorites.has(p.user_id));
-    if (groups[activeTab]) {
-      return userList.filter(p => groups[activeTab].includes(p.user_id));
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      userList = userList.filter(p => {
+        const callsign = userDirectory[p.user_id]?.callsign || '';
+        return callsign.toLowerCase().includes(query);
+      });
     }
-    return userList;
+
+    // Separate online and offline
+    const onlineUsers = userList.filter(p => p.status !== 'offline');
+    const offlineUsers = userList.filter(p => p.status === 'offline');
+
+    // Apply tab filters
+    let filtered = onlineUsers;
+    if (activeTab === 'all') {
+      filtered = onlineUsers;
+    } else if (activeTab === 'favorites') {
+      filtered = userList.filter(p => favorites.has(p.user_id));
+    } else if (groups[activeTab]) {
+      filtered = userList.filter(p => groups[activeTab].includes(p.user_id));
+    }
+
+    return { online: filtered.filter(p => p.status !== 'offline'), offline: offlineUsers };
   };
 
   const renderUserRow = (presence) => {
