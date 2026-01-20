@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, AlertCircle, Info, X, Bell, BellOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getSeverityColor, SEVERITY_LEVELS, getAlertSeverity } from "@/components/utils/severitySystem";
 
 export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
   const [alerts, setAlerts] = useState([]);
@@ -59,7 +60,7 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
       if (commsPatterns.distress_count >= 3) {
         newAlerts.push({
           id: `distress-${Date.now()}`,
-          severity: 'critical',
+          severity: SEVERITY_LEVELS.CRITICAL,
           type: 'MULTIPLE_DISTRESS',
           message: `${commsPatterns.distress_count} units reporting distress`,
           action: 'Coordinate rescue operations immediately',
@@ -71,7 +72,7 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
       if (commsPatterns.recent_keywords.length >= 5) {
         newAlerts.push({
           id: `keywords-${Date.now()}`,
-          severity: 'high',
+          severity: SEVERITY_LEVELS.WARNING,
           type: 'EMERGENCY_KEYWORDS',
           message: 'High frequency of emergency keywords detected',
           action: 'Review recent communications for situational awareness',
@@ -83,7 +84,7 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
       if (messages.length > 50) {
         newAlerts.push({
           id: `spike-${Date.now()}`,
-          severity: 'medium',
+          severity: SEVERITY_LEVELS.ACTIVE,
           type: 'COMMS_SPIKE',
           message: 'Unusual spike in communications detected',
           action: 'Monitor for developing situation',
@@ -95,7 +96,7 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
       if (voiceNets.length > 0 && commsPatterns.active_nets === 0) {
         newAlerts.push({
           id: `nets-${Date.now()}`,
-          severity: 'medium',
+          severity: SEVERITY_LEVELS.WARNING,
           type: 'NO_ACTIVE_NETS',
           message: 'No active voice nets detected',
           action: 'Verify network connectivity and activation status',
@@ -147,11 +148,13 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
 
   if (alerts.length === 0) return null;
 
+  const hasCritical = alerts.some(a => a.severity === SEVERITY_LEVELS.CRITICAL);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
-          <AlertTriangle className="w-3 h-3 animate-pulse" />
+        <div className={cn("text-[10px] font-bold uppercase tracking-wider flex items-center gap-1", getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'text'), hasCritical && "animate-pulse")}>
+          <AlertTriangle className="w-3 h-3" />
           Critical Network Alerts
         </div>
         <Button
@@ -165,48 +168,57 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
         </Button>
       </div>
 
-      {alerts.map(alert => (
-        <Card
-          key={alert.id}
-          className={cn(
-            "border-l-4",
-            alert.severity === 'critical' && "border-l-red-500 bg-red-950/20",
-            alert.severity === 'high' && "border-l-orange-500 bg-orange-950/20",
-            alert.severity === 'medium' && "border-l-yellow-500 bg-yellow-950/20",
-            alert.severity === 'low' && "border-l-blue-500 bg-blue-950/20"
-          )}
-        >
-          <CardContent className="p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  {alert.severity === 'critical' && <AlertTriangle className="w-4 h-4 text-red-400" />}
-                  {alert.severity === 'high' && <AlertCircle className="w-4 h-4 text-orange-400" />}
-                  {alert.severity === 'medium' && <Info className="w-4 h-4 text-yellow-400" />}
-                  <Badge variant="outline" className="text-[9px] h-4 uppercase">
-                    {alert.type.replace(/_/g, ' ')}
-                  </Badge>
+      {alerts.map(alert => {
+        const isCritical = alert.severity === SEVERITY_LEVELS.CRITICAL;
+        const isWarning = alert.severity === SEVERITY_LEVELS.WARNING;
+        const isActive = alert.severity === SEVERITY_LEVELS.ACTIVE;
+        
+        const borderColor = isCritical ? 'border-l-red-500' : isWarning ? 'border-l-orange-500' : 'border-l-yellow-500';
+        const bgColor = isCritical ? getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'bg') : isWarning ? getSeverityColor(SEVERITY_LEVELS.WARNING, 'bg') : getSeverityColor(SEVERITY_LEVELS.ACTIVE, 'bg');
+        const textColor = isCritical ? getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'text') : isWarning ? getSeverityColor(SEVERITY_LEVELS.WARNING, 'text') : getSeverityColor(SEVERITY_LEVELS.ACTIVE, 'text');
+        
+        return (
+          <Card
+            key={alert.id}
+            className={cn(
+              "border-l-4",
+              borderColor,
+              bgColor,
+              isCritical && getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'animate')
+            )}
+          >
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    {isCritical && <AlertTriangle className={cn("w-4 h-4", textColor)} />}
+                    {isWarning && <AlertCircle className={cn("w-4 h-4", textColor)} />}
+                    {isActive && <Info className={cn("w-4 h-4", textColor)} />}
+                    <Badge variant="outline" className="text-[9px] h-4 uppercase">
+                      {alert.type.replace(/_/g, ' ')}
+                    </Badge>
+                  </div>
+                  <div className="text-xs font-bold text-zinc-200">{alert.message}</div>
+                  {alert.action && (
+                    <div className="text-[10px] text-zinc-400">→ {alert.action}</div>
+                  )}
+                  <div className="text-[9px] text-zinc-600 font-mono">
+                    {new Date(alert.timestamp).toLocaleTimeString()}
+                  </div>
                 </div>
-                <div className="text-xs font-bold text-zinc-200">{alert.message}</div>
-                {alert.action && (
-                  <div className="text-[10px] text-zinc-400">→ {alert.action}</div>
-                )}
-                <div className="text-[9px] text-zinc-600 font-mono">
-                  {new Date(alert.timestamp).toLocaleTimeString()}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => dismissAlert(alert.id)}
+                  className="h-6 w-6 shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dismissAlert(alert.id)}
-                className="h-6 w-6 shrink-0"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
