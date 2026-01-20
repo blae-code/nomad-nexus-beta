@@ -69,7 +69,7 @@ function EventDetail({ id }) {
         <div className="container mx-auto max-w-6xl p-4 lg:p-6">
         
         {/* Header / Nav */}
-        <div className="mb-8">
+        <div className="mb-4">
           <a href={createPageUrl('Events')} className="inline-flex items-center text-xs text-zinc-500 hover:text-red-500 mb-4 transition-colors">
             <ArrowLeft className="w-3 h-3 mr-1" /> Back to Operations
           </a>
@@ -127,10 +127,10 @@ function EventDetail({ id }) {
           )}
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           
           {/* Main Content Column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-3">
             
             {/* Mission Details */}
             <Card className="bg-zinc-900 border-zinc-800">
@@ -220,7 +220,7 @@ function EventDetail({ id }) {
           </div>
 
           {/* Sidebar / Comms Column */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             
             {/* AI Intelligence Layer */}
             <AIInsightsPanel eventId={event.id} />
@@ -313,8 +313,8 @@ export default function EventsPage() {
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto max-w-6xl p-4 lg:p-6">
-        <div className="flex justify-between items-center mb-8">
+        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4">
+        <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight text-white">Operations Board</h1>
             <p className="text-zinc-500 mt-1">Upcoming missions and deployments.</p>

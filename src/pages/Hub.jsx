@@ -27,7 +27,7 @@ export default function HubPage() {
   return (
     <div className="h-full bg-zinc-950 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto max-w-7xl p-4 lg:p-6 space-y-4 lg:space-y-6">
+        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4 space-y-3">
         
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -84,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Static Header (Top Control Bar) */}
-      <header className="h-12 shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center px-4 justify-between z-50 relative">
+      <header className="h-10 shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center px-3 justify-between z-50 relative">
 
         {/* Logo Section */}
         <div className="flex items-center gap-4 shrink-0">
