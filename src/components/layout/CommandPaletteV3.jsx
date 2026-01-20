@@ -175,6 +175,101 @@ export default function CommandPaletteV3() {
 
   const parsedQuery = parseQuery();
 
+  // Build context-aware commands
+  const getContextCommands = useMemo(() => {
+    if (!contextEntity?.data) return [];
+
+    if (contextEntity.type === 'event') {
+      const event = contextEntity.data;
+      return [
+        {
+          id: 'ctx-event-details',
+          label: 'Edit Event Details',
+          keywords: ['edit', 'event', 'details'],
+          icon: 'Calendar',
+          handler: 'editEventDetails',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: `Edit "${event.title}"`,
+          contextId: event.id,
+        },
+        {
+          id: 'ctx-event-invite',
+          label: 'Invite Attendees',
+          keywords: ['invite', 'add', 'attendees'],
+          icon: 'Users',
+          handler: 'inviteAttendees',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: `Add people to "${event.title}"`,
+          contextId: event.id,
+        },
+        {
+          id: 'ctx-event-comms',
+          label: 'Configure Comms',
+          keywords: ['comms', 'radio', 'voice'],
+          icon: 'Radio',
+          handler: 'configureComms',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: `Setup voice nets for "${event.title}"`,
+          contextId: event.id,
+        },
+        {
+          id: 'ctx-event-map',
+          label: 'View Tactical Map',
+          keywords: ['map', 'tactical', 'location'],
+          icon: 'Rocket',
+          handler: 'viewMap',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: `View operation map for "${event.title}"`,
+          contextId: event.id,
+        },
+      ];
+    }
+
+    if (contextEntity.type === 'user') {
+      return [
+        {
+          id: 'ctx-user-profile',
+          label: 'View Profile',
+          keywords: ['profile', 'user'],
+          icon: 'User',
+          handler: 'viewUserProfile',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: 'View user profile details',
+          contextId: contextEntity.data.id,
+        },
+        {
+          id: 'ctx-user-dm',
+          label: 'Send Direct Message',
+          keywords: ['message', 'dm', 'chat'],
+          icon: 'MessageSquare',
+          handler: 'sendDM',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: 'Send a direct message to this user',
+          contextId: contextEntity.data.id,
+        },
+        {
+          id: 'ctx-user-invite-event',
+          label: 'Invite to Event',
+          keywords: ['invite', 'event', 'mission'],
+          icon: 'Calendar',
+          handler: 'inviteToEvent',
+          type: 'ACTION',
+          section: 'CONTEXT',
+          description: 'Invite this user to an operation',
+          contextId: contextEntity.data.id,
+        },
+      ];
+    }
+
+    return [];
+  }, [contextEntity]);
+
   // Search/filter with sections
   const displayCommands = useMemo(() => {
     // Help mode
@@ -191,6 +286,11 @@ export default function CommandPaletteV3() {
 
     if (!parsedQuery.term) {
       const result = {};
+
+      // Context section (if applicable)
+      if (getContextCommands.length > 0) {
+        result['CONTEXT'] = getContextCommands;
+      }
 
       // Pinned section
       if (pinnedCommands.length > 0) {
@@ -218,20 +318,23 @@ export default function CommandPaletteV3() {
       return { ...result, ...allGrouped };
     }
 
-    const filtered = searchCommands(parsedQuery.term, availableCommands);
+    // Merge context commands with search results
+    const allCmds = [...availableCommands, ...getContextCommands];
+    const filtered = searchCommands(parsedQuery.term, allCmds);
     
     // In command mode, prioritize actions
     if (parsedQuery.mode === 'command') {
       const grouped = groupCommandsBySection(filtered);
       const actions = grouped[COMMAND_SECTIONS.ACTIONS] || [];
+      const contextActions = (grouped['CONTEXT'] || []);
       const rest = Object.entries(grouped)
-        .filter(([key]) => key !== COMMAND_SECTIONS.ACTIONS)
+        .filter(([key]) => !['ACTIONS', 'CONTEXT'].includes(key))
         .reduce((acc, [key, cmds]) => ({ ...acc, [key]: cmds }), {});
-      return { 'ACTIONS': actions, ...rest };
+      return { 'CONTEXT': contextActions, 'ACTIONS': actions, ...rest };
     }
 
     return groupCommandsBySection(filtered);
-  }, [parsedQuery, availableCommands, recentCommands, pinnedCommands]);
+  }, [parsedQuery, availableCommands, recentCommands, pinnedCommands, getContextCommands]);
 
   // Flatten for keyboard nav
   const flatCommands = useMemo(() => {
