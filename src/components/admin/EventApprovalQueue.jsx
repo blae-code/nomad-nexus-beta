@@ -8,20 +8,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, XCircle, Clock, Calendar, User, MapPin } from "lucide-react";
 import { canApproveEvent } from "@/components/permissions";
 import { cn } from "@/lib/utils";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 export default function EventApprovalQueue({ user }) {
   const queryClient = useQueryClient();
+  const { userById } = useUserDirectory();
+  const canApprove = canApproveEvent(user);
 
   const { data: pendingEvents } = useQuery({
     queryKey: ['pending-events'],
     queryFn: () => base44.entities.Event.filter({ status: 'pending_approval' }, '-created_date', 50),
-    initialData: []
-  });
-
-  const { data: users } = useQuery({
-    queryKey: ['users-for-approval'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
+    initialData: [],
+    enabled: canApprove
   });
 
   const approveMutation = useMutation({
