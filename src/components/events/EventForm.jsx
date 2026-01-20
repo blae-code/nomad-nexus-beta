@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import AIFleetAssignmentSuggestions from "@/components/events/AIFleetAssignmentSuggestions";
 import AIMissionBriefingGenerator from "@/components/events/AIMissionBriefingGenerator";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 export default function EventForm({ event, open, onOpenChange, onSuccess }) {
   const queryClient = useQueryClient();
@@ -65,17 +66,10 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
     initialData: []
   });
   
-  const { data: users } = useQuery({
-    queryKey: ['event-users-assign'],
-    queryFn: async () => {
-      const user = await base44.auth.me();
-      if (user.role === 'admin' || user.rank === 'Pioneer' || user.rank === 'Founder') {
-        return base44.entities.User.list();
-      }
-      return [];
-    },
-    initialData: []
-  });
+  const { users, isLoading: isLoadingUsers } = useUserDirectory();
+  // Permission-gated: only load if user has admin/elevated rank
+  const shouldLoadUsers = currentUser?.role === 'admin' || currentUser?.rank === 'Pioneer' || currentUser?.rank === 'Founder';
+  const usersData = shouldLoadUsers ? users : [];
 
   React.useEffect(() => {
     if (event) {
@@ -288,7 +282,7 @@ export default function EventForm({ event, open, onOpenChange, onSuccess }) {
           <ObjectiveEditor 
              objectives={objectives} 
              onChange={setObjectives} 
-             users={users} 
+             users={usersData} 
              assets={assets} 
           />
 
