@@ -57,6 +57,15 @@ export default function HeaderV3() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Listen for profile updates
+  useEffect(() => {
+    const handleProfileUpdate = (event) => {
+      setUser(event.detail);
+    };
+    window.addEventListener('userProfileUpdated', handleProfileUpdate);
+    return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+  }, []);
+
   // Determine readiness state based on connection/comms health
   useEffect(() => {
     let state = 'green';
