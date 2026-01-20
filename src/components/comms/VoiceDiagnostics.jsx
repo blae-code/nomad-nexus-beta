@@ -23,6 +23,8 @@ export default function VoiceDiagnostics({ user, eventId }) {
   const [isTestingMic, setIsTestingMic] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [debugInfo, setDebugInfo] = useState({});
+  const [errorDetails, setErrorDetails] = useState({});
+  const [expandedErrors, setExpandedErrors] = useState({});
   
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -84,6 +86,20 @@ export default function VoiceDiagnostics({ user, eventId }) {
     } catch (err) {
       console.error("Mic test failed:", err);
       setDiagnostics(prev => ({ ...prev, micPermission: 'fail' }));
+      setErrorDetails(prev => ({
+        ...prev,
+        micPermission: {
+          title: 'Microphone Access Denied',
+          message: err.message,
+          solutions: [
+            'Check browser permissions for microphone access',
+            'Ensure your browser has microphone permission enabled',
+            'Try using HTTPS connection if on HTTP',
+            'Check if another app is using the microphone'
+          ],
+          errorCode: err.name || 'UNKNOWN'
+        }
+      }));
       setIsTestingMic(false);
       toast.error("Microphone access denied - check browser permissions");
     }
@@ -216,6 +232,38 @@ export default function VoiceDiagnostics({ user, eventId }) {
     } catch (err) {
       testLog.push(`[ERROR] ${err.message}`);
       setDiagnostics(prev => ({ ...prev, connectionTest: 'fail' }));
+      
+      // Detailed error analysis
+      let errorAnalysis = {
+        title: 'Connection Test Failed',
+        message: err.message,
+        solutions: [],
+        errorCode: err.name || 'UNKNOWN',
+        errorStack: err.stack?.split('\n').slice(0, 3).join('\n')
+      };
+      
+      if (err.message.includes('404') || err.message.includes('token')) {
+        errorAnalysis.solutions.push('LiveKit server token generation failed - check function logs');
+        errorAnalysis.solutions.push('Verify event ID is valid');
+        errorAnalysis.solutions.push('Check LiveKit API credentials in backend');
+      } else if (err.message.includes('connection') || err.message.includes('connect')) {
+        errorAnalysis.solutions.push('Unable to reach LiveKit server - check URL and network');
+        errorAnalysis.solutions.push('Verify LIVEKIT_URL environment variable is correct');
+        errorAnalysis.solutions.push('Check if firewall is blocking WebSocket connections');
+      } else if (err.message.includes('permission') || err.message.includes('denied')) {
+        errorAnalysis.solutions.push('User lacks required permissions for voice communication');
+        errorAnalysis.solutions.push('Check rank and role requirements for this event');
+        errorAnalysis.solutions.push('Verify VoiceNet permissions match user profile');
+      } else {
+        errorAnalysis.solutions.push('Check browser console for detailed error logs');
+        errorAnalysis.solutions.push('Try refreshing the page and running test again');
+        errorAnalysis.solutions.push('Contact system administrator if issue persists');
+      }
+      
+      setErrorDetails(prev => ({
+        ...prev,
+        connectionTest: errorAnalysis
+      }));
       setDebugInfo({ log: testLog, error: err.message });
       toast.error(`Connection test failed: ${err.message}`);
     } finally {
