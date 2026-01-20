@@ -187,12 +187,15 @@ function CommsConsolePage() {
   React.useEffect(() => {
      if (selectedEventId && voiceNets.length === 0 && !isLoading && !isProvisioningNets) {
         setIsProvisioningNets(true);
-        // Polling will handle the refresh
+        // Longer delay to avoid rate limiting
         const timeout = setTimeout(() => {
            refetchNets().then(() => {
               setIsProvisioningNets(false);
+           }).catch(() => {
+              // On error, keep provisioning flag to retry
+              setIsProvisioningNets(false);
            });
-        }, 2000);
+        }, 5000);
         return () => clearTimeout(timeout);
      }
   }, [selectedEventId, voiceNets.length, isLoading, isProvisioningNets, refetchNets]);
