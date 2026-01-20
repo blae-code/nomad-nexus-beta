@@ -6,10 +6,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone } from "lucide-react";
+import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone, MicOff, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { TerminalCard, SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import StatusChip from "@/components/status/StatusChip";
 import AudioControls from "@/components/comms/AudioControls";
@@ -63,11 +64,13 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [activeSpeakers, setActiveSpeakers] = React.useState(new Set());
   const [expandedUser, setExpandedUser] = React.useState(null);
+  const queryClient = useQueryClient();
   
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
   const myId = currentUser?.id;
+  const isAdmin = currentUser?.role === 'admin';
 
   // Track active speakers from LiveKit
   React.useEffect(() => {
@@ -117,6 +120,41 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     initialData: []
   });
 
+  // Fetch voice mutes for this net
+  const { data: voiceMutes = [] } = useQuery({
+    queryKey: ['voice-mutes', net.id],
+    queryFn: () => base44.entities.VoiceMute.filter({ net_id: net.id, is_active: true }),
+    enabled: !!net.id,
+    refetchInterval: 5000
+  });
+
+  // Mute/Unmute mutations
+  const muteMutation = useMutation({
+    mutationFn: async ({ userId, reason }) => {
+      await base44.entities.VoiceMute.create({
+        net_id: net.id,
+        user_id: userId,
+        muted_by: currentUser.id,
+        reason: reason || 'Admin action',
+        is_active: true
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-mutes', net.id] });
+      toast.success('User muted');
+    }
+  });
+
+  const unmuteMutation = useMutation({
+    mutationFn: async (muteId) => {
+      await base44.entities.VoiceMute.update(muteId, { is_active: false });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-mutes', net.id] });
+      toast.success('User unmuted');
+    }
+  });
+
   // Build participants list from room
   const participants = React.useMemo(() => {
     if (!room || !participantUsers) return [];
@@ -124,17 +162,20 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     return participantUsers.map(u => {
        const status = statuses.find(s => s.user_id === u.id);
        const isSpeaking = activeSpeakers.has(u.id);
+       const voiceMute = voiceMutes.find(m => m.user_id === u.id && m.is_active);
        return { 
           ...u, 
           status: status?.status || 'READY',
           role: status?.role || 'OTHER',
-          isSpeaking
+          isSpeaking,
+          isAdminMuted: !!voiceMute,
+          muteId: voiceMute?.id
        };
     }).sort((a, b) => {
        const priority = { DISTRESS: 0, DOWN: 1, ENGAGED: 2, READY: 3, OFFLINE: 4 };
        return (priority[a.status] || 99) - (priority[b.status] || 99);
     });
-  }, [room, participantUsers, statuses, activeSpeakers]);
+  }, [room, participantUsers, statuses, activeSpeakers, voiceMutes]);
 
   return (
     <div className="space-y-3">
@@ -167,15 +208,29 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
              return (
              <div key={participant.id} className={cn(
                "bg-zinc-900/50 p-2 rounded border transition-all",
-               (participant.status === 'DOWN' || participant.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : "border-zinc-800/50"
+               (participant.status === 'DOWN' || participant.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : 
+               participant.isAdminMuted ? "border-red-800/50 bg-red-950/20" : 
+               "border-zinc-800/50"
              )}>
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-3 min-w-0">
                     {/* Voice Status Indicator */}
-                    <div className={cn("w-2 h-2 rounded-full shrink-0 transition-all duration-200", voiceStatusColor)} />
+                    <div className={cn(
+                      "w-2 h-2 rounded-full shrink-0 transition-all duration-200", 
+                      participant.isAdminMuted ? "bg-red-900" : voiceStatusColor
+                    )} />
 
                     <div className="truncate">
-                      <div className="text-sm text-zinc-300 font-bold truncate">{participant.callsign || participant.rsi_handle || participant.full_name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-zinc-300 font-bold truncate">
+                          {participant.callsign || participant.rsi_handle || participant.full_name}
+                        </div>
+                        {participant.isAdminMuted && (
+                          <Badge variant="destructive" className="text-[9px] px-1 py-0">
+                            MUTED
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-2">
                          <span className={cn("font-bold", getRankColorClass(participant.rank))}>{participant.rank}</span>
                          <span className="text-zinc-700">•</span>
@@ -185,6 +240,31 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
                  </div>
                  <div className="flex items-center gap-2 shrink-0">
                     <StatusChip status={participant.status} size="xs" showLabel={false} />
+
+                    {/* Admin Mute/Unmute Controls */}
+                    {isAdmin && participant.id !== myId && (
+                       participant.isAdminMuted ? (
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 hover:bg-zinc-800 text-red-500 hover:text-red-400"
+                            onClick={() => unmuteMutation.mutate(participant.muteId)}
+                            title="Unmute user (Admin)"
+                         >
+                            <Mic className="w-3 h-3" />
+                         </Button>
+                       ) : (
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 hover:bg-zinc-800 text-zinc-500 hover:text-red-500"
+                            onClick={() => muteMutation.mutate({ userId: participant.id, reason: 'Admin action' })}
+                            title="Mute user (Admin)"
+                         >
+                            <MicOff className="w-3 h-3" />
+                         </Button>
+                       )
+                    )}
 
                     {/* Volume Control Button for Remote Participants */}
                     {participant.id !== myId && remoteParticipant && (
@@ -212,7 +292,7 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
                        </Button>
                     )}
 
-                    {hasMinRank(participant, net.min_rank_to_tx) && (
+                    {hasMinRank(participant, net.min_rank_to_tx) && !participant.isAdminMuted && (
                       <Mic className="w-3 h-3 text-zinc-600" />
                     )}
                  </div>
@@ -249,6 +329,22 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const roomRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeoutRef = useRef(null);
+
+  // Check if user is admin-muted
+  const { data: myVoiceMute } = useQuery({
+    queryKey: ['my-voice-mute', net?.id, user?.id],
+    queryFn: () => base44.entities.VoiceMute.filter({ 
+      net_id: net.id, 
+      user_id: user.id, 
+      is_active: true 
+    }),
+    enabled: !!(net?.id && user?.id),
+    refetchInterval: 3000
+  });
+
+  const isAdminMuted = React.useMemo(() => {
+    return myVoiceMute && myVoiceMute.length > 0;
+  }, [myVoiceMute]);
 
   useEffect(() => {
     if (!net || !user) return;
@@ -478,6 +574,12 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
      
      const handleAudioState = async () => {
         try {
+           // Force mute if admin-muted
+           if (isAdminMuted) {
+              await room.localParticipant.setMicrophoneEnabled(false);
+              return;
+           }
+
            if (audioState?.isTransmitting) {
               // Enable microphone with audio processing
               await room.localParticipant.setMicrophoneEnabled(true, {
@@ -500,7 +602,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
      };
      
      handleAudioState();
-  }, [audioState?.isTransmitting, audioState?.echoCancellation, audioState?.noiseSuppression, room]);
+  }, [audioState?.isTransmitting, audioState?.echoCancellation, audioState?.noiseSuppression, room, isAdminMuted]);
 
   const handleWhisper = (targetUser) => {
      if (whisperTarget?.id === targetUser.id) {
@@ -604,6 +706,26 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
         )}
       </AnimatePresence>
 
+      {/* Admin Mute Banner */}
+      <AnimatePresence>
+        {isAdminMuted && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-red-950/50 border border-red-900 p-3 rounded flex items-center gap-3"
+          >
+            <MicOff className="w-4 h-4 text-red-500 shrink-0" />
+            <div className="flex-1">
+              <div className="text-xs font-bold text-red-400 uppercase">Transmission Disabled by Administrator</div>
+              <div className="text-[10px] text-red-300 mt-0.5">
+                You have been muted by a moderator. Contact an administrator if you believe this is an error.
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header Card */}
       <TerminalCard className="relative overflow-hidden" active={isTransmitting}>
         {isTransmitting && (
@@ -698,7 +820,17 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
            </div>
 
            {/* Audio Controls */}
-           {canTx ? (
+           {isAdminMuted ? (
+             <div className="p-4 bg-red-950/20 border border-red-800/50 rounded-sm text-center space-y-2">
+                <div className="text-red-400 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                   <MicOff className="w-4 h-4" />
+                   Muted by Administrator
+                </div>
+                <div className="text-[10px] text-red-300">
+                   Transmission disabled by moderator
+                </div>
+             </div>
+           ) : canTx ? (
              <AudioControls 
                onStateChange={setAudioState} 
                room={room}
