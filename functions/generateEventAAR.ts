@@ -16,115 +16,126 @@ Deno.serve(async (req) => {
     }
 
     // Fetch event details
-    const event = await base44.entities.Event.get(eventId);
-    if (!event) {
+    const event = await base44.entities.Event.filter({ id: eventId });
+    if (!event || event.length === 0) {
       return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Fetch event logs
+    const eventDetails = event[0];
+
+    // Fetch all event logs
     const logs = await base44.entities.EventLog.filter(
       { event_id: eventId },
-      'created_date',
-      200
+      '-created_date',
+      500
     );
 
-    // Fetch participants
-    const participants = await base44.entities.EventParticipants?.filter({ event_id: eventId }) || [];
+    // Aggregate log data for AAR generation
+    const logSummary = {
+      total_logs: logs.length,
+      by_type: {},
+      by_severity: {},
+      critical_events: [],
+      timeline_summary: logs.map(l => ({
+        time: l.timestamp || l.created_date,
+        type: l.type,
+        severity: l.severity,
+        summary: l.summary
+      })).slice(0, 20)
+    };
 
-    // Build context for LLM
-    const logSummary = logs
-      .slice(-50)
-      .map(log => `[${log.type}] ${log.summary} (${log.severity})`)
-      .join('\n');
-
-    const prompt = `Generate a professional After Action Report (AAR) for a military/gaming operation.
-
-OPERATION DETAILS:
-- Title: ${event.title}
-- Type: ${event.event_type}
-- Priority: ${event.priority}
-- Duration: ${new Date(event.start_time).toISOString()} to ${event.end_time ? new Date(event.end_time).toISOString() : 'Ongoing'}
-- Participants: ${participants.length} operators
-- Location: ${event.location || 'Classified'}
-
-MISSION BRIEFING:
-${event.description}
-
-OPERATIONAL LOG (last 50 entries):
-${logSummary}
-
-Generate a professional AAR including:
-1. Executive Summary (2-3 sentences)
-2. Mission Objectives & Status
-3. Key Events & Timeline
-4. Personnel Performance & Assignments
-5. Equipment & Resource Status
-6. Casualties/Losses (if any)
-7. Lessons Learned
-8. Recommendations
-
-Format as Markdown. Keep it concise but comprehensive.`;
-
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          executive_summary: { type: 'string' },
-          content: { type: 'string' },
-          key_findings: {
-            type: 'array',
-            items: { type: 'string' }
-          },
-          recommendations: {
-            type: 'array',
-            items: { type: 'string' }
-          }
-        },
-        required: ['title', 'content']
+    logs.forEach(log => {
+      logSummary.by_type[log.type] = (logSummary.by_type[log.type] || 0) + 1;
+      logSummary.by_severity[log.severity] = (logSummary.by_severity[log.severity] || 0) + 1;
+      if (log.severity === 'HIGH') {
+        logSummary.critical_events.push(log.summary);
       }
     });
 
-    // Create or update EventReport
-    const existing = await base44.asServiceRole.entities.EventReport.filter(
-      { event_id: eventId, report_type: 'AAR' },
-      '-created_date',
-      1
-    );
+    // Generate AAR using LLM
+    const prompt = `Generate a professional After Action Report (AAR) for a completed operation.
 
-    let report;
-    if (existing?.length > 0) {
-      // Update existing
-      await base44.asServiceRole.entities.EventReport.update(existing[0].id, {
-        title: response.title || `AAR: ${event.title}`,
-        content: response.content,
-        generated_by: 'ai-aar-generator',
-        key_findings: response.key_findings || [],
-        log_count: logs.length
-      });
-      report = await base44.asServiceRole.entities.EventReport.get(existing[0].id);
-    } else {
-      // Create new
-      report = await base44.asServiceRole.entities.EventReport.create({
-        event_id: eventId,
-        report_type: 'AAR',
-        title: response.title || `AAR: ${event.title}`,
-        content: response.content,
-        generated_by: 'ai-aar-generator',
-        key_findings: response.key_findings || [],
-        log_count: logs.length
-      });
-    }
+OPERATION DETAILS:
+- Title: ${eventDetails.title}
+- Type: ${eventDetails.event_type}
+- Priority: ${eventDetails.priority}
+- Status: ${eventDetails.status}
+- Duration: ${eventDetails.start_time} to ${eventDetails.end_time || 'ongoing'}
+- Description: ${eventDetails.description || 'None provided'}
+
+OPERATION EVENTS SUMMARY:
+- Total logged events: ${logSummary.total_logs}
+- By type: ${JSON.stringify(logSummary.by_type)}
+- By severity: ${JSON.stringify(logSummary.by_severity)}
+- Critical events: ${logSummary.critical_events.length}
+
+KEY EVENTS (reverse chronological):
+${logSummary.timeline_summary.map(e => \`- [\${e.severity}] \${e.type}: \${e.summary}\`).join('\n')}
+
+Generate a structured AAR in markdown format with these sections:
+1. EXECUTIVE SUMMARY (2-3 sentences)
+2. OPERATION OVERVIEW (objectives, scope, participants)
+3. EXECUTION SUMMARY (what happened during the operation)
+4. KEY EVENTS (notable incidents, alerts, status changes)
+5. CRITICAL OBSERVATIONS (high-severity events, issues)
+6. LESSONS LEARNED (what worked, what didn't, recommendations)
+7. CONCLUSION (overall assessment)
+
+Format as clean markdown (use ## for sections, - for lists). Be concise but professional.`;
+
+    const aarContent = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          report: { type: "string" },
+          key_findings: {
+            type: "array",
+            items: { type: "string" }
+          },
+          recommendations: {
+            type: "array",
+            items: { type: "string" }
+          }
+        }
+      }
+    });
+
+    // Create EventReport
+    const reportRecord = await base44.asServiceRole.entities.EventReport.create({
+      event_id: eventId,
+      report_type: 'AAR',
+      title: `AAR: ${eventDetails.title}`,
+      content: aarContent.report,
+      generated_by: 'AI_SYSTEM',
+      key_findings: aarContent.key_findings || aarContent.recommendations || [],
+      log_count: logSummary.total_logs
+    });
+
+    // Also create event log entry for AAR generation
+    await base44.asServiceRole.entities.EventLog.create({
+      event_id: eventId,
+      type: 'NOTE',
+      severity: 'LOW',
+      actor_user_id: user.id,
+      summary: 'After Action Report generated by AI system',
+      details: {
+        report_id: reportRecord.id,
+        logs_analyzed: logSummary.total_logs
+      }
+    });
 
     return Response.json({
       success: true,
-      report: report,
-      message: 'AAR generated successfully'
+      report_id: reportRecord.id,
+      title: reportRecord.title
     });
 
   } catch (error) {
     console.error('AAR generation error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      error: error.message,
+      success: false 
+    }, { status: 500 });
   }
 });
