@@ -62,7 +62,7 @@ export default function UserPresencePanel({ netId, eventId }) {
   return (
     <div className="space-y-2">
       {presenceList.map(presence => {
-        const user = users.find(u => u.id === presence.user_id);
+        const user = userById[presence.user_id];
         if (!user) return null;
 
         const statusConfig = STATUS_ICONS[presence.status] || STATUS_ICONS.online;
