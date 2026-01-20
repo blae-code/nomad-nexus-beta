@@ -55,16 +55,14 @@ export default function TreasuryPage() {
            </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-           
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
            {/* Coffer List */}
-           <div className="lg:col-span-4 space-y-4">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Active Funds</h3>
+           <div className="lg:col-span-4 space-y-2">
+              <div className="text-[10px] font-bold uppercase text-zinc-600 px-1 tracking-wider mb-3">ACTIVE FUNDS</div>
               {coffersWithBalance.length === 0 && (
-                 <div className="p-4 text-center border border-dashed border-zinc-800 rounded bg-zinc-900/20 text-zinc-600 text-sm">
-                    No coffers initialized. 
-                    <br/>
-                    <span className="text-xs italic">(Ask admin to initialize via backend)</span>
+                 <div className="p-4 text-center border border-zinc-800/50 bg-zinc-950 text-zinc-600 text-[10px] font-mono">
+                    NO COFFERS INITIALIZED
                  </div>
               )}
               {coffersWithBalance.map(coffer => (
