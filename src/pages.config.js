@@ -1,90 +1,53 @@
-import {
-  Radio,
-  Calendar,
-  Headphones,
-  Shield,
-  Bot,
-  Zap,
-  Users,
-  Wallet,
-  Activity,
-} from 'lucide-react';
+import Admin from './pages/Admin';
+import Channels from './pages/Channels';
+import CommsConsole from './pages/CommsConsole';
+import CommsSettings from './pages/CommsSettings';
+import Diagnostics from './pages/Diagnostics';
+import Events from './pages/Events';
+import FleetManager from './pages/FleetManager';
+import Hub from './pages/Hub';
+import MissionControl from './pages/MissionControl';
+import NomadOpsDashboard from './pages/NomadOpsDashboard';
+import NotificationSettings from './pages/NotificationSettings';
+import Profile from './pages/Profile';
+import Ranks from './pages/Ranks';
+import Rescue from './pages/Rescue';
+import RoleManager from './pages/RoleManager';
+import Treasury from './pages/Treasury';
+import UniverseMap from './pages/UniverseMap';
+import UserManager from './pages/UserManager';
+import VoiceNetManager from './pages/VoiceNetManager';
+import Intelligence from './pages/Intelligence';
+import AdminConsole from './pages/AdminConsole';
+import __Layout from './Layout.jsx';
+
+
+export const PAGES = {
+    "Admin": Admin,
+    "Channels": Channels,
+    "CommsConsole": CommsConsole,
+    "CommsSettings": CommsSettings,
+    "Diagnostics": Diagnostics,
+    "Events": Events,
+    "FleetManager": FleetManager,
+    "Hub": Hub,
+    "MissionControl": MissionControl,
+    "NomadOpsDashboard": NomadOpsDashboard,
+    "NotificationSettings": NotificationSettings,
+    "Profile": Profile,
+    "Ranks": Ranks,
+    "Rescue": Rescue,
+    "RoleManager": RoleManager,
+    "Treasury": Treasury,
+    "UniverseMap": UniverseMap,
+    "UserManager": UserManager,
+    "VoiceNetManager": VoiceNetManager,
+    "Intelligence": Intelligence,
+    "AdminConsole": AdminConsole,
+}
 
 export const pagesConfig = {
-  getNavItemsForUser: (rank, isAdmin) => {
-    return [
-      {
-        id: 'hub',
-        label: 'Hub',
-        page: 'Hub',
-        icon: Radio,
-        description: 'Home dashboard',
-      },
-      {
-        id: 'mission',
-        label: 'Ops',
-        page: 'NomadOpsDashboard',
-        icon: Zap,
-        description: 'Mission control',
-      },
-      {
-        id: 'events',
-        label: 'Events',
-        page: 'Events',
-        icon: Calendar,
-        description: 'Operations board',
-      },
-      {
-        id: 'comms',
-        label: 'Comms',
-        page: 'CommsConsole',
-        icon: Headphones,
-        description: 'Communications array',
-      },
-      {
-        id: 'intelligence',
-        label: 'Intelligence',
-        page: 'Intelligence',
-        icon: Bot,
-        description: 'AI insights console',
-      },
-      ...(isAdmin
-        ? [
-            {
-              id: 'admin',
-              label: 'Admin',
-              page: 'Admin',
-              icon: Shield,
-              description: 'System administration',
-            },
-          ]
-        : []),
-    ];
-  },
-
-  getMoreItemsForUser: (rank, isAdmin) => {
-    return [
-      {
-        id: 'roster',
-        label: 'Roster',
-        page: 'Profile',
-        icon: Users,
-        description: 'Personnel management',
-      },
-      {
-        id: 'treasury',
-        label: 'Treasury',
-        page: 'Treasury',
-        icon: Wallet,
-        description: 'Financial management',
-      },
-      {
-        id: 'rescue',
-        label: 'Rescue',
-        page: 'Rescue',
-        icon: Activity,
-        description: 'Distress response',
-      },
-    ];
-  },
+    mainPage: "Events",
+    Pages: PAGES,
+    Layout: __Layout,
 };
