@@ -20,10 +20,10 @@ const SOUND_OPTIONS = {
 export default function NotificationSoundManager({ preferences, setPreferences }) {
   const [playing, setPlaying] = useState(null);
 
-  const playSound = async (soundType) => {
+  const playSound = async (soundType, playingKey = soundType) => {
     if (soundType === 'none') return;
     
-    setPlaying(soundType);
+    setPlaying(playingKey);
     try {
       // Using Web Audio API to generate sounds
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -62,6 +62,10 @@ export default function NotificationSoundManager({ preferences, setPreferences }
       console.error('[AUDIO] Failed to play sound:', error);
       setPlaying(null);
     }
+  };
+
+  const handleJoinLeavePreview = () => {
+    playSound(preferences.joinLeaveSound, 'joinLeave');
   };
 
   return (
@@ -158,39 +162,55 @@ export default function NotificationSoundManager({ preferences, setPreferences }
 
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-base">Net Join Notification Sound</CardTitle>
-              <CardDescription>Sound when users join or leave the net</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">User Join/Leave Notifications</CardTitle>
+                  <CardDescription>Alert when users connect or disconnect from active nets</CardDescription>
+                </div>
+                <Switch 
+                  checked={preferences.joinLeaveNotifications}
+                  onCheckedChange={(checked) => setPreferences(prev => ({
+                    ...prev,
+                    joinLeaveNotifications: checked
+                  }))}
+                />
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Select 
-                value={preferences.netJoinSound}
-                onValueChange={(value) => setPreferences(prev => ({
-                  ...prev,
-                  netJoinSound: value
-                }))}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  {Object.entries(SOUND_OPTIONS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => playSound(preferences.netJoinSound)}
-                disabled={preferences.netJoinSound === 'none' || playing === 'join'}
-                className="gap-2 w-full"
-              >
-                <Play className="w-4 h-4" />
-                {playing === 'join' ? 'Playing...' : 'Preview'}
-              </Button>
-            </CardContent>
+            {preferences.joinLeaveNotifications && (
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-sm text-zinc-300 mb-2">Notification Sound</p>
+                  <Select 
+                    value={preferences.joinLeaveSound}
+                    onValueChange={(value) => setPreferences(prev => ({
+                      ...prev,
+                      joinLeaveSound: value
+                    }))}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-700">
+                      {Object.entries(SOUND_OPTIONS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleJoinLeavePreview}
+                  disabled={preferences.joinLeaveSound === 'none' || playing === 'joinLeave'}
+                  className="gap-2 w-full"
+                >
+                  <Play className="w-4 h-4" />
+                  {playing === 'joinLeave' ? 'Playing...' : 'Preview'}
+                </Button>
+              </CardContent>
+            )}
           </Card>
 
           <Card className="bg-zinc-900 border-zinc-800">

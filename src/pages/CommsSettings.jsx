@@ -32,7 +32,10 @@ export default function CommsSettings() {
     voiceActivityDetection: true,
     autoGainControl: true,
     vadThreshold: 30,
-    noiseFloor: 20
+    noiseFloor: 20,
+    joinLeaveNotifications: true,
+    joinLeaveSound: 'beep',
+    showLastSeen: true
   });
 
   // Fetch user's current preferences
