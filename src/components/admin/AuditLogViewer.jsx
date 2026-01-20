@@ -6,14 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Shield, AlertTriangle, Info } from "lucide-react";
+import { Search, Shield, AlertTriangle, Info, Download, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function AuditLogViewer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [actionTypeFilter, setActionTypeFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState("all");
+  const [dateRange, setDateRange] = useState("all");
   const [limit, setLimit] = useState(50);
 
   const { data: auditLogs = [], isLoading, refetch } = useQuery({
@@ -43,8 +46,51 @@ export default function AuditLogViewer() {
       return false;
     }
 
+    if (targetTypeFilter !== 'all' && log.target_type !== targetTypeFilter) {
+      return false;
+    }
+
+    if (dateRange !== 'all') {
+      const logDate = new Date(log.created_date);
+      const now = new Date();
+      const hoursDiff = (now - logDate) / (1000 * 60 * 60);
+      
+      if (dateRange === '1h' && hoursDiff > 1) return false;
+      if (dateRange === '24h' && hoursDiff > 24) return false;
+      if (dateRange === '7d' && hoursDiff > 168) return false;
+    }
+
     return true;
   });
+
+  const exportToCSV = () => {
+    const headers = ['Timestamp', 'Actor', 'Action', 'Target', 'Severity', 'Success', 'Details'];
+    const rows = filteredLogs.map(log => [
+      format(new Date(log.created_date), 'yyyy-MM-dd HH:mm:ss'),
+      log.actor_name || 'Unknown',
+      log.action_type,
+      log.target_name || '',
+      log.severity,
+      log.success ? 'Yes' : 'No',
+      JSON.stringify(log.details || {})
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+    toast.success('Audit log exported to CSV');
+  };
 
   const getSeverityIcon = (severity) => {
     const icons = {
@@ -92,7 +138,7 @@ export default function AuditLogViewer() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div className="md:col-span-2 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
               <Input
@@ -131,6 +177,32 @@ export default function AuditLogViewer() {
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={targetTypeFilter} onValueChange={setTargetTypeFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                <SelectValue placeholder="Target Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="channel">Channel</SelectItem>
+                <SelectItem value="message">Message</SelectItem>
+                <SelectItem value="role">Role</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                <SelectValue placeholder="Time Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="1h">Last Hour</SelectItem>
+                <SelectItem value="24h">Last 24 Hours</SelectItem>
+                <SelectItem value="7d">Last 7 Days</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800">
@@ -138,6 +210,16 @@ export default function AuditLogViewer() {
               Showing {filteredLogs.length} of {auditLogs.length} entries
             </div>
             <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={exportToCSV}
+                className="text-xs h-7 border-zinc-700"
+                disabled={filteredLogs.length === 0}
+              >
+                <Download className="w-3 h-3 mr-1" />
+                Export CSV
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
