@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Radio, Settings, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import PAGES_CONFIG from '@/pages.config';
+import { pagesConfig as PAGES_CONFIG } from '@/pages.config';
 import { base44 } from '@/api/base44Client';
 
 export default function LeftNavRail({ currentPage, user }) {
