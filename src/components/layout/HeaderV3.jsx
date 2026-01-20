@@ -281,17 +281,7 @@ export default function HeaderV3() {
          title="System diagnostics: comms, readiness, health"
        >
          <div className={cn('w-1.5 h-1.5 rounded-full', readinessColors[readinessState])} />
-         <div className="flex flex-col gap-0.5 items-start">
-           <span className="text-[9px] font-mono text-zinc-500 leading-tight">{opsContext.label}</span>
-           <span className={cn(
-             'text-[9px] font-mono font-bold uppercase',
-             readinessState === 'green' && 'text-emerald-300',
-             readinessState === 'amber' && 'text-yellow-300',
-             readinessState === 'red' && 'text-red-300'
-           )}>
-             {readinessState === 'green' ? 'NOMINAL' : readinessState === 'amber' ? 'CAUTION' : 'ALERT'}
-           </span>
-         </div>
+         <span className="text-[9px] font-mono text-zinc-500">{opsContext.label}</span>
        </button>
       </div>
 
