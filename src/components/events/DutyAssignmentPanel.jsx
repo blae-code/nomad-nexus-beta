@@ -100,33 +100,41 @@ export default function DutyAssignmentPanel({ eventId }) {
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <Select value={selectedUnit || "__none__"} onValueChange={(v) => setSelectedUnit(v === "__none__" ? "" : v)}>
               <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-800">
                 <SelectValue placeholder="Unit" />
               </SelectTrigger>
               <SelectContent>
-                {units.map(unit => (
-                  <SelectItem key={unit.id} value={unit.id} className="text-xs">
-                    {unit.name} ({unit.hierarchy_level || 'squad'})
-                  </SelectItem>
-                ))}
+                {units.filter(u => u.id && String(u.id).trim()).length === 0 ? (
+                  <SelectItem value="__none__" disabled>No units available</SelectItem>
+                ) : (
+                  units.filter(u => u.id && String(u.id).trim()).map(unit => (
+                    <SelectItem key={unit.id} value={String(unit.id).trim()} className="text-xs">
+                      {unit.name} ({unit.hierarchy_level || 'squad'})
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
 
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <Select value={selectedUser || "__none__"} onValueChange={(v) => setSelectedUser(v === "__none__" ? "" : v)}>
               <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-800">
                 <SelectValue placeholder="User" />
               </SelectTrigger>
               <SelectContent>
-                {users.map(user => (
-                  <SelectItem key={user.id} value={user.id} className="text-xs">
-                    {user.callsign || user.rsi_handle || user.full_name}
-                  </SelectItem>
-                ))}
+                {users.filter(u => u.id && String(u.id).trim()).length === 0 ? (
+                  <SelectItem value="__none__" disabled>No users available</SelectItem>
+                ) : (
+                  users.filter(u => u.id && String(u.id).trim()).map(user => (
+                    <SelectItem key={user.id} value={String(user.id).trim()} className="text-xs">
+                      {user.callsign || user.rsi_handle || user.full_name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
 
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <Select value={selectedRole || "__none__"} onValueChange={(v) => setSelectedRole(v === "__none__" ? "" : v)}>
               <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-800">
                 <SelectValue placeholder="Role" />
               </SelectTrigger>

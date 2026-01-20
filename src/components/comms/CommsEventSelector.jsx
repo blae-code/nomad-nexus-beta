@@ -34,8 +34,8 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
         </SelectTrigger>
         <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
           <SelectItem value="none">No Operation Selected</SelectItem>
-          {activeEvents.map(event => (
-            <SelectItem key={event.id} value={event.id}>
+          {activeEvents.filter(e => e.id && String(e.id).trim()).map(event => (
+            <SelectItem key={event.id} value={String(event.id).trim()}>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
                 <span className="font-bold">{event.title}</span>

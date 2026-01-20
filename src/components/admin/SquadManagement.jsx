@@ -98,8 +98,8 @@ function SquadDialog({ squad, trigger, mode = 'create' }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LUCIDE_ICONS.map(icon => (
-                    <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                  {LUCIDE_ICONS.filter(icon => icon && String(icon).trim()).map(icon => (
+                    <SelectItem key={icon} value={String(icon).trim()}>{icon}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

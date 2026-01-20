@@ -105,8 +105,8 @@ export default function VoiceNetForm({ eventId }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Select an event...</SelectItem>
-                  {events.map(event => (
-                    <SelectItem key={event.id} value={event.id}>
+                  {events.filter(e => e.id && String(e.id).trim()).map(event => (
+                    <SelectItem key={event.id} value={String(event.id).trim()}>
                       {event.title}
                     </SelectItem>
                   ))}
@@ -237,8 +237,8 @@ export default function VoiceNetForm({ eventId }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">None</SelectItem>
-                  {squads.map(squad => (
-                    <SelectItem key={squad.id} value={squad.id}>
+                  {squads.filter(s => s.id && String(s.id).trim()).map(squad => (
+                    <SelectItem key={squad.id} value={String(squad.id).trim()}>
                       {squad.name}
                     </SelectItem>
                   ))}
