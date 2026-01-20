@@ -9,6 +9,7 @@ import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
+import { MOTION } from "@/components/utils/motionConstants";
 import EventForm from "@/components/events/EventForm";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
@@ -139,7 +140,7 @@ function EventDetail({ id }) {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wide ${MOTION.CSS.SMOOTH} ${
                 activeTab === tab
                   ? 'text-[#ea580c] border-b-2 border-[#ea580c]'
                   : 'text-zinc-500 hover:text-zinc-300'
@@ -453,7 +454,7 @@ export default function EventsPage() {
                 const status = getEventStatus(event);
                 
                 return (
-                  <OpsPanel key={event.id} className="hover:border-zinc-700 transition-colors group">
+                  <OpsPanel key={event.id} className={`hover:border-zinc-700 ${MOTION.CSS.SMOOTH} group`}>
                     <div className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -469,9 +470,9 @@ export default function EventsPage() {
                             {eventTime.date} • {eventTime.time}
                           </span>
                         </div>
-                        <h3 className="text-xl font-bold text-zinc-100 mb-2 group-hover:text-red-500 transition-colors">
-                          {event.title}
-                        </h3>
+                        <h3 className={`text-xl font-bold text-zinc-100 mb-2 group-hover:text-red-500 ${MOTION.CSS.SMOOTH}`}>
+                           {event.title}
+                         </h3>
                         <p className="text-zinc-400 text-sm line-clamp-2 max-w-2xl">
                           {event.description}
                         </p>

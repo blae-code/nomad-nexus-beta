@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { MOTION } from "@/components/utils/motionConstants";
 import { SignalStrength, PermissionBadge, TerminalCard, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
-import { typographyClasses } from "@/components/utils/typography";
 
 export default function CommsPanel({ eventId }) {
   const [selectedNetId, setSelectedNetId] = React.useState(null);
@@ -107,7 +107,7 @@ export default function CommsPanel({ eventId }) {
     setTimeout(() => setIsTransmitting(false), 2000);
   };
 
-  if (isLoading) return <div className="h-32 bg-zinc-900/50 rounded animate-pulse" />;
+  if (isLoading) return <div className="h-32 bg-zinc-900/50 rounded" />;
 
   return (
     <OpsPanel className="flex flex-col overflow-hidden">
@@ -132,30 +132,27 @@ export default function CommsPanel({ eventId }) {
            <AnimatePresence>
              {isTransmitting && (
                <motion.div 
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-                 exit={{ opacity: 0 }}
+                 {...MOTION.VARIANTS.alertFade}
                  className="absolute inset-0 border-2 border-red-500/50 pointer-events-none z-10"
                />
              )}
            </AnimatePresence>
 
            {selectedNet ? (
-           <div className="space-y-4 relative z-0">
-            <div className="flex justify-between items-start">
-               <div>
-                  <div className="flex items-center gap-2 mb-1">
-                     <NetTypeIcon type={selectedNet.type} />
-                     <h3 className={cn(
-                        typographyClasses.netCode,
-                        "transition-colors",
-                        isTransmitting ? "text-red-500" : "text-white"
-                     )}>
-                        {selectedNet.code}
-                     </h3>
-                  </div>
-                  <div className={cn(typographyClasses.labelSecondary, "pl-4")}>{selectedNet.label}</div>
-               </div>
+             <div className="space-y-4 relative z-0">
+                <div className="flex justify-between items-start">
+                   <div>
+                      <div className="flex items-center gap-2 mb-1">
+                         <NetTypeIcon type={selectedNet.type} />
+                         <h3 className={cn(
+                            "text-xl font-black font-mono tracking-tighter leading-none transition-colors",
+                            isTransmitting ? "text-red-500 text-shadow" : "text-white"
+                         )}>
+                            {selectedNet.code}
+                         </h3>
+                      </div>
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider pl-4">{selectedNet.label}</div>
+                   </div>
                    <div className="text-right flex flex-col items-end gap-1">
                       <PermissionBadge 
                         canTx={canTx} 
@@ -184,12 +181,15 @@ export default function CommsPanel({ eventId }) {
                   {/* Button Texture */}
                   <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
 
-                  <Mic className={cn("w-5 h-5", isTransmitting && "animate-pulse text-white")} />
+                  <Mic className={cn("w-5 h-5", isTransmitting && "text-white")} />
                   <span className={cn("font-black text-sm tracking-[0.2em]", isTransmitting && "text-white text-shadow")}>
                     {canTx ? (isTransmitting ? "TRANSMITTING" : "PUSH TO TALK") : "UNAUTHORIZED"}
                   </span>
                   {isTransmitting && (
-                     <div className="absolute inset-0 bg-red-500/10 animate-pulse" />
+                     <motion.div
+                       {...MOTION.VARIANTS.transmitPulse}
+                       className="absolute inset-0 bg-red-500/10"
+                     />
                   )}
                 </button>
              </div>
@@ -224,15 +224,15 @@ export default function CommsPanel({ eventId }) {
                   >
                      <div className="flex items-center gap-3">
                         <div className={cn(
-                                 "w-1 h-1 rounded-full",
-                                 net.type === 'command' ? "bg-red-500" :
-                                 net.type === 'general' ? "bg-emerald-500" : "bg-zinc-700"
-                              )} />
-                              <div>
-                                 <div className={cn(typographyClasses.netCodeSmall, "mb-0.5", isSelected ? "text-white" : "text-zinc-400 group-hover:text-zinc-300")}>
-                                    {net.code}
-                                 </div>
-                              </div>
+                           "w-1 h-1 rounded-full",
+                           net.type === 'command' ? "bg-red-500" :
+                           net.type === 'general' ? "bg-emerald-500" : "bg-zinc-700"
+                        )} />
+                        <div>
+                           <div className={cn("text-xs font-bold font-mono leading-none mb-0.5", isSelected ? "text-white" : "text-zinc-500 group-hover:text-zinc-300")}>
+                              {net.code}
+                           </div>
+                        </div>
                      </div>
                      <div className="flex items-center gap-2">
                         <button 
