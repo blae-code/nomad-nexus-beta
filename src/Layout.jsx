@@ -166,7 +166,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Page Content - OpsShell Layout */}
       <div className="flex-1 flex overflow-hidden relative">
          {/* Left Nav Rail */}
-         <LeftNavRail currentPage={currentPage} />
+         <LeftNavRail currentPage={currentPage} user={user} />
 
          {/* Main Content with Activity Bar */}
          <div className="flex-1 flex overflow-hidden flex-col">
