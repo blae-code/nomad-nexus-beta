@@ -8,8 +8,8 @@ import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-re
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
-import { TYPOGRAPHY } from "@/components/utils/typographySystem";
-import { MOTION } from "@/components/utils/motionConstants";
+import { typographyClasses } from "@/components/utils/typography";
+import { cn } from "@/lib/utils";
 import EventForm from "@/components/events/EventForm";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
@@ -81,36 +81,36 @@ function EventDetail({ id }) {
         
         {/* Header / Nav */}
         <div className="mb-4">
-          <a href={createPageUrl('Events')} className="inline-flex items-center text-xs text-zinc-500 hover:text-red-500 mb-4 transition-colors">
+          <a href={createPageUrl('Events')} className={cn("inline-flex items-center mb-4 transition-colors hover:text-red-500", typographyClasses.labelSecondary)}>
             <ArrowLeft className="w-3 h-3 mr-1" /> Back to Operations
           </a>
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-               <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Badge variant="outline" className={getSeverityBadge(
-                        event.event_type === 'focused' ? 'critical' : 'nominal'
-                    )}>
-                      {event.event_type.toUpperCase()}
-                    </Badge>
-                    {event.priority && (
-                       <Badge variant="outline" className={getSeverityBadge(
-                          getPrioritySeverity(event.priority)
-                       )}>
-                          {event.priority}
-                       </Badge>
-                    )}
-                    <span className={`${TYPOGRAPHY.TIMESTAMP_LG} text-zinc-500`}>OP-ID: {event.id.slice(0,8)}</span>
-                  </div>
-                  <h1 className={TYPOGRAPHY.H1 + ' text-white'}>
-                    {event.title}
-                  </h1>
-               </div>
+             <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <Badge variant="outline" className={getSeverityBadge(
+                      event.event_type === 'focused' ? 'critical' : 'nominal'
+                  )}>
+                    {event.event_type.toUpperCase()}
+                  </Badge>
+                  {event.priority && (
+                     <Badge variant="outline" className={getSeverityBadge(
+                        getPrioritySeverity(event.priority)
+                     )}>
+                        {event.priority}
+                     </Badge>
+                  )}
+                  <span className={cn(typographyClasses.timestamp, "text-zinc-400")}>OP-ID: {event.id.slice(0,8)}</span>
+                </div>
+                <h1 className={cn(typographyClasses.commandTitle, "text-4xl")}>
+                  {event.title}
+                </h1>
+             </div>
              
              {creator && (
                <div className="text-right">
-                 <div className="text-xs text-zinc-500 uppercase tracking-wider">Commanding Officer</div>
-                 <div className="text-sm font-bold text-zinc-300">{creator.callsign || creator.rsi_handle || creator.email}</div>
+                 <div className={typographyClasses.commandLabel}>Commanding Officer</div>
+                 <div className={typographyClasses.callsign}>{creator.callsign || creator.rsi_handle || creator.email}</div>
                </div>
              )}
           </div>
@@ -140,11 +140,10 @@ function EventDetail({ id }) {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wide ${MOTION.CSS.SMOOTH} ${
-                activeTab === tab
-                  ? 'text-[#ea580c] border-b-2 border-[#ea580c]'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
+              className={cn("px-4 py-2 transition-colors", typographyClasses.commandLabel, {
+                'text-[#ea580c] border-b-2 border-[#ea580c]': activeTab === tab,
+                'text-zinc-500 hover:text-zinc-300': activeTab !== tab
+              })}
             >
               {tab === 'briefing' ? 'Mission Briefing' : tab === 'timeline' ? 'Timeline' : tab === 'aar' ? 'After Action Report' : 'Tactical Map'}
             </button>
@@ -161,9 +160,9 @@ function EventDetail({ id }) {
               <>
                 <OpsPanel>
                   <OpsPanelHeader>
-                    <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Mission Briefing</OpsPanelTitle>
+                    <OpsPanelTitle>Mission Briefing</OpsPanelTitle>
                   </OpsPanelHeader>
-                  <OpsPanelContent className={`${TYPOGRAPHY.BODY_SM} text-zinc-400 space-y-6`}>
+                  <OpsPanelContent className="text-zinc-400 space-y-6">
                     <p className="leading-relaxed">{event.description}</p>
 
                     {/* Objectives */}
@@ -200,8 +199,8 @@ function EventDetail({ id }) {
                       <div className="flex items-center gap-3">
                         <Calendar className="w-4 h-4 text-red-500" />
                         <div>
-                          <div className="text-[10px] text-zinc-500 uppercase">Date</div>
-                          <div className="text-sm text-zinc-200">
+                          <div className={typographyClasses.commandLabel}>Date</div>
+                          <div className={cn(typographyClasses.timestamp, "text-sm text-zinc-200")}>
                             {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                           </div>
                         </div>
@@ -209,8 +208,8 @@ function EventDetail({ id }) {
                       <div className="flex items-center gap-3">
                         <Clock className="w-4 h-4 text-red-500" />
                         <div>
-                          <div className="text-[10px] text-zinc-500 uppercase">Start Time</div>
-                          <div className="text-sm text-zinc-200">
+                          <div className={typographyClasses.commandLabel}>Start Time</div>
+                          <div className={cn(typographyClasses.timestamp, "text-sm text-zinc-200")}>
                             {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                           </div>
                         </div>
@@ -219,8 +218,8 @@ function EventDetail({ id }) {
                         <div className="flex items-center gap-3">
                           <Clock className="w-4 h-4 text-amber-500" />
                           <div>
-                            <div className="text-[10px] text-zinc-500 uppercase">End Time</div>
-                            <div className="text-sm text-zinc-200">
+                            <div className={typographyClasses.commandLabel}>End Time</div>
+                            <div className={cn(typographyClasses.timestamp, "text-sm text-zinc-200")}>
                               {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </div>
                           </div>
@@ -229,8 +228,8 @@ function EventDetail({ id }) {
                       <div className="flex items-center gap-3 col-span-full">
                         <MapPin className="w-4 h-4 text-red-500" />
                         <div>
-                          <div className="text-[10px] text-zinc-500 uppercase">Location</div>
-                          <div className="text-sm text-zinc-200">{event.location || "Classified"}</div>
+                          <div className={typographyClasses.commandLabel}>Location</div>
+                          <div className={cn(typographyClasses.bodyLarge)}>{event.location || "Classified"}</div>
                         </div>
                       </div>
                     </div>
@@ -255,7 +254,7 @@ function EventDetail({ id }) {
             {activeTab === 'timeline' && (
               <OpsPanel>
                 <OpsPanelHeader>
-                  <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Operational Timeline</OpsPanelTitle>
+                  <OpsPanelTitle>Operational Timeline</OpsPanelTitle>
                 </OpsPanelHeader>
                 <OpsPanelContent>
                   <EventTimeline 
@@ -311,10 +310,10 @@ function EventDetail({ id }) {
 
                   {/* AAR Tab */}
                   {activeTab === 'aar' && (
-                    <OpsPanel>
-                      <OpsPanelHeader>
-                        <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>After Action Report</OpsPanelTitle>
-                      </OpsPanelHeader>
+                  <OpsPanel>
+                  <OpsPanelHeader>
+                  <OpsPanelTitle>After Action Report</OpsPanelTitle>
+                  </OpsPanelHeader>
                   <OpsPanelContent>
                   <EventAAR eventId={event.id} eventTitle={event.title} />
                 </OpsPanelContent>
@@ -454,7 +453,7 @@ export default function EventsPage() {
                 const status = getEventStatus(event);
                 
                 return (
-                  <OpsPanel key={event.id} className={`hover:border-zinc-700 ${MOTION.CSS.SMOOTH} group`}>
+                  <OpsPanel key={event.id} className="hover:border-zinc-700 transition-colors group">
                     <div className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -470,23 +469,23 @@ export default function EventsPage() {
                             {eventTime.date} • {eventTime.time}
                           </span>
                         </div>
-                        <h3 className={`text-xl font-bold text-zinc-100 mb-2 group-hover:text-red-500 ${MOTION.CSS.SMOOTH}`}>
-                           {event.title}
-                         </h3>
-                        <p className="text-zinc-400 text-sm line-clamp-2 max-w-2xl">
+                        <h3 className={cn("text-xl mb-2 group-hover:text-red-500 transition-colors", typographyClasses.commandSubtitle)}>
+                          {event.title}
+                        </h3>
+                        <p className={cn(typographyClasses.bodySmall, "line-clamp-2 max-w-2xl")}>
                           {event.description}
                         </p>
                       </div>
                       
                       <div className="flex items-center gap-4 md:w-auto w-full justify-between md:justify-end">
                         <div className="text-right hidden md:block">
-                          <div className="flex items-center justify-end gap-2 text-zinc-500 text-xs mb-1">
+                          <div className={cn(typographyClasses.labelSecondary, "flex items-center justify-end gap-2 mb-1")}>
                             <MapPin className="w-3 h-3" />
                             {event.location || "TBD"}
                           </div>
-                          <div className="flex items-center justify-end gap-2 text-zinc-500 text-xs">
-                             <Users className="w-3 h-3" />
-                             {creator ? (creator.callsign || creator.rsi_handle || creator.email) : "Command"}
+                          <div className={cn(typographyClasses.labelSecondary, "flex items-center justify-end gap-2")}>
+                               <Users className="w-3 h-3" />
+                               {creator ? (creator.callsign || creator.rsi_handle || creator.email) : "Command"}
                           </div>
                         </div>
                         
