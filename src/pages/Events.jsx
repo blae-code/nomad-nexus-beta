@@ -52,18 +52,20 @@ function EventDetail({ id }) {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-zinc-950 p-10 text-center">
-        <h1 className="text-xl text-zinc-300 mb-4">Operation Not Found</h1>
-        <a href={createPageUrl('Events')}>
-           <Badge variant="outline" className="hover:bg-zinc-800 cursor-pointer">Return to Operations Board</Badge>
-        </a>
+      <div className="h-full flex items-center justify-center bg-zinc-950 text-center">
+        <div>
+          <h1 className="text-xl text-zinc-300 mb-4">Operation Not Found</h1>
+          <a href={createPageUrl('Events')}>
+             <Badge variant="outline" className="hover:bg-zinc-800 cursor-pointer">Return to Operations Board</Badge>
+          </a>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <div className="container mx-auto max-w-6xl">
+    <div className="h-full overflow-y-auto bg-zinc-950 text-zinc-100">
+      <div className="container mx-auto max-w-6xl p-4 lg:p-6">
         
         {/* Header / Nav */}
         <div className="mb-8">
