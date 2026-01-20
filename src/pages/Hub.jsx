@@ -130,8 +130,8 @@ export default function HubPage() {
           </ScrollArea>
 
           {/* Right sidebar - Voice Toolkit */}
-          <div className="w-72 shrink-0 overflow-y-auto pr-4">
-          <VoiceControlToolkit />
+          <div className="w-72 shrink-0 overflow-y-auto">
+            <VoiceControlToolkit />
           </div>
           </div>
           </PageLayout>
