@@ -114,25 +114,15 @@ export default function ActivityBar() {
   };
 
   return (
-    <aside className="w-14 bg-[#0c0c0e] border-r border-zinc-800 flex flex-col items-center py-4 gap-3 shrink-0 z-40 shadow-xl">
+    <aside className="w-14 bg-[#0c0c0e] border-r border-zinc-800 flex flex-col items-center py-4 gap-2 shrink-0 z-40 shadow-xl">
       
       <NavItem 
         icon={LayoutGrid} 
-        label="Dashboard" 
-        page="NomadOpsDashboard" 
+        label="Hub" 
+        page="Hub" 
       />
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
-
-      <NavItem 
-        icon={ShieldAlert} 
-        label="Rescue Ops" 
-        page="CommsConsole" 
-        path={createPageUrl('CommsConsole') + '?view=rescue'}
-        alertColor="bg-red-600"
-        isAlertActive={hasRescue}
-        pulseFast={true}
-      />
 
       <NavItem 
         icon={Target} 
@@ -150,18 +140,28 @@ export default function ActivityBar() {
         isAlertActive={isCommsConnected}
       />
 
-      <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
-
       <NavItem 
-        icon={Coins} 
-        label="Treasury" 
-        page="Treasury" 
+        icon={ShieldAlert} 
+        label="Rescue" 
+        page="CommsConsole" 
+        path={createPageUrl('CommsConsole') + '?view=rescue'}
+        alertColor="bg-red-600"
+        isAlertActive={hasRescue}
+        pulseFast={true}
       />
+
+      <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
 
       <NavItem 
         icon={Rocket} 
         label="Fleet" 
         page="FleetManager" 
+      />
+
+      <NavItem 
+        icon={Coins} 
+        label="Treasury" 
+        page="Treasury" 
       />
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
@@ -173,18 +173,18 @@ export default function ActivityBar() {
       />
 
       <NavItem 
-        icon={Medal} 
-        label="Ranks" 
+        icon={Users} 
+        label="Roster" 
         page="Ranks" 
       />
+
+      <div className="flex-1" />
 
       <NavItem 
         icon={UserCircle} 
         label="Profile" 
         page="Profile" 
       />
-
-      <div className="flex-1" />
 
       <NavItem 
         icon={Lock} 
