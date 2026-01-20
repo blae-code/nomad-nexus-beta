@@ -73,7 +73,7 @@ export default function AdvancedAudioSettings({ preferences, setPreferences }) {
                   step={5}
                   className="w-full"
                 />
-                <p className="text-[10px] text-zinc-500">0% = Minimal (preserve natural sound) | 100% = Aggressive (remove more noise)</p>
+                <p className="text-[10px] text-zinc-500">0% = Minimal | 100% = Aggressive</p>
               </div>
             )}
           </div>
@@ -83,7 +83,7 @@ export default function AdvancedAudioSettings({ preferences, setPreferences }) {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <Label className="text-sm font-semibold">Voice Activity Detection (VAD)</Label>
-                <p className="text-xs text-zinc-400 mt-1">Only transmit when speech is detected, save bandwidth</p>
+                <p className="text-xs text-zinc-400 mt-1">Only transmit when speech detected</p>
               </div>
               <Switch 
                 checked={preferences.voiceActivityDetection} 
@@ -93,7 +93,7 @@ export default function AdvancedAudioSettings({ preferences, setPreferences }) {
             {preferences.voiceActivityDetection && (
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400">Detection Sensitivity</span>
+                  <span className="text-xs text-zinc-400">Sensitivity</span>
                   <Badge variant="outline" className="text-xs">{preferences.vadThreshold}%</Badge>
                 </div>
                 <Slider
@@ -104,7 +104,7 @@ export default function AdvancedAudioSettings({ preferences, setPreferences }) {
                   step={5}
                   className="w-full"
                 />
-                <p className="text-[10px] text-zinc-500">Low = More lenient (catch quiet speech) | High = More strict (avoid false triggers)</p>
+                <p className="text-[10px] text-zinc-500">Low = Lenient | High = Strict</p>
               </div>
             )}
           </div>
@@ -121,21 +121,16 @@ export default function AdvancedAudioSettings({ preferences, setPreferences }) {
                 onCheckedChange={() => handleToggle('autoGainControl')}
               />
             </div>
-            {!preferences.autoGainControl && (
-              <p className="text-[10px] text-amber-400 bg-amber-950/20 p-2 rounded border border-amber-900/30">
-                ⚠️ Disabled: Adjust levels manually in Audio Devices
-              </p>
-            )}
           </div>
 
           {/* Summary */}
           <div className="p-3 bg-zinc-950/50 border border-zinc-800 rounded space-y-2">
-            <p className="text-xs font-semibold text-zinc-300">Current Configuration</p>
+            <p className="text-xs font-semibold text-zinc-300">Active Features</p>
             <div className="text-[10px] text-zinc-400 space-y-1 font-mono">
-              <div>Echo Cancel: {preferences.echoCancellation ? '✓ ON' : '✗ OFF'}</div>
-              <div>Noise Suppress: {preferences.noiseSuppression ? `✓ ON (${preferences.noiseFloor}%)` : '✗ OFF'}</div>
-              <div>Voice Detection: {preferences.voiceActivityDetection ? `✓ ON (${preferences.vadThreshold}%)` : '✗ OFF'}</div>
-              <div>Auto Gain: {preferences.autoGainControl ? '✓ ON' : '✗ OFF'}</div>
+              <div>Echo Cancel: {preferences.echoCancellation ? '✓' : '✗'}</div>
+              <div>Noise Suppress: {preferences.noiseSuppression ? `✓ (${preferences.noiseFloor}%)` : '✗'}</div>
+              <div>VAD: {preferences.voiceActivityDetection ? `✓ (${preferences.vadThreshold}%)` : '✗'}</div>
+              <div>Auto Gain: {preferences.autoGainControl ? '✓' : '✗'}</div>
             </div>
           </div>
         </CardContent>
