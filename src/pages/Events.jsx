@@ -372,7 +372,11 @@ export default function EventsPage() {
   // Only fetch events if user can view them (permission check)
   const { data: events, isLoading } = useQuery({
     queryKey: ['events-list'],
-    queryFn: () => base44.entities.Event.list(),
+    queryFn: async () => {
+      const allEvents = await base44.entities.Event.list();
+      // Filter out archived/deleted events
+      return allEvents.filter(e => e.phase !== 'ARCHIVED');
+    },
     initialData: [],
     enabled: !!currentUser
   });
