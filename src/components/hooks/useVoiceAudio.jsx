@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocalParticipant } from 'livekit-react';
 
 export function useVoiceAudio() {
   const [micEnabled, setMicEnabled] = useState(false);
