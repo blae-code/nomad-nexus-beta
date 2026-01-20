@@ -67,12 +67,10 @@ export function useVoiceAudio() {
     return () => clearInterval(interval);
   }, [micEnabled]);
 
-  // Simulate latency from LocalParticipant (in real scenario, this comes from LiveKit stats)
+  // Monitor signal quality based on input level and latency
   useEffect(() => {
-    if (!localParticipant) return;
-
     const interval = setInterval(() => {
-      // In production: get actual RTT from localParticipant.audioTrackPublications stats
+      // Simulate latency (15-80ms typical)
       setLatency(Math.max(15, Math.random() * 80));
       
       // Quality based on input level and latency
@@ -83,7 +81,7 @@ export function useVoiceAudio() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [localParticipant]);
+  }, [inputLevel, latency]);
 
   return {
     micEnabled,
