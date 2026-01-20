@@ -1,6 +1,6 @@
 import React from 'react';
 import VoiceControlToolkit from '@/components/voice/VoiceControlToolkit';
-import UserPresenceDirectory from '@/components/directory/UserPresenceDirectory';
+import UserContactBook from '@/components/directory/UserContactBook';
 
 export default function ContextPanel({ currentPage, user }) {
   const renderContent = () => {
@@ -10,7 +10,7 @@ export default function ContextPanel({ currentPage, user }) {
           <div className="space-y-4">
             <VoiceControlToolkit />
             <div className="pt-4 border-t border-zinc-800">
-              <UserPresenceDirectory />
+              <UserContactBook />
             </div>
           </div>
         );
