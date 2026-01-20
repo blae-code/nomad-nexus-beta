@@ -315,6 +315,57 @@ ${debugInfo.log?.join('\n') || 'No log available'}
     return <AlertTriangle className="w-4 h-4 text-zinc-600" />;
   };
 
+  const ErrorDetailCard = ({ testKey, error }) => {
+    if (!error) return null;
+    
+    const isExpanded = expandedErrors[testKey];
+    
+    return (
+      <div className="mt-4 p-3 bg-red-950/20 border border-red-900/50 rounded-sm space-y-2">
+        <button
+          onClick={() => setExpandedErrors(prev => ({ ...prev, [testKey]: !prev[testKey] }))}
+          className="w-full flex items-start justify-between text-left hover:text-red-300 transition-colors"
+        >
+          <div>
+            <div className="text-xs font-bold text-red-400">{error.title}</div>
+            <div className="text-[10px] text-red-300/70 mt-1">{error.message}</div>
+          </div>
+          <ChevronRight className={`w-4 h-4 text-red-500 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+        </button>
+        
+        {isExpanded && (
+          <div className="mt-3 space-y-3 border-t border-red-900/30 pt-3">
+            {error.errorCode && (
+              <div className="text-[9px] font-mono bg-black/30 p-2 rounded border border-red-900/30">
+                <span className="text-red-500/70">Error Code:</span> {error.errorCode}
+              </div>
+            )}
+            
+            {error.solutions?.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold text-red-300 uppercase">Troubleshooting Steps:</div>
+                <ol className="space-y-1">
+                  {error.solutions.map((solution, i) => (
+                    <li key={i} className="text-[9px] text-red-200/80 flex gap-2">
+                      <span className="text-red-500 font-bold shrink-0">{i + 1}.</span>
+                      <span>{solution}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            
+            {error.errorStack && (
+              <div className="text-[8px] font-mono text-red-300/50 bg-black/50 p-2 rounded border border-red-900/20 whitespace-pre-wrap break-words max-h-24 overflow-auto">
+                {error.errorStack}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
@@ -328,54 +379,58 @@ ${debugInfo.log?.join('\n') || 'No log available'}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Microphone Test */}
-        <Card className="bg-zinc-950 border-zinc-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Mic className="w-4 h-4 text-[#ea580c]" />
-              Microphone Test
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400">Permission</span>
-              {getStatusIcon(diagnostics.micPermission)}
-            </div>
-            
-            {isTestingMic && (
-              <div className="space-y-2">
-                <div className="text-xs text-zinc-500 font-mono">Speak now...</div>
-                <div className="h-2 bg-zinc-900 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-emerald-500 transition-all duration-100"
-                    style={{ width: `${diagnostics.micLevel}%` }}
-                  />
-                </div>
-                <div className="text-[10px] text-zinc-600 text-right font-mono">
-                  Level: {Math.round(diagnostics.micLevel)}%
-                </div>
-              </div>
-            )}
-            
-            <Button 
-              onClick={testMicrophone}
-              disabled={isTestingMic}
-              size="sm"
-              className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700"
-            >
-              {isTestingMic ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                  Testing...
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 mr-2" />
-                  Test Microphone
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+         <Card className="bg-zinc-950 border-zinc-800">
+           <CardHeader className="pb-3">
+             <CardTitle className="text-sm flex items-center gap-2">
+               <Mic className="w-4 h-4 text-[#ea580c]" />
+               Microphone Test
+             </CardTitle>
+           </CardHeader>
+           <CardContent className="space-y-3">
+             <div className="flex items-center justify-between">
+               <span className="text-xs text-zinc-400">Permission</span>
+               {getStatusIcon(diagnostics.micPermission)}
+             </div>
+
+             {isTestingMic && (
+               <div className="space-y-2">
+                 <div className="text-xs text-zinc-500 font-mono">Speak now...</div>
+                 <div className="h-2 bg-zinc-900 rounded-full overflow-hidden">
+                   <div 
+                     className="h-full bg-emerald-500 transition-all duration-100"
+                     style={{ width: `${diagnostics.micLevel}%` }}
+                   />
+                 </div>
+                 <div className="text-[10px] text-zinc-600 text-right font-mono">
+                   Level: {Math.round(diagnostics.micLevel)}%
+                 </div>
+               </div>
+             )}
+
+             <Button 
+               onClick={testMicrophone}
+               disabled={isTestingMic}
+               size="sm"
+               className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700"
+             >
+               {isTestingMic ? (
+                 <>
+                   <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                   Testing...
+                 </>
+               ) : (
+                 <>
+                   <Play className="w-3 h-3 mr-2" />
+                   Test Microphone
+                 </>
+               )}
+             </Button>
+
+             {errorDetails.micPermission && (
+               <ErrorDetailCard testKey="micPermission" error={errorDetails.micPermission} />
+             )}
+           </CardContent>
+         </Card>
 
         {/* Speaker Test */}
         <Card className="bg-zinc-950 border-zinc-800">
@@ -409,59 +464,63 @@ ${debugInfo.log?.join('\n') || 'No log available'}
         </Card>
 
         {/* Connection Test */}
-        <Card className="bg-zinc-950 border-zinc-800 lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Radio className="w-4 h-4 text-[#ea580c]" />
-              Connection & Permission Test
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400">RX (Receive)</span>
-                {getStatusIcon(diagnostics.rxPermission)}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400">TX (Transmit)</span>
-                {getStatusIcon(diagnostics.txPermission)}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400">Connection</span>
-                {getStatusIcon(diagnostics.connectionTest)}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400">Room Join</span>
-                {getStatusIcon(diagnostics.roomConnection)}
-              </div>
-            </div>
-            
-            <Button 
-              onClick={testConnection}
-              disabled={isTestingConnection || !eventId}
-              size="sm"
-              className="w-full bg-[#ea580c] hover:bg-[#c2410c] text-white"
-            >
-              {isTestingConnection ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                  Testing Connection...
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 mr-2" />
-                  Run Connection Test
-                </>
-              )}
-            </Button>
-            
-            {!eventId && (
-              <div className="text-xs text-amber-500 bg-amber-950/20 p-2 rounded border border-amber-900">
-                Select an event in Comms Console to test connection
-              </div>
-            )}
-          </CardContent>
-        </Card>
+         <Card className="bg-zinc-950 border-zinc-800 lg:col-span-2">
+           <CardHeader className="pb-3">
+             <CardTitle className="text-sm flex items-center gap-2">
+               <Radio className="w-4 h-4 text-[#ea580c]" />
+               Connection & Permission Test
+             </CardTitle>
+           </CardHeader>
+           <CardContent className="space-y-3">
+             <div className="grid grid-cols-2 gap-4">
+               <div className="flex items-center justify-between">
+                 <span className="text-xs text-zinc-400">RX (Receive)</span>
+                 {getStatusIcon(diagnostics.rxPermission)}
+               </div>
+               <div className="flex items-center justify-between">
+                 <span className="text-xs text-zinc-400">TX (Transmit)</span>
+                 {getStatusIcon(diagnostics.txPermission)}
+               </div>
+               <div className="flex items-center justify-between">
+                 <span className="text-xs text-zinc-400">Connection</span>
+                 {getStatusIcon(diagnostics.connectionTest)}
+               </div>
+               <div className="flex items-center justify-between">
+                 <span className="text-xs text-zinc-400">Room Join</span>
+                 {getStatusIcon(diagnostics.roomConnection)}
+               </div>
+             </div>
+
+             <Button 
+               onClick={testConnection}
+               disabled={isTestingConnection || !eventId}
+               size="sm"
+               className="w-full bg-[#ea580c] hover:bg-[#c2410c] text-white"
+             >
+               {isTestingConnection ? (
+                 <>
+                   <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                   Testing Connection...
+                 </>
+               ) : (
+                 <>
+                   <Play className="w-3 h-3 mr-2" />
+                   Run Connection Test
+                 </>
+               )}
+             </Button>
+
+             {!eventId && (
+               <div className="text-xs text-amber-500 bg-amber-950/20 p-2 rounded border border-amber-900">
+                 Select an event in Comms Console to test connection
+               </div>
+             )}
+
+             {errorDetails.connectionTest && (
+               <ErrorDetailCard testKey="connectionTest" error={errorDetails.connectionTest} />
+             )}
+           </CardContent>
+         </Card>
       </div>
 
       {/* Debug Info */}
