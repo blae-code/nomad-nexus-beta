@@ -4,12 +4,19 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, Server, Radio, AlertTriangle, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { Activity, Server, Radio, AlertTriangle, CheckCircle, XCircle, RefreshCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default function SystemHealthMonitor() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [currentUser, setCurrentUser] = useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
 
   // Check LiveKit connectivity
   const { data: livekitHealth, isLoading: livekitLoading, refetch: refetchLivekit } = useQuery({
