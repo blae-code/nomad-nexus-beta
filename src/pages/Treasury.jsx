@@ -94,24 +94,24 @@ export default function TreasuryPage() {
            {/* Transaction View */}
            <div className="lg:col-span-8">
               {selectedCoffer ? (
-                 <Card className="bg-zinc-900/50 border-zinc-800 h-full min-h-[500px]">
-                    <CardHeader className="border-b border-zinc-800 pb-4 flex flex-row items-center justify-between">
+                 <div className="border border-zinc-800/50 bg-zinc-950 h-full min-h-[500px] flex flex-col">
+                    <div className="border-b border-zinc-800/50 p-4 flex flex-row items-center justify-between shrink-0">
                        <div>
-                          <CardTitle className="text-xl text-white flex items-center gap-2">
-                             {selectedCoffer.name} Ledger
-                          </CardTitle>
-                          <p className="text-xs text-zinc-500 mt-1">Recent transactions and movements</p>
+                          <div className="text-sm font-bold text-white uppercase tracking-wider">
+                             {selectedCoffer.name} LEDGER
+                          </div>
+                          <p className="text-[9px] text-zinc-600 mt-1 font-mono">TRANSACTION HISTORY</p>
                        </div>
                        {canEditResources(currentUser) && <TransactionForm cofferId={selectedCoffer.id} />}
-                       </CardHeader>
-                    <CardContent className="pt-6">
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
                        <TransactionHistory cofferId={selectedCoffer.id} />
-                    </CardContent>
-                 </Card>
+                    </div>
+                 </div>
               ) : (
-                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-zinc-600 border border-dashed border-zinc-800 rounded-lg bg-zinc-900/20">
+                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-zinc-600 border border-zinc-800/50 bg-zinc-950">
                     <Wallet className="w-12 h-12 mb-4 opacity-20" />
-                    <p>Select a coffer to view details</p>
+                    <p className="text-xs font-mono tracking-widest uppercase">SELECT A COFFER</p>
                  </div>
               )}
            </div>
