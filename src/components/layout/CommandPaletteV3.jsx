@@ -368,7 +368,7 @@ export default function CommandPaletteV3() {
 
   // Get icon component
   const getIcon = (iconName) => {
-    return iconMap[iconName] || Command;
+    return memoizedIconMap[iconName] || Command;
   };
 
   // Get current page breadcrumb
