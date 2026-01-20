@@ -31,6 +31,8 @@ export default function UserContactBook() {
   const [showNewGroupForm, setShowNewGroupForm] = useState(false);
   const [mutedUsers, setMutedUsers] = useState(new Set());
   const [volumeAdjustments, setVolumeAdjustments] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showOffline, setShowOffline] = useState(false);
 
   // Load preferences from localStorage
   useEffect(() => {
