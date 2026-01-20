@@ -1,0 +1,161 @@
+/* Layout Specification & Grid Variables */
+:root {
+  /* Core dimensions */
+  --rail-w: 72px;
+  --gutter: 16px;
+  --divider: 1px;
+  --container-max: 1280px;
+  
+  /* Spacing scale (4px increments) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  
+  /* Colors for dividers */
+  --divider-color: #27272a; /* zinc-700 */
+  --divider-color-subtle: #18181b; /* zinc-900 */
+}
+
+/* AppShell Grid Container */
+.app-shell {
+  display: grid;
+  grid-template-columns: [rail] var(--rail-w) [content] 1fr;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #09090b;
+  color: #e4e4e7;
+}
+
+/* Rail Column (Navigation) */
+.app-rail {
+  grid-column: rail;
+  border-right: var(--divider) solid var(--divider-color);
+  background-color: #09090b;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Content Column */
+.app-content {
+  grid-column: content;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Page Shell Container (standardized padding/margins) */
+.page-shell {
+  flex: 1;
+  overflow-y: auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  padding-top: var(--gutter);
+}
+
+.page-shell--max-width {
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Panel Component (card/box) */
+.panel {
+  border: var(--divider) solid var(--divider-color);
+  background-color: #18181b;
+  padding: var(--space-lg);
+}
+
+.panel--outline {
+  background-color: transparent;
+}
+
+.panel--inset {
+  background-color: #09090b;
+  border-color: var(--divider-color-subtle);
+}
+
+/* Divider Component */
+.divider {
+  height: var(--divider);
+  background-color: var(--divider-color);
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.divider--vertical {
+  width: var(--divider);
+  height: auto;
+  background-color: var(--divider-color);
+}
+
+.divider--subtle {
+  background-color: var(--divider-color-subtle);
+}
+
+/* Grid Snap (align to pixel grid) */
+* {
+  box-sizing: border-box;
+}
+
+/* Disable subpixel rendering for layout */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* Layout Debug Mode (dev only) */
+.layout-debug-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 999;
+  background-image: 
+    linear-gradient(90deg, transparent calc(var(--rail-w) - 0.5px), rgba(234, 88, 12, 0.1) calc(var(--rail-w) - 0.5px), rgba(234, 88, 12, 0.1) calc(var(--rail-w) + 0.5px), transparent calc(var(--rail-w) + 0.5px));
+  background-repeat: repeat-y;
+  background-size: 100% 1px;
+  background-position: 0 0;
+  overflow: hidden;
+}
+
+.layout-debug-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--rail-w);
+  width: 1px;
+  height: 100%;
+  background-color: rgba(234, 88, 12, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(234, 88, 12, 0.2);
+}
+
+.layout-debug-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--rail-w) + var(--gutter));
+  width: 2px;
+  height: 100%;
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+.layout-debug-label {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background-color: rgba(9, 9, 11, 0.95);
+  border: 1px solid rgba(234, 88, 12, 0.5);
+  color: #ea580c;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  z-index: 1000;
+  pointer-events: all;
+}
