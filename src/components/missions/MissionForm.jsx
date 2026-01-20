@@ -20,7 +20,7 @@ export default function MissionForm({ mission, open, onOpenChange }) {
   const [newObjective, setNewObjective] = useState("");
 
   // Global lists for assignment
-  const { users } = useUserDirectory();
+   const { users } = useUserDirectory();
 
   const { data: assets } = useQuery({
     queryKey: ['mission-assets'],
