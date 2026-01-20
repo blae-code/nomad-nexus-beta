@@ -56,6 +56,24 @@ Deno.serve(async (req) => {
             livekit_room_name: roomName
         });
 
+        // 2a. Log distress event (if event_id is in context or available)
+        // For now, we'll create a generic distress log
+        await base44.asServiceRole.entities.EventLog.create({
+            event_id: 'global-distress', // Could be passed in payload
+            type: 'RESCUE',
+            severity: 'HIGH',
+            actor_user_id: user.id,
+            summary: `DISTRESS BEACON: ${type} at ${location}`,
+            details: {
+                distress_type: type,
+                location: location,
+                description: description,
+                requester: user.rsi_handle || user.full_name,
+                rescue_ticket: rescueRecord.id,
+                comms_room: roomName
+            }
+        });
+
         // 3. Update PlayerStatus to DISTRESS (triggers UI alerts)
         // Check if status exists
         const existingStatus = await base44.entities.PlayerStatus.list({ filter: { user_id: user.id } });

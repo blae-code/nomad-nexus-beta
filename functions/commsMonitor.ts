@@ -99,7 +99,7 @@ Return JSON with findings:
                 }
             });
 
-            // Store critical alerts as AIAgentLog entries
+            // Store critical alerts as AIAgentLog entries AND EventLog
             if (result.critical_alerts?.length > 0 && eventId) {
                 for (const alert of result.critical_alerts.slice(0, 3)) {
                     await base44.asServiceRole.entities.AIAgentLog.create({
@@ -109,6 +109,20 @@ Return JSON with findings:
                         severity: alert.severity.toUpperCase(),
                         summary: alert.message,
                         details: `${alert.type}: ${alert.recommended_action}`
+                    });
+
+                    // Also log to EventLog for timeline
+                    await base44.asServiceRole.entities.EventLog.create({
+                        event_id: eventId,
+                        type: 'COMMS',
+                        severity: alert.severity === 'critical' ? 'HIGH' : alert.severity === 'high' ? 'MEDIUM' : 'LOW',
+                        summary: alert.message,
+                        details: {
+                            alert_type: alert.type,
+                            net_code: alert.net_code,
+                            recommended_action: alert.recommended_action,
+                            timestamp: alert.timestamp
+                        }
                     });
                 }
             }

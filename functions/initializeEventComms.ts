@@ -77,6 +77,19 @@ Deno.serve(async (req) => {
         });
         netsCreated.push(generalNet);
 
+        // 4. Log comms provisioning to EventLog
+        await base44.asServiceRole.entities.EventLog.create({
+            event_id: eventId,
+            type: 'SYSTEM',
+            severity: 'LOW',
+            actor_user_id: user.id,
+            summary: `Communications provisioning complete: ${netsCreated.length} nets initialized`,
+            details: {
+                nets_created: netsCreated.map(n => ({ code: n.code, label: n.label, room: n.livekit_room_name })),
+                total_count: netsCreated.length
+            }
+        });
+
         return Response.json({ 
             message: 'Comms initialized successfully',
             nets: netsCreated,

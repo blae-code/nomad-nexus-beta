@@ -42,7 +42,7 @@ Respond in JSON format.`;
       }
     });
 
-    // Create AI Agent Log if significant
+    // Create AI Agent Log if significant AND EventLog for timeline
     if (analysis.severity === 'HIGH' || analysis.severity === 'CRITICAL' || analysis.is_distress) {
       await base44.asServiceRole.entities.AIAgentLog.create({
         agent_slug: 'status_monitor',
@@ -58,6 +58,23 @@ Respond in JSON format.`;
           key_info: analysis.key_info,
           recommended_action: analysis.recommended_action
         })
+      });
+
+      // Log to EventLog for timeline
+      await base44.asServiceRole.entities.EventLog.create({
+        event_id: eventId,
+        type: 'STATUS',
+        severity: analysis.severity === 'CRITICAL' ? 'HIGH' : 'MEDIUM',
+        actor_user_id: userId,
+        summary: analysis.summary,
+        details: {
+          operator: callsign,
+          status_state: status,
+          location: location,
+          notes: notes,
+          is_distress: analysis.is_distress,
+          recommended_action: analysis.recommended_action
+        }
       });
     }
 
