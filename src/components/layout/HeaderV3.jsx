@@ -149,9 +149,15 @@ export default function HeaderV3() {
 
       const userIds = new Set(users.map(u => u.id));
       const validPresences = presences.filter(p => userIds.has(p.user_id));
-      const online = validPresences.filter((p) => p.status !== 'offline').length;
 
-      setOnlineCount(online);
+      // Count unique online users
+      const onlineUserIds = new Set(
+        validPresences
+          .filter((p) => p.status !== 'offline')
+          .map(p => p.user_id)
+      );
+
+      setOnlineCount(onlineUserIds.size);
       window.headerTotalUsers = users.length;
 
       // Get current user's presence
