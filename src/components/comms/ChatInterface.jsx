@@ -20,15 +20,16 @@ export default function ChatInterface({ channel, user }) {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const queryClient = useQueryClient();
 
-  // Fetch Messages with Real-Time Subscription
-  const { data: messages } = useQuery({
+  // Fetch Messages with Real-Time Subscription (reduced polling)
+  const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ['channel-messages', channel.id],
     queryFn: () => base44.entities.Message.filter(
       { channel_id: channel.id },
       'created_date',
       100
     ),
-    initialData: []
+    initialData: [],
+    refetchInterval: 10000
   });
 
   // Real-time subscription for new messages and updates
@@ -120,6 +121,7 @@ export default function ChatInterface({ channel, user }) {
     onSuccess: () => {
       setNewMessage("");
       setAttachments([]);
+      // Optimistic update: refetch after send completes
       queryClient.invalidateQueries({ queryKey: ['channel-messages', channel.id] });
     }
   });
@@ -201,6 +203,16 @@ export default function ChatInterface({ channel, user }) {
 
       {/* Input Area */}
       <div className="p-4 border-t border-zinc-800 bg-zinc-900/30 space-y-2">
+        {/* Manual Refresh Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => refetchMessages()}
+            className="text-[9px] text-zinc-600 hover:text-zinc-400 font-mono uppercase transition-colors"
+          >
+            ↻ Refresh
+          </button>
+        </div>
+
         {/* AI Response Suggestions */}
         {messages.length >= 2 && (
           <AIResponseSuggestions
