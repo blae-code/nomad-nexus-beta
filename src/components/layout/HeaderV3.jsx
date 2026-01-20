@@ -39,6 +39,8 @@ export default function HeaderV3() {
   const [latency, setLatency] = useState(0);
   const [isVisible, setIsVisible] = useState(!document.hidden);
   const [netDataTickActive, setNetDataTickActive] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [readinessState, setReadinessState] = useState('green'); // green, amber, red
   const location = useLocation();
   
   // Safe callsign/rank resolution via directory
