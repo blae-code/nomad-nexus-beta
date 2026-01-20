@@ -29,12 +29,12 @@ export default function AdminPage() {
   // Admin access check
   if (currentUser && currentUser.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-black text-zinc-200 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Lock className="w-16 h-16 text-red-900 mx-auto opacity-50" />
-          <h1 className="text-2xl font-black uppercase tracking-widest text-red-800">Access Denied</h1>
-          <p className="text-xs font-mono text-zinc-500">ADMIN CLEARANCE REQUIRED</p>
-        </div>
+      <div className="h-full flex items-center justify-center bg-zinc-950">
+        <EmptyState
+          icon={Lock}
+          title="Access Denied"
+          description="Administrator clearance required."
+        />
       </div>
     );
   }
