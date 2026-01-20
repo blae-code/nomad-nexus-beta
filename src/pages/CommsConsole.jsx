@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
 import CommsEventSelector from "@/components/comms/CommsEventSelector";
 import NetList from "@/components/comms/NetList";
 import ActiveNetPanel from "@/components/comms/ActiveNetPanel";
@@ -11,16 +12,11 @@ import FleetHierarchy from "@/components/ops/FleetHierarchy";
 import FleetStatusSummary from "@/components/ops/FleetStatusSummary";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Radio, Shield, Layout, Monitor, ListTree, Bot, Hash, Search, Activity, AlertTriangle } from "lucide-react";
+import { Radio, ListTree, Bot, Hash, Search, Activity, AlertTriangle } from "lucide-react";
 import CommsAIAssistant from "@/components/ai/CommsAIAssistant";
 import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
-import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
-import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
-import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import TacticalDashboard from "@/components/comms/TacticalDashboard";
 import CommsSearch from "@/components/comms/CommsSearch";
 import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
@@ -34,7 +30,6 @@ import FormationCallouts from "@/components/comms/FormationCallouts";
 import FleetPingSystem from "@/components/comms/FleetPingSystem";
 import RallyPointManager from "@/components/comms/RallyPointManager";
 import NetDisciplineQueue from "@/components/comms/NetDisciplineQueue";
-import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { usePTT } from "@/components/hooks/usePTT";
@@ -229,140 +224,69 @@ function CommsConsolePage() {
     );
   }
 
-  return (
-    <div className="h-full bg-zinc-950 text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
+  // Build header actions based on mode
+  const headerActions = consoleMode === 'ops' ? (
+    <div className="flex items-center gap-3">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowSearch(true)}
+        className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
+      >
+        <Search className="w-4 h-4" />
+        <kbd className="hidden md:inline px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono">
+          ⌘K
+        </kbd>
+      </Button>
       
-      {/* Toolbar */}
-      <div className="h-10 lg:h-12 border-b border-zinc-800 bg-zinc-900 flex items-center px-3 lg:px-6 justify-between shrink-0 z-40 gap-4">
-         <div className="flex items-center gap-6 flex-1">
-            <div className="flex items-center gap-2">
-               <Radio className="w-5 h-5 text-[#ea580c]" />
-               <h2 className="font-bold text-zinc-300 tracking-wider text-sm uppercase">COMMS ARRAY</h2>
-            </div>
+      {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
+      
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowAIAssistant(!showAIAssistant)}
+        className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800", showAIAssistant ? "bg-purple-500/10 text-purple-400 border-purple-500/30" : "text-zinc-500")}
+      >
+        <Bot className="w-3 h-3" />
+        AI ASSIST
+      </Button>
+    </div>
+  ) : null;
 
-            <Button
-               variant="ghost"
-               size="sm"
-               onClick={() => setShowSearch(true)}
-               className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
-            >
-               <Search className="w-4 h-4" />
-               <kbd className="hidden md:inline px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono">
-                  ⌘K
-               </kbd>
-            </Button>
-
-            {/* Console Mode Switcher */}
-            <div className="flex bg-zinc-950 border border-zinc-800 rounded-sm p-0.5">
-               <button
-                  onClick={() => setConsoleMode('ops')}
-                  className={cn(
-                     "px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-all",
-                     consoleMode === 'ops' ? "bg-[#ea580c] text-white shadow-lg" : "text-zinc-500 hover:text-zinc-300"
-                  )}
-                  >
-                  OPS
-               </button>
-               <button
-                  onClick={() => setConsoleMode('lounge')}
-                  className={cn(
-                     "px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-all",
-                     consoleMode === 'lounge' ? "bg-zinc-100 text-black" : "text-zinc-500 hover:text-zinc-300"
-                  )}
-                  >
-                  READY ROOMS
-               </button>
-            </div>
-         </div>
-
-         {consoleMode === 'ops' && (
-            <div className="flex items-center gap-4">
-               <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5">
-                  <button 
-                     onClick={() => setViewMode('line')}
-                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'line' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                     LINE
-                  </button>
-                  <button 
-                     onClick={() => setViewMode('command')}
-                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${viewMode === 'command' ? 'bg-red-900 text-red-100' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                     CMD
-                  </button>
-                  <button 
-                     onClick={() => setViewMode('hierarchy')}
-                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'hierarchy' ? 'bg-emerald-900 text-emerald-100' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                     <ListTree className="w-3 h-3" />
-                     ORG
-                  </button>
-                  <button 
-                     onClick={() => setViewMode('tactical')}
-                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'tactical' ? 'bg-[#ea580c] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                     <Monitor className="w-3 h-3" />
-                     TAC
-                  </button>
-                  <button 
-                     onClick={() => setViewMode('diagnostics')}
-                     className={`px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${viewMode === 'diagnostics' ? 'bg-purple-900 text-purple-100' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                     <Activity className="w-3 h-3" />
-                     TEST
-                  </button>
-               </div>
-               <div className="h-6 w-[1px] bg-zinc-800 mx-2" />
-               {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
-
-               <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAIAssistant(!showAIAssistant)}
-                  className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800", showAIAssistant ? "bg-purple-500/10 text-purple-400 border-purple-500/30" : "text-zinc-500")}
-               >
-                  <Bot className="w-3 h-3" />
-                  AI ASSIST
-               </Button>
-            </div>
-         )}
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-         
-         {/* Sidebar */}
-         <aside className="w-56 lg:w-64 xl:w-72 border-r border-zinc-800 bg-zinc-950/80 flex flex-col overflow-hidden">
+  return (
+    <PageLayout title="Comms Array" actions={headerActions}>
+      {/* Main 3-Column Grid */}
+      <div className="h-full overflow-hidden flex gap-[var(--gutter)] p-[var(--gutter)]">
+         {/* LEFT PANEL: Nets + Event Selector */}
+         <Panel title={consoleMode === 'ops' ? 'Voice Nets' : 'Channels'} className="w-64 flex flex-col overflow-hidden">
             {consoleMode === 'ops' ? (
                <>
-                  <div className="p-3 border-b border-zinc-800 bg-zinc-900/20 space-y-2">
+                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--divider-color)] space-y-2">
                      <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
-                     {selectedEventId && <AICriticalAlertsMonitor eventId={selectedEventId} />}
                      {selectedEventId && <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />}
                   </div>
                   
-                  <div className="flex-1 p-2 min-h-0 overflow-auto custom-scrollbar">
-                     {isLoading ? (
-                        <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING NETS...</div>
-                     ) : isProvisioningNets ? (
-                        <div className="text-center text-yellow-500 py-10 text-xs font-mono animate-pulse">
-                           PROVISIONING COMMS...<br/><span className="text-[10px] text-zinc-600">Auto-refreshing nets</span>
-                        </div>
-                     ) : voiceNets.length === 0 ? (
-                        <div className="text-center text-zinc-500 py-10 text-xs font-mono">
-                           NO ACTIVE NETS DETECTED.<br/>INITIALIZE VIA OPS BOARD.
-                        </div>
-                     ) : (
-                        viewMode === 'hierarchy' ? (
+                  <ScrollArea className="flex-1">
+                     <div className="p-[var(--space-lg)] space-y-2">
+                        {isLoading ? (
+                           <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING NETS...</div>
+                        ) : isProvisioningNets ? (
+                           <div className="text-center text-yellow-500 py-10 text-xs font-mono animate-pulse">
+                              PROVISIONING...<br/><span className="text-[10px] text-zinc-600">Auto-refreshing</span>
+                           </div>
+                        ) : voiceNets.length === 0 ? (
+                           <div className="text-center text-zinc-500 py-10 text-xs font-mono">
+                              NO ACTIVE NETS<br/>INITIALIZE VIA OPS BOARD
+                           </div>
+                        ) : viewMode === 'hierarchy' ? (
                            <FleetHierarchy eventId={selectedEventId} />
                         ) : (
                            <NetList 
                               nets={memoizedNets} 
                               selectedNetId={selectedNet?.id} 
                               onSelect={(net) => {
-                                // Prevent joining multiple nets simultaneously
                                 if (activeNetConnection && activeNetConnection !== net.id) {
-                                  console.warn('[COMMS] Switching nets - disconnecting from previous net');
+                                  console.warn('[COMMS] Switching nets');
                                 }
                                 setSelectedNet(net);
                                 setActiveNetConnection(net.id);
@@ -374,109 +298,105 @@ function CommsConsolePage() {
                               monitoredNetIds={monitoredNetIds}
                               onToggleMonitor={toggleMonitor}
                            />
-                        )
-                     )}
-                  </div>
+                        )}
+                     </div>
+                  </ScrollArea>
                </>
             ) : (
                <>
-                  {/* Ready Rooms Sidebar */}
-                  <div className="p-3 border-b border-zinc-800 bg-zinc-900/20 space-y-2">
-                     <div>
-                        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">CHANNELS</div>
-                        <div className="text-[10px] text-zinc-600 font-mono">PUBLIC COMMS</div>
-                     </div>
+                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--divider-color)]">
                      <ChannelManager user={currentUser} />
                   </div>
-                  <div className="flex-1 p-2 min-h-0 overflow-auto custom-scrollbar">
-                     <ReadyRoomList 
-                        user={currentUser} 
-                        selectedChannelId={selectedChannel?.id} 
-                        onSelect={setSelectedChannel} 
-                     />
-                  </div>
+                  <ScrollArea className="flex-1">
+                     <div className="p-[var(--space-lg)]">
+                        <ReadyRoomList 
+                           user={currentUser} 
+                           selectedChannelId={selectedChannel?.id} 
+                           onSelect={setSelectedChannel} 
+                        />
+                     </div>
+                  </ScrollArea>
                </>
             )}
-         </aside>
+         </Panel>
 
-         {/* Main Panel */}
-         <main className="flex-1 p-2 lg:p-3 bg-zinc-950 relative flex flex-col gap-2 lg:gap-3 overflow-hidden">
-            
-            <div className="h-full flex flex-col gap-2 lg:gap-3">
+         {/* CENTER PANEL: Active Net / Chat */}
+         <Panel title={consoleMode === 'ops' ? 'Active Net' : 'Ready Room'} className="flex-1 flex flex-col overflow-hidden" body={false}>
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                {consoleMode === 'ops' ? (
-                     // OPS MODE - Primary Active Net Panel
-                     selectedEventId ? (
-                       viewMode === 'tactical' ? (
-                          <TacticalDashboard eventId={selectedEventId} />
-                       ) : (
-                          <>
-                             {/* Comms Toolbar - Single source of truth for net actions */}
-                             <CommsToolbar
-                                selectedNet={selectedNet}
-                                onSelectNet={(net) => {
-                                  if (net) {
-                                    setSelectedNet(net);
-                                    setActiveNetConnection(net.id);
-                                  } else {
-                                    setSelectedNet(null);
-                                    setActiveNetConnection(null);
-                                  }
-                                }}
-                                isConnected={activeNetConnection === selectedNet?.id}
-                                isTransmitting={isTransmitting}
-                                onOpenAdvanced={() => setShowAdvancedDrawer(true)}
-                                className="shrink-0"
-                             />
-                             {/* Active Net Chat/Info */}
-                             {selectedNet ? (
-                                <ActiveNetPanel 
-                                   net={selectedNet} 
-                                   user={currentUser} 
-                                   eventId={selectedEventId}
-                                   onConnectionChange={(netId, isConnected) => {
-                                     if (isConnected) {
-                                       setActiveNetConnection(netId);
-                                     } else if (activeNetConnection === netId) {
-                                       setActiveNetConnection(null);
-                                     }
-                                   }}
-                                />
-                             ) : (
-                                <div className="flex-1 flex items-center justify-center text-zinc-600">
-                                   <div className="text-center">
-                                      <Radio className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                      <p className="text-sm uppercase tracking-widest">SELECT A NET TO BEGIN</p>
-                                   </div>
-                                </div>
-                             )}
-                          </>
-                       )
+                  selectedEventId ? (
+                     viewMode === 'tactical' ? (
+                        <TacticalDashboard eventId={selectedEventId} />
                      ) : (
                         <>
-                           {/* Dashboard Widgets */}
-                           <CurrentStatusHeader user={currentUser} />
-                           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                              <PersonalLogPanel user={currentUser} />
+                           {/* Comms Toolbar */}
+                           <div className="shrink-0 border-b border-[var(--divider-color)]">
+                              <CommsToolbar
+                                 selectedNet={selectedNet}
+                                 onSelectNet={(net) => {
+                                   if (net) {
+                                     setSelectedNet(net);
+                                     setActiveNetConnection(net.id);
+                                   } else {
+                                     setSelectedNet(null);
+                                     setActiveNetConnection(null);
+                                   }
+                                 }}
+                                 isConnected={activeNetConnection === selectedNet?.id}
+                                 isTransmitting={isTransmitting}
+                                 onOpenAdvanced={() => setShowAdvancedDrawer(true)}
+                              />
                            </div>
-                           <div className="shrink-0">
-                              <AUECWarningPanel />
+                           
+                           {/* Active Net Chat */}
+                           <div className="flex-1 min-h-0 overflow-hidden">
+                              {selectedNet ? (
+                                 <ActiveNetPanel 
+                                    net={selectedNet} 
+                                    user={currentUser} 
+                                    eventId={selectedEventId}
+                                    onConnectionChange={(netId, isConnected) => {
+                                      if (isConnected) {
+                                        setActiveNetConnection(netId);
+                                      } else if (activeNetConnection === netId) {
+                                        setActiveNetConnection(null);
+                                      }
+                                    }}
+                                 />
+                              ) : (
+                                 <div className="flex items-center justify-center h-full text-zinc-600">
+                                    <div className="text-center">
+                                       <Radio className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                       <p className="text-sm uppercase tracking-widest">SELECT A NET</p>
+                                    </div>
+                                 </div>
+                              )}
                            </div>
                         </>
                      )
+                  ) : (
+                     <ScrollArea className="flex-1">
+                        <div className="p-[var(--space-lg)] space-y-3">
+                           <CurrentStatusHeader user={currentUser} />
+                           <PersonalLogPanel user={currentUser} />
+                           <AUECWarningPanel />
+                        </div>
+                     </ScrollArea>
+                  )
                ) : (
-                  // LOUNGE MODE (Ready Rooms)
                   selectedChannel ? (
                      <ChatInterface channel={selectedChannel} user={currentUser} />
                   ) : (
-                     <div className="h-full flex flex-col items-center justify-center text-zinc-600 border-2 border-dashed border-zinc-900 rounded-lg bg-zinc-950/30">
-                        <Hash className="w-16 h-16 mb-4 opacity-20" />
-                        <p className="text-sm uppercase tracking-widest font-bold text-zinc-500">No Channel Selected</p>
-                        <p className="text-xs mt-2 font-mono">SELECT A READY ROOM TO JOIN //</p>
+                     <div className="flex items-center justify-center h-full text-zinc-600">
+                        <div className="text-center">
+                           <Hash className="w-16 h-16 mb-4 opacity-20" />
+                           <p className="text-sm uppercase tracking-widest">No Channel Selected</p>
+                        </div>
                      </div>
                   )
                )}
             </div>
-         </main>
+         </Panel>
 
          {/* Background Monitors */}
          {monitoredNetIds.map(netId => (
@@ -490,18 +410,18 @@ function CommsConsolePage() {
             )
          ))}
 
-         {/* Right Sidebar - Context-specific panels (no toolbox here anymore) */}
+         {/* RIGHT PANEL: Fleet / Status / AI (OPS Mode) */}
          {consoleMode === 'ops' && (
-            <div className="w-64 lg:w-72 xl:w-80 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
+            <Panel title={viewMode === 'tactical' ? 'Incidents' : 'Fleet Status'} className="w-72 flex flex-col overflow-hidden" body={false}>
                {viewMode === 'tactical' ? (
-                  <div className="h-full flex flex-col">
-                     <div className="flex-1 overflow-hidden">
+                  <>
+                     <ScrollArea className="flex-1">
                         <IncidentDashboard 
                            eventId={selectedEventId} 
                            onSelectIncident={setSelectedIncident}
                         />
-                     </div>
-                     <div className="p-3 border-t border-zinc-800">
+                     </ScrollArea>
+                     <div className="shrink-0 p-[var(--space-lg)] border-t border-[var(--divider-color)]">
                         <Button 
                            size="sm" 
                            onClick={() => setIncidentFormOpen(true)}
@@ -511,26 +431,31 @@ function CommsConsolePage() {
                            REPORT INCIDENT
                         </Button>
                      </div>
-                  </div>
+                  </>
                ) : showAIAssistant ? (
-                  <CommsAIAssistant 
-                     eventId={selectedEventId} 
-                     channelId={selectedChannel?.id}
-                     user={currentUser} 
-                  />
+                  <ScrollArea className="flex-1">
+                     <CommsAIAssistant 
+                        eventId={selectedEventId} 
+                        channelId={selectedChannel?.id}
+                        user={currentUser} 
+                     />
+                  </ScrollArea>
                ) : selectedNet ? (
-                  <div className="h-full min-h-0 overflow-auto space-y-2 p-2">
-                     <WingStatusPropagation eventId={selectedEventId} />
-                     <FleetPingSystem eventId={selectedEventId} />
-                     <FormationCallouts eventId={selectedEventId} currentNetId={selectedNet?.id} />
-                     <RallyPointManager eventId={selectedEventId} currentNetId={selectedNet?.id} />
-                     <NetDisciplineQueue netId={selectedNet?.id} />
-                  </div>
+                  <ScrollArea className="flex-1">
+                     <div className="p-[var(--space-lg)] space-y-3">
+                        <WingStatusPropagation eventId={selectedEventId} />
+                        <FleetPingSystem eventId={selectedEventId} />
+                        <FormationCallouts eventId={selectedEventId} currentNetId={selectedNet?.id} />
+                        <RallyPointManager eventId={selectedEventId} currentNetId={selectedNet?.id} />
+                        <NetDisciplineQueue netId={selectedNet?.id} />
+                     </div>
+                  </ScrollArea>
                ) : null}
-            </div>
+            </Panel>
          )}
 
-      </div>
+         </div>
+         </PageLayout>
 
       {/* Dialogs & Drawers */}
       {showSearch && <CommsSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />}
