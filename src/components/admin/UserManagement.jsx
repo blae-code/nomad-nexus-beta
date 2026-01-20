@@ -23,6 +23,7 @@ function UserEditDialog({ user, trigger }) {
       setEditData({
         rank: user.rank || 'Vagrant',
         role_tags: user.role_tags || [],
+        assigned_role_ids: user.assigned_role_ids || [],
         is_shaman: user.is_shaman || false
       });
     }
@@ -101,6 +102,45 @@ function UserEditDialog({ user, trigger }) {
           </div>
 
           <div className="space-y-2">
+            <Label className="text-xs text-zinc-400 uppercase">Assigned Roles</Label>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3 max-h-[200px] overflow-y-auto space-y-2">
+              {allRoles.length === 0 ? (
+                <div className="text-xs text-zinc-600 italic text-center py-4">
+                  No roles available. Create roles first in Role Management.
+                </div>
+              ) : (
+                allRoles.map(role => (
+                  <div
+                    key={role.id}
+                    className={cn(
+                      "p-2 rounded border cursor-pointer transition-colors",
+                      editData.assigned_role_ids?.includes(role.id)
+                        ? "bg-[#ea580c] border-[#ea580c] text-white"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                    )}
+                    onClick={() => {
+                      const roleIds = editData.assigned_role_ids || [];
+                      if (roleIds.includes(role.id)) {
+                        setEditData({ ...editData, assigned_role_ids: roleIds.filter(id => id !== role.id) });
+                      } else {
+                        setEditData({ ...editData, assigned_role_ids: [...roleIds, role.id] });
+                      }
+                    }}
+                  >
+                    <div className="font-bold text-sm">{role.name}</div>
+                    {role.description && (
+                      <div className="text-xs opacity-80">{role.description}</div>
+                    )}
+                    <div className="text-[10px] mt-1 opacity-60">
+                      {role.permissions?.length || 0} permissions
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label className="text-xs text-zinc-400 uppercase">Role Tags</Label>
             <div className="flex flex-wrap gap-2">
               {availableTags.map(tag => (
@@ -143,7 +183,23 @@ export default function UserManagement() {
     queryKey: ['all-users'],
     queryFn: async () => {
       const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
-      return allUsers;
+      
+      // Fetch roles for each user
+      const usersWithRoles = await Promise.all(
+        allUsers.map(async (user) => {
+          if (user.assigned_role_ids && user.assigned_role_ids.length > 0) {
+            const roles = await Promise.all(
+              user.assigned_role_ids.map(roleId => 
+                base44.entities.Role.get(roleId).catch(() => null)
+              )
+            );
+            return { ...user, assigned_roles: roles.filter(Boolean) };
+          }
+          return { ...user, assigned_roles: [] };
+        })
+      );
+      
+      return usersWithRoles;
     }
   });
 
@@ -239,16 +295,28 @@ export default function UserManagement() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Badge className={cn("text-[10px] uppercase", getRankColorClass(user.rank, 'bg'))}>
-                        {user.rank || 'Vagrant'}
-                      </Badge>
-                      
-                      {user.role_tags && user.role_tags.length > 0 && (
-                        <div className="flex gap-1">
-                          {user.role_tags.map((tag, idx) => (
-                            <Badge key={idx} variant="outline" className="text-[9px] border-zinc-700 text-zinc-400">
-                              {tag}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Badge className={cn("text-[10px] uppercase", getRankColorClass(user.rank, 'bg'))}>
+                          {user.rank || 'Vagrant'}
+                        </Badge>
+                        
+                        {user.role_tags && user.role_tags.length > 0 && (
+                          <div className="flex gap-1">
+                            {user.role_tags.map((tag, idx) => (
+                              <Badge key={idx} variant="outline" className="text-[9px] border-zinc-700 text-zinc-400">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {user.assigned_roles && user.assigned_roles.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {user.assigned_roles.map((role, idx) => (
+                            <Badge key={idx} className="text-[9px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50">
+                              {role.name}
                             </Badge>
                           ))}
                         </div>
