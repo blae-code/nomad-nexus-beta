@@ -56,14 +56,18 @@ export default function UserContactBook() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['all-users-contact'],
+    queryFn: async () => {
+      return await base44.entities.User.list();
+    }
+  });
+
   const { data: presences = [] } = useQuery({
     queryKey: ['user-presences-contact'],
     queryFn: async () => {
       const p = await base44.entities.UserPresence.list();
-      return p.sort((a, b) => {
-        const orderMap = { 'transmitting': 0, 'in-call': 1, 'online': 2, 'idle': 3, 'away': 4 };
-        return (orderMap[a.status] || 5) - (orderMap[b.status] || 5);
-      });
+      return p;
     },
     refetchInterval: 3000
   });
