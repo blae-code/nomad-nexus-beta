@@ -642,10 +642,10 @@ export default function CommandPaletteV3() {
               ) : (
                 Object.entries(displayCommands).map(([section, cmds]) => (
                   <div key={section}>
-                    <div className="px-3 py-2 text-[9px] font-bold text-zinc-600 uppercase tracking-wider border-t border-zinc-800/50">
-                      {section}
-                    </div>
-                    <div className="space-y-0">
+                     <div className="px-3 py-1.5 text-[9px] font-bold text-zinc-600 uppercase tracking-wider border-t border-zinc-800/50">
+                       {section}
+                     </div>
+                     <div className="space-y-0">
                        {cmds.map((cmd, idx) => {
                          const globalIdx = flatCommands.indexOf(cmd);
                          const isSelected = globalIdx === selectedIndex;
