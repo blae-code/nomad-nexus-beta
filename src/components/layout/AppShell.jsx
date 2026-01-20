@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import NavRail from '@/components/nav/NavRail';
 import ContextPanel from '@/components/layout/ContextPanel';
-import ActivityBar from '@/components/layout/ActivityBar';
 import Header from '@/components/layout/Header';
 
 /**
@@ -55,10 +54,7 @@ export default function AppShell({
         />
 
         {/* Col B: Main Content */}
-        <div className="flex flex-col overflow-hidden">
-          <ActivityBar />
-          <div className="flex-1 overflow-hidden page-shell">{children}</div>
-        </div>
+        <div className="h-full overflow-hidden page-shell flex flex-col">{children}</div>
 
         {/* Col C: Right Context Panel */}
         {showRightPanel && <ContextPanel currentPage={currentPage} user={user} />}
