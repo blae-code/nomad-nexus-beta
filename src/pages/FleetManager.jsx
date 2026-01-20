@@ -23,27 +23,27 @@ export default function FleetManagerPage() {
   });
 
   return (
-    <div className="h-full flex bg-black text-zinc-200 font-sans">
+    <div className="h-full flex bg-[#09090b] text-zinc-200 font-sans pt-14">
        {/* Left Sidebar: Asset List */}
-       <div className="w-80 shrink-0 h-full border-r border-zinc-800">
+       <div className="w-80 shrink-0 h-full border-r border-zinc-800 overflow-y-auto">
           <AssetList onSelect={setSelectedAsset} selectedId={selectedAsset?.id} />
        </div>
 
        {/* Main Content: Detail View & Map */}
        <div className="flex-1 flex flex-col min-w-0">
-          {selectedAsset ? (
-             <div className="flex-1 flex flex-col">
-                {/* Asset Header */}
-                <div className="h-16 border-b border-zinc-800 bg-zinc-950 px-6 flex items-center justify-between shrink-0">
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                         {selectedAsset.type === 'SHIP' ? <Rocket className="w-5 h-5 text-emerald-500" /> : <Activity className="w-5 h-5 text-amber-500" />}
-                      </div>
-                      <div>
-                         <h1 className="text-lg font-black uppercase tracking-wide text-white">{selectedAsset.name}</h1>
-                         <div className="text-xs font-mono text-zinc-500">{selectedAsset.model} // {selectedAsset.status}</div>
-                      </div>
-                   </div>
+           {selectedAsset ? (
+              <div className="flex-1 flex flex-col">
+                 {/* Asset Header */}
+                 <div className="h-16 border-b border-zinc-800 bg-zinc-950 px-6 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                          {selectedAsset.type === 'SHIP' ? <Rocket className="w-5 h-5 text-[#ea580c]" /> : <Activity className="w-5 h-5 text-[#ea580c]" />}
+                       </div>
+                       <div>
+                          <h1 className="text-sm font-black uppercase tracking-wider text-white">{selectedAsset.name}</h1>
+                          <div className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">{selectedAsset.model} • {selectedAsset.status}</div>
+                       </div>
+                    </div>
                    
                    <div className="flex gap-2">
                       <AssetFormDialog 
