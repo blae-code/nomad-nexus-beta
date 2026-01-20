@@ -19,11 +19,7 @@ export default function PersonalActivityWidget() {
       if (!user) return [];
       // Fetch events where user is participant or all future events for now
       // Ideally we'd filter by participation, but for now let's show upcoming events
-      return base44.entities.Event.list({
-        filter: { status: 'scheduled' },
-        sort: { start_time: 1 },
-        limit: 5
-      });
+      return base44.entities.Event.filter({ status: 'scheduled' }, 'start_time', 5);
     },
     enabled: !!user
   });
@@ -32,11 +28,7 @@ export default function PersonalActivityWidget() {
     queryKey: ['my-active-status', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const statuses = await base44.entities.PlayerStatus.list({
-        user_id: user.id,
-        sort: { last_updated: -1 },
-        limit: 1
-      });
+      const statuses = await base44.entities.PlayerStatus.filter({ user_id: user.id }, '-last_updated', 1);
       return statuses[0] || null;
     },
     enabled: !!user

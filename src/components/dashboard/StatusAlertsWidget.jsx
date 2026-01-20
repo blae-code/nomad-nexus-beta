@@ -16,10 +16,7 @@ export default function StatusAlertsWidget() {
   // 1. Rescue Alert Check (Any player in DISTRESS)
   const { data: distressSignals = [] } = useQuery({
     queryKey: ['dashboard-distress'],
-    queryFn: () => base44.entities.PlayerStatus.list({
-      filter: { status: 'DISTRESS' },
-      limit: 1
-    }),
+    queryFn: () => base44.entities.PlayerStatus.filter({ status: 'DISTRESS' }, '-last_updated', 1),
     refetchInterval: 5000
   });
   const hasRescueRequest = distressSignals.length > 0;
@@ -29,11 +26,7 @@ export default function StatusAlertsWidget() {
     queryKey: ['my-comms-status', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const statuses = await base44.entities.PlayerStatus.list({
-        user_id: user.id,
-        sort: { last_updated: -1 },
-        limit: 1
-      });
+      const statuses = await base44.entities.PlayerStatus.filter({ user_id: user.id }, '-last_updated', 1);
       return statuses[0] || null;
     },
     enabled: !!user,
@@ -52,11 +45,11 @@ export default function StatusAlertsWidget() {
       // Fetch General coffer transactions to calculate balance (since Coffer entity doesn't have balance field in schema provided)
       // Wait, the schema for Coffer doesn't have a 'balance'. I need to sum transactions.
       // Let's fetch Coffers first.
-      const coffers = await base44.entities.Coffer.list({ filter: { type: 'GENERAL' }, limit: 1 });
+      const coffers = await base44.entities.Coffer.filter({ type: 'GENERAL' }, null, 1);
       if (coffers.length === 0) return null;
       
       const cofferId = coffers[0].id;
-      const transactions = await base44.entities.CofferTransaction.list({ filter: { coffer_id: cofferId } });
+      const transactions = await base44.entities.CofferTransaction.filter({ coffer_id: cofferId });
       
       const balance = transactions.reduce((acc, tx) => acc + (tx.amount || 0), 0);
       return balance < 500000 ? balance : null;
