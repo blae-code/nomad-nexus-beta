@@ -9,7 +9,7 @@ import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft, ChevronDown } fr
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
-import { typographyClasses } from "@/components/utils/typography";
+import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import { cn } from "@/lib/utils";
 import EventForm from "@/components/events/EventForm";
 import EventCard from "@/components/events/EventCard";
@@ -93,9 +93,9 @@ function EventDetail({ id }) {
           <div className="mb-3 space-y-2">
             <button 
               onClick={() => window.location.href = createPageUrl('Events')}
-              className={cn("inline-flex items-center text-xs transition-colors hover:text-red-500", typographyClasses.labelSecondary)}
+              className={cn("inline-flex items-center transition-colors hover:text-[#ea580c]", TYPOGRAPHY.LABEL_SM)}
             >
-              <ArrowLeft className="w-3 h-3 mr-1" /> Back
+              <ArrowLeft className="w-3 h-3 mr-1" /> BACK
             </button>
             
             <div className="flex flex-col gap-2">
@@ -108,13 +108,13 @@ function EventDetail({ id }) {
                     {event.priority}
                   </Badge>
                 )}
-                <span className={cn(typographyClasses.timestamp, "text-[10px] text-zinc-400")}>
-                  OP-ID: {event.id.slice(0, 8)}
+                <span className={cn(TYPOGRAPHY.TIMESTAMP, "text-zinc-400")}>
+                   OP-ID: {event.id.slice(0, 8)}
                 </span>
               </div>
-              <h1 className={cn(typographyClasses.commandTitle, "text-2xl")}>
-                {event.title}
-              </h1>
+              <h1 className={cn(TYPOGRAPHY.H2, "text-white")}>
+                 {event.title}
+               </h1>
             </div>
 
             <EventActionBar
@@ -154,22 +154,22 @@ function EventDetail({ id }) {
                 <OpsPanelContent className="text-xs text-zinc-400 space-y-3">
                   <p className="leading-relaxed line-clamp-3">{event.description}</p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-800/50 text-[10px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-800/50">
                     <div>
-                      <div className={typographyClasses.commandLabel}>Start</div>
-                      <div className="text-zinc-200">{new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}</div>
+                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>START</div>
+                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200")}>{new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}</div>
                     </div>
                     <div>
-                      <div className={typographyClasses.commandLabel}>Time</div>
-                      <div className="text-zinc-200">{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
+                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>TIME</div>
+                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200")}>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
                     </div>
                     <div>
-                      <div className={typographyClasses.commandLabel}>Location</div>
-                      <div className="text-zinc-200 truncate">{event.location || "TBD"}</div>
+                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>LOCATION</div>
+                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200 truncate")}>{event.location || "TBD"}</div>
                     </div>
                     <div>
-                      <div className={typographyClasses.commandLabel}>CO</div>
-                      <div className="text-zinc-200 truncate">{creator?.callsign || "Unknown"}</div>
+                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>CO</div>
+                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200 truncate")}>{creator?.callsign || "Unknown"}</div>
                     </div>
                   </div>
                 </OpsPanelContent>
@@ -382,8 +382,8 @@ export default function EventsPage() {
       <div className="shrink-0 border-b border-zinc-800 px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <h2 className={cn(typographyClasses.commandTitle, "text-xl")}>Operations Board</h2>
-            <p className={cn(typographyClasses.labelSecondary, "text-[10px]")}>Upcoming missions and deployments</p>
+            <h2 className={cn(TYPOGRAPHY.H2, "text-white text-xl")}>OPERATIONS BOARD</h2>
+             <p className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500")}>Upcoming missions and deployments</p>
           </div>
           {canCreateEvent(currentUser) && (
             <Button 
