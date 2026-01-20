@@ -547,6 +547,7 @@ export default function CommandPaletteV3() {
   const getCurrentBreadcrumb = () => {
     const path = location.pathname.toLowerCase();
     const breadcrumbs = {
+      '/': 'COMMAND HUB',
       '/hub': 'COMMAND HUB',
       '/nomadopsdashboard': 'NOMAD OPS',
       '/events': 'OPERATIONS BOARD',
