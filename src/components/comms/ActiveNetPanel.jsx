@@ -662,11 +662,11 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
 
            if (audioState?.isTransmitting) {
               // Enable microphone with audio processing
-              await room.localParticipant.setMicrophoneEnabled(true, {
-                echoCancellation: audioState?.echoCancellation !== false,
-                noiseSuppression: audioState?.noiseSuppression !== false,
-                autoGainControl: true
-              });
+                 await room.localParticipant.setMicrophoneEnabled(true, {
+                   echoCancellation: audioState?.echoCancellation !== false,
+                   noiseSuppression: audioState?.noiseSuppression !== false,
+                   autoGainControl: audioState?.autoGainControl !== false
+                 });
               setTransmitting(true);
               setMicPermissionDenied(false);
            } else {
