@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Radio, Mic, ExternalLink, Volume2, VolumeX, Lock } from "lucide-react";
@@ -109,22 +109,22 @@ export default function CommsPanel({ eventId }) {
   if (isLoading) return <div className="h-32 bg-zinc-900/50 rounded animate-pulse" />;
 
   return (
-    <TerminalCard className="flex flex-col overflow-hidden">
-      <CardHeader className="pb-2 bg-zinc-900/30 border-b border-zinc-800/50 pt-4">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-sm font-black text-zinc-100 flex items-center gap-2 uppercase tracking-widest font-mono">
+    <OpsPanel className="flex flex-col overflow-hidden">
+      <OpsPanelHeader className="bg-zinc-900/30 pt-4">
+        <div className="flex justify-between items-center w-full">
+          <OpsPanelTitle className="flex items-center gap-2">
             <Radio className="w-3 h-3 text-emerald-500" />
             Redscar Comms
-          </CardTitle>
+          </OpsPanelTitle>
           <a href={createPageUrl(`CommsConsole?eventId=${eventId}`)}>
              <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-white">
                 <ExternalLink className="w-3 h-3" />
              </Button>
           </a>
         </div>
-      </CardHeader>
+      </OpsPanelHeader>
       
-      <CardContent className="p-0">
+      <div className="p-0">
         {/* Primary Net Interface */}
         <div className="p-4 bg-zinc-900/20 relative transition-colors duration-200" style={{ backgroundColor: isTransmitting ? 'rgba(127, 29, 29, 0.1)' : undefined }}>
            {/* Transmit Overlay */}
@@ -245,13 +245,13 @@ export default function CommsPanel({ eventId }) {
              })}
            </div>
         </div>
-      </CardContent>
-      <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
+        </div>
+        <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
          <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
             <span>STATUS: ONLINE</span>
             <span>ENCRYPTION: NONE</span>
          </div>
-      </div>
-    </TerminalCard>
-  );
+        </div>
+        </OpsPanel>
+        );
 }

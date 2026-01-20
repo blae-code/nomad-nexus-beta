@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -83,18 +83,18 @@ export default function EventParticipants({ eventId }) {
   return (
     <div className="space-y-6">
       {/* Summary / RSVP */}
-      <Card className="bg-zinc-900 border-zinc-800">
-         <CardHeader className="pb-3 border-b border-zinc-800">
-           <div className="flex justify-between items-center">
-             <CardTitle className="text-lg text-zinc-200 flex items-center gap-2">
+      <OpsPanel>
+         <OpsPanelHeader>
+           <div className="flex justify-between items-center w-full">
+             <OpsPanelTitle className="flex items-center gap-2">
                <Users className="w-5 h-5" /> Mission Roster
-             </CardTitle>
+             </OpsPanelTitle>
              <Badge variant="outline" className="bg-zinc-950 border-zinc-700 text-zinc-300">
                {totalParticipants} OPERATIVES
              </Badge>
            </div>
-         </CardHeader>
-         <CardContent className="pt-4">
+         </OpsPanelHeader>
+         <OpsPanelContent className="pt-4">
            {/* RSVP Action */}
            <div className="flex items-center gap-4 mb-6 p-4 bg-zinc-950/50 rounded border border-zinc-800 border-dashed">
              <div className="flex-1">
@@ -168,8 +168,8 @@ export default function EventParticipants({ eventId }) {
              ))}
            </div>
 
-         </CardContent>
-      </Card>
-    </div>
-  );
-}
+         </OpsPanelContent>
+         </OpsPanel>
+         </div>
+         );
+         }
