@@ -212,13 +212,13 @@ export default function HeaderV3() {
       </div>
 
       {/* CENTER: Command Palette Trigger */}
-      <div className="flex-1 flex items-center justify-center max-w-sm px-4">
+      <div className="flex-1 flex items-center justify-center max-w-[560px]">
         <button
           onClick={() => {
             const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
             document.dispatchEvent(event);
           }}
-          className="w-full flex items-center gap-2 px-3 h-7 border border-zinc-800 bg-zinc-900/50 text-[9px] text-zinc-400 hover:border-zinc-700 transition-colors"
+          className="w-full flex items-center gap-2 px-3 h-10 border border-zinc-800 bg-zinc-900/40 rounded-sm text-[9px] text-zinc-400 hover:border-zinc-700 focus-visible:border-[#ea580c]/50 focus-visible:ring-1 focus-visible:ring-[#ea580c]/30 transition-all duration-150"
           title="Command/Search protocols, events, nets… (Ctrl+K)"
         >
           <span className="flex-1 text-left">Command / Search protocols…</span>
