@@ -709,7 +709,7 @@ export default function CommandPaletteV3() {
             <div className="w-64 border-l border-zinc-800 bg-zinc-900/50 flex flex-col shrink-0 hidden lg:flex">
               {selectedCommand ? (
                 <>
-                  <div className="px-4 py-3 border-b border-zinc-800">
+                    <div className="px-4 py-2 border-b border-zinc-800">
                     <div className="flex items-center gap-2 mb-2">
                       {(() => {
                         const Icon = getIcon(selectedCommand.icon);
