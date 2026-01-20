@@ -23,7 +23,7 @@ export default function AppShellV3({ children, currentPage, user, showRightPanel
 
         {/* Optional right context panel */}
         {showRightPanel && (
-          <div className="w-72 h-full overflow-hidden border-l border-zinc-800 flex flex-col shrink-0">
+          <div className="w-72 h-full overflow-hidden border-l border-zinc-800 flex flex-col shrink-0 pt-14">
             <ContextPanel currentPage={currentPage} user={user} />
           </div>
         )}
