@@ -75,8 +75,8 @@ export default function EventApprovalQueue({ user }) {
         ) : (
           <ScrollArea className="h-96">
             <div className="p-4 space-y-3">
-              {pendingEvents.map(event => {
-                const creator = users.find(u => u.id === event.created_by);
+               {pendingEvents.map(event => {
+                 const creator = userById[event.created_by];
                 return (
                   <div 
                     key={event.id}
