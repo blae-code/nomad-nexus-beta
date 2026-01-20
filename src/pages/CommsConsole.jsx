@@ -124,7 +124,9 @@ function CommsConsolePage() {
     enabled: !!selectedEventId && !!currentUser
   });
 
-  const { data: voiceNets, isLoading } = useQuery({
+  const [isProvisioningNets, setIsProvisioningNets] = React.useState(false);
+  
+  const { data: voiceNets, isLoading, refetch: refetchNets } = useQuery({
     queryKey: ['voice-nets', selectedEventId],
     queryFn: async () => {
       // Always fetch all available nets - event-specific + global
@@ -136,7 +138,8 @@ function CommsConsolePage() {
         ? allNets.filter(n => !n.event_id || n.event_id === selectedEventId)
         : allNets.filter(n => !n.event_id);
     },
-    initialData: []
+    initialData: [],
+    refetchInterval: isProvisioningNets ? 1000 : false
   });
 
   // Fetch recent comms activity for indicators
