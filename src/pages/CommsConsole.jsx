@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 export default function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('eventId') || "";
+    return params.get('eventId') || null;
   });
   const [selectedNet, setSelectedNet] = React.useState(null);
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);

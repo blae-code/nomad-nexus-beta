@@ -34,10 +34,10 @@ export default function CommsEventSelector({ selectedEventId, onSelect }) {
         </SelectTrigger>
         <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
           {activeEvents.length === 0 ? (
-             <SelectItem value="none" disabled>No Active Signals</SelectItem>
+             <SelectItem value="__no_events__" disabled>No Active Signals</SelectItem>
           ) : (
              activeEvents.map(event => (
-               <SelectItem key={event.id} value={event.id}>
+               <SelectItem key={event.id} value={event.id || "__invalid__"}>
                  <div className="flex items-center gap-2">
                    <span className="font-mono text-zinc-500">[{event.start_time ? new Date(event.start_time).toLocaleDateString() : 'TBD'}]</span>
                    <span className="font-bold">{event.title}</span>
