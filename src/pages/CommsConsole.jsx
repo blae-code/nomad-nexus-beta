@@ -176,6 +176,20 @@ function CommsConsolePage() {
     initialData: {}
   });
 
+  // Auto-trigger provisioning when event selected with no nets
+  React.useEffect(() => {
+     if (selectedEventId && voiceNets.length === 0 && !isLoading && !isProvisioningNets) {
+        setIsProvisioningNets(true);
+        // Polling will handle the refresh
+        const timeout = setTimeout(() => {
+           refetchNets().then(() => {
+              setIsProvisioningNets(false);
+           });
+        }, 2000);
+        return () => clearTimeout(timeout);
+     }
+  }, [selectedEventId, voiceNets.length, isLoading, isProvisioningNets, refetchNets]);
+
   // Reset selected net when event changes to prevent stale connections
   React.useEffect(() => {
      setSelectedNet(null);
