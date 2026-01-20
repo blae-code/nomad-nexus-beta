@@ -455,28 +455,35 @@ export default function EventsPage() {
       <div className="px-6 py-6">
 
         {isLoading ? (
-           <div className="text-center py-10 text-zinc-500">RETRIEVING OPERATIONS...</div>
+           <LoadingState message="RETRIEVING OPERATIONS..." />
+         ) : events.length === 0 ? (
+          <EmptyState
+            title="No Scheduled Operations"
+            description="Initialize a new operation to begin planning."
+            action={canCreateEvent(currentUser) && (
+              <Button 
+                onClick={() => setIsCreateOpen(true)} 
+                className="bg-red-900 hover:bg-red-800 text-white text-xs"
+              >
+                INITIALIZE OPERATION
+              </Button>
+            )}
+          />
          ) : (
           <div className="grid gap-4">
-            {events.length === 0 ? (
-              <div className="text-center py-20 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-800">
-                <p className="text-zinc-500">NO SCHEDULED OPERATIONS</p>
-              </div>
-            ) : (
-              events.map((event) => {
-                const creator = allUsers.find(u => u.id === event.created_by);
-                return (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    creator={creator}
-                    onActionClick={(evt) => window.location.href = createPageUrl(`Events?id=${evt.id}`)}
-                  />
-                );
-              })
-            )}
+            {events.map((event) => {
+              const creator = allUsers.find(u => u.id === event.created_by);
+              return (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  creator={creator}
+                  onActionClick={(evt) => window.location.href = createPageUrl(`Events?id=${evt.id}`)}
+                />
+              );
+            })}
           </div>
-          )}
+         )}
           </div>
           </PageShell>
           );
