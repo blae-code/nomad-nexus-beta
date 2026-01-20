@@ -42,6 +42,21 @@ function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
+      // Validate rank change permission
+      if (data.rank !== user.rank) {
+        setValidatingPioneer(true);
+        const permResponse = await base44.functions.invoke('validateRankChangePermission', {
+          targetUserId: user.id,
+          newRank: data.rank
+        });
+        setValidatingPioneer(false);
+
+        if (!permResponse.data.permitted) {
+          setPioneerError(permResponse.data.error);
+          throw new Error(permResponse.data.error);
+        }
+      }
+
       // Validate Pioneer uniqueness before submit
       if (data.rank === 'Pioneer' && existingPioneer?.id !== user.id) {
         setValidatingPioneer(true);
