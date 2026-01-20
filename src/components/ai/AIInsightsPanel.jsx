@@ -5,11 +5,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, RefreshCw, Radio, Activity, Sparkles, AlertTriangle, Info, Lightbulb } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { refreshAgent } from "@/components/ai/aiOrchestrator";
 import AgentRuleManager from "@/components/ai/AgentRuleManager";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 import { getSeverityColor, SEVERITY_LEVELS } from "@/components/utils/severitySystem";
+import { motionAlertEntrance, motionHighlight } from "@/components/utils/motionSystem";
 
 export default function AIInsightsPanel({ eventId, compact = false }) {
   const queryClient = useQueryClient();
@@ -117,31 +119,36 @@ export default function AIInsightsPanel({ eventId, compact = false }) {
               <div className="p-2 min-h-[60px] relative">
                  {isRunning ? (
                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/50 z-10">
-                     <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+                     <Sparkles className="w-4 h-4 text-indigo-500" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
                    </div>
                  ) : findings.length > 0 ? (
-                   <div className="space-y-2">
-                      {findings.map(f => {
-                        const level = mapSeverityToLevel(f.severity);
-                        const isCritical = level === SEVERITY_LEVELS.CRITICAL;
-                        return (
-                          <div key={f.id} className={cn(
-                            "flex gap-2 p-2 border text-xs",
-                            getSeverityColor(level, 'text'),
-                            getSeverityColor(level, 'border'),
-                            getSeverityColor(level, 'bg'),
-                            isCritical && getSeverityColor(level, 'animate')
-                          )}>
-                             <div className="mt-0.5 shrink-0">{getTypeIcon(f.type)}</div>
-                             <div>
-                               <div className="font-bold leading-none mb-1">{f.summary}</div>
-                               <div className="opacity-80 font-mono leading-tight">{f.details || f.content}</div>
-                               <div className="mt-1 text-[9px] opacity-50 uppercase">{new Date(f.created_date).toLocaleTimeString()}</div>
-                             </div>
-                          </div>
-                        );
-                      })}
-                   </div>
+                   <AnimatePresence mode="popLayout">
+                      <div className="space-y-2">
+                        {findings.map(f => {
+                          const level = mapSeverityToLevel(f.severity);
+                          const isCritical = level === SEVERITY_LEVELS.CRITICAL;
+                          return (
+                            <motion.div
+                              key={f.id}
+                              {...motionAlertEntrance}
+                              className={cn(
+                                "flex gap-2 p-2 border text-xs",
+                                getSeverityColor(level, 'text'),
+                                getSeverityColor(level, 'border'),
+                                getSeverityColor(level, 'bg')
+                              )}
+                            >
+                               <div className="mt-0.5 shrink-0">{getTypeIcon(f.type)}</div>
+                               <div>
+                                 <div className="font-bold leading-none mb-1">{f.summary}</div>
+                                 <div className="opacity-80 font-mono leading-tight">{f.details || f.content}</div>
+                                 <div className="mt-1 text-[9px] opacity-50 uppercase">{new Date(f.created_date).toLocaleTimeString()}</div>
+                               </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                   </AnimatePresence>
                  ) : (
                    <div className="text-zinc-600 italic text-center py-2 text-xs">
                      No active findings.
