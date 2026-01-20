@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Radio, Plus, Zap, AlertTriangle, Phone, User, FileText, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
+import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";
@@ -117,7 +118,7 @@ export default function MissionControlPage() {
         {/* LEFT COLUMN: Next Operation + Quick Actions */}
         <OpsPanel className="w-72 lg:w-80 flex flex-col overflow-hidden shrink-0">
           <OpsPanelHeader>
-            <OpsPanelTitle>Next Operation</OpsPanelTitle>
+            <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Next Operation</OpsPanelTitle>
             {eventLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />}
           </OpsPanelHeader>
           
@@ -128,8 +129,8 @@ export default function MissionControlPage() {
                 className="p-3 border border-zinc-700 bg-zinc-900/50 hover:border-[#ea580c] transition-colors cursor-pointer"
                 onClick={() => setSelectedEventId(nextEvent.id)}
               >
-                <div className="text-xs font-bold text-white mb-1 truncate">{nextEvent.title}</div>
-                <div className="text-[9px] text-zinc-500 font-mono mb-2">
+                <div className={TYPOGRAPHY.CALLSIGN}>{nextEvent.title}</div>
+                <div className={TYPOGRAPHY.TIMESTAMP_LG}>
                   {new Date(nextEvent.start_time).toLocaleString([], { 
                     month: 'short', 
                     day: 'numeric',
@@ -137,7 +138,7 @@ export default function MissionControlPage() {
                     minute: '2-digit'
                   })}
                 </div>
-                <div className="inline-block text-[8px] px-2 py-1 bg-zinc-800 text-zinc-400 font-mono">
+                <div className={`${TYPOGRAPHY.STATUS_SM} px-2 py-1 bg-zinc-800 text-zinc-400`}>
                   {nextEvent.status.toUpperCase()}
                 </div>
               </div>
@@ -175,7 +176,7 @@ export default function MissionControlPage() {
         {/* CENTER COLUMN: Live Ops Feed */}
         <OpsPanel className="flex-1 flex flex-col overflow-hidden">
           <OpsPanelHeader>
-            <OpsPanelTitle>Live Ops Feed</OpsPanelTitle>
+            <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Live Ops Feed</OpsPanelTitle>
           </OpsPanelHeader>
           
           <OpsPanelContent className="flex-1 overflow-y-auto space-y-2">
@@ -205,7 +206,7 @@ export default function MissionControlPage() {
         {/* RIGHT COLUMN: Personal Status + Notifications */}
         <OpsPanel className="w-72 lg:w-80 flex flex-col overflow-hidden shrink-0">
           <OpsPanelHeader>
-            <OpsPanelTitle>Personal Status</OpsPanelTitle>
+            <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Personal Status</OpsPanelTitle>
           </OpsPanelHeader>
           
           <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
@@ -213,11 +214,11 @@ export default function MissionControlPage() {
             {/* User Card */}
             {user && (
               <div className="p-3 border border-zinc-700 bg-zinc-900/50">
-                <div className="text-xs font-bold text-white mb-1">
+                <div className={TYPOGRAPHY.CALLSIGN}>
                   {user.callsign || user.rsi_handle || 'OPERATIVE'}
                 </div>
-                <div className="text-[9px] text-zinc-500 font-mono mb-2">
-                  RANK: {user.rank || 'VAGRANT'}
+                <div className={TYPOGRAPHY.STATUS_SM + ' text-zinc-500 mb-2'}>
+                  Rank: {user.rank || 'VAGRANT'}
                 </div>
                 <a href={createPageUrl('Profile')} className="text-[9px] text-[#ea580c] hover:underline font-mono">
                   View Profile →
@@ -230,11 +231,11 @@ export default function MissionControlPage() {
 
             {/* Voice Status */}
             <div className="p-3 border border-zinc-700 bg-zinc-900/50">
-              <div className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-2">
+              <div className={TYPOGRAPHY.LABEL_SM + ' text-zinc-300 mb-2 flex items-center gap-2'}>
                 <Phone className="w-3 h-3 text-emerald-500" />
-                VOICE STATUS
+                Voice Status
               </div>
-              <div className="text-[9px] text-zinc-500 font-mono">
+              <div className={TYPOGRAPHY.LOG}>
                 <div>MODE: Open Push-to-Talk</div>
                 <div>AUDIO: Nominal</div>
               </div>
