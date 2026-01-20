@@ -8,6 +8,7 @@ import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-re
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
+import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import EventForm from "@/components/events/EventForm";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
@@ -159,9 +160,9 @@ function EventDetail({ id }) {
               <>
                 <OpsPanel>
                   <OpsPanelHeader>
-                    <OpsPanelTitle>Mission Briefing</OpsPanelTitle>
+                    <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Mission Briefing</OpsPanelTitle>
                   </OpsPanelHeader>
-                  <OpsPanelContent className="text-zinc-400 space-y-6">
+                  <OpsPanelContent className={`${TYPOGRAPHY.BODY_SM} text-zinc-400 space-y-6`}>
                     <p className="leading-relaxed">{event.description}</p>
 
                     {/* Objectives */}
@@ -253,7 +254,7 @@ function EventDetail({ id }) {
             {activeTab === 'timeline' && (
               <OpsPanel>
                 <OpsPanelHeader>
-                  <OpsPanelTitle>Operational Timeline</OpsPanelTitle>
+                  <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>Operational Timeline</OpsPanelTitle>
                 </OpsPanelHeader>
                 <OpsPanelContent>
                   <EventTimeline 
@@ -309,10 +310,10 @@ function EventDetail({ id }) {
 
                   {/* AAR Tab */}
                   {activeTab === 'aar' && (
-                  <OpsPanel>
-                  <OpsPanelHeader>
-                  <OpsPanelTitle>After Action Report</OpsPanelTitle>
-                  </OpsPanelHeader>
+                    <OpsPanel>
+                      <OpsPanelHeader>
+                        <OpsPanelTitle className={TYPOGRAPHY.LABEL_SM}>After Action Report</OpsPanelTitle>
+                      </OpsPanelHeader>
                   <OpsPanelContent>
                   <EventAAR eventId={event.id} eventTitle={event.title} />
                 </OpsPanelContent>
