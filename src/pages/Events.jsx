@@ -10,6 +10,8 @@ import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import { typographyClasses } from "@/components/utils/typography";
 import { cn } from "@/lib/utils";
+import PageShell from "@/components/layout/PageShell";
+import ActionBar from "@/components/layout/ActionBar";
 import EventForm from "@/components/events/EventForm";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
