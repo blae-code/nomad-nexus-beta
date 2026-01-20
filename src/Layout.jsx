@@ -124,7 +124,7 @@ export default function Layout({ children, currentPageName }) {
 
            <div className="h-8 w-[1px] bg-zinc-800" />
 
-           <a href={createPageUrl('Profile')} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors">
+           <button onClick={() => { clearAccessToken(); base44.auth.logout(); }} className="group flex items-center gap-3 cursor-pointer hover:bg-zinc-900 px-2 py-1 -mr-2 rounded transition-colors text-left">
               <div className="text-right hidden md:block">
                  <div className="text-xs font-bold text-zinc-300 group-hover:text-white">
                     {user ? (user.role === 'admin' ? "SYSTEM ADMIN" : (user.callsign || user.rsi_handle || "OPERATIVE")) : "GUEST"}
