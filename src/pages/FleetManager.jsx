@@ -51,23 +51,21 @@ export default function FleetManagerPage() {
                          onOpenChange={setIsEditOpen} 
                          asset={selectedAsset}
                          trigger={
-                            <Button variant="outline" size="sm" className="border-zinc-700 hover:border-emerald-500">
-                               <Edit className="w-4 h-4 mr-2" /> EDIT
-                            </Button>
+                            <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-zinc-800/50 bg-zinc-900/40 hover:border-[#ea580c]/50 hover:bg-zinc-900/60 transition-all duration-100 text-[9px] font-bold uppercase tracking-wider text-zinc-400 hover:text-[#ea580c]">
+                               <Edit className="w-3 h-3" /> EDIT
+                            </button>
                          } 
                       />
-                      <Button 
-                         variant="destructive" 
-                         size="sm" 
+                      <button 
                          onClick={() => {
                             if (confirm('Confirm decommissioning of this asset?')) {
                                deleteMutation.mutate(selectedAsset.id);
                             }
                          }}
-                         className="bg-red-900/20 border border-red-900 text-red-500 hover:bg-red-900/50"
+                         className="flex items-center gap-1.5 px-2.5 py-1.5 border border-red-800/50 bg-red-950/20 hover:border-red-700/50 hover:bg-red-950/40 transition-all duration-100 text-[9px] font-bold uppercase tracking-wider text-red-600 hover:text-red-500"
                       >
-                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                         <Trash2 className="w-3 h-3" /> DELETE
+                      </button>
                    </div>
                 </div>
 
