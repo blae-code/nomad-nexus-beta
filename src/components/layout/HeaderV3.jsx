@@ -236,14 +236,17 @@ export default function HeaderV3() {
   }, []);
 
   const handleStatusChange = async (newStatus) => {
-   if (!userPresence) return;
-   try {
-     await base44.entities.UserPresence.update(userPresence.id, { status: newStatus });
-     setUserPresence({ ...userPresence, status: newStatus });
-     setStatusMenuOpen(false);
-   } catch (e) {
-     console.error('Failed to update status:', e);
-   }
+    if (!userPresence) return;
+    try {
+      await base44.entities.UserPresence.update(userPresence.id, { 
+        status: newStatus,
+        last_activity: new Date().toISOString(),
+      });
+      setUserPresence({ ...userPresence, status: newStatus });
+      setStatusMenuOpen(false);
+    } catch (e) {
+      console.error('Failed to update status:', e);
+    }
   };
 
   return (
