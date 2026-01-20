@@ -15,6 +15,7 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    initializeAccessToken();
     const timer = setInterval(() => setTime(new Date()), 1000);
     base44.auth.me().then(setUser).catch(() => {});
     return () => clearInterval(timer);
