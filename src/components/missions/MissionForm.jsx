@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, User, Rocket, Flag, Plus, Trash2, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 export default function MissionForm({ mission, open, onOpenChange }) {
   const queryClient = useQueryClient();
@@ -19,11 +20,7 @@ export default function MissionForm({ mission, open, onOpenChange }) {
   const [newObjective, setNewObjective] = useState("");
 
   // Global lists for assignment
-  const { data: users } = useQuery({
-    queryKey: ['mission-users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const { users } = useUserDirectory();
 
   const { data: assets } = useQuery({
     queryKey: ['mission-assets'],

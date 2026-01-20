@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Ship, User, AlertTriangle, Radio, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 export default function TacticalMapDisplay({ eventId }) {
   const { data: assets } = useQuery({
@@ -23,11 +24,8 @@ export default function TacticalMapDisplay({ eventId }) {
     initialData: []
   });
 
-  const { data: users } = useQuery({
-    queryKey: ['tactical-users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const userIds = React.useMemo(() => playerStatuses.map(p => p.user_id).filter(Boolean), [playerStatuses]);
+  const { userById } = useUserDirectory(userIds.length > 0 ? userIds : null);
 
   const distressPersonnel = playerStatuses.filter(p => p.status === 'DISTRESS');
   const engagedPersonnel = playerStatuses.filter(p => p.status === 'ENGAGED');
@@ -108,7 +106,7 @@ export default function TacticalMapDisplay({ eventId }) {
 
       {/* Personnel on Map */}
       {playerStatuses.map((status) => {
-        const user = users.find(u => u.id === status.user_id);
+        const user = userById[status.user_id];
         const isDistress = status.status === 'DISTRESS';
         const isEngaged = status.status === 'ENGAGED';
         

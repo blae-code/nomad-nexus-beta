@@ -5,6 +5,7 @@ import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Users, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 const STATUS_COLORS = {
   online: 'bg-emerald-500',
@@ -23,16 +24,13 @@ export default function RealtimeTeamStatus() {
     refetchInterval: 2000
   });
 
-  const { data: users } = useQuery({
-    queryKey: ['team-users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: [],
-  });
+  const userIds = React.useMemo(() => presences.map(p => p.user_id).filter(Boolean), [presences]);
+  const { userById, users: userList } = useUserDirectory(userIds.length > 0 ? userIds : null);
 
   const onlineCount = presences.filter(p => p.status !== 'offline').length;
   const transmittingCount = presences.filter(p => p.is_transmitting).length;
 
-  const getUser = (userId) => users.find(u => u.id === userId);
+  const getUser = (userId) => userById[userId];
 
   return (
     <OpsPanel>
@@ -43,7 +41,7 @@ export default function RealtimeTeamStatus() {
             TEAM STATUS
           </span>
           <span className="text-[9px] font-mono text-emerald-400">
-            {onlineCount}/{users.length}
+            {onlineCount}/{userList.length}
           </span>
         </OpsPanelTitle>
       </OpsPanelHeader>

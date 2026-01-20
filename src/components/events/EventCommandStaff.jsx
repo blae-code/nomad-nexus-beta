@@ -1,6 +1,5 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 const STAFF_ROLES = [
   { key: 'commander_id', label: 'EVENT COMMANDER', description: 'Leads operation' },
@@ -24,11 +24,11 @@ const STAFF_ROLES = [
 export default function EventCommandStaff({ event, canEdit }) {
   const [staff, setStaff] = React.useState(event.command_staff || {});
 
-  const { data: users } = useQuery({
-    queryKey: ['event-staff-users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const staffUserIds = React.useMemo(() => {
+    return Object.values(event.command_staff || {}).filter(Boolean);
+  }, [event.command_staff]);
+
+  const { users } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
 
   const handleAssignRole = async (roleKey, userId) => {
     if (!canEdit) return;
