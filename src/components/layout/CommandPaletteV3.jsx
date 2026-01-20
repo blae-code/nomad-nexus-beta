@@ -723,26 +723,26 @@ export default function CommandPaletteV3() {
                   </div>
 
                   {selectedCommand.shortcut && (
-                    <div className="px-4 py-2 border-b border-zinc-800/50">
+                    <div className="px-4 py-1.5 border-b border-zinc-800/50">
                       <span className="text-[8px] text-zinc-600 uppercase">Shortcut</span>
                       <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.shortcut}</div>
                     </div>
                   )}
 
-                  <div className="px-4 py-2 border-b border-zinc-800/50">
+                  <div className="px-4 py-1.5 border-b border-zinc-800/50">
                     <span className="text-[8px] text-zinc-600 uppercase">Type</span>
                     <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.type}</div>
                   </div>
 
                   {selectedCommand.minRank && (
-                    <div className="px-4 py-2 border-b border-zinc-800/50">
+                    <div className="px-4 py-1.5 border-b border-zinc-800/50">
                       <span className="text-[8px] text-zinc-600 uppercase">Min Rank</span>
                       <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.minRank}</div>
                     </div>
                   )}
 
                   {selectedCommand.route && (
-                    <div className="px-4 py-2">
+                    <div className="px-4 py-1.5">
                       <span className="text-[8px] text-zinc-600 uppercase">Route</span>
                       <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.route}</div>
                     </div>
