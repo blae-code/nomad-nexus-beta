@@ -87,7 +87,7 @@ function UserEditDialog({ user, trigger }) {
 
           <div className="space-y-2">
             <Label className="text-xs text-[#ea580c] uppercase font-bold">Rank / Clearance</Label>
-            <Select value={editData.rank} onValueChange={(v) => setEditData({ ...editData, rank: v })}>
+            <Select value={editData.rank || 'Vagrant'} onValueChange={(v) => setEditData({ ...editData, rank: v })}>
               <SelectTrigger className="bg-zinc-900 border-zinc-800">
                 <SelectValue />
               </SelectTrigger>
