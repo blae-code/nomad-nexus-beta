@@ -126,8 +126,14 @@ export default function HubPage() {
               })}
             </div>
           </Panel>
-        </div>
-      </ScrollArea>
-    </PageLayout>
-  );
-}
+          </div>
+          </ScrollArea>
+
+          {/* Right sidebar - Voice Toolkit */}
+          <div className="w-72 shrink-0 overflow-y-auto pr-4">
+          <VoiceControlToolkit />
+          </div>
+          </div>
+          </PageLayout>
+          );
+          }
