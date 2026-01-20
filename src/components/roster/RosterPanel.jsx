@@ -154,10 +154,11 @@ export default function RosterPanel({
   if (mode === 'comms') {
     if (displayItems.length === 0) {
       return (
-        <div className="text-center py-4 text-zinc-500 text-xs italic">
-          <Radio className="w-4 h-4 mx-auto mb-1 opacity-30" />
-          No active users on frequency
-        </div>
+        <EmptyState
+          icon={Radio}
+          title="No Active Users"
+          description="Awaiting personnel on frequency."
+        />
       );
     }
 
