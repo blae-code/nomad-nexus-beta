@@ -37,6 +37,7 @@ export default function HeaderV3() {
   const [connectionStatus, setConnectionStatus] = useState('OPTIMAL');
   const [latency, setLatency] = useState(0);
   const [isVisible, setIsVisible] = useState(!document.hidden);
+  const [netDataTickActive, setNetDataTickActive] = useState(false);
   const location = useLocation();
   
   // Safe callsign/rank resolution via directory
