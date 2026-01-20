@@ -306,17 +306,26 @@ export default function VoiceNetManager() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="archived" className="m-0">
+              <TabsContent value="archived" className="m-0 space-y-4">
+                <VoiceNetFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  squads={squads}
+                />
                 <VoiceNetList
                   nets={inactiveNets}
                   netActivity={netActivity}
+                  filters={filters}
                   onEdit={(net) => {
                     setEditingNet({...net, status: 'active'});
                     setShowForm(true);
                   }}
                   onDelete={(netId) => deleteMutation.mutate(netId)}
                   onArchive={(netId) => archiveMutation.mutate(netId)}
-                  isLoading={deleteMutation.isPending || archiveMutation.isPending}
+                  onBulkArchive={(netIds) => bulkArchiveMutation.mutate(netIds)}
+                  onBulkDelete={(netIds) => bulkDeleteMutation.mutate(netIds)}
+                  onSetDefault={(netId) => setDefaultMutation.mutate(netId)}
+                  isLoading={deleteMutation.isPending || archiveMutation.isPending || bulkArchiveMutation.isPending || bulkDeleteMutation.isPending}
                 />
               </TabsContent>
             </div>
