@@ -129,7 +129,20 @@ export default function UserContactBook() {
   };
 
   const getFilteredUsers = () => {
-    let userList = presences.filter(p => p.user_id !== currentUser?.id && userDirectory[p.user_id]);
+    // Build map of presence by user ID
+    const presenceMap = {};
+    presences.forEach(p => {
+      presenceMap[p.user_id] = p;
+    });
+
+    // Start with all registered users (excluding current user)
+    let userList = allUsers
+      .filter(u => u.id !== currentUser?.id && userDirectory[u.id])
+      .map(u => ({
+        user_id: u.id,
+        status: presenceMap[u.id]?.status || 'offline',
+        is_transmitting: presenceMap[u.id]?.is_transmitting || false
+      }));
 
     // Filter by search query
     if (searchQuery) {
