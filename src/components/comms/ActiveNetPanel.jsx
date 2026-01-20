@@ -447,15 +447,44 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           // 3. Setup Event Listeners
           currentRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
              if (track.kind === Track.Kind.Audio) {
-                const element = track.attach();
-                element.style.display = 'none';
-                document.body.appendChild(element);
-                console.log(`[COMMS] Subscribed to audio from ${participant.identity}`);
+                try {
+                   const elements = track.attach();
+                   // Ensure we have valid elements
+                   if (elements && Array.isArray(elements)) {
+                      elements.forEach(el => {
+                         if (el instanceof HTMLElement) {
+                            el.style.display = 'none';
+                            el.style.visibility = 'hidden';
+                            document.body.appendChild(el);
+                         }
+                      });
+                   } else if (elements instanceof HTMLElement) {
+                      elements.style.display = 'none';
+                      elements.style.visibility = 'hidden';
+                      document.body.appendChild(elements);
+                   }
+                   console.log(`[COMMS] Subscribed to audio from ${participant.identity}`);
+                } catch (attachErr) {
+                   console.error(`[COMMS] Failed to attach audio track:`, attachErr);
+                }
              }
           });
 
           currentRoom.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-             track.detach().forEach(el => el.remove());
+             try {
+                const elements = track.detach();
+                if (elements && Array.isArray(elements)) {
+                   elements.forEach(el => {
+                      if (el instanceof HTMLElement) {
+                         el.remove();
+                      }
+                   });
+                } else if (elements instanceof HTMLElement) {
+                   elements.remove();
+                }
+             } catch (detachErr) {
+                console.error(`[COMMS] Failed to detach audio track:`, detachErr);
+             }
              console.log(`[COMMS] Unsubscribed from ${participant.identity}`);
           });
 
