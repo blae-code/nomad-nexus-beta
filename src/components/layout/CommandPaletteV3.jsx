@@ -428,7 +428,7 @@ export default function CommandPaletteV3() {
     if (cmd.type === 'NAV') {
       navigate(createPageUrl(cmd.route));
     } else if (cmd.type === 'ACTION') {
-      handleAction(cmd.handler);
+      handleAction(cmd.handler, cmd.contextId);
     }
 
     setIsOpen(false);
