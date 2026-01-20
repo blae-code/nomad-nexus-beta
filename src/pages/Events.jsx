@@ -22,6 +22,7 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import EventObjectives from "@/components/events/EventObjectives";
 import EventTimeline from "@/components/events/EventTimeline";
 import EventAAR from "@/components/events/EventAAR";
+import OpsMap from "@/components/ops/OpsMap";
 import { Rocket } from "lucide-react";
 
 function EventDetail({ id }) {
@@ -136,7 +137,7 @@ function EventDetail({ id }) {
 
         {/* Tabs */}
         <div className="flex gap-1 mb-4 border-b border-zinc-800 overflow-x-auto">
-          {['briefing', 'timeline', 'aar'].map(tab => (
+          {['briefing', 'timeline', 'aar', 'map'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -146,7 +147,7 @@ function EventDetail({ id }) {
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              {tab === 'briefing' ? 'Mission Briefing' : tab === 'timeline' ? 'Timeline' : 'After Action Report'}
+              {tab === 'briefing' ? 'Mission Briefing' : tab === 'timeline' ? 'Timeline' : tab === 'aar' ? 'After Action Report' : 'Tactical Map'}
             </button>
           ))}
         </div>
@@ -317,6 +318,13 @@ function EventDetail({ id }) {
                   <EventAAR eventId={event.id} eventTitle={event.title} />
                 </CardContent>
               </Card>
+            )}
+
+            {/* Map Tab */}
+            {activeTab === 'map' && (
+              <div style={{ height: '600px' }}>
+                <OpsMap eventId={event.id} readOnly={false} />
+              </div>
             )}
 
             </div>
