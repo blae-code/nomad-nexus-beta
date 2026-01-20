@@ -567,7 +567,7 @@ export default function CommandPaletteV3() {
 
   return (
     <>
-      <div ref={containerRef} className="relative max-w-sm">
+      <div ref={containerRef} className="relative max-w-2xl flex-1">
       {/* Main Input */}
       <div className="relative group">
         <div
