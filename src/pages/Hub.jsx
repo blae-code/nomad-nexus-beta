@@ -10,6 +10,7 @@ import PersonalActivityWidget from "@/components/dashboard/PersonalActivityWidge
 import OrgResourcesWidget from "@/components/dashboard/OrgResourcesWidget";
 import ArmoryStatusPanel from "@/components/dashboard/ArmoryStatusPanel";
 import EventCalendarView from "@/components/dashboard/EventCalendarView";
+import OpsMap from "@/components/ops/OpsMap";
 
 export default function HubPage() {
   const [user, setUser] = useState(null);
@@ -93,6 +94,16 @@ export default function HubPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2">
             <OrgResourcesWidget />
+          </div>
+        </div>
+
+        {/* Tactical Map */}
+        <div className="border border-zinc-800 bg-zinc-900/50">
+          <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800">
+            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Theater Map</h2>
+          </div>
+          <div style={{ height: '400px' }} className="p-3">
+            <OpsMap eventId={null} readOnly={true} />
           </div>
         </div>
 
