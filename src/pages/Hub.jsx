@@ -41,9 +41,11 @@ export default function HubPage() {
       subtitle={`Welcome, ${user?.callsign || user?.rsi_handle || 'Operative'}`}
       className="bg-zinc-950"
     >
-      {/* Single scrollable content region */}
-      <ScrollArea className="p-[var(--gutter)]">
-        <div className="space-y-[var(--gutter)] max-w-6xl">
+      {/* Layout with sidebar */}
+      <div className="flex gap-[var(--gutter)] h-full overflow-hidden p-[var(--gutter)]">
+        {/* Main content */}
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-[var(--gutter)]">
            {/* Quick Access Tiles */}
            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
              {quickLinks.map((link, idx) => {
