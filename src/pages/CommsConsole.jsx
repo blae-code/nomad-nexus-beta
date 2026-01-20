@@ -122,11 +122,14 @@ function CommsConsolePage() {
   const { data: voiceNets, isLoading } = useQuery({
     queryKey: ['voice-nets', selectedEventId],
     queryFn: async () => {
-      // Fetch event-specific nets if event selected, otherwise fetch global nets
-      const filter = selectedEventId 
-        ? { event_id: selectedEventId }
-        : { event_id: null };
-      return base44.entities.VoiceNet.filter(filter, 'priority', 50);
+      // Always fetch all available nets - event-specific + global
+      const allNets = await base44.entities.VoiceNet.filter({}, 'priority', 100);
+      
+      // If event selected, show both event nets and global nets
+      // If no event, show only global nets
+      return selectedEventId 
+        ? allNets.filter(n => !n.event_id || n.event_id === selectedEventId)
+        : allNets.filter(n => !n.event_id);
     },
     initialData: []
   });
