@@ -21,6 +21,8 @@ export default function AudioControls({ onStateChange, room, defaultMode = "PTT"
   // Audio processing
   const [echoCancellation, setEchoCancellation] = useState(true);
   const [noiseSuppression, setNoiseSuppression] = useState(true);
+  const [voiceActivityDetection, setVoiceActivityDetection] = useState(true);
+  const [autoGainControl, setAutoGainControl] = useState(true);
 
   // Enumerate devices
   useEffect(() => {
@@ -141,10 +143,12 @@ export default function AudioControls({ onStateChange, room, defaultMode = "PTT"
       isTransmitting,
       echoCancellation,
       noiseSuppression,
+      voiceActivityDetection,
+      autoGainControl,
       selectedMic,
       selectedOutput
     });
-  }, [mode, isMuted, isTransmitting, echoCancellation, noiseSuppression, selectedMic, selectedOutput, onStateChange]);
+  }, [mode, isMuted, isTransmitting, echoCancellation, noiseSuppression, voiceActivityDetection, autoGainControl, selectedMic, selectedOutput, onStateChange]);
 
   // Fast mute with M key
   useEffect(() => {
@@ -298,14 +302,22 @@ export default function AudioControls({ onStateChange, room, defaultMode = "PTT"
            )}
 
            {/* Audio Processing */}
-           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-800">
+           <div className="space-y-2 pt-2 border-t border-zinc-800">
              <div className="flex items-center justify-between">
-               <Label className="text-[9px] text-zinc-400 uppercase tracking-wider">Echo Cancel</Label>
+               <Label className="text-[9px] text-zinc-400 uppercase tracking-wider">Echo Cancellation</Label>
                <Switch checked={echoCancellation} onCheckedChange={setEchoCancellation} />
              </div>
              <div className="flex items-center justify-between">
-               <Label className="text-[9px] text-zinc-400 uppercase tracking-wider">Noise Suppress</Label>
+               <Label className="text-[9px] text-zinc-400 uppercase tracking-wider">Noise Suppression</Label>
                <Switch checked={noiseSuppression} onCheckedChange={setNoiseSuppression} />
+             </div>
+             <div className="flex items-center justify-between">
+               <Label className="text-[9px] text-zinc-400 uppercase tracking-wider">Voice Activity Detection</Label>
+               <Switch checked={voiceActivityDetection} onCheckedChange={setVoiceActivityDetection} />
+             </div>
+             <div className="flex items-center justify-between">
+               <Label className="text-[9px] text-zinc-400 uppercase tracking-wider">Auto Gain Control</Label>
+               <Switch checked={autoGainControl} onCheckedChange={setAutoGainControl} />
              </div>
            </div>
           </div>
