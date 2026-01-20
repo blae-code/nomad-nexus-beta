@@ -18,7 +18,7 @@ export function getUserRankValue(rank) {
 
 export function hasMinRank(user, minRank) {
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role === 'admin' || user.rank === 'Pioneer') return true;
   if (!user.rank) return false;
   if (!minRank) return true;
   return getUserRankValue(user.rank) >= getUserRankValue(minRank);
@@ -26,7 +26,7 @@ export function hasMinRank(user, minRank) {
 
 export function hasRole(user, roleTag) {
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role === 'admin' || user.rank === 'Pioneer') return true;
   if (!user.role_tags) return false;
   return user.role_tags.includes(roleTag);
 }
@@ -34,17 +34,16 @@ export function hasRole(user, roleTag) {
 // Focused Voice: Scout, Voyager, Founder, Affiliate, Pioneer
 export function canAccessFocusedVoice(user) {
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role === 'admin' || user.rank === 'Pioneer') return true;
   if (!user.rank) return false;
-  const allowedRanks = ['Scout', 'Voyager', 'Founder', 'Pioneer', 'Affiliate'];
+  const allowedRanks = ['Scout', 'Voyager', 'Founder', 'Affiliate'];
   return allowedRanks.includes(user.rank);
 }
 
 // Edit Armory/Coffer: Pioneer, Shaman
 export function canEditResources(user) {
   if (!user) return false;
-  if (user.role === 'admin') return true;
-  if (user.rank === 'Pioneer') return true;
+  if (user.role === 'admin' || user.rank === 'Pioneer') return true;
   if (user.is_shaman) return true;
   return false;
 }
@@ -83,7 +82,7 @@ export function canCreateEvent(user) {
 export function canApproveEvent(user) {
   // Pioneer, Founder, and Admin have oversight to approve events
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role === 'admin' || user.rank === 'Pioneer') return true;
   return hasMinRank(user, 'Pioneer');
 }
 
