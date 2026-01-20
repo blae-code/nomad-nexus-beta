@@ -628,7 +628,7 @@ export default function CommandPaletteV3() {
             {/* LEFT: Command List */}
             <div className="flex-1 border-r border-zinc-800 flex flex-col">
               {/* Context Line */}
-              <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 flex items-center gap-2 shrink-0">
+               <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 flex items-center gap-2 shrink-0">
                 <span className="text-[7px] text-zinc-700">[</span>
                 <span className="text-zinc-400">{getCurrentBreadcrumb()}</span>
                 <span className="text-[7px] text-zinc-700">]</span>
