@@ -55,11 +55,27 @@ export default function ModerationPanel({ channel, currentUser }) {
   });
 
   const unmuteUserMutation = useMutation({
-    mutationFn: (muteId) => base44.entities.ChannelMute.update(muteId, { is_active: false }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['channel-mutes'] });
-      toast.success("User unmuted");
-    }
+      mutationFn: async (muteId) => {
+          const mute = activeMutes.find(m => m.id === muteId);
+          const result = await base44.entities.ChannelMute.update(muteId, { is_active: false });
+
+          // Log user unmute
+          const currentUser = await base44.auth.me();
+          const mutedUser = users.find(u => u.id === mute?.user_id);
+          await AuditLogger.logUserUnmute(
+              currentUser.id,
+              currentUser.full_name || currentUser.email,
+              mute?.user_id,
+              mutedUser?.full_name || mutedUser?.email || 'Unknown',
+              channel.name
+          );
+
+          return result;
+      },
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['channel-mutes'] });
+          toast.success("User unmuted");
+      }
   });
 
   const updateRulesMutation = useMutation({
