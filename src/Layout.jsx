@@ -100,8 +100,10 @@ export default function Layout({ children, currentPageName }) {
 
       {/* AppShellV3: No left rail, palette-driven nav */}
       <AppShellV3 currentPage={currentPage} user={user}>
-        {children}
-      </AppShellV3>
+              <div className="pt-14">
+                {children}
+              </div>
+            </AppShellV3>
 
       {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
       <LayoutDebugMode />
