@@ -2,6 +2,7 @@ import React from 'react';
 import HeaderV3 from '@/components/layout/HeaderV3';
 import ContextPanel from '@/components/layout/ContextPanel';
 import NoScrollGuard from '@/components/layout/NoScrollGuard';
+import LiveSystemMetrics from '@/components/dashboard/LiveSystemMetrics';
 
 /**
  * AppShellV3: Palette-driven, header-only nav
