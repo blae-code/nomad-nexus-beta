@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, AlertCircle, Info, X, Bell, BellOff } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getSeverityColor, SEVERITY_LEVELS, getAlertSeverity } from "@/components/utils/severitySystem";
+import { motionAlertEntrance } from "@/components/utils/motionSystem";
 
 export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
   const [alerts, setAlerts] = useState([]);
@@ -168,25 +170,25 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
         </Button>
       </div>
 
-      {alerts.map(alert => {
-        const isCritical = alert.severity === SEVERITY_LEVELS.CRITICAL;
-        const isWarning = alert.severity === SEVERITY_LEVELS.WARNING;
-        const isActive = alert.severity === SEVERITY_LEVELS.ACTIVE;
-        
-        const borderColor = isCritical ? 'border-l-red-500' : isWarning ? 'border-l-orange-500' : 'border-l-yellow-500';
-        const bgColor = isCritical ? getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'bg') : isWarning ? getSeverityColor(SEVERITY_LEVELS.WARNING, 'bg') : getSeverityColor(SEVERITY_LEVELS.ACTIVE, 'bg');
-        const textColor = isCritical ? getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'text') : isWarning ? getSeverityColor(SEVERITY_LEVELS.WARNING, 'text') : getSeverityColor(SEVERITY_LEVELS.ACTIVE, 'text');
-        
-        return (
-          <Card
-            key={alert.id}
-            className={cn(
-              "border-l-4",
-              borderColor,
-              bgColor,
-              isCritical && getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'animate')
-            )}
-          >
+      <AnimatePresence mode="popLayout">
+        {alerts.map(alert => {
+          const isCritical = alert.severity === SEVERITY_LEVELS.CRITICAL;
+          const isWarning = alert.severity === SEVERITY_LEVELS.WARNING;
+          const isActive = alert.severity === SEVERITY_LEVELS.ACTIVE;
+
+          const borderColor = isCritical ? 'border-l-red-500' : isWarning ? 'border-l-orange-500' : 'border-l-yellow-500';
+          const bgColor = isCritical ? getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'bg') : isWarning ? getSeverityColor(SEVERITY_LEVELS.WARNING, 'bg') : getSeverityColor(SEVERITY_LEVELS.ACTIVE, 'bg');
+          const textColor = isCritical ? getSeverityColor(SEVERITY_LEVELS.CRITICAL, 'text') : isWarning ? getSeverityColor(SEVERITY_LEVELS.WARNING, 'text') : getSeverityColor(SEVERITY_LEVELS.ACTIVE, 'text');
+
+          return (
+            <motion.div key={alert.id} {...motionAlertEntrance}>
+              <Card
+                className={cn(
+                  "border-l-4",
+                  borderColor,
+                  bgColor
+                )}
+              >
             <CardContent className="p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 space-y-1">
@@ -216,9 +218,11 @@ export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
+            </Card>
+            </motion.div>
+            );
+            })}
+            </AnimatePresence>
+            </div>
+            );
+            }
