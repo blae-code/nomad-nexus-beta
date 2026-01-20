@@ -120,13 +120,26 @@ export default function ProfilePage() {
 
   const onSubmit = async (data) => {
     try {
+      // If rank was changed and user is not Vagrant, validate permission
+      if (data.rank !== user?.rank) {
+        const response = await base44.functions.invoke('validateRankChangePermission', {
+          targetUserId: user.id,
+          newRank: data.rank
+        });
+
+        if (!response.data.permitted) {
+          toast.error(response.data.error);
+          return;
+        }
+      }
+
       await base44.auth.updateMe({
         callsign: data.callsign,
         rsi_handle: data.rsi_handle,
         bio: data.bio,
-        rank: data.rank // Dev override only
+        ...(data.rank !== user?.rank && { rank: data.rank })
       });
-      
+
       toast.success("Profile updated successfully");
       const updatedUser = await base44.auth.me();
       setUser(updatedUser);
@@ -299,21 +312,23 @@ export default function ProfilePage() {
                             />
                          </div>
 
-                         {/* Temporary Dev Override for Rank */}
-                         <div className="grid gap-2 pt-4 border-t border-zinc-900/50">
-                            <Label htmlFor="rank" className="text-xs uppercase text-zinc-500 font-bold">Clearance Level (Dev Override)</Label>
-                            <select 
-                              {...register("rank")}
-                              className="flex h-9 w-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ea580c]"
-                            >
-                              <option value="Vagrant">Vagrant</option>
-                              <option value="Scout">Scout</option>
-                              <option value="Voyager">Voyager</option>
-                              <option value="Founder">Founder</option>
-                              <option value="Pioneer">Pioneer</option>
-                            </select>
-                            <p className="text-[10px] text-zinc-600">Dev mode: Set rank manually to access restricted systems.</p>
-                         </div>
+                         {/* Rank Selection - Only available to Vagrant on first login */}
+                         {user?.rank === 'Vagrant' && (
+                           <div className="grid gap-2 pt-4 border-t border-zinc-900/50">
+                              <Label htmlFor="rank" className="text-xs uppercase text-[#ea580c] font-bold">Initial Clearance Level</Label>
+                              <select 
+                                {...register("rank")}
+                                className="flex h-9 w-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ea580c]"
+                              >
+                                <option value="Vagrant">Vagrant</option>
+                                <option value="Scout">Scout</option>
+                                <option value="Voyager">Voyager</option>
+                                <option value="Founder">Founder</option>
+                                <option value="Pioneer">Pioneer</option>
+                              </select>
+                              <p className="text-[10px] text-zinc-600">Set your initial rank. This can only be changed by administrators or the Pioneer after registration.</p>
+                           </div>
+                         )}
 
                          <div className="pt-4 flex items-center justify-end border-t border-zinc-900">
                             <Button 
