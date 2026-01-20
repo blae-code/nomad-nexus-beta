@@ -42,6 +42,7 @@ export default function HeaderV3() {
   const [netDataTickActive, setNetDataTickActive] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [readinessState, setReadinessState] = useState('green'); // green, amber, red
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const location = useLocation();
   
   // Safe callsign/rank resolution via directory
