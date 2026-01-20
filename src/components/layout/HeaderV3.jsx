@@ -135,11 +135,14 @@ export default function HeaderV3() {
   // Fetch presence on demand (called from voice channel join)
   const fetchPresence = async () => {
     try {
-      const presences = await base44.entities.UserPresence.list();
+      const [presences, users] = await Promise.all([
+        base44.entities.UserPresence.list(),
+        base44.entities.User.list()
+      ]);
+
       const online = presences.filter((p) => p.status !== 'offline').length;
       setOnlineCount(online);
-      // Store total for display
-      window.headerTotalUsers = presences.length;
+      window.headerTotalUsers = users.length;
 
       // Get current user's presence
       if (user) {
