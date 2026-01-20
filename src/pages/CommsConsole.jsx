@@ -29,6 +29,8 @@ import CommsSearch from "@/components/comms/CommsSearch";
 import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
 import AICriticalAlertsMonitor from "@/components/comms/AICriticalAlertsMonitor";
 import ChannelManager from "@/components/comms/ChannelManager";
+import IncidentForm from "@/components/incidents/IncidentForm";
+import IncidentDashboard from "@/components/incidents/IncidentDashboard";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
