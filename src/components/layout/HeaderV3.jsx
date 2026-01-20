@@ -224,16 +224,16 @@ export default function HeaderV3() {
 
       {/* RIGHT: Telemetry + Online Count + Time + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* NET Status */}
+        {/* NET Status with refresh pulse */}
         <div
           className={cn(
-            'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase hidden lg:flex',
+            'flex items-center gap-1 px-2 h-7 border text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-200',
             connectionStatus === 'OPTIMAL'
               ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300'
               : 'bg-red-950/30 border-red-700/50 text-red-300'
           )}
         >
-          <Wifi className="w-2.5 h-2.5" />
+          <Wifi className={cn('w-2.5 h-2.5', connectionStatus === 'OPTIMAL' && 'animate-pulse')} />
           <span>{connectionStatus}</span>
           <span className="text-[8px] opacity-60">{latency}ms</span>
         </div>
