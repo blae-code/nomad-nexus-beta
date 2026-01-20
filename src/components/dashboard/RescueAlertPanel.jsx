@@ -8,11 +8,8 @@ export default function RescueAlertPanel() {
   const { data: activeRescue } = useQuery({
     queryKey: ['rescue-alert-panel'],
     queryFn: async () => {
-      const status = await base44.entities.PlayerStatus.list({
-        filter: { status: 'DISTRESS' },
-        limit: 1
-      });
-      return status.length > 0 ? status[0] : null;
+      const status = await base44.entities.PlayerStatus.filter({ status: 'DISTRESS' }, null, 1);
+      return status && status.length > 0 ? status[0] : null;
     },
     refetchInterval: 5000
   });
