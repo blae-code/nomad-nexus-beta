@@ -180,7 +180,7 @@ export default function ChatInterface({ channel, user }) {
         ) : (
           messages.map((msg) => {
             const isMe = msg.user_id === user?.id;
-            const author = authors[msg.user_id] || { full_name: 'Unknown', callsign: 'Unknown' };
+            const author = userById[msg.user_id] || { full_name: 'Unknown', callsign: 'Unknown' };
             const isOnline = onlineUsers.includes(msg.user_id);
             const isRead = msg.read_by && msg.read_by.includes(user?.id);
 
