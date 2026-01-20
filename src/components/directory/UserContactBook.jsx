@@ -181,11 +181,23 @@ export default function UserContactBook() {
     );
   };
 
-  const filteredUsers = getFilteredUsers();
+  const { online: filteredUsers, offline: offlineUsers } = getFilteredUsers();
   const allTabs = ['all', 'favorites', ...Object.keys(groups)];
 
   return (
     <div className="flex flex-col h-full space-y-2">
+      {/* Search Bar */}
+      <div className="flex items-center gap-1 px-1.5 py-1 bg-zinc-900/50 border border-zinc-800 shrink-0">
+        <Search className="w-3 h-3 text-zinc-600" />
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 bg-transparent text-[9px] text-white placeholder-zinc-600 focus:outline-none"
+        />
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto pb-2 border-b border-zinc-800 shrink-0">
         {allTabs.map(tab => (
