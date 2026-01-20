@@ -84,7 +84,7 @@ export default function AIInsightsPanel({ eventId, compact = false }) {
       <CardHeader className={cn("pb-2", compact ? "p-0 mb-4" : "")}>
         <CardTitle className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
           <Bot className="w-4 h-4 text-indigo-400" />
-          Internal Monitor
+          SYSTEM MONITOR
         </CardTitle>
       </CardHeader>
       <CardContent className={cn("space-y-4", compact ? "p-0" : "")}>
@@ -150,8 +150,8 @@ export default function AIInsightsPanel({ eventId, compact = false }) {
                       </div>
                    </AnimatePresence>
                  ) : (
-                   <div className="text-zinc-600 italic text-center py-2 text-xs">
-                     No active findings.
+                   <div className="text-zinc-600 text-center py-2 text-xs">
+                     NO FINDINGS
                    </div>
                  )}
               </div>
