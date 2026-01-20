@@ -94,6 +94,30 @@ export default function ProfilePage() {
     refetchInterval: 5000
   });
 
+  // Fetch squad memberships
+  const { data: squadMemberships = [] } = useQuery({
+    queryKey: ['user-squad-memberships', user?.id],
+    queryFn: () => base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }),
+    enabled: !!user
+  });
+
+  const { data: userSquads = [] } = useQuery({
+    queryKey: ['user-squads', squadMemberships.map(m => m.squad_id).join(',')],
+    queryFn: async () => {
+      if (squadMemberships.length === 0) return [];
+      const squads = await Promise.all(
+        squadMemberships.map(m => 
+          base44.entities.Squad.get(m.squad_id).catch(() => null)
+        )
+      );
+      return squads.filter(Boolean).map((squad, idx) => ({
+        ...squad,
+        membership: squadMemberships[idx]
+      }));
+    },
+    enabled: squadMemberships.length > 0
+  });
+
   const onSubmit = async (data) => {
     try {
       await base44.auth.updateMe({
@@ -183,6 +207,41 @@ export default function ProfilePage() {
                                   <div className="font-mono text-zinc-300 text-xs">{voiceStatus.current_location}</div>
                                </div>
                             )}
+                         </div>
+                      </CardContent>
+                   </Card>
+                )}
+
+                {/* Squad Memberships */}
+                {userSquads.length > 0 && (
+                   <Card className="bg-zinc-950 border-zinc-800">
+                      <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
+                         <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
+                            <Users className="w-4 h-4 text-[#ea580c]" />
+                            Squad Assignments
+                         </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                         <div className="space-y-3">
+                            {userSquads.map((squad) => (
+                               <div key={squad.id} className="p-3 bg-zinc-900/50 border border-zinc-800 rounded">
+                                  <div className="flex items-center justify-between mb-2">
+                                     <div className="font-bold text-white">{squad.name}</div>
+                                     <Badge className={cn(
+                                        "text-[9px]",
+                                        squad.membership.role === 'leader' ? "bg-[#ea580c] text-white" : "bg-zinc-800 text-zinc-400"
+                                     )}>
+                                        {squad.membership.role}
+                                     </Badge>
+                                  </div>
+                                  {squad.description && (
+                                     <div className="text-xs text-zinc-500">{squad.description}</div>
+                                  )}
+                                  <div className="text-[10px] text-zinc-600 mt-2">
+                                     {squad.hierarchy_level} • Joined {new Date(squad.membership.joined_date || squad.membership.created_date).toLocaleDateString()}
+                                  </div>
+                               </div>
+                            ))}
                          </div>
                       </CardContent>
                    </Card>

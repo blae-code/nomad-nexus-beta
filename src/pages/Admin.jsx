@@ -12,6 +12,7 @@ import AuditLogViewer from "@/components/admin/AuditLogViewer";
 import UserManagement from "@/components/admin/UserManagement";
 import VoiceNetControls from "@/components/admin/VoiceNetControls";
 import SystemHealthMonitor from "@/components/admin/SystemHealthMonitor";
+import SquadManagement from "@/components/admin/SquadManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasMinRank } from "@/components/permissions";
 
@@ -88,6 +89,12 @@ export default function AdminPage() {
                <Activity className="w-4 h-4 mr-2" /> System Health
              </TabsTrigger>
              <TabsTrigger 
+               value="squads"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+             >
+               <Users className="w-4 h-4 mr-2" /> Squads
+             </TabsTrigger>
+             <TabsTrigger 
                value="comms-diagnostics"
                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
              >
@@ -137,6 +144,10 @@ export default function AdminPage() {
 
            <TabsContent value="health">
               <SystemHealthMonitor />
+           </TabsContent>
+
+           <TabsContent value="squads">
+              <SquadManagement />
            </TabsContent>
 
            <TabsContent value="comms-diagnostics">
