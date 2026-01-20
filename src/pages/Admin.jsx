@@ -16,6 +16,7 @@ import SquadManagement from "@/components/admin/SquadManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasMinRank } from "@/components/permissions";
 import PageShell from "@/components/layout/PageShell";
+import EmptyState from "@/components/feedback/EmptyState";
 
 export default function AdminPage() {
   const [currentUser, setCurrentUser] = React.useState(null);
