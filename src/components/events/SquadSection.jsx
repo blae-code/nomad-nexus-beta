@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Shield } from "lucide-react";
+import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 export default function SquadSection({ eventId }) {
   // Fetch all squads
@@ -15,26 +16,22 @@ export default function SquadSection({ eventId }) {
   });
 
   // Fetch all squad members
-  const { data: members } = useQuery({
-    queryKey: ['squad-members'],
-    queryFn: () => base44.entities.SquadMember.list(),
-    initialData: []
-  });
+   const { data: members } = useQuery({
+     queryKey: ['squad-members'],
+     queryFn: () => base44.entities.SquadMember.list(),
+     initialData: []
+   });
 
-  // Fetch all users to map names
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+   const memberIds = members.map(m => m.user_id).filter(Boolean);
+   const { userById } = useUserDirectory(memberIds.length > 0 ? memberIds : null);
 
-  const getSquadMembers = (squadId) => {
-    const squadMemberRecords = members.filter(m => m.squad_id === squadId);
-    return squadMemberRecords.map(record => {
-      const user = users.find(u => u.id === record.user_id);
-      return { ...record, user };
-    }).filter(m => m.user); // Filter out if user not found
-  };
+   const getSquadMembers = (squadId) => {
+     const squadMemberRecords = members.filter(m => m.squad_id === squadId);
+     return squadMemberRecords.map(record => {
+       const user = userById[record.user_id];
+       return { ...record, user };
+     }).filter(m => m.user); // Filter out if user not found
+   };
 
   return (
     <div className="space-y-4">
