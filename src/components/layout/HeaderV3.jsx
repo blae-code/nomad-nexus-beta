@@ -81,9 +81,13 @@ export default function HeaderV3() {
         }
         setUserPresence(userPres);
 
-        // Update online count (only count valid presences)
-        const online = validPresences.filter((p) => p.status !== 'offline').length;
-        setOnlineCount(online);
+        // Count unique online users (only one presence per user)
+        const onlineUserIds = new Set(
+          validPresences
+            .filter((p) => p.status !== 'offline')
+            .map(p => p.user_id)
+        );
+        setOnlineCount(onlineUserIds.size);
       } catch (e) {
         console.error('Failed to initialize presence:', e);
       }
