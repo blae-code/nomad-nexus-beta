@@ -7,6 +7,7 @@ import { getRankColorClass } from '@/components/utils/rankUtils';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
+import CommandPaletteV3 from '@/components/layout/CommandPaletteV3';
 import { useQuery } from '@tanstack/react-query';
 
 /**
