@@ -1,7 +1,10 @@
 import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { TYPOGRAPHY } from "@/components/utils/typographySystem";
+import { cn } from "@/lib/utils";
 import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
+import Divider from "@/components/layout/Divider";
 import CommsEventSelector from "@/components/comms/CommsEventSelector";
 import NetList from "@/components/comms/NetList";
 import ActiveNetPanel from "@/components/comms/ActiveNetPanel";
@@ -261,9 +264,14 @@ function CommsConsolePage() {
          <Panel title={consoleMode === 'ops' ? 'Voice Nets' : 'Channels'} className="w-64 flex flex-col overflow-hidden">
             {consoleMode === 'ops' ? (
                <>
-                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--divider-color)] space-y-2">
+                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)]">
                      <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
-                     {selectedEventId && <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />}
+                     {selectedEventId && (
+                       <>
+                         <Divider spacing="md" />
+                         <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />
+                       </>
+                     )}
                   </div>
                   
                   <ScrollArea className="flex-1">
@@ -304,7 +312,7 @@ function CommsConsolePage() {
                </>
             ) : (
                <>
-                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--divider-color)]">
+                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)]">
                      <ChannelManager user={currentUser} />
                   </div>
                   <ScrollArea className="flex-1">
@@ -330,7 +338,7 @@ function CommsConsolePage() {
                      ) : (
                         <>
                            {/* Comms Toolbar */}
-                           <div className="shrink-0 border-b border-[var(--divider-color)]">
+                           <div className="shrink-0">
                               <CommsToolbar
                                  selectedNet={selectedNet}
                                  onSelectNet={(net) => {
@@ -346,6 +354,7 @@ function CommsConsolePage() {
                                  isTransmitting={isTransmitting}
                                  onOpenAdvanced={() => setShowAdvancedDrawer(true)}
                               />
+                              <Divider spacing="none" />
                            </div>
                            
                            {/* Active Net Chat */}
@@ -421,15 +430,18 @@ function CommsConsolePage() {
                            onSelectIncident={setSelectedIncident}
                         />
                      </ScrollArea>
-                     <div className="shrink-0 p-[var(--space-lg)] border-t border-[var(--divider-color)]">
-                        <Button 
-                           size="sm" 
-                           onClick={() => setIncidentFormOpen(true)}
-                           className="w-full bg-red-600 hover:bg-red-700 gap-2"
-                        >
-                           <AlertTriangle className="w-4 h-4" />
-                           REPORT INCIDENT
-                        </Button>
+                     <div className="shrink-0">
+                        <Divider spacing="none" />
+                        <div className="p-[var(--space-lg)]">
+                           <Button 
+                              size="sm" 
+                              onClick={() => setIncidentFormOpen(true)}
+                              className="w-full bg-red-600 hover:bg-red-700 gap-2"
+                           >
+                              <AlertTriangle className="w-4 h-4" />
+                              REPORT INCIDENT
+                           </Button>
+                        </div>
                      </div>
                   </>
                ) : showAIAssistant ? (
