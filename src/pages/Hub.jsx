@@ -14,6 +14,11 @@ import OpsMap from "@/components/ops/OpsMap";
 import QuickActionStrip from "@/components/dashboard/QuickActionStrip";
 import LiveOperationsFeed from "@/components/dashboard/LiveOperationsFeed";
 import PersonalReadinessPanel from "@/components/dashboard/PersonalReadinessPanel";
+import FleetOperationsMonitor from "@/components/ops/FleetOperationsMonitor";
+import LiveIncidentCenter from "@/components/incidents/LiveIncidentCenter";
+import RealtimeTeamStatus from "@/components/status/RealtimeTeamStatus";
+import CrisisResponseCoordinator from "@/components/ops/CrisisResponseCoordinator";
+import OperationalAnalyticsDashboard from "@/components/ops/OperationalAnalyticsDashboard";
 
 export default function HubPage() {
   const [user, setUser] = useState(null);
@@ -104,22 +109,35 @@ export default function HubPage() {
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2">
-            <OrgResourcesWidget />
-          </div>
-        </div>
+        {/* Bottom Section - Phase 7 Enhancements */}
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+           <div className="lg:col-span-2">
+             <OrgResourcesWidget />
+           </div>
+           <FleetOperationsMonitor />
+         </div>
 
-        {/* Tactical Map */}
-        <div className="border border-zinc-800 bg-zinc-900/50">
-          <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800">
-            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Theater Map</h2>
-          </div>
-          <div style={{ height: '400px' }} className="p-3">
-            <OpsMap eventId={null} readOnly={true} />
-          </div>
-        </div>
+         {/* Operations Intelligence Layer */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+           <LiveIncidentCenter />
+           <RealtimeTeamStatus />
+         </div>
+
+         {/* Crisis & Analytics */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+           <CrisisResponseCoordinator />
+           <OperationalAnalyticsDashboard />
+         </div>
+
+         {/* Tactical Map */}
+         <div className="border border-zinc-800 bg-zinc-900/50">
+           <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800">
+             <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">Theater Map</h2>
+           </div>
+           <div style={{ height: '400px' }} className="p-3">
+             <OpsMap eventId={null} readOnly={true} />
+           </div>
+         </div>
 
         </div>
       </div>
