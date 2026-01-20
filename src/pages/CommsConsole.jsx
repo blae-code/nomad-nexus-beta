@@ -28,6 +28,7 @@ import OperationalEventFeed from "@/components/comms/OperationalEventFeed";
 import CommsSearch from "@/components/comms/CommsSearch";
 import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
 import AICriticalAlertsMonitor from "@/components/comms/AICriticalAlertsMonitor";
+import ChannelManager from "@/components/comms/ChannelManager";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -339,9 +340,12 @@ function CommsConsolePage() {
             ) : (
                <>
                   {/* Ready Rooms Sidebar */}
-                  <div className="p-4 border-b border-zinc-800 bg-zinc-900/20">
-                     <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Ready Rooms</div>
-                     <div className="text-[10px] text-zinc-600 font-mono">CASUAL & PUBLIC CHANNELS</div>
+                  <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-3">
+                     <div>
+                        <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Ready Rooms</div>
+                        <div className="text-[10px] text-zinc-600 font-mono">CASUAL & PUBLIC CHANNELS</div>
+                     </div>
+                     <ChannelManager user={currentUser} />
                   </div>
                   <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
                      <ReadyRoomList 
