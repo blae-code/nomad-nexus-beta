@@ -31,6 +31,11 @@ import AICriticalAlertsMonitor from "@/components/comms/AICriticalAlertsMonitor"
 import ChannelManager from "@/components/comms/ChannelManager";
 import IncidentForm from "@/components/incidents/IncidentForm";
 import IncidentDashboard from "@/components/incidents/IncidentDashboard";
+import WingStatusPropagation from "@/components/comms/WingStatusPropagation";
+import FormationCallouts from "@/components/comms/FormationCallouts";
+import FleetPingSystem from "@/components/comms/FleetPingSystem";
+import RallyPointManager from "@/components/comms/RallyPointManager";
+import NetDisciplineQueue from "@/components/comms/NetDisciplineQueue";
 import { canAccessFocusedVoice } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -491,6 +496,14 @@ function CommsConsolePage() {
                      channelId={selectedChannel?.id}
                      user={currentUser} 
                   />
+               ) : selectedNet ? (
+                  <div className="h-full overflow-y-auto space-y-2 p-2">
+                     <WingStatusPropagation eventId={selectedEventId} />
+                     <FleetPingSystem eventId={selectedEventId} />
+                     <FormationCallouts eventId={selectedEventId} currentNetId={selectedNet?.id} />
+                     <RallyPointManager eventId={selectedEventId} currentNetId={selectedNet?.id} />
+                     <NetDisciplineQueue netId={selectedNet?.id} />
+                  </div>
                ) : (
                   <CommsToolbox user={currentUser} eventId={selectedEventId} />
                )}
