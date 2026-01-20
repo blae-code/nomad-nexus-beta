@@ -386,6 +386,13 @@ export default function CommandPaletteV3() {
     return breadcrumbs[path] || 'OPERATIONS';
   };
 
+  // Memoize icon map
+  const memoizedIconMap = useMemo(() => ({
+    ...iconMap,
+    HelpCircle,
+    AtSign,
+  }), []);
+
   return (
     <>
       <div ref={containerRef} className="relative max-w-sm">
