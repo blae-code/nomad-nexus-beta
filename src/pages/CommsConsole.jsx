@@ -341,7 +341,7 @@ function CommsConsolePage() {
                      {selectedEventId && <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />}
                   </div>
                   
-                  <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
+                  <div className="flex-1 p-2 min-h-0 overflow-auto custom-scrollbar">
                      {isLoading ? (
                         <div className="text-center text-zinc-500 py-10 text-xs font-mono animate-pulse">SCANNING NETS...</div>
                      ) : isProvisioningNets ? (
@@ -388,7 +388,7 @@ function CommsConsolePage() {
                      </div>
                      <ChannelManager user={currentUser} />
                   </div>
-                  <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
+                  <div className="flex-1 p-2 min-h-0 overflow-auto custom-scrollbar">
                      <ReadyRoomList 
                         user={currentUser} 
                         selectedChannelId={selectedChannel?.id} 
@@ -519,7 +519,7 @@ function CommsConsolePage() {
                      user={currentUser} 
                   />
                ) : selectedNet ? (
-                  <div className="h-full overflow-y-auto space-y-2 p-2">
+                  <div className="h-full min-h-0 overflow-auto space-y-2 p-2">
                      <WingStatusPropagation eventId={selectedEventId} />
                      <FleetPingSystem eventId={selectedEventId} />
                      <FormationCallouts eventId={selectedEventId} currentNetId={selectedNet?.id} />

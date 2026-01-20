@@ -245,7 +245,7 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                 />
               </div>
               
-              <div className="bg-zinc-900/20 border border-zinc-800 rounded-md overflow-hidden max-h-[70vh] overflow-y-auto">
+              <div className="bg-zinc-900/20 border border-zinc-800 rounded-md overflow-hidden min-h-0 h-80 overflow-y-auto">
                 {filteredUsers.map(user => (
                   <div 
                     key={user.id}

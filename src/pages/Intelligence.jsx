@@ -160,7 +160,7 @@ export default function IntelligencePage() {
                     <p>No logs available</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="space-y-3 h-80 min-h-0 overflow-auto">
                     {logs.map((log) => (
                       <div key={log.id} className="p-3 bg-zinc-900/50 border border-zinc-800 rounded text-xs">
                         <div className="flex items-start justify-between mb-2">
