@@ -1,32 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Bell, User as UserIcon, LogOut, Settings, Radio, Wifi } from 'lucide-react';
+import { Command, Bell, User as UserIcon, LogOut, Settings, Radio, Wifi, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import CommandPaletteV3 from './CommandPaletteV3';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 /**
- * HeaderV3: "Living Intranet" control surface
- * - Fixed 56px height
- * - Branding + Command Palette trigger
- * - NET + Presence telemetry
- * - User menu
+ * HeaderV3: Navigation & telemetry surface
+ * - Fixed 56px height (h-14)
+ * - Prominent Ctrl+K palette trigger + breadcrumb
+ * - NET status + latency + ONLINE count
+ * - "You" presence pill (Online/In-call/Transmitting)
+ * - Page visibility API pauses polling
  */
+
+const PAGE_NAMES = {
+  '/hub': 'Hub',
+  '/nomadopsdashboard': 'Mission Control',
+  '/events': 'Operations',
+  '/commsconsole': 'Comms',
+  '/intelligence': 'Intelligence',
+  '/adminconsole': 'Admin',
+  '/': 'Hub',
+};
 
 export default function HeaderV3() {
   const [time, setTime] = useState(new Date());
   const [user, setUser] = useState(null);
+  const [userPresence, setUserPresence] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState('OPTIMAL');
   const [latency, setLatency] = useState(0);
+  const [isVisible, setIsVisible] = useState(!document.hidden);
+  const location = useLocation();
 
   // Fetch user
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  // Track page visibility to pause polling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   // Update time
@@ -35,24 +58,32 @@ export default function HeaderV3() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch presence count every 15s
+  // Fetch presence count every 15s (pauses if hidden)
   useEffect(() => {
     const fetchPresence = async () => {
       try {
         const presences = await base44.entities.UserPresence.list();
         const online = presences.filter((p) => p.status !== 'offline').length;
         setOnlineCount(online);
+        
+        // Get current user's presence
+        if (user) {
+          const userPres = presences.find((p) => p.user_id === user.id);
+          setUserPresence(userPres || null);
+        }
       } catch (e) {
         console.error('Failed to fetch presence:', e);
       }
     };
 
-    fetchPresence();
-    const interval = setInterval(fetchPresence, 15000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isVisible) {
+      fetchPresence();
+      const interval = setInterval(fetchPresence, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [isVisible, user]);
 
-  // Ping for latency
+  // Ping for latency (pauses if hidden)
   useEffect(() => {
     const ping = async () => {
       const start = performance.now();
@@ -65,10 +96,12 @@ export default function HeaderV3() {
       }
     };
 
-    ping();
-    const interval = setInterval(ping, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isVisible) {
+      ping();
+      const interval = setInterval(ping, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isVisible]);
 
   const handleLogout = () => {
     setUserMenuOpen(false);
