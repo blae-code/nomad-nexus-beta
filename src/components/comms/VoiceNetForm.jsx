@@ -1,298 +1,290 @@
-import React, { useState } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Radio, Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
-export default function VoiceNetForm({ eventId }) {
-  const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    event_id: eventId || null,
-    code: "",
-    label: "",
-    type: "squad",
-    discipline: "focused",
+const RANK_OPTIONS = ['Vagrant', 'Scout', 'Recruit', 'Member', 'Specialist', 'Veteran', 'Lead', 'Officer', 'Pioneer', 'Founder'];
+const NET_TYPES = ['command', 'squad', 'support', 'general'];
+const DISCIPLINES = ['casual', 'focused'];
+
+export default function VoiceNetForm({ net = null, squads = [], onSubmit, onCancel, isLoading = false }) {
+  const [formData, setFormData] = useState(net ? {
+    code: net.code || '',
+    label: net.label || '',
+    type: net.type || 'squad',
+    discipline: net.discipline || 'casual',
+    linked_squad_id: net.linked_squad_id || '',
+    min_rank_to_tx: net.min_rank_to_tx || 'Vagrant',
+    min_rank_to_rx: net.min_rank_to_rx || 'Vagrant',
+    stage_mode: net.stage_mode || false,
+    priority: net.priority || 2,
+    allowed_role_tags: net.allowed_role_tags?.join(', ') || '',
+    is_default_for_squad: net.is_default_for_squad || false
+  } : {
+    code: '',
+    label: '',
+    type: 'squad',
+    discipline: 'casual',
+    linked_squad_id: '',
+    min_rank_to_tx: 'Vagrant',
+    min_rank_to_rx: 'Vagrant',
     stage_mode: false,
     priority: 2,
-    min_rank_to_tx: "Vagrant",
-    min_rank_to_rx: "Vagrant",
-    linked_squad_id: null,
-    status: "active"
+    allowed_role_tags: '',
+    is_default_for_squad: false
   });
 
-  const { data: events } = useQuery({
-    queryKey: ['events-for-nets'],
-    queryFn: () => base44.entities.Event.list('-start_time', 50),
-    initialData: []
-  });
+  const [errors, setErrors] = useState({});
 
-  const { data: squads } = useQuery({
-    queryKey: ['squads-for-nets'],
-    queryFn: () => base44.entities.Squad.filter({ hierarchy_level: 'squad' }),
-    initialData: []
-  });
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.code.trim()) newErrors.code = 'Code is required';
+    if (!formData.label.trim()) newErrors.label = 'Label is required';
+    if (formData.code && formData.code.length > 20) newErrors.code = 'Code must be 20 characters or less';
+    if (formData.label && formData.label.length > 100) newErrors.label = 'Label must be 100 characters or less';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.VoiceNet.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-nets'] });
-      toast.success("Voice Net created successfully");
-      // Reset form
-      setFormData({
-        event_id: eventId || null,
-        code: "",
-        label: "",
-        type: "squad",
-        discipline: "focused",
-        stage_mode: false,
-        priority: 2,
-        min_rank_to_tx: "Vagrant",
-        min_rank_to_rx: "Vagrant",
-        linked_squad_id: null,
-        status: "active"
-      });
-    },
-    onError: (error) => {
-      toast.error("Failed to create net: " + error.message);
-    }
-  });
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.event_id || !formData.code || !formData.label) {
-      toast.error("Event, Code, and Label are required");
-      return;
-    }
+    if (!validateForm()) return;
 
-    // Generate LiveKit room name
-    const roomName = `event_${formData.event_id}_net_${formData.code}_${Date.now()}`;
-    
-    const cleanedData = {
-      ...formData,
-      linked_squad_id: formData.linked_squad_id || undefined,
-      livekit_room_name: roomName
-    };
-    
-    createMutation.mutate(cleanedData);
+    try {
+      const submitData = {
+        ...formData,
+        allowed_role_tags: formData.allowed_role_tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag.length > 0),
+        priority: parseInt(formData.priority)
+      };
+      await onSubmit(submitData);
+    } catch (error) {
+      toast.error(error.message || 'Failed to save net');
+    }
   };
 
   return (
-    <Card className="bg-zinc-950 border-zinc-800">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-zinc-300">
-          <Radio className="w-5 h-5 text-[#ea580c]" />
-          Create Voice Net
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle>{net ? 'Edit Voice Net' : 'Create New Voice Net'}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Event *</Label>
-              <Select
-                value={formData.event_id || "__none__"}
-                onValueChange={(value) => setFormData({ ...formData, event_id: value === "__none__" ? null : value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
-                  <SelectValue placeholder="Select event" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Select an event...</SelectItem>
-                  {events.filter(e => e.id && String(e.id).trim()).map(event => (
-                    <SelectItem key={event.id} value={String(event.id).trim()}>
-                      {event.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Code (e.g., ALPHA) *</Label>
+            <div>
+              <Label htmlFor="code" className="text-sm font-semibold mb-2 block">
+                Net Code <span className="text-red-500">*</span>
+              </Label>
               <Input
+                id="code"
+                placeholder="e.g., COMMAND, ALPHA"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                placeholder="ALPHA"
-                className="bg-zinc-900 border-zinc-800 uppercase"
-                maxLength={12}
+                className="bg-zinc-800 border-zinc-700"
+                maxLength={20}
               />
+              {errors.code && <p className="text-xs text-red-400 mt-1">{errors.code}</p>}
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Label *</Label>
+            <div>
+              <Label htmlFor="label" className="text-sm font-semibold mb-2 block">
+                Label <span className="text-red-500">*</span>
+              </Label>
               <Input
+                id="label"
+                placeholder="e.g., Ground Team Alpha"
                 value={formData.label}
                 onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                placeholder="Ground Team A"
-                className="bg-zinc-900 border-zinc-800"
+                className="bg-zinc-800 border-zinc-700"
+                maxLength={100}
               />
+              {errors.label && <p className="text-xs text-red-400 mt-1">{errors.label}</p>}
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
+          {/* Type & Discipline */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="type" className="text-sm font-semibold mb-2 block">
+                Net Type
+              </Label>
+              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="command">Command</SelectItem>
-                  <SelectItem value="squad">Squad</SelectItem>
-                  <SelectItem value="support">Support</SelectItem>
-                  <SelectItem value="general">General</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Discipline</Label>
-              <Select
-                value={formData.discipline}
-                onValueChange={(value) => setFormData({ ...formData, discipline: value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="casual">Casual (Open access)</SelectItem>
-                  <SelectItem value="focused">Focused (Rank enforced)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Priority</Label>
-              <Select
-                value={formData.priority.toString()}
-                onValueChange={(value) => setFormData({ ...formData, priority: parseInt(value) })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 - Command (Highest)</SelectItem>
-                  <SelectItem value="2">2 - Tactical</SelectItem>
-                  <SelectItem value="3">3 - Support</SelectItem>
-                  <SelectItem value="4">4 - General</SelectItem>
-                  <SelectItem value="5">5 - Lowest</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Min Rank to Transmit</Label>
-              <Select
-                value={formData.min_rank_to_tx}
-                onValueChange={(value) => setFormData({ ...formData, min_rank_to_tx: value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Vagrant">Vagrant</SelectItem>
-                  <SelectItem value="Scout">Scout</SelectItem>
-                  <SelectItem value="Voyager">Voyager</SelectItem>
-                  <SelectItem value="Founder">Founder</SelectItem>
-                  <SelectItem value="Pioneer">Pioneer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Min Rank to Receive</Label>
-              <Select
-                value={formData.min_rank_to_rx}
-                onValueChange={(value) => setFormData({ ...formData, min_rank_to_rx: value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Vagrant">Vagrant</SelectItem>
-                  <SelectItem value="Scout">Scout</SelectItem>
-                  <SelectItem value="Voyager">Voyager</SelectItem>
-                  <SelectItem value="Founder">Founder</SelectItem>
-                  <SelectItem value="Pioneer">Pioneer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Linked Squad (Optional)</Label>
-              <Select
-                value={formData.linked_squad_id || "__none__"}
-                onValueChange={(value) => setFormData({ ...formData, linked_squad_id: value === "__none__" ? null : value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
-                  <SelectValue placeholder="None" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">None</SelectItem>
-                  {squads.filter(s => s.id && String(s.id).trim()).map(squad => (
-                    <SelectItem key={squad.id} value={String(squad.id).trim()}>
-                      {squad.name}
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {NET_TYPES.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
-              >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
+            <div>
+              <Label htmlFor="discipline" className="text-sm font-semibold mb-2 block">
+                Discipline
+              </Label>
+              <Select value={formData.discipline} onValueChange={(value) => setFormData({ ...formData, discipline: value })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {DISCIPLINES.map(disc => (
+                    <SelectItem key={disc} value={disc}>
+                      {disc.charAt(0).toUpperCase() + disc.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded">
-            <Switch
-              checked={formData.stage_mode}
-              onCheckedChange={(checked) => setFormData({ ...formData, stage_mode: checked })}
-            />
-            <div>
-              <Label className="text-xs text-zinc-300">Stage Mode</Label>
-              <p className="text-[10px] text-zinc-500">Only commanders can grant TX permission</p>
+          {/* Squad Assignment */}
+          <div>
+            <Label htmlFor="squad" className="text-sm font-semibold mb-2 block">
+              Assign to Squad (Optional)
+            </Label>
+            <Select value={formData.linked_squad_id} onValueChange={(value) => setFormData({ ...formData, linked_squad_id: value })}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="No squad assigned" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectItem value={null}>None</SelectItem>
+                {squads.map(squad => (
+                  <SelectItem key={squad.id} value={squad.id}>
+                    {squad.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Rank Requirements */}
+          <div className="space-y-4 p-4 bg-zinc-950/50 border border-zinc-800 rounded">
+            <div className="text-sm font-semibold text-zinc-300">Rank Requirements</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="minRankRx" className="text-xs font-semibold mb-2 block">
+                  Minimum Rank to Receive (RX)
+                </Label>
+                <Select value={formData.min_rank_to_rx} onValueChange={(value) => setFormData({ ...formData, min_rank_to_rx: value })}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    {RANK_OPTIONS.map(rank => (
+                      <SelectItem key={rank} value={rank}>
+                        {rank}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="minRankTx" className="text-xs font-semibold mb-2 block">
+                  Minimum Rank to Transmit (TX)
+                </Label>
+                <Select value={formData.min_rank_to_tx} onValueChange={(value) => setFormData({ ...formData, min_rank_to_tx: value })}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    {RANK_OPTIONS.map(rank => (
+                      <SelectItem key={rank} value={rank}>
+                        {rank}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="w-full bg-[#ea580c] hover:bg-[#c2410c]"
-          >
-            {createMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Voice Net
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          {/* Advanced Options */}
+          <div className="space-y-4 p-4 bg-zinc-950/50 border border-zinc-800 rounded">
+            <div className="text-sm font-semibold text-zinc-300">Advanced Options</div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-semibold">Stage Mode</Label>
+                <p className="text-[10px] text-zinc-400 mt-1">Only commanders can grant TX permission</p>
+              </div>
+              <Switch
+                checked={formData.stage_mode}
+                onCheckedChange={(checked) => setFormData({ ...formData, stage_mode: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-semibold">Default for Squad</Label>
+                <p className="text-[10px] text-zinc-400 mt-1">Auto-join squad members to this net</p>
+              </div>
+              <Switch
+                checked={formData.is_default_for_squad}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_default_for_squad: checked })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="priority" className="text-xs font-semibold mb-2 block">
+                Priority (1=Highest, 3=Lowest)
+              </Label>
+              <Select value={String(formData.priority)} onValueChange={(value) => setFormData({ ...formData, priority: parseInt(value) })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectItem value="1">1 - Command (Highest)</SelectItem>
+                  <SelectItem value="2">2 - Standard</SelectItem>
+                  <SelectItem value="3">3 - Chatter (Lowest)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="roles" className="text-xs font-semibold mb-2 block">
+                Allowed Role Tags (comma-separated, optional)
+              </Label>
+              <Input
+                id="roles"
+                placeholder="e.g., MEDIC, LEAD, SPECIALIST"
+                value={formData.allowed_role_tags}
+                onChange={(e) => setFormData({ ...formData, allowed_role_tags: e.target.value })}
+                className="bg-zinc-800 border-zinc-700 text-xs"
+              />
+              <p className="text-[10px] text-zinc-400 mt-1">Leave empty for all roles</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Form Actions */}
+      <div className="flex gap-3 justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-emerald-900 hover:bg-emerald-800"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Saving...' : (net ? 'Update Net' : 'Create Net')}
+        </Button>
+      </div>
+    </form>
   );
 }
