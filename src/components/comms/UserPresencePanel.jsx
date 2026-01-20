@@ -30,11 +30,7 @@ export default function UserPresencePanel({ netId, eventId }) {
     enabled: !!netId
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users-for-presence'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: []
-  });
+  const { users, userById } = useUserDirectory();
 
   // Real-time subscription
   useEffect(() => {
