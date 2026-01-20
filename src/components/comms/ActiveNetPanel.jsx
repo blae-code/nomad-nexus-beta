@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone, MicOff, Volume2 } from "lucide-react";
 import NetStatusBar from "@/components/comms/NetStatusBar";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import VolumeControls from "@/components/comms/VolumeControls";
 import UserPresencePanel from "./UserPresencePanel";
 import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
 import { usePresence } from "@/components/comms/usePresence";
+import NetChannelChat from "@/components/comms/NetChannelChat";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -332,6 +334,17 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const [accessDenied, setAccessDenied] = React.useState(false);
   const [accessReason, setAccessReason] = React.useState("");
   const [hasTemporaryTx, setHasTemporaryTx] = React.useState(false);
+  const [selectedChannel, setSelectedChannel] = React.useState(null);
+
+  // Fetch channels for this net
+  const { data: channels = [] } = useQuery({
+    queryKey: ['net-channels', net?.id],
+    queryFn: async () => {
+      if (!net?.id) return [];
+      return base44.entities.Channel.filter({ squad_id: net.id });
+    },
+    enabled: !!net?.id
+  });
 
   const [room, setRoom] = useState(null);
   const roomRef = useRef(null);
@@ -753,7 +766,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const participantCount = room?.remoteParticipants?.size || 0;
 
   return (
-    <div className="h-full flex flex-col gap-6">
+    <div className="h-full flex flex-col gap-4">
       
       {/* Connection Error Banner */}
       <AnimatePresence>
@@ -963,71 +976,114 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
              isConnected={connectionState === 'connected'}
            />
 
-           {/* Roster & Logs */}
-           <TerminalCard className="flex-1 flex flex-col overflow-hidden">
-           <ScrollArea className="flex-1 p-4">
-            <div className="space-y-6">
-               {/* Active Users on This Net */}
-               <div>
-                  <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 mb-3 border-b border-zinc-800">
-                     <Radio className="w-3 h-3" />
-                     Active on Frequency ({participants.length})
-                  </div>
-                  <UserPresencePanel netId={net.id} eventId={eventId} />
+           {/* Tabs: Roster & Chat */}
+           <div className="flex-1 flex flex-col overflow-hidden">
+             {/* Channel Tabs */}
+             {channels.length > 0 && (
+               <div className="flex items-center gap-1 px-4 pt-3 border-b border-zinc-800 overflow-x-auto">
+                 <button
+                   onClick={() => setSelectedChannel(null)}
+                   className={cn(
+                     'px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors',
+                     !selectedChannel
+                       ? 'text-white border-b-2 border-[#ea580c]'
+                       : 'text-zinc-500 hover:text-zinc-300'
+                   )}
+                 >
+                   Roster
+                 </button>
+                 {channels.map(ch => (
+                   <button
+                     key={ch.id}
+                     onClick={() => setSelectedChannel(ch)}
+                     className={cn(
+                       'px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors',
+                       selectedChannel?.id === ch.id
+                         ? 'text-white border-b-2 border-[#ea580c]'
+                         : 'text-zinc-500 hover:text-zinc-300'
+                     )}
+                   >
+                     #{ch.name}
+                   </button>
+                 ))}
                </div>
+             )}
 
-               {/* Roster */}
-               <NetRoster 
-                  net={net} 
-                  eventId={eventId} 
-                  currentUserState={audioState} 
-                  onWhisper={handleWhisper}
-                  room={room}
+             {/* Content */}
+             {selectedChannel ? (
+               <NetChannelChat 
+                 channel={selectedChannel} 
+                 netCode={net.code}
+                 user={user}
                />
+             ) : (
+               <TerminalCard className="flex-1 flex flex-col overflow-hidden">
+                 <ScrollArea className="flex-1 p-4">
+                   <div className="space-y-6">
+                     {/* Active Users on This Net */}
+                     <div>
+                       <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 mb-3 border-b border-zinc-800">
+                         <Radio className="w-3 h-3" />
+                         Active on Frequency ({participants.length})
+                       </div>
+                       <UserPresencePanel netId={net.id} eventId={eventId} />
+                     </div>
 
-               {/* Comms Log */}
-               <CommsLog eventId={eventId} />
-            </div>
-           </ScrollArea>
+                     {/* Roster */}
+                     <NetRoster 
+                       net={net} 
+                       eventId={eventId} 
+                       currentUserState={audioState} 
+                       onWhisper={handleWhisper}
+                       room={room}
+                     />
+
+                     {/* Comms Log */}
+                     <CommsLog eventId={eventId} />
+                   </div>
+                 </ScrollArea>
          <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
-            <div className="w-full flex justify-between text-[9px] text-zinc-500 font-mono">
-               <span className={cn(
-                  connectionState === "connected" ? "text-emerald-500" :
-                  connectionState === "reconnecting" ? "text-amber-500 animate-pulse" :
-                  connectionState === "failed" ? "text-red-500" :
-                  "text-zinc-500"
-               )}>
-                  STATUS: {
-                     connectionState === "connected" ? "CONNECTED (SECURE)" :
-                     connectionState === "reconnecting" ? "RECONNECTING..." :
-                     connectionState === "failed" ? "FAILED" :
-                     connectionState === "connecting" ? "HANDSHAKE..." :
-                     "OFFLINE"
-                  }
-               </span>
-               <div className="flex gap-4">
-                  {connectionState === "connected" && (
-                     <>
-                        <span className="text-emerald-600">PEERS: {participantCount + 1}</span>
-                        <span className={cn(
-                           connectionQuality.quality === 'excellent' ? "text-emerald-600" :
-                           connectionQuality.quality === 'good' ? "text-yellow-600" :
-                           connectionQuality.quality === 'poor' ? "text-red-600" :
-                           "text-zinc-600"
-                        )}>
-                           Q: {connectionQuality.quality?.toUpperCase() || 'UNKNOWN'}
-                        </span>
-                        {connectionQuality.packetLoss > 2 && (
-                           <span className="text-amber-600 animate-pulse">LOSS: {connectionQuality.packetLoss}%</span>
-                        )}
-                     </>
-                  )}
-                  {livekitUrl && <span className="hidden md:inline text-zinc-500">UPLINK: {livekitUrl.split('://')[1]}</span>}
-                  <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
-               </div>
-            </div>
+           <div className="w-full flex justify-between text-[9px] text-zinc-500 font-mono">
+             <span className={cn(
+               connectionState === "connected" ? "text-emerald-500" :
+               connectionState === "reconnecting" ? "text-amber-500 animate-pulse" :
+               connectionState === "failed" ? "text-red-500" :
+               "text-zinc-500"
+             )}>
+               STATUS: {
+                 connectionState === "connected" ? "CONNECTED (SECURE)" :
+                 connectionState === "reconnecting" ? "RECONNECTING..." :
+                 connectionState === "failed" ? "FAILED" :
+                 connectionState === "connecting" ? "HANDSHAKE..." :
+                 "OFFLINE"
+               }
+             </span>
+             <div className="flex gap-4">
+               {connectionState === "connected" && (
+                 <>
+                   <span className="text-emerald-600">PEERS: {participantCount + 1}</span>
+                   <span className={cn(
+                     connectionQuality.quality === 'excellent' ? "text-emerald-600" :
+                     connectionQuality.quality === 'good' ? "text-yellow-600" :
+                     connectionQuality.quality === 'poor' ? "text-red-600" :
+                     "text-zinc-600"
+                   )}>
+                     Q: {connectionQuality.quality?.toUpperCase() || 'UNKNOWN'}
+                   </span>
+                   {connectionQuality.packetLoss > 2 && (
+                     <span className="text-amber-600 animate-pulse">LOSS: {connectionQuality.packetLoss}%</span>
+                   )}
+                 </>
+               )}
+               {livekitUrl && <span className="hidden md:inline text-zinc-500">UPLINK: {livekitUrl.split('://')[1]}</span>}
+               <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
+             </div>
+           </div>
          </div>
-      </TerminalCard>
-    </div>
-  );
-}
+         </TerminalCard>
+         )}
+         </div>
+         </TerminalCard>
+         </div>
+         );
+         }
