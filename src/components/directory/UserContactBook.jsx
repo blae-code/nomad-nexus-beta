@@ -255,14 +255,43 @@ export default function UserContactBook() {
       )}
 
       {/* User List */}
-      <div className="flex-1 min-h-0 space-y-1.5 overflow-y-auto">
-        {filteredUsers.length === 0 ? (
-          <div className="text-[10px] text-zinc-600 px-1 py-2">
-            {activeTab === 'favorites' ? 'No favorites yet' : 'No users online'}
-          </div>
-        ) : (
-          filteredUsers.map(presence => renderUserRow(presence))
-        )}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="space-y-1.5">
+          {/* Online Users */}
+          {filteredUsers.length > 0 && (
+            <>
+              <div className="text-[8px] font-bold uppercase text-zinc-600 px-1 py-1.5 sticky top-0 bg-zinc-950 border-b border-zinc-800">
+                ONLINE ({filteredUsers.length})
+              </div>
+              {filteredUsers.map(presence => renderUserRow(presence))}
+            </>
+          )}
+
+          {/* Offline Users Toggle */}
+          {offlineUsers.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowOffline(!showOffline)}
+                className="w-full text-[8px] font-bold uppercase text-zinc-600 hover:text-zinc-400 px-1 py-1.5 border-b border-zinc-800 transition-colors text-left"
+              >
+                {showOffline ? '▼' : '▶'} OFFLINE ({offlineUsers.length})
+              </button>
+
+              {showOffline && (
+                <div className="space-y-1.5">
+                  {offlineUsers.map(presence => renderUserRow(presence))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Empty State */}
+          {filteredUsers.length === 0 && offlineUsers.length === 0 && (
+            <div className="text-[10px] text-zinc-600 px-1 py-2">
+              {searchQuery ? 'No users found' : activeTab === 'favorites' ? 'No favorites yet' : 'No users'}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Group Management Dropdown */}
