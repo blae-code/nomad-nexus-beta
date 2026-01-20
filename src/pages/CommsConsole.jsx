@@ -103,7 +103,7 @@ function CommsConsolePage() {
        }
 
        // 2. Fallback to Global Squad
-       const memberships = await base44.entities.SquadMember.list({ user_id: currentUser.id });
+       const memberships = await base44.entities.SquadMembership.filter({ user_id: currentUser.id });
        if (memberships.length > 0) {
           setUserSquadId(memberships[0].squad_id);
           return memberships[0].squad_id;

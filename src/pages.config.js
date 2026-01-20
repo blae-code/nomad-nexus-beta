@@ -3,9 +3,7 @@ import Channels from './pages/Channels';
 import CommsConsole from './pages/CommsConsole';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
-import Home from './pages/Home';
 import Hub from './pages/Hub';
-import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
 import Profile from './pages/Profile';
@@ -23,9 +21,7 @@ export const PAGES = {
     "CommsConsole": CommsConsole,
     "Events": Events,
     "FleetManager": FleetManager,
-    "Home": Home,
     "Hub": Hub,
-    "MissionControl": MissionControl,
     "NomadOpsDashboard": NomadOpsDashboard,
     "NotificationSettings": NotificationSettings,
     "Profile": Profile,
