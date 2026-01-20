@@ -77,295 +77,271 @@ function EventDetail({ id }) {
     );
   }
 
+  // Collapse state for long sections
+  const [expandedSections, setExpandedSections] = useState({
+    objectives: false,
+    assets: false,
+    participants: false
+  });
+
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="container mx-auto max-w-full px-3 py-3 lg:px-4 lg:py-4">
+        <div className="max-w-7xl mx-auto px-3 py-2 lg:px-4 lg:py-3">
         
-        {/* Header / Nav */}
-        <div className="mb-4">
-          <a href={createPageUrl('Events')} className={cn("inline-flex items-center mb-4 transition-colors hover:text-red-500", typographyClasses.labelSecondary)}>
-            <ArrowLeft className="w-3 h-3 mr-1" /> Back to Operations
-          </a>
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-             <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Badge variant="outline" className={getSeverityBadge(
-                      event.event_type === 'focused' ? 'critical' : 'nominal'
-                  )}>
-                    {event.event_type.toUpperCase()}
-                  </Badge>
-                  {event.priority && (
-                     <Badge variant="outline" className={getSeverityBadge(
-                        getPrioritySeverity(event.priority)
-                     )}>
-                        {event.priority}
-                     </Badge>
-                  )}
-                  <span className={cn(typographyClasses.timestamp, "text-zinc-400")}>OP-ID: {event.id.slice(0,8)}</span>
-                </div>
-                <h1 className={cn(typographyClasses.commandTitle, "text-4xl")}>
-                  {event.title}
-                </h1>
-             </div>
-             
-             {creator && (
-               <div className="text-right">
-                 <div className={typographyClasses.commandLabel}>Commanding Officer</div>
-                 <div className={typographyClasses.callsign}>{creator.callsign || creator.rsi_handle || creator.email}</div>
-               </div>
-             )}
-          </div>
-          
-          <EventActionBar
-            event={event}
-            currentUser={currentUser}
-            onModify={() => setIsEditOpen(true)}
-            className="mb-4"
-          />
-          <EventForm 
-            event={event} 
-            open={isEditOpen} 
-            onOpenChange={setIsEditOpen} 
-          />
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 border-b border-zinc-800 overflow-x-auto">
-          {['briefing', 'timeline', 'aar', 'map'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn("px-4 py-2 transition-colors", typographyClasses.commandLabel, {
-                'text-[#ea580c] border-b-2 border-[#ea580c]': activeTab === tab,
-                'text-zinc-500 hover:text-zinc-300': activeTab !== tab
-              })}
+          {/* Compact Header */}
+          <div className="mb-3 space-y-2">
+            <button 
+              onClick={() => window.location.href = createPageUrl('Events')}
+              className={cn("inline-flex items-center text-xs transition-colors hover:text-red-500", typographyClasses.labelSecondary)}
             >
-              {tab === 'briefing' ? 'Mission Briefing' : tab === 'timeline' ? 'Timeline' : tab === 'aar' ? 'After Action Report' : 'Tactical Map'}
+              <ArrowLeft className="w-3 h-3 mr-1" /> Back
             </button>
-          ))}
-        </div>
+            
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={getSeverityBadge(event.event_type === 'focused' ? 'critical' : 'nominal')} size="sm">
+                  {event.event_type.toUpperCase()}
+                </Badge>
+                {event.priority && (
+                  <Badge variant="outline" className={getSeverityBadge(getPrioritySeverity(event.priority))} size="sm">
+                    {event.priority}
+                  </Badge>
+                )}
+                <span className={cn(typographyClasses.timestamp, "text-[10px] text-zinc-400")}>
+                  OP-ID: {event.id.slice(0, 8)}
+                </span>
+              </div>
+              <h1 className={cn(typographyClasses.commandTitle, "text-2xl")}>
+                {event.title}
+              </h1>
+            </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+            <EventActionBar
+              event={event}
+              currentUser={currentUser}
+              onModify={() => setIsEditOpen(true)}
+              className="inline-flex gap-2"
+            />
+            <EventForm 
+              event={event} 
+              open={isEditOpen} 
+              onOpenChange={setIsEditOpen} 
+            />
+          </div>
 
-          {/* Main Content Column */}
-          <div className="lg:col-span-2 space-y-3">
+          {/* Compact Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-3">
+            <TabsList className="h-8 gap-1">
+              {[
+                { id: 'briefing', label: 'Briefing' },
+                { id: 'timeline', label: 'Timeline' },
+                { id: 'aar', label: 'AAR' },
+                { id: 'map', label: 'Tactical' }
+              ].map(tab => (
+                <TabsTrigger key={tab.id} value={tab.id} className="text-[10px] h-7 px-2">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-            {/* Mission Details */}
-            {activeTab === 'briefing' && (
-              <>
-                <OpsPanel>
-                  <OpsPanelHeader>
-                    <OpsPanelTitle>Mission Briefing</OpsPanelTitle>
-                  </OpsPanelHeader>
-                  <OpsPanelContent className="text-zinc-400 space-y-6">
-                    <p className="leading-relaxed">{event.description}</p>
-
-                    {/* Objectives */}
-                    <EventObjectives 
-                       event={event} 
-                       users={allUsers} 
-                       assets={allAssets} 
-                       canEdit={true} 
-                    />
-
-                    {/* Assigned Assets */}
-                    {event.assigned_asset_ids && event.assigned_asset_ids.length > 0 && (
-                       <div className="pt-4 border-t border-zinc-800/50">
-                          <h4 className="text-xs font-bold text-zinc-500 uppercase mb-3 flex items-center gap-2">
-                             <Rocket className="w-3 h-3" /> Deployed Assets
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                             {allAssets.filter(a => event.assigned_asset_ids.includes(a.id)).map(asset => (
-                                <div key={asset.id} className="flex items-center gap-3 p-2 bg-zinc-950/50 border border-zinc-800/50">
-                                   <div className="w-8 h-8 bg-blue-900/10 flex items-center justify-center text-blue-500 border border-blue-900/20">
-                                      <Rocket className="w-4 h-4" />
-                                   </div>
-                                   <div>
-                                      <div className="text-xs font-bold text-zinc-200">{asset.name}</div>
-                                      <div className="text-[10px] text-zinc-500 uppercase">{asset.model}</div>
-                                   </div>
-                                </div>
-                             ))}
-                          </div>
-                       </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-4 h-4 text-red-500" />
-                        <div>
-                          <div className={typographyClasses.commandLabel}>Date</div>
-                          <div className={cn(typographyClasses.timestamp, "text-sm text-zinc-200")}>
-                            {new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-red-500" />
-                        <div>
-                          <div className={typographyClasses.commandLabel}>Start Time</div>
-                          <div className={cn(typographyClasses.timestamp, "text-sm text-zinc-200")}>
-                            {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                          </div>
-                        </div>
-                      </div>
-                      {event.end_time && (
-                        <div className="flex items-center gap-3">
-                          <Clock className="w-4 h-4 text-amber-500" />
-                          <div>
-                            <div className={typographyClasses.commandLabel}>End Time</div>
-                            <div className={cn(typographyClasses.timestamp, "text-sm text-zinc-200")}>
-                              {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 col-span-full">
-                        <MapPin className="w-4 h-4 text-red-500" />
-                        <div>
-                          <div className={typographyClasses.commandLabel}>Location</div>
-                          <div className={cn(typographyClasses.bodyLarge)}>{event.location || "Classified"}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </OpsPanelContent>
-                  </OpsPanel>
-
-                  {/* Participants & Roles */}
-                  <EventParticipants eventId={event.id} />
-
-                  {/* Phase Gates & Readiness */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <EventPhaseGates event={event} canEdit={canEditEvent(currentUser, event)} />
-                          <EventReadinessChecklist event={event} canEdit={canEditEvent(currentUser, event)} />
-                        </div>
-
-                        {/* Command Staff & Squads */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <EventCommandStaff event={event} canEdit={canEditEvent(currentUser, event)} />
-                          <SquadManager eventId={event.id} />
-                        </div>
-
-                        {/* Communication Logs */}
-                        <EventCommunicationLogs eventId={event.id} />
-
-                        {/* Post-Event Analysis */}
-                        <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
-                  </>
-                  )}
-
-            {/* Timeline Tab */}
-            {activeTab === 'timeline' && (
+            {/* Briefing Tab - Collapsible sections */}
+            <TabsContent value="briefing" className="space-y-2 mt-3">
               <OpsPanel>
                 <OpsPanelHeader>
-                  <OpsPanelTitle>Operational Timeline</OpsPanelTitle>
+                  <OpsPanelTitle>Op Summary</OpsPanelTitle>
                 </OpsPanelHeader>
-                <OpsPanelContent>
+                <OpsPanelContent className="text-xs text-zinc-400 space-y-3">
+                  <p className="leading-relaxed line-clamp-3">{event.description}</p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-800/50 text-[10px]">
+                    <div>
+                      <div className={typographyClasses.commandLabel}>Start</div>
+                      <div className="text-zinc-200">{new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}</div>
+                    </div>
+                    <div>
+                      <div className={typographyClasses.commandLabel}>Time</div>
+                      <div className="text-zinc-200">{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
+                    </div>
+                    <div>
+                      <div className={typographyClasses.commandLabel}>Location</div>
+                      <div className="text-zinc-200 truncate">{event.location || "TBD"}</div>
+                    </div>
+                    <div>
+                      <div className={typographyClasses.commandLabel}>CO</div>
+                      <div className="text-zinc-200 truncate">{creator?.callsign || "Unknown"}</div>
+                    </div>
+                  </div>
+                </OpsPanelContent>
+              </OpsPanel>
+
+              {/* Collapsible Objectives */}
+              <div className="border border-zinc-800 bg-zinc-950/50">
+                <button 
+                  onClick={() => setExpandedSections({...expandedSections, objectives: !expandedSections.objectives})}
+                  className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-zinc-900/50 transition-colors border-b border-zinc-800/50"
+                >
+                  <span className="text-[10px] font-bold uppercase text-zinc-400">Objectives</span>
+                  <ChevronDown className={cn("w-3 h-3 transition-transform", expandedSections.objectives && "rotate-180")} />
+                </button>
+                {expandedSections.objectives && (
+                  <div className="p-2">
+                    <EventObjectives 
+                      event={event} 
+                      users={allUsers} 
+                      assets={allAssets} 
+                      canEdit={canEditEvent(currentUser, event)} 
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Collapsible Assets */}
+              {event.assigned_asset_ids?.length > 0 && (
+                <div className="border border-zinc-800 bg-zinc-950/50">
+                  <button 
+                    onClick={() => setExpandedSections({...expandedSections, assets: !expandedSections.assets})}
+                    className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-zinc-900/50 transition-colors border-b border-zinc-800/50"
+                  >
+                    <span className="text-[10px] font-bold uppercase text-zinc-400 flex items-center gap-1">
+                      <Rocket className="w-3 h-3" /> Assets ({event.assigned_asset_ids.length})
+                    </span>
+                    <ChevronDown className={cn("w-3 h-3 transition-transform", expandedSections.assets && "rotate-180")} />
+                  </button>
+                  {expandedSections.assets && (
+                    <div className="p-2 grid grid-cols-2 gap-1">
+                      {allAssets.filter(a => event.assigned_asset_ids.includes(a.id)).map(asset => (
+                        <div key={asset.id} className="flex items-center gap-2 p-1 bg-zinc-900 border border-zinc-800 text-[9px]">
+                          <div className="w-5 h-5 bg-blue-900/20 flex items-center justify-center text-blue-400 border border-blue-900/30">
+                            <Rocket className="w-2.5 h-2.5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-zinc-200">{asset.name}</div>
+                            <div className="text-zinc-500">{asset.model}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Compact 2x2 grid for status panels */}
+              <div className="grid grid-cols-2 gap-2">
+                <EventPhaseGates event={event} canEdit={canEditEvent(currentUser, event)} />
+                <EventReadinessChecklist event={event} canEdit={canEditEvent(currentUser, event)} />
+                <EventCommandStaff event={event} canEdit={canEditEvent(currentUser, event)} />
+                <SquadManager eventId={event.id} />
+              </div>
+
+              {/* Collapsible Participants */}
+              <div className="border border-zinc-800 bg-zinc-950/50">
+                <button 
+                  onClick={() => setExpandedSections({...expandedSections, participants: !expandedSections.participants})}
+                  className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-zinc-900/50 transition-colors border-b border-zinc-800/50"
+                >
+                  <span className="text-[10px] font-bold uppercase text-zinc-400 flex items-center gap-1">
+                    <Users className="w-3 h-3" /> Participants
+                  </span>
+                  <ChevronDown className={cn("w-3 h-3 transition-transform", expandedSections.participants && "rotate-180")} />
+                </button>
+                {expandedSections.participants && (
+                  <div className="p-2">
+                    <EventParticipants eventId={event.id} />
+                  </div>
+                )}
+              </div>
+
+              {/* Compact bottom panels */}
+              <div className="grid grid-cols-2 gap-2">
+                <EventEconomy eventId={event.id} />
+                <PlayerStatusSection eventId={event.id} />
+              </div>
+
+              <EventCommunicationLogs eventId={event.id} />
+              <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
+            </TabsContent>
+
+            {/* Timeline Tab */}
+            <TabsContent value="timeline" className="mt-3">
+              <OpsPanel>
+                <OpsPanelContent className="p-2">
                   <EventTimeline 
                     eventId={event.id}
                     onAddNote={() => setShowNoteForm(!showNoteForm)}
                   />
                   {showNoteForm && (
-                    <div className="mt-4 pt-4 border-t border-zinc-700">
-                      <div className="space-y-2">
-                        <textarea
-                           value={noteText}
-                           onChange={(e) => setNoteText(e.target.value)}
-                           placeholder="RECORD ENTRY..."
-                          className="w-full bg-zinc-950 border border-zinc-700 text-white p-2 text-sm font-mono rounded"
-                          rows="3"
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={async () => {
-                              if (noteText.trim()) {
-                                await base44.entities.EventLog.create({
-                                  event_id: event.id,
-                                  type: 'NOTE',
-                                  severity: 'LOW',
-                                  actor_user_id: currentUser.id,
-                                  summary: noteText.slice(0, 100),
-                                  details: { full_note: noteText }
-                                });
-                                setNoteText('');
-                                setShowNoteForm(false);
-                              }
-                            }}
-                            className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[10px] h-7"
-                          >
-                            RECORD
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setShowNoteForm(false)}
-                            className="text-[10px] h-7"
-                          >
-                            DISMISS
-                          </Button>
-                        </div>
+                    <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder="RECORD ENTRY..."
+                        className="w-full bg-zinc-950 border border-zinc-700 text-white p-1.5 text-xs font-mono"
+                        rows="2"
+                      />
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            if (noteText.trim()) {
+                              await base44.entities.EventLog.create({
+                                event_id: event.id,
+                                type: 'NOTE',
+                                severity: 'LOW',
+                                actor_user_id: currentUser.id,
+                                summary: noteText.slice(0, 100),
+                                details: { full_note: noteText }
+                              });
+                              setNoteText('');
+                              setShowNoteForm(false);
+                            }
+                          }}
+                          className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[9px] h-6 px-2"
+                        >
+                          RECORD
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowNoteForm(false)}
+                          className="text-[9px] h-6 px-2"
+                        >
+                          DISMISS
+                        </Button>
                       </div>
                     </div>
                   )}
-                  </OpsPanelContent>
-                  </OpsPanel>
-                  )}
+                </OpsPanelContent>
+              </OpsPanel>
+            </TabsContent>
 
-                  {/* AAR Tab */}
-                  {activeTab === 'aar' && (
-                    <div className="space-y-3">
-                      <OpsPanel>
-                        <OpsPanelHeader>
-                          <OpsPanelTitle>After Action Report</OpsPanelTitle>
-                        </OpsPanelHeader>
-                        <OpsPanelContent>
-                          <EventAAR eventId={event.id} eventTitle={event.title} />
-                        </OpsPanelContent>
-                      </OpsPanel>
-                      <AIAfterActionReportGenerator eventId={event.id} eventTitle={event.title} />
-                    </div>
-                  )}
+            {/* AAR Tab */}
+            <TabsContent value="aar" className="space-y-2 mt-3">
+              <OpsPanel>
+                <OpsPanelContent className="p-2">
+                  <EventAAR eventId={event.id} eventTitle={event.title} />
+                </OpsPanelContent>
+              </OpsPanel>
+              <AIAfterActionReportGenerator eventId={event.id} eventTitle={event.title} />
+            </TabsContent>
 
-                {/* Map Tab */}
-                {activeTab === 'map' && (
-                <div style={{ height: '600px' }}>
+            {/* Map Tab */}
+            <TabsContent value="map" className="mt-3">
+              <div style={{ height: '500px' }}>
                 <OpsMap eventId={event.id} readOnly={false} />
-                </div>
-                )}
+              </div>
+            </TabsContent>
+          </Tabs>
 
-                </div>
-
-          {/* Sidebar / Comms & AI Column */}
-          <div className="space-y-3">
-
-            {/* AI Tactical Advisor */}
+          {/* Compact Sidebar - 2 column at 1440p */}
+          <div className="grid grid-cols-2 gap-2 mt-3">
             <AITacticalAdvisor eventId={event.id} />
-
-            {/* AI Intelligence Layer */}
             <AIInsightsPanel eventId={event.id} />
-
-            {/* Comms Configuration (Leaders Only) */}
             {canEditEvent(currentUser, event) && (
               <CommsConfig eventId={event.id} />
             )}
-
-            {/* Player Status */}
-            <PlayerStatusSection eventId={event.id} />
-
-            {/* Economy Section */}
-            <EventEconomy eventId={event.id} />
-
-            {/* Comms Panel */}
-            <div className="opacity-75 hover:opacity-100 transition-opacity">
-               <CommsPanel eventId={event.id} />
-            </div>
-
+            <CommsPanel eventId={event.id} />
           </div>
-
-        </div>
         </div>
       </div>
     </div>
