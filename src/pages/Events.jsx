@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
-import { getEventSeverity, getPrioritySeverity, getSeverityBadge } from "@/components/utils/severitySystem";
+import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import EventForm from "@/components/events/EventForm";
        import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
        import EventPostAnalysis from "@/components/events/EventPostAnalysis";
@@ -92,7 +92,9 @@ function EventDetail({ id }) {
                     {event.event_type.toUpperCase()}
                   </Badge>
                   {event.priority && (
-                     <Badge variant="outline" className={getSeverityBadge(getPrioritySeverity(event.priority))}>
+                     <Badge variant="outline" className={getSeverityBadge(
+                        getPrioritySeverity(event.priority)
+                     )}>
                         {event.priority}
                      </Badge>
                   )}
@@ -387,26 +389,15 @@ export default function EventsPage() {
     const start = new Date(event.start_time);
     const end = event.end_time ? new Date(event.end_time) : null;
     
-    let statusLabel, severity;
+    const statusLabel = 
+      event.status === 'cancelled' || event.status === 'failed' || event.status === 'aborted' ? event.status.toUpperCase() :
+      event.status === 'completed' ? 'COMPLETED' :
+      event.status === 'active' || (now >= start && (!end || now <= end)) ? 'ACTIVE' :
+      now < start ? 'UPCOMING' : 'SCHEDULED';
     
-    if (event.status === 'cancelled' || event.status === 'failed' || event.status === 'aborted') {
-      statusLabel = event.status.toUpperCase();
-      severity = getEventSeverity(event.status);
-    } else if (event.status === 'completed') {
-      statusLabel = 'COMPLETED';
-      severity = getEventSeverity(event.status);
-    } else if (event.status === 'active' || (now >= start && (!end || now <= end))) {
-      statusLabel = 'ACTIVE';
-      severity = getEventSeverity('active');
-    } else if (now < start) {
-      statusLabel = 'UPCOMING';
-      severity = getEventSeverity('scheduled');
-    } else {
-      statusLabel = 'SCHEDULED';
-      severity = getEventSeverity('scheduled');
-    }
+    const severity = getEventSeverity(event.status);
     
-    return { label: statusLabel, badge: getSeverityBadge(severity) };
+    return { label: statusLabel, color: getSeverityBadge(severity) };
   };
 
   // Helper to format time consistently
@@ -465,14 +456,14 @@ export default function EventsPage() {
                     <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <Badge variant="outline" className={status.badge}>
-                              {status.label}
-                            </Badge>
-                            <Badge variant="outline" className={getSeverityBadge(
-                              event.event_type === 'focused' ? 'critical' : 'nominal'
-                            )}>
-                              {event.event_type.toUpperCase()}
-                            </Badge>
+                          <Badge variant="outline" className={status.color}>
+                            {status.label}
+                          </Badge>
+                          <Badge variant="outline" className={getSeverityBadge(
+                            event.event_type === 'focused' ? 'critical' : 'nominal'
+                          )}>
+                            {event.event_type.toUpperCase()}
+                          </Badge>
                           <span className="text-zinc-600 text-xs font-mono">
                             {eventTime.date} • {eventTime.time}
                           </span>
