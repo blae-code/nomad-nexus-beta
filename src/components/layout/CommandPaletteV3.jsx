@@ -756,8 +756,8 @@ export default function CommandPaletteV3() {
             </div>
 
             {/* Status menu */}
-            {statusMenu && (
-              <div className="border-t border-zinc-800 bg-zinc-900/50 p-3 space-y-1">
+             {statusMenu && (
+               <div className="border-t border-zinc-800 bg-zinc-900/50 p-2 space-y-0">
                 <p className="text-[9px] text-zinc-500 uppercase font-bold mb-2">SET STATUS</p>
                 {['online', 'idle', 'in-call', 'away', 'offline'].map((status) => (
                   <button
