@@ -17,6 +17,14 @@ export default function VoiceNetManager() {
   const [editingNet, setEditingNet] = useState(null);
   const [netActivity, setNetActivity] = useState({});
   const [selectedNetForChannels, setSelectedNetForChannels] = useState(null);
+  const [filters, setFilters] = useState({
+    search: '',
+    type: [],
+    discipline: [],
+    squads: [],
+    stageMode: false,
+    isDefault: false
+  });
   const queryClient = useQueryClient();
 
   // Check admin access
