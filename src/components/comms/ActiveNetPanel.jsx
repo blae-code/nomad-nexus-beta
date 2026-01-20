@@ -424,15 +424,37 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           }
           
           const token = res.data.tokens?.[net.id];
-          const url = res.data.livekitUrl;
-          
+          const url = res.data.url || res.data.livekitUrl;
+
           if (!token) {
-             console.error('No token received for net - insufficient permissions');
+             console.error('[COMMS] No token received for net - insufficient permissions');
              setConnectionError('Insufficient permissions for this net');
              setConnectionState("failed");
              return;
           }
-          
+
+          if (!url) {
+             console.error('[COMMS] No LiveKit URL provided in response', res.data);
+             setConnectionError('Server error: Missing LiveKit configuration');
+             setConnectionState("failed");
+             return;
+          }
+
+          // Validate token and URL formats
+          if (typeof token !== 'string' || token.length === 0) {
+             console.error('[COMMS] Invalid token format:', typeof token);
+             setConnectionError('Invalid authentication token');
+             setConnectionState("failed");
+             return;
+          }
+
+          if (typeof url !== 'string' || url.length === 0) {
+             console.error('[COMMS] Invalid URL format:', typeof url, url);
+             setConnectionError('Invalid server URL');
+             setConnectionState("failed");
+             return;
+          }
+
           setConnectionToken(token);
           setLivekitUrl(url);
 
@@ -441,7 +463,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
              adaptiveStream: true,
              dynacast: true,
           });
-          
+
           roomRef.current = currentRoom;
 
           // 3. Setup Event Listeners
@@ -502,14 +524,14 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 // Attempt auto-reconnect with exponential backoff
                 const attemptReconnect = () => {
                    if (!mounted) return;
-                   
+
                    reconnectAttempts.current += 1;
                    const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
-                   
+
                    console.log(`[COMMS] Reconnect attempt ${reconnectAttempts.current} in ${backoffDelay}ms`);
                    setConnectionState("reconnecting");
                    setConnectionError(`Reconnecting... (attempt ${reconnectAttempts.current})`);
-                   
+
                    reconnectTimeoutRef.current = setTimeout(() => {
                       if (mounted && reconnectAttempts.current < 5) {
                          connect();
@@ -519,7 +541,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                       }
                    }, backoffDelay);
                 };
-                
+
                 attemptReconnect();
              }
           });
@@ -533,8 +555,9 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
              console.log(`[COMMS] Participant left: ${participant.identity}`);
              if (mounted) setRoom({ ...currentRoom });
           });
-          
+
           // 4. Connect
+          console.log(`[COMMS] Connecting to LiveKit: ${url} with token length: ${token.length}`);
           await currentRoom.connect(url, token);
           
           if (!mounted) {
