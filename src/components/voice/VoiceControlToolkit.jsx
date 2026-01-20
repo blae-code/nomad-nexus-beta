@@ -39,112 +39,155 @@ export default function VoiceControlToolkit() {
     };
   }, []);
 
+  const getQualityColor = () => {
+    if (signalQuality === 'excellent') return 'bg-emerald-600';
+    if (signalQuality === 'good') return 'bg-cyan-500';
+    if (signalQuality === 'fair') return 'bg-yellow-600';
+    return 'bg-red-600';
+  };
+
+  const getLatencyColor = () => {
+    if (latency < 50) return 'text-emerald-400';
+    if (latency < 100) return 'text-cyan-400';
+    if (latency < 150) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
   return (
-    <div className="space-y-3 p-3 bg-zinc-950 border border-zinc-800 rounded-sm">
-      {/* Title */}
-      <div className="flex items-center gap-2">
-        <Radio className="w-3 h-3 text-[#ea580c]" />
-        <span className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-400 uppercase")}>Voice Toolkit</span>
+    <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 overflow-hidden"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)',
+        backgroundSize: '100% 2px',
+      }}
+    >
+      {/* Header */}
+      <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/30 shrink-0">
+        <div className="flex items-center gap-2">
+          <Radio className="w-3 h-3 text-[#ea580c]" />
+          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">VOICE CONTROL</span>
+        </div>
       </div>
 
-      {/* PTT Button */}
-      <Button
-        onClick={() => setVoiceActive(!voiceActive)}
-        className={cn(
-          'w-full h-10 font-bold uppercase text-sm transition-all',
-          voiceActive
-            ? 'bg-red-600 hover:bg-red-700 text-white'
-            : 'bg-zinc-900 border border-zinc-700 text-zinc-300 hover:border-zinc-600'
-        )}
-      >
-        <Mic className="w-4 h-4 mr-2" />
-        {voiceActive ? 'TRANSMITTING' : 'PTT (Ctrl+V)'}
-      </Button>
+      {/* Main Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-0">
+        {/* PTT Section */}
+        <div className="px-3 py-2 border-b border-zinc-800/50 space-y-1.5">
+          <button
+            onClick={() => setVoiceActive(!voiceActive)}
+            className={cn(
+              'w-full h-10 font-bold uppercase text-xs transition-all border flex items-center justify-center gap-2',
+              voiceActive
+                ? 'bg-red-900/40 border-red-700/60 text-red-300 animate-pulse'
+                : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:border-[#ea580c]/40'
+            )}
+          >
+            <Mic className="w-3 h-3" />
+            {voiceActive ? 'TRANSMITTING' : 'PTT (Ctrl+V)'}
+          </button>
+        </div>
 
-      {/* Voice Listening Toggle */}
-      <Button
-        onClick={() => setListeningActive(!listeningActive)}
-        variant={listeningActive ? 'default' : 'outline'}
-        className={cn(
-          'w-full h-8 text-xs font-mono',
-          listeningActive && 'bg-emerald-900/30 border-emerald-700/50 text-emerald-300'
-        )}
-      >
-        <Zap className="w-3 h-3 mr-1" />
-        {listeningActive ? 'Voice Command Active' : 'Enable Voice Command'}
-      </Button>
-
-      {/* Mic Toggle */}
-      <div className="flex gap-2">
-        <Button
-          onClick={() => setMicEnabled(!micEnabled)}
-          variant={micEnabled ? 'default' : 'outline'}
-          size="sm"
-          className={cn(
-            'flex-1 h-8 text-xs',
-            micEnabled && 'bg-blue-900/30 border-blue-700/50 text-blue-300'
-          )}
-        >
-          <Mic className="w-3 h-3" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 h-8 text-xs"
-        >
-          <Settings className="w-3 h-3 mr-1" />
-          Config
-        </Button>
-      </div>
-
-      {/* Volume Controls */}
-      <div className="space-y-2 pt-2 border-t border-zinc-800">
-        {/* Mic Volume */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500")}>Input</span>
-            <span className="text-[10px] text-zinc-600">{micVolume}%</span>
+        {/* Diagnostics Section */}
+        <div className="px-3 py-2 border-b border-zinc-800/50">
+          <div className="text-[8px] font-bold text-zinc-600 uppercase mb-1.5">DIAGNOSTICS</div>
+          <div className="space-y-1">
+            {/* Signal Quality */}
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-zinc-500">Signal</span>
+              <div className="flex items-center gap-1.5">
+                <div className={cn('w-2 h-2 rounded-full', getQualityColor())} />
+                <span className="text-[9px] font-mono text-zinc-400">{signalQuality.toUpperCase()}</span>
+              </div>
+            </div>
+            {/* Latency */}
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-zinc-500">Latency</span>
+              <span className={cn('text-[9px] font-mono', getLatencyColor())}>{latency}ms</span>
+            </div>
           </div>
-          <Slider
-            value={[micVolume]}
-            onValueChange={(val) => setMicVolume(val[0])}
-            max={100}
-            step={5}
-            className="h-1"
-          />
         </div>
 
-        {/* Speaker Volume */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500")}>Output</span>
-            <span className="text-[10px] text-zinc-600">{speakerVolume}%</span>
+        {/* Audio Processing Section */}
+        <div className="px-3 py-2 border-b border-zinc-800/50">
+          <div className="text-[8px] font-bold text-zinc-600 uppercase mb-1.5">PROCESSING</div>
+          <div className="space-y-1">
+            {[
+              { id: 'noise', label: 'Noise Gate', state: noiseGate, setState: setNoiseGate },
+              { id: 'echo', label: 'Echo Cancel', state: echoCancellation, setState: setEchoCancellation },
+              { id: 'gain', label: 'Auto Gain', state: autoGain, setState: setAutoGain }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => item.setState(!item.state)}
+                className={cn(
+                  'w-full flex items-center gap-2 px-2 py-1 text-[9px] transition-colors border border-l-2',
+                  item.state
+                    ? 'bg-zinc-900 text-[#ea580c] border-l-[#ea580c] border-zinc-800'
+                    : 'bg-zinc-900/50 text-zinc-500 border-l-transparent border-zinc-800/50 hover:bg-zinc-900/70'
+                )}
+              >
+                <div className={cn('w-1 h-1 rounded-full', item.state ? 'bg-[#ea580c]' : 'bg-zinc-600')} />
+                <span className="font-mono">{item.label}</span>
+              </button>
+            ))}
           </div>
-          <Slider
-            value={[speakerVolume]}
-            onValueChange={(val) => setSpeakerVolume(val[0])}
-            max={100}
-            step={5}
-            className="h-1"
-          />
+        </div>
+
+        {/* Volume Controls */}
+        <div className="px-3 py-2 border-b border-zinc-800/50 space-y-2">
+          <div className="text-[8px] font-bold text-zinc-600 uppercase mb-1">LEVELS</div>
+          
+          {/* Mic Volume */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] text-zinc-500 font-mono">INPUT</span>
+              <span className="text-[9px] font-mono text-zinc-400">{micVolume}%</span>
+            </div>
+            <Slider
+              value={[micVolume]}
+              onValueChange={(val) => setMicVolume(val[0])}
+              max={100}
+              step={1}
+              className="h-1"
+            />
+          </div>
+
+          {/* Speaker Volume */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] text-zinc-500 font-mono">OUTPUT</span>
+              <span className="text-[9px] font-mono text-zinc-400">{speakerVolume}%</span>
+            </div>
+            <Slider
+              value={[speakerVolume]}
+              onValueChange={(val) => setSpeakerVolume(val[0])}
+              max={100}
+              step={1}
+              className="h-1"
+            />
+          </div>
+        </div>
+
+        {/* Voice Command */}
+        <div className="px-3 py-2 border-b border-zinc-800/50">
+          <button
+            onClick={() => setListeningActive(!listeningActive)}
+            className={cn(
+              'w-full flex items-center gap-2 px-2 py-1.5 text-xs transition-colors border-l-2',
+              listeningActive
+                ? 'bg-emerald-900/30 text-emerald-300 border-l-emerald-600'
+                : 'bg-zinc-900/50 text-zinc-400 border-l-transparent hover:bg-zinc-900/70'
+            )}
+          >
+            <Zap className="w-3 h-3" />
+            <span className="font-mono uppercase flex-1 text-left">{listeningActive ? 'Listening' : 'Voice Command'}</span>
+            <div className={cn('w-1.5 h-1.5 rounded-full', listeningActive ? 'bg-emerald-500' : 'bg-zinc-700')} />
+          </button>
         </div>
       </div>
 
-      {/* Status Indicators */}
-      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800 text-[9px] font-mono">
-        <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded-sm">
-          <div className={cn('w-1.5 h-1.5 rounded-full', micEnabled ? 'bg-blue-500' : 'bg-zinc-700')} />
-          <span className={micEnabled ? 'text-blue-300' : 'text-zinc-500'}>MIC</span>
-        </div>
-        <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded-sm">
-          <div className={cn('w-1.5 h-1.5 rounded-full', listeningActive ? 'bg-emerald-500' : 'bg-zinc-700')} />
-          <span className={listeningActive ? 'text-emerald-300' : 'text-zinc-500'}>CMD</span>
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="text-[9px] text-zinc-600 pt-2 border-t border-zinc-800">
-        <p>Voice command support coming soon. Hold Ctrl+V to transmit.</p>
+      {/* Footer */}
+      <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1 text-[8px] text-zinc-600 font-mono shrink-0">
+        Ctrl+V PTT • ⚙ config
       </div>
     </div>
   );
