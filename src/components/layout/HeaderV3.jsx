@@ -100,30 +100,27 @@ export default function HeaderV3() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch presence count every 15s (pauses if hidden)
-  useEffect(() => {
-    const fetchPresence = async () => {
-      try {
-        const presences = await base44.entities.UserPresence.list();
-        const online = presences.filter((p) => p.status !== 'offline').length;
-        setOnlineCount(online);
-        
-        // Get current user's presence
-        if (user) {
-          const userPres = presences.find((p) => p.user_id === user.id);
-          setUserPresence(userPres || null);
-        }
-      } catch (e) {
-        console.error('Failed to fetch presence:', e);
-      }
-    };
+  // Fetch presence on demand (called from voice channel join)
+  const fetchPresence = async () => {
+    try {
+      const presences = await base44.entities.UserPresence.list();
+      const online = presences.filter((p) => p.status !== 'offline').length;
+      setOnlineCount(online);
 
-    if (isVisible) {
-      fetchPresence();
-      const interval = setInterval(fetchPresence, 15000);
-      return () => clearInterval(interval);
+      // Get current user's presence
+      if (user) {
+        const userPres = presences.find((p) => p.user_id === user.id);
+        setUserPresence(userPres || null);
+      }
+    } catch (e) {
+      console.error('Failed to fetch presence:', e);
     }
-  }, [isVisible, user]);
+  };
+
+  // Expose for manual triggering from voice events
+  useEffect(() => {
+    window.headerFetchPresence = fetchPresence;
+  }, [user]);
 
   // Ping for latency (pauses if hidden)
   useEffect(() => {
