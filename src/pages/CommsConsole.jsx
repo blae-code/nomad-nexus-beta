@@ -297,16 +297,16 @@ function CommsConsolePage() {
       <div className="flex-1 flex overflow-hidden">
          
          {/* Sidebar */}
-         <aside className="w-64 lg:w-72 xl:w-80 border-r border-zinc-800 bg-zinc-950 flex flex-col overflow-hidden">
+         <aside className="w-56 lg:w-64 xl:w-72 border-r border-zinc-800 bg-zinc-950 flex flex-col overflow-hidden">
             {consoleMode === 'ops' ? (
                <>
-                  <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-4">
+                  <div className="p-3 border-b border-zinc-800 bg-zinc-900/20 space-y-2">
                      <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
                      {selectedEventId && <AICriticalAlertsMonitor eventId={selectedEventId} />}
                      {selectedEventId && <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />}
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-hidden custom-scrollbar">
+                  <div className="flex-1 p-2 overflow-hidden custom-scrollbar">
                      {!selectedEventId ? (
                         <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-center space-y-4">
                            <Monitor className="w-12 h-12 opacity-20" />
@@ -348,7 +348,7 @@ function CommsConsolePage() {
             ) : (
                <>
                   {/* Ready Rooms Sidebar */}
-                  <div className="p-4 border-b border-zinc-800 bg-zinc-900/20 space-y-3">
+                  <div className="p-3 border-b border-zinc-800 bg-zinc-900/20 space-y-2">
                      <div>
                         <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Ready Rooms</div>
                         <div className="text-[10px] text-zinc-600 font-mono">CASUAL & PUBLIC CHANNELS</div>
@@ -367,14 +367,14 @@ function CommsConsolePage() {
          </aside>
 
          {/* Main Panel */}
-         <main className="flex-1 p-3 lg:p-6 bg-black relative flex flex-col gap-3 lg:gap-4 overflow-hidden">
+         <main className="flex-1 p-2 lg:p-3 bg-black relative flex flex-col gap-2 lg:gap-3 overflow-hidden">
             {/* Background grid & Vignette */}
             <div className="absolute inset-0 opacity-[0.04] pointer-events-none" 
                  style={{ backgroundImage: 'linear-gradient(rgba(50,50,50,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(50,50,50,0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
             
-            <div className="relative z-10 h-full flex flex-col gap-4">
+            <div className="relative z-10 h-full flex flex-col gap-2 lg:gap-3">
                {consoleMode === 'ops' ? (
                   // OPS MODE
                   selectedEventId ? (
@@ -437,7 +437,7 @@ function CommsConsolePage() {
 
          {/* Right Sidebar - Incidents, Event Feed, AI Assistant, or Toolbox */}
          {consoleMode === 'ops' && (
-            <div className="w-72 lg:w-80 xl:w-96 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
+            <div className="w-64 lg:w-72 xl:w-80 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
                {viewMode === 'tactical' ? (
                   <div className="h-full flex flex-col">
                      <div className="flex-1 overflow-hidden">
