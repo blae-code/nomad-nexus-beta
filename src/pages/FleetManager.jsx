@@ -135,10 +135,10 @@ export default function FleetManagerPage() {
                 </div>
              </div>
           ) : (
-             <div className="flex-1 flex flex-col items-center justify-center text-zinc-700">
+             <div className="flex-1 flex flex-col items-center justify-center text-zinc-600">
                 <Shield className="w-16 h-16 mb-4 opacity-20" />
-                <h2 className="text-lg font-black uppercase tracking-widest">Fleet Command</h2>
-                <p className="text-xs font-mono mt-2">SELECT AN ASSET FROM THE MANIFEST TO VIEW DETAILS</p>
+                <h2 className="text-lg font-black uppercase tracking-tighter">FLEET COMMAND</h2>
+                <p className="text-xs font-mono mt-2 tracking-widest text-zinc-700">SELECT AN ASSET FROM THE MANIFEST</p>
              </div>
           )}
        </div>
