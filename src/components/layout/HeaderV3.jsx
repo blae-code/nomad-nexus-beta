@@ -173,6 +173,31 @@ export default function HeaderV3() {
 
   const presenceInfo = getPresenceInfo();
 
+  // Determine ops context based on route
+  const getOpsContext = () => {
+    const pathname = location.pathname.toLowerCase();
+    
+    if (pathname.includes('events')) {
+      return { label: 'NO ACTIVE OP', value: '—', hint: 'Select operation' };
+    }
+    if (pathname.includes('comms')) {
+      return { label: 'NET STATUS', value: 'IDLE', hint: 'No active net' };
+    }
+    if (pathname.includes('rescue')) {
+      return { label: 'DISTRESS', value: '0', hint: 'No active incidents' };
+    }
+    return { label: 'NO ACTIVE OP', value: '—', hint: 'Last activity' };
+  };
+
+  const opsContext = getOpsContext();
+
+  // Readiness meter colors
+  const readinessColors = {
+    green: 'bg-emerald-600',
+    amber: 'bg-yellow-600',
+    red: 'bg-red-600'
+  };
+
   // Dev-only: check header height constraint
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
