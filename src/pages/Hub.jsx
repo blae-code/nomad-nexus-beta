@@ -195,13 +195,22 @@ export default function HubPage() {
               <div>
                 <div className="text-[7px] uppercase text-zinc-500 tracking-widest mb-2 font-bold">ORGANIZATION STATUS</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-zinc-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Users className="w-3.5 h-3.5 text-zinc-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Roster</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{allUsers.length}</div>
+                    <div className="text-[7px] text-zinc-400 font-medium">total members</div>
+                  </div>
+
                   <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-emerald-400/50 transition-all cursor-pointer group">
                     <div className="flex items-center gap-2 mb-1.5">
                       <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Members</span>
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Online</span>
                     </div>
                     <div className="text-2xl font-black text-white mb-0.5">{onlineUsers.length}</div>
-                    <div className="text-[7px] text-emerald-400 font-medium">{orgMetrics.activeMemberRate}% online</div>
+                    <div className="text-[7px] text-emerald-400 font-medium">{orgMetrics.activeMemberRate}% active</div>
                   </div>
 
                   <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-blue-400/50 transition-all cursor-pointer group">
