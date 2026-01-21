@@ -421,48 +421,52 @@ export default function HubPage() {
             </div>
           </div>
 
-          {/* Right Sidebar: Personalized Dashboard */}
+          {/* Right Sidebar: Info & Navigation */}
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="col-span-3 lg:col-span-1 border border-zinc-800/50 bg-zinc-950/50 p-4 h-fit space-y-4"
+            className="lg:col-span-4 space-y-4"
           >
-            {/* Role-Based Info */}
-            <div className="space-y-2">
-              <div className="text-[10px] font-bold uppercase text-zinc-600 tracking-wider">CLEARANCE INFO</div>
-              <div className="text-[8px] space-y-1.5 font-mono text-zinc-500">
-                <div className="flex justify-between">
-                  <span>Rank:</span>
-                  <span className="text-white">{user?.rank || 'VAGRANT'}</span>
+            {/* Clearance & Permissions */}
+            <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+              <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">CLEARANCE LEVEL</div>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-[8px]">
+                  <span className="text-zinc-500">Rank:</span>
+                  <Badge className={getRankColorClass(user?.rank, 'bg')}>{user?.rank || 'VAGRANT'}</Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span>Level:</span>
-                  <span className="text-white">{userRankIndex + 1}/5</span>
+                <div className="flex items-center justify-between text-[8px]">
+                  <span className="text-zinc-500">Level:</span>
+                  <span className="text-white font-mono">{userRankIndex + 1} / 5</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Role:</span>
-                  <span className="text-white">{user?.role === 'admin' ? 'ADMIN' : 'USER'}</span>
+                <div className="flex items-center justify-between text-[8px]">
+                  <span className="text-zinc-500">Online:</span>
+                  <Badge variant="outline" className="text-[7px] bg-emerald-900/20 text-emerald-400 border-emerald-900/50">
+                    {onlineUsers.length} OPERATIVES
+                  </Badge>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-zinc-800/30" />
-
-            {/* Features Available */}
-            <div className="space-y-2">
-              <div className="text-[10px] font-bold uppercase text-zinc-600 tracking-wider">AVAILABLE FEATURES</div>
-              <div className="space-y-1.5 text-[8px]">
+            {/* Feature Access */}
+            <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+              <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">ACCESS PRIVILEGES</div>
+              <div className="grid grid-cols-2 gap-2 text-[8px]">
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                  <div className={cn('w-1.5 h-1.5 rounded-full', 'bg-emerald-500')} />
+                  <span>Comms Array</span>
+                </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
                   <div className={cn('w-1.5 h-1.5 rounded-full', canCreateEvents ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Create Events</span>
+                  <span>Create Ops</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
                   <div className={cn('w-1.5 h-1.5 rounded-full', canManageFleet ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Fleet Manager</span>
+                  <span>Fleet Mgmt</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
                   <div className={cn('w-1.5 h-1.5 rounded-full', canAccessTreasury ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Treasury Access</span>
+                  <span>Treasury</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
                   <div className={cn('w-1.5 h-1.5 rounded-full', canAccessIntelligence ? 'bg-emerald-500' : 'bg-zinc-700')} />
@@ -471,43 +475,67 @@ export default function HubPage() {
                 {showAdminFeatures && (
                   <div className="flex items-center gap-1.5 text-[#ea580c]">
                     <div className='w-1.5 h-1.5 rounded-full bg-[#ea580c]' />
-                    <span>Admin Panel</span>
+                    <span>Admin Console</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="border-t border-zinc-800/30" />
+            {/* Active Alerts */}
+            {activeIncidents.length > 0 && (
+              <div className="border border-red-900/50 bg-red-950/20 p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                  <span className="text-[9px] font-bold uppercase text-red-400 tracking-wider">ACTIVE INCIDENTS</span>
+                </div>
+                <div className="space-y-1.5">
+                  {activeIncidents.slice(0, 3).map((incident) => (
+                    <div key={incident.id} className="px-2 py-1.5 bg-zinc-900/50 border border-red-900/30">
+                      <div className="text-[9px] text-red-300 font-bold mb-0.5">{incident.title}</div>
+                      <div className="flex items-center justify-between">
+                        <Badge className="text-[7px] bg-red-900/50 text-red-300 border-red-900">{incident.severity}</Badge>
+                        <span className="text-[7px] text-zinc-600">{incident.incident_type}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            {/* Quick Navigation */}
-            <div className="space-y-1.5">
-              <div className="text-[10px] font-bold uppercase text-zinc-600 tracking-wider mb-2">NAVIGATE</div>
-              <div className="space-y-1 text-[9px]">
-                <button 
-                  onClick={() => navigate(createPageUrl('CommsConsole'))}
-                  className="w-full text-left px-2 py-1.5 border border-zinc-800/30 hover:border-[#ea580c]/50 bg-zinc-900/50 hover:bg-zinc-900/70 text-zinc-400 hover:text-[#ea580c] transition-colors flex items-center gap-2"
-                >
-                  <Radio className="w-3 h-3" />
-                  COMMS
-                </button>
-                <button 
-                  onClick={() => navigate(createPageUrl('Events'))}
-                  className="w-full text-left px-2 py-1.5 border border-zinc-800/30 hover:border-[#ea580c]/50 bg-zinc-900/50 hover:bg-zinc-900/70 text-zinc-400 hover:text-[#ea580c] transition-colors flex items-center gap-2"
-                >
-                  <Calendar className="w-3 h-3" />
-                  OPERATIONS
-                </button>
-                {canManageFleet && (
-                  <button 
-                    onClick={() => navigate(createPageUrl('FleetManager'))}
-                    className="w-full text-left px-2 py-1.5 border border-zinc-800/30 hover:border-[#ea580c]/50 bg-zinc-900/50 hover:bg-zinc-900/70 text-zinc-400 hover:text-[#ea580c] transition-colors flex items-center gap-2"
-                  >
-                    <Shield className="w-3 h-3" />
-                    FLEET
-                  </button>
-                )}
+            {/* System Status */}
+            <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+              <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">SYSTEM STATUS</div>
+              <div className="space-y-2 text-[8px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-500">Comms Network:</span>
+                  <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">ONLINE</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-500">Fleet Systems:</span>
+                  <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">NOMINAL</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-500">Database:</span>
+                  <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">SYNCED</Badge>
+                </div>
               </div>
             </div>
+
+            {/* Quick Links */}
+            {showAdminFeatures && (
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+                <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-2">ADMIN TOOLS</div>
+                <Button 
+                  onClick={() => navigate(createPageUrl('AdminConsole'))}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-[9px] border-[#ea580c]/30 hover:border-[#ea580c] text-[#ea580c]"
+                >
+                  <Settings className="w-3 h-3 mr-1.5" />
+                  ADMIN CONSOLE
+                </Button>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
