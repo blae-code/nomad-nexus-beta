@@ -272,67 +272,119 @@ export default function HubPage() {
           </div>
         </motion.div>
 
-        {/* Quick Actions Bar */}
+        {/* Quick Actions Bar with Enhanced Context */}
         <motion.div 
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2"
         >
           <Button 
             onClick={() => navigate(createPageUrl('CommsConsole'))}
             variant="outline"
-            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50 hover:shadow-lg hover:shadow-[#ea580c]/10 transition-all group relative overflow-hidden"
           >
-            <Radio className="w-4 h-4 text-[#ea580c]" />
-            <span className="text-[9px] font-bold uppercase">Comms</span>
+            <div className="absolute inset-0 bg-[#ea580c]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Radio className="w-4 h-4 text-[#ea580c] relative z-10" />
+            <span className="text-[9px] font-bold uppercase relative z-10">Comms</span>
+            {voiceNets.length > 0 && <Badge className="absolute top-1 right-1 text-[7px] h-3 px-1">{voiceNets.length}</Badge>}
           </Button>
           <Button 
             onClick={() => navigate(createPageUrl('Events'))}
             variant="outline"
-            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all group relative overflow-hidden"
           >
-            <Calendar className="w-4 h-4 text-blue-500" />
-            <span className="text-[9px] font-bold uppercase">Operations</span>
+            <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Calendar className="w-4 h-4 text-blue-500 relative z-10" />
+            <span className="text-[9px] font-bold uppercase relative z-10">Operations</span>
+            {userEvents.length > 0 && <Badge className="absolute top-1 right-1 text-[7px] h-3 px-1 bg-blue-600">{userEvents.length}</Badge>}
           </Button>
           {canManageFleet && (
             <Button 
               onClick={() => navigate(createPageUrl('FleetManager'))}
               variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10 transition-all group relative overflow-hidden"
             >
-              <Rocket className="w-4 h-4 text-purple-500" />
-              <span className="text-[9px] font-bold uppercase">Fleet</span>
+              <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Rocket className="w-4 h-4 text-purple-500 relative z-10" />
+              <span className="text-[9px] font-bold uppercase relative z-10">Fleet</span>
+              {fleetAssets.length > 0 && <Badge className="absolute top-1 right-1 text-[7px] h-3 px-1 bg-purple-600">{fleetAssets.length}</Badge>}
             </Button>
           )}
           {canAccessTreasury && (
             <Button 
               onClick={() => navigate(createPageUrl('Treasury'))}
               variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-yellow-500/50 hover:shadow-lg hover:shadow-yellow-500/10 transition-all group relative overflow-hidden"
             >
-              <Coins className="w-4 h-4 text-yellow-500" />
-              <span className="text-[9px] font-bold uppercase">Treasury</span>
+              <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Coins className="w-4 h-4 text-yellow-500 relative z-10" />
+              <span className="text-[9px] font-bold uppercase relative z-10">Treasury</span>
+              <div className="text-[7px] text-zinc-600 relative z-10">{treasuryBalance.toLocaleString()}</div>
             </Button>
           )}
           {canAccessIntelligence && (
             <Button 
               onClick={() => navigate(createPageUrl('Intelligence'))}
               variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all group relative overflow-hidden"
             >
-              <Database className="w-4 h-4 text-cyan-500" />
-              <span className="text-[9px] font-bold uppercase">Intel</span>
+              <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Database className="w-4 h-4 text-cyan-500 relative z-10" />
+              <span className="text-[9px] font-bold uppercase relative z-10">Intel</span>
             </Button>
           )}
           <Button 
             onClick={() => navigate(createPageUrl('Profile'))}
             variant="outline"
-            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-zinc-600/50 transition-all group relative overflow-hidden"
           >
-            <Settings className="w-4 h-4 text-zinc-500" />
-            <span className="text-[9px] font-bold uppercase">Profile</span>
+            <div className="absolute inset-0 bg-zinc-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Settings className="w-4 h-4 text-zinc-500 relative z-10" />
+            <span className="text-[9px] font-bold uppercase relative z-10">Profile</span>
           </Button>
         </motion.div>
+
+        {/* Live Activity Stream */}
+        {recentLogs.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="border border-zinc-800/50 bg-zinc-950/30 p-2"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Activity className="w-3 h-3 text-[#ea580c]" />
+                <span className="text-[8px] uppercase text-zinc-600 tracking-wider font-bold">LIVE ACTIVITY STREAM</span>
+              </div>
+              <Badge variant="outline" className="text-[7px]">REAL-TIME</Badge>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <AnimatePresence mode="popLayout">
+                {recentLogs.slice(0, 8).map((log, i) => (
+                  <motion.div
+                    key={log.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30 min-w-48 hover:border-[#ea580c]/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {log.type === 'STATUS' && <Gauge className="w-2.5 h-2.5 text-blue-500" />}
+                      {log.type === 'COMMS' && <Radio className="w-2.5 h-2.5 text-purple-500" />}
+                      {log.type === 'RESCUE' && <AlertCircle className="w-2.5 h-2.5 text-red-500" />}
+                      {log.type === 'SYSTEM' && <Server className="w-2.5 h-2.5 text-cyan-500" />}
+                      {log.type === 'NOTE' && <FileText className="w-2.5 h-2.5 text-zinc-500" />}
+                      <span className="text-[7px] text-zinc-600">{new Date(log.created_date).toLocaleTimeString()}</span>
+                    </div>
+                    <div className="text-[8px] text-zinc-400 line-clamp-2">{log.summary}</div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
