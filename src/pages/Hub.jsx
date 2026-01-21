@@ -241,14 +241,28 @@ export default function HubPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left Column - Primary Content */}
           <div className="lg:col-span-8 space-y-4">
-            {/* Tabbed Work Area */}
-            <div className="space-y-2">
-              <div className="flex gap-1 border-b border-zinc-800 overflow-x-auto">
+            {/* Personal Status */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border border-zinc-800/50 bg-zinc-950"
+            >
+              <CurrentStatusHeader user={user} />
+            </motion.div>
+
+            {/* Primary Tabbed Interface */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="flex gap-1 border-b border-zinc-800 overflow-x-auto mb-0">
                 {[
                   { id: 'ops', label: 'OPERATIONS', icon: Calendar },
                   { id: 'alerts', label: 'ALERTS', icon: AlertCircle },
                   { id: 'incidents', label: 'INCIDENTS', icon: Zap },
-                  { id: 'comms', label: 'FEED', icon: Activity },
+                  { id: 'feed', label: 'FEED', icon: Activity },
+                  { id: 'calendar', label: 'CALENDAR', icon: Clock },
                 ].map(tab => {
                   const TabIcon = tab.icon;
                   return (
@@ -269,102 +283,141 @@ export default function HubPage() {
                 })}
               </div>
 
-              {/* Tab Content with Animation */}
               <motion.div
                 key={activeTab}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
-                className="border border-zinc-800/50 bg-zinc-950 min-h-96"
+                className="border border-zinc-800/50 border-t-0 bg-zinc-950"
               >
-                <div className="p-4">
+                <div className="p-3">
                   {activeTab === 'ops' && (
-                    <div>
-                      <div className="text-[10px] font-bold uppercase text-zinc-600 mb-4 border-b border-zinc-800/50 pb-2 tracking-wider">
-                        MISSION PROJECTION
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        <EventProjectionPanel user={user} />
-                      </div>
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">UPCOMING MISSIONS</div>
+                      <EventProjectionPanel user={user} />
                     </div>
                   )}
                   {activeTab === 'alerts' && (
-                    <div>
-                      <div className="text-[10px] font-bold uppercase text-zinc-600 mb-4 border-b border-zinc-800/50 pb-2 tracking-wider">
-                        STATUS ALERTS
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        <RescueAlertPanel />
-                      </div>
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">STATUS ALERTS</div>
+                      <RescueAlertPanel />
                     </div>
                   )}
                   {activeTab === 'incidents' && (
-                    <div>
-                      <div className="text-[10px] font-bold uppercase text-zinc-600 mb-4 border-b border-zinc-800/50 pb-2 tracking-wider">
-                        LIVE INCIDENTS
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        <LiveIncidentCenter />
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">ACTIVE INCIDENTS</div>
+                      <LiveIncidentCenter />
+                    </div>
+                  )}
+                  {activeTab === 'feed' && (
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">OPERATIONAL FEED</div>
+                      <div className="max-h-80 overflow-y-auto">
+                        <LiveOperationsFeed eventId={null} limit={15} />
                       </div>
                     </div>
                   )}
-                  {activeTab === 'comms' && (
-                    <div>
-                      <div className="text-[10px] font-bold uppercase text-zinc-600 mb-4 border-b border-zinc-800/50 pb-2 tracking-wider">
-                        OPERATIONAL FEED
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        <LiveOperationsFeed eventId={null} limit={20} />
-                      </div>
+                  {activeTab === 'calendar' && (
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">EVENT CALENDAR</div>
+                      <EventCalendarView />
                     </div>
                   )}
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
 
-            {/* Personalized Feature Cards */}
+            {/* Secondary Panels Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Squads */}
               {userSquads.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="border border-zinc-800/50 bg-zinc-950/50 p-4"
+                  transition={{ delay: 0.2 }}
+                  className="border border-zinc-800/50 bg-zinc-950/50 p-3"
                 >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-4 h-4 text-[#ea580c]" />
-                    <span className="text-[10px] font-bold uppercase text-zinc-600 tracking-wider">YOUR SQUADS</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5 text-[#ea580c]" />
+                      <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">YOUR SQUADS</span>
+                    </div>
+                    <Badge variant="outline" className="text-[8px]">{userSquads.length}</Badge>
                   </div>
-                  <div className="space-y-1.5 text-[9px]">
-                    {userSquads.slice(0, 3).map((squad) => (
-                      <div key={squad.id} className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30 flex items-center justify-between">
-                        <span className="text-zinc-300">{squad.name}</span>
-                        <span className="text-[8px] text-zinc-600 uppercase">{squad.hierarchy_level}</span>
+                  <div className="space-y-1.5">
+                    {userSquads.slice(0, 4).map((squad) => (
+                      <div key={squad.id} className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30 flex items-center justify-between hover:border-[#ea580c]/30 transition-colors">
+                        <span className="text-[9px] text-zinc-300 font-bold">{squad.name}</span>
+                        <span className="text-[7px] text-zinc-600 uppercase">{squad.hierarchy_level}</span>
                       </div>
                     ))}
                   </div>
                 </motion.div>
               )}
 
-              {canCreateEvents && (
+              {/* Fleet Assets */}
+              {canManageFleet && fleetAssets.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="border border-zinc-800/50 bg-zinc-950/50 p-4"
+                  transition={{ delay: 0.25 }}
+                  className="border border-zinc-800/50 bg-zinc-950/50 p-3"
                 >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Target className="w-4 h-4 text-[#ea580c]" />
-                    <span className="text-[10px] font-bold uppercase text-zinc-600 tracking-wider">QUICK START</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Rocket className="w-3.5 h-3.5 text-purple-500" />
+                      <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">FLEET STATUS</span>
+                    </div>
+                    <Badge variant="outline" className="text-[8px]">{fleetAssets.length} READY</Badge>
                   </div>
                   <div className="space-y-1.5">
-                    <button 
-                      onClick={() => navigate(createPageUrl('Events'))}
-                      className="w-full px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/50 hover:border-[#ea580c]/50 text-[9px] text-zinc-300 hover:text-[#ea580c] transition-colors uppercase font-bold"
-                    >
-                      + CREATE EVENT
-                    </button>
+                    {fleetAssets.slice(0, 4).map((asset) => (
+                      <div key={asset.id} className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30 flex items-center justify-between">
+                        <div>
+                          <div className="text-[9px] text-zinc-300 font-bold">{asset.name}</div>
+                          <div className="text-[7px] text-zinc-600">{asset.model}</div>
+                        </div>
+                        <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">READY</Badge>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
+
+              {/* Recent Activity */}
+              <motion.div 
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="border border-zinc-800/50 bg-zinc-950/50 p-3"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Hash className="w-3.5 h-3.5 text-cyan-500" />
+                  <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">RECENT COMMS</span>
+                </div>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {recentMessages.slice(0, 4).map((msg) => (
+                    <div key={msg.id} className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30">
+                      <div className="text-[8px] text-zinc-500 mb-0.5">{new Date(msg.created_date).toLocaleTimeString()}</div>
+                      <div className="text-[9px] text-zinc-400 line-clamp-2">{msg.content}</div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Personal Log */}
+              <motion.div 
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="border border-zinc-800/50 bg-zinc-950/50 p-3"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">PERSONAL LOG</span>
+                </div>
+                <PersonalLogPanel user={user} />
+              </motion.div>
             </div>
           </div>
 
