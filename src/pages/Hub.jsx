@@ -175,10 +175,72 @@ export default function HubPage() {
           </div>
         </motion.div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-3 gap-6 lg:grid-cols-4">
-          {/* Primary Dashboard (2 columns) */}
-          <div className="col-span-3 lg:col-span-3 space-y-6">
+        {/* Quick Actions Bar */}
+        <motion.div 
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2"
+        >
+          <Button 
+            onClick={() => navigate(createPageUrl('CommsConsole'))}
+            variant="outline"
+            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+          >
+            <Radio className="w-4 h-4 text-[#ea580c]" />
+            <span className="text-[9px] font-bold uppercase">Comms</span>
+          </Button>
+          <Button 
+            onClick={() => navigate(createPageUrl('Events'))}
+            variant="outline"
+            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+          >
+            <Calendar className="w-4 h-4 text-blue-500" />
+            <span className="text-[9px] font-bold uppercase">Operations</span>
+          </Button>
+          {canManageFleet && (
+            <Button 
+              onClick={() => navigate(createPageUrl('FleetManager'))}
+              variant="outline"
+              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+            >
+              <Rocket className="w-4 h-4 text-purple-500" />
+              <span className="text-[9px] font-bold uppercase">Fleet</span>
+            </Button>
+          )}
+          {canAccessTreasury && (
+            <Button 
+              onClick={() => navigate(createPageUrl('Treasury'))}
+              variant="outline"
+              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+            >
+              <Coins className="w-4 h-4 text-yellow-500" />
+              <span className="text-[9px] font-bold uppercase">Treasury</span>
+            </Button>
+          )}
+          {canAccessIntelligence && (
+            <Button 
+              onClick={() => navigate(createPageUrl('Intelligence'))}
+              variant="outline"
+              className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+            >
+              <Database className="w-4 h-4 text-cyan-500" />
+              <span className="text-[9px] font-bold uppercase">Intel</span>
+            </Button>
+          )}
+          <Button 
+            onClick={() => navigate(createPageUrl('Profile'))}
+            variant="outline"
+            className="h-auto py-3 flex-col gap-1.5 border-zinc-800/50 hover:border-[#ea580c]/50"
+          >
+            <Settings className="w-4 h-4 text-zinc-500" />
+            <span className="text-[9px] font-bold uppercase">Profile</span>
+          </Button>
+        </motion.div>
+
+        {/* Main Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Left Column - Primary Content */}
+          <div className="lg:col-span-8 space-y-4">
             {/* Tabbed Work Area */}
             <div className="space-y-2">
               <div className="flex gap-1 border-b border-zinc-800 overflow-x-auto">
