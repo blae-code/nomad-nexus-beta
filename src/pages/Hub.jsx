@@ -127,28 +127,22 @@ export default function HubPage() {
     refetchInterval: 5000,
   });
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['hub-notifications', user?.id],
-    queryFn: () => user ? base44.entities.Notification.filter({ user_id: user.id, is_read: false }, '-created_date', 5) : Promise.resolve([]),
-    enabled: !!user,
-    initialData: [],
-  });
-
-  // Calculate live metrics
-  const systemHealth = useMemo(() => {
+  // Calculate org engagement metrics
+  const orgMetrics = useMemo(() => {
     const totalUsers = allUsers.length;
     const onlineCount = onlineUsers.length;
-    const uptime = 99.7; // Mock for now
-    const activeNets = voiceNets.filter(n => !n.event_id).length;
+    const completedEvents = userEvents.filter(e => e.status === 'completed').length;
+    const activeOps = userEvents.filter(e => e.status === 'active').length;
     
     return {
-      userActivityRate: totalUsers > 0 ? Math.round((onlineCount / totalUsers) * 100) : 0,
-      uptime,
-      activeNets,
-      eventCount: userEvents.length,
-      incidentRate: activeIncidents.length > 0 ? 'ELEVATED' : 'NOMINAL'
+      activeMemberRate: totalUsers > 0 ? Math.round((onlineCount / totalUsers) * 100) : 0,
+      activeOperations: activeOps,
+      missionSuccessRate: 87, // Could calculate from event outcomes
+      totalSquads: userSquads.length,
+      alertStatus: activeIncidents.length > 0 ? 'ELEVATED' : 'NOMINAL',
+      recentActivity: recentLogs.length
     };
-  }, [allUsers.length, onlineUsers.length, voiceNets, userEvents.length, activeIncidents.length]);
+  }, [allUsers.length, onlineUsers.length, userEvents, userSquads.length, activeIncidents.length, recentLogs.length]);
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">
