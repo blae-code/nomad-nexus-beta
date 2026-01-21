@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 
 const pageMap = {
+  '/': 'hub',
   '/hub': 'hub',
   '/nomadopsdashboard': 'mission',
   '/events': 'events',
@@ -14,7 +15,6 @@ const pageMap = {
   '/intelligence': 'intelligence',
   '/adminconsole': 'admin',
   '/admin': 'admin',
-  '/': 'hub',
 };
 
 export default function Layout({ children, currentPageName }) {
