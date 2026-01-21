@@ -3,14 +3,19 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Calendar, Shield, Coins, AlertCircle, Plus, Zap, Users, Target, TrendingUp, Star, Clock, Activity } from "lucide-react";
+import { Radio, Calendar, Shield, Coins, AlertCircle, Plus, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Hash, Bot, Bell, MapPin, Database, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 import { getRankColorClass } from '@/components/utils/rankUtils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import EventProjectionPanel from "@/components/dashboard/EventProjectionPanel";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import LiveOperationsFeed from "@/components/dashboard/LiveOperationsFeed";
 import LiveIncidentCenter from "@/components/incidents/LiveIncidentCenter";
+import EventCalendarView from "@/components/dashboard/EventCalendarView";
+import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
+import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 
