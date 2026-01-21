@@ -105,6 +105,52 @@ export default function HubPage() {
     refetchInterval: 10000,
   });
 
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['hub-all-users'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: !!user,
+    initialData: [],
+  });
+
+  const { data: voiceNets = [] } = useQuery({
+    queryKey: ['hub-voice-nets'],
+    queryFn: () => base44.entities.VoiceNet.filter({ status: 'active' }),
+    enabled: !!user,
+    initialData: [],
+    refetchInterval: 15000,
+  });
+
+  const { data: recentLogs = [] } = useQuery({
+    queryKey: ['hub-event-logs'],
+    queryFn: () => base44.entities.EventLog.filter({}, '-created_date', 10),
+    enabled: !!user,
+    initialData: [],
+    refetchInterval: 5000,
+  });
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['hub-notifications', user?.id],
+    queryFn: () => user ? base44.entities.Notification.filter({ user_id: user.id, is_read: false }, '-created_date', 5) : Promise.resolve([]),
+    enabled: !!user,
+    initialData: [],
+  });
+
+  // Calculate live metrics
+  const systemHealth = useMemo(() => {
+    const totalUsers = allUsers.length;
+    const onlineCount = onlineUsers.length;
+    const uptime = 99.7; // Mock for now
+    const activeNets = voiceNets.filter(n => !n.event_id).length;
+    
+    return {
+      userActivityRate: totalUsers > 0 ? Math.round((onlineCount / totalUsers) * 100) : 0,
+      uptime,
+      activeNets,
+      eventCount: userEvents.length,
+      incidentRate: activeIncidents.length > 0 ? 'ELEVATED' : 'NOMINAL'
+    };
+  }, [allUsers.length, onlineUsers.length, voiceNets, userEvents.length, activeIncidents.length]);
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">
       <div className="p-4 space-y-4">
