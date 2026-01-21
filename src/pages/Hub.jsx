@@ -496,79 +496,61 @@ export default function HubPage() {
             animate={{ opacity: 1, x: 0 }}
             className="lg:col-span-4 space-y-4"
           >
-            {/* Clearance & Permissions */}
-            <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
-              <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">CLEARANCE LEVEL</div>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-[8px]">
-                  <span className="text-zinc-500">Rank:</span>
-                  <Badge className={getRankColorClass(user?.rank, 'bg')}>{user?.rank || 'VAGRANT'}</Badge>
-                </div>
-                <div className="flex items-center justify-between text-[8px]">
-                  <span className="text-zinc-500">Level:</span>
-                  <span className="text-white font-mono">{userRankIndex + 1} / 5</span>
-                </div>
-                <div className="flex items-center justify-between text-[8px]">
-                  <span className="text-zinc-500">Online:</span>
-                  <Badge variant="outline" className="text-[7px] bg-emerald-900/20 text-emerald-400 border-emerald-900/50">
-                    {onlineUsers.length} OPERATIVES
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Feature Access */}
-            <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
-              <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">ACCESS PRIVILEGES</div>
-              <div className="grid grid-cols-2 gap-2 text-[8px]">
-                <div className="flex items-center gap-1.5 text-zinc-400">
-                  <div className={cn('w-1.5 h-1.5 rounded-full', 'bg-emerald-500')} />
-                  <span>Comms Array</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-zinc-400">
-                  <div className={cn('w-1.5 h-1.5 rounded-full', canCreateEvents ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Create Ops</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-zinc-400">
-                  <div className={cn('w-1.5 h-1.5 rounded-full', canManageFleet ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Fleet Mgmt</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-zinc-400">
-                  <div className={cn('w-1.5 h-1.5 rounded-full', canAccessTreasury ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Treasury</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-zinc-400">
-                  <div className={cn('w-1.5 h-1.5 rounded-full', canAccessIntelligence ? 'bg-emerald-500' : 'bg-zinc-700')} />
-                  <span>Intelligence</span>
-                </div>
-                {showAdminFeatures && (
-                  <div className="flex items-center gap-1.5 text-[#ea580c]">
-                    <div className='w-1.5 h-1.5 rounded-full bg-[#ea580c]' />
-                    <span>Admin Console</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Notifications Center */}
-            {notifications.length > 0 && (
-              <div className="border border-yellow-900/50 bg-yellow-950/20 p-3">
+            {/* Member Spotlight */}
+            {onlineUsers.length > 0 && (
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Bell className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
-                    <span className="text-[9px] font-bold uppercase text-yellow-400 tracking-wider">NOTIFICATIONS</span>
+                    <Star className="w-3.5 h-3.5 text-yellow-500" />
+                    <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">ACTIVE MEMBERS</span>
                   </div>
-                  <Badge variant="outline" className="text-[7px] bg-yellow-900/30 text-yellow-400 border-yellow-900/50">{notifications.length}</Badge>
+                  <Badge variant="outline" className="text-[7px]">{onlineUsers.length} ONLINE</Badge>
                 </div>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                  {notifications.map((notif) => (
-                    <div key={notif.id} className="px-2 py-1.5 bg-zinc-900/50 border border-yellow-900/30 hover:border-yellow-600/50 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <Badge className="text-[7px] bg-yellow-900/50 text-yellow-300 border-yellow-900">{notif.type}</Badge>
-                        <span className="text-[7px] text-zinc-600">{new Date(notif.created_date).toLocaleTimeString()}</span>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {onlineUsers.slice(0, 8).map((presence) => {
+                    const member = allUsers.find(u => u.id === presence.user_id);
+                    if (!member) return null;
+                    return (
+                      <div key={presence.id} className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30 hover:border-emerald-500/30 transition-colors cursor-pointer group">
+                        <div className="w-8 h-8 bg-zinc-800 border border-zinc-700 flex items-center justify-center group-hover:border-emerald-500/50 transition-colors">
+                          <span className="text-[9px] font-bold text-zinc-400">{(member.callsign || member.rsi_handle || 'U')[0]}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[9px] font-bold text-zinc-300 truncate">{member.callsign || member.rsi_handle || 'User'}</div>
+                          <div className="flex items-center gap-1.5">
+                            <Badge className={cn('text-[7px]', getRankColorClass(member.rank, 'bg'))}>{member.rank || 'Vagrant'}</Badge>
+                            {presence.status === 'in-call' && <Badge className="text-[7px] bg-purple-900/30 text-purple-400 border-purple-900/50">IN CALL</Badge>}
+                          </div>
+                        </div>
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       </div>
-                      <div className="text-[9px] text-yellow-200 font-bold mb-0.5">{notif.title}</div>
-                      <div className="text-[8px] text-zinc-400 line-clamp-2">{notif.message}</div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Squad Engagement */}
+            {userSquads.length > 0 && (
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Swords className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">YOUR SQUADS</span>
+                  </div>
+                  <Badge variant="outline" className="text-[7px]">{userSquads.length} UNITS</Badge>
+                </div>
+                <div className="space-y-2">
+                  {userSquads.map((squad) => (
+                    <div key={squad.id} className="p-2.5 bg-zinc-900/30 border border-zinc-800/30 hover:border-purple-500/30 transition-all cursor-pointer group">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-[10px] font-bold text-zinc-300 group-hover:text-purple-400 transition-colors">{squad.name}</div>
+                        <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-purple-500 transition-colors" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[7px]">{squad.hierarchy_level}</Badge>
+                        <div className="text-[7px] text-zinc-600">{squad.description?.slice(0, 40)}...</div>
+                      </div>
                     </div>
                   ))}
                 </div>
