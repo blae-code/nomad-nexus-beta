@@ -26,7 +26,8 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const currentPage = pageMap[location.pathname.toLowerCase()] || 'hub';
+  // Ensure root path always maps to hub
+  const currentPage = location.pathname === '/' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
 
   return (
     <div className="h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
