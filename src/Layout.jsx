@@ -24,10 +24,15 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     initializeAccessToken();
     base44.auth.me().then(setUser).catch(() => {});
-  }, []);
+    
+    // Redirect root to Hub page if not already there
+    if (location.pathname === '/' || location.pathname === '') {
+      window.history.replaceState({}, '', '/hub');
+    }
+  }, [location.pathname]);
 
   // Ensure root path always maps to hub
-  const currentPage = location.pathname === '/' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
+  const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
 
   return (
     <div className="h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
