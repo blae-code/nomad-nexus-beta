@@ -416,6 +416,10 @@ export default function HubPage() {
                   { id: 'incidents', label: 'INCIDENTS', icon: Zap },
                   { id: 'feed', label: 'FEED', icon: Activity },
                   { id: 'calendar', label: 'CALENDAR', icon: Clock },
+                  { id: 'squads', label: 'SQUADS', icon: Users },
+                  { id: 'fleet', label: 'FLEET', icon: Rocket },
+                  { id: 'comms', label: 'COMMS', icon: Hash },
+                  { id: 'achievements', label: 'ACHIEVEMENTS', icon: Award },
                 ].map(tab => {
                   const TabIcon = tab.icon;
                   return (
@@ -476,9 +480,137 @@ export default function HubPage() {
                       <EventCalendarView />
                     </div>
                   )}
-                </div>
-              </motion.div>
-            </motion.div>
+                  {activeTab === 'squads' && (
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">YOUR SQUADS</div>
+                      {userSquads.length === 0 ? (
+                        <div className="text-center py-12 text-zinc-600 text-xs">No squad assignments</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {userSquads.map((squad) => (
+                            <div key={squad.id} className="p-3 bg-zinc-900/30 border border-zinc-800/30 hover:border-purple-500/30 transition-all cursor-pointer group">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-sm font-bold text-zinc-300 group-hover:text-purple-400 transition-colors">{squad.name}</div>
+                                <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-purple-500 transition-colors" />
+                              </div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="text-[8px]">{squad.hierarchy_level}</Badge>
+                              </div>
+                              {squad.description && (
+                                <div className="text-[9px] text-zinc-500">{squad.description}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {activeTab === 'fleet' && (
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">FLEET ASSETS</div>
+                      {!canManageFleet ? (
+                        <div className="text-center py-12 text-zinc-600 text-xs">Insufficient clearance</div>
+                      ) : fleetAssets.length === 0 ? (
+                        <div className="text-center py-12 text-zinc-600 text-xs">No fleet assets available</div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {fleetAssets.map((asset) => (
+                            <div key={asset.id} className="p-3 bg-zinc-900/30 border border-zinc-800/30 hover:border-purple-500/30 transition-colors">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-8 h-8 bg-blue-900/20 flex items-center justify-center text-blue-400 border border-blue-900/30">
+                                  <Rocket className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-bold text-zinc-200">{asset.name}</div>
+                                  <div className="text-[9px] text-zinc-500">{asset.model}</div>
+                                </div>
+                              </div>
+                              <Badge className="text-[8px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">OPERATIONAL</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {activeTab === 'comms' && (
+                    <div className="space-y-3">
+                      <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">RECENT COMMUNICATIONS</div>
+                      {recentMessages.length === 0 ? (
+                        <div className="text-center py-12 text-zinc-600 text-xs">No recent messages</div>
+                      ) : (
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {recentMessages.map((msg) => (
+                            <div key={msg.id} className="px-3 py-2 bg-zinc-900/50 border border-zinc-800/30">
+                              <div className="text-[8px] text-zinc-500 mb-1">{new Date(msg.created_date).toLocaleTimeString()}</div>
+                              <div className="text-[10px] text-zinc-400">{msg.content}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {activeTab === 'achievements' && (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">ORGANIZATION ACHIEVEMENTS</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-3 bg-zinc-900/30 border border-[#ea580c]/20">
+                            <div className="w-8 h-8 bg-[#ea580c]/20 border border-[#ea580c]/50 flex items-center justify-center">
+                              <TrendingUp className="w-5 h-5 text-[#ea580c]" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-bold text-zinc-300">Mission Success Streak</div>
+                              <div className="text-[9px] text-zinc-600">12 consecutive completions</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-3 bg-zinc-900/30 border border-zinc-800/30">
+                            <div className="w-8 h-8 bg-emerald-900/20 border border-emerald-900/50 flex items-center justify-center">
+                              <Users className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-bold text-zinc-300">Member Milestone</div>
+                              <div className="text-[9px] text-zinc-600">{allUsers.length} operatives reached</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">PERSONAL ACHIEVEMENTS</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-3 bg-zinc-900/30 border border-blue-900/30">
+                            <div className="w-8 h-8 bg-blue-900/20 border border-blue-900/50 flex items-center justify-center">
+                              <Target className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-bold text-zinc-300">Missions Completed</div>
+                              <div className="text-[9px] text-zinc-600">{userEvents.filter(e => e.status === 'completed').length} operations</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-3 bg-zinc-900/30 border border-zinc-800/30">
+                            <div className="w-8 h-8 bg-cyan-900/20 border border-cyan-900/50 flex items-center justify-center">
+                              <Clock className="w-5 h-5 text-cyan-500" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-bold text-zinc-300">Recent Activity</div>
+                              <div className="text-[9px] text-zinc-600">{recentLogs.filter(l => l.actor_user_id === user?.id).length} actions logged</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-3 bg-zinc-900/30 border border-zinc-800/30">
+                            <div className="w-8 h-8 bg-purple-900/20 border border-purple-900/50 flex items-center justify-center">
+                              <Swords className="w-5 h-5 text-purple-500" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-bold text-zinc-300">Squad Assignments</div>
+                              <div className="text-[9px] text-zinc-600">{squadMemberships.length} active units</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                  </motion.div>
+                  </motion.div>
 
             {/* Secondary Panels Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
