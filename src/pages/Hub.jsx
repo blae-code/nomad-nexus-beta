@@ -703,7 +703,7 @@ export default function HubPage() {
               </div>
             )}
 
-            {/* Recent Activity Achievements */}
+            {/* Org Achievements */}
             <div className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 to-[#ea580c]/5 p-3">
               <div className="flex items-center gap-2 mb-3">
                 <Award className="w-3.5 h-3.5 text-[#ea580c]" />
@@ -728,17 +728,45 @@ export default function HubPage() {
                     <div className="text-[7px] text-zinc-600">{allUsers.length} operatives reached</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
+              </div>
+            </div>
+
+            {/* Personal Achievements */}
+            <div className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 to-blue-500/5 p-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="w-3.5 h-3.5 text-blue-500" />
+                <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">PERSONAL ACHIEVEMENTS</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-blue-900/30">
                   <div className="w-6 h-6 bg-blue-900/20 border border-blue-900/50 flex items-center justify-center">
-                    <Star className="w-3.5 h-3.5 text-blue-500" />
+                    <Target className="w-3.5 h-3.5 text-blue-500" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[9px] font-bold text-zinc-300">Personal Milestone</div>
-                    <div className="text-[7px] text-zinc-600">{userEvents.length} missions completed</div>
+                    <div className="text-[9px] font-bold text-zinc-300">Missions Completed</div>
+                    <div className="text-[7px] text-zinc-600">{userEvents.filter(e => e.status === 'completed').length} operations</div>
                   </div>
                 </div>
+                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
+                  <div className="w-6 h-6 bg-cyan-900/20 border border-cyan-900/50 flex items-center justify-center">
+                    <Clock className="w-3.5 h-3.5 text-cyan-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[9px] font-bold text-zinc-300">Recent Activity</div>
+                    <div className="text-[7px] text-zinc-600">{recentLogs.filter(l => l.actor_user_id === user?.id).length} actions logged</div>
+                  </div>
                 </div>
+                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
+                  <div className="w-6 h-6 bg-purple-900/20 border border-purple-900/50 flex items-center justify-center">
+                    <Swords className="w-3.5 h-3.5 text-purple-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[9px] font-bold text-zinc-300">Squad Assignments</div>
+                    <div className="text-[7px] text-zinc-600">{squadMemberships.length} active units</div>
+                  </div>
                 </div>
+              </div>
+            </div>
                 </motion.div>
                 </div>
                 </div>
