@@ -735,11 +735,20 @@ export default function HubPage() {
                     <div className="text-[7px] text-zinc-600">{allUsers.length} operatives reached</div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
+                  <div className="w-6 h-6 bg-blue-900/20 border border-blue-900/50 flex items-center justify-center">
+                    <Star className="w-3.5 h-3.5 text-blue-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[9px] font-bold text-zinc-300">Personal Milestone</div>
+                    <div className="text-[7px] text-zinc-600">{userEvents.length} missions completed</div>
+                  </div>
+                </div>
+                </div>
+                </div>
+                </motion.div>
+                </div>
+                </div>
+                </div>
+                );
+                }
