@@ -413,7 +413,12 @@ export default function HeaderV3() {
             <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor, 
               userPresence?.is_transmitting && 'animate-pulse'
             )} />
-            <span className="hidden md:inline">{presenceInfo.label}</span>
+            <div className="hidden md:flex flex-col items-start gap-0.5">
+              <span>{presenceInfo.label}</span>
+              {presenceInfo.sublabel && (
+                <span className="text-[7px] text-zinc-500 font-medium tracking-wider">{presenceInfo.sublabel}</span>
+              )}
+            </div>
           </button>
 
           {statusMenuOpen && (
