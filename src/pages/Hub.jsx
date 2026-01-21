@@ -630,20 +630,76 @@ export default function HubPage() {
               </div>
             </div>
 
+            {/* Notifications Center */}
+            {notifications.length > 0 && (
+              <div className="border border-yellow-900/50 bg-yellow-950/20 p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
+                    <span className="text-[9px] font-bold uppercase text-yellow-400 tracking-wider">NOTIFICATIONS</span>
+                  </div>
+                  <Badge variant="outline" className="text-[7px] bg-yellow-900/30 text-yellow-400 border-yellow-900/50">{notifications.length}</Badge>
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {notifications.map((notif) => (
+                    <div key={notif.id} className="px-2 py-1.5 bg-zinc-900/50 border border-yellow-900/30 hover:border-yellow-600/50 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <Badge className="text-[7px] bg-yellow-900/50 text-yellow-300 border-yellow-900">{notif.type}</Badge>
+                        <span className="text-[7px] text-zinc-600">{new Date(notif.created_date).toLocaleTimeString()}</span>
+                      </div>
+                      <div className="text-[9px] text-yellow-200 font-bold mb-0.5">{notif.title}</div>
+                      <div className="text-[8px] text-zinc-400 line-clamp-2">{notif.message}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Active Alerts */}
             {activeIncidents.length > 0 && (
               <div className="border border-red-900/50 bg-red-950/20 p-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                  <span className="text-[9px] font-bold uppercase text-red-400 tracking-wider">ACTIVE INCIDENTS</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                    <span className="text-[9px] font-bold uppercase text-red-400 tracking-wider">ACTIVE INCIDENTS</span>
+                  </div>
+                  <Badge className="text-[7px] bg-red-900/50 text-red-300 border-red-900">{activeIncidents.length} OPEN</Badge>
                 </div>
                 <div className="space-y-1.5">
                   {activeIncidents.slice(0, 3).map((incident) => (
-                    <div key={incident.id} className="px-2 py-1.5 bg-zinc-900/50 border border-red-900/30">
-                      <div className="text-[9px] text-red-300 font-bold mb-0.5">{incident.title}</div>
-                      <div className="flex items-center justify-between">
+                    <div key={incident.id} className="px-2 py-1.5 bg-zinc-900/50 border border-red-900/30 hover:border-red-600/50 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-1.5 mb-1">
                         <Badge className="text-[7px] bg-red-900/50 text-red-300 border-red-900">{incident.severity}</Badge>
-                        <span className="text-[7px] text-zinc-600">{incident.incident_type}</span>
+                        <Badge variant="outline" className="text-[7px]">{incident.status}</Badge>
+                      </div>
+                      <div className="text-[9px] text-red-300 font-bold mb-0.5">{incident.title}</div>
+                      <div className="text-[7px] text-zinc-600">{incident.incident_type} • {new Date(incident.created_date).toLocaleTimeString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Voice Nets Status */}
+            {voiceNets.length > 0 && (
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Radio className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">VOICE NETS</span>
+                  </div>
+                  <Badge variant="outline" className="text-[7px]">{voiceNets.length} ACTIVE</Badge>
+                </div>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {voiceNets.slice(0, 5).map((net) => (
+                    <div key={net.id} className="px-2 py-1 bg-zinc-900/50 border border-zinc-800/30 hover:border-purple-600/30 transition-colors cursor-pointer flex items-center justify-between">
+                      <div>
+                        <div className="text-[9px] text-zinc-300 font-bold">{net.code}</div>
+                        <div className="text-[7px] text-zinc-600">{net.label}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <Badge className="text-[7px] bg-purple-900/30 text-purple-400 border-purple-900/50">{net.type}</Badge>
                       </div>
                     </div>
                   ))}
