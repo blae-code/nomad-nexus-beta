@@ -191,64 +191,129 @@ export default function HubPage() {
             </div>
 
             {/* Live Org Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 hover:border-emerald-500/30 transition-all cursor-pointer group">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Users className="w-3.5 h-3.5 text-emerald-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-[8px] uppercase text-zinc-600 tracking-wider">Members</span>
-                </div>
-                <div className="text-2xl font-black text-white mb-0.5">{onlineUsers.length}</div>
-                <div className="text-[7px] text-emerald-500">{orgMetrics.activeMemberRate}% online</div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 hover:border-blue-500/30 transition-all cursor-pointer group">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Target className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-[8px] uppercase text-zinc-600 tracking-wider">Operations</span>
-                </div>
-                <div className="text-2xl font-black text-white mb-0.5">{orgMetrics.activeOperations}</div>
-                <div className="text-[7px] text-blue-500">active missions</div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 hover:border-purple-500/30 transition-all cursor-pointer group">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Swords className="w-3.5 h-3.5 text-purple-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-[8px] uppercase text-zinc-600 tracking-wider">Squads</span>
-                </div>
-                <div className="text-2xl font-black text-white mb-0.5">{orgMetrics.totalSquads}</div>
-                <div className="text-[7px] text-purple-500">operational units</div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 hover:border-yellow-500/30 transition-all cursor-pointer group">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-yellow-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-[8px] uppercase text-zinc-600 tracking-wider">Success Rate</span>
-                </div>
-                <div className="text-2xl font-black text-white mb-0.5">{orgMetrics.missionSuccessRate}%</div>
-                <div className="text-[7px] text-yellow-500">mission efficiency</div>
-              </div>
-
-              {activeIncidents.length > 0 && (
-                <div className="bg-red-950/30 border border-red-900/50 p-3 hover:border-red-500/50 transition-all cursor-pointer group">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                    <span className="text-[8px] uppercase text-red-600 tracking-wider">Alerts</span>
+            <div className="space-y-3">
+              <div>
+                <div className="text-[7px] uppercase text-zinc-500 tracking-widest mb-2 font-bold">ORGANIZATION STATUS</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-emerald-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Members</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{onlineUsers.length}</div>
+                    <div className="text-[7px] text-emerald-400 font-medium">{orgMetrics.activeMemberRate}% online</div>
                   </div>
-                  <div className="text-2xl font-black text-red-400 mb-0.5">{activeIncidents.length}</div>
-                  <div className="text-[7px] text-red-500">{orgMetrics.alertStatus}</div>
-                </div>
-              )}
 
-              {canAccessTreasury && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 hover:border-yellow-500/30 transition-all cursor-pointer group">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Coins className="w-3.5 h-3.5 text-yellow-500 group-hover:scale-110 transition-transform" />
-                    <span className="text-[8px] uppercase text-zinc-600 tracking-wider">Treasury</span>
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-blue-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Target className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Operations</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{orgMetrics.activeOperations}</div>
+                    <div className="text-[7px] text-blue-400 font-medium">active missions</div>
                   </div>
-                  <div className="text-2xl font-black text-white mb-0.5">{(treasuryBalance / 1000000).toFixed(1)}M</div>
-                  <div className="text-[7px] text-yellow-500">aUEC reserves</div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-purple-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Swords className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Squads</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{orgMetrics.totalSquads}</div>
+                    <div className="text-[7px] text-purple-400 font-medium">operational units</div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-yellow-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-yellow-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Success Rate</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{orgMetrics.missionSuccessRate}%</div>
+                    <div className="text-[7px] text-yellow-400 font-medium">mission efficiency</div>
+                  </div>
+
+                  {activeIncidents.length > 0 && (
+                    <div className="bg-red-950/50 border border-red-700 p-3 hover:border-red-400/50 transition-all cursor-pointer group">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                        <span className="text-[8px] uppercase text-red-300 tracking-wider font-bold">Alerts</span>
+                      </div>
+                      <div className="text-2xl font-black text-red-200 mb-0.5">{activeIncidents.length}</div>
+                      <div className="text-[7px] text-red-400 font-medium">{orgMetrics.alertStatus}</div>
+                    </div>
+                  )}
+
+                  {canAccessTreasury && (
+                    <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-yellow-400/50 transition-all cursor-pointer group">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Coins className="w-3.5 h-3.5 text-yellow-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Treasury</span>
+                      </div>
+                      <div className="text-2xl font-black text-white mb-0.5">{(treasuryBalance / 1000000).toFixed(1)}M</div>
+                      <div className="text-[7px] text-yellow-400 font-medium">aUEC reserves</div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Personal Stats Row */}
+              <div>
+                <div className="text-[7px] uppercase text-zinc-500 tracking-widest mb-2 font-bold">PERSONAL PERFORMANCE</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-[#ea580c]/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Target className="w-3.5 h-3.5 text-[#ea580c] group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Missions</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{userEvents.length}</div>
+                    <div className="text-[7px] text-[#ea580c] font-medium">assigned ops</div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-cyan-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Activity</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{recentLogs.filter(l => l.actor_user_id === user?.id).length}</div>
+                    <div className="text-[7px] text-cyan-400 font-medium">recent actions</div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-purple-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Swords className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Squads</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{squadMemberships.length}</div>
+                    <div className="text-[7px] text-purple-400 font-medium">assignments</div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-emerald-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Award className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Rank</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{userRankIndex + 1}</div>
+                    <div className="text-[7px] text-emerald-400 font-medium">{user?.rank || 'VAGRANT'}</div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-blue-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Radio className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Comms</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">{voiceNets.length}</div>
+                    <div className="text-[7px] text-blue-400 font-medium">available nets</div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 border border-zinc-700 p-3 hover:border-zinc-400/50 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Activity className="w-3.5 h-3.5 text-zinc-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] uppercase text-zinc-400 tracking-wider font-bold">Clearance</span>
+                    </div>
+                    <div className="text-2xl font-black text-white mb-0.5">L{userRankIndex + 1}</div>
+                    <div className="text-[7px] text-zinc-400 font-medium">access level</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
