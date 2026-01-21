@@ -568,39 +568,7 @@ export default function HubPage() {
             animate={{ opacity: 1, x: 0 }}
             className="lg:col-span-4 space-y-4"
           >
-            {/* Member Spotlight */}
-            {onlineUsers.length > 0 && (
-              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-3.5 h-3.5 text-yellow-500" />
-                    <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">ACTIVE MEMBERS</span>
-                  </div>
-                  <Badge variant="outline" className="text-[7px]">{onlineUsers.length} ONLINE</Badge>
-                </div>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {onlineUsers.slice(0, 8).map((presence) => {
-                    const member = allUsers.find(u => u.id === presence.user_id);
-                    if (!member) return null;
-                    return (
-                      <div key={presence.id} className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30 hover:border-emerald-500/30 transition-colors cursor-pointer group">
-                        <div className="w-8 h-8 bg-zinc-800 border border-zinc-700 flex items-center justify-center group-hover:border-emerald-500/50 transition-colors">
-                          <span className="text-[9px] font-bold text-zinc-400">{(member.callsign || member.rsi_handle || 'U')[0]}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[9px] font-bold text-zinc-300 truncate">{member.callsign || member.rsi_handle || 'User'}</div>
-                          <div className="flex items-center gap-1.5">
-                            <Badge className={cn('text-[7px]', getRankColorClass(member.rank, 'bg'))}>{member.rank || 'Vagrant'}</Badge>
-                            {presence.status === 'in-call' && <Badge className="text-[7px] bg-purple-900/30 text-purple-400 border-purple-900/50">IN CALL</Badge>}
-                          </div>
-                        </div>
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+
 
             {/* Squad Engagement */}
             {userSquads.length > 0 && (
