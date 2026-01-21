@@ -204,28 +204,111 @@ export default function HeaderV3() {
   // Get current page breadcrumb
   const breadcrumb = PAGE_BREADCRUMBS[location.pathname.toLowerCase()] || 'OPERATIONS';
 
-  // Determine presence pill color/label
+  // Fetch operational context
+  const { data: activeEvent } = useQuery({
+    queryKey: ['header-active-event', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const events = await base44.entities.Event.filter({ 
+        assigned_user_ids: user.id,
+        status: ['active', 'pending']
+      });
+      return events[0] || null;
+    },
+    enabled: !!user,
+    refetchInterval: 15000
+  });
+
+  const { data: activeSquadMemberships } = useQuery({
+    queryKey: ['header-squad-memberships', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      return await base44.entities.SquadMembership.filter({ 
+        user_id: user.id, 
+        status: 'active' 
+      });
+    },
+    enabled: !!user,
+    refetchInterval: 30000
+  });
+
+  const { data: activeNet } = useQuery({
+    queryKey: ['header-active-net', userPresence?.net_id],
+    queryFn: async () => {
+      if (!userPresence?.net_id) return null;
+      return await base44.entities.VoiceNet.get(userPresence.net_id);
+    },
+    enabled: !!userPresence?.net_id,
+    refetchInterval: 10000
+  });
+
+  // Determine presence pill color/label with operational context
   const getPresenceInfo = () => {
-    if (!userPresence) return { label: 'OFFLINE', color: 'bg-zinc-600', dotColor: 'bg-zinc-500' };
+    if (!userPresence) return { 
+      label: 'OFFLINE', 
+      sublabel: null,
+      color: 'bg-zinc-600', 
+      dotColor: 'bg-zinc-500' 
+    };
     
     const status = userPresence.status || 'online';
     const transmitting = userPresence.is_transmitting;
     
+    // Determine operational context sublabel
+    let sublabel = null;
+    if (activeNet) {
+      sublabel = `NET: ${activeNet.code}`;
+    } else if (activeEvent) {
+      sublabel = `OP: ${activeEvent.title.slice(0, 12)}`;
+    } else if (activeSquadMemberships?.length > 0) {
+      sublabel = `${activeSquadMemberships.length} SQUAD${activeSquadMemberships.length > 1 ? 'S' : ''}`;
+    }
+    
     if (transmitting) {
-      return { label: 'TRANSMITTING', color: 'bg-red-950/30 border-red-700/50 text-red-300', dotColor: 'bg-red-500' };
+      return { 
+        label: 'TRANSMITTING', 
+        sublabel,
+        color: 'bg-red-950/30 border-red-700/50 text-red-300', 
+        dotColor: 'bg-red-500' 
+      };
     }
     
     switch (status) {
       case 'in-call':
-        return { label: 'IN-CALL', color: 'bg-blue-950/30 border-blue-700/50 text-blue-300', dotColor: 'bg-blue-500' };
+        return { 
+          label: 'IN-CALL', 
+          sublabel,
+          color: 'bg-blue-950/30 border-blue-700/50 text-blue-300', 
+          dotColor: 'bg-blue-500' 
+        };
       case 'online':
-        return { label: 'ONLINE', color: 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300', dotColor: 'bg-emerald-500' };
+        return { 
+          label: 'ONLINE', 
+          sublabel,
+          color: 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300', 
+          dotColor: 'bg-emerald-500' 
+        };
       case 'idle':
-        return { label: 'IDLE', color: 'bg-yellow-950/30 border-yellow-700/50 text-yellow-300', dotColor: 'bg-yellow-500' };
+        return { 
+          label: 'IDLE', 
+          sublabel,
+          color: 'bg-yellow-950/30 border-yellow-700/50 text-yellow-300', 
+          dotColor: 'bg-yellow-500' 
+        };
       case 'away':
-        return { label: 'AWAY', color: 'bg-orange-950/30 border-orange-700/50 text-orange-300', dotColor: 'bg-orange-500' };
+        return { 
+          label: 'AWAY', 
+          sublabel,
+          color: 'bg-orange-950/30 border-orange-700/50 text-orange-300', 
+          dotColor: 'bg-orange-500' 
+        };
       default:
-        return { label: 'OFFLINE', color: 'bg-zinc-900/50 border-zinc-700 text-zinc-300', dotColor: 'bg-zinc-600' };
+        return { 
+          label: 'OFFLINE', 
+          sublabel: null,
+          color: 'bg-zinc-900/50 border-zinc-700 text-zinc-300', 
+          dotColor: 'bg-zinc-600' 
+        };
     }
   };
 
