@@ -709,22 +709,76 @@ export default function HubPage() {
 
             {/* System Status */}
             <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
-              <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider mb-3">SYSTEM STATUS</div>
-              <div className="space-y-2 text-[8px]">
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500">Comms Network:</span>
-                  <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">ONLINE</Badge>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-3.5 h-3.5 text-cyan-500" />
+                  <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">SYSTEM STATUS</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500">Fleet Systems:</span>
-                  <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">NOMINAL</Badge>
+                <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">NOMINAL</Badge>
+              </div>
+              <div className="space-y-2.5 text-[8px]">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-zinc-500">Comms Network:</span>
+                    <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">ONLINE</Badge>
+                  </div>
+                  <Progress value={100} className="h-1" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500">Database:</span>
-                  <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">SYNCED</Badge>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-zinc-500">Fleet Systems:</span>
+                    <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">NOMINAL</Badge>
+                  </div>
+                  <Progress value={systemHealth.uptime} className="h-1" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-zinc-500">Database:</span>
+                    <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400">SYNCED</Badge>
+                  </div>
+                  <Progress value={98} className="h-1" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-zinc-500">User Activity:</span>
+                    <span className="text-emerald-400 font-mono">{systemHealth.userActivityRate}%</span>
+                  </div>
+                  <Progress value={systemHealth.userActivityRate} className="h-1" />
                 </div>
               </div>
             </div>
+
+            {/* Online Users Preview */}
+            {onlineUsers.length > 0 && (
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">ONLINE NOW</span>
+                  </div>
+                  <Badge variant="outline" className="text-[7px]">{onlineUsers.length} / {allUsers.length}</Badge>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {onlineUsers.slice(0, 12).map((presence) => {
+                    const onlineUser = allUsers.find(u => u.id === presence.user_id);
+                    return onlineUser ? (
+                      <Badge 
+                        key={presence.id} 
+                        variant="outline" 
+                        className="text-[7px] bg-emerald-900/20 text-emerald-400 border-emerald-900/50"
+                      >
+                        {onlineUser.callsign || onlineUser.rsi_handle || 'User'}
+                      </Badge>
+                    ) : null;
+                  })}
+                  {onlineUsers.length > 12 && (
+                    <Badge variant="outline" className="text-[7px]">
+                      +{onlineUsers.length - 12} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Quick Links */}
             {showAdminFeatures && (
