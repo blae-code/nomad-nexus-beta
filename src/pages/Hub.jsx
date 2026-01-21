@@ -106,48 +106,71 @@ export default function HubPage() {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">
-      <div className="p-6 space-y-6">
-        {/* Hero Header with Rank Badge */}
+      <div className="p-4 space-y-4">
+        {/* Hero Header with Live Stats */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="border border-zinc-800/50 bg-gradient-to-r from-zinc-950 via-[#ea580c]/5 to-zinc-950 p-6 relative overflow-hidden"
+          className="border border-zinc-800/50 bg-gradient-to-r from-zinc-950 via-[#ea580c]/5 to-zinc-950 p-5 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#ea580c]/5 blur-3xl -z-0" />
-          <div className="relative z-1 flex items-start justify-between gap-6">
-            <div>
-              <h1 className="text-5xl font-black uppercase tracking-tighter text-white mb-2">
+          <div className="relative z-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* User Info */}
+            <div className="lg:col-span-4">
+              <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-1">
                 COMMAND HUB
               </h1>
-              <p className="text-xs font-mono text-zinc-500 tracking-widest mb-3">
-                Welcome back, {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
+              <p className="text-xs font-mono text-zinc-500 tracking-widest mb-2">
+                {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
               </p>
-              <div className="flex items-center gap-2">
-                <span className={cn('px-2.5 py-1 text-[9px] font-bold uppercase border', getRankColorClass(user?.rank, 'bg'))}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className={cn('text-[9px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
                   {user?.rank || 'VAGRANT'}
-                </span>
+                </Badge>
                 {user?.role === 'admin' && (
-                  <span className="px-2.5 py-1 text-[9px] font-bold uppercase border border-[#ea580c]/50 bg-[#ea580c]/10 text-[#ea580c]">
+                  <Badge className="text-[9px] font-bold border-[#ea580c]/50 bg-[#ea580c]/10 text-[#ea580c]">
                     SYSTEM ADMIN
-                  </span>
+                  </Badge>
                 )}
+                <Badge variant="outline" className="text-[9px]">
+                  <Clock className="w-2.5 h-2.5 mr-1" />
+                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Badge>
               </div>
             </div>
             
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4 text-right">
-              <div>
-                <div className="text-2xl font-black text-white">{userSquads.length}</div>
-                <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Squads</div>
+            {/* Live Metrics Grid */}
+            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Users className="w-3 h-3 text-emerald-500" />
+                  <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Online</div>
+                </div>
+                <div className="text-xl font-black text-white">{onlineUsers.length}</div>
               </div>
-              <div>
-                <div className="text-2xl font-black text-white">{userEvents.length}</div>
-                <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Operations</div>
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Calendar className="w-3 h-3 text-blue-500" />
+                  <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Events</div>
+                </div>
+                <div className="text-xl font-black text-white">{userEvents.length}</div>
               </div>
-              <div>
-                <div className="text-2xl font-black text-[#ea580c]">{userRankIndex + 1}/{rankHierarchy.length}</div>
-                <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Clearance</div>
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <AlertCircle className="w-3 h-3 text-red-500" />
+                  <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Incidents</div>
+                </div>
+                <div className="text-xl font-black text-white">{activeIncidents.length}</div>
               </div>
+              {canAccessTreasury && (
+                <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Coins className="w-3 h-3 text-yellow-500" />
+                    <div className="text-[8px] uppercase text-zinc-600 tracking-wider">aUEC</div>
+                  </div>
+                  <div className="text-xl font-black text-white">{treasuryBalance.toLocaleString()}</div>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
