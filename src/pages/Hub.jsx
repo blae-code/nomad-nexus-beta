@@ -28,6 +28,18 @@ export default function HubPage() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Get user rank index
+  const userRankIndex = useMemo(() => {
+    return rankHierarchy.indexOf(user?.rank || 'Vagrant');
+  }, [user?.rank]);
+
+  // Determine which features to show based on rank
+  const showAdminFeatures = user?.role === 'admin';
+  const canCreateEvents = userRankIndex >= rankHierarchy.indexOf('Voyager');
+  const canManageFleet = userRankIndex >= rankHierarchy.indexOf('Scout');
+  const canAccessTreasury = userRankIndex >= rankHierarchy.indexOf('Scout');
+  const canAccessIntelligence = userRankIndex >= rankHierarchy.indexOf('Scout');
+
   // Fetch comprehensive dashboard data
   const { data: userEvents = [] } = useQuery({
     queryKey: ['hub-user-events', user?.id],
@@ -91,18 +103,6 @@ export default function HubPage() {
     initialData: [],
     refetchInterval: 10000,
   });
-
-  // Get user rank index
-  const userRankIndex = useMemo(() => {
-    return rankHierarchy.indexOf(user?.rank || 'Vagrant');
-  }, [user?.rank]);
-
-  // Determine which features to show based on rank
-  const showAdminFeatures = user?.role === 'admin';
-  const canCreateEvents = userRankIndex >= rankHierarchy.indexOf('Voyager');
-  const canManageFleet = userRankIndex >= rankHierarchy.indexOf('Scout');
-  const canAccessTreasury = userRankIndex >= rankHierarchy.indexOf('Scout');
-  const canAccessIntelligence = userRankIndex >= rankHierarchy.indexOf('Scout');
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">
