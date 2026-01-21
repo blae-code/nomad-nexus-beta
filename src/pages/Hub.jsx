@@ -161,63 +161,113 @@ export default function HubPage() {
           className="border border-zinc-800/50 bg-gradient-to-r from-zinc-950 via-[#ea580c]/5 to-zinc-950 p-5 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#ea580c]/5 blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-96 h-32 bg-blue-500/3 blur-3xl -z-0" />
           <div className="relative z-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* User Info */}
-            <div className="lg:col-span-4">
-              <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-1">
-                COMMAND HUB
-              </h1>
-              <p className="text-xs font-mono text-zinc-500 tracking-widest mb-2">
-                {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge className={cn('text-[9px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
-                  {user?.rank || 'VAGRANT'}
-                </Badge>
-                {user?.role === 'admin' && (
-                  <Badge className="text-[9px] font-bold border-[#ea580c]/50 bg-[#ea580c]/10 text-[#ea580c]">
-                    SYSTEM ADMIN
+            <div className="lg:col-span-4 space-y-2">
+              <div>
+                <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-1 flex items-center gap-2">
+                  COMMAND HUB
+                  <Signal className="w-4 h-4 text-emerald-500 animate-pulse" />
+                </h1>
+                <p className="text-xs font-mono text-zinc-500 tracking-widest mb-2">
+                  {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className={cn('text-[9px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
+                    {user?.rank || 'VAGRANT'}
                   </Badge>
-                )}
-                <Badge variant="outline" className="text-[9px]">
-                  <Clock className="w-2.5 h-2.5 mr-1" />
-                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Badge>
+                  {user?.role === 'admin' && (
+                    <Badge className="text-[9px] font-bold border-[#ea580c]/50 bg-[#ea580c]/10 text-[#ea580c]">
+                      SYSTEM ADMIN
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-[9px]">
+                    <Clock className="w-2.5 h-2.5 mr-1" />
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Badge>
+                </div>
+              </div>
+              {/* System Health Indicator */}
+              <div className="border border-zinc-800/30 bg-zinc-900/30 p-2">
+                <div className="text-[8px] uppercase text-zinc-600 mb-1 tracking-wider">Network Health</div>
+                <div className="flex items-center gap-2">
+                  <Progress value={systemHealth.userActivityRate} className="h-1.5 flex-1" />
+                  <span className="text-[9px] font-mono text-emerald-400">{systemHealth.userActivityRate}%</span>
+                </div>
               </div>
             </div>
-            
+
             {/* Live Metrics Grid */}
-            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-emerald-500/30 transition-colors">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Users className="w-3 h-3 text-emerald-500" />
                   <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Online</div>
                 </div>
                 <div className="text-xl font-black text-white">{onlineUsers.length}</div>
+                <div className="text-[7px] text-zinc-600 mt-0.5">/{allUsers.length} total</div>
               </div>
-              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-blue-500/30 transition-colors">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Calendar className="w-3 h-3 text-blue-500" />
                   <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Events</div>
                 </div>
                 <div className="text-xl font-black text-white">{userEvents.length}</div>
+                <div className="text-[7px] text-zinc-600 mt-0.5">active ops</div>
               </div>
-              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-red-500/30 transition-colors">
                 <div className="flex items-center gap-1.5 mb-1">
                   <AlertCircle className="w-3 h-3 text-red-500" />
                   <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Incidents</div>
                 </div>
                 <div className="text-xl font-black text-white">{activeIncidents.length}</div>
+                <div className="text-[7px] text-zinc-600 mt-0.5">{systemHealth.incidentRate}</div>
+              </div>
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-purple-500/30 transition-colors">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Radio className="w-3 h-3 text-purple-500" />
+                  <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Nets</div>
+                </div>
+                <div className="text-xl font-black text-white">{systemHealth.activeNets}</div>
+                <div className="text-[7px] text-zinc-600 mt-0.5">voice channels</div>
               </div>
               {canAccessTreasury && (
-                <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5">
+                <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-yellow-500/30 transition-colors">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Coins className="w-3 h-3 text-yellow-500" />
                     <div className="text-[8px] uppercase text-zinc-600 tracking-wider">aUEC</div>
                   </div>
                   <div className="text-xl font-black text-white">{treasuryBalance.toLocaleString()}</div>
+                  <div className="text-[7px] text-zinc-600 mt-0.5">treasury</div>
                 </div>
               )}
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-cyan-500/30 transition-colors">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Server className="w-3 h-3 text-cyan-500" />
+                  <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Uptime</div>
+                </div>
+                <div className="text-xl font-black text-white">{systemHealth.uptime}%</div>
+                <div className="text-[7px] text-zinc-600 mt-0.5">systems online</div>
+              </div>
+              {notifications.length > 0 && (
+                <div className="border border-yellow-900/50 bg-yellow-950/20 p-2.5 hover:border-yellow-500/50 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Bell className="w-3 h-3 text-yellow-500 animate-pulse" />
+                    <div className="text-[8px] uppercase text-yellow-600 tracking-wider">Alerts</div>
+                  </div>
+                  <div className="text-xl font-black text-yellow-300">{notifications.length}</div>
+                  <div className="text-[7px] text-yellow-700 mt-0.5">unread</div>
+                </div>
+              )}
+              <div className="border border-zinc-800/50 bg-zinc-950/50 p-2.5 hover:border-zinc-600/30 transition-colors">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Activity className="w-3 h-3 text-zinc-500" />
+                  <div className="text-[8px] uppercase text-zinc-600 tracking-wider">Activity</div>
+                </div>
+                <div className="text-xl font-black text-white">{recentLogs.length}</div>
+                <div className="text-[7px] text-zinc-600 mt-0.5">recent logs</div>
+              </div>
             </div>
           </div>
         </motion.div>
