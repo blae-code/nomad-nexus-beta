@@ -98,7 +98,17 @@ export default function HubPage() {
 
   const { data: onlineUsers = [] } = useQuery({
     queryKey: ['hub-online-users'],
-    queryFn: () => base44.entities.UserPresence.filter({ status: ['online', 'in-call'] }),
+    queryFn: async () => {
+      const presences = await base44.entities.UserPresence.filter({ status: ['online', 'in-call'] });
+      // Filter out stale presence records (no activity in last 30 seconds)
+      const now = new Date();
+      return presences.filter(p => {
+        if (!p.last_activity) return true; // Include if no timestamp
+        const lastActivity = new Date(p.last_activity);
+        const diffSeconds = (now - lastActivity) / 1000;
+        return diffSeconds < 30; // Only count as online if activity within 30 seconds
+      });
+    },
     enabled: !!user,
     initialData: [],
     refetchInterval: 10000,
