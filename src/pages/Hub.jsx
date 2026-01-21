@@ -294,10 +294,17 @@ export default function HubPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
-                        <Badge variant="outline" className="text-[7px]">{log.type}</Badge>
-                        <span className="text-[7px] text-zinc-600">{new Date(log.created_date).toLocaleTimeString()}</span>
+                        <Badge className={cn(
+                          "text-[7px] font-bold",
+                          log.type === 'STATUS' && "bg-blue-900/40 text-blue-200 border-blue-600",
+                          log.type === 'COMMS' && "bg-purple-900/40 text-purple-200 border-purple-600",
+                          log.type === 'RESCUE' && "bg-red-900/40 text-red-200 border-red-600",
+                          log.type === 'SYSTEM' && "bg-cyan-900/40 text-cyan-200 border-cyan-600",
+                          log.type === 'NOTE' && "bg-zinc-800/40 text-zinc-200 border-zinc-600"
+                        )}>{log.type}</Badge>
+                        <span className="text-[7px] text-zinc-500">{new Date(log.created_date).toLocaleTimeString()}</span>
                       </div>
-                      <div className="text-[9px] text-zinc-300 line-clamp-2 font-medium">{log.summary}</div>
+                      <div className="text-[9px] text-zinc-200 line-clamp-2 font-medium">{log.summary}</div>
                     </div>
                   </div>
                 </motion.div>
