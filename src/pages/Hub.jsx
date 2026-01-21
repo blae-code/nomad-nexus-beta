@@ -401,14 +401,7 @@ export default function HubPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left Column - Primary Content */}
           <div className="lg:col-span-8 space-y-4">
-            {/* Personal Status */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="border border-zinc-800/50 bg-zinc-950"
-            >
-              <CurrentStatusHeader user={user} />
-            </motion.div>
+
 
             {/* Primary Tabbed Interface */}
             <motion.div
