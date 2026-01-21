@@ -28,10 +28,10 @@ export default function HubPage() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Fetch user's events and memberships
+  // Fetch comprehensive dashboard data
   const { data: userEvents = [] } = useQuery({
     queryKey: ['hub-user-events', user?.id],
-    queryFn: () => user ? base44.entities.Event.filter({ status: ['active', 'pending', 'scheduled'] }, '-updated_date', 5) : Promise.resolve([]),
+    queryFn: () => user ? base44.entities.Event.filter({ status: ['active', 'pending', 'scheduled'] }, '-updated_date', 10) : Promise.resolve([]),
     enabled: !!user,
   });
 
@@ -41,7 +41,6 @@ export default function HubPage() {
     enabled: !!user,
   });
 
-  // Fetch squad details
   const { data: userSquads = [] } = useQuery({
     queryKey: ['hub-squads', squadMemberships.map(m => m.squad_id).join(',')],
     queryFn: async () => {
@@ -52,6 +51,45 @@ export default function HubPage() {
       return squads.filter(Boolean);
     },
     enabled: squadMemberships.length > 0,
+  });
+
+  const { data: fleetAssets = [] } = useQuery({
+    queryKey: ['hub-fleet-assets'],
+    queryFn: () => base44.entities.FleetAsset.filter({ status: 'operational' }, '-updated_date', 5),
+    enabled: !!user && canManageFleet,
+    initialData: [],
+  });
+
+  const { data: recentMessages = [] } = useQuery({
+    queryKey: ['hub-recent-messages'],
+    queryFn: () => base44.entities.Message.list('-created_date', 5),
+    enabled: !!user,
+    initialData: [],
+  });
+
+  const { data: treasuryBalance } = useQuery({
+    queryKey: ['hub-treasury'],
+    queryFn: async () => {
+      const coffers = await base44.entities.Coffer.list();
+      return coffers.reduce((sum, c) => sum + (c.balance || 0), 0);
+    },
+    enabled: !!user && canAccessTreasury,
+    initialData: 0,
+  });
+
+  const { data: activeIncidents = [] } = useQuery({
+    queryKey: ['hub-incidents'],
+    queryFn: () => base44.entities.Incident.filter({ status: ['active', 'responding'] }, '-created_date', 3),
+    enabled: !!user,
+    initialData: [],
+  });
+
+  const { data: onlineUsers = [] } = useQuery({
+    queryKey: ['hub-online-users'],
+    queryFn: () => base44.entities.UserPresence.filter({ status: ['online', 'in-call'] }),
+    enabled: !!user,
+    initialData: [],
+    refetchInterval: 10000,
   });
 
   // Get user rank index
