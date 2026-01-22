@@ -22,7 +22,7 @@ const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 export default function HubPage() {
   const [activeTab, setActiveTab] = useState('ops');
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [statsCollapsed, setStatsCollapsed] = useState(false);
+  const [pulseCollapsed, setPulseCollapsed] = useState(false);
   const navigate = useNavigate();
   
   const user = useCurrentUser();
@@ -89,12 +89,12 @@ export default function HubPage() {
         </div>
       </div>
     );
-  }
+    }
 
-  return (
+    return (
     <div className="h-screen bg-[#09090b] text-zinc-200 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-auto flex flex-col">
-        <div className="p-3 space-y-3 flex-shrink-0">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
           {/* Immersive Org Identity Header - Collapsible */}
           <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#ea580c]/10 to-zinc-950 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
@@ -102,15 +102,15 @@ export default function HubPage() {
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
 
             {/* Collapse Toggle Bar - Always Visible */}
-            <div 
-              className="relative z-20 flex items-center justify-between p-2.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
-              onClick={() => setHeaderCollapsed(!headerCollapsed)}
-            >
-              <span className="text-[8px] uppercase text-zinc-300 tracking-wider font-bold">OPERATIONAL CONTEXT</span>
-              <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
-              </motion.div>
-            </div>
+              <div 
+                className="relative z-20 flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
+                onClick={() => setHeaderCollapsed(!headerCollapsed)}
+              >
+                <span className="text-[7px] uppercase text-zinc-300 tracking-wider font-bold">OPS CONTEXT</span>
+                <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
+                </motion.div>
+              </div>
 
             <motion.div 
               initial={false}
@@ -118,7 +118,7 @@ export default function HubPage() {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="relative z-10 p-2.5">
+              <div className="relative z-10 p-1.5">
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -179,22 +179,29 @@ export default function HubPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="border border-[#ea580c]/30 bg-zinc-950/80 p-2"
+              className="border border-[#ea580c]/30 bg-zinc-950/80"
             >
-              <div className="flex items-center justify-between mb-1.5">
+              <div 
+                onClick={() => setPulseCollapsed(!pulseCollapsed)}
+                className="flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors"
+              >
                 <div className="flex items-center gap-2">
                   <Flame className="w-3 h-3 text-[#ea580c] animate-pulse" />
                   <span className="text-[8px] uppercase text-zinc-300 tracking-wider font-bold">PULSE</span>
                   <Badge className="text-[6px] bg-[#ea580c] text-white border-[#ea580c] animate-pulse">LIVE</Badge>
                 </div>
-                <button
-                  onClick={() => setActiveTab('activity')}
-                  className="text-[7px] text-zinc-400 hover:text-[#ea580c] transition-colors font-mono"
+                <motion.div animate={{ rotate: pulseCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronRight className="w-3 h-3 text-zinc-500" />
+                </motion.div>
+                </div>
+
+                <motion.div
+                initial={false}
+                animate={{ height: pulseCollapsed ? 0 : 'auto', opacity: pulseCollapsed ? 0 : 1 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
                 >
-                  VIEW ALL →
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 p-1.5 border-t border-zinc-800/30">
                 {recentLogs.slice(0, 4).map((log, i) => {
                   const getNavigationTarget = (log) => {
                     if (log.event_id) return () => navigate(createPageUrl('Events'));
@@ -247,15 +254,16 @@ export default function HubPage() {
                       </div>
                     </motion.div>
                   );
-                })}
-              </div>
-            </motion.div>
-          )}
+                  })}
+                  </div>
+                  </motion.div>
+                  </motion.div>
+                  )}
         </div>
 
         {/* Main Dashboard Grid */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-auto">
-          <div className="space-y-2 flex flex-col min-h-0 flex-1 p-3">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="space-y-0 flex flex-col min-h-0 flex-1 p-2">
             {/* Primary Tabbed Interface */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
