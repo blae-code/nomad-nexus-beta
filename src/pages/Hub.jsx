@@ -19,6 +19,7 @@ const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 export default function HubPage() {
   const [activeTab, setActiveTab] = useState('ops');
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [statsCollapsed, setStatsCollapsed] = useState(false);
   const navigate = useNavigate();
   
   const user = useCurrentUser();
