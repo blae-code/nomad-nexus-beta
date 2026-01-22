@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, TrendingUp, Star, Swords, Award } from 'lucide-react';
+import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, TrendingUp, Star, Swords, Award, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
