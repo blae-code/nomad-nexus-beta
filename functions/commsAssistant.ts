@@ -176,12 +176,16 @@ async function suggestNets(base44, user, { eventId }) {
 }
 
 async function askComms(base44, user, { query, eventId }) {
-  // Gather context: Active Nets, Recent Important Logs, Player Statuses
+  // Gather context with timeout protection
   const filterQuery = eventId ? { event_id: eventId } : {};
+  
+  const fetchWithTimeout = (promise, timeoutMs = 3000) => 
+    Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs))]);
+
   const [nets, statuses, agents] = await Promise.all([
-      base44.entities.VoiceNet.filter(filterQuery),
-      base44.entities.PlayerStatus.filter(filterQuery),
-      base44.entities.AIAgentLog.filter(filterQuery, '-created_date', 10)
+      fetchWithTimeout(base44.entities.VoiceNet.filter(filterQuery)).catch(() => []),
+      fetchWithTimeout(base44.entities.PlayerStatus.filter(filterQuery)).catch(() => []),
+      fetchWithTimeout(base44.entities.AIAgentLog.filter(filterQuery, '-created_date', 10)).catch(() => [])
   ]);
 
   const context = `
