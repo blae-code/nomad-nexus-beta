@@ -161,15 +161,35 @@ export default function HubPage() {
                 treasuryBalance={treasuryBalance}
               />
 
-              {/* Personal Stats Row */}
-              <HubPersonalStats
-                userEvents={userEvents}
-                recentLogs={recentLogs}
-                squadMemberships={squadMemberships}
-                userRankIndex={userRankIndex}
-                user={user}
-                voiceNets={voiceNets}
-              />
+              {/* Personal Stats Row - Collapsible */}
+              <div className="border border-zinc-800 bg-zinc-950">
+                <div 
+                  className="flex items-center justify-between p-3 cursor-pointer hover:bg-zinc-900/50 transition-colors group"
+                  onClick={() => setStatsCollapsed(!statsCollapsed)}
+                >
+                  <span className="text-[9px] uppercase text-zinc-300 tracking-wider font-bold">PERSONAL PERFORMANCE</span>
+                  <motion.div animate={{ rotate: statsCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c]" />
+                  </motion.div>
+                </div>
+                <motion.div
+                  initial={false}
+                  animate={{ height: statsCollapsed ? 0 : 'auto', opacity: statsCollapsed ? 0 : 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3 border-t border-zinc-800">
+                    <HubPersonalStats
+                      userEvents={userEvents}
+                      recentLogs={recentLogs}
+                      squadMemberships={squadMemberships}
+                      userRankIndex={userRankIndex}
+                      user={user}
+                      voiceNets={voiceNets}
+                    />
+                  </div>
+                </motion.div>
+              </div>
               </div>
               </div>
               </motion.div>
