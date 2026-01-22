@@ -89,8 +89,8 @@ export default function HubPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">
-      <div className="p-4 space-y-4">
+    <div className="h-screen bg-[#09090b] text-zinc-200 overflow-auto flex flex-col">
+      <div className="p-4 space-y-4 flex-shrink-0">
         {/* Immersive Org Identity Header */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
@@ -219,9 +219,9 @@ export default function HubPage() {
         )}
 
         {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0 pb-4">
           {/* Left Column - Primary Content */}
-          <div className="lg:col-span-8 space-y-4">
+          <div className="lg:col-span-8 space-y-4 flex flex-col min-h-0">
             {/* Primary Tabbed Interface */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -903,7 +903,7 @@ export default function HubPage() {
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-4 space-y-4"
+            className="lg:col-span-4 space-y-4 flex flex-col min-h-0"
           >
             {/* Critical Alerts */}
             {activeIncidents.length > 0 && (
