@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog, Coins } from 'lucide-react';
+import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog, Coins, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
