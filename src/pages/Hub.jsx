@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { createPageUrl } from "@/utils";
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
@@ -23,6 +23,10 @@ export default function HubPage() {
   
   const user = useCurrentUser();
   const { data, isLoading } = useDashboardData(user);
+  
+  // Memoize navigation handlers
+  const handleNavigateToEvents = useCallback(() => navigate(createPageUrl('Events')), [navigate]);
+  const handleTabChange = useCallback((tab) => setActiveTab(tab), []);
   
   useRealtimeSubscriptions({
     enabled: !!user,
