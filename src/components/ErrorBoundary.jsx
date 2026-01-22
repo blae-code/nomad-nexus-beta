@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default class ErrorBoundary extends React.Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
@@ -71,3 +71,6 @@ export default class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+export { ErrorBoundary };
+export default ErrorBoundary;
