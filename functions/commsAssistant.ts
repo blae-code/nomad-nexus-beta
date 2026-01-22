@@ -40,11 +40,9 @@ async function summarizeLogs(base44, { eventId, channelId, limit = 50 }) {
   }
   if (channelId) filter.channel_id = channelId;
 
-  const messages = await base44.entities.Message.list({
-    filter,
-    sort: { created_date: -1 },
-    limit
-  });
+  const messages = channelId 
+    ? await base44.entities.Message.filter(filter, '-created_date', limit)
+    : [];
 
   if (messages.length === 0) {
     return Response.json({ summary: "No recent communications to summarize." });
@@ -76,24 +74,18 @@ async function summarizeLogs(base44, { eventId, channelId, limit = 50 }) {
 }
 
 async function scanPriority(base44, { messageIds }) {
-  // If messageIds provided, scan specific messages. 
-  // Or scan recent messages in a channel.
-  // Let's assume we scan a specific new message or list of messages.
+  if (!messageIds || messageIds.length === 0) {
+    return Response.json({ flagged: [] });
+  }
   
-  // For this implementation, let's assume the frontend sends a list of recent messages to analyze
-  // Or we fetch them.
-  // Let's fetch the messages by ID.
+  const messages = await Promise.all(
+    messageIds.map(id => base44.entities.Message.get(id).catch(() => null))
+  );
   
-  // Simplified: The frontend sends "content" to check, or we fetch recent.
-  // Better: Fetch recent 10 messages from a channel and flag them.
-  
-  const messages = await base44.entities.Message.list({
-     filter: { id: { "$in": messageIds } }
-  });
-  
-  if (!messages.length) return Response.json({ flagged: [] });
+  const validMessages = messages.filter(Boolean);
+  if (!validMessages.length) return Response.json({ flagged: [] });
 
-  const contentList = messages.map(m => ({ id: m.id, content: m.content }));
+  const contentList = validMessages.map(m => ({ id: m.id, content: m.content }));
   
   const prompt = `
     Analyze the following messages for priority.
@@ -125,30 +117,33 @@ async function scanPriority(base44, { messageIds }) {
   });
 
   // Update messages with analysis
-  const updates = [];
-  for (const item of res.analysis) {
-      if (item.is_priority) {
-          updates.push(
-              base44.entities.Message.update(item.id, {
-                  ai_analysis: {
-                      is_priority: item.is_priority,
-                      summary: item.reason,
-                      tags: item.tags
-                  }
-              })
-          );
-      }
+  if (res.analysis && res.analysis.length > 0) {
+    const updates = [];
+    for (const item of res.analysis) {
+        if (item.is_priority) {
+            updates.push(
+                base44.asServiceRole.entities.Message.update(item.id, {
+                    ai_analysis: {
+                        is_priority: item.is_priority,
+                        summary: item.reason,
+                        tags: item.tags
+                    }
+                })
+            );
+        }
+    }
+    
+    await Promise.all(updates);
   }
-  
-  await Promise.all(updates);
 
   return Response.json(res);
 }
 
 async function suggestNets(base44, user, { eventId }) {
+  const filterQuery = eventId ? { event_id: eventId } : {};
   const [nets, playerStatus] = await Promise.all([
-    base44.entities.VoiceNet.list({ filter: { event_id: eventId } }),
-    base44.entities.PlayerStatus.list({ filter: { user_id: user.id, event_id: eventId } })
+    base44.entities.VoiceNet.filter(filterQuery),
+    base44.entities.PlayerStatus.filter({ user_id: user.id })
   ]);
 
   const status = playerStatus[0];
@@ -182,10 +177,11 @@ async function suggestNets(base44, user, { eventId }) {
 
 async function askComms(base44, user, { query, eventId }) {
   // Gather context: Active Nets, Recent Important Logs, Player Statuses
+  const filterQuery = eventId ? { event_id: eventId } : {};
   const [nets, statuses, agents] = await Promise.all([
-      base44.entities.VoiceNet.list({ filter: { event_id: eventId } }),
-      base44.entities.PlayerStatus.list({ filter: { event_id: eventId } }),
-      base44.entities.AIAgentLog.list({ filter: { event_id: eventId }, sort: { created_date: -1 }, limit: 10 })
+      base44.entities.VoiceNet.filter(filterQuery),
+      base44.entities.PlayerStatus.filter(filterQuery),
+      base44.entities.AIAgentLog.filter(filterQuery, '-created_date', 10)
   ]);
 
   const context = `
