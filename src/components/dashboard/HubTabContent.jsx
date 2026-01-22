@@ -320,53 +320,81 @@ function OpsTab({ userEvents }) {
       <div className="text-[8px] font-bold uppercase text-zinc-300 tracking-wider mb-2">ACTIVE & UPCOMING MISSIONS</div>
 
       {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).length === 0 ? (
-        <div className="text-center py-12 space-y-2 border border-zinc-800 bg-zinc-900/30">
-          <Target className="w-10 h-10 mx-auto text-zinc-600" />
-          <div className="text-sm font-bold text-zinc-400">NO ACTIVE OPERATIONS</div>
-          <div className="text-[9px] text-zinc-500">Awaiting mission assignment</div>
+        <div className="text-center py-8 space-y-2 border border-zinc-800 bg-zinc-900/30">
+          <Target className="w-8 h-8 mx-auto text-zinc-600" />
+          <div className="text-xs font-bold text-zinc-400">NO ACTIVE OPERATIONS</div>
+          <div className="text-[8px] text-zinc-500">Awaiting mission assignment</div>
         </div>
       ) : (
-        <div className="space-y-2">
-          {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).slice(0, 6).map((event) => {
+        <div className="space-y-1">
+          {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).slice(0, 10).map((event) => {
             const startTime = new Date(event.start_time);
             const timeUntil = Math.floor((startTime - new Date()) / 1000 / 60);
             const isImmediate = timeUntil < 60;
-            
+            const objectiveCount = event.objectives?.length || 0;
+            const completedObjectives = event.objectives?.filter(o => o.is_completed).length || 0;
+
             return (
-              <div key={event.id} className="border border-zinc-800 bg-zinc-900/50 p-3 hover:border-[#ea580c] transition-all cursor-pointer group">
-                <div className="flex items-start justify-between mb-2">
+              <div key={event.id} className="border border-zinc-800/50 bg-zinc-900/30 p-2 hover:border-[#ea580c]/50 hover:bg-zinc-900/50 transition-all cursor-pointer group">
+                <div className="flex items-start gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge className={cn(
+                      'text-[6px] font-bold px-1 py-0',
+                      event.status === 'active' && 'bg-emerald-600 text-white border-emerald-600',
+                      event.status === 'pending' && 'bg-yellow-600 text-white border-yellow-600',
+                      event.status === 'scheduled' && 'bg-blue-600 text-white border-blue-600'
+                    )}>{event.status.slice(0, 3).toUpperCase()}</Badge>
+                    <div className={cn(
+                      "text-[8px] font-mono font-bold px-1",
+                      isImmediate ? "text-[#ea580c]" : "text-zinc-300"
+                    )}>
+                      {isImmediate ? 'NOW' : timeUntil > 0 ? `T-${timeUntil}m` : 'LIVE'}
+                    </div>
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Badge className={cn(
-                        'text-[7px] font-bold',
-                        event.status === 'active' && 'bg-emerald-600 text-white border-emerald-600',
-                        event.status === 'pending' && 'bg-yellow-600 text-white border-yellow-600',
-                        event.status === 'scheduled' && 'bg-blue-600 text-white border-blue-600'
-                      )}>{event.status.toUpperCase()}</Badge>
-                      <Badge className="text-[7px] bg-zinc-700 text-zinc-200 border-zinc-600">{event.priority}</Badge>
-                      <Badge className="text-[7px] bg-zinc-800 text-zinc-300 border-zinc-700">{event.event_type}</Badge>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <div className="text-[10px] font-bold text-zinc-100 truncate group-hover:text-[#ea580c] transition-colors">{event.title}</div>
+                      <Badge className="text-[6px] px-1 py-0 bg-zinc-800 text-zinc-400 border-zinc-700 shrink-0">{event.priority}</Badge>
+                      <Badge className="text-[6px] px-1 py-0 bg-zinc-800/50 text-zinc-400 border-zinc-700/50 shrink-0">{event.event_type}</Badge>
                     </div>
-                    <div className="text-sm font-bold text-zinc-100 mb-1 group-hover:text-[#ea580c] transition-colors">{event.title}</div>
-                    {event.description && <div className="text-[9px] text-zinc-400 line-clamp-1">{event.description}</div>}
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c] transition-colors shrink-0" />
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800">
-                  <div>
-                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Departure</div>
-                    <div className={cn("text-[9px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-200")}>
-                      {isImmediate ? 'IMMEDIATE' : timeUntil > 0 ? `T-${timeUntil}m` : 'ACTIVE'}
+
+                    <div className="flex items-center gap-3 text-[8px] text-zinc-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-2.5 h-2.5" />
+                        <span className="font-mono">{startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+
+                      {event.location && (
+                        <div className="flex items-center gap-1 truncate">
+                          <Target className="w-2.5 h-2.5" />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                      )}
+
+                      {event.assigned_user_ids?.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Users className="w-2.5 h-2.5" />
+                          <span>{event.assigned_user_ids.length}</span>
+                        </div>
+                      )}
+
+                      {objectiveCount > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Target className="w-2.5 h-2.5" />
+                          <span>{completedObjectives}/{objectiveCount}</span>
+                        </div>
+                      )}
+
+                      {event.phase && (
+                        <Badge className="text-[6px] px-1 py-0 bg-cyan-900/30 text-cyan-400 border-cyan-900/50">
+                          {event.phase}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Location</div>
-                    <div className="text-[9px] font-mono text-zinc-200 truncate">{event.location || 'TBD'}</div>
-                  </div>
-                  <div>
-                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Personnel</div>
-                    <div className="text-[9px] font-mono text-zinc-200">{event.assigned_user_ids?.length || 0}</div>
-                  </div>
+
+                  <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0 mt-0.5" />
                 </div>
               </div>
             );
