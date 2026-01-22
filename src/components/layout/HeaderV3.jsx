@@ -504,6 +504,19 @@ export default function HeaderV3() {
 
       {/* RIGHT: Telemetry + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Personal Ledger */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          onClick={() => window.location.href = createPageUrl('Treasury')}
+          className="flex flex-col items-center text-[9px] hover:opacity-80 transition-opacity cursor-pointer group"
+        >
+          <div className="text-[7px] text-zinc-500 uppercase mb-0.5 tracking-wider group-hover:text-[#ea580c] font-mono">Ledger</div>
+          <Badge className="text-[8px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 px-2 py-0.5">
+            <Coins className="w-2 h-2 mr-0.5" />
+            {user?.aUEC?.toLocaleString() || '0'}
+          </Badge>
+        </motion.button>
+
         {/* Ritual Bonfire Widget */}
         <RitualBonfireWidget />
         
