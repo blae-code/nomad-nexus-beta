@@ -22,6 +22,8 @@ import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 import EventDeleteDialog from "@/components/events/EventDeleteDialog";
 import CommsPanel from "@/components/events/CommsPanel";
 import SquadManager from "@/components/events/SquadManager";
+import EventPlanningWizard from "@/components/events/EventPlanningWizard";
+import SquadCommsSetup from "@/components/events/SquadCommsSetup";
 import PlayerStatusSection from "@/components/events/PlayerStatusSection";
 import EventParticipants from "@/components/events/EventParticipants";
 import EventEconomy from "@/components/events/EventEconomy";
@@ -357,7 +359,10 @@ function EventDetail({ id }) {
 
 export default function EventsPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardData, setWizardData] = useState(null);
+  const [showCommsSetup, setShowCommsSetup] = useState(false);
+  const [newEventId, setNewEventId] = useState(null);
 
   // Check for Detail View
   const params = new URLSearchParams(window.location.search);
@@ -398,7 +403,7 @@ export default function EventsPage() {
           </div>
           {canCreateEvent(currentUser) && (
             <Button 
-              onClick={() => setIsCreateOpen(true)} 
+              onClick={() => setShowWizard(true)} 
               className="bg-red-900 hover:bg-red-800 text-white text-xs h-7 px-3"
             >
               INITIALIZE OPERATION
@@ -414,17 +419,17 @@ export default function EventsPage() {
             <LoadingState message="RETRIEVING OPERATIONS..." />
           ) : events.length === 0 ? (
             <EmptyState
-              title="No Scheduled Operations"
-              description="Initialize a new operation to begin planning."
-              action={canCreateEvent(currentUser) && (
-                <Button 
-                  onClick={() => setIsCreateOpen(true)} 
-                  className="bg-red-900 hover:bg-red-800 text-white text-xs"
-                >
-                  INITIALIZE OPERATION
-                </Button>
-              )}
-            />
+               title="No Scheduled Operations"
+               description="Initialize a new operation to begin planning."
+               action={canCreateEvent(currentUser) && (
+                 <Button 
+                   onClick={() => setShowWizard(true)} 
+                   className="bg-red-900 hover:bg-red-800 text-white text-xs"
+                 >
+                   INITIALIZE OPERATION
+                 </Button>
+               )}
+             />
           ) : (
             <div className="grid gap-2">
               {events.map((event) => {
@@ -443,7 +448,31 @@ export default function EventsPage() {
         </div>
       </div>
 
-      <EventForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      {/* Step 1: Planning Wizard */}
+      <EventPlanningWizard
+        open={showWizard}
+        onOpenChange={setShowWizard}
+        currentUser={currentUser}
+        onComplete={(data) => {
+          setWizardData(data);
+          setShowWizard(false);
+          setShowCommsSetup(true);
+        }}
+      />
+
+      {/* Step 2: Squad & Comms Setup (creates event + squads + nets) */}
+      <SquadCommsSetup
+        open={showCommsSetup && !!wizardData}
+        onOpenChange={setShowCommsSetup}
+        eventData={wizardData}
+        eventId={newEventId}
+        onSuccess={() => {
+          // After comms setup, redirect to event detail
+          if (newEventId) {
+            window.location.href = createPageUrl(`Events?id=${newEventId}`);
+          }
+        }}
+      />
     </div>
   );
 }
