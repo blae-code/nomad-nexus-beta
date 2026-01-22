@@ -43,38 +43,33 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) 
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">DATA VISUALIZATIONS</h3>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 px-2 text-[8px]"
-            onClick={() => handleExportChart('metrics')}
-          >
-            <Download className="w-3 h-3 mr-1" />
-            Export All
-          </Button>
-        </div>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">DATA VISUALIZATIONS</h3>
+        <button
+          onClick={() => handleExportChart('metrics')}
+          className="text-[8px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+        >
+          <Download className="w-3 h-3" />
+          Export All
+        </button>
       </div>
 
       {/* Activity Over Time */}
-      <div className="border border-zinc-800 bg-zinc-900/30 p-3">
-        <div className="flex items-center justify-between mb-2">
+      <div className="border border-zinc-800 bg-zinc-900/30 p-2">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Badge className="text-[7px] bg-cyan-900/30 text-cyan-400 border-cyan-900/50">LINE CHART</Badge>
-            <span className="text-[9px] font-bold text-zinc-300">User Activity Trend (7 Days)</span>
+            <Badge className="text-[6px] bg-cyan-900/30 text-cyan-400 border-cyan-900/50">TREND</Badge>
+            <span className="text-[8px] font-bold text-zinc-300">7-Day Activity</span>
           </div>
           <button
             onClick={() => handleExportChart('activity-trend')}
-            className="text-[8px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
           >
-            <Download className="w-3 h-3" />
-            Export
+            <Download className="w-2.5 h-2.5" />
           </button>
         </div>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={120}>
           <LineChart data={activityData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
@@ -105,21 +100,20 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) 
       </div>
 
       {/* Event Completion Rate */}
-      <div className="border border-zinc-800 bg-zinc-900/30 p-3">
-        <div className="flex items-center justify-between mb-2">
+      <div className="border border-zinc-800 bg-zinc-900/30 p-2">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Badge className="text-[7px] bg-blue-900/30 text-blue-400 border-blue-900/50">BAR CHART</Badge>
-            <span className="text-[9px] font-bold text-zinc-300">Event Status Distribution</span>
+            <Badge className="text-[6px] bg-blue-900/30 text-blue-400 border-blue-900/50">STATUS</Badge>
+            <span className="text-[8px] font-bold text-zinc-300">Event Distribution</span>
           </div>
           <button
             onClick={() => handleExportChart('event-status')}
-            className="text-[8px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
           >
-            <Download className="w-3 h-3" />
-            Export
+            <Download className="w-2.5 h-2.5" />
           </button>
         </div>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={120}>
           <BarChart data={completionData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="status" stroke="#71717a" style={{ fontSize: '11px' }} />
@@ -139,27 +133,24 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) 
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-1">Total Events</div>
-          <div className="text-lg font-bold text-blue-300">{userEvents.length}</div>
-          <div className="text-[7px] text-zinc-500 mt-1">All operations</div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="border border-zinc-800/50 bg-zinc-900/30 p-1.5">
+          <div className="text-[6px] text-zinc-400 uppercase mb-0.5">Events</div>
+          <div className="text-base font-bold text-blue-300">{userEvents.length}</div>
         </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-1">Completion Rate</div>
-          <div className="text-lg font-bold text-emerald-300">
+        <div className="border border-zinc-800/50 bg-zinc-900/30 p-1.5">
+          <div className="text-[6px] text-zinc-400 uppercase mb-0.5">Rate</div>
+          <div className="text-base font-bold text-emerald-300">
             {userEvents.length > 0 
               ? Math.round((userEvents.filter(e => e.status === 'completed').length / userEvents.length) * 100) 
               : 0}%
           </div>
-          <div className="text-[7px] text-zinc-500 mt-1">Success metric</div>
         </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-1">Avg Activity</div>
-          <div className="text-lg font-bold text-cyan-300">
-            {Math.round(recentLogs.length / 7)}
+        <div className="border border-zinc-800/50 bg-zinc-900/30 p-1.5">
+          <div className="text-[6px] text-zinc-400 uppercase mb-0.5">Activity</div>
+          <div className="text-base font-bold text-cyan-300">
+            {Math.round(recentLogs.length / 7)}/day
           </div>
-          <div className="text-[7px] text-zinc-500 mt-1">per day</div>
         </div>
       </div>
     </div>
