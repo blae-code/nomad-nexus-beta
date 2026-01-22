@@ -228,8 +228,8 @@ function EventDetail({ id }) {
                             <div className="font-bold text-zinc-200">{asset.name}</div>
                             <div className="text-zinc-500">{asset.model}</div>
                           </div>
-                        </div>
-                      ))}
+                        </Link>
+                        ))}
                     </div>
                   )}
                 </div>
