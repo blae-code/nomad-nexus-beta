@@ -4,7 +4,7 @@ import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) {
+export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0 }) {
   // Prepare activity over time (last 7 days)
   const activityData = useMemo(() => {
     const days = 7;
@@ -26,14 +26,19 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) 
     return data;
   }, [recentLogs, allUsers.length]);
 
-  // Event completion rates
-  const completionData = useMemo(() => {
-    const statuses = ['active', 'scheduled', 'pending', 'completed', 'cancelled'];
-    return statuses.map(status => ({
-      status: status.charAt(0).toUpperCase() + status.slice(1),
-      count: userEvents.filter(e => e.status === status).length
-    }));
-  }, [userEvents]);
+  // Org fund allocation
+  const fundAllocationData = useMemo(() => {
+    const totalEvents = userEvents.length || 1;
+    const activeEvents = userEvents.filter(e => e.status === 'active').length || 1;
+    const completedEvents = userEvents.filter(e => e.status === 'completed').length || 1;
+    
+    return [
+      { category: 'Operations', amount: Math.round(treasuryBalance * 0.4) },
+      { category: 'Fleet', amount: Math.round(treasuryBalance * 0.3) },
+      { category: 'Reserves', amount: Math.round(treasuryBalance * 0.2) },
+      { category: 'Active', amount: Math.round(treasuryBalance * 0.1) }
+    ];
+  }, [treasuryBalance, userEvents]);
 
   const handleExportChart = (chartName) => {
     const link = document.createElement('a');
@@ -99,36 +104,35 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) 
         </ResponsiveContainer>
       </div>
 
-      {/* Org Resources */}
+      {/* Org Fund Allocation */}
       <div className="border border-zinc-800 bg-zinc-900/30 p-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Badge className="text-[6px] bg-purple-900/30 text-purple-400 border-purple-900/50">RESOURCES</Badge>
-            <span className="text-[8px] font-bold text-zinc-300">Organization Assets</span>
+            <Badge className="text-[6px] bg-purple-900/30 text-purple-400 border-purple-900/50">FUNDS</Badge>
+            <span className="text-[8px] font-bold text-zinc-300">Treasury Allocation</span>
+          </div>
+          <div className="text-[8px] font-bold text-purple-400">
+            {treasuryBalance.toLocaleString()} aUEC
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-1">
-          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
-            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Users</div>
-            <div className="text-sm font-bold text-emerald-300">{allUsers.length}</div>
-            <div className="text-[6px] text-zinc-600">Active</div>
-          </div>
-          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
-            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Events</div>
-            <div className="text-sm font-bold text-blue-300">{userEvents.length}</div>
-            <div className="text-[6px] text-zinc-600">Tracked</div>
-          </div>
-          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
-            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Logs</div>
-            <div className="text-sm font-bold text-cyan-300">{recentLogs.length}</div>
-            <div className="text-[6px] text-zinc-600">Recent</div>
-          </div>
-          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
-            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Health</div>
-            <div className="text-sm font-bold text-yellow-300">98%</div>
-            <div className="text-[6px] text-zinc-600">System</div>
-          </div>
-        </div>
+        <ResponsiveContainer width="100%" height={120}>
+          <BarChart data={fundAllocationData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+            <XAxis dataKey="category" stroke="#71717a" style={{ fontSize: '11px' }} />
+            <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+              labelStyle={{ color: '#e4e4e7' }}
+              formatter={(value) => value.toLocaleString()}
+            />
+            <Bar
+              dataKey="amount"
+              fill="#a855f7"
+              name="aUEC"
+              radius={0}
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Summary Stats */}
