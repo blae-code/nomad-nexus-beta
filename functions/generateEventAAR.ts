@@ -16,12 +16,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch event details
-    const event = await base44.entities.Event.filter({ id: eventId });
-    if (!event || event.length === 0) {
-      return Response.json({ error: 'Event not found' }, { status: 404 });
-    }
-
-    const eventDetails = event[0];
+    const eventDetails = await base44.entities.Event.get(eventId);
 
     // Fetch all event logs
     const logs = await base44.entities.EventLog.filter(

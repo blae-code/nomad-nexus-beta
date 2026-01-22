@@ -1,5 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { RoomServiceClient, AccessToken } from 'npm:livekit-server-sdk@2.0.3';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { RoomServiceClient, AccessToken } from 'npm:livekit-server-sdk@^2.0.0';
 
 Deno.serve(async (req) => {
     try {
@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
         const apiKey = Deno.env.get("LIVEKIT_API_KEY");
         const apiSecret = Deno.env.get("LIVEKIT_API_SECRET");
-        const livekitUrl = Deno.env.get("LIVEKIT_SERVER_URL");
+        const livekitUrl = Deno.env.get("LIVEKIT_URL");
 
         // 1. Create Temporary LiveKit Room
         const roomName = `rescue-${Date.now()}-${user.id.substring(0, 5)}`;
@@ -76,15 +76,15 @@ Deno.serve(async (req) => {
 
         // 3. Update PlayerStatus to DISTRESS (triggers UI alerts)
         // Check if status exists
-        const existingStatus = await base44.entities.PlayerStatus.list({ filter: { user_id: user.id } });
+        const existingStatus = await base44.entities.PlayerStatus.filter({ user_id: user.id });
         if (existingStatus.length > 0) {
-            await base44.entities.PlayerStatus.update(existingStatus[0].id, {
+            await base44.asServiceRole.entities.PlayerStatus.update(existingStatus[0].id, {
                 status: 'DISTRESS',
                 notes: `[${type}] ${description || location}`,
                 last_updated: new Date().toISOString()
             });
         } else {
-            await base44.entities.PlayerStatus.create({
+            await base44.asServiceRole.entities.PlayerStatus.create({
                 user_id: user.id,
                 status: 'DISTRESS',
                 notes: `[${type}] ${description || location}`,
