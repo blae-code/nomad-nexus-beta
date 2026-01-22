@@ -33,49 +33,32 @@ export default function HubTabContent({
   }
   
   if (activeTab === 'alerts') {
-    return <AlertsTab activeIncidents={activeIncidents} recentLogs={recentLogs} voiceNets={voiceNets} />;
+    return <AlertsAndIncidentsTab activeIncidents={activeIncidents} recentLogs={recentLogs} voiceNets={voiceNets} />;
   }
   
-  if (activeTab === 'incidents') {
-    return <IncidentsTab activeIncidents={activeIncidents} />;
+  if (activeTab === 'activity') {
+    return <ActivityTab recentLogs={recentLogs} recentMessages={recentMessages} user={user} />;
   }
   
-  if (activeTab === 'feed') {
-    return <FeedTab recentLogs={recentLogs} user={user} />;
-  }
-  
-  if (activeTab === 'squads') {
-    return <SquadsTab userSquads={userSquads} squadMemberships={squadMemberships} />;
-  }
-  
-  if (activeTab === 'fleet') {
-    return <FleetTab fleetAssets={fleetAssets} canManageFleet={canManageFleet} />;
-  }
-  
-  if (activeTab === 'comms') {
-    return <CommsTab voiceNets={voiceNets} onlineUsers={onlineUsers} recentMessages={recentMessages} />;
-  }
-  
-  if (activeTab === 'achievements') {
-    return <AchievementsTab 
-      achievementsTab={achievementsTab} 
-      setAchievementsTab={setAchievementsTab}
+  if (activeTab === 'organization') {
+    return <OrganizationTab 
+      userSquads={userSquads} 
+      squadMemberships={squadMemberships}
+      fleetAssets={fleetAssets}
+      canManageFleet={canManageFleet}
       allUsers={allUsers}
       orgMetrics={orgMetrics}
       user={user}
       userEvents={userEvents}
       recentLogs={recentLogs}
-      squadMemberships={squadMemberships}
       userRankIndex={userRankIndex}
+      achievementsTab={achievementsTab}
+      setAchievementsTab={setAchievementsTab}
     />;
   }
-
-  if (activeTab === 'recent-comms') {
-    return <RecentCommsTab recentMessages={recentMessages} />;
-  }
-
-  if (activeTab === 'personal-log') {
-    return <PersonalLogTab user={user} />;
+  
+  if (activeTab === 'comms') {
+    return <CommsTab voiceNets={voiceNets} onlineUsers={onlineUsers} recentMessages={recentMessages} />;
   }
   
   return null;
@@ -394,11 +377,36 @@ function OpsTab({ userEvents }) {
   );
 }
 
-function AlertsTab({ activeIncidents, recentLogs, voiceNets }) {
+function AlertsAndIncidentsTab({ activeIncidents, recentLogs, voiceNets }) {
+  const [subTab, setSubTab] = useState('alerts');
+  
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">SYSTEM ALERTS</div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSubTab('alerts')}
+            className={cn(
+              'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+              subTab === 'alerts'
+                ? 'bg-[#ea580c] text-white'
+                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            System Alerts
+          </button>
+          <button
+            onClick={() => setSubTab('incidents')}
+            className={cn(
+              'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+              subTab === 'incidents'
+                ? 'bg-[#ea580c] text-white'
+                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            Incidents ({activeIncidents.length})
+          </button>
+        </div>
         <Badge className={cn(
           'text-[7px] font-bold',
           activeIncidents.length > 0 ? 'bg-red-900/50 text-red-200 border-red-700 animate-pulse' : 'bg-emerald-900/50 text-emerald-200 border-emerald-700'
@@ -406,99 +414,235 @@ function AlertsTab({ activeIncidents, recentLogs, voiceNets }) {
           {activeIncidents.length > 0 ? 'ELEVATED' : 'NOMINAL'}
         </Badge>
       </div>
-      
-      <RescueAlertPanel />
-      
-      {recentLogs.filter(l => l.severity === 'HIGH' || l.type === 'RESCUE').length > 0 && (
-        <div className="space-y-2 mt-3">
-          <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">HIGH PRIORITY LOG</div>
-          {recentLogs.filter(l => l.severity === 'HIGH' || l.type === 'RESCUE').slice(0, 3).map((log) => (
-            <div key={log.id} className="border border-red-900/30 bg-red-950/20 p-2.5">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertCircle className="w-3 h-3 text-red-400" />
-                <Badge className="text-[7px] bg-red-900/50 text-red-300 border-red-900">{log.type}</Badge>
-                <span className="text-[7px] text-zinc-400 font-mono">{new Date(log.created_date).toLocaleTimeString()}</span>
-              </div>
-              <div className="text-[9px] text-red-200 font-medium">{log.summary}</div>
-              {log.details?.recommended_action && (
-                <div className="text-[8px] text-zinc-400 mt-1">→ {log.details.recommended_action}</div>
-              )}
+
+      {subTab === 'alerts' ? (
+        <>
+          <RescueAlertPanel />
+          
+          {recentLogs.filter(l => l.severity === 'HIGH' || l.type === 'RESCUE').length > 0 && (
+            <div className="space-y-2 mt-3">
+              <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">HIGH PRIORITY LOG</div>
+              {recentLogs.filter(l => l.severity === 'HIGH' || l.type === 'RESCUE').slice(0, 3).map((log) => (
+                <div key={log.id} className="border border-red-900/30 bg-red-950/20 p-2.5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertCircle className="w-3 h-3 text-red-400" />
+                    <Badge className="text-[7px] bg-red-900/50 text-red-300 border-red-900">{log.type}</Badge>
+                    <span className="text-[7px] text-zinc-400 font-mono">{new Date(log.created_date).toLocaleTimeString()}</span>
+                  </div>
+                  <div className="text-[9px] text-red-200 font-medium">{log.summary}</div>
+                  {log.details?.recommended_action && (
+                    <div className="text-[8px] text-zinc-400 mt-1">→ {log.details.recommended_action}</div>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+          
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-1">System Health</div>
+              <div className="text-sm font-bold text-emerald-300">98%</div>
+            </div>
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-1">Avg Response</div>
+              <div className="text-sm font-bold text-cyan-300">2.4m</div>
+            </div>
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-1">Active Nets</div>
+              <div className="text-sm font-bold text-blue-300">{voiceNets.length}</div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <LiveIncidentCenter />
+        </>
       )}
-      
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-1">System Health</div>
-          <div className="text-sm font-bold text-emerald-300">98%</div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-1">Avg Response</div>
-          <div className="text-sm font-bold text-cyan-300">2.4m</div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-1">Active Nets</div>
-          <div className="text-sm font-bold text-blue-300">{voiceNets.length}</div>
-        </div>
-      </div>
     </div>
   );
 }
 
-function IncidentsTab({ activeIncidents }) {
+function ActivityTab({ recentLogs, recentMessages, user }) {
+  const [subTab, setSubTab] = useState('feed');
+  
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">INCIDENT TRACKING</div>
-        <div className="flex items-center gap-2">
-          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{activeIncidents.length} ACTIVE</Badge>
-          {activeIncidents.some(i => i.severity === 'CRITICAL') && (
-            <Badge className="text-[7px] bg-red-900/50 text-red-200 border-red-700 animate-pulse">CRITICAL</Badge>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSubTab('feed')}
+            className={cn(
+              'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+              subTab === 'feed'
+                ? 'bg-[#ea580c] text-white'
+                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            Activity Feed
+          </button>
+          <button
+            onClick={() => setSubTab('comms')}
+            className={cn(
+              'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+              subTab === 'comms'
+                ? 'bg-[#ea580c] text-white'
+                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            Recent Comms
+          </button>
+          <button
+            onClick={() => setSubTab('personal')}
+            className={cn(
+              'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+              subTab === 'personal'
+                ? 'bg-[#ea580c] text-white'
+                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            Personal Log
+          </button>
+        </div>
+      </div>
+
+      {subTab === 'feed' && (
+        <>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Total Logs</div>
+              <div className="text-sm font-bold text-zinc-200">{recentLogs.length}</div>
+            </div>
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">High Priority</div>
+              <div className="text-sm font-bold text-red-300">{recentLogs.filter(l => l.severity === 'HIGH').length}</div>
+            </div>
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Your Activity</div>
+              <div className="text-sm font-bold text-cyan-300">{recentLogs.filter(l => l.actor_user_id === user?.id).length}</div>
+            </div>
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
+              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Last Update</div>
+              <div className="text-[9px] font-mono text-zinc-300">
+                {recentLogs[0] ? new Date(recentLogs[0].created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="max-h-80 overflow-y-auto space-y-1">
+            <LiveOperationsFeed eventId={null} limit={15} />
+          </div>
+        </>
+      )}
+
+      {subTab === 'comms' && (
+        <div className="space-y-2">
+          <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider mb-2">RECENT COMMUNICATIONS</div>
+          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700 mb-3">{recentMessages.length} MESSAGES</Badge>
+          
+          {recentMessages.length === 0 ? (
+            <div className="text-center py-16 space-y-2">
+              <Hash className="w-12 h-12 mx-auto text-zinc-600" />
+              <div className="text-sm font-bold text-zinc-400">NO RECENT MESSAGES</div>
+              <div className="text-[9px] text-zinc-500">All channels quiet</div>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {recentMessages.map((msg) => (
+                <div key={msg.id} className="border border-zinc-800/50 bg-zinc-900/30 p-3 hover:border-cyan-500/30 transition-all">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="text-[8px] font-mono text-zinc-400">{new Date(msg.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="w-1 h-1 rounded-full bg-cyan-500" />
+                    <div className="text-[8px] text-cyan-400 font-mono truncate">#{msg.channel_id?.slice(0, 8)}</div>
+                  </div>
+                  <div className="text-[10px] text-zinc-200 leading-relaxed">{msg.content}</div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-      </div>
-      <LiveIncidentCenter />
+      )}
+
+      {subTab === 'personal' && (
+        <PersonalLogPanel user={user} />
+      )}
     </div>
   );
 }
 
-function FeedTab({ recentLogs, user }) {
+function OrganizationTab({ 
+  userSquads, 
+  squadMemberships, 
+  fleetAssets, 
+  canManageFleet,
+  allUsers,
+  orgMetrics,
+  user,
+  userEvents,
+  recentLogs,
+  userRankIndex,
+  achievementsTab,
+  setAchievementsTab
+}) {
+  const [subTab, setSubTab] = useState('squads');
+  
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">OPERATIONAL LOG</div>
+      <div className="flex gap-2 mb-3">
+        <button
+          onClick={() => setSubTab('squads')}
+          className={cn(
+            'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+            subTab === 'squads'
+              ? 'bg-[#ea580c] text-white'
+              : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+          )}
+        >
+          Squads
+        </button>
+        <button
+          onClick={() => setSubTab('fleet')}
+          className={cn(
+            'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+            subTab === 'fleet'
+              ? 'bg-[#ea580c] text-white'
+              : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+          )}
+        >
+          Fleet
+        </button>
+        <button
+          onClick={() => setSubTab('achievements')}
+          className={cn(
+            'px-3 py-1.5 text-[9px] font-bold uppercase transition-all',
+            subTab === 'achievements'
+              ? 'bg-[#ea580c] text-white'
+              : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+          )}
+        >
+          Achievements
+        </button>
       </div>
-      
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Total Logs</div>
-          <div className="text-sm font-bold text-zinc-200">{recentLogs.length}</div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">High Priority</div>
-          <div className="text-sm font-bold text-red-300">{recentLogs.filter(l => l.severity === 'HIGH').length}</div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Your Activity</div>
-          <div className="text-sm font-bold text-cyan-300">{recentLogs.filter(l => l.actor_user_id === user?.id).length}</div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Last Update</div>
-          <div className="text-[9px] font-mono text-zinc-300">
-            {recentLogs[0] ? new Date(recentLogs[0].created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-          </div>
-        </div>
-      </div>
-      
-      <div className="max-h-80 overflow-y-auto space-y-1">
-        <LiveOperationsFeed eventId={null} limit={15} />
-      </div>
+
+      {subTab === 'squads' && <SquadsContent userSquads={userSquads} squadMemberships={squadMemberships} />}
+      {subTab === 'fleet' && <FleetContent fleetAssets={fleetAssets} canManageFleet={canManageFleet} />}
+      {subTab === 'achievements' && (
+        <AchievementsTab 
+          achievementsTab={achievementsTab}
+          setAchievementsTab={setAchievementsTab}
+          allUsers={allUsers}
+          orgMetrics={orgMetrics}
+          user={user}
+          userEvents={userEvents}
+          recentLogs={recentLogs}
+          squadMemberships={squadMemberships}
+          userRankIndex={userRankIndex}
+        />
+      )}
     </div>
   );
 }
 
-function SquadsTab({ userSquads, squadMemberships }) {
+function SquadsContent({ userSquads, squadMemberships }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2">
@@ -561,7 +705,7 @@ function SquadsTab({ userSquads, squadMemberships }) {
   );
 }
 
-function FleetTab({ fleetAssets, canManageFleet }) {
+function FleetContent({ fleetAssets, canManageFleet }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2">

@@ -224,15 +224,10 @@ export default function HubPage() {
               <div className="flex gap-0 border-b border-zinc-800 overflow-x-auto">
                 {[
                   { id: 'ops', label: 'OPERATIONS', icon: Calendar },
-                  { id: 'alerts', label: 'ALERTS', icon: AlertCircle },
-                  { id: 'incidents', label: 'INCIDENTS', icon: Zap },
-                  { id: 'feed', label: 'FEED', icon: Activity },
-                  { id: 'squads', label: 'SQUADS', icon: Users },
-                  { id: 'fleet', label: 'FLEET', icon: Rocket },
+                  { id: 'alerts', label: 'ALERTS & INCIDENTS', icon: AlertCircle },
+                  { id: 'activity', label: 'ACTIVITY', icon: Activity },
+                  { id: 'organization', label: 'ORGANIZATION', icon: Users },
                   { id: 'comms', label: 'COMMS', icon: Radio },
-                  { id: 'recent-comms', label: 'RECENT COMMS', icon: Hash },
-                  { id: 'personal-log', label: 'PERSONAL LOG', icon: Clock },
-                  { id: 'achievements', label: 'ACHIEVEMENTS', icon: Award },
                 ].map(tab => {
                   const TabIcon = tab.icon;
                   return (
