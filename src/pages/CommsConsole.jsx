@@ -463,6 +463,12 @@ function CommsConsolePage() {
                         </div>
                      </div>
                   </>
+               ) : showSimulation ? (
+                 <ScrollArea className="flex-1">
+                    <div className="p-[var(--space-lg)]">
+                       <CommsSimulationPanel />
+                    </div>
+                 </ScrollArea>
                ) : showAIAssistant ? (
                  <ScrollArea className="flex-1">
                     <div className="p-[var(--space-lg)] space-y-3">
