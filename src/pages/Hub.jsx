@@ -169,9 +169,10 @@ export default function HubPage() {
                 user={user}
                 voiceNets={voiceNets}
               />
-            </div>
-            </motion.div>
-            </motion.div>
+              </div>
+              </div>
+              </motion.div>
+              </motion.div>
 
             {/* Live Operational Pulse */}
         {recentLogs.length > 0 && (
