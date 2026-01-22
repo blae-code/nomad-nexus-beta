@@ -1,13 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-export default async function handler(req) {
-  const base44 = createClientFromRequest(req);
-  const { action, data } = await req.json();
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const { action, data } = await req.json();
 
-  const user = await base44.auth.me();
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
   try {
     switch (action) {
@@ -26,7 +27,7 @@ export default async function handler(req) {
     console.error("AI Error:", error);
     return Response.json({ error: error.message }, { status: 500 });
   }
-}
+});
 
 async function summarizeLogs(base44, { eventId, channelId, limit = 50 }) {
   const filter = {};
@@ -232,6 +233,3 @@ async function askComms(base44, user, { query, eventId }) {
 
   return Response.json(res);
 }
-
-// Deno wrapper
-Deno.serve(handler);

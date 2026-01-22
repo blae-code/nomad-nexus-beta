@@ -25,8 +25,11 @@ Deno.serve(async (req) => {
             });
         }
 
-        // Fetch squads
-        const squads = await base44.entities.Squad.list();
+        // Fetch squads with timeout protection
+        const squads = await Promise.race([
+            base44.entities.Squad.list(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Squad fetch timeout')), 5000))
+        ]);
 
         const netsCreated = [];
         const eventShort = eventId.slice(0, 8);
