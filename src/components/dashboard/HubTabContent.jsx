@@ -297,16 +297,45 @@ function AchievementsTab({ achievementsTab, setAchievementsTab, allUsers, orgMet
 }
 
 function OpsTab({ userEvents }) {
+  const activeCount = userEvents.filter(e => e.status === 'active').length;
+  const scheduledCount = userEvents.filter(e => e.status === 'scheduled').length;
+  const pendingCount = userEvents.filter(e => e.status === 'pending').length;
+  const completedCount = userEvents.filter(e => e.status === 'completed').length;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">MISSION BOARD</div>
-        <div className="flex items-center gap-2">
-          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{userEvents.length} ACTIVE</Badge>
-          <Badge className="text-[7px] bg-emerald-900/40 text-emerald-300 border-emerald-700">{userEvents.filter(e => e.status === 'active').length} LIVE</Badge>
+        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">MISSION DASHBOARD</div>
+        <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{userEvents.length} TOTAL</Badge>
+      </div>
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-4 gap-2 mb-3">
+        <div className="bg-emerald-950/30 border border-emerald-900/30 p-2.5">
+          <div className="text-[7px] text-emerald-400/70 uppercase mb-0.5 font-bold">Active</div>
+          <div className="text-xl font-bold text-emerald-300">{activeCount}</div>
+          <div className="text-[7px] text-emerald-400/50 mt-0.5">Live ops</div>
+        </div>
+        <div className="bg-blue-950/30 border border-blue-900/30 p-2.5">
+          <div className="text-[7px] text-blue-400/70 uppercase mb-0.5 font-bold">Scheduled</div>
+          <div className="text-xl font-bold text-blue-300">{scheduledCount}</div>
+          <div className="text-[7px] text-blue-400/50 mt-0.5">Upcoming</div>
+        </div>
+        <div className="bg-yellow-950/30 border border-yellow-900/30 p-2.5">
+          <div className="text-[7px] text-yellow-400/70 uppercase mb-0.5 font-bold">Pending</div>
+          <div className="text-xl font-bold text-yellow-300">{pendingCount}</div>
+          <div className="text-[7px] text-yellow-400/50 mt-0.5">Review</div>
+        </div>
+        <div className="bg-zinc-900/50 border border-zinc-800/30 p-2.5">
+          <div className="text-[7px] text-zinc-400 uppercase mb-0.5 font-bold">Completed</div>
+          <div className="text-xl font-bold text-zinc-300">{completedCount}</div>
+          <div className="text-[7px] text-zinc-500 mt-0.5">Total</div>
         </div>
       </div>
       
+      {/* Active & Upcoming Section */}
+      <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider mb-2">ACTIVE & UPCOMING</div>
+
       {userEvents.length === 0 ? (
         <div className="text-center py-16 space-y-2">
           <Target className="w-12 h-12 mx-auto text-zinc-600" />
@@ -315,7 +344,7 @@ function OpsTab({ userEvents }) {
         </div>
       ) : (
         <div className="space-y-2">
-          {userEvents.map((event) => {
+          {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).slice(0, 6).map((event) => {
             const startTime = new Date(event.start_time);
             const timeUntil = Math.floor((startTime - new Date()) / 1000 / 60);
             const isImmediate = timeUntil < 60;
