@@ -171,7 +171,8 @@ export default function HubPage() {
               />
             </div>
           </div>
-        </motion.div>
+            </motion.div>
+          </motion.div>
 
         {/* Live Operational Pulse */}
         {recentLogs.length > 0 && (
