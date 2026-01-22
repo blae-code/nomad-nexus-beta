@@ -211,7 +211,7 @@ export default function VoiceControlToolkit() {
                 )}
                 title={item.label}
               >
-                {item.label.slice(0, 4)}
+                {item.label}
               </button>
             ))}
           </div>
