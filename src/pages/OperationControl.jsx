@@ -14,6 +14,9 @@ import OperationVoiceNetPanel from '@/components/operations/OperationVoiceNetPan
 import OperationObjectives from '@/components/operations/OperationObjectives';
 import OperationParticipants from '@/components/operations/OperationParticipants';
 import OperationTimeline from '@/components/operations/OperationTimeline';
+import HierarchicalCommsVisualizer from '@/components/operations/HierarchicalCommsVisualizer';
+import HailingSystem from '@/components/operations/HailingSystem';
+import CommsNetworkManager from '@/components/operations/CommsNetworkManager';
 import LoadingState from '@/components/feedback/LoadingState';
 
 /**
@@ -25,8 +28,13 @@ export default function OperationControlPage() {
   const params = new URLSearchParams(window.location.search);
   const eventId = params.get('id');
 
-  const [activePanel, setActivePanel] = useState('voiceNets'); // voiceNets, objectives, participants, timeline
+  const [activePanel, setActivePanel] = useState('hierarchy'); // hierarchy, network, hailing, objectives, participants, timeline
   const [expandedNet, setExpandedNet] = useState(null);
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   // Fetch event with all related data
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -127,7 +135,9 @@ export default function OperationControlPage() {
           {/* Panel Tabs */}
           <div className="flex gap-0 border-b border-zinc-800 overflow-x-auto shrink-0 bg-zinc-900/30">
             {[
-              { id: 'voiceNets', label: 'NETS', icon: Radio },
+              { id: 'hierarchy', label: 'HIERARCHY', icon: Radio },
+              { id: 'network', label: 'MANAGER', icon: Settings },
+              { id: 'hailing', label: 'HAILING', icon: Volume2 },
               { id: 'objectives', label: 'OBJECTIVES', icon: Target },
               { id: 'participants', label: 'ROSTER', icon: Users },
               { id: 'timeline', label: 'TIMELINE', icon: Clock },
@@ -154,26 +164,43 @@ export default function OperationControlPage() {
           {/* Content */}
           <div className="flex-1 overflow-auto">
             <AnimatePresence mode="wait">
-              {activePanel === 'voiceNets' && (
+              {activePanel === 'hierarchy' && (
                 <motion.div
-                  key="voiceNets"
+                  key="hierarchy"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="p-3 space-y-2"
+                  className="h-full flex flex-col"
                 >
-                  {/* Voice Nets Detail */}
-                  <div className="space-y-2">
-                    {commandNet && (
-                      <NetDetailCard net={commandNet} isCommand />
-                    )}
-                    {squadNets.map(net => (
-                      <NetDetailCard key={net.id} net={net} />
-                    ))}
-                    {generalNet && (
-                      <NetDetailCard net={generalNet} isGeneral />
-                    )}
-                  </div>
+                  <HierarchicalCommsVisualizer eventId={eventId} currentUser={currentUser} />
+                </motion.div>
+              )}
+
+              {activePanel === 'network' && (
+                <motion.div
+                  key="network"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex flex-col"
+                >
+                  <CommsNetworkManager 
+                    eventId={eventId} 
+                    currentUser={currentUser} 
+                    canEdit={event?.command_staff?.commander_id === currentUser?.id}
+                  />
+                </motion.div>
+              )}
+
+              {activePanel === 'hailing' && (
+                <motion.div
+                  key="hailing"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="p-3 h-full overflow-auto"
+                >
+                  <HailingSystem eventId={eventId} currentUser={currentUser} />
                 </motion.div>
               )}
 
