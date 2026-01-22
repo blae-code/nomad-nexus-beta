@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Users, Target, Swords, TrendingUp, AlertCircle, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function HubMetricsPanel({ 
+const HubMetricsPanel = memo(function HubMetricsPanel({ 
   allUsers, 
   onlineUsers, 
   orgMetrics, 
@@ -77,9 +77,9 @@ export default function HubMetricsPanel({
       </div>
     </div>
   );
-}
+});
 
-function MetricCard({ icon: Icon, label, value, subtext, color, animate }) {
+const MetricCard = memo(function MetricCard({ icon: Icon, label, value, subtext, color, animate }) {
   const colorClasses = {
     zinc: 'text-zinc-300 hover:border-zinc-400/50',
     emerald: 'text-emerald-300 hover:border-emerald-400/50',
@@ -115,4 +115,6 @@ function MetricCard({ icon: Icon, label, value, subtext, color, animate }) {
       <div className={cn('text-[7px] font-medium', textColors[color])}>{subtext}</div>
     </div>
   );
-}
+});
+
+export default HubMetricsPanel;

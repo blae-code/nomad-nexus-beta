@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useState, useEffect } from 'react';
+import { staticQueryConfig } from '@/components/utils/queryConfig';
 
 /**
  * Centralized user data hook - single source of truth
@@ -24,6 +25,9 @@ export function useDashboardData(user) {
   // Single batch query for all dashboard data
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard-data', user?.id],
+    staleTime: 20000, // 20 seconds - dashboard data can be slightly stale
+    cacheTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       if (!user) return null;
 
@@ -150,7 +154,9 @@ export function useEventData(eventId) {
       return { event, logs, nets, participants };
     },
     enabled: !!eventId,
-    staleTime: 5000
+    staleTime: 5000,
+    cacheTime: 60000,
+    refetchOnWindowFocus: false
   });
 
   return { data, isLoading };
