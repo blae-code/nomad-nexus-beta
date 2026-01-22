@@ -311,34 +311,34 @@ function OpsTab({ userEvents }) {
 
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-4 gap-2 mb-3">
-        <div className="bg-emerald-950/30 border border-emerald-900/30 p-2.5">
-          <div className="text-[7px] text-emerald-400/70 uppercase mb-0.5 font-bold">Active</div>
-          <div className="text-xl font-bold text-emerald-300">{activeCount}</div>
-          <div className="text-[7px] text-emerald-400/50 mt-0.5">Live ops</div>
+        <div className="bg-emerald-950/60 border border-emerald-600 p-2">
+          <div className="text-[7px] text-emerald-300 uppercase mb-0.5 font-bold tracking-wider">Active</div>
+          <div className="text-2xl font-bold text-emerald-100">{activeCount}</div>
+          <div className="text-[7px] text-emerald-400 mt-0.5">Live ops</div>
         </div>
-        <div className="bg-blue-950/30 border border-blue-900/30 p-2.5">
-          <div className="text-[7px] text-blue-400/70 uppercase mb-0.5 font-bold">Scheduled</div>
-          <div className="text-xl font-bold text-blue-300">{scheduledCount}</div>
-          <div className="text-[7px] text-blue-400/50 mt-0.5">Upcoming</div>
+        <div className="bg-blue-950/60 border border-blue-600 p-2">
+          <div className="text-[7px] text-blue-300 uppercase mb-0.5 font-bold tracking-wider">Scheduled</div>
+          <div className="text-2xl font-bold text-blue-100">{scheduledCount}</div>
+          <div className="text-[7px] text-blue-400 mt-0.5">Upcoming</div>
         </div>
-        <div className="bg-yellow-950/30 border border-yellow-900/30 p-2.5">
-          <div className="text-[7px] text-yellow-400/70 uppercase mb-0.5 font-bold">Pending</div>
-          <div className="text-xl font-bold text-yellow-300">{pendingCount}</div>
-          <div className="text-[7px] text-yellow-400/50 mt-0.5">Review</div>
+        <div className="bg-yellow-950/60 border border-yellow-600 p-2">
+          <div className="text-[7px] text-yellow-300 uppercase mb-0.5 font-bold tracking-wider">Pending</div>
+          <div className="text-2xl font-bold text-yellow-100">{pendingCount}</div>
+          <div className="text-[7px] text-yellow-400 mt-0.5">Review</div>
         </div>
-        <div className="bg-zinc-900/50 border border-zinc-800/30 p-2.5">
-          <div className="text-[7px] text-zinc-400 uppercase mb-0.5 font-bold">Completed</div>
-          <div className="text-xl font-bold text-zinc-300">{completedCount}</div>
-          <div className="text-[7px] text-zinc-500 mt-0.5">Total</div>
+        <div className="bg-zinc-900/80 border border-zinc-600 p-2">
+          <div className="text-[7px] text-zinc-300 uppercase mb-0.5 font-bold tracking-wider">Completed</div>
+          <div className="text-2xl font-bold text-zinc-100">{completedCount}</div>
+          <div className="text-[7px] text-zinc-400 mt-0.5">Total</div>
         </div>
       </div>
       
       {/* Active & Upcoming Section */}
-      <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider mb-2">ACTIVE & UPCOMING</div>
+      <div className="text-[8px] font-bold uppercase text-zinc-300 tracking-wider mb-2">ACTIVE & UPCOMING MISSIONS</div>
 
-      {userEvents.length === 0 ? (
-        <div className="text-center py-16 space-y-2">
-          <Target className="w-12 h-12 mx-auto text-zinc-600" />
+      {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).length === 0 ? (
+        <div className="text-center py-12 space-y-2 border border-zinc-800 bg-zinc-900/30">
+          <Target className="w-10 h-10 mx-auto text-zinc-600" />
           <div className="text-sm font-bold text-zinc-400">NO ACTIVE OPERATIONS</div>
           <div className="text-[9px] text-zinc-500">Awaiting mission assignment</div>
         </div>
@@ -350,39 +350,39 @@ function OpsTab({ userEvents }) {
             const isImmediate = timeUntil < 60;
             
             return (
-              <div key={event.id} className="border border-zinc-800/50 bg-zinc-900/30 p-3 hover:border-[#ea580c]/30 transition-all cursor-pointer group">
+              <div key={event.id} className="border border-zinc-800 bg-zinc-900/50 p-3 hover:border-[#ea580c] transition-all cursor-pointer group">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <Badge className={cn(
                         'text-[7px] font-bold',
-                        event.status === 'active' && 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50',
-                        event.status === 'pending' && 'bg-yellow-900/30 text-yellow-400 border-yellow-900/50',
-                        event.status === 'scheduled' && 'bg-blue-900/30 text-blue-400 border-blue-900/50'
-                      )}>{event.status}</Badge>
-                      <Badge variant="outline" className="text-[7px]">{event.priority}</Badge>
-                      <Badge variant="outline" className="text-[7px]">{event.event_type}</Badge>
+                        event.status === 'active' && 'bg-emerald-600 text-white border-emerald-600',
+                        event.status === 'pending' && 'bg-yellow-600 text-white border-yellow-600',
+                        event.status === 'scheduled' && 'bg-blue-600 text-white border-blue-600'
+                      )}>{event.status.toUpperCase()}</Badge>
+                      <Badge className="text-[7px] bg-zinc-700 text-zinc-200 border-zinc-600">{event.priority}</Badge>
+                      <Badge className="text-[7px] bg-zinc-800 text-zinc-300 border-zinc-700">{event.event_type}</Badge>
                     </div>
                     <div className="text-sm font-bold text-zinc-100 mb-1 group-hover:text-[#ea580c] transition-colors">{event.title}</div>
-                    <div className="text-[9px] text-zinc-400 line-clamp-2">{event.description || 'No briefing available'}</div>
+                    {event.description && <div className="text-[9px] text-zinc-400 line-clamp-1">{event.description}</div>}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#ea580c] transition-colors shrink-0" />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/30">
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800">
                   <div>
                     <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Departure</div>
-                    <div className={cn("text-[9px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-300")}>
+                    <div className={cn("text-[9px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-200")}>
                       {isImmediate ? 'IMMEDIATE' : timeUntil > 0 ? `T-${timeUntil}m` : 'ACTIVE'}
                     </div>
                   </div>
                   <div>
                     <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Location</div>
-                    <div className="text-[9px] font-mono text-zinc-300 truncate">{event.location || 'TBD'}</div>
+                    <div className="text-[9px] font-mono text-zinc-200 truncate">{event.location || 'TBD'}</div>
                   </div>
                   <div>
                     <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Personnel</div>
-                    <div className="text-[9px] font-mono text-zinc-300">{event.assigned_user_ids?.length || 0} assigned</div>
+                    <div className="text-[9px] font-mono text-zinc-200">{event.assigned_user_ids?.length || 0}</div>
                   </div>
                 </div>
               </div>

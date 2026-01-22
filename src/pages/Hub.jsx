@@ -95,47 +95,47 @@ export default function HubPage() {
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 via-[#ea580c]/10 to-zinc-950 relative overflow-hidden"
+          className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#ea580c]/10 to-zinc-950 relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/10 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
 
-          <div className="relative z-10 p-6">
-            <div className="flex items-start justify-between mb-6">
+          <div className="relative z-10 p-4">
+            <div className="flex items-start justify-between mb-3">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 bg-[#ea580c]/20 border border-[#ea580c]/50 flex items-center justify-center">
-                    <Shield className="w-6 h-6 text-[#ea580c]" />
+                <div className="flex items-center gap-3 mb-1.5">
+                  <div className="w-10 h-10 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
+                    <Shield className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tighter text-white">NOMAD NEXUS</h1>
-                    <p className="text-xs font-mono text-zinc-500 tracking-widest">AUTONOMOUS OPERATIONS NETWORK</p>
+                    <h1 className="text-2xl font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
+                    <p className="text-[10px] font-mono text-zinc-400 tracking-widest">AUTONOMOUS OPERATIONS NETWORK</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 ml-13">
                   <Badge className={cn('text-[9px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
                     {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
                   </Badge>
-                  <Badge variant="outline" className="text-[8px]">{user?.rank || 'VAGRANT'}</Badge>
-                  {user?.role === 'admin' && <Badge className="text-[8px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50">ADMIN</Badge>}
+                  <Badge className="text-[8px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
+                  {user?.role === 'admin' && <Badge className="text-[8px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>}
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-[8px] text-zinc-400 uppercase mb-1">Operational Status</div>
-                <Badge className="text-xs bg-emerald-900/50 text-emerald-200 border-emerald-700">
+                <div className="text-[8px] text-zinc-500 uppercase mb-1 tracking-wider">Status</div>
+                <Badge className="text-xs bg-emerald-500/20 text-emerald-300 border-emerald-500">
                   <CircleDot className="w-2.5 h-2.5 mr-1 animate-pulse" />
                   NOMINAL
                 </Badge>
-                <div className="text-[8px] text-zinc-400 mt-2 font-mono">
-                  {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className="text-[9px] text-zinc-400 mt-2 font-mono">
+                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
 
             {/* Live Org Metrics */}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <HubMetricsPanel 
                 allUsers={allUsers}
                 onlineUsers={onlineUsers}
@@ -164,14 +164,14 @@ export default function HubPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="border border-[#ea580c]/20 bg-zinc-950/50 p-3"
+            className="border border-[#ea580c]/30 bg-zinc-950/80 p-3"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-[#ea580c]" />
-                <span className="text-[9px] uppercase text-zinc-400 tracking-wider font-bold">OPERATIONAL PULSE</span>
+                <Flame className="w-4 h-4 text-[#ea580c] animate-pulse" />
+                <span className="text-[9px] uppercase text-zinc-300 tracking-wider font-bold">OPERATIONAL PULSE</span>
               </div>
-              <Badge className="text-[7px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50 animate-pulse">LIVE</Badge>
+              <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c] animate-pulse">LIVE</Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
               {recentLogs.slice(0, 4).map((log, i) => (
@@ -180,36 +180,28 @@ export default function HubPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-zinc-900/50 border border-zinc-800/50 p-2.5 hover:border-[#ea580c]/30 transition-all cursor-pointer group"
+                  className="bg-zinc-900/70 border border-zinc-800 p-2 hover:border-[#ea580c]/50 transition-all cursor-pointer group"
                 >
                   <div className="flex items-start gap-2">
                     <div className={cn(
-                      "w-6 h-6 flex items-center justify-center border",
-                      log.type === 'STATUS' && "bg-blue-900/20 border-blue-900/50",
-                      log.type === 'COMMS' && "bg-purple-900/20 border-purple-900/50",
-                      log.type === 'RESCUE' && "bg-red-900/20 border-red-900/50",
-                      log.type === 'SYSTEM' && "bg-cyan-900/20 border-cyan-900/50",
-                      log.type === 'NOTE' && "bg-zinc-800/20 border-zinc-800/50"
+                      "w-5 h-5 flex items-center justify-center border shrink-0",
+                      log.type === 'STATUS' && "bg-blue-500/20 border-blue-500",
+                      log.type === 'COMMS' && "bg-purple-500/20 border-purple-500",
+                      log.type === 'RESCUE' && "bg-red-500/20 border-red-500",
+                      log.type === 'SYSTEM' && "bg-cyan-500/20 border-cyan-500",
+                      log.type === 'NOTE' && "bg-zinc-600/20 border-zinc-600"
                     )}>
-                      {log.type === 'STATUS' && <Target className="w-3 h-3 text-blue-400" />}
-                      {log.type === 'COMMS' && <Radio className="w-3 h-3 text-purple-400" />}
-                      {log.type === 'RESCUE' && <AlertCircle className="w-3 h-3 text-red-400" />}
-                      {log.type === 'SYSTEM' && <Activity className="w-3 h-3 text-cyan-400" />}
-                      {log.type === 'NOTE' && <Clock className="w-3 h-3 text-zinc-400" />}
+                      {log.type === 'STATUS' && <Target className="w-2.5 h-2.5 text-blue-300" />}
+                      {log.type === 'COMMS' && <Radio className="w-2.5 h-2.5 text-purple-300" />}
+                      {log.type === 'RESCUE' && <AlertCircle className="w-2.5 h-2.5 text-red-300" />}
+                      {log.type === 'SYSTEM' && <Activity className="w-2.5 h-2.5 text-cyan-300" />}
+                      {log.type === 'NOTE' && <Clock className="w-2.5 h-2.5 text-zinc-300" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Badge className={cn(
-                          "text-[7px] font-bold",
-                          log.type === 'STATUS' && "bg-blue-900/40 text-blue-200 border-blue-600",
-                          log.type === 'COMMS' && "bg-purple-900/40 text-purple-200 border-purple-600",
-                          log.type === 'RESCUE' && "bg-red-900/40 text-red-200 border-red-600",
-                          log.type === 'SYSTEM' && "bg-cyan-900/40 text-cyan-200 border-cyan-600",
-                          log.type === 'NOTE' && "bg-zinc-800/40 text-zinc-200 border-zinc-600"
-                        )}>{log.type}</Badge>
-                        <span className="text-[7px] text-zinc-400">{new Date(log.created_date).toLocaleTimeString()}</span>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <span className="text-[7px] text-zinc-500 font-mono">{new Date(log.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                      <div className="text-[9px] text-zinc-200 line-clamp-2 font-medium">{log.summary}</div>
+                      <div className="text-[9px] text-zinc-100 line-clamp-2 font-medium leading-tight">{log.summary}</div>
                     </div>
                   </div>
                 </motion.div>
@@ -227,8 +219,9 @@ export default function HubPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
+              className="border border-zinc-800 bg-zinc-950"
             >
-              <div className="flex gap-1 border-b border-zinc-800 overflow-x-auto mb-0">
+              <div className="flex gap-0 border-b border-zinc-800 overflow-x-auto">
                 {[
                   { id: 'ops', label: 'OPERATIONS', icon: Calendar },
                   { id: 'alerts', label: 'ALERTS', icon: AlertCircle },
@@ -247,13 +240,13 @@ export default function HubPage() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-2 text-[9px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 whitespace-nowrap',
+                        'flex items-center gap-1.5 px-3 py-2.5 text-[9px] font-bold uppercase tracking-wider transition-all duration-100 whitespace-nowrap border-b-2',
                         activeTab === tab.id
-                          ? 'text-[#ea580c] border-b-[#ea580c]'
-                          : 'text-zinc-500 border-b-transparent hover:text-zinc-400'
+                          ? 'text-white bg-zinc-900 border-b-[#ea580c]'
+                          : 'text-zinc-500 border-b-transparent hover:text-zinc-300 hover:bg-zinc-900/50'
                       )}
                     >
-                      <TabIcon className="w-3 h-3" />
+                      <TabIcon className="w-3.5 h-3.5" />
                       {tab.label}
                     </button>
                   );
@@ -265,9 +258,8 @@ export default function HubPage() {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
-                className="border border-zinc-800/50 border-t-0 bg-zinc-950"
               >
-                <div className="p-3">
+                <div className="p-4">
                   <HubTabContent
                     activeTab={activeTab}
                     userEvents={userEvents}
