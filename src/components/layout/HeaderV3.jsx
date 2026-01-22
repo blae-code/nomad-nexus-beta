@@ -12,6 +12,8 @@ import TimeClock from '@/components/layout/TimeClock';
 import RitualBonfireWidget from '@/components/dashboard/RitualBonfireWidget';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect as useReactEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * HeaderV3: "Living intranet" command surface
