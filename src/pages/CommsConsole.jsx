@@ -63,6 +63,7 @@ function CommsConsolePage() {
   const [isLoadingAuth, setIsLoadingAuth] = React.useState(true);
   const [userPreferences, setUserPreferences] = React.useState({});
   const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
+  const [showSimulation, setShowSimulation] = React.useState(false);
   const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
 
   React.useEffect(() => {
