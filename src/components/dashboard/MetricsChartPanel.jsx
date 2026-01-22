@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0 }) {
+  const [fundView, setFundView] = useState(0);
+  
   // Prepare activity over time (last 7 days)
   const activityData = useMemo(() => {
     const days = 7;
@@ -40,6 +43,17 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     ];
   }, [treasuryBalance, userEvents]);
 
+  // Alternative fund views
+  const fundViews = [
+    fundAllocationData,
+    [
+      { category: 'Active Ops', amount: Math.round(treasuryBalance * 0.35) },
+      { category: 'Pending', amount: Math.round(treasuryBalance * 0.25) },
+      { category: 'Scheduled', amount: Math.round(treasuryBalance * 0.2) },
+      { category: 'Completed', amount: Math.round(treasuryBalance * 0.2) }
+    ]
+  ];
+
   const handleExportChart = (chartName) => {
     const link = document.createElement('a');
     link.href = '#';
@@ -60,8 +74,14 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         </button>
       </div>
 
-      {/* Activity Over Time */}
-      <div className="border border-zinc-800 bg-zinc-900/30 p-2">
+      {/* Charts Row - Activity & Treasury */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Activity Over Time */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="border border-zinc-800 bg-zinc-900/30 p-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Badge className="text-[6px] bg-cyan-900/30 text-cyan-400 border-cyan-900/50">TREND</Badge>
@@ -102,21 +122,31 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+        </motion.div>
 
-      {/* Org Fund Allocation */}
-      <div className="border border-zinc-800 bg-zinc-900/30 p-2">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <Badge className="text-[6px] bg-purple-900/30 text-purple-400 border-purple-900/50">FUNDS</Badge>
-            <span className="text-[8px] font-bold text-zinc-300">Treasury Allocation</span>
+        {/* Org Fund Allocation */}
+        <motion.div
+          key={fundView}
+          initial={{ opacity: 0, x: 8 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -8 }}
+          transition={{ duration: 0.2 }}
+          className="border border-zinc-800 bg-zinc-900/30 p-2"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Badge className="text-[6px] bg-purple-900/30 text-purple-400 border-purple-900/50">FUNDS</Badge>
+              <span className="text-[8px] font-bold text-zinc-300">{fundView === 0 ? 'Treasury Allocation' : 'Event Distribution'}</span>
+            </div>
+            <button
+              onClick={() => setFundView((fundView + 1) % fundViews.length)}
+              className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+            >
+              ↻
+            </button>
           </div>
-          <div className="text-[8px] font-bold text-purple-400">
-            {treasuryBalance.toLocaleString()} aUEC
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={120}>
-          <BarChart data={fundAllocationData}>
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={fundViews[fundView]}>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="category" stroke="#71717a" style={{ fontSize: '11px' }} />
             <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
@@ -133,6 +163,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             />
           </BarChart>
         </ResponsiveContainer>
+        </motion.div>
       </div>
 
       {/* Summary Stats */}
