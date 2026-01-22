@@ -219,9 +219,9 @@ export default function HubPage() {
         )}
 
         {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0 pb-4">
-          {/* Left Column - Primary Content */}
-          <div className="lg:col-span-8 space-y-4 flex flex-col min-h-0">
+        <div className="grid grid-cols-1 gap-4 flex-1 min-h-0 pb-4">
+          {/* Primary Content - Full Width */}
+          <div className="space-y-4 flex flex-col min-h-0">
             {/* Primary Tabbed Interface */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -864,94 +864,6 @@ export default function HubPage() {
 
 
           </div>
-
-          {/* Right Sidebar: Info & Navigation */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-4 space-y-4 flex flex-col min-h-0"
-          >
-            {/* Critical Alerts */}
-            {activeIncidents.length > 0 && (
-              <div className="border border-red-900/50 bg-red-950/20 p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-                    <span className="text-[9px] font-bold uppercase text-red-300 tracking-wider">CRITICAL ALERTS</span>
-                  </div>
-                  <Badge className="text-[7px] bg-red-900/50 text-red-200 border-red-900 animate-pulse">{activeIncidents.length} ACTIVE</Badge>
-                </div>
-                <div className="space-y-2">
-                  {activeIncidents.slice(0, 3).map((incident) => (
-                    <div key={incident.id} className="p-2.5 bg-zinc-900/50 border border-red-900/30 hover:border-red-500/50 transition-all cursor-pointer group">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <Badge className="text-[7px] bg-red-900/50 text-red-200 border-red-900">{incident.severity}</Badge>
-                        <span className="text-[7px] text-zinc-400">{new Date(incident.created_date).toLocaleTimeString()}</span>
-                      </div>
-                      <div className="text-[10px] text-red-200 font-bold mb-1 group-hover:text-red-100 transition-colors">{incident.title}</div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[7px]">{incident.status}</Badge>
-                        <span className="text-[7px] text-zinc-400">{incident.incident_type}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Squad Engagement */}
-            {userSquads.length > 0 && (
-              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Swords className="w-3.5 h-3.5 text-purple-400" />
-                    <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">YOUR SQUADS</span>
-                  </div>
-                  <Badge variant="outline" className="text-[7px]">{userSquads.length} UNITS</Badge>
-                </div>
-                <div className="space-y-2">
-                  {userSquads.map((squad) => (
-                    <div key={squad.id} className="p-2.5 bg-zinc-900/30 border border-zinc-800/30 hover:border-purple-500/30 transition-all cursor-pointer group">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="text-[10px] font-bold text-zinc-200 group-hover:text-purple-400 transition-colors">{squad.name}</div>
-                        <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-purple-500 transition-colors" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[7px]">{squad.hierarchy_level}</Badge>
-                        <div className="text-[7px] text-zinc-400">{squad.description?.slice(0, 40)}...</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Fleet Assets Preview */}
-            {canManageFleet && fleetAssets.length > 0 && (
-              <div className="border border-zinc-800/50 bg-zinc-950/50 p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Rocket className="w-3.5 h-3.5 text-purple-400" />
-                    <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">FLEET READY</span>
-                  </div>
-                  <Badge variant="outline" className="text-[7px]">{fleetAssets.length} SHIPS</Badge>
-                </div>
-                <div className="space-y-1.5">
-                  {fleetAssets.slice(0, 4).map((asset) => (
-                    <div key={asset.id} className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 hover:border-purple-500/30 transition-colors">
-                      <div>
-                        <div className="text-[9px] font-bold text-zinc-200">{asset.name}</div>
-                        <div className="text-[7px] text-zinc-400">{asset.model}</div>
-                      </div>
-                      <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">READY</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-
-          </motion.div>
         </div>
       </div>
     </div>
