@@ -3,7 +3,6 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
-import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
 import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
