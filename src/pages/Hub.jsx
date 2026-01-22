@@ -133,25 +133,22 @@ export default function HubPage() {
               className="overflow-hidden"
             >
               <div className="relative z-10 p-1.5">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
-                      <Shield className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-lg font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
-                      <p className="text-[8px] font-mono text-zinc-400 tracking-widest">OPERATIONS NETWORK</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 ml-10">
-                    <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
-                      {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
-                    </Badge>
-                    <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
-                    {user?.role === 'admin' && <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>}
-                  </div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
+                  <Shield className="w-4 h-4 text-white" />
                 </div>
+                <div>
+                  <h1 className="text-lg font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
+                  <p className="text-[8px] font-mono text-zinc-400 tracking-widest">OPERATIONS NETWORK</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 ml-10 mb-2">
+                <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
+                  {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
+                </Badge>
+                <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
+                {user?.role === 'admin' && <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>}
+              </div>
 
               {/* Compact Metrics & Data */}
               <div className="space-y-2">
