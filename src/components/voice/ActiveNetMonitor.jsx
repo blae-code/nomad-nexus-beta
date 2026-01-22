@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Radio, Mic, Volume2, Users, Wifi, Activity, Signal, MicOff, VolumeX, ChevronDown, ChevronUp, UserCircle, Volume1, Headphones, Phone } from 'lucide-react';
+import { Radio, Mic, Volume2, Users, Wifi, Activity, Signal, MicOff, VolumeX, ChevronDown, ChevronUp, UserCircle, Volume1, Headphones, Phone, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,15 @@ export default function ActiveNetMonitor() {
       }
     },
     refetchInterval: 10000
+  });
+
+  // Fetch voice net status (health, jamming, etc.)
+  const { data: netStatuses = [] } = useQuery({
+    queryKey: ['net-statuses-voice'],
+    queryFn: async () => {
+      return await base44.entities.VoiceNetStatus.list();
+    },
+    refetchInterval: 3000
   });
 
   // Simulated connection state (would be from LiveKit in production)
@@ -264,18 +273,28 @@ export default function ActiveNetMonitor() {
               </div>
             )}
 
-            {/* Connection Quality Bar */}
+            {/* Connection Quality Bar & Net Health */}
             {isExpanded && (
-              <div className="border-t border-zinc-800/50 px-3 py-2 bg-zinc-950/80 flex items-center gap-2">
-                <Signal className="w-3 h-3 text-emerald-400" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-1 mb-1">
-                    <div className="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 w-[95%] rounded-full" />
+              <div className="border-t border-zinc-800/50 bg-zinc-950/80 space-y-1.5 px-3 py-2">
+                {/* Jamming Warning */}
+                {netStatuses.find(ns => ns.net_id === net.id)?.is_jammed && (
+                  <div className="flex items-center gap-2 p-1.5 bg-red-900/20 border border-red-700/50">
+                    <AlertTriangle className="w-3 h-3 text-red-400 animate-pulse" />
+                    <span className="text-[8px] text-red-400 font-bold">JAMMED - TRAINING MODE</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2">
+                  <Signal className="w-3 h-3 text-emerald-400" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-[95%] rounded-full" />
+                      </div>
                     </div>
                   </div>
+                  <span className="text-[8px] font-mono text-zinc-500">45ms</span>
                 </div>
-                <span className="text-[8px] font-mono text-zinc-500">45ms</span>
               </div>
             )}
           </div>
