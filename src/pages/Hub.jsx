@@ -13,6 +13,7 @@ import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import HubMetricsPanel from "@/components/dashboard/HubMetricsPanel";
 import HubPersonalStats from "@/components/dashboard/HubPersonalStats";
 import HubTabContent from "@/components/dashboard/HubTabContent";
+import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
 import IncidentHeatmap from "@/components/incidents/IncidentHeatmap";
 import ReportExporter from "@/components/dashboard/ReportExporter";
@@ -308,24 +309,34 @@ export default function HubPage() {
                 className="flex-1 min-h-0 overflow-auto flex-shrink-0"
               >
                 <div className="p-2 h-full">
-                  <HubTabContent
-                    activeTab={activeTab}
-                    userEvents={userEvents}
-                    activeIncidents={activeIncidents}
-                    recentLogs={recentLogs}
-                    voiceNets={voiceNets}
-                    onlineUsers={onlineUsers}
-                    recentMessages={recentMessages}
-                    userSquads={userSquads}
-                    squadMemberships={squadMemberships}
-                    fleetAssets={fleetAssets}
-                    canManageFleet={canManageFleet}
-                    user={user}
-                    allUsers={allUsers}
-                    orgMetrics={orgMetrics}
-                    userRankIndex={userRankIndex}
-                  />
-                </div>
+                   {activeTab === 'analytics' ? (
+                     <HubAnalyticsPanel
+                       userEvents={userEvents}
+                       allUsers={allUsers}
+                       recentLogs={recentLogs}
+                       voiceNets={voiceNets}
+                       user={user}
+                     />
+                   ) : (
+                     <HubTabContent
+                       activeTab={activeTab}
+                       userEvents={userEvents}
+                       activeIncidents={activeIncidents}
+                       recentLogs={recentLogs}
+                       voiceNets={voiceNets}
+                       onlineUsers={onlineUsers}
+                       recentMessages={recentMessages}
+                       userSquads={userSquads}
+                       squadMemberships={squadMemberships}
+                       fleetAssets={fleetAssets}
+                       canManageFleet={canManageFleet}
+                       user={user}
+                       allUsers={allUsers}
+                       orgMetrics={orgMetrics}
+                       userRankIndex={userRankIndex}
+                     />
+                   )}
+                 </div>
               </motion.div>
             </motion.div>
           </div>
