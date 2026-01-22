@@ -121,15 +121,6 @@ export default function HubPage() {
               className="overflow-hidden"
             >
               <div className="relative z-10 p-1.5">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
-                  <Shield className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
-                  <p className="text-[8px] font-mono text-zinc-400 tracking-widest">OPERATIONS NETWORK</p>
-                </div>
-              </div>
 
               {/* Compact Metrics & Data */}
               <div className="space-y-2">
