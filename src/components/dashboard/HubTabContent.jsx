@@ -500,6 +500,18 @@ function OpsTab({ userEvents }) {
               </div>
             );
           })}
+          
+          {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).length > 10 && (
+            <button
+              onClick={() => navigate(createPageUrl('Events'))}
+              className="w-full mt-2 p-3 border border-zinc-800 bg-zinc-900/50 hover:border-[#ea580c]/50 hover:bg-zinc-900 transition-all flex items-center justify-center gap-2 group"
+            >
+              <span className="text-[11px] font-bold uppercase text-zinc-400 group-hover:text-[#ea580c] tracking-wider">
+                View All {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).length} Operations
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-[#ea580c] transition-colors" />
+            </button>
+          )}
         </div>
       )}
     </div>
