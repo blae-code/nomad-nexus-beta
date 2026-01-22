@@ -69,8 +69,59 @@ export default function HubTabContent({
       userRankIndex={userRankIndex}
     />;
   }
+
+  if (activeTab === 'recent-comms') {
+    return <RecentCommsTab recentMessages={recentMessages} />;
+  }
+
+  if (activeTab === 'personal-log') {
+    return <PersonalLogTab user={user} />;
+  }
   
   return null;
+}
+
+function RecentCommsTab({ recentMessages }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">RECENT COMMUNICATIONS</div>
+        <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{recentMessages.length} MESSAGES</Badge>
+      </div>
+      
+      {recentMessages.length === 0 ? (
+        <div className="text-center py-16 space-y-2">
+          <Hash className="w-12 h-12 mx-auto text-zinc-600" />
+          <div className="text-sm font-bold text-zinc-400">NO RECENT MESSAGES</div>
+          <div className="text-[9px] text-zinc-500">All channels quiet</div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {recentMessages.map((msg) => (
+            <div key={msg.id} className="border border-zinc-800/50 bg-zinc-900/30 p-3 hover:border-cyan-500/30 transition-all">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-[8px] font-mono text-zinc-400">{new Date(msg.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="w-1 h-1 rounded-full bg-cyan-500" />
+                <div className="text-[8px] text-cyan-400 font-mono truncate">#{msg.channel_id?.slice(0, 8)}</div>
+              </div>
+              <div className="text-[10px] text-zinc-200 leading-relaxed">{msg.content}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PersonalLogTab({ user }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">PERSONAL NOTIFICATIONS</div>
+      </div>
+      <PersonalLogPanel user={user} />
+    </div>
+  );
 }
 
 // ... rest of component functions remain the same ...
