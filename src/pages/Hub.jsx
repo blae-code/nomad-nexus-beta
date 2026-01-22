@@ -166,6 +166,7 @@ export default function HubPage() {
                   userEvents={userEvents}
                   allUsers={allUsers}
                   recentLogs={recentLogs}
+                  treasuryBalance={treasuryBalance}
                 />
               </div>
               </div>
