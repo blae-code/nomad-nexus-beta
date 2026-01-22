@@ -1,7 +1,10 @@
 import React from 'react';
-import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield } from 'lucide-react';
+import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, Award, TrendingUp, Star, Swords, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { getRankColorClass } from '@/components/utils/rankUtils';
 import RescueAlertPanel from './RescueAlertPanel';
 import LiveIncidentCenter from '../incidents/LiveIncidentCenter';
 import LiveOperationsFeed from './LiveOperationsFeed';
@@ -19,7 +22,10 @@ export default function HubTabContent({
   squadMemberships,
   fleetAssets,
   canManageFleet,
-  user
+  user,
+  allUsers,
+  orgMetrics,
+  userRankIndex
 }) {
   if (activeTab === 'ops') {
     return <OpsTab userEvents={userEvents} />;
@@ -53,16 +59,22 @@ export default function HubTabContent({
     return <CommsTab voiceNets={voiceNets} onlineUsers={onlineUsers} recentMessages={recentMessages} />;
   }
   
+  if (activeTab === 'achievements') {
+    return <AchievementsTab user={user} userEvents={userEvents} recentLogs={recentLogs} squadMemberships={squadMemberships} allUsers={allUsers} orgMetrics={orgMetrics} userRankIndex={userRankIndex} />;
+  }
+  
   return null;
 }
 
 function OpsTab({ userEvents }) {
+  const navigate = useNavigate();
+  
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2">
         <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">MISSION BOARD</div>
         <div className="flex items-center gap-2">
-          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{userEvents.length} ACTIVE</Badge>
+          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{userEvents.length} TOTAL</Badge>
           <Badge className="text-[7px] bg-emerald-900/40 text-emerald-300 border-emerald-700">{userEvents.filter(e => e.status === 'active').length} LIVE</Badge>
         </div>
       </div>
@@ -74,48 +86,124 @@ function OpsTab({ userEvents }) {
           <div className="text-[9px] text-zinc-500">Awaiting mission assignment</div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {userEvents.map((event) => {
             const startTime = new Date(event.start_time);
+            const endTime = event.end_time ? new Date(event.end_time) : null;
             const timeUntil = Math.floor((startTime - new Date()) / 1000 / 60);
-            const isImmediate = timeUntil < 60;
+            const isImmediate = timeUntil < 60 && timeUntil > 0;
+            const isActive = event.status === 'active';
             
             return (
-              <div key={event.id} className="border border-zinc-800/50 bg-zinc-900/30 p-3 hover:border-[#ea580c]/30 transition-all cursor-pointer group">
-                <div className="flex items-start justify-between mb-2">
+              <div 
+                key={event.id} 
+                onClick={() => navigate(createPageUrl('Events') + `?eventId=${event.id}`)}
+                className="border border-zinc-800/50 bg-zinc-900/30 p-4 hover:border-[#ea580c]/30 transition-all cursor-pointer group"
+              >
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-2">
                       <Badge className={cn(
-                        'text-[7px] font-bold',
+                        'text-[8px] font-bold',
                         event.status === 'active' && 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50',
                         event.status === 'pending' && 'bg-yellow-900/30 text-yellow-400 border-yellow-900/50',
-                        event.status === 'scheduled' && 'bg-blue-900/30 text-blue-400 border-blue-900/50'
-                      )}>{event.status}</Badge>
-                      <Badge variant="outline" className="text-[7px]">{event.priority}</Badge>
-                      <Badge variant="outline" className="text-[7px]">{event.event_type}</Badge>
+                        event.status === 'scheduled' && 'bg-blue-900/30 text-blue-400 border-blue-900/50',
+                        event.status === 'completed' && 'bg-zinc-800/50 text-zinc-400 border-zinc-700'
+                      )}>{event.status.toUpperCase()}</Badge>
+                      <Badge className={cn(
+                        'text-[8px] font-bold',
+                        event.priority === 'CRITICAL' && 'bg-red-900/30 text-red-300 border-red-900/50',
+                        event.priority === 'HIGH' && 'bg-orange-900/30 text-orange-300 border-orange-900/50',
+                        event.priority === 'STANDARD' && 'bg-blue-900/30 text-blue-300 border-blue-900/50',
+                        event.priority === 'LOW' && 'bg-zinc-800/30 text-zinc-400 border-zinc-700'
+                      )}>{event.priority}</Badge>
+                      <Badge variant="outline" className="text-[8px]">{event.event_type.toUpperCase()}</Badge>
                     </div>
-                    <div className="text-sm font-bold text-zinc-100 mb-1 group-hover:text-[#ea580c] transition-colors">{event.title}</div>
-                    <div className="text-[9px] text-zinc-400 line-clamp-2">{event.description || 'No briefing available'}</div>
+                    <div className="text-base font-bold text-zinc-100 mb-1 group-hover:text-[#ea580c] transition-colors">
+                      {event.title}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 line-clamp-2 mb-2">
+                      {event.description || 'No briefing available'}
+                    </div>
+                    
+                    {/* Tags */}
+                    {event.tags && event.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {event.tags.slice(0, 3).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-[7px] text-zinc-500">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0 mt-1" />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/30">
+                {/* Detailed Info Grid */}
+                <div className="grid grid-cols-4 gap-3 pt-3 border-t border-zinc-800/30">
                   <div>
-                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Departure</div>
-                    <div className={cn("text-[9px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-300")}>
-                      {isImmediate ? 'IMMEDIATE' : timeUntil > 0 ? `T-${timeUntil}m` : 'ACTIVE'}
+                    <div className="text-[7px] text-zinc-500 uppercase mb-1 flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5" />
+                      Departure
+                    </div>
+                    <div className={cn("text-[10px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-300")}>
+                      {isActive ? 'ACTIVE NOW' : isImmediate ? 'IMMEDIATE' : timeUntil > 0 ? `T-${timeUntil}m` : new Date(startTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Location</div>
-                    <div className="text-[9px] font-mono text-zinc-300 truncate">{event.location || 'TBD'}</div>
+                    <div className="text-[7px] text-zinc-500 uppercase mb-1 flex items-center gap-1">
+                      <MapPin className="w-2.5 h-2.5" />
+                      Location
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-300 truncate">
+                      {event.location || 'TBD'}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Personnel</div>
-                    <div className="text-[9px] font-mono text-zinc-300">{event.assigned_user_ids?.length || 0} assigned</div>
+                    <div className="text-[7px] text-zinc-500 uppercase mb-1 flex items-center gap-1">
+                      <Users className="w-2.5 h-2.5" />
+                      Personnel
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-300">
+                      {event.assigned_user_ids?.length || 0} assigned
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[7px] text-zinc-500 uppercase mb-1 flex items-center gap-1">
+                      <CalendarIcon className="w-2.5 h-2.5" />
+                      Duration
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-300">
+                      {endTime ? `${Math.floor((endTime - startTime) / 1000 / 60 / 60)}h` : 'TBD'}
+                    </div>
                   </div>
                 </div>
+                
+                {/* Objectives Preview */}
+                {event.objectives && event.objectives.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-zinc-800/30">
+                    <div className="text-[7px] text-zinc-500 uppercase mb-1.5">OBJECTIVES</div>
+                    <div className="space-y-1">
+                      {event.objectives.slice(0, 2).map((obj, idx) => (
+                        <div key={obj.id || idx} className="flex items-start gap-2">
+                          <div className={cn(
+                            "w-1 h-1 rounded-full mt-1.5",
+                            obj.is_completed ? "bg-emerald-500" : "bg-zinc-600"
+                          )} />
+                          <div className="text-[9px] text-zinc-400 flex-1">
+                            {obj.text}
+                          </div>
+                        </div>
+                      ))}
+                      {event.objectives.length > 2 && (
+                        <div className="text-[8px] text-zinc-500 ml-3">
+                          +{event.objectives.length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
