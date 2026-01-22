@@ -7,6 +7,7 @@ import RescueAlertPanel from './RescueAlertPanel';
 import LiveIncidentCenter from '../incidents/LiveIncidentCenter';
 import LiveOperationsFeed from './LiveOperationsFeed';
 import EventCalendarView from './EventCalendarView';
+import PersonalLogPanel from './PersonalLogPanel';
 
 export default function HubTabContent({ 
   activeTab, 
