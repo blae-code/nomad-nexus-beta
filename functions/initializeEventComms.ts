@@ -26,10 +26,16 @@ Deno.serve(async (req) => {
         }
 
         // Fetch squads with timeout protection
-        const squads = await Promise.race([
-            base44.entities.Squad.list(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Squad fetch timeout')), 5000))
-        ]);
+        let squads = [];
+        try {
+            squads = await Promise.race([
+                base44.entities.Squad.filter({}, '-created_date', 20),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Squad fetch timeout')), 3000))
+            ]);
+        } catch (error) {
+            console.warn('Squad fetch timeout, proceeding with defaults');
+            squads = [];
+        }
 
         const netsCreated = [];
         const eventShort = eventId.slice(0, 8);

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from "@/api/base44Client";
+import React, { useState, useMemo } from 'react';
 import { createPageUrl } from "@/utils";
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
+import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
 import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
@@ -19,18 +19,36 @@ import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 
 export default function HubPage() {
-  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('ops');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
+  
+  // Centralized data fetching
+  const user = useCurrentUser();
+  const { data, isLoading } = useDashboardData(user);
+  
+  // Real-time subscriptions
+  useRealtimeSubscriptions({
+    enabled: !!user,
+    entities: ['UserPresence', 'Event', 'EventLog', 'Incident', 'VoiceNet']
+  });
 
   // Get user rank index
   const userRankIndex = useMemo(() => {
     return rankHierarchy.indexOf(user?.rank || 'Vagrant');
   }, [user?.rank]);
+
+  // Extract data from centralized hook
+  const userEvents = data?.events || [];
+  const squadMemberships = data?.squadMemberships || [];
+  const userSquads = data?.squads || [];
+  const fleetAssets = data?.fleetAssets || [];
+  const recentMessages = data?.recentMessages || [];
+  const treasuryBalance = data?.treasuryBalance || 0;
+  const activeIncidents = data?.activeIncidents || [];
+  const onlineUsers = data?.onlineUsers || [];
+  const allUsers = data?.allUsers || [];
+  const voiceNets = data?.voiceNets || [];
+  const recentLogs = data?.recentLogs || [];
 
   // Determine which features to show based on rank
   const showAdminFeatures = user?.role === 'admin';
@@ -38,102 +56,6 @@ export default function HubPage() {
   const canManageFleet = userRankIndex >= rankHierarchy.indexOf('Scout');
   const canAccessTreasury = userRankIndex >= rankHierarchy.indexOf('Scout');
   const canAccessIntelligence = userRankIndex >= rankHierarchy.indexOf('Scout');
-
-  // Fetch comprehensive dashboard data
-  const { data: userEvents = [] } = useQuery({
-    queryKey: ['hub-user-events', user?.id],
-    queryFn: () => user ? base44.entities.Event.filter({ status: ['active', 'pending', 'scheduled'] }, '-updated_date', 10) : Promise.resolve([]),
-    enabled: !!user,
-  });
-
-  const { data: squadMemberships = [] } = useQuery({
-    queryKey: ['hub-squad-memberships', user?.id],
-    queryFn: () => user ? base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }) : Promise.resolve([]),
-    enabled: !!user,
-  });
-
-  const { data: userSquads = [] } = useQuery({
-    queryKey: ['hub-squads', squadMemberships.map(m => m.squad_id).join(',')],
-    queryFn: async () => {
-      if (squadMemberships.length === 0) return [];
-      const squads = await Promise.all(
-        squadMemberships.map(m => base44.entities.Squad.get(m.squad_id).catch(() => null))
-      );
-      return squads.filter(Boolean);
-    },
-    enabled: squadMemberships.length > 0,
-  });
-
-  const { data: fleetAssets = [] } = useQuery({
-    queryKey: ['hub-fleet-assets'],
-    queryFn: () => base44.entities.FleetAsset.filter({ status: 'operational' }, '-updated_date', 5),
-    enabled: !!user && canManageFleet,
-    initialData: [],
-  });
-
-  const { data: recentMessages = [] } = useQuery({
-    queryKey: ['hub-recent-messages'],
-    queryFn: () => base44.entities.Message.list('-created_date', 5),
-    enabled: !!user,
-    initialData: [],
-  });
-
-  const { data: treasuryBalance } = useQuery({
-    queryKey: ['hub-treasury'],
-    queryFn: async () => {
-      const coffers = await base44.entities.Coffer.list();
-      return coffers.reduce((sum, c) => sum + (c.balance || 0), 0);
-    },
-    enabled: !!user && canAccessTreasury,
-    initialData: 0,
-  });
-
-  const { data: activeIncidents = [] } = useQuery({
-    queryKey: ['hub-incidents'],
-    queryFn: () => base44.entities.Incident.filter({ status: ['active', 'responding'] }, '-created_date', 3),
-    enabled: !!user,
-    initialData: [],
-  });
-
-  const { data: onlineUsers = [] } = useQuery({
-    queryKey: ['hub-online-users'],
-    queryFn: async () => {
-      const presences = await base44.entities.UserPresence.filter({ status: ['online', 'in-call'] });
-      const now = new Date();
-      return presences.filter(p => {
-        if (!p.last_activity) return true;
-        const lastActivity = new Date(p.last_activity);
-        const diffSeconds = (now - lastActivity) / 1000;
-        return diffSeconds < 30;
-      });
-    },
-    enabled: !!user,
-    initialData: [],
-    refetchInterval: 10000,
-  });
-
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['hub-all-users'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: !!user,
-    initialData: [],
-  });
-
-  const { data: voiceNets = [] } = useQuery({
-    queryKey: ['hub-voice-nets'],
-    queryFn: () => base44.entities.VoiceNet.filter({ status: 'active' }),
-    enabled: !!user,
-    initialData: [],
-    refetchInterval: 15000,
-  });
-
-  const { data: recentLogs = [] } = useQuery({
-    queryKey: ['hub-event-logs'],
-    queryFn: () => base44.entities.EventLog.filter({}, '-created_date', 10),
-    enabled: !!user,
-    initialData: [],
-    refetchInterval: 5000,
-  });
 
   // Calculate org engagement metrics
   const orgMetrics = useMemo(() => {
@@ -151,6 +73,18 @@ export default function HubPage() {
       recentActivity: recentLogs.length
     };
   }, [allUsers.length, onlineUsers.length, userEvents, userSquads.length, activeIncidents.length, recentLogs.length]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="text-sm text-zinc-400 font-mono">LOADING OPERATIONAL DATA...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">

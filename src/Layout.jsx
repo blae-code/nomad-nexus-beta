@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import '@/globals.css';
 import AppShellV3 from "@/components/layout/AppShellV3";
 import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 
@@ -35,6 +36,7 @@ export default function Layout({ children, currentPageName }) {
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
 
   return (
+    <ErrorBoundary>
     <div className="h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -114,5 +116,6 @@ export default function Layout({ children, currentPageName }) {
       {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
       <LayoutDebugMode />
     </div>
+    </ErrorBoundary>
   );
 }
