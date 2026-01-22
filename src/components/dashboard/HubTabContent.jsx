@@ -387,6 +387,161 @@ function FleetTab({ fleetAssets, canManageFleet }) {
   );
 }
 
+function AchievementsTab({ user, userEvents, recentLogs, squadMemberships, allUsers, orgMetrics, userRankIndex }) {
+  const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
+  
+  return (
+    <div className="space-y-4">
+      {/* Rank Progress */}
+      <div className="border border-[#ea580c]/30 bg-gradient-to-br from-[#ea580c]/5 to-zinc-950 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-[#ea580c]" />
+            <span className="text-xs font-bold text-zinc-200 uppercase">Current Rank</span>
+          </div>
+          <Badge className={cn('text-[9px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
+            {user?.rank || 'VAGRANT'}
+          </Badge>
+        </div>
+        <div className="h-3 bg-zinc-900/50 border border-zinc-800/50 mb-2">
+          <div 
+            className="h-full bg-gradient-to-r from-[#ea580c] to-yellow-500 transition-all duration-300"
+            style={{ width: `${((userRankIndex + 1) / 5) * 100}%` }}
+          />
+        </div>
+        <div className="text-[8px] text-zinc-400 text-right">
+          {userRankIndex < 4 ? `Next: ${rankHierarchy[userRankIndex + 1]}` : 'Max Rank Achieved'}
+        </div>
+      </div>
+
+      {/* Tab Grid for Org and Personal */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Org Achievements */}
+        <div className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 to-[#ea580c]/5 p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-4 h-4 text-[#ea580c]" />
+            <span className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">ORG ACHIEVEMENTS</span>
+          </div>
+          <div className="space-y-3">
+            <div className="border border-[#ea580c]/20 bg-zinc-900/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-[#ea580c]/20 border border-[#ea580c]/50 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-[#ea580c]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-zinc-200">Mission Success Streak</div>
+                    <div className="text-[8px] text-zinc-400">12 consecutive completions</div>
+                  </div>
+                </div>
+                <Star className="w-4 h-4 text-[#ea580c]" />
+              </div>
+              <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
+                <div className="h-full bg-[#ea580c] w-4/5" />
+              </div>
+            </div>
+            
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-900/20 border border-emerald-900/50 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-zinc-200">Member Milestone</div>
+                    <div className="text-[8px] text-zinc-400">{allUsers?.length || 0}/50 operatives</div>
+                  </div>
+                </div>
+                {(allUsers?.length >= 50) && <Star className="w-4 h-4 text-emerald-500" />}
+              </div>
+              <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: `${Math.min(((allUsers?.length || 0) / 50) * 100, 100)}%` }} />
+              </div>
+            </div>
+            
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-cyan-900/20 border border-cyan-900/50 flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-zinc-200">Active Operations</div>
+                    <div className="text-[8px] text-zinc-400">{orgMetrics?.activeOperations || 0}/10 concurrent</div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
+                <div className="h-full bg-cyan-500" style={{ width: `${((orgMetrics?.activeOperations || 0) / 10) * 100}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Personal Achievements */}
+        <div className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 to-blue-500/5 p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="w-4 h-4 text-blue-400" />
+            <span className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">PERSONAL ACHIEVEMENTS</span>
+          </div>
+          <div className="space-y-3">
+            <div className="border border-blue-900/30 bg-zinc-900/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-900/20 border border-blue-900/50 flex items-center justify-center">
+                    <Target className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-zinc-200">Missions Completed</div>
+                    <div className="text-[8px] text-zinc-400">{userEvents.filter(e => e.status === 'completed').length}/25 operations</div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
+                <div className="h-full bg-blue-500" style={{ width: `${Math.min((userEvents.filter(e => e.status === 'completed').length / 25) * 100, 100)}%` }} />
+              </div>
+            </div>
+            
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-cyan-900/20 border border-cyan-900/50 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-zinc-200">Activity Score</div>
+                    <div className="text-[8px] text-zinc-400">{recentLogs.filter(l => l.actor_user_id === user?.id).length}/50 actions</div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
+                <div className="h-full bg-cyan-500" style={{ width: `${Math.min((recentLogs.filter(l => l.actor_user_id === user?.id).length / 50) * 100, 100)}%` }} />
+              </div>
+            </div>
+            
+            <div className="border border-zinc-800/50 bg-zinc-900/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-purple-900/20 border border-purple-900/50 flex items-center justify-center">
+                    <Swords className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-zinc-200">Squad Integration</div>
+                    <div className="text-[8px] text-zinc-400">{squadMemberships.length}/3 units</div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
+                <div className="h-full bg-purple-500" style={{ width: `${Math.min((squadMemberships.length / 3) * 100, 100)}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CommsTab({ voiceNets, onlineUsers, recentMessages }) {
   return (
     <div className="space-y-3">
