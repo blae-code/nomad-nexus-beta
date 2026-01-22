@@ -55,7 +55,7 @@ const HubMetricsPanel = memo(function HubMetricsPanel({
           icon={Target}
           label="Operations"
           value={orgMetrics.activeOperations}
-          subtext="active missions"
+          subtext="active ops"
           color="blue"
           details={{
             stats: [
@@ -89,7 +89,7 @@ const HubMetricsPanel = memo(function HubMetricsPanel({
           icon={TrendingUp}
           label="Success Rate"
           value={`${orgMetrics.missionSuccessRate}%`}
-          subtext="mission efficiency"
+          subtext="ops efficiency"
           color="yellow"
           details={{
             stats: [
