@@ -192,9 +192,9 @@ export default function HubPage() {
               </div>
               </div>
               </motion.div>
-              </motion.div>
+              </div>
 
-            {/* Live Operational Pulse */}
+              {/* Live Operational Pulse */}
         {recentLogs.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
