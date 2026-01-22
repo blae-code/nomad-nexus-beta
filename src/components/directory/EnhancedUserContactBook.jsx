@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
 import UserProfileCard from './UserProfileCard';
+import EnhancedUserCard from './EnhancedUserCard';
+import { AnimatePresence } from 'framer-motion';
 
 const statusColors = {
   'online': 'bg-emerald-500',
