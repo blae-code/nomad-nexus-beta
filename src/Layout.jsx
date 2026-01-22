@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import '@/globals.css';
 import AppShellV3 from "@/components/layout/AppShellV3";
 import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 
