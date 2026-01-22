@@ -380,13 +380,12 @@ export default function EnhancedUserContactBook() {
           {/* View Mode Toggle */}
           <Button
             size="sm"
-            variant="outline"
             onClick={() => {
               const newMode = viewMode === 'list' ? 'compact' : 'list';
               setViewMode(newMode);
               savePreferences({ viewMode: newMode });
             }}
-            className="h-7 w-7 p-0"
+            className="h-7 w-7 p-0 bg-blue-900/50 hover:bg-blue-900 border border-blue-700 text-blue-300"
             title={viewMode === 'list' ? 'Compact view' : 'List view'}
           >
             {viewMode === 'list' ? <Grid className="w-3 h-3" /> : <List className="w-3 h-3" />}
@@ -395,7 +394,7 @@ export default function EnhancedUserContactBook() {
           {/* Sort Dropdown */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button size="sm" variant="outline" className="h-7 w-7 p-0" title="Sort">
+              <Button size="sm" className="h-7 w-7 p-0 bg-cyan-900/50 hover:bg-cyan-900 border border-cyan-700 text-cyan-300" title="Sort">
                 <ArrowUpDown className="w-3 h-3" />
               </Button>
             </DropdownMenu.Trigger>
@@ -425,7 +424,7 @@ export default function EnhancedUserContactBook() {
           {/* Filter Dropdown */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button size="sm" variant="outline" className="h-7 w-7 p-0" title="Filter">
+              <Button size="sm" className="h-7 w-7 p-0 bg-amber-900/50 hover:bg-amber-900 border border-amber-700 text-amber-300" title="Filter">
                 <Filter className="w-3 h-3" />
               </Button>
             </DropdownMenu.Trigger>
@@ -491,10 +490,10 @@ export default function EnhancedUserContactBook() {
               className="flex-1 bg-zinc-900 border border-zinc-700 text-[10px] px-2 py-1 text-white placeholder-zinc-600 focus:outline-none focus:border-[#ea580c]"
               autoFocus
             />
-            <Button size="sm" onClick={() => createGroup(newGroupName)} className="h-7 px-2 text-[8px] bg-emerald-600 hover:bg-emerald-700">
+            <Button size="sm" onClick={() => createGroup(newGroupName)} className="h-7 px-2 text-[8px] bg-emerald-600 hover:bg-emerald-700 text-white">
               CREATE
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowNewGroupForm(false)} className="h-7 w-7 p-0">
+            <Button size="sm" onClick={() => setShowNewGroupForm(false)} className="h-7 w-7 p-0 bg-red-900/50 hover:bg-red-900 border border-red-700 text-red-300">
               <X className="w-3 h-3" />
             </Button>
           </div>
@@ -504,12 +503,12 @@ export default function EnhancedUserContactBook() {
         {selectedUsers.size > 0 && (
           <div className="flex items-center gap-2 px-2 py-1.5 bg-blue-900/20 border border-blue-700/50">
             <span className="text-[9px] text-blue-300 font-bold">{selectedUsers.size} selected</span>
-            <Button size="sm" onClick={() => setSelectedUsers(new Set())} className="h-6 px-2 text-[8px]">
+            <Button size="sm" onClick={() => setSelectedUsers(new Set())} className="h-6 px-2 text-[8px] bg-red-900/50 hover:bg-red-900 border border-red-700 text-red-300">
               Clear
             </Button>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <Button size="sm" variant="outline" className="h-6 px-2 text-[8px]">
+                <Button size="sm" className="h-6 px-2 text-[8px] bg-emerald-900/50 hover:bg-emerald-900 border border-emerald-700 text-emerald-300">
                   Add to Group <ChevronDown className="w-3 h-3 ml-1" />
                 </Button>
               </DropdownMenu.Trigger>
