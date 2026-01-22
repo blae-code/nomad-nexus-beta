@@ -22,6 +22,8 @@ import AUECWarningPanel from "@/components/dashboard/AUECWarningPanel";
 import TacticalDashboard from "@/components/comms/TacticalDashboard";
 import CommsSearch from "@/components/comms/CommsSearch";
 import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
+import AnomalyDetectionPanel from "@/components/ai/AnomalyDetectionPanel";
+import SituationalAwarenessPanel from "@/components/ai/SituationalAwarenessPanel";
 import CommsToolbar from "@/components/comms/CommsToolbar";
 import CommsAdvancedDrawer from "@/components/comms/CommsAdvancedDrawer";
 import ChannelManager from "@/components/comms/ChannelManager";
@@ -447,13 +449,17 @@ function CommsConsolePage() {
                      </div>
                   </>
                ) : showAIAssistant ? (
-                  <ScrollArea className="flex-1">
-                     <CommsAIAssistant 
-                        eventId={selectedEventId} 
-                        channelId={selectedChannel?.id}
-                        user={currentUser} 
-                     />
-                  </ScrollArea>
+                 <ScrollArea className="flex-1">
+                    <div className="p-[var(--space-lg)] space-y-3">
+                       <SituationalAwarenessPanel eventId={selectedEventId} timeWindowMinutes={15} />
+                       <AnomalyDetectionPanel eventId={selectedEventId} timeWindowMinutes={30} />
+                       <CommsAIAssistant 
+                          eventId={selectedEventId} 
+                          channelId={selectedChannel?.id}
+                          user={currentUser} 
+                       />
+                    </div>
+                 </ScrollArea>
                ) : selectedNet ? (
                   <ScrollArea className="flex-1">
                      <div className="p-[var(--space-lg)] space-y-3">

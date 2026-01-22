@@ -23,6 +23,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasMinRank } from "@/components/permissions";
 import { PERMISSIONS, PERMISSION_LABELS } from "@/components/auth/permissionConstants";
 import PageShell from "@/components/layout/PageShell";
+import AnomalyDetectionPanel from "@/components/ai/AnomalyDetectionPanel";
+import SituationalAwarenessPanel from "@/components/ai/SituationalAwarenessPanel";
+import NetConfigurationAssistant from "@/components/ai/NetConfigurationAssistant";
 
 export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -220,6 +223,12 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
             <FileText className="w-4 h-4 mr-2" /> LOGS
+          </TabsTrigger>
+          <TabsTrigger 
+            value="ai-ops"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+          >
+            <Activity className="w-4 h-4 mr-2" /> AI OPS
           </TabsTrigger>
         </TabsList>
 
@@ -442,6 +451,16 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
 
         <TabsContent value="audit-logs">
           <AuditLogViewer />
+        </TabsContent>
+
+        <TabsContent value="ai-ops">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AnomalyDetectionPanel timeWindowMinutes={30} />
+              <SituationalAwarenessPanel timeWindowMinutes={15} />
+            </div>
+            <NetConfigurationAssistant eventId={null} />
+          </div>
         </TabsContent>
       </Tabs>
     </PageShell>
