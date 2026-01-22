@@ -163,6 +163,30 @@ export default function HubPage() {
                 treasuryBalance={treasuryBalance}
               />
 
+              {/* Data Insights Section */}
+              <div className="border border-zinc-800 bg-zinc-950 space-y-2.5">
+                <MetricsChartPanel 
+                  userEvents={userEvents}
+                  allUsers={allUsers}
+                  recentLogs={recentLogs}
+                />
+
+                {activeIncidents.length > 0 && (
+                  <div className="border-t border-zinc-800 pt-2.5">
+                    <IncidentHeatmap activeIncidents={activeIncidents} />
+                  </div>
+                )}
+
+                <div className="border-t border-zinc-800 pt-2.5">
+                  <ReportExporter 
+                    userEvents={userEvents}
+                    allUsers={allUsers}
+                    activeIncidents={activeIncidents}
+                    recentLogs={recentLogs}
+                  />
+                </div>
+              </div>
+
               {/* Personal Stats Row - Collapsible */}
               <div className="border border-zinc-800 bg-zinc-950">
                 <div 
