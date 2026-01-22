@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, TrendingUp, Star, Swords, Award, Calendar, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -283,7 +282,6 @@ function AchievementsTab({ achievementsTab, setAchievementsTab, allUsers, orgMet
 }
 
 function OpsTab({ userEvents }) {
-  const [hoveredEvent, setHoveredEvent] = useState(null);
   const navigate = useNavigate();
   const activeCount = userEvents.filter(e => e.status === 'active').length;
   const scheduledCount = userEvents.filter(e => e.status === 'scheduled').length;
