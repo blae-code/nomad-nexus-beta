@@ -860,43 +860,53 @@ export default function HubPage() {
               </motion.div>
             </motion.div>
 
-            {/* Secondary Panels Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Recent Comms */}
-              <motion.div 
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="border border-zinc-800/50 bg-zinc-950/50 p-3"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <Hash className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">RECENT COMMS</span>
-                </div>
-                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                  {recentMessages.slice(0, 4).map((msg) => (
-                    <div key={msg.id} className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30">
-                      <div className="text-[8px] text-zinc-400 mb-0.5">{new Date(msg.created_date).toLocaleTimeString()}</div>
-                      <div className="text-[9px] text-zinc-300 line-clamp-2">{msg.content}</div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
+            {/* Secondary Panels - Tabbed */}
+            <motion.div 
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="border border-zinc-800/50 bg-zinc-950/50"
+            >
+              <div className="flex border-b border-zinc-800">
+                <button
+                  onClick={() => setActiveTab(activeTab === 'comms-panel' ? 'ops' : 'comms-panel')}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 text-[9px] font-bold uppercase tracking-wider transition-all border-b-2',
+                    activeTab === 'comms-panel' ? 'text-cyan-400 border-cyan-400 bg-zinc-900/30' : 'text-zinc-500 border-transparent hover:text-zinc-400'
+                  )}
+                >
+                  <Hash className="w-3.5 h-3.5" />
+                  RECENT COMMS
+                </button>
+                <button
+                  onClick={() => setActiveTab(activeTab === 'log-panel' ? 'ops' : 'log-panel')}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 text-[9px] font-bold uppercase tracking-wider transition-all border-b-2',
+                    activeTab === 'log-panel' ? 'text-blue-400 border-blue-400 bg-zinc-900/30' : 'text-zinc-500 border-transparent hover:text-zinc-400'
+                  )}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  PERSONAL LOG
+                </button>
+              </div>
 
-              {/* Personal Log */}
-              <motion.div 
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-                className="border border-zinc-800/50 bg-zinc-950/50 p-3"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">PERSONAL LOG</span>
-                </div>
-                <PersonalLogPanel user={user} />
-              </motion.div>
-            </div>
+              <div className="p-3">
+                {activeTab === 'comms-panel' && (
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {recentMessages.slice(0, 4).map((msg) => (
+                      <div key={msg.id} className="px-2 py-1.5 bg-zinc-900/50 border border-zinc-800/30">
+                        <div className="text-[8px] text-zinc-400 mb-0.5">{new Date(msg.created_date).toLocaleTimeString()}</div>
+                        <div className="text-[9px] text-zinc-300 line-clamp-2">{msg.content}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'log-panel' && (
+                  <PersonalLogPanel user={user} />
+                )}
+              </div>
+            </motion.div>
           </div>
 
           {/* Right Sidebar: Info & Navigation */}
