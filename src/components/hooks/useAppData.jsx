@@ -41,17 +41,19 @@ export function useDashboardData(user) {
         allUsers,
         voiceNets,
         recentLogs,
-        treasuryCoffers
+        treasuryCoffers,
+        recentMessages
       ] = await Promise.all([
-        base44.entities.Event.filter({ status: ['active', 'pending', 'scheduled'] }, '-updated_date', 10),
-        base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }),
-        base44.entities.FleetAsset.filter({ status: 'operational' }, '-updated_date', 5),
-        base44.entities.Incident.filter({ status: ['active', 'responding'] }, '-created_date', 3),
-        base44.entities.UserPresence.filter({ status: ['online', 'in-call'] }),
-        base44.entities.User.list(),
-        base44.entities.VoiceNet.filter({ status: 'active' }),
-        base44.entities.EventLog.list('-created_date', 10),
-        base44.entities.Coffer.list().catch(() => [])
+        base44.entities.Event.list('-updated_date', 10).catch(() => []),
+        base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }).catch(() => []),
+        base44.entities.FleetAsset.list('-updated_date', 10).catch(() => []),
+        base44.entities.Incident.filter({ status: ['active', 'responding'] }, '-created_date', 5).catch(() => []),
+        base44.entities.UserPresence.filter({ status: ['online', 'in-call'] }).catch(() => []),
+        base44.entities.User.list().catch(() => []),
+        base44.entities.VoiceNet.filter({ status: 'active' }).catch(() => []),
+        base44.entities.EventLog.list('-created_date', 20).catch(() => []),
+        base44.entities.Coffer.list().catch(() => []),
+        base44.entities.Message.list('-created_date', 10).catch(() => [])
       ]);
 
       // Fetch squads for memberships (with timeout protection)
@@ -86,7 +88,7 @@ export function useDashboardData(user) {
         squadMemberships,
         squads: userSquads.filter(Boolean),
         fleetAssets,
-        recentMessages: [], // Fetched separately to avoid timeout
+        recentMessages,
         activeIncidents,
         onlineUsers: activeUsers,
         allUsers,
