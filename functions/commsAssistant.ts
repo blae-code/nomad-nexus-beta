@@ -1,5 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Timeout helper
+const withTimeout = (promise, ms = 2000) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+]);
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -191,9 +197,8 @@ async function askComms(base44, user, { query, eventId }) {
   const context = `
     Event Context:
     Active Nets: ${nets.length}
-    personnel Online: ${statuses.length}
-    Personnel Statuses: ${JSON.stringify(statuses.map(s => ({ role: s.role, status: s.status, loc: s.current_location })))}
-    Recent AI Alerts: ${JSON.stringify(agents.map(a => a.summary))}
+    Personnel Online: ${statuses.length}
+    Critical Status Count: ${statuses.filter(s => s.status === 'DISTRESS' || s.status === 'DOWN').length}
   `;
 
   const prompt = `

@@ -1,5 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const withTimeout = (promise, ms = 2000) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+]);
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -15,12 +20,12 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Missing action' }, { status: 400 });
         }
 
-        // Fetch event and nets context
-        const event = eventId ? await base44.entities.Event.get(eventId) : null;
-        const nets = netIds?.length ? await Promise.all(netIds.map(id => base44.entities.VoiceNet.get(id))) : [];
-        const allNets = eventId ? await base44.entities.VoiceNet.filter({ event_id: eventId }) : [];
-        const statuses = eventId ? await base44.entities.PlayerStatus.filter({ event_id: eventId }) : [];
-        const squads = await base44.entities.Squad.list();
+        // Fetch event and nets context with timeout protection
+        const event = eventId ? await withTimeout(base44.entities.Event.get(eventId)).catch(() => null) : null;
+        const nets = netIds?.length ? await Promise.all(netIds.map(id => withTimeout(base44.entities.VoiceNet.get(id)).catch(() => null))) : [];
+        const allNets = eventId ? await withTimeout(base44.entities.VoiceNet.filter({ event_id: eventId }), 1500).catch(() => []) : [];
+        const statuses = eventId ? await withTimeout(base44.entities.PlayerStatus.filter({ event_id: eventId }), 1500).catch(() => []) : [];
+        const squads = await withTimeout(base44.entities.Squad.list(), 2000).catch(() => []);
 
         // Suggest net configurations
         if (action === 'suggest_config') {
