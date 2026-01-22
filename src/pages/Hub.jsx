@@ -220,31 +220,31 @@ export default function HubPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[8px] text-zinc-500 font-mono">{new Date(log.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-[10px] text-zinc-500 font-mono">{new Date(log.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <Badge className={cn(
-                              'text-[6px] px-1 py-0',
+                              'text-[8px] px-1.5 py-0.5',
                               log.severity === 'HIGH' && 'bg-red-900/50 text-red-300 border-red-900',
                               log.severity === 'MEDIUM' && 'bg-yellow-900/50 text-yellow-300 border-yellow-900',
                               log.severity === 'LOW' && 'bg-zinc-800 text-zinc-400 border-zinc-700'
                             )}>{log.type}</Badge>
                           </div>
-                          <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
+                          <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
                         </div>
                         
-                        <div className="text-[9px] text-zinc-100 line-clamp-2 font-medium leading-tight mb-1 group-hover:text-white transition-colors">
+                        <div className="text-[11px] text-zinc-100 line-clamp-2 font-medium leading-tight mb-1 group-hover:text-white transition-colors">
                           {log.summary}
                         </div>
                         
                         {log.details?.recommended_action && (
-                          <div className="text-[7px] text-zinc-500 line-clamp-1 mt-1 flex items-center gap-1">
+                          <div className="text-[9px] text-zinc-500 line-clamp-1 mt-1 flex items-center gap-1">
                             <span className="text-[#ea580c]">→</span>
                             {log.details.recommended_action}
                           </div>
                         )}
                         
                         {log.event_id && (
-                          <div className="text-[7px] text-blue-400 mt-1 flex items-center gap-1">
-                            <Calendar className="w-2.5 h-2.5" />
+                          <div className="text-[9px] text-blue-400 mt-1 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
                             EVENT LINKED
                           </div>
                         )}
@@ -256,21 +256,21 @@ export default function HubPage() {
             </div>
             
             <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center justify-between">
-              <div className="flex items-center gap-3 text-[8px] text-zinc-500">
+              <div className="flex items-center gap-3 text-[10px] text-zinc-500">
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                   <span>{recentLogs.filter(l => l.severity === 'HIGH').length} Critical</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
                   <span>{recentLogs.filter(l => l.severity === 'MEDIUM').length} Active</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                  <Clock className="w-3.5 h-3.5" />
                   <span>Last: {recentLogs[0] ? new Date(recentLogs[0].created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--'}</span>
                 </div>
               </div>
-              <div className="text-[7px] text-zinc-600 font-mono">
+              <div className="text-[9px] text-zinc-600 font-mono">
                 REFRESH: {Math.floor(Math.random() * 60)}s
               </div>
             </div>
