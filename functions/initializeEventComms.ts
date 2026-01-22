@@ -25,11 +25,27 @@ Deno.serve(async (req) => {
             });
         }
 
+        // Fetch squads with timeout protection
+        let squads = [];
+        try {
+            squads = await Promise.race([
+                base44.entities.Squad.filter({}, '-created_date', 20),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Squad fetch timeout')), 3000))
+            ]);
+        } catch (error) {
+            console.warn('Squad fetch timeout, proceeding with defaults');
+            squads = [];
+        }
+
+        const netsCreated = [];
         const eventShort = eventId.slice(0, 8);
+
+        // Helper to generate unique room name
         const genRoomName = (netCode) => `redscar_evt_${eventShort}_${netCode.toLowerCase()}`;
 
-        // Create core nets (command + general) in parallel - these are always needed
-        const coreNets = await Promise.all([
+        // Create all nets in parallel for speed
+        const netPromises = [
+            // 1. Command Net
             base44.asServiceRole.entities.VoiceNet.create({
                 event_id: eventId,
                 code: "COMMAND",
@@ -41,6 +57,7 @@ Deno.serve(async (req) => {
                 status: "active",
                 livekit_room_name: genRoomName("COMMAND")
             }),
+            // 2. General Net
             base44.asServiceRole.entities.VoiceNet.create({
                 event_id: eventId,
                 code: "GENERAL",
@@ -50,40 +67,27 @@ Deno.serve(async (req) => {
                 status: "active",
                 livekit_room_name: genRoomName("GENERAL")
             })
-        ]);
+        ];
 
-        const netsCreated = [...coreNets];
+        // Add squad nets (limit to first 3)
+        squads.slice(0, 3).forEach(squad => {
+            const code = squad.name.split(' ')[0].toUpperCase().substring(0, 8);
+            netPromises.push(
+                base44.asServiceRole.entities.VoiceNet.create({
+                    event_id: eventId,
+                    code: code,
+                    label: `${squad.name} Comms`,
+                    type: "squad",
+                    priority: 2,
+                    linked_squad_id: squad.id,
+                    is_default_for_squad: true,
+                    status: "active",
+                    livekit_room_name: genRoomName(code)
+                })
+            );
+        });
 
-        // Optionally add squad nets (non-blocking, with short timeout)
-        try {
-            const squads = await Promise.race([
-                base44.entities.Squad.list(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
-            ]);
-            
-            if (squads.length > 0) {
-                const squadNets = await Promise.all(
-                    squads.slice(0, 3).map(squad => {
-                        const code = squad.name.split(' ')[0].toUpperCase().substring(0, 8);
-                        return base44.asServiceRole.entities.VoiceNet.create({
-                            event_id: eventId,
-                            code: code,
-                            label: `${squad.name} Comms`,
-                            type: "squad",
-                            priority: 2,
-                            linked_squad_id: squad.id,
-                            is_default_for_squad: true,
-                            status: "active",
-                            livekit_room_name: genRoomName(code)
-                        });
-                    })
-                );
-                netsCreated.push(...squadNets);
-            }
-        } catch (error) {
-            // Squad nets creation failed, continue with core nets only
-            console.log('Squad nets skipped:', error.message);
-        }
+        const netsCreated = await Promise.all(netPromises);
 
         // 4. Log comms provisioning to EventLog
         await base44.asServiceRole.entities.EventLog.create({
