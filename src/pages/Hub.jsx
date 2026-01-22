@@ -269,9 +269,9 @@ export default function HubPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="border border-zinc-800 bg-zinc-950 flex-1 min-h-0 flex flex-col overflow-hidden"
+              className="border border-zinc-800 bg-zinc-950 flex-1 min-h-0 flex flex-col overflow-hidden flex-shrink-0"
             >
-              <div className="flex gap-0 border-b border-zinc-800 overflow-x-auto shrink-0">
+              <div className="flex gap-0 border-b border-zinc-800 overflow-x-auto shrink-0 bg-zinc-900/30">
                 {[
                   { id: 'ops', label: 'OPS', icon: Calendar },
                   { id: 'alerts', label: 'ALERTS', icon: AlertCircle },
@@ -285,13 +285,13 @@ export default function HubPage() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-2 text-[8px] font-bold uppercase tracking-wider transition-all duration-100 whitespace-nowrap border-b-2',
+                        'flex items-center gap-1 px-2 py-1.5 text-[7px] font-bold uppercase tracking-wider transition-all duration-100 whitespace-nowrap border-b-2',
                         activeTab === tab.id
                           ? 'text-white bg-zinc-900 border-b-[#ea580c]'
-                          : 'text-zinc-500 border-b-transparent hover:text-zinc-300 hover:bg-zinc-900/50'
+                          : 'text-zinc-500 border-b-transparent hover:text-zinc-300'
                       )}
                     >
-                      <TabIcon className="w-3 h-3" />
+                      <TabIcon className="w-2.5 h-2.5" />
                       {tab.label}
                     </button>
                   );
@@ -303,9 +303,9 @@ export default function HubPage() {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
-                className="flex-1 min-h-0 overflow-auto"
+                className="flex-1 min-h-0 overflow-auto flex-shrink-0"
               >
-                <div className="p-2.5">
+                <div className="p-2 h-full">
                   <HubTabContent
                     activeTab={activeTab}
                     userEvents={userEvents}
