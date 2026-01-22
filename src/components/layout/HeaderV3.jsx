@@ -411,21 +411,13 @@ export default function HeaderV3() {
     >
       {/* LEFT: Brand + Callsign + Presence */}
       <div className="flex items-center gap-2.5 min-w-0 shrink-0">
-        {/* Brand */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Radio className="w-4 h-4 text-[#ea580c]" />
-          <span className="text-[9px] font-black uppercase text-zinc-500 hidden sm:inline tracking-widest">NEXUS</span>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-6 bg-zinc-800/50 hidden sm:block" />
-
-        {/* Callsign + Rank */}
-        <div className="hidden sm:flex items-baseline gap-2 min-w-0">
-          <span className="text-[11px] font-bold uppercase text-zinc-100 truncate tracking-tight">{userCallsign}</span>
-          <span className={cn('text-[9px] font-mono', user?.rank ? getRankColorClass(user.rank, 'text') : 'text-zinc-600')}>
-            {user?.rank || 'VAGRANT'}
-          </span>
+        {/* User Identity Badges */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
+            {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
+          </Badge>
+          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
+          {user?.role === 'admin' && <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>}
         </div>
 
         {/* Divider */}
