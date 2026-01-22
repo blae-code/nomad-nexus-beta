@@ -6,8 +6,9 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ChevronRight, ChevronLeft, Zap, Users, Radio, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, Users, Radio, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
 
 /**
  * Event Planning Wizard
