@@ -32,10 +32,8 @@ Deno.serve(async (req) => {
     }
 
     // Find or create presence record
-    const existing = await base44.asServiceRole.entities.UserPresence.filter({
-      user_id: user.id,
-      event_id: eventId || null
-    });
+    const filterQuery = eventId ? { user_id: user.id, event_id: eventId } : { user_id: user.id };
+    const existing = await base44.asServiceRole.entities.UserPresence.filter(filterQuery);
 
     const presenceData = {
       user_id: user.id,
