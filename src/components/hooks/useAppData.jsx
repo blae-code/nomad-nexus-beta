@@ -50,11 +50,20 @@ export function useDashboardData(user) {
         base44.entities.Coffer.list().catch(() => [])
       ]);
 
-      // Fetch squads for memberships
+      // Fetch squads for memberships (with timeout protection)
       const squadIds = squadMemberships.map(m => m.squad_id);
-      const userSquads = squadIds.length > 0 
-        ? await Promise.all(squadIds.map(id => base44.entities.Squad.get(id).catch(() => null)))
-        : [];
+      let userSquads = [];
+      if (squadIds.length > 0) {
+        try {
+          userSquads = await Promise.race([
+            Promise.all(squadIds.map(id => base44.entities.Squad.get(id).catch(() => null))),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+          ]);
+        } catch (err) {
+          console.warn('Squad fetch timeout in dashboard hook');
+          userSquads = [];
+        }
+      }
 
       // Calculate treasury balance
       const treasuryBalance = treasuryCoffers.reduce((sum, c) => sum + (c.balance || 0), 0);
@@ -71,8 +80,9 @@ export function useDashboardData(user) {
       return {
         events,
         squadMemberships,
-        userSquads: userSquads.filter(Boolean),
+        squads: userSquads.filter(Boolean),
         fleetAssets,
+        recentMessages: [], // Fetched separately to avoid timeout
         activeIncidents,
         onlineUsers: activeUsers,
         allUsers,

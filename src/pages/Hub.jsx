@@ -86,16 +86,7 @@ export default function HubPage() {
     );
   }
 
-  if (isLoading && !data) {
-    return (
-      <div className="min-h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <div className="text-sm text-zinc-400">Loading operational data...</div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 overflow-auto">
