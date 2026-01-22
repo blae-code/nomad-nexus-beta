@@ -33,7 +33,7 @@ import FleetPingSystem from "@/components/comms/FleetPingSystem";
 import RallyPointManager from "@/components/comms/RallyPointManager";
 import NetDisciplineQueue from "@/components/comms/NetDisciplineQueue";
 import { cn } from "@/lib/utils";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { usePTT } from "@/components/hooks/usePTT";
 import PTTHud from "@/components/comms/PTTHud";
 import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
