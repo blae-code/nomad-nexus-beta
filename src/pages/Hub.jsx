@@ -139,16 +139,17 @@ export default function HubPage() {
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5 tracking-wider">Status</div>
-                  <Badge className="text-[8px] bg-emerald-500/20 text-emerald-300 border-emerald-500">
-                    <CircleDot className="w-2 h-2 mr-0.5 animate-pulse" />
-                    NOMINAL
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => navigate(createPageUrl('Treasury'))}
+                  className="text-center hover:opacity-80 transition-opacity cursor-pointer group"
+                >
+                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5 tracking-wider group-hover:text-[#ea580c]">Personal Ledger</div>
+                  <Badge className="text-[8px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50 group-hover:bg-[#ea580c]/30">
+                    <Coins className="w-2 h-2 mr-0.5" />
+                    {user?.aUEC?.toLocaleString() || '0'} aUEC
                   </Badge>
-                  <div className="text-[8px] text-zinc-400 mt-1 font-mono">
-                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
+                </motion.button>
               </div>
 
               {/* Compact Metrics & Data */}
