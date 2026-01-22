@@ -190,8 +190,9 @@ export default function HubPage() {
                 </motion.div>
               </div>
             </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
+        </div>
 
         {/* Live Operational Pulse */}
         {recentLogs.length > 0 && (
