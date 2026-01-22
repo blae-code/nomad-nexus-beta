@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft, ChevronDown } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { Link } from 'react-router-dom';
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
@@ -432,18 +433,23 @@ export default function EventsPage() {
              />
           ) : (
             <div className="grid gap-2">
-              {events.map((event) => {
-                const creator = userById[event.created_by];
-                return (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    creator={creator}
-                    onActionClick={(evt) => window.location.href = createPageUrl(`Events?id=${evt.id}`)}
-                  />
-                );
-              })}
-            </div>
+               {events.map((event) => {
+                 const creator = userById[event.created_by];
+                 return (
+                   <Link 
+                     key={event.id}
+                     to={createPageUrl(`OperationControl?id=${event.id}`)}
+                     className="hover:opacity-80 transition-opacity"
+                   >
+                     <EventCard
+                       event={event}
+                       creator={creator}
+                       onActionClick={() => {}}
+                     />
+                   </Link>
+                 );
+               })}
+             </div>
           )}
         </div>
       </div>
