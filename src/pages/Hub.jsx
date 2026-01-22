@@ -105,12 +105,25 @@ export default function HubPage() {
             {/* Collapse Toggle Bar - Always Visible */}
               <div 
                 className="relative z-20 flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
-                onClick={() => setHeaderCollapsed(!headerCollapsed)}
               >
-                <span className="text-[7px] uppercase text-zinc-300 tracking-wider font-bold">OPS CONTEXT</span>
-                <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
-                </motion.div>
+                <div onClick={() => setHeaderCollapsed(!headerCollapsed)} className="flex-1 flex items-center gap-2">
+                  <span className="text-[7px] uppercase text-zinc-300 tracking-wider font-bold">OPS CONTEXT</span>
+                  <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
+                  </motion.div>
+                </div>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => navigate(createPageUrl('Treasury'))}
+                  className="text-center hover:opacity-80 transition-opacity cursor-pointer group"
+                >
+                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5 tracking-wider group-hover:text-[#ea580c]">Personal Ledger</div>
+                  <Badge className="text-[8px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50 group-hover:bg-[#ea580c]/30">
+                    <Coins className="w-2 h-2 mr-0.5" />
+                    {user?.aUEC?.toLocaleString() || '0'} aUEC
+                  </Badge>
+                </motion.button>
               </div>
 
             <motion.div 
