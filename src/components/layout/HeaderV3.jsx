@@ -9,6 +9,7 @@ import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import CommandPaletteV3 from '@/components/layout/CommandPaletteV3';
 import TimeClock from '@/components/layout/TimeClock';
+import RitualBonfireWidget from '@/components/dashboard/RitualBonfireWidget';
 import { useQuery } from '@tanstack/react-query';
 
 /**
@@ -472,6 +473,9 @@ export default function HeaderV3() {
 
       {/* RIGHT: Telemetry + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Ritual Bonfire Widget */}
+        <RitualBonfireWidget />
+        
         {/* Time Clocks */}
         <TimeClock />
 
