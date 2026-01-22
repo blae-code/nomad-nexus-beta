@@ -19,6 +19,7 @@ import UniverseMap from './pages/UniverseMap';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
 import OperationControl from './pages/OperationControl';
+import UserDirectory from './pages/UserDirectory';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
     "OperationControl": OperationControl,
+    "UserDirectory": UserDirectory,
 }
 
 export const pagesConfig = {
