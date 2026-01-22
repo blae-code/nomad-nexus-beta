@@ -112,18 +112,6 @@ export default function HubPage() {
                     <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
                   </motion.div>
                 </div>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => navigate(createPageUrl('Treasury'))}
-                  className="text-center hover:opacity-80 transition-opacity cursor-pointer group"
-                >
-                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5 tracking-wider group-hover:text-[#ea580c]">Personal Ledger</div>
-                  <Badge className="text-[8px] bg-[#ea580c]/20 text-[#ea580c] border-[#ea580c]/50 group-hover:bg-[#ea580c]/30">
-                    <Coins className="w-2 h-2 mr-0.5" />
-                    {user?.aUEC?.toLocaleString() || '0'} aUEC
-                  </Badge>
-                </motion.button>
               </div>
 
             <motion.div 
