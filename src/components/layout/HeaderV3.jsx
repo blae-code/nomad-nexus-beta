@@ -411,6 +411,20 @@ export default function HeaderV3() {
     >
       {/* LEFT: Brand + Callsign + Presence */}
       <div className="flex items-center gap-2.5 min-w-0 shrink-0">
+        {/* NOMAD NEXUS Logo */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-8 h-8 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
+            <Shield className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-sm font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
+            <p className="text-[7px] font-mono text-zinc-500 tracking-widest">OPERATIONS</p>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-10 bg-zinc-800/50" />
+
         {/* User Identity Badges */}
         <div className="flex items-center gap-1.5 shrink-0">
           <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
