@@ -16,7 +16,7 @@ export default function HubPersonalStats({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard
           icon={Target}
-          label="Missions"
+          label="Operations"
           value={userEvents.length}
           subtext="assigned ops"
           color="[#ea580c]"

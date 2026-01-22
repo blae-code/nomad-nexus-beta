@@ -146,19 +146,19 @@ function AchievementsTab({ achievementsTab, setAchievementsTab, allUsers, orgMet
         <div className="space-y-4">
           <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">ORGANIZATION MILESTONES</div>
           <div className="space-y-2">
-            <div className="border border-[#ea580c]/20 bg-zinc-900/30 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#ea580c]/20 border border-[#ea580c]/50 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-[#ea580c]" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-zinc-200">Mission Success Streak</div>
-                    <div className="text-[8px] text-zinc-400">12 consecutive completions</div>
-                  </div>
+          <div className="border border-[#ea580c]/20 bg-zinc-900/30 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#ea580c]/20 border border-[#ea580c]/50 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-[#ea580c]" />
                 </div>
-                <Star className="w-4 h-4 text-[#ea580c]" />
+                <div>
+                  <div className="text-[10px] font-bold text-zinc-200">Operation Success Streak</div>
+                  <div className="text-[8px] text-zinc-400">12 consecutive completions</div>
+                </div>
               </div>
+              <Star className="w-4 h-4 text-[#ea580c]" />
+            </div>
               <div className="h-1.5 bg-zinc-900/50 border border-zinc-800/50">
                 <div className="h-full bg-[#ea580c] w-4/5" />
               </div>
@@ -232,8 +232,8 @@ function AchievementsTab({ achievementsTab, setAchievementsTab, allUsers, orgMet
                     <Target className="w-4 h-4 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-zinc-200">Missions Completed</div>
-                    <div className="text-[8px] text-zinc-400">{userEvents.filter(e => e.status === 'completed').length}/25 operations</div>
+                    <div className="text-[10px] font-bold text-zinc-200">Operations Completed</div>
+                    <div className="text-[8px] text-zinc-400">{userEvents.filter(e => e.status === 'completed').length}/25 ops</div>
                   </div>
                 </div>
               </div>
@@ -293,7 +293,7 @@ function OpsTab({ userEvents }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">MISSION DASHBOARD</div>
+        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">OPERATIONS DASHBOARD</div>
         <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{userEvents.length} TOTAL</Badge>
       </div>
 
@@ -322,7 +322,7 @@ function OpsTab({ userEvents }) {
       </div>
       
       {/* Active & Upcoming Section */}
-      <div className="text-[8px] font-bold uppercase text-zinc-300 tracking-wider mb-2">ACTIVE & UPCOMING MISSIONS</div>
+      <div className="text-[8px] font-bold uppercase text-zinc-300 tracking-wider mb-2">ACTIVE & UPCOMING OPERATIONS</div>
 
       {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).length === 0 ? (
         <div className="text-center py-8 space-y-2 border border-zinc-800 bg-zinc-900/30">
@@ -491,7 +491,7 @@ function OpsTab({ userEvents }) {
                         onClick={() => navigate(createPageUrl('Events') + `?event=${event.id}`)}
                         className="w-full flex items-center justify-between px-3 py-2 border border-[#ea580c]/50 bg-[#ea580c]/10 hover:bg-[#ea580c]/20 transition-all text-[#ea580c]"
                       >
-                        <span className="text-[10px] font-bold uppercase tracking-wider">View Mission Details</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">View Operation Details</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </motion.div>

@@ -25,7 +25,7 @@ import { useQuery } from '@tanstack/react-query';
 const PAGE_BREADCRUMBS = {
   '/hub': 'COMMAND HUB',
   '/nomadopsdashboard': 'NOMAD OPS',
-  '/events': 'OPERATIONS BOARD',
+  '/events': 'OPERATIONS',
   '/commsconsole': 'COMMS ARRAY',
   '/intelligence': 'INTELLIGENCE',
   '/adminconsole': 'SYSTEM ADMIN',
