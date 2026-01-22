@@ -24,6 +24,7 @@ import CommsSearch from "@/components/comms/CommsSearch";
 import AICommsSummarizer from "@/components/comms/AICommsSummarizer";
 import AnomalyDetectionPanel from "@/components/ai/AnomalyDetectionPanel";
 import SituationalAwarenessPanel from "@/components/ai/SituationalAwarenessPanel";
+import WhisperInterface from "@/components/comms/WhisperInterface";
 import CommsToolbar from "@/components/comms/CommsToolbar";
 import CommsAdvancedDrawer from "@/components/comms/CommsAdvancedDrawer";
 import ChannelManager from "@/components/comms/ChannelManager";
@@ -247,6 +248,8 @@ function CommsConsolePage() {
       </Button>
       
       {selectedEventId && <FleetStatusSummary eventId={selectedEventId} />}
+      
+      <WhisperInterface user={currentUser} eventId={selectedEventId} netId={selectedNet?.id} />
       
       <Button
         variant="ghost"
