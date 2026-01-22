@@ -9,6 +9,7 @@ import { Send, User, Hash, Lock, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import MessageBubble from "@/components/comms/MessageBubble";
+import WhisperDisplay from "@/components/comms/WhisperDisplay";
 import FileUploadButton from "@/components/comms/FileUploadButton";
 import AIResponseSuggestions from "@/components/comms/AIResponseSuggestions";
 import { useUserDirectory } from "@/components/hooks/useUserDirectory";
@@ -186,7 +187,9 @@ export default function ChatInterface({ channel, user }) {
             const isOnline = onlineUsers.includes(msg.user_id);
             const isRead = msg.read_by && msg.read_by.includes(user?.id);
 
-            return (
+            return msg.whisper_metadata?.is_whisper ? (
+              <WhisperDisplay key={msg.id} message={msg} currentUserId={user?.id} />
+            ) : (
               <MessageBubble
                 key={msg.id}
                 message={msg}
