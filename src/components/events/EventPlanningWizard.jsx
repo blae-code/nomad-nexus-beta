@@ -20,6 +20,7 @@ export default function EventPlanningWizard({
   currentUser
 }) {
   const [step, setStep] = useState(1);
+  const [isCreating, setIsCreating] = useState(false);
   const [eventData, setEventData] = useState({
     title: '',
     description: '',
@@ -38,12 +39,39 @@ export default function EventPlanningWizard({
     if (step > 1) setStep(step - 1);
   }, [step]);
 
-  const handleComplete = useCallback(() => {
-    if (onComplete) {
-      onComplete(eventData);
+  const handleComplete = useCallback(async () => {
+    if (!eventData.title || !eventData.location || !eventData.start_time) return;
+
+    try {
+      setIsCreating(true);
+      
+      // Create the event
+      const newEvent = await base44.entities.Event.create({
+        title: eventData.title,
+        description: eventData.description,
+        location: eventData.location,
+        event_type: eventData.event_type,
+        priority: eventData.priority,
+        status: currentUser?.role === 'admin' || currentUser?.rank === 'Pioneer' || currentUser?.rank === 'Founder' ? 'scheduled' : 'pending_approval',
+        start_time: new Date(eventData.start_time).toISOString(),
+        objectives: []
+      });
+
+      // Pass event and data to next step
+      if (onComplete) {
+        onComplete({
+          ...eventData,
+          eventId: newEvent.id
+        });
+      }
+      
+      onOpenChange(false);
+    } catch (err) {
+      console.error('Failed to create event:', err);
+    } finally {
+      setIsCreating(false);
     }
-    onOpenChange(false);
-  }, [eventData, onComplete, onOpenChange]);
+  }, [eventData, onComplete, onOpenChange, currentUser]);
 
   const isStepValid = useCallback(() => {
     switch (step) {
@@ -259,10 +287,12 @@ export default function EventPlanningWizard({
           ) : (
             <Button
               onClick={handleComplete}
-              disabled={!isStepValid()}
+              disabled={!isStepValid() || isCreating}
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-7"
             >
-              <Check className="w-3 h-3 mr-1" /> CONFIRM & PLAN
+              {isCreating && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+              {!isCreating && <Check className="w-3 h-3 mr-1" />}
+              {isCreating ? 'CREATING...' : 'CONFIRM & PLAN'}
             </Button>
           )}
         </div>
