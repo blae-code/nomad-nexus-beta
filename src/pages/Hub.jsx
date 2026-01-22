@@ -13,6 +13,9 @@ import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import HubMetricsPanel from "@/components/dashboard/HubMetricsPanel";
 import HubPersonalStats from "@/components/dashboard/HubPersonalStats";
 import HubTabContent from "@/components/dashboard/HubTabContent";
+import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
+import IncidentHeatmap from "@/components/incidents/IncidentHeatmap";
+import ReportExporter from "@/components/dashboard/ReportExporter";
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 
