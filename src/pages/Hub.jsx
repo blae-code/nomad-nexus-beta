@@ -234,7 +234,6 @@ export default function HubPage() {
                   { id: 'alerts', label: 'ALERTS', icon: AlertCircle },
                   { id: 'incidents', label: 'INCIDENTS', icon: Zap },
                   { id: 'feed', label: 'FEED', icon: Activity },
-                  { id: 'calendar', label: 'CALENDAR', icon: Clock },
                   { id: 'squads', label: 'SQUADS', icon: Users },
                   { id: 'fleet', label: 'FLEET', icon: Rocket },
                   { id: 'comms', label: 'COMMS', icon: Hash },
@@ -280,6 +279,9 @@ export default function HubPage() {
                     fleetAssets={fleetAssets}
                     canManageFleet={canManageFleet}
                     user={user}
+                    allUsers={allUsers}
+                    orgMetrics={orgMetrics}
+                    userRankIndex={userRankIndex}
                   />
                   {/* Legacy tab content removed - now handled by HubTabContent component */}
                   {false && activeTab === 'ops' && (
@@ -1024,70 +1026,7 @@ export default function HubPage() {
               </div>
             )}
 
-            {/* Org Achievements */}
-            <div className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 to-[#ea580c]/5 p-3">
-              <div className="flex items-center gap-2 mb-3">
-                <Award className="w-3.5 h-3.5 text-[#ea580c]" />
-                <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">ORG ACHIEVEMENTS</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-[#ea580c]/20">
-                  <div className="w-6 h-6 bg-[#ea580c]/20 border border-[#ea580c]/50 flex items-center justify-center">
-                    <TrendingUp className="w-3.5 h-3.5 text-[#ea580c]" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[9px] font-bold text-zinc-200">Mission Success Streak</div>
-                    <div className="text-[7px] text-zinc-400">12 consecutive completions</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
-                  <div className="w-6 h-6 bg-emerald-900/20 border border-emerald-900/50 flex items-center justify-center">
-                    <Users className="w-3.5 h-3.5 text-emerald-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[9px] font-bold text-zinc-200">Member Milestone</div>
-                    <div className="text-[7px] text-zinc-400">{allUsers.length} operatives reached</div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Personal Achievements */}
-            <div className="border border-zinc-800/50 bg-gradient-to-br from-zinc-950 to-blue-500/5 p-3">
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-3.5 h-3.5 text-blue-400" />
-                <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">PERSONAL ACHIEVEMENTS</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-blue-900/30">
-                  <div className="w-6 h-6 bg-blue-900/20 border border-blue-900/50 flex items-center justify-center">
-                    <Target className="w-3.5 h-3.5 text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[9px] font-bold text-zinc-200">Missions Completed</div>
-                    <div className="text-[7px] text-zinc-400">{userEvents.filter(e => e.status === 'completed').length} operations</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
-                  <div className="w-6 h-6 bg-cyan-900/20 border border-cyan-900/50 flex items-center justify-center">
-                    <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[9px] font-bold text-zinc-200">Recent Activity</div>
-                    <div className="text-[7px] text-zinc-400">{recentLogs.filter(l => l.actor_user_id === user?.id).length} actions logged</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-zinc-900/30 border border-zinc-800/30">
-                  <div className="w-6 h-6 bg-purple-900/20 border border-purple-900/50 flex items-center justify-center">
-                    <Swords className="w-3.5 h-3.5 text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[9px] font-bold text-zinc-200">Squad Assignments</div>
-                    <div className="text-[7px] text-zinc-400">{squadMemberships.length} active units</div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </motion.div>
         </div>
       </div>
