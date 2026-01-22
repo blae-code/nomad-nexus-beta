@@ -106,8 +106,19 @@ export default function EnhancedUserContactBook() {
       try {
         const result = await base44.functions.invoke('getUserDirectory', {});
         return result.data.userById || {};
-      } catch {
-        return {};
+      } catch (e) {
+        console.warn('getUserDirectory failed, building directory from allUsers:', e);
+        // Fallback: build directory from allUsers directly
+        const directory = {};
+        allUsers.forEach(u => {
+          directory[u.id] = {
+            callsign: u.callsign || u.full_name?.split(' ')[0] || 'OPERATIVE',
+            rank: u.rank || 'VAGRANT',
+            full_name: u.full_name,
+            id: u.id
+          };
+        });
+        return directory;
       }
     },
     refetchInterval: 5000
@@ -213,7 +224,7 @@ export default function EnhancedUserContactBook() {
     });
 
     let userList = allUsers
-      .filter(u => u.id !== currentUser?.id && userDirectory[u.id])
+      .filter(u => u.id !== currentUser?.id)
       .filter(u => !blockedUsers.has(u.id))
       .map(u => ({
         user: u,
