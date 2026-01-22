@@ -8,7 +8,7 @@ import LiveIncidentCenter from '../incidents/LiveIncidentCenter';
 import LiveOperationsFeed from './LiveOperationsFeed';
 import EventCalendarView from './EventCalendarView';
 import PersonalLogPanel from './PersonalLogPanel';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
