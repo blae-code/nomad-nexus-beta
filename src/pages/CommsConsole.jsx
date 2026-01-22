@@ -262,6 +262,16 @@ function CommsConsolePage() {
         <Bot className="w-3 h-3" />
         AI ASSIST
       </Button>
+      
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowSimulation(!showSimulation)}
+        className={cn("gap-2 text-[10px] uppercase font-bold border border-zinc-800", showSimulation ? "bg-blue-500/10 text-blue-400 border-blue-500/30" : "text-zinc-500")}
+      >
+        <Activity className="w-3 h-3" />
+        SIMULATE
+      </Button>
     </div>
   ) : null;
 
