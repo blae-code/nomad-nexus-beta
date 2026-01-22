@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, TrendingUp, Star, Swords, Award, Calendar } from 'lucide-react';
+import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, TrendingUp, Star, Swords, Award, Calendar, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
@@ -8,6 +8,9 @@ import LiveIncidentCenter from '../incidents/LiveIncidentCenter';
 import LiveOperationsFeed from './LiveOperationsFeed';
 import EventCalendarView from './EventCalendarView';
 import PersonalLogPanel from './PersonalLogPanel';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function HubTabContent({ 
   activeTab, 
@@ -280,6 +283,8 @@ function AchievementsTab({ achievementsTab, setAchievementsTab, allUsers, orgMet
 }
 
 function OpsTab({ userEvents }) {
+  const [hoveredEvent, setHoveredEvent] = useState(null);
+  const navigate = useNavigate();
   const activeCount = userEvents.filter(e => e.status === 'active').length;
   const scheduledCount = userEvents.filter(e => e.status === 'scheduled').length;
   const pendingCount = userEvents.filter(e => e.status === 'pending').length;
@@ -326,7 +331,7 @@ function OpsTab({ userEvents }) {
           <div className="text-[8px] text-zinc-500">Awaiting mission assignment</div>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {userEvents.filter(e => ['active', 'scheduled', 'pending'].includes(e.status)).slice(0, 10).map((event) => {
             const startTime = new Date(event.start_time);
             const timeUntil = Math.floor((startTime - new Date()) / 1000 / 60);
@@ -335,67 +340,163 @@ function OpsTab({ userEvents }) {
             const completedObjectives = event.objectives?.filter(o => o.is_completed).length || 0;
 
             return (
-              <div key={event.id} className="border border-zinc-800/50 bg-zinc-900/30 p-2 hover:border-[#ea580c]/50 hover:bg-zinc-900/50 transition-all cursor-pointer group">
-                <div className="flex items-start gap-2">
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge className={cn(
-                      'text-[6px] font-bold px-1 py-0',
-                      event.status === 'active' && 'bg-emerald-600 text-white border-emerald-600',
-                      event.status === 'pending' && 'bg-yellow-600 text-white border-yellow-600',
-                      event.status === 'scheduled' && 'bg-blue-600 text-white border-blue-600'
-                    )}>{event.status.slice(0, 3).toUpperCase()}</Badge>
-                    <div className={cn(
-                      "text-[8px] font-mono font-bold px-1",
-                      isImmediate ? "text-[#ea580c]" : "text-zinc-300"
-                    )}>
-                      {isImmediate ? 'NOW' : timeUntil > 0 ? `T-${timeUntil}m` : 'LIVE'}
+              <div 
+                key={event.id} 
+                className="relative"
+                onMouseEnter={() => setHoveredEvent(event.id)}
+                onMouseLeave={() => setHoveredEvent(null)}
+              >
+                <div className="border border-zinc-800/50 bg-zinc-900/30 p-3 hover:border-[#ea580c]/50 hover:bg-zinc-900/50 transition-all cursor-pointer group">
+                  <div className="flex items-start gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge className={cn(
+                        'text-[8px] font-bold px-1.5 py-0.5',
+                        event.status === 'active' && 'bg-emerald-600 text-white border-emerald-600',
+                        event.status === 'pending' && 'bg-yellow-600 text-white border-yellow-600',
+                        event.status === 'scheduled' && 'bg-blue-600 text-white border-blue-600'
+                      )}>{event.status.slice(0, 3).toUpperCase()}</Badge>
+                      <div className={cn(
+                        "text-[10px] font-mono font-bold px-1.5",
+                        isImmediate ? "text-[#ea580c]" : "text-zinc-300"
+                      )}>
+                        {isImmediate ? 'NOW' : timeUntil > 0 ? `T-${timeUntil}m` : 'LIVE'}
+                      </div>
                     </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="text-[12px] font-bold text-zinc-100 truncate group-hover:text-[#ea580c] transition-colors">{event.title}</div>
+                        <Badge className="text-[8px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border-zinc-700 shrink-0">{event.priority}</Badge>
+                        <Badge className="text-[8px] px-1.5 py-0.5 bg-zinc-800/50 text-zinc-400 border-zinc-700/50 shrink-0">{event.event_type}</Badge>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-[10px] text-zinc-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span className="font-mono">{startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+
+                        {event.location && (
+                          <div className="flex items-center gap-1 truncate">
+                            <MapPin className="w-3 h-3" />
+                            <span className="truncate">{event.location}</span>
+                          </div>
+                        )}
+
+                        {event.assigned_user_ids?.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{event.assigned_user_ids.length}</span>
+                          </div>
+                        )}
+
+                        {objectiveCount > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            <span>{completedObjectives}/{objectiveCount}</span>
+                          </div>
+                        )}
+
+                        {event.phase && (
+                          <Badge className="text-[8px] px-1.5 py-0.5 bg-cyan-900/30 text-cyan-400 border-cyan-900/50">
+                            {event.phase}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0 mt-0.5" />
                   </div>
+                </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <div className="text-[10px] font-bold text-zinc-100 truncate group-hover:text-[#ea580c] transition-colors">{event.title}</div>
-                      <Badge className="text-[6px] px-1 py-0 bg-zinc-800 text-zinc-400 border-zinc-700 shrink-0">{event.priority}</Badge>
-                      <Badge className="text-[6px] px-1 py-0 bg-zinc-800/50 text-zinc-400 border-zinc-700/50 shrink-0">{event.event_type}</Badge>
-                    </div>
+                <AnimatePresence>
+                  {hoveredEvent === event.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className={cn(
+                        'absolute top-0 left-0 right-0 z-50 border-2 p-4 shadow-2xl',
+                        event.status === 'active' ? 'bg-emerald-950/95 border-emerald-700' :
+                        event.status === 'pending' ? 'bg-yellow-950/95 border-yellow-700' :
+                        'bg-blue-950/95 border-blue-700'
+                      )}
+                      style={{
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.7)',
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Target className="w-4 h-4 text-[#ea580c]" />
+                            <span className="text-[11px] uppercase text-zinc-200 tracking-wider font-bold">{event.title}</span>
+                          </div>
+                          {event.description && (
+                            <p className="text-[10px] text-zinc-400 line-clamp-2 mb-3">{event.description}</p>
+                          )}
+                        </div>
+                        <Badge className={cn(
+                          'text-[9px] font-bold px-2 py-1 shrink-0',
+                          event.status === 'active' && 'bg-emerald-600 text-white',
+                          event.status === 'pending' && 'bg-yellow-600 text-white',
+                          event.status === 'scheduled' && 'bg-blue-600 text-white'
+                        )}>{event.status.toUpperCase()}</Badge>
+                      </div>
 
-                    <div className="flex items-center gap-3 text-[8px] text-zinc-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-2.5 h-2.5" />
-                        <span className="font-mono">{startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-zinc-400">Time</span>
+                            <span className="text-[10px] font-bold text-zinc-200 font-mono">
+                              {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-zinc-400">Priority</span>
+                            <span className="text-[10px] font-bold text-[#ea580c]">{event.priority}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-zinc-400">Type</span>
+                            <span className="text-[10px] font-bold text-zinc-200 uppercase">{event.event_type}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-zinc-400">Personnel</span>
+                            <span className="text-[10px] font-bold text-blue-300">{event.assigned_user_ids?.length || 0}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-zinc-400">Objectives</span>
+                            <span className="text-[10px] font-bold text-cyan-300">{completedObjectives}/{objectiveCount}</span>
+                          </div>
+                          {event.phase && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] text-zinc-400">Phase</span>
+                              <span className="text-[10px] font-bold text-cyan-300 uppercase">{event.phase}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {event.location && (
-                        <div className="flex items-center gap-1 truncate">
-                          <Target className="w-2.5 h-2.5" />
-                          <span className="truncate">{event.location}</span>
+                        <div className="flex items-center gap-2 mb-3 p-2 bg-zinc-900/50 border border-zinc-800">
+                          <MapPin className="w-3 h-3 text-[#ea580c]" />
+                          <span className="text-[9px] text-zinc-300">{event.location}</span>
                         </div>
                       )}
 
-                      {event.assigned_user_ids?.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-2.5 h-2.5" />
-                          <span>{event.assigned_user_ids.length}</span>
-                        </div>
-                      )}
-
-                      {objectiveCount > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Target className="w-2.5 h-2.5" />
-                          <span>{completedObjectives}/{objectiveCount}</span>
-                        </div>
-                      )}
-
-                      {event.phase && (
-                        <Badge className="text-[6px] px-1 py-0 bg-cyan-900/30 text-cyan-400 border-cyan-900/50">
-                          {event.phase}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0 mt-0.5" />
-                </div>
+                      <button
+                        onClick={() => navigate(createPageUrl('Events') + `?event=${event.id}`)}
+                        className="w-full flex items-center justify-between px-3 py-2 border border-[#ea580c]/50 bg-[#ea580c]/10 hover:bg-[#ea580c]/20 transition-all text-[#ea580c]"
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-wider">View Mission Details</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
