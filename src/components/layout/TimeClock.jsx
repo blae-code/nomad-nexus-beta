@@ -31,15 +31,16 @@ export default function TimeClock() {
   }, []);
 
   return (
-    <div className="hidden sm:flex items-center gap-3 px-2.5 py-2 border border-transparent bg-transparent text-[9px] font-mono">
-      <Clock className="w-3 h-3 text-zinc-600" />
-      <div className="flex flex-col gap-0.5">
-        <div className="flex flex-col items-center">
-          <span className="text-zinc-600 uppercase text-[8px]">LOCAL</span>
-          <span className="text-zinc-300 font-bold tracking-wide">{localTime}</span>
+    <div className="hidden sm:flex items-center gap-4 px-3 py-2 border border-transparent bg-transparent text-xs font-mono">
+      <Clock className="w-4 h-4 text-zinc-600" />
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-500 uppercase text-[9px] font-semibold">LOCAL</span>
+          <span className="text-zinc-200 font-bold tracking-wide">{localTime}</span>
         </div>
-        <div className="flex flex-col items-center">
-          <span className="text-zinc-600 uppercase text-[8px]">UTC</span>
+        <div className="h-4 w-px bg-zinc-800" />
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-500 uppercase text-[9px] font-semibold">UTC</span>
           <span className="text-cyan-400 font-bold tracking-wide">{utcTime}</span>
         </div>
       </div>
