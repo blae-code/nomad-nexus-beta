@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import VoiceControlToolkit from '@/components/voice/VoiceControlToolkit';
-import UserContactBook from '@/components/directory/UserContactBook';
+import EnhancedUserContactBook from '@/components/directory/EnhancedUserContactBook';
 import ActiveNetMonitor from '@/components/voice/ActiveNetMonitor';
 import { Radio, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -79,7 +79,7 @@ export default function ContextPanel({ currentPage, user }) {
 
         {contactsExpanded && (
           <div className="flex-1 min-h-0 overflow-hidden p-3">
-            <UserContactBook />
+            <EnhancedUserContactBook />
           </div>
         )}
       </div>
