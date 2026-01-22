@@ -29,6 +29,7 @@ import CommsToolbar from "@/components/comms/CommsToolbar";
 import CommsAdvancedDrawer from "@/components/comms/CommsAdvancedDrawer";
 import ChannelManager from "@/components/comms/ChannelManager";
 import IncidentForm from "@/components/incidents/IncidentForm";
+import CommsSimulationPanel from "@/components/comms/CommsSimulationPanel";
 import IncidentDashboard from "@/components/incidents/IncidentDashboard";
 import WingStatusPropagation from "@/components/comms/WingStatusPropagation";
 import FormationCallouts from "@/components/comms/FormationCallouts";
