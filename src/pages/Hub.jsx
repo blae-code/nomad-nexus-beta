@@ -451,18 +451,18 @@ export default function HubPage() {
                   {activeTab === 'ops' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">MISSION BOARD</div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">MISSION BOARD</div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[7px]">{userEvents.length} ACTIVE</Badge>
-                          <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">{userEvents.filter(e => e.status === 'active').length} LIVE</Badge>
+                          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{userEvents.length} ACTIVE</Badge>
+                          <Badge className="text-[7px] bg-emerald-900/40 text-emerald-300 border-emerald-700">{userEvents.filter(e => e.status === 'active').length} LIVE</Badge>
                         </div>
                       </div>
                       
                       {userEvents.length === 0 ? (
                         <div className="text-center py-16 space-y-2">
-                          <Target className="w-12 h-12 mx-auto text-zinc-700" />
-                          <div className="text-sm font-bold text-zinc-600">NO ACTIVE OPERATIONS</div>
-                          <div className="text-[9px] text-zinc-700">Awaiting mission assignment</div>
+                          <Target className="w-12 h-12 mx-auto text-zinc-600" />
+                          <div className="text-sm font-bold text-zinc-400">NO ACTIVE OPERATIONS</div>
+                          <div className="text-[9px] text-zinc-500">Awaiting mission assignment</div>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -485,26 +485,26 @@ export default function HubPage() {
                                       <Badge variant="outline" className="text-[7px]">{event.priority}</Badge>
                                       <Badge variant="outline" className="text-[7px]">{event.event_type}</Badge>
                                     </div>
-                                    <div className="text-sm font-bold text-zinc-200 mb-1 group-hover:text-[#ea580c] transition-colors">{event.title}</div>
-                                    <div className="text-[9px] text-zinc-500 line-clamp-2">{event.description || 'No briefing available'}</div>
+                                    <div className="text-sm font-bold text-zinc-100 mb-1 group-hover:text-[#ea580c] transition-colors">{event.title}</div>
+                                    <div className="text-[9px] text-zinc-400 line-clamp-2">{event.description || 'No briefing available'}</div>
                                   </div>
                                   <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
                                 </div>
                                 
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/30">
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Departure</div>
-                                    <div className={cn("text-[9px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-400")}>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Departure</div>
+                                    <div className={cn("text-[9px] font-mono font-bold", isImmediate ? "text-[#ea580c]" : "text-zinc-300")}>
                                       {isImmediate ? 'IMMEDIATE' : timeUntil > 0 ? `T-${timeUntil}m` : 'ACTIVE'}
                                     </div>
                                   </div>
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Location</div>
-                                    <div className="text-[9px] font-mono text-zinc-400 truncate">{event.location || 'TBD'}</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Location</div>
+                                    <div className="text-[9px] font-mono text-zinc-300 truncate">{event.location || 'TBD'}</div>
                                   </div>
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Personnel</div>
-                                    <div className="text-[9px] font-mono text-zinc-400">{event.assigned_user_ids?.length || 0} assigned</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Personnel</div>
+                                    <div className="text-[9px] font-mono text-zinc-300">{event.assigned_user_ids?.length || 0} assigned</div>
                                   </div>
                                 </div>
                               </div>
@@ -517,10 +517,10 @@ export default function HubPage() {
                   {activeTab === 'alerts' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">SYSTEM ALERTS</div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">SYSTEM ALERTS</div>
                         <Badge className={cn(
-                          'text-[7px]',
-                          activeIncidents.length > 0 ? 'bg-red-900/30 text-red-400 border-red-900/50 animate-pulse' : 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50'
+                          'text-[7px] font-bold',
+                          activeIncidents.length > 0 ? 'bg-red-900/50 text-red-200 border-red-700 animate-pulse' : 'bg-emerald-900/50 text-emerald-200 border-emerald-700'
                         )}>
                           {activeIncidents.length > 0 ? 'ELEVATED' : 'NOMINAL'}
                         </Badge>
@@ -530,7 +530,7 @@ export default function HubPage() {
                       
                       {recentLogs.filter(l => l.severity === 'HIGH' || l.type === 'RESCUE').length > 0 && (
                         <div className="space-y-2 mt-3">
-                          <div className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider">HIGH PRIORITY LOG</div>
+                          <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">HIGH PRIORITY LOG</div>
                           {recentLogs.filter(l => l.severity === 'HIGH' || l.type === 'RESCUE').slice(0, 3).map((log) => (
                             <div key={log.id} className="border border-red-900/30 bg-red-950/20 p-2.5">
                               <div className="flex items-center gap-2 mb-1">
@@ -538,9 +538,9 @@ export default function HubPage() {
                                 <Badge className="text-[7px] bg-red-900/50 text-red-300 border-red-900">{log.type}</Badge>
                                 <span className="text-[7px] text-zinc-600 font-mono">{new Date(log.created_date).toLocaleTimeString()}</span>
                               </div>
-                              <div className="text-[9px] text-red-300 font-medium">{log.summary}</div>
+                              <div className="text-[9px] text-red-200 font-medium">{log.summary}</div>
                               {log.details?.recommended_action && (
-                                <div className="text-[8px] text-zinc-500 mt-1">→ {log.details.recommended_action}</div>
+                                <div className="text-[8px] text-zinc-400 mt-1">→ {log.details.recommended_action}</div>
                               )}
                             </div>
                           ))}
@@ -549,16 +549,16 @@ export default function HubPage() {
                       
                       <div className="grid grid-cols-3 gap-2 mt-3">
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-1">System Health</div>
-                          <div className="text-sm font-bold text-emerald-400">98%</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-1">System Health</div>
+                          <div className="text-sm font-bold text-emerald-300">98%</div>
                         </div>
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-1">Avg Response</div>
-                          <div className="text-sm font-bold text-cyan-400">2.4m</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-1">Avg Response</div>
+                          <div className="text-sm font-bold text-cyan-300">2.4m</div>
                         </div>
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-1">Active Nets</div>
-                          <div className="text-sm font-bold text-blue-400">{voiceNets.length}</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-1">Active Nets</div>
+                          <div className="text-sm font-bold text-blue-300">{voiceNets.length}</div>
                         </div>
                       </div>
                     </div>
@@ -566,11 +566,11 @@ export default function HubPage() {
                   {activeTab === 'incidents' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">INCIDENT TRACKING</div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">INCIDENT TRACKING</div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[7px]">{activeIncidents.length} ACTIVE</Badge>
+                          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{activeIncidents.length} ACTIVE</Badge>
                           {activeIncidents.some(i => i.severity === 'CRITICAL') && (
-                            <Badge className="text-[7px] bg-red-900/30 text-red-400 border-red-900/50 animate-pulse">CRITICAL</Badge>
+                            <Badge className="text-[7px] bg-red-900/50 text-red-200 border-red-700 animate-pulse">CRITICAL</Badge>
                           )}
                         </div>
                       </div>
@@ -579,7 +579,7 @@ export default function HubPage() {
                       
                       {activeIncidents.length > 0 && (
                         <div className="mt-3 space-y-2">
-                          <div className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider">INCIDENT DETAILS</div>
+                          <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">INCIDENT DETAILS</div>
                           {activeIncidents.slice(0, 2).map((incident) => (
                             <div key={incident.id} className="border border-zinc-800/50 bg-zinc-900/30 p-3">
                               <div className="flex items-start justify-between mb-2">
@@ -593,23 +593,23 @@ export default function HubPage() {
                                     )}>{incident.severity}</Badge>
                                     <Badge variant="outline" className="text-[7px]">{incident.incident_type}</Badge>
                                   </div>
-                                  <div className="text-sm font-bold text-zinc-200 mb-1">{incident.title}</div>
-                                  <div className="text-[9px] text-zinc-500 line-clamp-2">{incident.description}</div>
+                                  <div className="text-sm font-bold text-zinc-100 mb-1">{incident.title}</div>
+                                  <div className="text-[9px] text-zinc-400 line-clamp-2">{incident.description}</div>
                                 </div>
                               </div>
                               
                               <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-zinc-800/30">
                                 <div>
-                                  <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Status</div>
-                                  <div className="text-[9px] font-mono text-zinc-400">{incident.status}</div>
+                                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Status</div>
+                                  <div className="text-[9px] font-mono text-zinc-300">{incident.status}</div>
                                 </div>
                                 <div>
-                                  <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Location</div>
-                                  <div className="text-[9px] font-mono text-zinc-400 truncate">{incident.affected_area || 'Unknown'}</div>
+                                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Location</div>
+                                  <div className="text-[9px] font-mono text-zinc-300 truncate">{incident.affected_area || 'Unknown'}</div>
                                 </div>
                                 <div>
-                                  <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Assigned</div>
-                                  <div className="text-[9px] font-mono text-zinc-400">{incident.assigned_user_ids?.length || 0} personnel</div>
+                                  <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Assigned</div>
+                                  <div className="text-[9px] font-mono text-zinc-300">{incident.assigned_user_ids?.length || 0} personnel</div>
                                 </div>
                               </div>
                             </div>
@@ -621,12 +621,12 @@ export default function HubPage() {
                   {activeTab === 'feed' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">OPERATIONAL LOG</div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">OPERATIONAL LOG</div>
                         <div className="flex items-center gap-1">
                           {['ALL', 'STATUS', 'COMMS', 'RESCUE', 'SYSTEM'].map((filter) => (
                             <button
                               key={filter}
-                              className="px-2 py-1 text-[7px] font-mono border border-zinc-800/50 hover:border-[#ea580c]/50 transition-colors"
+                              className="px-2 py-1 text-[7px] font-mono text-zinc-300 border border-zinc-700 hover:border-[#ea580c] hover:text-zinc-100 transition-colors"
                             >
                               {filter}
                             </button>
@@ -636,20 +636,20 @@ export default function HubPage() {
                       
                       <div className="grid grid-cols-4 gap-2 mb-3">
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Total Logs</div>
-                          <div className="text-sm font-bold text-zinc-300">{recentLogs.length}</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Total Logs</div>
+                          <div className="text-sm font-bold text-zinc-200">{recentLogs.length}</div>
                         </div>
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-0.5">High Priority</div>
-                          <div className="text-sm font-bold text-red-400">{recentLogs.filter(l => l.severity === 'HIGH').length}</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">High Priority</div>
+                          <div className="text-sm font-bold text-red-300">{recentLogs.filter(l => l.severity === 'HIGH').length}</div>
                         </div>
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Your Activity</div>
-                          <div className="text-sm font-bold text-cyan-400">{recentLogs.filter(l => l.actor_user_id === user?.id).length}</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Your Activity</div>
+                          <div className="text-sm font-bold text-cyan-300">{recentLogs.filter(l => l.actor_user_id === user?.id).length}</div>
                         </div>
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Last Update</div>
-                          <div className="text-[9px] font-mono text-zinc-400">
+                          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Last Update</div>
+                          <div className="text-[9px] font-mono text-zinc-300">
                             {recentLogs[0] ? new Date(recentLogs[0].created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                           </div>
                         </div>
@@ -669,15 +669,15 @@ export default function HubPage() {
                   {activeTab === 'squads' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">SQUAD ROSTER</div>
-                        <Badge variant="outline" className="text-[7px]">{squadMemberships.length} ASSIGNMENTS</Badge>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">SQUAD ROSTER</div>
+                        <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{squadMemberships.length} ASSIGNMENTS</Badge>
                       </div>
                       
                       {userSquads.length === 0 ? (
                         <div className="text-center py-16 space-y-2">
-                          <Users className="w-12 h-12 mx-auto text-zinc-700" />
-                          <div className="text-sm font-bold text-zinc-600">NO SQUAD ASSIGNMENTS</div>
-                          <div className="text-[9px] text-zinc-700">Contact squad leadership for assignment</div>
+                          <Users className="w-12 h-12 mx-auto text-zinc-600" />
+                          <div className="text-sm font-bold text-zinc-400">NO SQUAD ASSIGNMENTS</div>
+                          <div className="text-[9px] text-zinc-500">Contact squad leadership for assignment</div>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -696,9 +696,9 @@ export default function HubPage() {
                                       )}
                                       {squad.icon && <div className="text-[9px]">{squad.icon}</div>}
                                     </div>
-                                    <div className="text-sm font-bold text-zinc-200 mb-1 group-hover:text-purple-400 transition-colors">{squad.name}</div>
+                                    <div className="text-sm font-bold text-zinc-100 mb-1 group-hover:text-purple-400 transition-colors">{squad.name}</div>
                                     {squad.description && (
-                                      <div className="text-[9px] text-zinc-500 line-clamp-2">{squad.description}</div>
+                                      <div className="text-[9px] text-zinc-400 line-clamp-2">{squad.description}</div>
                                     )}
                                   </div>
                                   <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-purple-500 transition-colors shrink-0" />
@@ -706,16 +706,16 @@ export default function HubPage() {
                                 
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/30">
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Status</div>
-                                    <div className="text-[9px] font-mono text-emerald-400">ACTIVE</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Status</div>
+                                    <div className="text-[9px] font-mono text-emerald-300">ACTIVE</div>
                                   </div>
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Your Role</div>
-                                    <div className="text-[9px] font-mono text-zinc-400 uppercase">{membership?.role || 'member'}</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Your Role</div>
+                                    <div className="text-[9px] font-mono text-zinc-300 uppercase">{membership?.role || 'member'}</div>
                                   </div>
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Joined</div>
-                                    <div className="text-[9px] font-mono text-zinc-400">
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Joined</div>
+                                    <div className="text-[9px] font-mono text-zinc-300">
                                       {membership?.joined_date ? new Date(membership.joined_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'}
                                     </div>
                                   </div>
@@ -730,42 +730,42 @@ export default function HubPage() {
                   {activeTab === 'fleet' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">FLEET REGISTRY</div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">FLEET REGISTRY</div>
                         {canManageFleet && (
-                          <Badge variant="outline" className="text-[7px]">{fleetAssets.length} VESSELS</Badge>
+                          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{fleetAssets.length} VESSELS</Badge>
                         )}
                       </div>
                       
                       {!canManageFleet ? (
                         <div className="text-center py-16 space-y-2">
-                          <Shield className="w-12 h-12 mx-auto text-zinc-700" />
-                          <div className="text-sm font-bold text-zinc-600">INSUFFICIENT CLEARANCE</div>
-                          <div className="text-[9px] text-zinc-700">Requires Scout rank or higher</div>
+                          <Shield className="w-12 h-12 mx-auto text-zinc-600" />
+                          <div className="text-sm font-bold text-zinc-400">INSUFFICIENT CLEARANCE</div>
+                          <div className="text-[9px] text-zinc-500">Requires Scout rank or higher</div>
                         </div>
                       ) : fleetAssets.length === 0 ? (
                         <div className="text-center py-16 space-y-2">
-                          <Rocket className="w-12 h-12 mx-auto text-zinc-700" />
-                          <div className="text-sm font-bold text-zinc-600">NO FLEET ASSETS</div>
-                          <div className="text-[9px] text-zinc-700">Register vessels in Fleet Manager</div>
+                          <Rocket className="w-12 h-12 mx-auto text-zinc-600" />
+                          <div className="text-sm font-bold text-zinc-400">NO FLEET ASSETS</div>
+                          <div className="text-[9px] text-zinc-500">Register vessels in Fleet Manager</div>
                         </div>
                       ) : (
                         <>
                           <div className="grid grid-cols-4 gap-2 mb-3">
                             <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                              <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Total Fleet</div>
-                              <div className="text-sm font-bold text-zinc-300">{fleetAssets.length}</div>
+                              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Total Fleet</div>
+                              <div className="text-sm font-bold text-zinc-200">{fleetAssets.length}</div>
                             </div>
                             <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                              <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Operational</div>
-                              <div className="text-sm font-bold text-emerald-400">{fleetAssets.filter(a => a.status === 'operational').length}</div>
+                              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Operational</div>
+                              <div className="text-sm font-bold text-emerald-300">{fleetAssets.filter(a => a.status === 'operational').length}</div>
                             </div>
                             <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                              <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Deployed</div>
-                              <div className="text-sm font-bold text-blue-400">{fleetAssets.filter(a => a.current_event_id).length}</div>
+                              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Deployed</div>
+                              <div className="text-sm font-bold text-blue-300">{fleetAssets.filter(a => a.current_event_id).length}</div>
                             </div>
                             <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                              <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Maintenance</div>
-                              <div className="text-sm font-bold text-yellow-400">0</div>
+                              <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Maintenance</div>
+                              <div className="text-sm font-bold text-yellow-300">0</div>
                             </div>
                           </div>
                           
@@ -778,8 +778,8 @@ export default function HubPage() {
                                       <Rocket className="w-5 h-5" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-bold text-zinc-200 mb-0.5 group-hover:text-blue-400 transition-colors">{asset.name}</div>
-                                      <div className="text-[9px] text-zinc-500">{asset.model}</div>
+                                      <div className="text-sm font-bold text-zinc-100 mb-0.5 group-hover:text-blue-400 transition-colors">{asset.name}</div>
+                                      <div className="text-[9px] text-zinc-400">{asset.model}</div>
                                     </div>
                                   </div>
                                   <Badge className="text-[7px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50 shrink-0">
@@ -789,16 +789,16 @@ export default function HubPage() {
                                 
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/30">
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Owner</div>
-                                    <div className="text-[9px] font-mono text-zinc-400 truncate">{asset.owner_name || 'Org Fleet'}</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Owner</div>
+                                    <div className="text-[9px] font-mono text-zinc-300 truncate">{asset.owner_name || 'Org Fleet'}</div>
                                   </div>
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Location</div>
-                                    <div className="text-[9px] font-mono text-zinc-400 truncate">{asset.current_location || 'Stanton'}</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Location</div>
+                                    <div className="text-[9px] font-mono text-zinc-300 truncate">{asset.current_location || 'Stanton'}</div>
                                   </div>
                                   <div>
-                                    <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Crew</div>
-                                    <div className="text-[9px] font-mono text-zinc-400">{asset.crew_capacity || '1-4'}</div>
+                                    <div className="text-[7px] text-zinc-500 uppercase mb-0.5">Crew</div>
+                                    <div className="text-[9px] font-mono text-zinc-300">{asset.crew_capacity || '1-4'}</div>
                                   </div>
                                 </div>
                               </div>
@@ -811,35 +811,35 @@ export default function HubPage() {
                   {activeTab === 'comms' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">COMMS TRAFFIC</div>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">COMMS TRAFFIC</div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[7px]">{voiceNets.length} NETS</Badge>
-                          <Badge className="text-[7px] bg-blue-900/30 text-blue-400 border-blue-900/50">{onlineUsers.length} ONLINE</Badge>
+                          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{voiceNets.length} NETS</Badge>
+                          <Badge className="text-[7px] bg-blue-900/50 text-blue-200 border-blue-700">{onlineUsers.length} ONLINE</Badge>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2 mb-3">
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Active Channels</div>
-                          <div className="text-sm font-bold text-cyan-400">{voiceNets.filter(n => n.status === 'active').length}</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Active Channels</div>
+                          <div className="text-sm font-bold text-cyan-300">{voiceNets.filter(n => n.status === 'active').length}</div>
                         </div>
                         <div className="border border-zinc-800/50 bg-zinc-900/30 p-2">
-                          <div className="text-[7px] text-zinc-600 uppercase mb-0.5">Recent Messages</div>
-                          <div className="text-sm font-bold text-zinc-300">{recentMessages.length}</div>
+                          <div className="text-[7px] text-zinc-400 uppercase mb-0.5">Recent Messages</div>
+                          <div className="text-sm font-bold text-zinc-200">{recentMessages.length}</div>
                         </div>
                       </div>
                       
                       {voiceNets.length > 0 && (
                         <div className="space-y-2 mb-3">
-                          <div className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider">VOICE NETWORKS</div>
+                          <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">VOICE NETWORKS</div>
                           {voiceNets.slice(0, 3).map((net) => (
                             <div key={net.id} className="border border-zinc-800/50 bg-zinc-900/30 p-2 hover:border-blue-500/30 transition-all cursor-pointer">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <Radio className="w-3 h-3 text-blue-400" />
                                   <div>
-                                    <div className="text-[9px] font-bold text-zinc-300">{net.code}</div>
-                                    <div className="text-[7px] text-zinc-600">{net.label}</div>
+                                    <div className="text-[9px] font-bold text-zinc-200">{net.code}</div>
+                                    <div className="text-[7px] text-zinc-400">{net.label}</div>
                                   </div>
                                 </div>
                                 <Badge variant="outline" className="text-[7px]">{net.type}</Badge>
@@ -851,13 +851,13 @@ export default function HubPage() {
                       
                       {recentMessages.length === 0 ? (
                         <div className="text-center py-16 space-y-2">
-                          <Hash className="w-12 h-12 mx-auto text-zinc-700" />
-                          <div className="text-sm font-bold text-zinc-600">NO RECENT TRAFFIC</div>
-                          <div className="text-[9px] text-zinc-700">All channels quiet</div>
+                          <Hash className="w-12 h-12 mx-auto text-zinc-600" />
+                          <div className="text-sm font-bold text-zinc-400">NO RECENT TRAFFIC</div>
+                          <div className="text-[9px] text-zinc-500">All channels quiet</div>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider">LATEST MESSAGES</div>
+                          <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">LATEST MESSAGES</div>
                           <div className="space-y-1.5 max-h-64 overflow-y-auto">
                             {recentMessages.map((msg) => (
                               <div key={msg.id} className="border border-zinc-800/50 bg-zinc-900/30 p-2">
@@ -877,8 +877,8 @@ export default function HubPage() {
                   {activeTab === 'achievements' && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-bold uppercase text-zinc-600 tracking-wider">ACHIEVEMENT TRACKER</div>
-                        <Badge variant="outline" className="text-[7px]">RANK {userRankIndex + 1}/5</Badge>
+                        <div className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">ACHIEVEMENT TRACKER</div>
+                        <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">RANK {userRankIndex + 1}/5</Badge>
                       </div>
                       
                       {/* Rank Progress */}
@@ -905,7 +905,7 @@ export default function HubPage() {
                       
                       {/* Organization Achievements */}
                       <div>
-                        <div className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider mb-2">ORGANIZATION MILESTONES</div>
+                      <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider mb-2">ORGANIZATION MILESTONES</div>
                         <div className="space-y-2">
                           <div className="border border-[#ea580c]/20 bg-zinc-900/30 p-3">
                             <div className="flex items-center justify-between mb-2">
@@ -964,7 +964,7 @@ export default function HubPage() {
                       
                       {/* Personal Achievements */}
                       <div>
-                        <div className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider mb-2">PERSONAL PROGRESS</div>
+                      <div className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider mb-2">PERSONAL PROGRESS</div>
                         <div className="space-y-2">
                           <div className="border border-blue-900/30 bg-zinc-900/30 p-3">
                             <div className="flex items-center justify-between mb-2">
