@@ -460,16 +460,16 @@ export default function EventsPage() {
         }}
       />
 
-      {/* Step 2: Squad & Comms Setup (creates event + squads + nets) */}
+      {/* Step 2: Squad & Comms Setup (creates squads + nets after event created) */}
       <SquadCommsSetup
         open={showCommsSetup && !!wizardData}
         onOpenChange={setShowCommsSetup}
         eventData={wizardData}
-        eventId={newEventId}
+        eventId={wizardData?.eventId}
         onSuccess={() => {
           // After comms setup, redirect to event detail
-          if (newEventId) {
-            window.location.href = createPageUrl(`Events?id=${newEventId}`);
+          if (wizardData?.eventId) {
+            window.location.href = createPageUrl(`Events?id=${wizardData.eventId}`);
           }
         }}
       />
