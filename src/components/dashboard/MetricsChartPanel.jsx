@@ -99,37 +99,36 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs }) 
         </ResponsiveContainer>
       </div>
 
-      {/* Event Completion Rate */}
+      {/* Org Resources */}
       <div className="border border-zinc-800 bg-zinc-900/30 p-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Badge className="text-[6px] bg-blue-900/30 text-blue-400 border-blue-900/50">STATUS</Badge>
-            <span className="text-[8px] font-bold text-zinc-300">Event Distribution</span>
+            <Badge className="text-[6px] bg-purple-900/30 text-purple-400 border-purple-900/50">RESOURCES</Badge>
+            <span className="text-[8px] font-bold text-zinc-300">Organization Assets</span>
           </div>
-          <button
-            onClick={() => handleExportChart('event-status')}
-            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
-          >
-            <Download className="w-2.5 h-2.5" />
-          </button>
         </div>
-        <ResponsiveContainer width="100%" height={120}>
-          <BarChart data={completionData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis dataKey="status" stroke="#71717a" style={{ fontSize: '11px' }} />
-            <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-              labelStyle={{ color: '#e4e4e7' }}
-            />
-            <Bar
-              dataKey="count"
-              fill="#3b82f6"
-              name="Count"
-              radius={0}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="grid grid-cols-4 gap-1">
+          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
+            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Users</div>
+            <div className="text-sm font-bold text-emerald-300">{allUsers.length}</div>
+            <div className="text-[6px] text-zinc-600">Active</div>
+          </div>
+          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
+            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Events</div>
+            <div className="text-sm font-bold text-blue-300">{userEvents.length}</div>
+            <div className="text-[6px] text-zinc-600">Tracked</div>
+          </div>
+          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
+            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Logs</div>
+            <div className="text-sm font-bold text-cyan-300">{recentLogs.length}</div>
+            <div className="text-[6px] text-zinc-600">Recent</div>
+          </div>
+          <div className="border border-zinc-700/50 bg-zinc-800/30 p-1.5">
+            <div className="text-[6px] text-zinc-500 uppercase mb-0.5">Health</div>
+            <div className="text-sm font-bold text-yellow-300">98%</div>
+            <div className="text-[6px] text-zinc-600">System</div>
+          </div>
+        </div>
       </div>
 
       {/* Summary Stats */}
