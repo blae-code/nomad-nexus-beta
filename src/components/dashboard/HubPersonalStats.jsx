@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Clock, Swords, Award, Radio, Activity } from 'lucide-react';
+import { Target, Clock, Swords, Award, Radio, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HubPersonalStats({ 
@@ -41,8 +41,8 @@ export default function HubPersonalStats({
         <StatCard
           icon={Award}
           label="Rank"
-          value={userRankIndex + 1}
-          subtext={user?.rank || 'VAGRANT'}
+          value={user?.rank || 'VAGRANT'}
+          subtext={`Clearance L${userRankIndex + 1}`}
           color="emerald-300"
         />
 
@@ -55,11 +55,11 @@ export default function HubPersonalStats({
         />
 
         <StatCard
-          icon={Activity}
-          label="Clearance"
-          value={`L${userRankIndex + 1}`}
-          subtext="access level"
-          color="zinc-300"
+          icon={CheckCircle}
+          label="Completed"
+          value={userEvents.filter(e => e.status === 'completed').length}
+          subtext="successful ops"
+          color="yellow-300"
         />
       </div>
     </div>
