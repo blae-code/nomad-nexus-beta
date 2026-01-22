@@ -11,6 +11,7 @@ import CommandPaletteV3 from '@/components/layout/CommandPaletteV3';
 import TimeClock from '@/components/layout/TimeClock';
 import RitualBonfireWidget from '@/components/dashboard/RitualBonfireWidget';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect as useReactEffect } from 'react';
 
 /**
  * HeaderV3: "Living intranet" command surface
@@ -176,6 +177,20 @@ export default function HeaderV3() {
   useEffect(() => {
     window.headerFetchPresence = fetchPresence;
   }, [user]);
+
+  // Subscribe to UserPresence changes for real-time updates
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const unsubscribe = base44.entities.UserPresence.subscribe((event) => {
+      // Only update if it's this user's presence
+      if (event.id === userPresence?.id || event.data?.user_id === user.id) {
+        setUserPresence(event.data || event);
+      }
+    });
+
+    return () => unsubscribe?.();
+  }, [user?.id, userPresence?.id]);
 
   // Ping for latency on demand (called from voice channel events)
   const ping = async () => {
@@ -359,14 +374,28 @@ export default function HeaderV3() {
       return;
     }
     try {
+      // Optimistically update UI first
+      const optimisticPresence = { ...userPresence, status: newStatus, last_activity: new Date().toISOString() };
+      setUserPresence(optimisticPresence);
+      setStatusMenuOpen(false);
+      
+      // Then update database
       const updated = await base44.entities.UserPresence.update(userPresence.id, { 
         status: newStatus,
         last_activity: new Date().toISOString(),
       });
+      
+      // Confirm with server response
       setUserPresence(updated);
-      setStatusMenuOpen(false);
+      
+      // Trigger presence refresh for all users
+      if (window.headerFetchPresence) {
+        window.headerFetchPresence();
+      }
     } catch (e) {
       console.error('Failed to update status:', e);
+      // Revert optimistic update on error
+      fetchPresence();
       alert(`Failed to update status: ${e.message}`);
     }
   };
