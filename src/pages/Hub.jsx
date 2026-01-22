@@ -171,41 +171,108 @@ export default function HubPage() {
                 <Flame className="w-4 h-4 text-[#ea580c] animate-pulse" />
                 <span className="text-[9px] uppercase text-zinc-300 tracking-wider font-bold">OPERATIONAL PULSE</span>
               </div>
-              <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c] animate-pulse">LIVE</Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c] animate-pulse">LIVE</Badge>
+                <button
+                  onClick={() => setActiveTab('activity')}
+                  className="text-[8px] text-zinc-400 hover:text-[#ea580c] transition-colors font-mono"
+                >
+                  VIEW ALL →
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-              {recentLogs.slice(0, 4).map((log, i) => (
-                <motion.div
-                  key={log.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-zinc-900/70 border border-zinc-800 p-2 hover:border-[#ea580c]/50 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-start gap-2">
-                    <div className={cn(
-                      "w-5 h-5 flex items-center justify-center border shrink-0",
-                      log.type === 'STATUS' && "bg-blue-500/20 border-blue-500",
-                      log.type === 'COMMS' && "bg-purple-500/20 border-purple-500",
-                      log.type === 'RESCUE' && "bg-red-500/20 border-red-500",
-                      log.type === 'SYSTEM' && "bg-cyan-500/20 border-cyan-500",
-                      log.type === 'NOTE' && "bg-zinc-600/20 border-zinc-600"
-                    )}>
-                      {log.type === 'STATUS' && <Target className="w-2.5 h-2.5 text-blue-300" />}
-                      {log.type === 'COMMS' && <Radio className="w-2.5 h-2.5 text-purple-300" />}
-                      {log.type === 'RESCUE' && <AlertCircle className="w-2.5 h-2.5 text-red-300" />}
-                      {log.type === 'SYSTEM' && <Activity className="w-2.5 h-2.5 text-cyan-300" />}
-                      {log.type === 'NOTE' && <Clock className="w-2.5 h-2.5 text-zinc-300" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="text-[7px] text-zinc-500 font-mono">{new Date(log.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              {recentLogs.slice(0, 4).map((log, i) => {
+                const getNavigationTarget = (log) => {
+                  if (log.event_id) return () => navigate(createPageUrl('Events'));
+                  if (log.type === 'RESCUE') return () => navigate(createPageUrl('Rescue'));
+                  if (log.type === 'COMMS') return () => navigate(createPageUrl('CommsConsole'));
+                  return () => setActiveTab('activity');
+                };
+                
+                return (
+                  <motion.div
+                    key={log.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={getNavigationTarget(log)}
+                    className="bg-zinc-900/70 border border-zinc-800 p-2.5 hover:border-[#ea580c]/50 transition-all cursor-pointer group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/5 to-[#ea580c]/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    <div className="relative flex items-start gap-2.5">
+                      <div className={cn(
+                        "w-6 h-6 flex items-center justify-center border shrink-0 transition-all group-hover:scale-110",
+                        log.type === 'STATUS' && "bg-blue-500/20 border-blue-500 group-hover:bg-blue-500/30",
+                        log.type === 'COMMS' && "bg-purple-500/20 border-purple-500 group-hover:bg-purple-500/30",
+                        log.type === 'RESCUE' && "bg-red-500/20 border-red-500 group-hover:bg-red-500/30",
+                        log.type === 'SYSTEM' && "bg-cyan-500/20 border-cyan-500 group-hover:bg-cyan-500/30",
+                        log.type === 'NOTE' && "bg-zinc-600/20 border-zinc-600 group-hover:bg-zinc-600/30"
+                      )}>
+                        {log.type === 'STATUS' && <Target className="w-3 h-3 text-blue-300" />}
+                        {log.type === 'COMMS' && <Radio className="w-3 h-3 text-purple-300" />}
+                        {log.type === 'RESCUE' && <AlertCircle className="w-3 h-3 text-red-300" />}
+                        {log.type === 'SYSTEM' && <Activity className="w-3 h-3 text-cyan-300" />}
+                        {log.type === 'NOTE' && <Clock className="w-3 h-3 text-zinc-300" />}
                       </div>
-                      <div className="text-[9px] text-zinc-100 line-clamp-2 font-medium leading-tight">{log.summary}</div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[8px] text-zinc-500 font-mono">{new Date(log.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <Badge className={cn(
+                              'text-[6px] px-1 py-0',
+                              log.severity === 'HIGH' && 'bg-red-900/50 text-red-300 border-red-900',
+                              log.severity === 'MEDIUM' && 'bg-yellow-900/50 text-yellow-300 border-yellow-900',
+                              log.severity === 'LOW' && 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                            )}>{log.type}</Badge>
+                          </div>
+                          <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-[#ea580c] transition-colors shrink-0" />
+                        </div>
+                        
+                        <div className="text-[9px] text-zinc-100 line-clamp-2 font-medium leading-tight mb-1 group-hover:text-white transition-colors">
+                          {log.summary}
+                        </div>
+                        
+                        {log.details?.recommended_action && (
+                          <div className="text-[7px] text-zinc-500 line-clamp-1 mt-1 flex items-center gap-1">
+                            <span className="text-[#ea580c]">→</span>
+                            {log.details.recommended_action}
+                          </div>
+                        )}
+                        
+                        {log.event_id && (
+                          <div className="text-[7px] text-blue-400 mt-1 flex items-center gap-1">
+                            <Calendar className="w-2.5 h-2.5" />
+                            EVENT LINKED
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
+            </div>
+            
+            <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-[8px] text-zinc-500">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span>{recentLogs.filter(l => l.severity === 'HIGH').length} Critical</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                  <span>{recentLogs.filter(l => l.severity === 'MEDIUM').length} Active</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>Last: {recentLogs[0] ? new Date(recentLogs[0].created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--'}</span>
+                </div>
+              </div>
+              <div className="text-[7px] text-zinc-600 font-mono">
+                REFRESH: {Math.floor(Math.random() * 60)}s
+              </div>
             </div>
           </motion.div>
         )}
