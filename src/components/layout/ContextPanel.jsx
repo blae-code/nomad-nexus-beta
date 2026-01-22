@@ -64,8 +64,8 @@ export default function ContextPanel({ currentPage, user }) {
   };
 
   return (
-    <div className="w-64 bg-zinc-950 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0 p-3">
-      <div className="space-y-4 text-xs">
+    <div className="w-64 bg-zinc-950 border-l border-zinc-800 flex flex-col h-full overflow-hidden shrink-0">
+      <div className="flex-1 overflow-y-auto p-3">
         {renderContent()}
       </div>
     </div>
