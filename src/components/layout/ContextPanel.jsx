@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 
 export default function ContextPanel({ currentPage, user }) {
   const [activeNetExpanded, setActiveNetExpanded] = useState(true);
-  const [voiceControlsExpanded, setVoiceControlsExpanded] = useState(false);
-  const [contactsExpanded, setContactsExpanded] = useState(true);
+  const [voiceControlsExpanded, setVoiceControlsExpanded] = useState(true);
+  const [contactsExpanded, setContactsExpanded] = useState(false);
 
   return (
     <div className="h-full flex flex-col bg-zinc-950 overflow-hidden">
