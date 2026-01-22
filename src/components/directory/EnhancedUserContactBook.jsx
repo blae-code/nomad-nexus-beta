@@ -600,35 +600,25 @@ export default function EnhancedUserContactBook() {
         </div>
       )}
 
-      {/* Profile Card Popover */}
-      {showProfileCard && (
-        <Popover.Root open={!!showProfileCard} onOpenChange={(open) => !open && setShowProfileCard(null)}>
-          <Popover.Anchor style={{ position: 'fixed', top: 0, left: 0 }} />
-          <Popover.Portal>
-            <Popover.Content
-              className="z-50"
-              sideOffset={5}
-              align="center"
-            >
-              <UserProfileCard
+      {/* Enhanced User Card Modal */}
+      <AnimatePresence>
+        {showProfileCard && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
+            onClick={() => setShowProfileCard(null)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <EnhancedUserCard
                 user={allUsers.find(u => u.id === showProfileCard)}
                 presence={presences.find(p => p.user_id === showProfileCard)}
                 userDirectory={userDirectory}
-                isFavorite={favorites.has(showProfileCard)}
-                isMuted={mutedUsers.has(showProfileCard)}
-                notes={userNotes[showProfileCard]}
-                onToggleFavorite={() => toggleFavorite(showProfileCard)}
-                onToggleMute={() => toggleMute(showProfileCard)}
-                onSaveNote={(note) => saveNote(showProfileCard, note)}
-                onMessage={() => {/* TODO: Implement messaging */}}
-                onCall={() => {/* TODO: Implement calling */}}
-                onClose={() => setShowProfileCard(null)}
                 mutualSquads={getMutualSquads(showProfileCard)}
+                onClose={() => setShowProfileCard(null)}
               />
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
-      )}
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Context Menu */}
       {contextMenu && (
