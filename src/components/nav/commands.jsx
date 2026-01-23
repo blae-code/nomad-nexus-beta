@@ -28,6 +28,7 @@ import {
   FileText,
   Eye,
   TrendingUp,
+  BookOpen,
 } from 'lucide-react';
 
 export const COMMAND_SECTIONS = {
