@@ -268,14 +268,16 @@ export default function CommsPanel({ eventId }) {
             <span>ENCRYPTION: NONE</span>
          </div>
         </div>
+        </div>
         </OpsPanel>
 
         {/* Join Modal */}
         <CommsJoinModal
-          net={joinTarget}
-          eventId={eventId}
-          open={joinModalOpen}
-          onOpenChange={setJoinModalOpen}
+        net={joinTarget}
+        eventId={eventId}
+        open={joinModalOpen}
+        onOpenChange={setJoinModalOpen}
         />
+        </>
         );
         }
