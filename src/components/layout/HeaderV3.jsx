@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog, Coins, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
+import { formatAUEC } from '@/components/utils/formatCurrency';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
@@ -614,7 +615,7 @@ export default function HeaderV3() {
             >
               <Badge className="text-[10px] bg-[#ea580c]/20 text-[#ea580c] border-2 border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 group-hover:border-[#ea580c] px-3 py-1.5 transition-all flex items-center gap-1.5">
                 <Coins className="w-3 h-3" />
-                <span className="font-mono font-bold">{((user?.aUEC || 0) / 1000000000).toFixed(2)}B</span>
+                <span className="font-mono font-bold">{formatAUEC(user?.aUEC || 0)}</span>
                 <span className="text-[8px] text-[#ea580c]/80">aUEC</span>
               </Badge>
             </motion.button>
