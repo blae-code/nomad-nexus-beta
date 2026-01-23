@@ -110,15 +110,13 @@ export default function VoiceControlToolkit() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Mic Status Indicator */}
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full transition-all', 
-                voiceActive ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
-                micEnabled && !isMuted ? 'bg-emerald-500' : 'bg-zinc-700'
-              )} />
-              <span className="text-[8px] text-zinc-400 font-mono uppercase">
-                {voiceActive ? 'TRANSMITTING' : micEnabled && !isMuted ? 'READY' : 'STANDBY'}
-              </span>
-            </div>
+            <div className={cn('w-2 h-2 rounded-full transition-all', 
+              voiceActive ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
+              micEnabled && !isMuted ? 'bg-emerald-500' : 'bg-zinc-700'
+            )} />
+            <span className="text-[8px] text-zinc-400 font-mono uppercase">
+              {voiceActive ? 'TRANSMITTING' : micEnabled && !isMuted ? 'READY' : 'STANDBY'}
+            </span>
             
             {/* Divider */}
             <div className="h-3 w-px bg-zinc-700" />
