@@ -5,10 +5,11 @@ import { Download, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommsModeToggle from './CommsModeToggle';
 
-export default function CockpitHeader({ readinessScore, auditLogs }) {
+export default function CockpitHeader({ readinessScore, auditLogs, effectiveCommsMode = 'SIM', modeFallbackReason = null }) {
 
   // Check LiveKit environment
-  const hasLiveKit = true; // Check at runtime via cockpit tests
+  const hasLiveKit = !!process.env.LIVEKIT_URL; // Check if env is configured
+  const commsReady = effectiveCommsMode === 'LIVE'; // True if LIVE and stable
 
   // Get last run time
   const lastRun = auditLogs[0]?.executed_at;
@@ -67,8 +68,15 @@ export default function CockpitHeader({ readinessScore, auditLogs }) {
             <Badge className={cn('text-[9px]', getBadgeColor(readinessScore))}>
               {readinessScore >= 80 ? 'READY' : readinessScore >= 50 ? 'PARTIAL' : 'NEEDS WORK'}
             </Badge>
-            <Badge variant={hasLiveKit ? 'default' : 'outline'} className="text-[9px] bg-blue-900/30 text-blue-400 border-blue-700/50">
-              {hasLiveKit ? 'LIVEKIT ✓' : 'LIVEKIT ✗'}
+            <Badge 
+              variant={commsReady ? 'default' : 'outline'} 
+              className={cn('text-[9px]', 
+                commsReady ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700/50' : 'bg-amber-900/30 text-amber-400 border-amber-700/50'
+              )}
+              title={modeFallbackReason || 'Comms system operational'}
+            >
+              {commsReady ? 'COMMS: LIVE' : 'COMMS: SIM'}
+              {modeFallbackReason && ' (fallback)'}
             </Badge>
           </div>
         </div>
