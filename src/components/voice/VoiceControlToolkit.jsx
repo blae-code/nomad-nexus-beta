@@ -202,23 +202,53 @@ export default function VoiceControlToolkit() {
           <div className="text-[7px] font-bold text-zinc-500 uppercase mb-1.5 tracking-wider">PROCESSING</div>
           <div className="flex gap-1">
             {[
-              { id: 'noise', label: 'Noise', state: noiseGate, setState: setNoiseGate },
-              { id: 'echo', label: 'Echo', state: echoCancellation, setState: setEchoCancellation },
-              { id: 'gain', label: 'Gain', state: autoGain, setState: setAutoGain }
+              { 
+                id: 'noise', 
+                label: 'Noise', 
+                state: noiseGate, 
+                setState: setNoiseGate,
+                description: 'Noise Gate: Automatically suppresses background noise below a threshold. Ideal for reducing ambient sounds like keyboard clicks and fan noise.',
+                status: noiseGate ? 'Active' : 'Inactive'
+              },
+              { 
+                id: 'echo', 
+                label: 'Echo', 
+                state: echoCancellation, 
+                setState: setEchoCancellation,
+                description: 'Echo Cancellation: Removes audio feedback loops and reverberations. Essential when using speakers instead of headphones.',
+                status: echoCancellation ? 'Active' : 'Inactive'
+              },
+              { 
+                id: 'gain', 
+                label: 'Gain', 
+                state: autoGain, 
+                setState: setAutoGain,
+                description: 'Auto Gain: Automatically adjusts microphone input levels to maintain consistent volume. Prevents sudden level spikes.',
+                status: autoGain ? 'Active' : 'Inactive'
+              }
             ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => item.setState(!item.state)}
-                className={cn(
-                  'flex-1 py-1 text-[8px] font-medium rounded transition-all',
-                  item.state
-                    ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-700/50'
-                    : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
-                )}
-                title={item.label}
-              >
-                {item.label}
-              </button>
+              <Tooltip key={item.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => item.setState(!item.state)}
+                    className={cn(
+                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      item.state
+                        ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-700/50'
+                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs text-[#ea580c]">{item.label}</p>
+                    <p className="text-xs text-zinc-200">{item.description}</p>
+                    <p className="text-[10px] text-zinc-400 pt-1">Status: <span className={item.state ? 'text-emerald-400' : 'text-zinc-500'}>{item.status}</span></p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
