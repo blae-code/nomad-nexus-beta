@@ -111,7 +111,38 @@ export default function ContextPanel({ currentPage, user }) {
          )}
         </div>
 
-        {/* SECTION: AI Settings - Collapsible */}
+        {/* SECTION: Contacts - Scrollable */}
+        <div className="flex-1 min-h-0 flex flex-col border-b border-zinc-800">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setContactsExpanded(!contactsExpanded)}
+              className="w-full px-3 py-2.5 flex items-center justify-between bg-zinc-900/50 hover:bg-zinc-900 transition-colors shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <Users className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[9px] font-bold text-zinc-300 uppercase tracking-wider">CONTACTS</span>
+              </div>
+              {contactsExpanded ? (
+                <ChevronUp className="w-3.5 h-3.5 text-zinc-500" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Organization member directory</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {contactsExpanded && (
+          <div className="flex-1 min-h-0 overflow-hidden p-3">
+            <EnhancedUserContactBook />
+          </div>
+        )}
+      </div>
+
+      {/* SECTION: AI Settings - Collapsible */}
       <div className="border-b border-zinc-800 shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -138,37 +169,6 @@ export default function ContextPanel({ currentPage, user }) {
         {aiSettingsExpanded && (
           <div className="p-3">
             <AISettingsPanel />
-          </div>
-        )}
-      </div>
-
-      {/* SECTION: Contacts - Scrollable */}
-      <div className="flex-1 min-h-0 flex flex-col border-b border-zinc-800">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setContactsExpanded(!contactsExpanded)}
-              className="w-full px-3 py-2.5 flex items-center justify-between bg-zinc-900/50 hover:bg-zinc-900 transition-colors shrink-0"
-            >
-              <div className="flex items-center gap-2">
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-[9px] font-bold text-zinc-300 uppercase tracking-wider">CONTACTS</span>
-              </div>
-              {contactsExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5 text-zinc-500" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">Organization member directory</p>
-          </TooltipContent>
-        </Tooltip>
-
-        {contactsExpanded && (
-          <div className="flex-1 min-h-0 overflow-hidden p-3">
-            <EnhancedUserContactBook />
           </div>
         )}
       </div>
