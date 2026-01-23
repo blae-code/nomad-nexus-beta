@@ -3,7 +3,7 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
-import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash } from "lucide-react";
+import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash, BookOpen, Lightbulb, Video, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 import { getRankColorClass } from '@/components/utils/rankUtils';
@@ -25,6 +25,7 @@ export default function HubPage() {
   const [activeTab, setActiveTab] = useState('ops');
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [pulseCollapsed, setPulseCollapsed] = useState(false);
+  const [trainingCollapsed, setTrainingCollapsed] = useState(true);
   const navigate = useNavigate();
   
   const user = useCurrentUser();
@@ -232,9 +233,54 @@ export default function HubPage() {
         </div>
 
         {/* Main Dashboard Grid */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div className="space-y-0 flex flex-col min-h-0 flex-1 p-2">
-            {/* Primary Tabbed Interface */}
+         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+           <div className="space-y-0 flex flex-col min-h-0 flex-1 p-2">
+             {/* Training & Tutorials Widget - Collapsible */}
+             <div className="border border-zinc-800 bg-zinc-950/50 mb-2 shrink-0">
+               <div 
+                 onClick={() => setTrainingCollapsed(!trainingCollapsed)}
+                 className="flex items-center justify-between p-2 cursor-pointer hover:bg-zinc-900/30 transition-colors"
+               >
+                 <div className="flex items-center gap-2">
+                   <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                   <span className="text-[8px] uppercase text-zinc-300 tracking-wider font-bold">Training & Tutorials</span>
+                 </div>
+                 <motion.div animate={{ rotate: trainingCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                   <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                 </motion.div>
+               </div>
+
+               <motion.div
+                 initial={false}
+                 animate={{ height: trainingCollapsed ? 0 : 'auto', opacity: trainingCollapsed ? 0 : 1 }}
+                 transition={{ duration: 0.2 }}
+                 className="overflow-hidden"
+               >
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border-t border-zinc-800/50">
+                   {[
+                     { icon: Lightbulb, label: 'Getting Started', desc: 'Core concepts & setup' },
+                     { icon: Radio, label: 'Voice Comms', desc: 'Net & channel guide' },
+                     { icon: Calendar, label: 'Events & Ops', desc: 'Planning & execution' },
+                     { icon: Users, label: 'Squad Management', desc: 'Teams & roles' }
+                   ].map((item, i) => {
+                     const ItemIcon = item.icon;
+                     return (
+                       <div key={i} className="bg-zinc-900/50 border border-zinc-800 p-2.5 hover:border-blue-500/30 hover:bg-zinc-900 transition-all cursor-pointer group">
+                         <div className="flex items-start gap-2">
+                           <ItemIcon className="w-4 h-4 text-blue-500 shrink-0 mt-0.5 group-hover:text-blue-400 transition-colors" />
+                           <div className="min-w-0 flex-1">
+                             <div className="text-[9px] font-bold text-zinc-200 group-hover:text-white transition-colors">{item.label}</div>
+                             <div className="text-[7px] text-zinc-500 mt-0.5">{item.desc}</div>
+                           </div>
+                         </div>
+                       </div>
+                     );
+                   })}
+                 </div>
+               </motion.div>
+             </div>
+
+             {/* Primary Tabbed Interface */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
