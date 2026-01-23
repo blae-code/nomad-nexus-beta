@@ -124,7 +124,9 @@ export default function CommsArray() {
   };
 
   return (
-    <div className="space-y-3 max-w-7xl">
+    <div className="flex gap-3 h-[calc(100vh-200px)] min-h-0">
+      {/* LEFT PANEL: Controls */}
+      <div className="flex-1 space-y-3 overflow-y-auto pr-2">
       {/* Technical Header */}
       <div className="relative border border-zinc-800 bg-zinc-950">
         <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-[#ea580c]" />
@@ -317,6 +319,145 @@ export default function CommsArray() {
           </ScrollArea>
         </div>
       )}
+      </div>
+
+      {/* RIGHT PANEL: Voice Utilities & Mapping */}
+      <div className="w-80 space-y-3 overflow-y-auto shrink-0">
+        {/* Voice Utilities */}
+        <div className="border border-zinc-800 bg-zinc-950 sticky top-0">
+          <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
+            <div className="flex items-center gap-2">
+              <Radio className="w-3 h-3 text-[#ea580c]" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">VOICE UTILITIES</span>
+            </div>
+          </div>
+          <div className="p-3 space-y-2">
+            <VoiceUtilityButton
+              label="TEST CONNECTION"
+              icon={Zap}
+              onClick={() => toast.info('Testing voice connection...')}
+            />
+            <VoiceUtilityButton
+              label="ROOM STATUS"
+              icon={Network}
+              onClick={() => toast.info('Fetching room status...')}
+            />
+            <VoiceUtilityButton
+              label="CLEAR CACHE"
+              icon={Trash2}
+              onClick={() => toast.info('Clearing voice cache...')}
+            />
+          </div>
+        </div>
+
+        {/* Net Mapping */}
+        {selectedEventId && voiceNets.length > 0 && (
+          <div className="border border-zinc-800 bg-zinc-950">
+            <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center gap-2">
+                <Network className="w-3 h-3 text-cyan-500" />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">NET MAPPING</span>
+              </div>
+            </div>
+            <ScrollArea className="h-[400px]">
+              <div className="p-3">
+                <NetHierarchy nets={voiceNets} />
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* Stats Panel */}
+        {selectedEventId && voiceNets.length > 0 && (
+          <div className="border border-zinc-800 bg-zinc-950">
+            <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center gap-2">
+                <Shield className="w-3 h-3 text-zinc-500" />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">STATISTICS</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-2">
+              <StatRow label="TOTAL NETS" value={voiceNets.length} />
+              <StatRow label="ACTIVE" value={voiceNets.filter(n => n.status === 'active').length} color="emerald" />
+              <StatRow label="INACTIVE" value={voiceNets.filter(n => n.status === 'inactive').length} color="zinc" />
+              <StatRow label="FOCUSED" value={voiceNets.filter(n => n.discipline === 'focused').length} color="red" />
+              <StatRow label="CASUAL" value={voiceNets.filter(n => n.discipline === 'casual').length} color="zinc" />
+              <StatRow label="STAGE MODE" value={voiceNets.filter(n => n.stage_mode).length} color="amber" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VoiceUtilityButton({ label, icon: Icon, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full h-7 flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-[9px] font-mono uppercase tracking-wider text-zinc-400 hover:text-zinc-300 px-2"
+    >
+      <Icon className="w-3 h-3" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function NetHierarchy({ nets }) {
+  const netsByType = {
+    command: nets.filter(n => n.type === 'command'),
+    squad: nets.filter(n => n.type === 'squad'),
+    support: nets.filter(n => n.type === 'support'),
+    general: nets.filter(n => n.type === 'general')
+  };
+
+  return (
+    <div className="space-y-3">
+      {Object.entries(netsByType).map(([type, typeNets]) => (
+        typeNets.length > 0 && (
+          <div key={type}>
+            <div className="text-[8px] text-zinc-600 uppercase font-bold mb-1.5 font-mono tracking-widest flex items-center gap-1">
+              <div className={cn(
+                "w-1.5 h-1.5",
+                type === 'command' && "bg-red-500",
+                type === 'squad' && "bg-emerald-500",
+                type === 'support' && "bg-cyan-500",
+                type === 'general' && "bg-zinc-500"
+              )} />
+              <span>{type}</span>
+            </div>
+            <div className="space-y-1 pl-3 border-l border-zinc-800">
+              {typeNets.map(net => (
+                <div key={net.id} className="text-[9px] font-mono text-zinc-500 flex items-center gap-1.5">
+                  <div className={cn(
+                    "w-1 h-1",
+                    net.status === 'active' ? "bg-emerald-500" : "bg-zinc-700"
+                  )} />
+                  <span className="text-zinc-400">{net.code}</span>
+                  <span className="text-zinc-700">→</span>
+                  <span className="text-zinc-600 truncate text-[8px]">{net.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      ))}
+    </div>
+  );
+}
+
+function StatRow({ label, value, color = 'zinc' }) {
+  const colorClasses = {
+    emerald: 'text-emerald-500',
+    red: 'text-red-500',
+    amber: 'text-amber-500',
+    zinc: 'text-zinc-500'
+  };
+
+  return (
+    <div className="flex items-center justify-between text-[9px] font-mono">
+      <span className="text-zinc-600 uppercase tracking-wider">{label}</span>
+      <span className={cn("font-black", colorClasses[color])}>{value}</span>
     </div>
   );
 }
