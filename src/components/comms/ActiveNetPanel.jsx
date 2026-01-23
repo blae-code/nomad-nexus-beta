@@ -22,6 +22,7 @@ import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtil
 import { usePresence } from "@/components/comms/usePresence";
 import NetChannelChat from "@/components/comms/NetChannelChat";
 import VoiceRecordingControls from "./VoiceRecordingControls";
+import { Room, RoomEvent } from 'livekit-client';
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
