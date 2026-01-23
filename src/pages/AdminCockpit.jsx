@@ -20,6 +20,7 @@ import CommsModeControl from '@/components/admin/CommsModeControl';
 import TicketBoard from '@/components/admin/TicketBoard';
 import DemoScenarioController from '@/components/admin/DemoScenarioController';
 import UserManagementTab from '@/components/admin/UserManagementTab';
+import BootMediaAdmin from '@/components/admin/BootMediaAdmin';
 
 const READINESS_STEPS = [
   { id: 'schema_check', title: '① Schema Check', component: SchemaCheckStep },
@@ -152,8 +153,11 @@ export default function AdminCockpitPage() {
                   <MessageSquare className="w-3 h-3" />
                   FEEDBACK
                 </TabsTrigger>
-              </TabsList>
-            </div>
+                <TabsTrigger value="boot-media" className="text-[9px] h-7 px-3 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-[#ea580c]">
+                  🎬 BOOT MEDIA
+                </TabsTrigger>
+                </TabsList>
+                </div>
 
             {/* Cockpit Tab - 3 column layout */}
             <TabsContent value="cockpit" className="flex-1 overflow-hidden mt-0 flex gap-0">
@@ -255,6 +259,11 @@ export default function AdminCockpitPage() {
             {/* Feedback Tickets Tab */}
             <TabsContent value="tickets" className="flex-1 overflow-hidden mt-0 p-3">
               <TicketBoard user={user} />
+            </TabsContent>
+
+            {/* Boot Media Tab */}
+            <TabsContent value="boot-media" className="flex-1 overflow-hidden mt-0 p-3 overflow-y-auto">
+              <BootMediaAdmin />
             </TabsContent>
           </Tabs>
         </div>
