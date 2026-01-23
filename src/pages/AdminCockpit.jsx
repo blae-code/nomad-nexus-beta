@@ -172,9 +172,10 @@ export default function AdminCockpitPage() {
               </div>
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
-                <MessageSquare className="w-3 h-3 text-green-400" />
+                <MessageSquare className={cn("w-3 h-3", effectiveCommsMode === 'LIVE' ? 'text-green-400' : 'text-amber-400')} />
                 <span className="text-zinc-300">Comms:</span>
-                <span className="font-mono font-bold text-green-400">{demoEnabled ? 'DEMO' : 'LIVE'}</span>
+                <span className={cn("font-mono font-bold", effectiveCommsMode === 'LIVE' ? 'text-green-400' : 'text-amber-400')}>{effectiveCommsMode}</span>
+                {modeFallbackReason && <span className="text-[7px] text-amber-300">({modeFallbackReason})</span>}
               </div>
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
