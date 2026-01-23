@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
-import AdminConsolePage from "./AdminConsole";
+import AdminCockpitPage from "./AdminCockpit";
 
-// Forward to AdminConsole with users tab active
+// Forward to AdminCockpit with users tab active
 export default function UserManagerPage() {
   useEffect(() => {
     // This is just a thin wrapper for backward compatibility
   }, []);
 
-  return <AdminConsolePage initialTab="users" />;
+  return <AdminCockpitPage initialTab="users" />;
 }
