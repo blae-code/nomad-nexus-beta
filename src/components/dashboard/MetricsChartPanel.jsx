@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download, Activity, TrendingUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,24 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   const [fundView, setFundView] = useState(0);
   const [activeChart, setActiveChart] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [now, setNow] = useState(new Date());
   
-  // Active users by UTC hour (24-hour cycle)
+  // Update time every minute to shift the 24-hour window
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Active users by UTC hour (24-hour rolling window)
   const activeUsersByUTC = useMemo(() => {
     const data = [];
     const baseCount = allUsers.length * 0.3;
-    for (let hour = 0; hour < 24; hour++) {
-      // Simulate realistic user distribution across UTC hours
+    const currentUTCHour = now.getUTCHours();
+    
+    for (let i = 0; i < 24; i++) {
+      const hour = (currentUTCHour - 23 + i) % 24;
       const variance = Math.sin(hour / 24 * Math.PI * 2) * baseCount * 0.5;
       const userCount = Math.max(1, Math.floor(baseCount + variance));
       
@@ -26,7 +37,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       });
     }
     return data;
-  }, [allUsers.length]);
+  }, [allUsers.length, now]);
 
   // Treasury cash flow (inflows/outflows last 30 days)
   const treasuryCashFlowData = useMemo(() => {
