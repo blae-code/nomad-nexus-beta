@@ -10,16 +10,17 @@ import Intelligence from './pages/Intelligence';
 import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
+import OperationControl from './pages/OperationControl';
 import Profile from './pages/Profile';
 import Ranks from './pages/Ranks';
 import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
+import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
-import OperationControl from './pages/OperationControl';
-import UserDirectory from './pages/UserDirectory';
+import CommandCenter from './pages/CommandCenter';
 import __Layout from './Layout.jsx';
 
 
@@ -36,16 +37,17 @@ export const PAGES = {
     "MissionControl": MissionControl,
     "NomadOpsDashboard": NomadOpsDashboard,
     "NotificationSettings": NotificationSettings,
+    "OperationControl": OperationControl,
     "Profile": Profile,
     "Ranks": Ranks,
     "Rescue": Rescue,
     "RoleManager": RoleManager,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
+    "UserDirectory": UserDirectory,
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
-    "OperationControl": OperationControl,
-    "UserDirectory": UserDirectory,
+    "CommandCenter": CommandCenter,
 }
 
 export const pagesConfig = {
