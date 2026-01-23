@@ -601,38 +601,36 @@ export default function HeaderV3() {
                 ↵ apply • esc
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          {/* Personal Ledger - Moved here */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                onClick={() => window.location.href = createPageUrl('Treasury')}
+                className="hover:opacity-90 transition-opacity cursor-pointer group hidden sm:flex"
+              >
+                <Badge className="text-[10px] bg-[#ea580c]/20 text-[#ea580c] border-2 border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 group-hover:border-[#ea580c] px-3 py-1.5 transition-all flex items-center gap-1.5">
+                  <Coins className="w-3 h-3" />
+                  <span className="font-mono font-bold">{((user?.aUEC || 0) / 1000000000).toFixed(2)}B</span>
+                  <span className="text-[8px] text-[#ea580c]/80">aUEC</span>
+                </Badge>
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Personal Treasury Balance</p>
+            </TooltipContent>
+          </Tooltip>
+          </div>
 
-      {/* CENTER: Command Palette */}
-      <div className="flex-1 flex items-center justify-center max-w-[560px]">
-        <CommandPaletteV3 />
-      </div>
+          {/* CENTER: Command Palette */}
+          <div className="flex-1 flex items-center justify-center max-w-[560px]">
+          <CommandPaletteV3 />
+          </div>
 
 
 
-      {/* RIGHT: Telemetry + User Menu */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Personal Ledger */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <motion.button
-              whileHover={{ scale: 1.08 }}
-              onClick={() => window.location.href = createPageUrl('Treasury')}
-              className="hover:opacity-90 transition-opacity cursor-pointer group"
-            >
-              <Badge className="text-[10px] bg-[#ea580c]/20 text-[#ea580c] border-2 border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 group-hover:border-[#ea580c] px-3 py-1.5 transition-all flex items-center gap-1.5">
-                <Coins className="w-3 h-3" />
-                <span className="font-mono font-bold">{((user?.aUEC || 0) / 1000000000).toFixed(2)}B</span>
-                <span className="text-[8px] text-[#ea580c]/80">aUEC</span>
-              </Badge>
-            </motion.button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">Personal Treasury Balance</p>
-          </TooltipContent>
-        </Tooltip>
+          {/* RIGHT: Telemetry + User Menu */}
+          <div className="flex items-center gap-2 shrink-0">
 
         {/* Ritual Bonfire Widget */}
         <RitualBonfireWidget />
