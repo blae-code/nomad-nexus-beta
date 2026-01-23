@@ -139,6 +139,7 @@ export default function HubPage() {
                   allUsers={allUsers}
                   recentLogs={recentLogs}
                   treasuryBalance={treasuryBalance}
+                  fleetAssets={fleetAssets}
                 />
                 </div>
               </div>
