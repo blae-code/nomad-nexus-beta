@@ -109,7 +109,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* AppShellV3: No left rail, palette-driven nav */}
       <AppShellV3 currentPage={currentPage} user={user}>
-              <div className="pt-14 pb-72">
+              <div className="pt-14 pb-96">
                 {children}
               </div>
             </AppShellV3>

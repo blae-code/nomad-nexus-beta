@@ -148,7 +148,7 @@ export default function MessagingFooter({ user }) {
             </div>
 
             {/* Content Area */}
-            <div className="bg-zinc-950 h-56 overflow-hidden flex flex-col">
+            <div className="bg-zinc-950 h-96 overflow-hidden flex flex-col">
               {activeTab === 'notifications' && (
                 <NotificationsTab user={user} unreadCounts={unreadCounts} />
               )}
