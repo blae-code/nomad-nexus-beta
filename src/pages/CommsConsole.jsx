@@ -525,6 +525,37 @@ function CommsConsolePage() {
 
          {/* Dialogs & Drawers */}
          {showSearch && <CommsSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />}
+         {showMessageSearch && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+             <div className="w-full max-w-md h-96">
+               <MessageSearchPanel
+                 channelId={selectedChannel?.id}
+                 dmChannelId={selectedDMId}
+                 onSelectMessage={(msg) => {
+                   // Scroll to message in chat
+                 }}
+                 onClose={() => setShowMessageSearch(false)}
+                 currentUser={currentUser}
+               />
+             </div>
+           </div>
+         )}
+         {showDMPanel && (
+           <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/50">
+             <div className="w-80 h-full">
+               <DMThreadList
+                 currentUser={currentUser}
+                 selectedDMId={selectedDMId}
+                 onSelectDM={(thread) => {
+                   setSelectedDMId(thread.id);
+                   setConsoleMode('dms');
+                   setSelectedChannel(thread);
+                 }}
+                 onClose={() => setShowDMPanel(false)}
+               />
+             </div>
+           </div>
+         )}
          <IncidentForm 
            isOpen={incidentFormOpen} 
            onClose={() => setIncidentFormOpen(false)}
