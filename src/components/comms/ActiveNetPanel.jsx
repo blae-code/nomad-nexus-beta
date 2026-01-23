@@ -103,8 +103,9 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     queryKey: ['net-roster-statuses', eventId],
     queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }),
     enabled: !!eventId,
-    refetchInterval: 5000, // Optimized for performance
-    staleTime: 3000,
+    staleTime: 5000,
+    refetchInterval: false, // Prefer real-time subscriptions
+    gcTime: 15000,
     initialData: []
   });
 
