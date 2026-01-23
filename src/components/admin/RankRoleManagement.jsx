@@ -65,9 +65,9 @@ export default function RankRoleManagement() {
   const filteredUsers = users.filter(u => {
     const query = searchQuery.toLowerCase();
     return (
-      u.full_name?.toLowerCase().includes(query) ||
-      u.email?.toLowerCase().includes(query) ||
-      u.callsign?.toLowerCase().includes(query)
+      u.callsign?.toLowerCase().includes(query) ||
+      u.rsi_handle?.toLowerCase().includes(query) ||
+      u.id?.toLowerCase().includes(query)
     );
   });
 
@@ -103,8 +103,8 @@ export default function RankRoleManagement() {
             <div className="space-y-1">
               {currentPioneer ? (
                 <>
-                  <div className="text-white font-bold">{currentPioneer.callsign || currentPioneer.full_name}</div>
-                  <div className="text-xs text-zinc-500">{currentPioneer.email}</div>
+                  <div className="text-white font-bold">{currentPioneer.callsign || currentPioneer.rsi_handle || 'OPERATIVE'}</div>
+                  <div className="text-xs text-zinc-500">ID: {currentPioneer.id.slice(0, 8)}</div>
                 </>
               ) : (
                 <div className="text-zinc-600 text-sm">Not Assigned</div>
@@ -121,7 +121,7 @@ export default function RankRoleManagement() {
             </div>
             <div className="text-2xl font-black text-white">{sysAdmins.length}</div>
             <div className="text-xs text-zinc-500 mt-1">
-              {sysAdmins.slice(0, 2).map(u => u.callsign || u.email).join(', ')}
+              {sysAdmins.slice(0, 2).map(u => u.callsign || u.rsi_handle || 'OPERATIVE').join(', ')}
               {sysAdmins.length > 2 && ` +${sysAdmins.length - 2}`}
             </div>
           </CardContent>
@@ -153,9 +153,9 @@ export default function RankRoleManagement() {
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={() => {
-                  const user = prompt("Enter user email to designate as Pioneer:");
+                  const user = prompt("Enter user callsign to designate as Pioneer:");
                   if (user) {
-                    const foundUser = users.find(u => u.email === user);
+                    const foundUser = users.find(u => u.callsign === user || u.rsi_handle === user);
                     if (foundUser) {
                       handleRankChange(foundUser.id, 'Pioneer');
                     } else {
@@ -171,9 +171,9 @@ export default function RankRoleManagement() {
               </Button>
               <Button
                 onClick={() => {
-                  const user = prompt("Enter user email to grant System Admin:");
+                  const user = prompt("Enter user callsign to grant System Admin:");
                   if (user) {
-                    const foundUser = users.find(u => u.email === user);
+                    const foundUser = users.find(u => u.callsign === user || u.rsi_handle === user);
                     if (foundUser) {
                       handleToggleSystemAdmin(foundUser.id, foundUser.is_system_administrator);
                     } else {
@@ -249,8 +249,8 @@ export default function RankRoleManagement() {
                           !user.rank || user.rank === 'Pioneer' || user.is_system_administrator || "bg-emerald-500"
                         )} />
                         <div>
-                          <div className="text-sm text-white font-medium">{user.callsign || user.rsi_handle || user.full_name}</div>
-                          <div className="text-[10px] text-zinc-600 font-mono">{user.email}</div>
+                          <div className="text-sm text-white font-medium">{user.callsign || user.rsi_handle || 'OPERATIVE'}</div>
+                          <div className="text-[10px] text-zinc-600 font-mono">ID: {user.id.slice(0, 8)}</div>
                         </div>
                       </div>
                     </td>
@@ -321,7 +321,7 @@ export default function RankRoleManagement() {
             <CardHeader className="border-b border-zinc-900 sticky top-0 bg-zinc-950">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg uppercase font-bold tracking-wider">
-                  {selectedUser.callsign || selectedUser.rsi_handle || selectedUser.full_name}
+                  {selectedUser.callsign || selectedUser.rsi_handle || 'OPERATIVE'}
                 </CardTitle>
                 <button
                   onClick={() => setSelectedUser(null)}
@@ -330,7 +330,7 @@ export default function RankRoleManagement() {
                   ×
                 </button>
               </div>
-              <div className="text-xs text-zinc-600 font-mono">{selectedUser.email}</div>
+              <div className="text-xs text-zinc-600 font-mono">ID: {selectedUser.id.slice(0, 12)}</div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               {/* Rank Management */}
@@ -357,7 +357,7 @@ export default function RankRoleManagement() {
                               handleRankChange(selectedUser.id, rank, parseInt(num));
                             }
                           } else if (rank === 'Pioneer') {
-                            if (confirm(`Designate ${selectedUser.callsign || selectedUser.email} as Pioneer?`)) {
+                            if (confirm(`Designate ${selectedUser.callsign || selectedUser.rsi_handle || 'this user'} as Pioneer?`)) {
                               handleRankChange(selectedUser.id, rank);
                             }
                           } else {
