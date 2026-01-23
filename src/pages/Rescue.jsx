@@ -6,17 +6,21 @@ import ActiveRescueList from "@/components/rescue/ActiveRescueList";
 import { Shield, AlertCircle, CheckCircle2, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useVisibilityPause } from "@/components/hooks/useVisibilityPause";
 
 export default function RescuePage() {
     const [currentUser, setCurrentUser] = useState(null);
     const [requestSuccess, setRequestSuccess] = useState(null);
+    const isTabVisible = useVisibilityPause();
 
     useQuery({
         queryKey: ['rescue-user'],
         queryFn: () => base44.auth.me().then(u => {
             setCurrentUser(u);
             return u;
-        })
+        }),
+        enabled: isTabVisible,
+        staleTime: 60000
     });
 
     // Handle Success from Form
