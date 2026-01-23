@@ -273,13 +273,13 @@ export default function CommsPanel({ eventId }) {
         </div>
         </OpsPanel>
 
-        {/* Join Modal */}
-        <CommsJoinModal
+        {/* DEPRECATED: CommsJoinModal disabled (2026-01-23) — use CommsConsole instead */}
+        {/* <CommsJoinModal
         net={joinTarget}
         eventId={eventId}
         open={joinModalOpen}
         onOpenChange={setJoinModalOpen}
-        />
+        /> */}
         </>
         );
         }
