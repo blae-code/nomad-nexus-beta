@@ -17,11 +17,11 @@ export default function CommsTestStep({ user, onAudit }) {
     const results = { tests: [] };
 
     try {
-      // Test 1: Generate token
+      // Test 1: Generate token for healthcheck net
       try {
         const tokenRes = await base44.functions.invoke('generateLiveKitToken', {
-          roomName: 'nn_healthcheck',
-          userName: 'healthcheck'
+          eventId: 'nn_healthcheck',
+          netIds: ['nn_healthcheck']
         });
         results.tests.push({
           name: 'Generate Token',
@@ -36,10 +36,10 @@ export default function CommsTestStep({ user, onAudit }) {
         });
       }
 
-      // Test 2: Room status
+      // Test 2: Room status (if infrastructure available)
       try {
         const statusRes = await base44.functions.invoke('getLiveKitRoomStatus', {
-          roomName: 'nn_healthcheck'
+          rooms: ['nn_healthcheck']
         });
         results.tests.push({
           name: 'Room Status',

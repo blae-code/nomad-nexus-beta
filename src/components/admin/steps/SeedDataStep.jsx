@@ -38,7 +38,7 @@ export default function SeedDataStep({ user, onAudit }) {
       const scaleMultiplier = SCALE_OPTIONS.find(s => s.value === scale)?.multiplier || 1.0;
 
       const response = await base44.functions.invoke('populateSampleData', {
-        seed: parseInt(seed),
+        seed: parseInt(seed) || 424242,
         scale: scaleMultiplier,
         toggles
       });

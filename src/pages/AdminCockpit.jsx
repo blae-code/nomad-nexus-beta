@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { 
@@ -29,6 +29,7 @@ export default function AdminCockpitPage() {
   const [readinessScore, setReadinessScore] = useState(0);
   const [logs, setLogs] = useState([]);
   const [expandedStep, setExpandedStep] = useState('schema_check');
+  const queryClient = useQueryClient();
 
   // Auth check - gate to Pioneer/Founder (rank check if needed)
   useEffect(() => {
@@ -72,6 +73,9 @@ export default function AdminCockpitPage() {
         executed_by: user.id,
         executed_at: new Date().toISOString()
       });
+      
+      // Invalidate audit logs query to refresh
+      queryClient.invalidateQueries({ queryKey: ['admin-audit-logs'] });
       
       // Add to local logs for telemetry panel
       setLogs(prev => [{

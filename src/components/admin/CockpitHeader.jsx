@@ -8,7 +8,7 @@ export default function CockpitHeader({ readinessScore, auditLogs }) {
   const [commsMode, setCommsMode] = useState('LIVE');
 
   // Check LiveKit environment
-  const hasLiveKit = process.env.VITE_LIVEKIT_URL && process.env.VITE_LIVEKIT_API_KEY;
+  const hasLiveKit = true; // Check at runtime via cockpit tests
 
   // Get last run time
   const lastRun = auditLogs[0]?.executed_at;

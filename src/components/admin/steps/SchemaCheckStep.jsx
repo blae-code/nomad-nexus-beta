@@ -33,7 +33,7 @@ export default function SchemaCheckStep({ user, onAudit, auditLogs }) {
       for (const entityName of CORE_ENTITIES) {
         try {
           const startEntity = Date.now();
-          const records = await base44.entities[entityName].list('', 1);
+          const records = await base44.entities[entityName].list('-created_date', 1);
           const latency = Date.now() - startEntity;
           const passed = records && records.length > 0;
 
