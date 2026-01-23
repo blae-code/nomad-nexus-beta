@@ -500,9 +500,9 @@ export default function HeaderV3() {
           {/* Row 1: Callsign/Username */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className={cn('text-[10px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
-                {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
-              </Badge>
+             <Badge className={cn('text-[10px] font-bold text-center', getRankColorClass(user?.rank, 'bg'))}>
+               {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
+             </Badge>
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-xs">Your Callsign</p>
