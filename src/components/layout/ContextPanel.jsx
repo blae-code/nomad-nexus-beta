@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import VoiceControlToolkit from '@/components/voice/VoiceControlToolkit';
 import EnhancedUserContactBook from '@/components/directory/EnhancedUserContactBook';
 import ActiveNetMonitor from '@/components/voice/ActiveNetMonitor';
-import { Radio, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import AISettingsPanel from '@/components/layout/AISettingsPanel';
+import { Radio, Users, Brain, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
