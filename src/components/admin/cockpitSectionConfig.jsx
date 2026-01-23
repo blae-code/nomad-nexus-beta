@@ -1,13 +1,13 @@
 import React from 'react';
 import {
-  Activity, MessageSquare, Database, Users, Server, AlertTriangle, Lock
+  Activity, MessageSquare, Database, Users, Server, Lock
 } from 'lucide-react';
 
-// Section components (lazy imports to avoid circular deps)
-import SchemaCheckStep from '@/components/admin/steps/SchemaCheckStep';
+// Section components
+import DemoPreflight from '@/components/admin/steps/DemoPreflight';
+import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import WipeDataStep from '@/components/admin/steps/WipeDataStep';
 import SeedDataStep from '@/components/admin/steps/SeedDataStep';
-import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import CommsModeControl from '@/components/admin/CommsModeControl';
 
 export const COCKPIT_SECTIONS = [
@@ -17,8 +17,8 @@ export const COCKPIT_SECTIONS = [
     icon: Activity,
     minRank: 'founder',
     visible: true,
-    description: 'Schema checks, system probes, demo readiness',
-    component: SchemaCheckStep,
+    description: 'System readiness probe, demo checks',
+    component: DemoPreflight,
   },
   {
     id: 'comms',
@@ -26,16 +26,16 @@ export const COCKPIT_SECTIONS = [
     icon: MessageSquare,
     minRank: 'founder',
     visible: true,
-    description: 'Voice nets, comms mode, smoke tests',
-    component: CommsModeControl,
+    description: 'Comms mode, smoke tests, voice config',
+    component: CommsTestStep,
   },
   {
     id: 'data',
-    label: 'Data (Wipe/Seed/Integrity)',
+    label: 'Data (Wipe/Seed)',
     icon: Database,
     minRank: 'founder',
     visible: true,
-    description: 'Data management, sample scenarios, cleanup',
+    description: 'Sample data, data management, cleanup',
     component: WipeDataStep,
   },
   {
@@ -44,7 +44,7 @@ export const COCKPIT_SECTIONS = [
     icon: Users,
     minRank: 'founder',
     visible: true,
-    description: 'User ranks, roles, access keys, policies',
+    description: 'User ranks, roles, access keys',
     component: null,
   },
   {
@@ -53,7 +53,7 @@ export const COCKPIT_SECTIONS = [
     icon: Server,
     minRank: 'voyager',
     visible: true,
-    description: 'Integrations, diagnostics, health metrics',
+    description: 'Integrations, health, diagnostics',
     component: null,
   },
   {
@@ -62,9 +62,9 @@ export const COCKPIT_SECTIONS = [
     icon: Lock,
     minRank: 'pioneer',
     visible: true,
-    description: 'Sovereign actions, danger zone (confirm required)',
+    description: 'Sovereign actions (CONFIRM required)',
     component: null,
-    collapsed: true, // Collapsed by default
+    collapsed: true,
   },
 ];
 
