@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,47 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     ]
   ];
 
+  // Event Status Distribution
+  const eventStatusData = useMemo(() => {
+    const statusCounts = {
+      scheduled: 0,
+      active: 0,
+      completed: 0,
+      cancelled: 0
+    };
+    
+    userEvents.forEach(event => {
+      if (statusCounts.hasOwnProperty(event.status)) {
+        statusCounts[event.status]++;
+      }
+    });
+    
+    return [
+      { name: 'Scheduled', value: statusCounts.scheduled, color: '#06b6d4' },
+      { name: 'Active', value: statusCounts.active, color: '#22c55e' },
+      { name: 'Completed', value: statusCounts.completed, color: '#a855f7' },
+      { name: 'Cancelled', value: statusCounts.cancelled, color: '#ef4444' }
+    ].filter(item => item.value > 0);
+  }, [userEvents]);
+
+  // User Engagement Trend (simulated)
+  const engagementData = useMemo(() => {
+    const days = 7;
+    const data = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      data.push({
+        date: dateStr,
+        events: Math.floor(Math.random() * 5) + 1,
+        messages: Math.floor(Math.random() * 20) + 5,
+        voiceTime: Math.floor(Math.random() * 60) + 10
+      });
+    }
+    return data;
+  }, []);
+
   const handleExportChart = (chartName) => {
     const link = document.createElement('a');
     link.href = '#';
@@ -75,7 +116,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       </div>
 
       {/* Charts Row - Activity & Treasury */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {/* Activity Over Time */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -164,7 +205,101 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           </BarChart>
         </ResponsiveContainer>
         </motion.div>
-      </div>
+
+        {/* Event Status Distribution */}
+        <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="border border-zinc-800 bg-zinc-900/30 p-2"
+        >
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Badge className="text-[6px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">STATUS</Badge>
+            <span className="text-[8px] font-bold text-zinc-300">Event Distribution</span>
+          </div>
+          <button
+            onClick={() => handleExportChart('event-status')}
+            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+          >
+            <Download className="w-2.5 h-2.5" />
+          </button>
+        </div>
+        <ResponsiveContainer width="100%" height={120}>
+          <PieChart>
+            <Pie
+              data={eventStatusData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={45}
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              labelStyle={{ fontSize: '9px', fill: '#e4e4e7' }}
+            >
+              {eventStatusData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+              labelStyle={{ color: '#e4e4e7' }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        </motion.div>
+
+        {/* User Engagement */}
+        <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="border border-zinc-800 bg-zinc-900/30 p-2"
+        >
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Badge className="text-[6px] bg-orange-900/30 text-orange-400 border-orange-900/50">ENGAGE</Badge>
+            <span className="text-[8px] font-bold text-zinc-300">Activity Metrics</span>
+          </div>
+          <button
+            onClick={() => handleExportChart('engagement')}
+            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+          >
+            <Download className="w-2.5 h-2.5" />
+          </button>
+        </div>
+        <ResponsiveContainer width="100%" height={120}>
+          <AreaChart data={engagementData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+            <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+            <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+              labelStyle={{ color: '#e4e4e7' }}
+            />
+            <Legend wrapperStyle={{ fontSize: '11px' }} />
+            <Area
+              type="monotone"
+              dataKey="events"
+              stackId="1"
+              stroke="#22c55e"
+              fill="#22c55e"
+              fillOpacity={0.6}
+              name="Events"
+            />
+            <Area
+              type="monotone"
+              dataKey="messages"
+              stackId="1"
+              stroke="#3b82f6"
+              fill="#3b82f6"
+              fillOpacity={0.6}
+              name="Messages"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+        </motion.div>
+        </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-1.5">
