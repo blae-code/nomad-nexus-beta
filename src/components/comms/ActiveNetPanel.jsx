@@ -25,14 +25,30 @@ import VoiceRecordingControls from "./VoiceRecordingControls";
 import { Room, RoomEvent } from 'livekit-client';
 
 function CommsLog({ eventId }) {
+  const queryClient = useQueryClient();
+
   const { data: messages } = useQuery({
     queryKey: ['comms-messages', eventId],
     queryFn: () => base44.entities.Message.list({ 
       sort: { created_date: -1 }, 
-      limit: 50 
+      limit: 30 // Reduced from 50
     }),
-    refetchInterval: 5000
+    enabled: !!eventId,
+    staleTime: 8000,
+    refetchInterval: false, // Replaced by subscription below
+    gcTime: 20000
   });
+
+  // Real-time subscription for comms log updates
+  React.useEffect(() => {
+    if (!eventId) return;
+
+    const unsubscribe = base44.entities.Message.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['comms-messages', eventId] });
+    });
+
+    return () => unsubscribe?.();
+  }, [eventId, queryClient]);
 
   const logs = React.useMemo(() => {
     if (!messages) return [];
