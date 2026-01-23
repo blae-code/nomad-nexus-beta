@@ -60,9 +60,6 @@ function CommsConsolePage() {
   const [connectionState, setConnectionState] = React.useState('disconnected'); // disconnected | connecting | connected | error
   const [connectionError, setConnectionError] = React.useState(null);
   
-  // Get desired mode from comms mode config
-  const { isLive: desiredLive, isSim: desiredSim } = useCommsMode();
-  
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
   const [consoleMode, setConsoleMode] = React.useState("ops");
@@ -84,8 +81,7 @@ function CommsConsolePage() {
   // Compute effective comms mode (desired vs. actual readiness)
   const { effectiveMode, fallbackReason } = useCommsReadiness();
   
-  const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
-  const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
+  const { isTransmitting, pttKey } = usePTT(null, userPreferences);
 
   React.useEffect(() => {
     const loadUser = async () => {
