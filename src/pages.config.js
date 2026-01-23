@@ -22,6 +22,7 @@ import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
+import SquadDetail from './pages/SquadDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "UserDirectory": UserDirectory,
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
+    "SquadDetail": SquadDetail,
 }
 
 export const pagesConfig = {

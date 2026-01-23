@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Edit, Trash2, Shield, UserPlus, UserMinus } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Shield, UserPlus, UserMinus, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -357,6 +359,11 @@ export default function SquadManagement() {
                       )}
                     </div>
                     <div className="flex gap-1">
+                      <Link to={`${createPageUrl('SquadDetail')}?id=${squad.id}`}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500 hover:text-[#ea580c]">
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </Link>
                       <SquadMembersDialog
                         squad={squad}
                         trigger={
