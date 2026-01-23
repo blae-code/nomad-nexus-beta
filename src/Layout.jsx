@@ -108,14 +108,15 @@ export default function Layout({ children, currentPageName }) {
 
 
       {/* AppShellV3: No left rail, palette-driven nav */}
-      <AppShellV3 currentPage={currentPage} user={user}>
-              <div className="pt-14 pb-96">
-                {children}
-              </div>
-            </AppShellV3>
-
-      {/* Messaging Console Footer */}
-      {user && <MessagingFooter user={user} />}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <AppShellV3 currentPage={currentPage} user={user}>
+          <div className="pt-14 pb-2">
+            {children}
+          </div>
+        </AppShellV3>
+        {/* Messaging Console Footer */}
+        {user && <MessagingFooter user={user} />}
+      </div>
 
       {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
       <LayoutDebugMode />
