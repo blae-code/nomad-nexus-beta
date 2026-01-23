@@ -1,9 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { CONTENT_TEMPLATES } from '@/components/comms/seedContentStyleGuide.js';
+import { ensureCommsBaseline } from './commsProvisioner.js';
 
 /**
  * Seed a week of realistic, ops-first comms activity
  * Generates posts across all canonical channels with proper author ranks/roles
+ * Calls provisioner first to ensure baseline channels exist
  */
 
 const SEED_SCENARIOS = [
@@ -106,10 +108,14 @@ Deno.serve(async (req) => {
     }
 
     const results = {
+      baseline: {},
       postsCreated: 0,
       channelsProcessed: 0,
       errors: []
     };
+
+    // FIRST: Ensure baseline channels exist (idempotent)
+    results.baseline = await ensureCommsBaseline(base44);
 
     // Fetch all canonical channels
     const channels = await base44.entities.CommsChannel.filter(
