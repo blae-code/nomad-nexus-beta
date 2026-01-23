@@ -30,7 +30,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       const variance = Math.sin(hour / 24 * Math.PI * 2) * baseCount * 0.5;
       const userCount = Math.max(1, Math.floor(baseCount + variance));
       
-      const timeStr = hour.toString().padStart(2, '0') + ':00 UTC';
+      const timeStr = hour.toString().padStart(2, '0') + ':00';
       data.push({
         time: timeStr,
         users: userCount
