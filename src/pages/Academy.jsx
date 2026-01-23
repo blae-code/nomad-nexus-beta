@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Radio, Zap } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
-import BasicCommsGuide from '@/components/academy/BasicCommsGuide';
-import AdvancedCommsGuide from '@/components/academy/AdvancedCommsGuide';
-import BasicOpsGuide from '@/components/academy/BasicOpsGuide';
-import AdvancedOpsGuide from '@/components/academy/AdvancedOpsGuide';
+import BasicCommsGuide from '@/components/academy/BasicCommsGuide.jsx';
+import AdvancedCommsGuide from '@/components/academy/AdvancedCommsGuide.jsx';
+import BasicOpsGuide from '@/components/academy/BasicOpsGuide.jsx';
+import AdvancedOpsGuide from '@/components/academy/AdvancedOpsGuide.jsx';
 
 export default function AcademyPage() {
   const [activeTab, setActiveTab] = useState('comms-basic');
