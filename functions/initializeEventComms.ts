@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
                     code: code,
                     label: `${squad.name} Comms`,
                     type: "squad",
+                    discipline: "casual",
                     priority: 2,
                     linked_squad_id: squad.id,
                     is_default_for_squad: true,
