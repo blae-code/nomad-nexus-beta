@@ -178,6 +178,84 @@ export const commands = [
 
   // ===== OPERATIONS WORKSPACE =====
   {
+    id: 'dock-toggle',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Toggle Comms Dock',
+    keywords: ['dock', 'comms', 'messages', 'toggle', 'open'],
+    icon: 'MessageSquare',
+    handler: 'toggleCommsDock',
+    description: 'Open or close the Comms Dock',
+    minRank: 'Vagrant',
+    shortcut: 'Cmd+Shift+D'
+  },
+  {
+    id: 'dock-comms',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Open Comms Tab',
+    keywords: ['dock', 'comms', 'channels', 'messages'],
+    icon: 'MessageSquare',
+    handler: 'openCommsDock',
+    description: 'Open Comms Dock to Comms tab',
+    minRank: 'Vagrant'
+  },
+  {
+    id: 'dock-polls',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Open Polls',
+    keywords: ['dock', 'polls', 'vote', 'survey'],
+    icon: 'Send',
+    handler: 'openPollsDock',
+    description: 'Open Comms Dock to Polls tab',
+    minRank: 'Vagrant'
+  },
+  {
+    id: 'dock-riggsy',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Chat with Riggsy',
+    keywords: ['riggsy', 'ai', 'chat', 'help', 'dock'],
+    icon: 'Zap',
+    handler: 'openRiggsyDock',
+    description: 'Open AI chat with Riggsy',
+    minRank: 'Vagrant'
+  },
+  {
+    id: 'dock-inbox',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Open Inbox',
+    keywords: ['inbox', 'notifications', 'mentions', 'dock'],
+    icon: 'Inbox',
+    handler: 'openInboxDock',
+    description: 'Open Comms Dock to Inbox',
+    minRank: 'Vagrant'
+  },
+  {
+    id: 'post-create',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Create Post',
+    keywords: ['post', 'message', 'create', 'publish'],
+    icon: 'Plus',
+    handler: 'createPost',
+    description: 'Create a new post in active channel',
+    minRank: 'Scout'
+  },
+  {
+    id: 'poll-create',
+    type: 'ACTION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Create Poll',
+    keywords: ['poll', 'vote', 'survey', 'create'],
+    icon: 'Send',
+    handler: 'createPoll',
+    description: 'Create a new poll',
+    minRank: 'Scout'
+  },
+  {
     id: 'ops-open-active',
     type: 'ACTION',
     section: COMMAND_SECTIONS.OPERATIONS,
