@@ -504,13 +504,19 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
 
           roomRef.current = currentRoom;
 
-          // 3. Setup Event Listeners BEFORE connect
-          if (currentRoom.on && typeof currentRoom.on === 'function') {
-            currentRoom.on('trackSubscribed', (track, publication, participant) => {
+          // 3. Setup Event Listeners BEFORE connect - store refs for cleanup
+          const eventListeners = [];
+
+          const addListener = (event, handler) => {
+            currentRoom.on(event, handler);
+            eventListeners.push({ event, handler });
+          };
+
+          // Track subscription
+          const handleTrackSubscribed = (track, publication, participant) => {
              if (track?.kind === 'audio') {
                 try {
                    const elements = track.attach();
-                   // Handle attachment result safely
                    if (!elements) {
                       console.warn(`[COMMS] track.attach() returned null for ${participant.identity}`);
                       return;
@@ -523,7 +529,6 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                          el.style.visibility = 'hidden';
                          el.style.height = '0';
                          el.style.width = '0';
-                         // Use a dedicated container instead of body
                          let audioContainer = document.getElementById('livekit-audio-container');
                          if (!audioContainer) {
                             audioContainer = document.createElement('div');
@@ -538,10 +543,10 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 } catch (attachErr) {
                    console.error(`[COMMS] Failed to attach audio track from ${participant.identity}:`, attachErr.message);
                 }
-                }
-                });
+             }
+          };
 
-                currentRoom.on('trackUnsubscribed', (track, publication, participant) => {
+          const handleTrackUnsubscribed = (track, publication, participant) => {
              try {
                 const elements = track.detach();
                 if (!elements) return;
@@ -556,30 +561,26 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                 console.error(`[COMMS] Failed to detach audio track from ${participant.identity}:`, detachErr.message);
              }
              console.log(`[COMMS] Unsubscribed from ${participant.identity}`);
-             });
+          };
 
-             currentRoom.on('reconnecting', () => {
+          const handleReconnecting = () => {
              if (mounted) setConnectionState("reconnecting");
-             });
+          };
 
-             currentRoom.on('reconnected', () => {
+          const handleReconnected = () => {
              if (mounted) setConnectionState("connected");
-             });
+          };
 
-             currentRoom.on('disconnected', (reason) => {
+          const handleDisconnected = (reason) => {
              console.log(`[COMMS] Disconnected: ${reason}`);
              if (mounted && connectionState !== "disconnected") {
-                // Attempt auto-reconnect with exponential backoff
                 const attemptReconnect = () => {
                    if (!mounted) return;
-
                    reconnectAttempts.current += 1;
                    const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
-
                    console.log(`[COMMS] Reconnect attempt ${reconnectAttempts.current} in ${backoffDelay}ms`);
                    setConnectionState("reconnecting");
                    setConnectionError(`Reconnecting... (attempt ${reconnectAttempts.current})`);
-
                    reconnectTimeoutRef.current = setTimeout(() => {
                       if (mounted && reconnectAttempts.current < 5) {
                          connect();
@@ -589,21 +590,28 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                       }
                    }, backoffDelay);
                 };
-
                 attemptReconnect();
-                }
-                });
+             }
+          };
 
-                currentRoom.on('participantConnected', (participant) => {
-                console.log(`[COMMS] Participant joined: ${participant.identity}`);
-                if (mounted) setRoom({ ...currentRoom });
-                });
+          const handleParticipantConnected = (participant) => {
+             console.log(`[COMMS] Participant joined: ${participant.identity}`);
+             if (mounted) setRoom({ ...currentRoom });
+          };
 
-                currentRoom.on('participantDisconnected', (participant) => {
-                console.log(`[COMMS] Participant left: ${participant.identity}`);
-                if (mounted) setRoom({ ...currentRoom });
-                });
-                }
+          const handleParticipantDisconnected = (participant) => {
+             console.log(`[COMMS] Participant left: ${participant.identity}`);
+             if (mounted) setRoom({ ...currentRoom });
+          };
+
+          // Register all listeners
+          addListener(RoomEvent.TrackSubscribed, handleTrackSubscribed);
+          addListener(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+          addListener(RoomEvent.Reconnecting, handleReconnecting);
+          addListener(RoomEvent.Reconnected, handleReconnected);
+          addListener(RoomEvent.Disconnected, handleDisconnected);
+          addListener(RoomEvent.ParticipantConnected, handleParticipantConnected);
+          addListener(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 
           // 4. Connect
           console.log(`[COMMS] Connecting to LiveKit: ${url} with token length: ${token.length}`);
