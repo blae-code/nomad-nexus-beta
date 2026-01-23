@@ -5,19 +5,24 @@ import { Phone, PhoneOff, Settings2, Radio, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * Comms toolbar — display-only for connection status and net info.
- * Join/Leave moved to ActiveNetPanel to keep connection state in one place.
+ * Core comms actions toolbar.
+ * Single source of truth for:
+ * - net selector (passed in via selectedNet)
+ * - join/leave button
+ * - mute / PTT status
+ * - connection indicator
+ *
+ * Secondary controls moved to Advanced drawer.
  */
 export default function CommsToolbar({
   selectedNet,
-  connectionState,
+  isConnected,
+  isConnecting,
+  connectionError,
   isTransmitting,
   onOpenAdvanced,
   className = '',
 }) {
-  const isConnected = connectionState === 'connected';
-  const isConnecting = connectionState === 'connecting';
-
   return (
     <div className={cn('flex items-center gap-3 h-10 bg-zinc-900 border border-zinc-800 px-3 rounded-sm', className)}>
       {/* Net Info Display */}
@@ -46,18 +51,33 @@ export default function CommsToolbar({
         </div>
       )}
 
-      {/* Connection Status Indicator */}
+      {/* Connection State Indicator */}
       {selectedNet && (
         <div className="flex items-center gap-1">
-          <div
-            className={cn(
-              'w-2 h-2 rounded-full',
-              isConnected ? 'bg-emerald-500 animate-pulse' : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-zinc-600'
-            )}
-          />
-          <span className="text-[9px] text-zinc-500 font-mono">
-            {isConnecting ? 'CONNECTING...' : isConnected ? 'CONNECTED' : 'DISCONNECTED'}
-          </span>
+          {isConnecting && (
+            <>
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-[9px] text-blue-400 font-mono">CONNECTING...</span>
+            </>
+          )}
+          {isConnected && (
+            <>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] text-emerald-400 font-mono">CONNECTED</span>
+            </>
+          )}
+          {!isConnecting && !isConnected && (
+            <>
+              <div className="w-2 h-2 rounded-full bg-zinc-600" />
+              <span className="text-[9px] text-zinc-500 font-mono">DISCONNECTED</span>
+            </>
+          )}
+          {connectionError && (
+            <>
+              <AlertCircle className="w-3 h-3 text-red-500 ml-1" />
+              <span className="text-[9px] text-red-400 font-mono">{connectionError}</span>
+            </>
+          )}
         </div>
       )}
 
@@ -74,6 +94,6 @@ export default function CommsToolbar({
       >
         <Settings2 className="w-3.5 h-3.5" />
       </Button>
-    </div>
-  );
-}
+      </div>
+      );
+      }
