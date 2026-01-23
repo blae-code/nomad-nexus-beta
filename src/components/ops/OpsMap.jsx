@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import MapDrawingTools from './MapDrawingTools';
 import MapDrawingLayer from './MapDrawingLayer';
 import { createTacticalMarkerIcon, TACTICAL_ICON_CATEGORIES } from '@/components/utils/tacticalsIcons';
+import { STAR_CITIZEN_SYSTEMS, getAllLocations } from '@/components/utils/starCitizenLocations';
+import LocationRadialMenu from './LocationRadialMenu';
 
 // Legacy marker fallback
 const createMarkerIcon = (type, color = '#ea580c') => {
@@ -61,6 +63,8 @@ export default function OpsMap({ eventId, readOnly = false }) {
   const [showIconPalette, setShowIconPalette] = useState(false);
   const [showCommandForm, setShowCommandForm] = useState(false);
   const [commandMsg, setCommandMsg] = useState('');
+  const [selectedLocationForMenu, setSelectedLocationForMenu] = useState(null);
+  const [showLocations, setShowLocations] = useState(true);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -266,6 +270,14 @@ export default function OpsMap({ eventId, readOnly = false }) {
            <span className="text-xs font-bold text-zinc-500 uppercase">Tactical Command</span>
            {!readOnly && (
              <>
+               <Button
+                 size="sm"
+                 onClick={() => setShowLocations(!showLocations)}
+                 variant={showLocations ? 'default' : 'outline'}
+                 className="h-7 text-[10px] gap-1"
+               >
+                 📍 Locations
+               </Button>
                <Button
                  size="sm"
                  onClick={() => {
@@ -504,10 +516,86 @@ export default function OpsMap({ eventId, readOnly = false }) {
             paths={drawnPaths}
           />
 
+          {/* Star Citizen Locations Layer */}
+          {showLocations && (
+            Object.values(STAR_CITIZEN_SYSTEMS).map(system =>
+              system.bodies.map(body => {
+                // Render celestial body
+                const bodyIcon = createMarkerIcon(body.type === 'star' ? 'waypoint' : 'objective', body.color);
+                return (
+                  <React.Fragment key={`body-${body.id}`}>
+                    <Marker
+                      position={[body.location.lat, body.location.lng]}
+                      icon={bodyIcon}
+                      eventHandlers={{
+                        click: () => !readOnly && setSelectedLocationForMenu(body)
+                      }}
+                    >
+                      <Popup className="dark-popup">
+                        <div className="text-xs text-white bg-zinc-900 p-2">
+                          <div className="font-bold">{body.name}</div>
+                          <div className="text-[8px] text-zinc-400">{system.name}</div>
+                        </div>
+                      </Popup>
+                    </Marker>
+
+                    {/* Orbital Stations */}
+                    {body.orbitalStations?.map(station => (
+                      <Marker
+                        key={`station-${station.id}`}
+                        position={[station.location.lat, station.location.lng]}
+                        icon={createMarkerIcon('checkpoint', '#06b6d4')}
+                        eventHandlers={{
+                          click: () => !readOnly && setSelectedLocationForMenu(station)
+                        }}
+                      >
+                        <Popup className="dark-popup">
+                          <div className="text-xs text-white bg-zinc-900 p-2">
+                            <div className="font-bold">{station.name}</div>
+                            <div className="text-[8px] text-zinc-400">{body.name} Orbit</div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+
+                    {/* Landing Areas */}
+                    {body.landingAreas?.map(area => (
+                      <Marker
+                        key={`area-${area.id}`}
+                        position={[area.location.lat, area.location.lng]}
+                        icon={createMarkerIcon('insertion', '#10b981')}
+                        eventHandlers={{
+                          click: () => !readOnly && setSelectedLocationForMenu(area)
+                        }}
+                      >
+                        <Popup className="dark-popup">
+                          <div className="text-xs text-white bg-zinc-900 p-2">
+                            <div className="font-bold">{area.name}</div>
+                            <div className="text-[8px] text-zinc-400">{body.name}</div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </React.Fragment>
+                );
+              })
+            )
+          )}
+
           {/* Click handler */}
           <MapClickHandler onMapClick={handleMapClick} />
           </MapContainer>
-      </div>
+          </div>
+
+          {/* Location Radial Menu */}
+          {selectedLocationForMenu && !readOnly && (
+          <LocationRadialMenu
+          location={selectedLocationForMenu}
+          eventId={eventId}
+          userRank={currentUser?.rank || 'VAGRANT'}
+          onClose={() => setSelectedLocationForMenu(null)}
+          />
+          )}
 
       {/* Rally Point Form */}
       {showNewMarkerForm && !readOnly && (
