@@ -380,20 +380,59 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
 }
 
 export default function ActiveNetPanel({ net, user, eventId, onConnectionChange }) {
-  const { isLive, isSim } = useCommsMode();
+  const { isLive, isSim, simConfig } = useCommsMode();
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
   const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
-  const [connectionState, setConnectionState] = React.useState("disconnected");
+  const [connectionState, setConnectionState] = React.useState(isSim ? "connected" : "disconnected");
   const [connectionError, setConnectionError] = React.useState(null);
   const [micPermissionDenied, setMicPermissionDenied] = React.useState(false);
-  const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0 });
+  const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0, quality: 'excellent' });
   const [accessDenied, setAccessDenied] = React.useState(false);
   const [accessReason, setAccessReason] = React.useState("");
   const [hasTemporaryTx, setHasTemporaryTx] = React.useState(false);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
-  const [simParticipants, setSimParticipants] = React.useState([]);
+  const [simParticipants, setSimParticipants] = React.useState(null);
+
+  // Generate SIM participants (consistent, plausible)
+  const generateSimParticipants = React.useCallback(() => {
+    const config = simConfig || { participant_count_range: [2, 8], activity_variance: 0.3 };
+    const [min, max] = config.participant_count_range;
+    const count = Math.floor(Math.random() * (max - min + 1)) + min;
+    const names = ['Phoenix', 'Shadow', 'Viper', 'Hawk', 'Storm', 'Blade', 'Echo', 'Raven', 'Wolf', 'Tiger'];
+    const ranks = ['Vagrant', 'Scout', 'Mercenary', 'Specialist', 'Pioneer'];
+    
+    const participants = [];
+    for (let i = 0; i < count; i++) {
+      const name = names[i % names.length];
+      const idx = Math.floor(Math.random() * 100);
+      participants.push({
+        id: `sim_${net.code}_${i}`,
+        callsign: `${name}-${idx}`,
+        rank: ranks[Math.floor(Math.random() * ranks.length)],
+        role: ['FLIGHT LEAD', 'PILOT', 'GUNNER', 'MEDIC'][Math.floor(Math.random() * 4)],
+        status: Math.random() > 0.9 ? 'DISTRESS' : Math.random() > 0.7 ? 'ENGAGED' : 'READY',
+        isSpeaking: Math.random() < config.activity_variance,
+        isAdminMuted: false
+      });
+    }
+    return participants;
+  }, [net.code, simConfig]);
+
+  React.useEffect(() => {
+    if (isSim && !simParticipants) {
+      setSimParticipants(generateSimParticipants());
+      // Refresh sim state every 5s for activity variance
+      const interval = setInterval(() => {
+        setSimParticipants(prev => prev?.map(p => ({
+          ...p,
+          isSpeaking: Math.random() < 0.2
+        })));
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isSim, simParticipants, generateSimParticipants]);
 
   // Fetch channels for this net
   const { data: channels = [] } = useQuery({
@@ -484,6 +523,12 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
     };
 
     if (!checkAccess()) {
+      return;
+    }
+
+    // SIM mode: fake connection (already connected above)
+    if (isSim) {
+      onConnectionChange?.(net.id, true);
       return;
     }
 
@@ -730,43 +775,43 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
           if (mounted) {
              setConnectionError(err.message || 'Connection failed');
              setConnectionState("failed");
-          }
-       }
-    };
+                }
+             }
+             };
 
-    connect();
-    
-    return () => {
-       mounted = false;
-       if (qualityInterval) clearInterval(qualityInterval);
-       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+             connect();
 
-       // Remove all event listeners before disconnecting
-       if (currentRoom && eventListeners.length > 0) {
-          try {
-             eventListeners.forEach(({ event, handler }) => {
-                currentRoom.off(event, handler);
-             });
-             console.log(`[COMMS] Cleaned up ${eventListeners.length} event listeners`);
-          } catch (err) {
-             console.warn('[COMMS] Error removing event listeners:', err);
-          }
-       }
+             return () => {
+             mounted = false;
+             if (qualityInterval) clearInterval(qualityInterval);
+             if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
 
-       if (currentRoom) {
-          try {
-             currentRoom.disconnect();
-          } catch (err) {
-             console.warn('[COMMS] Error disconnecting:', err);
-          }
-          roomRef.current = null;
-       }
-       setRoom(null);
-       setConnectionState("disconnected");
-       reconnectAttempts.current = 0;
-       onConnectionChange?.(net?.id, false);
-    };
-  }, [net?.id, user?.id, eventId]);
+             // Remove all event listeners before disconnecting
+             if (currentRoom && eventListeners.length > 0) {
+                try {
+                   eventListeners.forEach(({ event, handler }) => {
+                      currentRoom.off(event, handler);
+                   });
+                   console.log(`[COMMS] Cleaned up ${eventListeners.length} event listeners`);
+                } catch (err) {
+                   console.warn('[COMMS] Error removing event listeners:', err);
+                }
+             }
+
+             if (currentRoom) {
+                try {
+                   currentRoom.disconnect();
+                } catch (err) {
+                   console.warn('[COMMS] Error disconnecting:', err);
+                }
+                roomRef.current = null;
+             }
+             setRoom(null);
+             setConnectionState("disconnected");
+             reconnectAttempts.current = 0;
+             onConnectionChange?.(net?.id, false);
+             };
+             }, [net?.id, user?.id, eventId, isSim, onConnectionChange]);
 
   // Audio Handling - Mic Publish/Unpublish with audio processing
   useEffect(() => {
@@ -865,7 +910,9 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   }
 
   const isTransmitting = audioState?.isTransmitting || false;
-  const participantCount = room?.remoteParticipants?.size || 0;
+  const participantCount = isSim 
+    ? (simParticipants?.length || 0) 
+    : (room?.remoteParticipants?.size || 0);
 
   return (
     <div className="h-full flex flex-col gap-4">
@@ -1149,13 +1196,45 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                      </div>
 
                      {/* Roster */}
-                     <NetRoster 
-                       net={net} 
-                       eventId={eventId} 
-                       currentUserState={audioState} 
-                       onWhisper={handleWhisper}
-                       room={room}
-                     />
+                     {isSim && simParticipants ? (
+                       <div className="space-y-3">
+                         <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider pb-2 border-b border-zinc-800">
+                           <Users className="w-3 h-3" />
+                           Simulated Personnel ({simParticipants.length})
+                         </div>
+                         <div className="grid grid-cols-1 gap-2">
+                           {simParticipants.map(p => (
+                             <div key={p.id} className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                               <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-2 min-w-0">
+                                   <div className={cn(
+                                     'w-2 h-2 rounded-full shrink-0',
+                                     p.isSpeaking ? 'bg-green-500 animate-pulse' : 'bg-zinc-600'
+                                   )} />
+                                   <div className="truncate">
+                                     <div className="text-sm text-zinc-300 font-bold truncate">{p.callsign}</div>
+                                     <div className="text-[10px] text-zinc-500 uppercase flex items-center gap-1">
+                                       <span className="font-bold">{p.rank}</span>
+                                       <span className="text-zinc-700">•</span>
+                                       <span>{p.role}</span>
+                                     </div>
+                                   </div>
+                                 </div>
+                                 <StatusChip status={p.status} size="xs" showLabel={false} />
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     ) : (
+                       <NetRoster 
+                         net={net} 
+                         eventId={eventId} 
+                         currentUserState={audioState} 
+                         onWhisper={handleWhisper}
+                         room={room}
+                       />
+                     )}
 
                      {/* Comms Log */}
                      <CommsLog eventId={eventId} />
