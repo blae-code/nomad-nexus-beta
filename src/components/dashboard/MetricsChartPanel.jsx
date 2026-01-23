@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download } from 'lucide-react';
+import { Download, Activity, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
+  const [activeChart, setActiveChart] = useState(null);
   
   // Active users by UTC hour (24-hour cycle)
   const activeUsersByUTC = useMemo(() => {
@@ -106,33 +107,54 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">DATA VISUALIZATIONS</h3>
+      <motion.div 
+        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        <div className="flex items-center gap-2">
+          <Activity className="w-3 h-3 text-[#ea580c]" />
+          <h3 className="text-[8px] font-bold uppercase text-zinc-300 tracking-widest font-mono">[ DATA TELEMETRY ]</h3>
+        </div>
         <button
           onClick={() => handleExportChart('metrics')}
-          className="text-[8px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+          className="text-[8px] text-zinc-500 hover:text-[#ea580c] transition-colors flex items-center gap-1 hover:gap-2"
         >
           <Download className="w-3 h-3" />
-          Export All
+          Export
         </button>
-      </div>
+      </motion.div>
 
       {/* Charts Row - Activity & Treasury */}
-      <div className="grid grid-cols-4 gap-2">
+       <div className="grid grid-cols-4 gap-2">
         {/* Activity Over Time */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="border border-zinc-800 bg-zinc-900/30 p-2">
+          onHoverStart={() => setActiveChart('utc')}
+          onHoverEnd={() => setActiveChart(null)}
+          className={`border transition-all duration-200 p-2 relative group ${
+            activeChart === 'utc' 
+              ? 'border-cyan-500/60 bg-cyan-950/20 shadow-[0_0_12px_rgba(6,182,212,0.15)]' 
+              : 'border-zinc-800 bg-zinc-900/30'
+          }`}>
+          <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-cyan-500 transition-colors duration-200" />
+          <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-cyan-500 transition-colors duration-200" />
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Badge className="text-[6px] bg-cyan-900/30 text-cyan-400 border-cyan-900/50">USERS</Badge>
-            <span className="text-[8px] font-bold text-zinc-300">Active by UTC Hour</span>
+            <motion.div 
+              animate={activeChart === 'utc' ? { scale: 1.1, opacity: 1 } : { scale: 1, opacity: 0.7 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Badge className="text-[6px] bg-cyan-900/40 text-cyan-300 border-cyan-700/50 font-mono">UTC</Badge>
+            </motion.div>
+            <span className="text-[8px] font-bold text-zinc-300">Active Users</span>
           </div>
           <button
             onClick={() => handleExportChart('active-users-utc')}
-            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+            className="text-[7px] text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-0.5 opacity-0 group-hover:opacity-100"
           >
             <Download className="w-2.5 h-2.5" />
           </button>
@@ -171,16 +193,30 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -8 }}
           transition={{ duration: 0.2 }}
-          className="border border-zinc-800 bg-zinc-900/30 p-2"
+          onHoverStart={() => setActiveChart('funds')}
+          onHoverEnd={() => setActiveChart(null)}
+          className={`border transition-all duration-200 p-2 relative group ${
+            activeChart === 'funds' 
+              ? 'border-purple-500/60 bg-purple-950/20 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
+              : 'border-zinc-800 bg-zinc-900/30'
+          }`}
         >
+          <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-purple-500 transition-colors duration-200" />
+          <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-purple-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <Badge className="text-[6px] bg-purple-900/30 text-purple-400 border-purple-900/50">FUNDS</Badge>
-              <span className="text-[8px] font-bold text-zinc-300">{fundView === 0 ? 'Treasury Allocation' : 'Event Distribution'}</span>
+              <motion.div 
+                animate={activeChart === 'funds' ? { scale: 1.1, opacity: 1 } : { scale: 1, opacity: 0.7 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Badge className="text-[6px] bg-purple-900/40 text-purple-300 border-purple-700/50 font-mono">AUEC</Badge>
+              </motion.div>
+              <span className="text-[8px] font-bold text-zinc-300 font-mono">{fundView === 0 ? 'Treasury' : 'Events'}</span>
             </div>
             <button
               onClick={() => setFundView((fundView + 1) % fundViews.length)}
-              className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+              className="text-[7px] text-zinc-500 hover:text-purple-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+              title="Toggle view"
             >
               ↻
             </button>
@@ -210,16 +246,29 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="border border-zinc-800 bg-zinc-900/30 p-2"
+          onHoverStart={() => setActiveChart('recruitment')}
+          onHoverEnd={() => setActiveChart(null)}
+          className={`border transition-all duration-200 p-2 relative group ${
+            activeChart === 'recruitment' 
+              ? 'border-emerald-500/60 bg-emerald-950/20 shadow-[0_0_12px_rgba(34,197,94,0.15)]' 
+              : 'border-zinc-800 bg-zinc-900/30'
+          }`}
         >
+          <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-emerald-500 transition-colors duration-200" />
+          <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-emerald-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <Badge className="text-[6px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">RECRUIT</Badge>
-              <span className="text-[8px] font-bold text-zinc-300">New Members (7d)</span>
+              <motion.div 
+                animate={activeChart === 'recruitment' ? { scale: 1.1, opacity: 1 } : { scale: 1, opacity: 0.7 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Badge className="text-[6px] bg-emerald-900/40 text-emerald-300 border-emerald-700/50 font-mono">RECRUIT</Badge>
+              </motion.div>
+              <span className="text-[8px] font-bold text-zinc-300">New (7d)</span>
             </div>
             <button
               onClick={() => handleExportChart('recruitment')}
-              className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+              className="text-[7px] text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-0.5 opacity-0 group-hover:opacity-100"
             >
               <Download className="w-2.5 h-2.5" />
             </button>
@@ -249,16 +298,29 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="border border-zinc-800 bg-zinc-900/30 p-2"
+          onHoverStart={() => setActiveChart('flotilla')}
+          onHoverEnd={() => setActiveChart(null)}
+          className={`border transition-all duration-200 p-2 relative group ${
+            activeChart === 'flotilla' 
+              ? 'border-orange-500/60 bg-orange-950/20 shadow-[0_0_12px_rgba(234,88,12,0.15)]' 
+              : 'border-zinc-800 bg-zinc-900/30'
+          }`}
         >
+          <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-orange-500 transition-colors duration-200" />
+          <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-orange-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <Badge className="text-[6px] bg-orange-900/30 text-orange-400 border-orange-900/50">FLOTILLA</Badge>
-              <span className="text-[8px] font-bold text-zinc-300">Ships Added (7d)</span>
+              <motion.div 
+                animate={activeChart === 'flotilla' ? { scale: 1.1, opacity: 1 } : { scale: 1, opacity: 0.7 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Badge className="text-[6px] bg-orange-900/40 text-orange-300 border-orange-700/50 font-mono">FLEET</Badge>
+              </motion.div>
+              <span className="text-[8px] font-bold text-zinc-300">Ships (7d)</span>
             </div>
             <button
               onClick={() => handleExportChart('flotilla')}
-              className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+              className="text-[7px] text-zinc-500 hover:text-orange-400 transition-colors flex items-center gap-0.5 opacity-0 group-hover:opacity-100"
             >
               <Download className="w-2.5 h-2.5" />
             </button>
@@ -286,27 +348,83 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         </motion.div>
         </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-1.5">
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-1.5">
-          <div className="text-[6px] text-zinc-400 uppercase mb-0.5">Events</div>
-          <div className="text-base font-bold text-blue-300">{userEvents.length}</div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-1.5">
-          <div className="text-[6px] text-zinc-400 uppercase mb-0.5">Rate</div>
-          <div className="text-base font-bold text-emerald-300">
+      {/* Summary Stats - Live Indicators */}
+       <motion.div className="grid grid-cols-3 gap-1.5">
+        <motion.div 
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="border border-blue-800/40 bg-blue-950/20 p-2 relative group hover:border-blue-600/60 hover:shadow-[0_0_8px_rgba(59,130,246,0.1)] transition-all duration-200"
+        >
+          <div className="text-[6px] text-blue-400 uppercase mb-0.5 font-mono font-bold">Events</div>
+          <motion.div 
+            className="text-lg font-bold text-blue-300 font-mono"
+            key={userEvents.length}
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {userEvents.length}
+          </motion.div>
+          <motion.div 
+            className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100"
+            animate={{ opacity: [0, 0.1, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="absolute inset-0 border border-blue-500/20" />
+          </motion.div>
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="border border-emerald-800/40 bg-emerald-950/20 p-2 relative group hover:border-emerald-600/60 hover:shadow-[0_0_8px_rgba(34,197,94,0.1)] transition-all duration-200"
+        >
+          <div className="text-[6px] text-emerald-400 uppercase mb-0.5 font-mono font-bold">Success Rate</div>
+          <motion.div 
+            className="text-lg font-bold text-emerald-300 font-mono"
+            key={userEvents.filter(e => e.status === 'completed').length}
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             {userEvents.length > 0 
               ? Math.round((userEvents.filter(e => e.status === 'completed').length / userEvents.length) * 100) 
               : 0}%
-          </div>
-        </div>
-        <div className="border border-zinc-800/50 bg-zinc-900/30 p-1.5">
-          <div className="text-[6px] text-zinc-400 uppercase mb-0.5">Activity</div>
-          <div className="text-base font-bold text-cyan-300">
+          </motion.div>
+          <motion.div 
+            className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100"
+            animate={{ opacity: [0, 0.1, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="absolute inset-0 border border-emerald-500/20" />
+          </motion.div>
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="border border-cyan-800/40 bg-cyan-950/20 p-2 relative group hover:border-cyan-600/60 hover:shadow-[0_0_8px_rgba(6,182,212,0.1)] transition-all duration-200"
+        >
+          <div className="text-[6px] text-cyan-400 uppercase mb-0.5 font-mono font-bold">Activity</div>
+          <motion.div 
+            className="text-lg font-bold text-cyan-300 font-mono"
+            key={Math.round(recentLogs.length / 7)}
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             {Math.round(recentLogs.length / 7)}/day
-          </div>
-        </div>
-      </div>
+          </motion.div>
+          <motion.div 
+            className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100"
+            animate={{ opacity: [0, 0.1, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="absolute inset-0 border border-cyan-500/20" />
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
