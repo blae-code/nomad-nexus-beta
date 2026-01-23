@@ -1178,6 +1178,17 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
            />
            )}
 
+           {/* Connection Telemetry Strip */}
+           <ConnectionTelemetryStrip
+             mode={isSim ? 'SIM' : 'LIVE'}
+             state={connectionState}
+             participantCount={participantCount}
+             isMicEnabled={audioState?.isTransmitting || false}
+             isTransmitting={isTransmitting}
+             pttKey="Space"
+             errorMessage={connectionError}
+           />
+
            {/* Net Status Bar */}
            <NetStatusBar 
              net={net}
