@@ -1,210 +1,162 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+  const base44 = createClientFromRequest(req);
+  const user = await base44.auth.me();
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user || user.role !== 'admin') {
+    return Response.json({ error: 'Admin only' }, { status: 403 });
+  }
+
+  try {
+    const { eventId } = await req.json();
+
+    if (!eventId) {
+      return Response.json({ error: 'eventId required' }, { status: 400 });
     }
 
-    // Create test event
-    const event = await base44.entities.Event.create({
-      title: 'TACTICAL EXERCISE ALPHA',
-      description: 'Live tactical map training scenario',
-      event_type: 'focused',
-      priority: 'HIGH',
-      phase: 'ACTIVE',
-      status: 'active',
-      start_time: new Date().toISOString(),
-      end_time: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-      location: 'Combat Zone - Sector 7',
-      host_id: user.id,
-      assigned_user_ids: [user.id]
-    });
+    // Create player statuses with DISTRESS (urgent)
+    const playerStatuses = [
+      {
+        user_id: 'user-1',
+        event_id: eventId,
+        status: 'READY',
+        role: 'PILOT',
+        coordinates: { lat: 35.6895, lng: 139.6917 }
+      },
+      {
+        user_id: 'user-2',
+        event_id: eventId,
+        status: 'ENGAGED',
+        role: 'GUNNER',
+        coordinates: { lat: 35.6850, lng: 139.6850 },
+        notes: 'Taking fire'
+      },
+      {
+        user_id: 'user-3',
+        event_id: eventId,
+        status: 'DISTRESS',
+        role: 'MEDIC',
+        coordinates: { lat: 35.6700, lng: 139.7000 },
+        notes: 'Critical condition'
+      },
+      {
+        user_id: 'user-4',
+        event_id: eventId,
+        status: 'DOWN',
+        role: 'SCOUT',
+        coordinates: { lat: 35.6500, lng: 139.6500 }
+      }
+    ];
 
-    console.log('Created event:', event.id);
+    for (const ps of playerStatuses) {
+      await base44.entities.PlayerStatus.create(ps);
+    }
 
-    // Create rally points / objectives
-    const rallyPoint1 = await base44.entities.MapMarker.create({
-      event_id: event.id,
-      type: 'rally',
-      label: 'RALLY ALPHA',
-      coordinates: { lat: 40.7128, lng: -74.0060 },
-      description: 'Primary rally point',
-      color: '#10b981'
-    });
+    // Create fleet assets
+    const assets = [
+      {
+        name: 'Command Ship',
+        model: 'Anvil Carrack',
+        type: 'SHIP',
+        status: 'OPERATIONAL',
+        current_location: { lat: 35.6800, lng: 139.7100 }
+      },
+      {
+        name: 'Support Vessel',
+        model: 'Drake Caterpillar',
+        type: 'SHIP',
+        status: 'MISSION',
+        current_location: { lat: 35.6600, lng: 139.6700 }
+      }
+    ];
 
-    const rallyPoint2 = await base44.entities.MapMarker.create({
-      event_id: event.id,
-      type: 'waypoint',
-      label: 'WAYPOINT BRAVO',
-      coordinates: { lat: 40.7200, lng: -74.0100 },
-      description: 'Secondary waypoint',
-      color: '#3b82f6'
-    });
+    for (const asset of assets) {
+      await base44.entities.FleetAsset.create(asset);
+    }
 
-    const objective = await base44.entities.MapMarker.create({
-      event_id: event.id,
-      type: 'objective',
-      label: 'OBJECTIVE CHARLIE',
-      coordinates: { lat: 40.7300, lng: -74.0150 },
-      description: 'Primary objective target',
-      color: '#f59e0b'
-    });
-
-    const lz = await base44.entities.MapMarker.create({
-      event_id: event.id,
-      type: 'extraction',
-      label: 'LZ DELTA',
-      coordinates: { lat: 40.7100, lng: -73.9900 },
-      description: 'Landing zone for extraction',
-      color: '#8b5cf6'
-    });
-
-    console.log('Created markers:', { rallyPoint1: rallyPoint1.id, rallyPoint2: rallyPoint2.id, objective: objective.id, lz: lz.id });
-
-    // Create fleet assets with coordinates
-    const asset1 = await base44.entities.FleetAsset.create({
-      name: 'NOMAD-01',
-      model: 'Carrack',
-      type: 'SHIP',
-      status: 'OPERATIONAL',
-      location: 'Airspace',
-      current_location: { lat: 40.7150, lng: -74.0080 },
-      assigned_user_id: user.id,
-      maintenance_notes: 'Systems nominal'
-    });
-
-    const asset2 = await base44.entities.FleetAsset.create({
-      name: 'NOMAD-02',
-      model: 'Cutlass',
-      type: 'SHIP',
-      status: 'OPERATIONAL',
-      location: 'Airspace',
-      current_location: { lat: 40.7250, lng: -74.0120 },
-      assigned_user_id: user.id,
-      maintenance_notes: 'Weapons hot'
-    });
-
-    console.log('Created fleet assets:', { asset1: asset1.id, asset2: asset2.id });
-
-    // Create personnel status - READY team
-    const personnel1 = await base44.entities.PlayerStatus.create({
-      user_id: user.id,
-      event_id: event.id,
-      status: 'READY',
-      role: 'PILOT',
-      coordinates: { lat: 40.7160, lng: -74.0090 },
-      current_location: 'NOMAD-01 Cockpit',
-      notes: 'Standing by for deployment'
-    });
-
-    console.log('Created personnel status:', personnel1.id);
-
-    // Create DISTRESS situation - URGENT
-    const distressPersonnel = await base44.entities.PlayerStatus.create({
-      user_id: 'distress-operative-001',
-      event_id: event.id,
-      status: 'DISTRESS',
-      role: 'MARINE',
-      coordinates: { lat: 40.7350, lng: -74.0200 },
-      current_location: 'Ground Level - Sector 7B',
-      notes: 'UNDER FIRE - REQUESTING IMMEDIATE SUPPORT'
-    });
-
-    console.log('Created DISTRESS personnel:', distressPersonnel.id);
-
-    // Create CRITICAL incident at distress location
+    // Create critical incident
     const incident = await base44.entities.Incident.create({
-      title: 'COMBAT ENGAGEMENT - SECTOR 7B',
-      description: 'Ground team under heavy fire. Requesting air support and medical evac.',
+      title: 'DISTRESS: Personnel Down',
+      description: 'Personnel requiring immediate medical attention at sector 7',
       severity: 'CRITICAL',
       status: 'active',
-      incident_type: 'combat',
-      affected_area: 'Sector 7B - Industrial District',
-      coordinates: { lat: 40.7350, lng: -74.0200 },
-      event_id: event.id,
-      reported_by: user.id,
-      priority: 1,
-      tags: ['URGENT', 'COMBAT', 'MEDIVAC_REQUIRED']
+      incident_type: 'medical',
+      coordinates: { lat: 35.6700, lng: 139.7000 },
+      event_id: eventId,
+      priority: 1
     });
 
-    console.log('Created CRITICAL incident:', incident.id);
+    // Create tactical markers (objectives, rally points)
+    const markers = [
+      {
+        event_id: eventId,
+        type: 'rally',
+        label: 'Rally Point Alpha',
+        coordinates: { lat: 35.6762, lng: 139.6503 },
+        color: '#10b981'
+      },
+      {
+        event_id: eventId,
+        type: 'extraction',
+        label: 'LZ Bravo',
+        coordinates: { lat: 35.6900, lng: 139.7200 },
+        color: '#3b82f6'
+      },
+      {
+        event_id: eventId,
+        type: 'hazard',
+        label: 'Enemy Territory',
+        coordinates: { lat: 35.6400, lng: 139.6300 },
+        color: '#dc2626'
+      }
+    ];
 
-    // Create a HIGH severity incident
-    const incidentHigh = await base44.entities.Incident.create({
-      title: 'STRUCTURAL COLLAPSE - BUILDING 12',
-      description: 'East wing collapse imminent. Civilians trapped on upper levels.',
-      severity: 'HIGH',
-      status: 'responding',
-      incident_type: 'rescue',
-      affected_area: 'Building 12 - East Wing',
-      coordinates: { lat: 40.7280, lng: -74.0130 },
-      event_id: event.id,
-      reported_by: user.id,
-      priority: 2,
-      tags: ['RESCUE', 'STRUCTURAL']
-    });
+    for (const marker of markers) {
+      await base44.entities.MapMarker.create(marker);
+    }
 
-    console.log('Created HIGH severity incident:', incidentHigh.id);
-
-    // Create initial tactical command
+    // Create tactical command
     const command = await base44.entities.TacticalCommand.create({
-      event_id: event.id,
-      message: 'All units converge on rally point ALPHA. Maintain radio discipline on NET COMMAND.',
+      event_id: eventId,
+      message: 'Converge on distress position. Medical priority.',
+      coordinates: { lat: 35.6700, lng: 139.7000 },
       issued_by: user.id,
-      coordinates: { lat: 40.7128, lng: -74.0060 },
       command_type: 'RALLY',
-      priority: 'HIGH',
+      priority: 'CRITICAL',
       status: 'ISSUED'
     });
 
-    console.log('Created tactical command:', command.id);
-
-    // Create event logs for audit trail
+    // Create event log entries
     await base44.entities.EventLog.create({
-      event_id: event.id,
-      type: 'SYSTEM',
-      severity: 'HIGH',
-      actor_user_id: user.id,
-      summary: 'Exercise ALPHA initiated - Combat scenario active',
-      details: {
-        scenario_type: 'tactical_exercise',
-        personnel_count: 2,
-        asset_count: 2,
-        incident_count: 2
-      }
-    });
-
-    await base44.entities.EventLog.create({
-      event_id: event.id,
+      event_id: eventId,
       type: 'RESCUE',
       severity: 'HIGH',
       actor_user_id: user.id,
-      summary: 'DISTRESS call received - Combat engagement in Sector 7B',
-      details: {
-        personnel_id: distressPersonnel.id,
-        coordinates: { lat: 40.7350, lng: -74.0200 },
-        recommended_action: 'Dispatch air support immediately'
-      }
+      summary: 'Distress beacon activated - personnel medical emergency',
+      details: { incident_id: incident.id }
+    });
+
+    await base44.entities.EventLog.create({
+      event_id: eventId,
+      type: 'SYSTEM',
+      severity: 'MEDIUM',
+      actor_user_id: user.id,
+      summary: 'Tactical map initialized with seed data',
+      details: { markers: 3, personnel: 4, incidents: 1 }
     });
 
     return Response.json({
       success: true,
-      event_id: event.id,
-      data: {
-        event: event.id,
-        markers: { rallyPoint1: rallyPoint1.id, rallyPoint2: rallyPoint2.id, objective: objective.id, lz: lz.id },
-        assets: { asset1: asset1.id, asset2: asset2.id },
-        personnel: { ready: personnel1.id, distress: distressPersonnel.id },
-        incidents: { critical: incident.id, high: incidentHigh.id },
-        command: command.id
-      }
+      markers: markers.length,
+      personnel: playerStatuses.length,
+      incidents: 1,
+      assets: assets.length,
+      commands: 1,
+      incident_id: incident.id
     });
   } catch (error) {
-    console.error('Seed failed:', error.message);
+    console.error('Seed error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
