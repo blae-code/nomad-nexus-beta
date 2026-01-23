@@ -89,44 +89,46 @@ function EventDetail({ id }) {
 
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-3 py-2 lg:px-4 lg:py-3">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="h-full flex flex-col overflow-hidden px-3 py-2 lg:px-4 lg:py-3 max-w-full">
         
-          {/* Compact Header */}
-          <div className="mb-3 space-y-2">
-            <button 
-              onClick={() => window.location.href = createPageUrl('Events')}
-              className={cn("inline-flex items-center transition-colors hover:text-[#ea580c]", TYPOGRAPHY.LABEL_SM)}
-            >
-              <ArrowLeft className="w-3 h-3 mr-1" /> BACK
-            </button>
-            
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className={getSeverityBadge(event.event_type === 'focused' ? 'critical' : 'nominal')} size="sm">
-                  {event.event_type.toUpperCase()}
-                </Badge>
-                {event.priority && (
-                  <Badge variant="outline" className={getSeverityBadge(getPrioritySeverity(event.priority))} size="sm">
-                    {event.priority}
+          {/* Ultra-Compact Header */}
+          <div className="shrink-0 mb-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <button 
+                  onClick={() => window.location.href = createPageUrl('Events')}
+                  className="text-[9px] text-zinc-500 hover:text-[#ea580c] transition-colors shrink-0"
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </button>
+                
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Badge variant="outline" className={cn(getSeverityBadge(event.event_type === 'focused' ? 'critical' : 'nominal'), "text-[8px] h-4")} size="sm">
+                    {event.event_type.toUpperCase()}
                   </Badge>
-                )}
-                <span className={cn(TYPOGRAPHY.TIMESTAMP, "text-zinc-400")}>
-                   OP-ID: {event.id.slice(0, 8)}
-                </span>
+                  {event.priority && (
+                    <Badge variant="outline" className={cn(getSeverityBadge(getPrioritySeverity(event.priority)), "text-[8px] h-4")} size="sm">
+                      {event.priority}
+                    </Badge>
+                  )}
+                  <h1 className="text-sm font-bold text-white truncate">
+                    {event.title}
+                  </h1>
+                  <span className="text-[8px] text-zinc-500 font-mono shrink-0">
+                    {event.id.slice(0, 8)}
+                  </span>
+                </div>
               </div>
-              <h1 className={cn(TYPOGRAPHY.H2, "text-white")}>
-                 {event.title}
-               </h1>
-            </div>
 
-            <EventActionBar
-              event={event}
-              currentUser={currentUser}
-              onModify={() => setIsEditOpen(true)}
-              onDelete={() => setIsDeleteOpen(true)}
-              className="inline-flex gap-2"
-            />
+              <EventActionBar
+                event={event}
+                currentUser={currentUser}
+                onModify={() => setIsEditOpen(true)}
+                onDelete={() => setIsDeleteOpen(true)}
+                className="inline-flex gap-1 shrink-0"
+              />
+            </div>
             <EventForm 
               event={event} 
               open={isEditOpen} 
@@ -140,218 +142,139 @@ function EventDetail({ id }) {
             />
           </div>
 
-          {/* Compact Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-3">
-            <TabsList className="h-8 gap-1">
+          {/* Ultra-Compact Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="h-7 gap-0.5 shrink-0 mb-2">
               {[
                 { id: 'briefing', label: 'Briefing' },
                 { id: 'timeline', label: 'Timeline' },
                 { id: 'aar', label: 'AAR' },
                 { id: 'map', label: 'Tactical' }
               ].map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id} className="text-[10px] h-7 px-2">
+                <TabsTrigger key={tab.id} value={tab.id} className="text-[9px] h-6 px-2">
                   {tab.label}
                 </TabsTrigger>
               ))}
             </TabsList>
 
-            {/* Briefing Tab - Collapsible sections */}
-            <TabsContent value="briefing" className="space-y-2 mt-3">
-              <OpsPanel>
-                <OpsPanelHeader>
-                  <OpsPanelTitle>Op Summary</OpsPanelTitle>
-                </OpsPanelHeader>
-                <OpsPanelContent className="text-xs text-zinc-400 space-y-3">
-                  <p className="leading-relaxed line-clamp-3">{event.description}</p>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-800/50">
-                    <div>
-                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>START</div>
-                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200")}>{new Date(event.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}</div>
-                    </div>
-                    <div>
-                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>TIME</div>
-                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200")}>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
-                    </div>
-                    <div>
-                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>LOCATION</div>
-                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200 truncate")}>{event.location || "TBD"}</div>
-                    </div>
-                    <div>
-                      <div className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500 mb-1")}>CO</div>
-                      <div className={cn(TYPOGRAPHY.BODY_SM, "text-zinc-200 truncate")}>{creator?.callsign || "Unknown"}</div>
-                    </div>
+            {/* Briefing Tab - Grid layout, no scroll */}
+            <TabsContent value="briefing" className="flex-1 min-h-0 flex flex-col gap-2 mt-0">
+              {/* Summary Bar - Single line */}
+              <div className="shrink-0 border border-zinc-800 bg-zinc-950/50 p-2">
+                <div className="flex items-center justify-between gap-3 text-[9px]">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span className="text-zinc-500 shrink-0">START:</span>
+                    <span className="text-zinc-200">{new Date(event.start_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-zinc-700">•</span>
+                    <span className="text-zinc-500 shrink-0">LOC:</span>
+                    <span className="text-zinc-200 truncate">{event.location || "TBD"}</span>
                   </div>
-                </OpsPanelContent>
-              </OpsPanel>
-
-              {/* Collapsible Objectives */}
-              <div className="border border-zinc-800 bg-zinc-950/50">
-                <button 
-                  onClick={() => setExpandedSections({...expandedSections, objectives: !expandedSections.objectives})}
-                  className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-zinc-900/50 transition-colors border-b border-zinc-800/50"
-                >
-                  <span className="text-[10px] font-bold uppercase text-zinc-400">Objectives</span>
-                  <ChevronDown className={cn("w-3 h-3 transition-transform", expandedSections.objectives && "rotate-180")} />
-                </button>
-                {expandedSections.objectives && (
-                  <div className="p-2">
-                    <EventObjectives 
-                      event={event} 
-                      users={allUsers} 
-                      assets={allAssets} 
-                      canEdit={canEditEvent(currentUser, event)} 
-                    />
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-zinc-500">CO:</span>
+                    <span className="text-zinc-200">{creator?.callsign || "Unknown"}</span>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Collapsible Assets */}
-              {event.assigned_asset_ids?.length > 0 && (
-                <div className="border border-zinc-800 bg-zinc-950/50">
-                  <button 
-                    onClick={() => setExpandedSections({...expandedSections, assets: !expandedSections.assets})}
-                    className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-zinc-900/50 transition-colors border-b border-zinc-800/50"
-                  >
-                    <span className="text-[10px] font-bold uppercase text-zinc-400 flex items-center gap-1">
-                      <Rocket className="w-3 h-3" /> Assets ({event.assigned_asset_ids.length})
-                    </span>
-                    <ChevronDown className={cn("w-3 h-3 transition-transform", expandedSections.assets && "rotate-180")} />
-                  </button>
-                  {expandedSections.assets && (
-                    <div className="p-2 grid grid-cols-2 gap-1">
-                      {allAssets.filter(a => event.assigned_asset_ids.includes(a.id)).map(asset => (
-                        <div key={asset.id} className="flex items-center gap-2 p-1 bg-zinc-900 border border-zinc-800 text-[9px]">
-                          <div className="w-5 h-5 bg-blue-900/20 flex items-center justify-center text-blue-400 border border-blue-900/30">
-                            <Rocket className="w-2.5 h-2.5" />
-                          </div>
-                          <div>
-                            <div className="font-bold text-zinc-200">{asset.name}</div>
-                            <div className="text-zinc-500">{asset.model}</div>
-                          </div>
-                        </div>
-                        ))}
-                    </div>
+              {/* Main Grid - 2 columns */}
+              <div className="flex-1 min-h-0 grid grid-cols-3 gap-2 overflow-hidden">
+
+                {/* Column 1: Control & Status */}
+                <div className="space-y-2 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-2">
+                    <EventPhaseGates event={event} canEdit={canEditEvent(currentUser, event)} />
+                    <EventReadinessChecklist event={event} canEdit={canEditEvent(currentUser, event)} />
+                  </div>
+                  <EventCommandStaff event={event} canEdit={canEditEvent(currentUser, event)} />
+                  <EventObjectives 
+                    event={event} 
+                    users={allUsers} 
+                    assets={allAssets} 
+                    canEdit={canEditEvent(currentUser, event)} 
+                  />
+                </div>
+
+                {/* Column 2: Personnel & Comms */}
+                <div className="space-y-2 overflow-y-auto">
+                  <EventParticipants eventId={event.id} />
+                  <SquadManager eventId={event.id} />
+                  <CommsPanel eventId={event.id} />
+                  <PlayerStatusSection eventId={event.id} />
+                </div>
+
+                {/* Column 3: AI & Analysis */}
+                <div className="space-y-2 overflow-y-auto">
+                  <AITacticalAdvisor eventId={event.id} />
+                  <AIInsightsPanel eventId={event.id} />
+                  <EventEconomy eventId={event.id} />
+                  {canEditEvent(currentUser, event) && (
+                    <CommsConfig eventId={event.id} />
                   )}
                 </div>
-              )}
-
-              {/* Compact 2x2 grid for status panels */}
-              <div className="grid grid-cols-2 gap-2">
-                <EventPhaseGates event={event} canEdit={canEditEvent(currentUser, event)} />
-                <EventReadinessChecklist event={event} canEdit={canEditEvent(currentUser, event)} />
-                <EventCommandStaff event={event} canEdit={canEditEvent(currentUser, event)} />
-                <SquadManager eventId={event.id} />
               </div>
-
-              {/* Collapsible Participants */}
-              <div className="border border-zinc-800 bg-zinc-950/50">
-                <button 
-                  onClick={() => setExpandedSections({...expandedSections, participants: !expandedSections.participants})}
-                  className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-zinc-900/50 transition-colors border-b border-zinc-800/50"
-                >
-                  <span className="text-[10px] font-bold uppercase text-zinc-400 flex items-center gap-1">
-                    <Users className="w-3 h-3" /> Participants
-                  </span>
-                  <ChevronDown className={cn("w-3 h-3 transition-transform", expandedSections.participants && "rotate-180")} />
-                </button>
-                {expandedSections.participants && (
-                  <div className="p-2">
-                    <EventParticipants eventId={event.id} />
-                  </div>
-                )}
-              </div>
-
-              {/* Compact bottom panels */}
-              <div className="grid grid-cols-2 gap-2">
-                <EventEconomy eventId={event.id} />
-                <PlayerStatusSection eventId={event.id} />
-              </div>
-
-              <EventCommunicationLogs eventId={event.id} />
-              <EventPostAnalysis event={event} canEdit={canEditEvent(currentUser, event)} />
             </TabsContent>
 
             {/* Timeline Tab */}
-            <TabsContent value="timeline" className="mt-3">
-              <OpsPanel>
-                <OpsPanelContent className="p-2">
-                  <EventTimeline 
-                    eventId={event.id}
-                    onAddNote={() => setShowNoteForm(!showNoteForm)}
+            <TabsContent value="timeline" className="flex-1 min-h-0 flex flex-col mt-0">
+              <div className="flex-1 min-h-0 overflow-y-auto p-2 border border-zinc-800 bg-zinc-950/50">
+                <EventTimeline 
+                  eventId={event.id}
+                  onAddNote={() => setShowNoteForm(!showNoteForm)}
+                />
+              </div>
+              {showNoteForm && (
+                <div className="shrink-0 mt-2 p-2 border border-zinc-800 bg-zinc-900/50 space-y-2">
+                  <textarea
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="RECORD ENTRY..."
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white p-1.5 text-xs font-mono"
+                    rows="2"
                   />
-                  {showNoteForm && (
-                    <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
-                      <textarea
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                        placeholder="RECORD ENTRY..."
-                        className="w-full bg-zinc-950 border border-zinc-700 text-white p-1.5 text-xs font-mono"
-                        rows="2"
-                      />
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            if (noteText.trim()) {
-                              await base44.entities.EventLog.create({
-                                event_id: event.id,
-                                type: 'NOTE',
-                                severity: 'LOW',
-                                actor_user_id: currentUser.id,
-                                summary: noteText.slice(0, 100),
-                                details: { full_note: noteText }
-                              });
-                              setNoteText('');
-                              setShowNoteForm(false);
-                            }
-                          }}
-                          className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[9px] h-6 px-2"
-                        >
-                          RECORD
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setShowNoteForm(false)}
-                          className="text-[9px] h-6 px-2"
-                        >
-                          DISMISS
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </OpsPanelContent>
-              </OpsPanel>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (noteText.trim()) {
+                          await base44.entities.EventLog.create({
+                            event_id: event.id,
+                            type: 'NOTE',
+                            severity: 'LOW',
+                            actor_user_id: currentUser.id,
+                            summary: noteText.slice(0, 100),
+                            details: { full_note: noteText }
+                          });
+                          setNoteText('');
+                          setShowNoteForm(false);
+                        }
+                      }}
+                      className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[9px] h-6 px-2"
+                    >
+                      RECORD
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowNoteForm(false)}
+                      className="text-[9px] h-6 px-2"
+                    >
+                      DISMISS
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* AAR Tab */}
-            <TabsContent value="aar" className="space-y-2 mt-3">
-              <OpsPanel>
-                <OpsPanelContent className="p-2">
-                  <EventAAR eventId={event.id} eventTitle={event.title} />
-                </OpsPanelContent>
-              </OpsPanel>
-              <AIAfterActionReportGenerator eventId={event.id} eventTitle={event.title} />
+            <TabsContent value="aar" className="flex-1 min-h-0 overflow-y-auto mt-0 p-2 border border-zinc-800 bg-zinc-950/50">
+              <EventAAR eventId={event.id} eventTitle={event.title} event={event} />
             </TabsContent>
 
             {/* Map Tab */}
-            <TabsContent value="map" className="mt-3">
-              <div style={{ height: '500px' }}>
-                <OpsMap eventId={event.id} readOnly={false} />
-              </div>
+            <TabsContent value="map" className="flex-1 min-h-0 mt-0">
+              <OpsMap eventId={event.id} readOnly={false} />
             </TabsContent>
           </Tabs>
-
-          {/* Compact Sidebar - 2 column at 1440p */}
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <AITacticalAdvisor eventId={event.id} />
-            <AIInsightsPanel eventId={event.id} />
-            {canEditEvent(currentUser, event) && (
-              <CommsConfig eventId={event.id} />
-            )}
-            <CommsPanel eventId={event.id} />
-          </div>
         </div>
       </div>
     </div>
