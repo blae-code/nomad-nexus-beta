@@ -1,11 +1,14 @@
 import React from 'react';
-import { Users, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sortChannels, getChannelIcon } from './channelTaxonomy';
 
 export default function CommsDockChannelList({ channels, user, onSelectChannel }) {
+  const sorted = sortChannels(channels, user);
+
   return (
     <div className="space-y-1 p-1">
-      {channels.map(channel => (
+      {sorted.map(channel => (
         <button
           key={channel.id}
           onClick={() => onSelectChannel(channel)}
@@ -13,22 +16,21 @@ export default function CommsDockChannelList({ channels, user, onSelectChannel }
         >
           <div className="flex items-start justify-between gap-1">
             <div className="flex-1 min-w-0">
-              <p className="text-[8px] font-bold uppercase text-zinc-300 truncate group-hover:text-[#ea580c]">
-                {channel.name}
-              </p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className={cn(
-                  'text-[7px] px-1 py-0 uppercase',
-                  channel.type === 'BROADCAST' ? 'bg-red-950/40 text-red-300' :
-                  channel.type === 'OPS_FEED' ? 'bg-blue-950/40 text-blue-300' :
-                  'bg-zinc-800/40 text-zinc-400'
-                )}>
-                  {channel.type}
-                </span>
-                {channel.scope !== 'ORG' && (
-                  <Lock className="w-2 h-2 text-zinc-600" />
+              <div className="flex items-center gap-1">
+                <span className="text-[10px]">{getChannelIcon(channel.type)}</span>
+                <p className="text-[8px] font-bold uppercase text-zinc-300 truncate group-hover:text-[#ea580c]">
+                  {channel.name}
+                </p>
+                {channel.is_canonical && (
+                  <span className="text-[6px] bg-cyan-950/40 text-cyan-400 px-0.5 py-0 shrink-0">●</span>
                 )}
               </div>
+              {channel.is_locked && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Lock className="w-2 h-2 text-orange-500" />
+                  <span className="text-[7px] text-orange-400">LOCKED</span>
+                </div>
+              )}
             </div>
             {channel.unread_count > 0 && (
               <span className="text-[7px] px-1.5 py-0.5 bg-red-950/60 border border-red-700/40 text-red-300 font-bold shrink-0">
