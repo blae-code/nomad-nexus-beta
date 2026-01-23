@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ChevronUp, X, MessageCircle, Users, Bell, FileUp, Minimize2, Maximize2 } from 'lucide-react';
+import { ChevronUp, X, MessageCircle, Users, Bell, FileUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import DMTab from './DMTab';
@@ -88,12 +88,6 @@ export default function MessagingFooter({ user }) {
         </button>
 
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="p-0.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
-          >
-            {isMinimized ? <Maximize2 className="w-2.5 h-2.5" /> : <Minimize2 className="w-2.5 h-2.5" />}
-          </button>
           <button
             onClick={() => setIsMinimized(true)}
             className="p-0.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
