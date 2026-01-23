@@ -11,6 +11,9 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   const [activeChart, setActiveChart] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [now, setNow] = useState(new Date());
+  const [userActivityView, setUserActivityView] = useState(0); // 0: line, 1: peak distribution
+  const [recruitmentView, setRecruitmentView] = useState(0); // 0: daily, 1: cumulative
+  const [flotillaView, setFlotillaView] = useState(0); // 0: trend, 1: status breakdown
   
   // Update time every minute to shift the 24-hour window
   useEffect(() => {
@@ -18,6 +21,21 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       setNow(new Date());
     }, 60000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Auto-rotate views asynchronously
+  useEffect(() => {
+    const timings = [
+      { setter: setUserActivityView, max: 2, delay: 6000 },
+      { setter: setRecruitmentView, max: 2, delay: 8000 },
+      { setter: setFlotillaView, max: 2, delay: 7000 }
+    ];
+
+    const intervals = timings.map(({ setter, max, delay }) =>
+      setInterval(() => setter(prev => (prev + 1) % max), delay)
+    );
+
+    return () => intervals.forEach(clearInterval);
   }, []);
   
   // Active users by UTC hour (24-hour rolling window)
