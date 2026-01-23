@@ -8,7 +8,9 @@ import CommsDockPollsTab from './tabs/CommsDockPollsTab';
 import CommsDockRiggsyTab from './tabs/CommsDockRiggsyTab';
 import CommsDockInboxTab from './tabs/CommsDockInboxTab';
 import CommsDockDebugPanel from './CommsDockDebugPanel';
-import { useVoiceRoom } from './useVoiceRoom';
+// DEPRECATED: useVoiceRoom disabled in dock (2026-01-23)
+// Voice joining is now canonical via CommsConsole + ActiveNetPanel only
+// import { useVoiceRoom } from './useVoiceRoom';
 
 const TABS = [
   { id: 'comms', label: 'COMMS', icon: MessageSquare },
