@@ -650,12 +650,7 @@ export default function CommandPaletteV3() {
              ? 'text-[#ea580c]' 
              : 'text-zinc-500 group-hover:text-[#ea580c]'
           )}>
-           <motion.div
-              animate={!isOpen ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <span className="text-[8px] font-bold">Ctrl</span>
-            </motion.div>
+            <span className="text-[8px] font-bold">Ctrl</span>
             <span>+K</span>
           </div>
         </div>
