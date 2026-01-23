@@ -185,14 +185,14 @@ export default function AdminCockpitPage() {
                 </TabsList>
                 </div>
 
-            {/* Cockpit Tab - 3 column layout */}
+            {/* Cockpit Tab - accordion layout */}
             <TabsContent value="cockpit" className="flex-1 overflow-hidden mt-0 flex gap-0">
-              {/* LEFT SIDEBAR: Status & Controls (280px) */}
-              <div className="w-72 border-r border-zinc-800 overflow-y-auto flex flex-col gap-2 p-2 bg-zinc-950/60 shrink-0">
+              {/* LEFT SIDEBAR: Demo Control (240px) */}
+              <div className="w-60 border-r border-zinc-800 overflow-y-auto flex flex-col p-2 bg-zinc-950/60 shrink-0 gap-2">
                 {/* Demo Mode Card */}
                 <div className="border border-zinc-800 bg-zinc-900/50 p-2.5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-[9px] font-mono font-bold text-zinc-400 uppercase">Demo Mode</p>
+                    <p className="text-[9px] font-mono font-bold text-zinc-400 uppercase">Demo</p>
                     <Button
                       onClick={demoEnabled ? handleDisableDemo : handleEnableDemo}
                       disabled={isSetupDemo}
@@ -208,71 +208,40 @@ export default function AdminCockpitPage() {
                       {demoEnabled ? 'ON' : 'OFF'}
                     </Button>
                   </div>
-                  <p className="text-[8px] text-zinc-500">Guided operational walkthrough</p>
+                  <p className="text-[8px] text-zinc-500">Guided walkthrough</p>
                 </div>
 
-                {/* Comms Mode Control Card */}
-                <div className="border border-zinc-800 bg-zinc-900/50 p-2.5">
-                  <CommsModeControl />
-                </div>
+                <div className="border-t border-zinc-800" />
 
-                {/* Divider */}
-                <div className="border-t border-zinc-800 pt-2" />
-
-                {/* Quick Stats */}
-                <div className="space-y-2 text-[8px]">
-                  <p className="text-zinc-500 font-mono uppercase tracking-wider">Last Runs</p>
-                  {READINESS_STEPS.map(step => {
-                    const lastRun = auditLogs.find(log => log.step_name === step.id && log.status === 'success');
-                    return (
-                      <div key={step.id} className="flex items-center justify-between p-1.5 bg-zinc-900/50 border border-zinc-800">
-                        <span className="text-zinc-400">{step.title}</span>
-                        {lastRun ? (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                        ) : (
-                          <AlertTriangle className="w-3 h-3 text-zinc-600" />
-                        )}
-                      </div>
-                    );
-                  })}
+                {/* Health Score Card */}
+                <div className="border border-zinc-800 bg-zinc-900/50 p-2.5 space-y-1.5">
+                  <p className="text-[8px] font-mono text-zinc-500 uppercase">Health</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-zinc-800 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-[#ea580c] to-orange-500 transition-all"
+                        style={{ width: `${readinessScore}%` }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-bold text-[#ea580c] min-w-max">{readinessScore}%</span>
+                  </div>
                 </div>
               </div>
 
-              {/* CENTER: Main Content (flex) */}
+              {/* CENTER: Accordion Sections (flex) */}
               <div className="flex-1 overflow-hidden flex flex-col p-2 gap-2 min-w-0">
-                <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest shrink-0">READINESS RUNBOOK</h2>
-                <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-                  {READINESS_STEPS.map((step) => {
-                    const Component = step.component;
-                    const isExpanded = expandedStep === step.id;
-                    
-                    return (
-                      <div key={step.id} className="border border-zinc-800 bg-zinc-950/50 shrink-0">
-                        <button
-                          onClick={() => setExpandedStep(isExpanded ? null : step.id)}
-                          className="w-full p-2.5 flex items-center justify-between hover:bg-zinc-900/50 transition-colors text-left"
-                        >
-                          <span className="text-[10px] font-bold text-zinc-300 uppercase">{step.title}</span>
-                          <div className="flex items-center gap-1.5">
-                            {auditLogs.find(log => log.step_name === step.id && log.status === 'success') && (
-                              <CheckCircle2 className="w-3 h-3 text-green-500" />
-                            )}
-                            <span className="text-[10px] text-zinc-600">{isExpanded ? '▼' : '▶'}</span>
-                          </div>
-                        </button>
-                        {isExpanded && (
-                          <div className="border-t border-zinc-800 p-2.5 bg-zinc-950/80 space-y-2">
-                            <Component user={user} onAudit={logAuditAction} auditLogs={auditLogs} />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <AdminCockpitAccordion
+                  sections={COCKPIT_SECTIONS.filter(s => hasRank(user, s.minRank))}
+                  expandedSection={expandedSection}
+                  onExpand={setExpandedSection}
+                  readinessScore={readinessScore}
+                  auditLogs={auditLogs}
+                  user={user}
+                />
               </div>
 
-              {/* RIGHT SIDEBAR: Telemetry (320px) */}
-              <div className="w-80 border-l border-zinc-800 overflow-hidden flex flex-col p-2 bg-zinc-950/60 shrink-0">
+              {/* RIGHT SIDEBAR: Telemetry (280px) */}
+              <div className="w-72 border-l border-zinc-800 overflow-hidden flex flex-col p-2 bg-zinc-950/60 shrink-0">
                 <TelemetryPanel logs={logs} auditLogs={auditLogs} />
               </div>
             </TabsContent>
