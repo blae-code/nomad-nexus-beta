@@ -23,7 +23,8 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [unreadCounts, setUnreadCounts] = useState({});
   const queryClient = useQueryClient();
-  const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
+  // DEPRECATED: Voice joining removed from dock (useVoiceRoom disabled)
+  // Redirect users to CommsConsole for LIVE voice connection
 
   // Fetch unread counts
   const { data: readStates = [] } = useQuery({
