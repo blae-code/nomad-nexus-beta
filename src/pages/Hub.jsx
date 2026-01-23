@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import HubMetricsPanel from "@/components/dashboard/HubMetricsPanel";
+import PersonalStatusPanel from "@/components/dashboard/PersonalStatusPanel";
 import HubPersonalStats from "@/components/dashboard/HubPersonalStats";
 import HubTabContent from "@/components/dashboard/HubTabContent";
 import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
@@ -219,6 +220,22 @@ export default function HubPage() {
                   activeIncidents={activeIncidents}
                   canAccessTreasury={canAccessTreasury}
                   treasuryBalance={treasuryBalance}
+                />
+
+                <PersonalStatusPanel
+                  user={user}
+                  userMetrics={{
+                    assignedOps: userEvents.filter(e => e.status === 'active').length,
+                    completedOps: userEvents.filter(e => e.status === 'completed').length,
+                    totalOps: userEvents.length,
+                    squadCount: userSquads.length,
+                    hoursThisWeek: 12,
+                    personalEfficiency: 87,
+                    personAlerts: 0,
+                    readiness: 95,
+                    tenureMonths: 6,
+                    commendations: 3
+                  }}
                 />
 
                 <MetricsChartPanel 
