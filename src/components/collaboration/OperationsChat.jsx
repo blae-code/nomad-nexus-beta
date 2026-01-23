@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, MessageSquare, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import AIMessageAnalysis from '@/components/comms/AIMessageAnalysis';
 
 const OPS_CHANNEL_NAME = 'operations-general';
 
@@ -146,6 +147,7 @@ function MessageBubble({ message, currentUserId }) {
         <div className="text-[9px] text-zinc-600 mt-1">
           {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
+        <AIMessageAnalysis message={message} compact />
       </div>
     </div>
   );
