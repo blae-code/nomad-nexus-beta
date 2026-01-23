@@ -17,7 +17,7 @@ import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
 import IncidentHeatmap from "@/components/incidents/IncidentHeatmap";
 import ReportExporter from "@/components/dashboard/ReportExporter";
-import OperationsChat from '@/components/collaboration/OperationsChat';
+
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 
@@ -134,17 +134,12 @@ export default function HubPage() {
                   treasuryBalance={treasuryBalance}
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-                  <div className="lg:col-span-2">
-                    <MetricsChartPanel 
-                      userEvents={userEvents}
-                      allUsers={allUsers}
-                      recentLogs={recentLogs}
-                      treasuryBalance={treasuryBalance}
-                    />
-                  </div>
-                  <OperationsChat user={user} className="h-48" />
-                </div>
+                <MetricsChartPanel 
+                  userEvents={userEvents}
+                  allUsers={allUsers}
+                  recentLogs={recentLogs}
+                  treasuryBalance={treasuryBalance}
+                />
                 </div>
               </div>
             </motion.div>
