@@ -11,6 +11,7 @@ import React from 'react';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import { Radio } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function useCommsConsoleLink() {
   const navigate = useNavigate();
