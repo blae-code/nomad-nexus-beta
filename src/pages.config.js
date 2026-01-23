@@ -25,6 +25,7 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
+import Academy from './pages/Academy';
 import __Layout from './Layout.jsx';
 
 
@@ -56,6 +57,7 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
+    "Academy": Academy,
 }
 
 export const pagesConfig = {
