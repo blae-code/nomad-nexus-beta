@@ -346,10 +346,11 @@ function CommsConsolePage() {
                   </ScrollArea>
                </>
             ) : (
-               <>
-                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)]">
-                     <ChannelManager user={currentUser} />
-                  </div>
+                <>
+                   <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)] space-y-2">
+                      <ChannelCreateDialog />
+                      <ChannelManager user={currentUser} />
+                   </div>
                   <ScrollArea className="flex-1">
                      <div className="p-[var(--space-lg)]">
                         <ReadyRoomList 
