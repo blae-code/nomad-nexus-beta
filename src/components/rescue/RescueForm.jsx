@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Radio, Loader2, MapPin, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
+import VoiceRoomJoinDialog from '@/components/comms/VoiceRoomJoinDialog';
+import RoomDebugPanel from '@/components/comms/RoomDebugPanel';
 
-export default function RescueForm({ onSuccess }) {
+export default function RescueForm({ onSuccess, eventId }) {
     const [formData, setFormData] = useState({
         type: "MEDICAL",
         location: "",
         description: ""
     });
     const [error, setError] = useState("");
+    const [showCommsDialog, setShowCommsDialog] = useState(false);
+
+    // Fetch rescue/comms voice net
+    const { data: rescueVoiceNet } = useQuery({
+        queryKey: ['rescue-voice-net'],
+        queryFn: async () => {
+            try {
+                const nets = await base44.entities.VoiceNet.filter({ code: 'RESCUE' });
+                return nets?.[0] || null;
+            } catch {
+                return null;
+            }
+        }
+    });
 
     const rescueMutation = useMutation({
         mutationFn: async (data) => {
@@ -114,9 +130,9 @@ export default function RescueForm({ onSuccess }) {
                 </div>
             </CardContent>
 
-            <CardFooter className="relative z-10 pb-6">
+            <CardFooter className="relative z-10 flex gap-2 pb-6">
                 <Button 
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest border border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] h-12 group"
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest border border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] h-12 group"
                     onClick={handleSubmit}
                     disabled={rescueMutation.isPending}
                 >
@@ -132,7 +148,28 @@ export default function RescueForm({ onSuccess }) {
                         </>
                     )}
                 </Button>
+                {rescueVoiceNet && eventId && (
+                    <Button
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest border border-emerald-500 h-12"
+                        onClick={() => setShowCommsDialog(true)}
+                    >
+                        <Radio className="w-4 h-4" />
+                    </Button>
+                )}
             </CardFooter>
+
+            {/* Voice Comms Dialog */}
+            <VoiceRoomJoinDialog
+                isOpen={showCommsDialog}
+                onClose={() => setShowCommsDialog(false)}
+                eventId={eventId}
+                netId={rescueVoiceNet?.id}
+                netCode="RESCUE"
+                netLabel="RESCUE COMMS"
+            />
+
+            {/* Room Debug Panel */}
+            <RoomDebugPanel isVisible={showCommsDialog} />
         </Card>
     );
 }
