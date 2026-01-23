@@ -76,10 +76,7 @@ export default function MessagingFooter({ user }) {
   if (!user) return null;
 
   return (
-    <div className="bg-zinc-950 border-t border-zinc-800 flex flex-col shrink-0 overflow-hidden" style={{ 
-      marginLeft: 'var(--rail-w-collapsed, 72px)',
-      width: 'calc(100% - var(--rail-w-collapsed, 72px))'
-    }}>
+    <div className="bg-zinc-950 border-t border-zinc-800 flex flex-col shrink-0 overflow-hidden w-full">
       {/* Header Bar */}
       <div className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-950 border-b border-zinc-800/50">
         <button
