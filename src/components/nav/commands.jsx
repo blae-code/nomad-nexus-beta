@@ -18,6 +18,9 @@ import {
   LogOut,
   User,
   Settings,
+  MapPin,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const COMMAND_SECTIONS = {
