@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Radio, Send, X, Zap } from 'lucide-react';
+import { Clock, MapPin, Radio, Send, X, Zap, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
+import { PresenceDot } from '@/components/collaboration/LivePresenceIndicator';
+import DirectMessaging from '@/components/collaboration/DirectMessaging';
 
 const statusColors = {
   'online': 'bg-emerald-500',
@@ -19,7 +21,8 @@ export default function EnhancedUserCard({
   presence, 
   userDirectory, 
   onClose,
-  mutualSquads = []
+  mutualSquads = [],
+  currentUser
 }) {
   const [hailingMessage, setHailingMessage] = useState('');
   const [isSendingHail, setIsSendingHail] = useState(false);
@@ -88,10 +91,9 @@ export default function EnhancedUserCard({
       {/* Header with close button */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-800 relative">
         <div className="flex items-center gap-3 flex-1">
-          <div className={cn(
-            'w-3 h-3 rounded-full',
-            statusColors[status]
-          )} />
+          <div className="relative">
+            <PresenceDot userId={user?.id} className="w-3 h-3" />
+          </div>
           <div>
             <div className="text-sm font-bold text-white">{callsign}</div>
             <div className="text-xs text-zinc-500 font-mono">{rank}</div>
@@ -170,6 +172,23 @@ export default function EnhancedUserCard({
               ))}
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="border-t border-zinc-800 p-3">
+        {currentUser && (
+          <DirectMessaging
+            user={currentUser}
+            recipientId={user?.id}
+            recipientName={callsign}
+            trigger={
+              <button className="w-full flex items-center justify-center gap-2 p-2 bg-blue-950/50 border border-blue-900/50 hover:bg-blue-900/50 transition-colors text-blue-300 text-xs font-bold">
+                <MessageCircle className="w-3.5 h-3.5" />
+                DIRECT MESSAGE
+              </button>
+            }
+          />
         )}
       </div>
 
