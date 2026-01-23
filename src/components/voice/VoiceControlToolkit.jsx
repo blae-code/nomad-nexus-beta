@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Volume2, Settings, Radio, Zap, Activity, AlertCircle, Wifi, VolumeX, Headphones, MicOff, UserCheck, MessageSquare, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Mic, Volume2, Settings, Radio, Zap, Activity, AlertCircle, Wifi, VolumeX, Headphones, MicOff, UserCheck, MessageSquare, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -183,7 +183,7 @@ export default function VoiceControlToolkit() {
                     onClick={() => setAiTranscription(!aiTranscription)}
                     disabled={!aiOptIn}
                     className={cn(
-                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
+                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5 relative',
                       aiTranscription && aiOptIn
                         ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50'
                         : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
@@ -191,12 +191,14 @@ export default function VoiceControlToolkit() {
                   >
                     <TrendingUp className="w-3.5 h-3.5" />
                     TX
+                    <Brain className="w-2 h-2 absolute top-0.5 right-0.5 text-cyan-400" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-blue-400">Real-time Transcription</p>
-                    <p className="text-[10px] text-zinc-300">Automatically transcribes all PTT transmissions and voice communications in real-time. Useful for accessibility and maintaining chat logs.</p>
+                    <p className="text-xs font-bold text-blue-400">Real-time Transcription <span className="text-cyan-400">🧠</span></p>
+                    <p className="text-[10px] text-zinc-300">AI-powered feature: Automatically transcribes all PTT transmissions and voice communications in real-time. Useful for accessibility and maintaining chat logs.</p>
+                    <p className="text-[9px] text-cyan-400 pt-1">✓ AI opt-in enabled</p>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -207,7 +209,7 @@ export default function VoiceControlToolkit() {
                     onClick={() => setAiStatusInference(!aiStatusInference)}
                     disabled={!aiOptIn}
                     className={cn(
-                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
+                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5 relative',
                       aiStatusInference && aiOptIn
                         ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50'
                         : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
@@ -215,12 +217,14 @@ export default function VoiceControlToolkit() {
                   >
                     <Zap className="w-3.5 h-3.5" />
                     INF
+                    <Brain className="w-2 h-2 absolute top-0.5 right-0.5 text-cyan-400" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-blue-400">Status Inference</p>
-                    <p className="text-[10px] text-zinc-300">AI analyzes voice patterns and content to automatically update your status (Available, In-Call, AFK, etc.) without manual intervention.</p>
+                    <p className="text-xs font-bold text-blue-400">Status Inference <span className="text-cyan-400">🧠</span></p>
+                    <p className="text-[10px] text-zinc-300">AI-powered feature: Analyzes voice patterns and content to automatically update your status (Available, In-Call, AFK, etc.) without manual intervention.</p>
+                    <p className="text-[9px] text-cyan-400 pt-1">✓ AI opt-in enabled</p>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -231,7 +235,7 @@ export default function VoiceControlToolkit() {
                     onClick={() => setAiAnomalyDetection(!aiAnomalyDetection)}
                     disabled={!aiOptIn}
                     className={cn(
-                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
+                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5 relative',
                       aiAnomalyDetection && aiOptIn
                         ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50'
                         : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
@@ -239,12 +243,14 @@ export default function VoiceControlToolkit() {
                   >
                     <AlertTriangle className="w-3.5 h-3.5" />
                     ADT
+                    <Brain className="w-2 h-2 absolute top-0.5 right-0.5 text-cyan-400" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-blue-400">Anomaly Detection</p>
-                    <p className="text-[10px] text-zinc-300">Monitors communication patterns for unusual activity, interference, jamming, or security threats. Alerts you to comms anomalies automatically.</p>
+                    <p className="text-xs font-bold text-blue-400">Anomaly Detection <span className="text-cyan-400">🧠</span></p>
+                    <p className="text-[10px] text-zinc-300">AI-powered feature: Monitors communication patterns for unusual activity, interference, jamming, or security threats. Alerts you to comms anomalies automatically.</p>
+                    <p className="text-[9px] text-cyan-400 pt-1">✓ AI opt-in enabled</p>
                   </div>
                 </TooltipContent>
               </Tooltip>
