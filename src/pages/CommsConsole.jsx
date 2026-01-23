@@ -475,14 +475,14 @@ function CommsConsolePage() {
                            </div>
                            
                            {/* Effective Mode Fallback Banner */}
-                           {modeFallbackReason && (
+                           {fallbackReason && (
                               <motion.div
                                  initial={{ opacity: 0, y: -8 }}
                                  animate={{ opacity: 1, y: 0 }}
                                  className="shrink-0 bg-amber-950/50 border-b border-amber-800 p-2 flex items-center gap-2 text-[10px]"
                               >
                                  <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-                                 <span className="text-amber-400 font-mono">SIM MODE: {modeFallbackReason}</span>
+                                 <span className="text-amber-400 font-mono">SIM MODE: {fallbackReason}</span>
                               </motion.div>
                            )}
 
