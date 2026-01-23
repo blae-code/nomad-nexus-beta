@@ -24,6 +24,10 @@ import {
   MessageSquare,
   Send,
   Inbox,
+  Bell,
+  FileText,
+  Eye,
+  TrendingUp,
 } from 'lucide-react';
 
 export const COMMAND_SECTIONS = {
