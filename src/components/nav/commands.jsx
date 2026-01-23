@@ -70,6 +70,18 @@ export const commands = [
     minRank: 'Vagrant',
   },
 
+  {
+    id: 'nav-academy',
+    type: 'NAV',
+    section: COMMAND_SECTIONS.MISSION_CONTROL,
+    label: 'Nexus Academy',
+    keywords: ['academy', 'training', 'learning', 'guides', 'tutorial'],
+    icon: 'BookOpen',
+    route: 'Academy',
+    description: 'Learn how to use Nexus—basic and advanced training',
+    minRank: 'Vagrant',
+  },
+
   // ===== OPERATIONS =====
   {
     id: 'nav-events',
