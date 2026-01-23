@@ -11,6 +11,8 @@ import MapDrawingLayer from './MapDrawingLayer';
 import { createTacticalMarkerIcon, TACTICAL_ICON_CATEGORIES } from '@/components/utils/tacticalsIcons';
 import { STAR_CITIZEN_SYSTEMS, getAllLocations } from '@/components/utils/starCitizenLocations';
 import LocationRadialMenu from './LocationRadialMenu';
+import { JumpPointsLayer, HazardZonesLayer, IncidentHeatMapLayer, FleetStatusLayer, CommsCoverageLayer, SpaceLanesLayer } from './TacticalMapLayers';
+import MapLayerControls from './MapLayerControls';
 
 // Legacy marker fallback
 const createMarkerIcon = (type, color = '#ea580c') => {
@@ -65,6 +67,15 @@ export default function OpsMap({ eventId, readOnly = false }) {
   const [commandMsg, setCommandMsg] = useState('');
   const [selectedLocationForMenu, setSelectedLocationForMenu] = useState(null);
   const [showLocations, setShowLocations] = useState(true);
+  const [visibleLayers, setVisibleLayers] = useState({
+    locations: true,
+    jumpPoints: true,
+    hazardZones: true,
+    incidentHeatmap: true,
+    fleetStatus: true,
+    commsCoverage: false,
+    spaceLanes: true
+  });
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -589,13 +600,30 @@ export default function OpsMap({ eventId, readOnly = false }) {
 
           {/* Location Radial Menu */}
           {selectedLocationForMenu && !readOnly && (
-          <LocationRadialMenu
-          location={selectedLocationForMenu}
-          eventId={eventId}
-          userRank={currentUser?.rank || 'VAGRANT'}
-          onClose={() => setSelectedLocationForMenu(null)}
-          />
+            <LocationRadialMenu
+              location={selectedLocationForMenu}
+              eventId={eventId}
+              userRank={currentUser?.rank || 'VAGRANT'}
+              onClose={() => setSelectedLocationForMenu(null)}
+            />
           )}
+
+          {/* Map Layer Controls */}
+          <MapLayerControls
+            onLayerToggle={(layerId, visible) => {
+              setVisibleLayers(prev => ({ ...prev, [layerId]: visible }));
+            }}
+            incidents={incidents}
+            playerStatuses={playerStatuses}
+          />
+
+          {/* Tactical Map Layers */}
+          {visibleLayers.jumpPoints && <JumpPointsLayer visible={visibleLayers.jumpPoints} />}
+          {visibleLayers.hazardZones && <HazardZonesLayer visible={visibleLayers.hazardZones} />}
+          {visibleLayers.incidentHeatmap && <IncidentHeatMapLayer incidents={incidents} visible={visibleLayers.incidentHeatmap} />}
+          {visibleLayers.fleetStatus && <FleetStatusLayer playerStatuses={playerStatuses} visible={visibleLayers.fleetStatus} />}
+          {visibleLayers.commsCoverage && <CommsCoverageLayer visible={visibleLayers.commsCoverage} />}
+          {visibleLayers.spaceLanes && <SpaceLanesLayer visible={visibleLayers.spaceLanes} />}
 
       {/* Rally Point Form */}
       {showNewMarkerForm && !readOnly && (
