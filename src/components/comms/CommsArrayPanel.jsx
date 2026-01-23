@@ -130,12 +130,12 @@ export default function CommsArrayPanel({
 
     // Draw nodes
     const nodes = buildNodes(topologyData, width, height);
-    drawNodes(ctx, nodes);
+    drawNodes(ctx, nodes, nodeStates, transmittingNodes);
 
     // Draw edges
     const edges = buildEdges(topologyData, nodes);
-    drawEdges(ctx, edges);
-  }, [topologyData]);
+    drawEdges(ctx, edges, edgeTypes);
+  }, [topologyData, nodeStates, transmittingNodes, edgeTypes]);
 
   useEffect(() => {
     drawTopology();
