@@ -113,6 +113,17 @@ export const commands = [
     route: 'Rescue',
     minRank: 'Vagrant',
   },
+  {
+    id: 'nav-academy',
+    type: 'NAV',
+    section: COMMAND_SECTIONS.OPERATIONS,
+    label: 'Nexus Academy',
+    keywords: ['academy', 'training', 'tutorial', 'learn', 'guide'],
+    icon: 'BookOpen',
+    route: 'Academy',
+    minRank: 'Vagrant',
+    description: 'Learn comms and operations fundamentals',
+  },
 
 
   // ===== COMMS =====
