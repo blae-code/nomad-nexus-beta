@@ -245,14 +245,44 @@ function CommsConsolePage() {
      }
   }, [selectedEventId, voiceNets.length, isLoading, isProvisioningNets, refetchNets]);
 
-  // Reset selected net when event changes to prevent stale connections
+  // Reset state when event changes
   React.useEffect(() => {
-     setSelectedNet(null);
+     setSelectedNetId(null);
+     setConnectedNetId(null);
+     setConnectionState('disconnected');
+     setConnectionError(null);
      setMonitoredNetIds([]);
   }, [selectedEventId]);
 
   // Memoize nets to prevent unnecessary rerenders
   const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
+
+  // Get currently selected and connected nets
+  const selectedNet = memoizedNets.find(n => n.id === selectedNetId) || null;
+  const connectedNet = memoizedNets.find(n => n.id === connectedNetId) || null;
+
+  // Handlers for connection state changes from ActiveNetPanel
+  const handleConnectSuccess = React.useCallback((netId) => {
+    setConnectedNetId(netId);
+    setConnectionState('connected');
+    setConnectionError(null);
+  }, []);
+
+  const handleConnecting = React.useCallback((netId) => {
+    setConnectionState('connecting');
+    setConnectionError(null);
+  }, []);
+
+  const handleDisconnect = React.useCallback(() => {
+    setConnectedNetId(null);
+    setConnectionState('disconnected');
+    setConnectionError(null);
+  }, []);
+
+  const handleConnectionError = React.useCallback((error) => {
+    setConnectionState('error');
+    setConnectionError(error);
+  }, []);
 
   const toggleMonitor = (netId) => {
      if (monitoredNetIds.includes(netId)) {
