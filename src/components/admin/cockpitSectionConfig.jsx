@@ -47,7 +47,7 @@ export const COCKPIT_SECTIONS = [
     minRank: 'founder',
     visible: true,
     description: 'User ranks, roles, access keys',
-    component: null,
+    component: GovernanceSection,
   },
   {
     id: 'system',
@@ -56,7 +56,7 @@ export const COCKPIT_SECTIONS = [
     minRank: 'voyager',
     visible: true,
     description: 'Integrations, health, diagnostics',
-    component: null,
+    component: SystemStatusSection,
   },
   {
     id: 'pioneer-overrides',
