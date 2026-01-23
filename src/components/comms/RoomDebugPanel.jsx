@@ -1,170 +1,143 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Copy, X, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Copy, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function RoomDebugPanel({ room, roomName, identity, token, connectionState, lastError }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [copiedField, setCopiedField] = useState(null);
+  if (!room || !roomName) return null;
 
-  const copyToClipboard = (text, field) => {
+  const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 1500);
-    toast.success('Copied to clipboard');
+    toast.success(`${label} copied`);
   };
 
-  // Get connection color
-  const connectionColor =
-    connectionState === 'connected'
-      ? 'text-emerald-500 bg-emerald-950/30'
-      : connectionState === 'connecting' || connectionState === 'reconnecting'
-      ? 'text-amber-500 bg-amber-950/30'
-      : connectionState === 'failed'
-      ? 'text-red-500 bg-red-950/30'
-      : 'text-zinc-500 bg-zinc-900/30';
+  const participantCount = (room?.remoteParticipants?.size || 0) + (room?.localParticipant ? 1 : 0);
+  
+  const getStatusColor = () => {
+    if (connectionState === 'connected') return 'text-emerald-500';
+    if (connectionState === 'reconnecting') return 'text-amber-500';
+    if (connectionState === 'failed') return 'text-red-500';
+    return 'text-zinc-500';
+  };
 
-  const debugFields = [
-    { label: 'Room Name', value: roomName || 'N/A', short: 'room' },
-    { label: 'Identity', value: identity || 'N/A', short: 'id' },
-    { label: 'Token', value: token ? `${token.substring(0, 16)}...` : 'Not minted', short: 'token' },
-    {
-      label: 'Connection State',
-      value: connectionState || 'disconnected',
-      short: 'state',
-      isBadge: true
-    },
-    { label: 'Participants', value: room?.remoteParticipants?.size || 0, short: 'peers' },
-    {
-      label: 'Last Error',
-      value: lastError || 'None',
-      short: 'error',
-      isError: !!lastError
-    }
-  ];
-
-  if (!isExpanded) {
-    return (
-      <motion.button
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        onClick={() => setIsExpanded(true)}
-        className="fixed bottom-20 right-4 h-10 w-10 rounded-full bg-zinc-900 border border-zinc-800 hover:border-cyan-500 hover:bg-cyan-950/20 flex items-center justify-center text-xs font-mono text-zinc-400 hover:text-cyan-400 transition-colors z-40 shadow-lg"
-        title="Open debug panel"
-      >
-        🔌
-      </motion.button>
-    );
-  }
+  const localParticipant = room?.localParticipant;
+  const micEnabled = localParticipant?.isMicrophoneEnabled();
+  const cameraEnabled = localParticipant?.isCameraEnabled();
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        className="fixed bottom-20 right-4 z-50 w-96"
-      >
-        <Card className="bg-zinc-950 border border-cyan-800/50 shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-cyan-950/20 border-b border-cyan-800/30">
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'w-2 h-2 rounded-full',
-                  connectionState === 'connected'
-                    ? 'bg-emerald-500 animate-pulse'
-                    : connectionState === 'connecting'
-                    ? 'bg-amber-500 animate-pulse'
-                    : 'bg-red-500'
-                )}
-              />
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
-                Room Debug
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 text-zinc-500 hover:text-zinc-300"
-              onClick={() => setIsExpanded(false)}
+    <Card className="bg-zinc-950 border-zinc-800/50">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-mono">DEBUG: ROOM STATE</CardTitle>
+            <Badge 
+              variant="outline" 
+              className={cn(
+                'text-[9px] px-1.5 py-0.5',
+                connectionState === 'connected' ? 'border-emerald-500 text-emerald-500' :
+                connectionState === 'failed' ? 'border-red-500 text-red-500' :
+                'border-zinc-600 text-zinc-400'
+              )}
             >
-              <X className="w-4 h-4" />
-            </Button>
+              {connectionState?.toUpperCase()}
+            </Badge>
           </div>
+          <Zap className="w-3 h-3 text-zinc-600" />
+        </div>
+      </CardHeader>
 
-          {/* Content */}
-          <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-            {debugFields.map((field) => (
-              <div key={field.short} className="space-y-1">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
-                  {field.label}
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  {field.isBadge ? (
-                    <Badge
-                      className={cn(
-                        'text-[10px] px-2 py-0.5 font-mono',
-                        connectionState === 'connected'
-                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
-                          : connectionState === 'connecting' || connectionState === 'reconnecting'
-                          ? 'bg-amber-950 text-amber-400 border-amber-800'
-                          : 'bg-red-950 text-red-400 border-red-800'
-                      )}
-                    >
-                      {field.value}
-                    </Badge>
-                  ) : (
-                    <code
-                      className={cn(
-                        'text-[11px] px-2 py-1 rounded bg-zinc-900/50 border border-zinc-800 font-mono truncate flex-1',
-                        field.isError ? 'text-red-400 border-red-800/50' : 'text-zinc-300'
-                      )}
-                    >
-                      {field.value}
-                    </code>
-                  )}
-                  {!field.isBadge && field.value !== 'N/A' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-zinc-600 hover:text-cyan-400"
-                      onClick={() => copyToClipboard(field.value, field.short)}
-                    >
-                      {copiedField === field.short ? (
-                        <CheckCircle2 className="w-3 h-3" />
-                      ) : (
-                        <Copy className="w-3 h-3" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+      <CardContent className="space-y-2">
+        {/* Room Name */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
+          <span className="text-zinc-500 font-mono">ROOM:</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-zinc-300">{roomName}</span>
+            <button
+              onClick={() => copyToClipboard(roomName, 'Room name')}
+              className="p-1 hover:bg-zinc-700 rounded transition-colors"
+            >
+              <Copy className="w-3 h-3 text-zinc-500 hover:text-zinc-300" />
+            </button>
+          </div>
+        </div>
 
-            {lastError && (
-              <div className="mt-3 p-3 bg-red-950/20 border border-red-800/30 rounded-sm">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
-                  <div className="text-[10px] text-red-300 font-mono leading-tight break-all">
-                    {lastError}
-                  </div>
-                </div>
-              </div>
+        {/* Identity */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
+          <span className="text-zinc-500 font-mono">IDENTITY:</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-zinc-300">{identity || 'UNKNOWN'}</span>
+            <button
+              onClick={() => copyToClipboard(identity || '', 'Identity')}
+              className="p-1 hover:bg-zinc-700 rounded transition-colors"
+            >
+              <Copy className="w-3 h-3 text-zinc-500 hover:text-zinc-300" />
+            </button>
+          </div>
+        </div>
+
+        {/* Token Status */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
+          <span className="text-zinc-500 font-mono">TOKEN:</span>
+          <div className="flex items-center gap-2">
+            {token ? (
+              <>
+                <CheckCircle className="w-3 h-3 text-emerald-500" />
+                <span className="text-emerald-500 font-mono text-[9px]">MINTED</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-3 h-3 text-red-500" />
+                <span className="text-red-500 font-mono text-[9px]">PENDING</span>
+              </>
             )}
           </div>
+        </div>
 
-          {/* Status Bar */}
-          <div className="px-4 py-2 bg-zinc-900/50 border-t border-zinc-800/50 text-[9px] text-zinc-500 font-mono flex items-center justify-between">
-            <span>STATUS: {connectionState.toUpperCase()}</span>
-            {connectionState === 'connecting' && <Loader2 className="w-3 h-3 animate-spin" />}
+        {/* Participant Count */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
+          <span className="text-zinc-500 font-mono">PEERS:</span>
+          <span className="font-mono text-zinc-300">{participantCount}</span>
+        </div>
+
+        {/* Media State */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
+          <span className="text-zinc-500 font-mono">MEDIA:</span>
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              'font-mono text-[9px] px-1.5 py-0.5 rounded border',
+              micEnabled ? 'border-emerald-600 text-emerald-500 bg-emerald-950/30' : 'border-zinc-600 text-zinc-500 bg-zinc-900/30'
+            )}>
+              MIC {micEnabled ? 'ON' : 'OFF'}
+            </span>
+            <span className={cn(
+              'font-mono text-[9px] px-1.5 py-0.5 rounded border',
+              cameraEnabled ? 'border-emerald-600 text-emerald-500 bg-emerald-950/30' : 'border-zinc-600 text-zinc-500 bg-zinc-900/30'
+            )}>
+              CAM {cameraEnabled ? 'ON' : 'OFF'}
+            </span>
           </div>
-        </Card>
-      </motion.div>
-    </AnimatePresence>
+        </div>
+
+        {/* Last Error (if any) */}
+        {lastError && (
+          <div className="p-2 bg-red-950/30 border border-red-800/30 rounded text-[10px]">
+            <div className="text-red-500 font-mono font-bold mb-1">LAST ERROR:</div>
+            <div className="text-red-400 text-[9px] font-mono break-words">{lastError}</div>
+          </div>
+        )}
+
+        {/* Connection Quality (if connected) */}
+        {connectionState === 'connected' && room?.localParticipant && (
+          <div className="p-2 bg-emerald-950/20 border border-emerald-800/30 rounded text-[10px]">
+            <div className="text-emerald-600 font-mono font-bold mb-1">QUALITY:</div>
+            <div className="text-emerald-500 text-[9px] font-mono">
+              {room.localParticipant.lastConnectionQuality?.toUpperCase() || 'CHECKING'}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
