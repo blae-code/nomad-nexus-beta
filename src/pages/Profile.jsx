@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Shield, Tag, Save, History, AlertTriangle, MessageSquare, Pin, Radio, Brain, Activity, Zap } from "lucide-react";
+import { User, Shield, Tag, Save, History, AlertTriangle, MessageSquare, Pin, Radio, Brain, Activity, Zap, ChevronRight, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { motion } from 'framer-motion';
 import AIPreferencesPanel from "@/components/profile/AIPreferencesPanel";
 import ProfileOperationalView from "@/components/profile/ProfileOperationalView";
 import ProfilePresenceCard from "@/components/profile/ProfilePresenceCard";
@@ -200,206 +201,185 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-zinc-200 flex items-center justify-center font-mono">
-        LOADING PROFILE DATA...
+      <div className="min-h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center font-mono">
+        <div className="text-center space-y-2">
+          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="text-sm text-zinc-400">LOADING PROFILE DATA...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-200 p-6 overflow-auto">
-       <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header with Profile Picture */}
-          <div className="flex items-center gap-4 mb-8">
-             <div className="relative group">
-                <div className="w-20 h-20 bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
-                   {profilePicUrl ? (
-                      <img src={profilePicUrl} alt="Profile" className="w-full h-full object-cover" />
-                   ) : (
-                      <User className="w-10 h-10 text-zinc-500" />
-                   )}
-                </div>
-                <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
-                   <span className="text-xs text-white font-bold">CHANGE</span>
-                   <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={(e) => handleProfilePicUpload(e.target.files?.[0])}
-                      disabled={isUploadingPic}
-                      className="hidden"
-                   />
-                </label>
-             </div>
-             <div>
-                <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Operative Profile</h1>
-                <p className="text-zinc-500 font-mono text-xs tracking-widest">
-                   {user?.email || "LOADING..."}
-                </p>
-             </div>
-          </div>
+    <div className="h-screen bg-[#09090b] text-zinc-200 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
+           {/* Header with Profile Picture - Compact Style */}
+           <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#ea580c]/5 to-zinc-950 p-2">
+              <div className="flex items-center gap-3">
+                 <div className="relative group">
+                    <div className="w-16 h-16 bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
+                       {profilePicUrl ? (
+                          <img src={profilePicUrl} alt="Profile" className="w-full h-full object-cover" />
+                       ) : (
+                          <User className="w-8 h-8 text-zinc-500" />
+                       )}
+                    </div>
+                    <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity rounded">
+                       <span className="text-[8px] text-white font-bold">CHANGE</span>
+                       <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={(e) => handleProfilePicUpload(e.target.files?.[0])}
+                          disabled={isUploadingPic}
+                          className="hidden"
+                       />
+                    </label>
+                 </div>
+                 <div className="min-w-0 flex-1">
+                    <h1 className="text-lg font-black uppercase tracking-tighter text-white">{user?.callsign || 'OPERATIVE'}</h1>
+                    <p className="text-zinc-500 font-mono text-[9px] tracking-widest">
+                       {user?.email || "LOADING..."}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                       <Badge className={cn("text-[8px] font-mono uppercase", getRankColorClass(user?.rank, 'bg'))}>
+                          {user?.rank || 'VAGRANT'}
+                       </Badge>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
 
-          <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
-                 <TabsTrigger value="profile" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                    Profile
+        {/* Main Content - Flex Column */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="p-2 space-y-0">
+           <Tabs defaultValue="profile" className="w-full flex flex-col h-full">
+              <TabsList className="bg-zinc-900/30 border border-zinc-800 mb-0 shrink-0 overflow-x-auto">
+                 <TabsTrigger value="profile" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                    PROFILE
                  </TabsTrigger>
-                 <TabsTrigger value="operational" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                    Operational
+                 <TabsTrigger value="operational" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                    OPERATIONAL
                  </TabsTrigger>
-                 <TabsTrigger value="presence" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                    Presence
+                 <TabsTrigger value="presence" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                    PRESENCE
                  </TabsTrigger>
-                 <TabsTrigger value="personality" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                    Identity
+                 <TabsTrigger value="personality" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                    IDENTITY
                  </TabsTrigger>
-                 <TabsTrigger value="clearance" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                    Clearance & Roles
+                 <TabsTrigger value="clearance" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                    CLEARANCE
                  </TabsTrigger>
-                 <TabsTrigger value="ai-preferences" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white flex items-center gap-2">
-                    <Brain className="w-4 h-4" />
-                    AI Customization
+                 <TabsTrigger value="ai-preferences" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white flex items-center gap-1">
+                    <Brain className="w-2.5 h-2.5" />
+                    AI
                  </TabsTrigger>
                  {hasModerationActivity && (
-                    <TabsTrigger value="moderation" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                       Moderation History
+                    <TabsTrigger value="moderation" className="text-[7px] data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                       MODERATION
                     </TabsTrigger>
                  )}
               </TabsList>
 
              {/* Profile Tab */}
-             <TabsContent value="profile" className="space-y-6">
+             <TabsContent value="profile" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
                 {/* Voice Channel Status */}
                 {voiceStatus && (
-                   <Card className="bg-zinc-950 border-zinc-800">
-                      <CardHeader className="border-b border-zinc-900 bg-emerald-950/20">
-                         <CardTitle className="text-lg font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-2">
-                            <Radio className="w-4 h-4 animate-pulse" />
+                   <div className="border border-zinc-800 bg-zinc-950/50">
+                      <div className="border-b border-zinc-800 bg-emerald-950/20 p-1.5">
+                         <div className="text-[8px] font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-2">
+                            <Radio className="w-3 h-3 animate-pulse" />
                             Active Voice Connection
-                         </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                               <div className="text-zinc-500 text-xs mb-1">Status</div>
-                               <div className="font-bold text-white">{voiceStatus.status || 'READY'}</div>
-                            </div>
-                            <div>
-                               <div className="text-zinc-500 text-xs mb-1">Role</div>
-                               <div className="font-bold text-white">{voiceStatus.role || 'OTHER'}</div>
-                            </div>
-                            {voiceStatus.current_location && (
-                               <div className="col-span-2">
-                                  <div className="text-zinc-500 text-xs mb-1">Current Location</div>
-                                  <div className="font-mono text-zinc-300 text-xs">{voiceStatus.current_location}</div>
-                               </div>
-                            )}
                          </div>
-                      </CardContent>
-                   </Card>
-                )}
+                      </div>
+                      <div className="p-2 text-[9px] space-y-1">
+                         <div className="flex justify-between">
+                            <span className="text-zinc-500">Status</span>
+                            <span className="font-bold text-white">{voiceStatus.status || 'READY'}</span>
+                         </div>
+                         <div className="flex justify-between">
+                            <span className="text-zinc-500">Role</span>
+                            <span className="font-bold text-white">{voiceStatus.role || 'OTHER'}</span>
+                         </div>
+                         {voiceStatus.current_location && (
+                            <div className="text-zinc-400 text-[8px] font-mono">{voiceStatus.current_location}</div>
+                         )}
+                      </div>
+                      </div>
+                      )}
 
                 {/* Squad Memberships */}
                 {userSquads.length > 0 && (
-                   <Card className="bg-zinc-950 border-zinc-800">
-                      <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
-                         <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
-                            <Users className="w-4 h-4 text-[#ea580c]" />
-                            Squad Assignments
-                         </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                         <div className="space-y-3">
-                            {userSquads.map((squad) => (
-                               <div key={squad.id} className="p-3 bg-zinc-900/50 border border-zinc-800 rounded">
-                                  <div className="flex items-center justify-between mb-2">
-                                     <div className="font-bold text-white">{squad.name}</div>
-                                     <Badge className={cn(
-                                        "text-[9px] font-bold",
-                                        squad.membership.role === 'leader' ? "bg-amber-500 text-black border-amber-400" : "bg-cyan-600 text-white border-cyan-400"
-                                     )}>
-                                        {squad.membership.role.toUpperCase()}
-                                     </Badge>
-                                  </div>
-                                  {squad.description && (
-                                     <div className="text-xs text-zinc-500">{squad.description}</div>
-                                  )}
-                                  <div className="text-[10px] text-zinc-600 mt-2">
-                                     {squad.hierarchy_level} • Joined {new Date(squad.membership.joined_date || squad.membership.created_date).toLocaleDateString()}
-                                  </div>
-                               </div>
-                            ))}
+                   <div className="border border-zinc-800 bg-zinc-950/50">
+                      <div className="border-b border-zinc-800 bg-zinc-900/20 p-1.5">
+                         <div className="text-[8px] font-bold text-zinc-300 uppercase tracking-wide flex items-center gap-2">
+                            <Shield className="w-3 h-3 text-[#ea580c]" />
+                            SQUAD ASSIGNMENTS
                          </div>
-                      </CardContent>
-                   </Card>
+                      </div>
+                      <div className="p-2 space-y-1">
+                         {userSquads.map((squad) => (
+                            <div key={squad.id} className="p-1.5 bg-zinc-900/30 border border-zinc-800 text-[8px]">
+                               <div className="flex items-center justify-between mb-1">
+                                  <span className="font-bold text-white text-[9px]">{squad.name}</span>
+                                  <Badge className={cn(
+                                     "text-[6px] font-bold px-1 py-0.5",
+                                     squad.membership.role === 'leader' ? "bg-amber-500 text-black" : "bg-cyan-600 text-white"
+                                  )}>
+                                     {squad.membership.role.toUpperCase()}
+                                  </Badge>
+                               </div>
+                               <div className="text-zinc-500 text-[7px]">
+                                  {new Date(squad.membership.joined_date || squad.membership.created_date).toLocaleDateString()}
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
                 )}
 
-                <Card className="bg-zinc-950 border-zinc-800">
-                   <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
-                      <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
-                         <Shield className="w-4 h-4 text-[#ea580c]" />
-                         Identity Configuration
-                      </CardTitle>
-                      <CardDescription className="text-xs font-mono text-zinc-600">
-                         Update your handle and display preferences.
-                      </CardDescription>
-                   </CardHeader>
-                   <CardContent className="p-6 space-y-6">
-                      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                         <div className="grid gap-2">
-                            <Label htmlFor="email" className="text-xs uppercase text-[#ea580c] font-bold">Email Address</Label>
+                <div className="border border-zinc-800 bg-zinc-950/50">
+                   <div className="border-b border-zinc-800 bg-zinc-900/20 p-1.5">
+                      <div className="text-[8px] font-bold text-zinc-300 uppercase tracking-wide flex items-center gap-2">
+                         <Tag className="w-3 h-3 text-[#ea580c]" />
+                         IDENTITY CONFIGURATION
+                      </div>
+                   </div>
+                   <div className="p-2 space-y-3">
+                      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 text-[9px]">
+                         <div>
+                            <Label htmlFor="email" className="text-[7px] uppercase text-[#ea580c] font-bold">EMAIL</Label>
                             <Input 
                               id="email" 
                               type="email"
                               {...register("email")} 
-                              className="bg-zinc-900 border-zinc-800 text-white font-mono focus:border-[#ea580c]"
-                              placeholder="your.email@example.com"
+                              className="bg-zinc-900 border-zinc-800 text-white h-7 text-[8px]"
                             />
                          </div>
 
-                         <div className="grid gap-2">
-                            <Label htmlFor="full_name" className="text-xs uppercase text-zinc-500 font-bold">Registered Name (Read Only)</Label>
-                            <Input 
-                              id="full_name" 
-                              {...register("full_name")} 
-                              disabled 
-                              className="bg-zinc-900/50 border-zinc-800 text-zinc-500"
-                            />
-                         </div>
-
-                         <div className="grid gap-2">
-                            <Label htmlFor="callsign" className="text-xs uppercase text-[#ea580c] font-bold">Callsign / Display Name</Label>
+                         <div>
+                            <Label htmlFor="callsign" className="text-[7px] uppercase text-[#ea580c] font-bold">CALLSIGN</Label>
                             <Input 
                               id="callsign" 
                               {...register("callsign")} 
-                              className="bg-zinc-900 border-zinc-800 text-white font-mono focus:border-[#ea580c]"
-                              placeholder="e.g. System Admin, Maverick..."
+                              className="bg-zinc-900 border-zinc-800 text-white h-7 text-[8px]"
                             />
                          </div>
 
-                         <div className="grid gap-2">
-                            <Label htmlFor="rsi_handle" className="text-xs uppercase text-zinc-500 font-bold">RSI Handle (In-Game)</Label>
+                         <div>
+                            <Label htmlFor="rsi_handle" className="text-[7px] uppercase text-zinc-500 font-bold">RSI HANDLE</Label>
                             <Input 
                               id="rsi_handle" 
                               {...register("rsi_handle")} 
-                              className="bg-zinc-900/50 border-zinc-800 text-zinc-300 font-mono"
-                              placeholder="Your Star Citizen handle"
+                              className="bg-zinc-900/50 border-zinc-800 text-zinc-300 h-7 text-[8px]"
                             />
                          </div>
 
-                         <div className="grid gap-2">
-                            <Label htmlFor="bio" className="text-xs uppercase text-zinc-500 font-bold">Bio / About</Label>
-                            <Textarea 
-                              id="bio" 
-                              {...register("bio")} 
-                              className="bg-zinc-900/50 border-zinc-800 text-zinc-300 min-h-[100px]"
-                              placeholder="Tell us about yourself..."
-                            />
-                         </div>
-
-                         <div className="grid gap-2">
-                            <Label htmlFor="status" className="text-xs uppercase text-zinc-500 font-bold">Status</Label>
+                         <div>
+                            <Label htmlFor="status" className="text-[7px] uppercase text-zinc-500 font-bold">STATUS</Label>
                             <Select defaultValue={user?.status || "active"}>
-                              <SelectTrigger {...register("status")} className="bg-zinc-900 border-zinc-800">
+                              <SelectTrigger {...register("status")} className="bg-zinc-900 border-zinc-800 h-7 text-[8px]">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -411,24 +391,22 @@ export default function ProfilePage() {
                          </div>
 
                          {user?.rank === "Voyager" && (
-                           <div className="grid gap-2">
-                              <Label htmlFor="voyager_number" className="text-xs uppercase text-[#ea580c] font-bold">Voyager Number</Label>
+                           <div>
+                              <Label htmlFor="voyager_number" className="text-[7px] uppercase text-[#ea580c] font-bold">VOYAGER #</Label>
                               <Input 
                                 id="voyager_number" 
                                 {...register("voyager_number")} 
-                                className="bg-zinc-900 border-zinc-800 text-white font-mono"
-                                placeholder="Your Voyager designation"
+                                className="bg-zinc-900 border-zinc-800 text-white h-7 text-[8px]"
                               />
                            </div>
                          )}
 
-                         {/* Rank Selection - Only available to Vagrant on first login */}
                          {user?.rank === 'Vagrant' && (
-                           <div className="grid gap-2 pt-4 border-t border-zinc-900/50">
-                              <Label htmlFor="rank" className="text-xs uppercase text-[#ea580c] font-bold">Initial Clearance Level</Label>
+                           <div className="pt-2 border-t border-zinc-800">
+                              <Label htmlFor="rank" className="text-[7px] uppercase text-[#ea580c] font-bold">CLEARANCE LEVEL</Label>
                               <select 
                                 {...register("rank")}
-                                className="flex h-9 w-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ea580c]"
+                                className="w-full h-7 border border-zinc-800 bg-zinc-900 text-[8px] focus:ring-1 focus:ring-[#ea580c]"
                               >
                                 <option value="Vagrant">Vagrant</option>
                                 <option value="Scout">Scout</option>
@@ -436,27 +414,26 @@ export default function ProfilePage() {
                                 <option value="Founder">Founder</option>
                                 <option value="Pioneer">Pioneer</option>
                               </select>
-                              <p className="text-[10px] text-zinc-600">Set your initial rank. This can only be changed by administrators or the Pioneer after registration.</p>
                            </div>
                          )}
 
-                         <div className="pt-4 flex items-center justify-end border-t border-zinc-900">
+                         <div className="pt-2 flex justify-end border-t border-zinc-800">
                             <Button 
                               type="submit" 
                               disabled={isSubmitting}
-                              className="bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold uppercase tracking-wider"
+                              className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[8px] font-bold h-6 px-2"
                             >
-                               <Save className="w-4 h-4 mr-2" />
-                               {isSubmitting ? "Updating..." : "Save Changes"}
+                               <Save className="w-3 h-3 mr-1" />
+                               {isSubmitting ? "SAVING..." : "SAVE"}
                             </Button>
                          </div>
                       </form>
-                   </CardContent>
-                </Card>
-             </TabsContent>
+                   </div>
+                   </div>
+                   </TabsContent>
 
-             {/* Operational Tab */}
-             <TabsContent value="operational" className="space-y-6">
+                   {/* Operational Tab */}
+                   <TabsContent value="operational" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
                 {user && (
                    <ProfileOperationalView 
                       user={user} 
@@ -466,7 +443,7 @@ export default function ProfilePage() {
              </TabsContent>
 
              {/* Presence Tab */}
-             <TabsContent value="presence" className="space-y-6">
+             <TabsContent value="presence" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
                 {user && (
                    <ProfilePresenceCard 
                       user={user} 
@@ -476,7 +453,7 @@ export default function ProfilePage() {
              </TabsContent>
 
              {/* Personality Tab */}
-             <TabsContent value="personality" className="space-y-6">
+             <TabsContent value="personality" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
                 {user && (
                    <ProfilePersonalizationPanel 
                       user={user} 
@@ -486,7 +463,7 @@ export default function ProfilePage() {
              </TabsContent>
 
              {/* AI Customization Tab */}
-             <TabsContent value="ai-preferences" className="space-y-6">
+             <TabsContent value="ai-preferences" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
                 {user && (
                    <AIPreferencesPanel 
                       user={user} 
@@ -496,98 +473,71 @@ export default function ProfilePage() {
              </TabsContent>
 
              {/* Clearance & Roles Tab */}
-             <TabsContent value="clearance" className="space-y-6">
-                <Card className="bg-zinc-950 border-zinc-800">
-                   <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
-                      <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
-                         <Shield className="w-4 h-4 text-[#ea580c]" />
-                         Clearance Level
-                      </CardTitle>
-                   </CardHeader>
-                   <CardContent className="p-6">
-                      <div className="flex items-center gap-4 p-4 bg-zinc-900/50 border border-zinc-800">
-                         <Badge 
-                           className={cn(
-                             "px-3 py-1 text-sm font-mono uppercase",
-                             getRankColorClass(user?.rank, 'bg')
-                           )}
-                         >
+             <TabsContent value="clearance" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
+                <div className="border border-zinc-800 bg-zinc-950/50">
+                   <div className="border-b border-zinc-800 bg-zinc-900/20 p-1.5">
+                      <div className="text-[8px] font-bold text-zinc-300 uppercase tracking-wide flex items-center gap-2">
+                         <Shield className="w-3 h-3 text-[#ea580c]" />
+                         CLEARANCE LEVEL
+                      </div>
+                   </div>
+                   <div className="p-2">
+                      <div className="flex items-center gap-2 text-[8px]">
+                         <Badge className={cn("text-[8px] font-mono uppercase", getRankColorClass(user?.rank, 'bg'))}>
                             {user?.rank || "VAGRANT"}
                          </Badge>
-                         <div className="text-xs font-bold flex gap-2">
-                            {user?.role === 'admin' && <Badge className="bg-red-600 text-white border-red-400">SYSTEM ADMIN</Badge>}
-                            {user?.is_shaman && <Badge className="bg-yellow-500 text-black border-yellow-400">SHAMAN</Badge>}
-                         </div>
+                         {user?.role === 'admin' && <Badge className="bg-red-600 text-white text-[7px]">ADMIN</Badge>}
+                         {user?.is_shaman && <Badge className="bg-yellow-500 text-black text-[7px]">SHAMAN</Badge>}
                       </div>
-                   </CardContent>
-                </Card>
+                   </div>
+                </div>
 
-                <Card className="bg-zinc-950 border-zinc-800">
-                   <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
-                      <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
-                         <Tag className="w-4 h-4 text-[#ea580c]" />
-                         Role Tags
-                      </CardTitle>
-                      <CardDescription className="text-xs font-mono text-zinc-600">
-                         Specialty roles and certifications
-                      </CardDescription>
-                   </CardHeader>
-                   <CardContent className="p-6">
-                      {user?.role_tags && user.role_tags.length > 0 ? (
-                         <div className="flex flex-wrap gap-2">
-                            {user.role_tags.map((tag, idx) => (
-                               <Badge key={idx} className="bg-emerald-600 text-white border-emerald-400 font-bold">
-                                  {tag}
-                               </Badge>
-                            ))}
-                         </div>
-                      ) : (
-                         <p className="text-sm text-zinc-500">No role tags assigned</p>
-                      )}
-                   </CardContent>
-                </Card>
+                {user?.role_tags && user.role_tags.length > 0 && (
+                   <div className="border border-zinc-800 bg-zinc-950/50">
+                      <div className="border-b border-zinc-800 bg-zinc-900/20 p-1.5">
+                         <div className="text-[8px] font-bold text-zinc-300 uppercase tracking-wide">ROLE TAGS</div>
+                      </div>
+                      <div className="p-2 flex flex-wrap gap-1">
+                         {user.role_tags.map((tag, idx) => (
+                            <Badge key={idx} className="bg-emerald-600 text-white text-[7px] font-bold">
+                               {tag}
+                            </Badge>
+                         ))}
+                      </div>
+                   </div>
+                )}
 
-                <Card className="bg-zinc-950 border-zinc-800">
-                   <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
-                      <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
-                         <Shield className="w-4 h-4 text-[#ea580c]" />
-                         Assigned Roles
-                      </CardTitle>
-                      <CardDescription className="text-xs font-mono text-zinc-600">
-                         Formal roles with permissions
-                      </CardDescription>
-                   </CardHeader>
-                   <CardContent className="p-6">
-                      {assignedRoles.length > 0 ? (
-                         <div className="space-y-3">
-                            {assignedRoles.map((role) => (
-                               <div key={role.id} className="p-3 bg-zinc-900/50 border border-zinc-800">
-                                  <div className="font-bold text-white text-sm">{role.name}</div>
-                                  {role.description && (
-                                     <div className="text-xs text-zinc-500 mt-1">{role.description}</div>
-                                  )}
-                                  {role.permissions && role.permissions.length > 0 && (
-                                     <div className="flex flex-wrap gap-1 mt-2">
-                                        {role.permissions.map((perm, idx) => (
-                                           <Badge key={idx} className="text-[10px] bg-purple-600 text-white border-purple-400 font-bold">
-                                              {perm}
-                                           </Badge>
-                                        ))}
-                                     </div>
-                                  )}
-                               </div>
-                            ))}
-                         </div>
-                      ) : (
-                         <p className="text-sm text-zinc-500">No formal roles assigned</p>
-                      )}
-                   </CardContent>
-                </Card>
+                {assignedRoles.length > 0 && (
+                   <div className="border border-zinc-800 bg-zinc-950/50">
+                      <div className="border-b border-zinc-800 bg-zinc-900/20 p-1.5">
+                         <div className="text-[8px] font-bold text-zinc-300 uppercase tracking-wide">ASSIGNED ROLES</div>
+                      </div>
+                      <div className="p-2 space-y-1">
+                         {assignedRoles.map((role) => (
+                            <div key={role.id} className="p-1.5 bg-zinc-900/30 border border-zinc-800 text-[8px]">
+                               <div className="font-bold text-white text-[9px]">{role.name}</div>
+                               {role.description && (
+                                  <div className="text-zinc-500 text-[7px] mt-0.5">{role.description}</div>
+                               )}
+                               {role.permissions && role.permissions.length > 0 && (
+                                  <div className="flex flex-wrap gap-0.5 mt-1">
+                                     {role.permissions.map((perm, idx) => (
+                                        <Badge key={idx} className="text-[6px] bg-purple-600 text-white font-bold px-1">
+                                           {perm}
+                                        </Badge>
+                                     ))}
+                                  </div>
+                               )}
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                )}
              </TabsContent>
 
              {/* Moderation History Tab */}
              {hasModerationActivity && (
-                <TabsContent value="moderation" className="space-y-6">
+                <TabsContent value="moderation" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
                    {/* Deleted Messages */}
                    {moderationActions.deletedMessages?.length > 0 && (
                       <Card className="bg-zinc-950 border-zinc-800">
@@ -671,7 +621,9 @@ export default function ProfilePage() {
                 </TabsContent>
              )}
           </Tabs>
-       </div>
-    </div>
-  );
-}
+          </div>
+          </div>
+          </div>
+          </div>
+          );
+          }
