@@ -38,24 +38,57 @@ export default function RadialFeedbackMenu() {
 
   return (
     <>
-      {/* Main Menu Button - Fixed right edge */}
+      {/* Main Menu Button - Fixed right edge, halfway to top */}
       <motion.div
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40"
+        className="fixed right-0 top-1/4 -translate-y-1/2 z-40"
         initial={{ x: 20 }}
         whileHover={{ x: 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
+        {/* Pulsing glow aura */}
+        <motion.div
+          className="absolute inset-0 rounded-none border-l border-t border-b border-[#ea580c]/30 -right-1"
+          animate={{ 
+            boxShadow: [
+              '0 0 20px rgba(234, 88, 12, 0.2)',
+              '0 0 40px rgba(234, 88, 12, 0.4)',
+              '0 0 20px rgba(234, 88, 12, 0.2)'
+            ]
+          }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 border-l border-t border-b border-zinc-800 text-[10px] font-mono font-bold uppercase transition-all duration-200',
+            'relative flex items-center justify-center w-14 h-14 border-l border-t border-b text-[10px] font-mono font-bold uppercase transition-all duration-200 group',
             isOpen
-              ? 'bg-[#ea580c]/40 border-[#ea580c]/80 text-[#ea580c]'
-              : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200'
+              ? 'bg-[#ea580c]/50 border-[#ea580c] text-white shadow-lg shadow-[#ea580c]/40'
+              : 'bg-zinc-900/90 border-zinc-700 text-[#ea580c] hover:bg-zinc-800/90 hover:border-[#ea580c]/60'
           )}
           title="User Feedback"
         >
-          <MessageSquare className="w-4 h-4" />
+          {/* Animated icon with pulsing effect */}
+          <motion.div
+            animate={{ scale: isOpen ? 1.2 : 1 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              {/* Speech bubble with feedback symbol */}
+              <path d="M12 2C6.48 2 2 5.58 2 10c0 2.54 1.19 4.86 3.16 6.35.09 2.5-1.16 5.65-1.16 5.65 0 0 3.5-.5 5.76-1.65 1.5.32 3.13.5 4.84.5 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
+              {/* Center dot accent */}
+              <circle cx="12" cy="10" r="0.5" fill="currentColor" />
+            </svg>
+          </motion.div>
+          
+          {/* Pulsing indicator dot */}
+          {!isOpen && (
+            <motion.div
+              className="absolute w-2 h-2 bg-[#ea580c] rounded-full top-1 right-1"
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          )}
         </button>
 
         {/* Radial Menu Items - Vertical Stack */}
