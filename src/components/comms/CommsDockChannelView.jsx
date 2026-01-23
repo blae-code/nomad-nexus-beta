@@ -75,7 +75,7 @@ export default function CommsDockChannelView({ channel, user, onBack }) {
                 <p className="font-bold text-zinc-300">{post.author_id}</p>
                 <div className="flex items-center gap-1">
                   {post.is_pinned && <Pin className="w-2.5 h-2.5 text-orange-400" />}
-                  {userCanModerate && (
+                  {userCanDelete && (
                     <button className="opacity-0 group-hover:opacity-100 text-[7px] px-1 py-0 bg-zinc-800/50 hover:bg-red-950/50 text-red-300 transition-opacity">
                       Hide
                     </button>
