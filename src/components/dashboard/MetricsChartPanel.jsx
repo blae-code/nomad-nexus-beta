@@ -10,13 +10,16 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   const [activeChart, setActiveChart] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
   
-  // Active users by UTC hour (24-hour cycle)
+  // Active users by UTC hour (last 24 hours)
   const activeUsersByUTC = useMemo(() => {
     const data = [];
+    const now = new Date();
+    const currentHour = now.getUTCHours();
     const baseCount = allUsers.length * 0.3;
-    for (let hour = 0; hour < 24; hour++) {
-      // Simulate realistic user distribution across UTC hours
-      const variance = Math.sin(hour / 24 * Math.PI * 2) * baseCount * 0.5;
+    
+    for (let i = 23; i >= 0; i--) {
+      const hour = (currentHour - i + 24) % 24;
+      const variance = Math.sin(i / 24 * Math.PI * 2) * baseCount * 0.5;
       const userCount = Math.max(1, Math.floor(baseCount + variance));
       
       const timeStr = hour.toString().padStart(2, '0') + ':00 UTC';
@@ -28,52 +31,29 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     return data;
   }, [allUsers.length]);
 
-  // Treasury cash flow (inflows/outflows last 30 days)
-  const treasuryCashFlowData = useMemo(() => {
-    const inflow = Math.round(treasuryBalance * 0.15);
-    const outflow = Math.round(treasuryBalance * 0.08);
-    return [
-      { label: 'Inflows', amount: inflow, category: 'Inflow' },
-      { label: 'Outflows', amount: outflow, category: 'Outflow' },
-      { label: 'Net Change', amount: inflow - outflow, category: 'Net' }
-    ];
-  }, [treasuryBalance]);
-
-  // Top 3 contributors (last 30 days)
-  const topContributorsData = useMemo(() => {
-    if (!recentLogs || recentLogs.length === 0) {
-      return [
-        { rank: 1, name: 'Scout Team Alpha', amount: Math.round(treasuryBalance * 0.05) },
-        { rank: 2, name: 'Rescue Ops', amount: Math.round(treasuryBalance * 0.03) },
-        { rank: 3, name: 'Industry Run', amount: Math.round(treasuryBalance * 0.02) }
-      ];
-    }
-    // Simulate top contributors based on event data
-    const contributorMap = {};
-    userEvents.filter(e => e.status === 'completed').forEach(event => {
-      const name = event.title || 'Event';
-      contributorMap[name] = (contributorMap[name] || 0) + Math.round(treasuryBalance * 0.02);
-    });
-    return Object.entries(contributorMap)
-      .map(([name, amount], idx) => ({ rank: idx + 1, name, amount }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 3);
-  }, [recentLogs, userEvents, treasuryBalance]);
-
-  // Fund allocation
+  // Org fund allocation
   const fundAllocationData = useMemo(() => {
+    const totalEvents = userEvents.length || 1;
+    const activeEvents = userEvents.filter(e => e.status === 'active').length || 1;
+    const completedEvents = userEvents.filter(e => e.status === 'completed').length || 1;
+    
     return [
       { category: 'Operations', amount: Math.round(treasuryBalance * 0.4) },
       { category: 'Fleet', amount: Math.round(treasuryBalance * 0.3) },
       { category: 'Reserves', amount: Math.round(treasuryBalance * 0.2) },
       { category: 'Active', amount: Math.round(treasuryBalance * 0.1) }
     ];
-  }, [treasuryBalance]);
+  }, [treasuryBalance, userEvents]);
 
-  // Fund views
+  // Alternative fund views
   const fundViews = [
-    treasuryCashFlowData,
-    topContributorsData
+    fundAllocationData,
+    [
+      { category: 'Active Ops', amount: Math.round(treasuryBalance * 0.35) },
+      { category: 'Pending', amount: Math.round(treasuryBalance * 0.25) },
+      { category: 'Scheduled', amount: Math.round(treasuryBalance * 0.2) },
+      { category: 'Completed', amount: Math.round(treasuryBalance * 0.2) }
+    ]
   ];
 
   // Redscar Recruitment Numbers (last 7 days)
@@ -252,8 +232,8 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                 transition={{ duration: 0.2 }}
               >
                 <Badge className="text-[6px] bg-purple-900/40 text-purple-300 border-purple-700/50 font-mono">AUEC</Badge>
-                </motion.div>
-                <span className="text-[8px] font-bold text-zinc-300 font-mono">{fundView === 0 ? 'Cash Flow' : 'Top Contributors'}</span>
+              </motion.div>
+              <span className="text-[8px] font-bold text-zinc-300 font-mono">{fundView === 0 ? 'Treasury' : 'Events'}</span>
             </div>
             <button
               onClick={() => setFundView((fundView + 1) % fundViews.length)}
@@ -394,14 +374,14 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
 
         {/* Summary Stats - Live Indicators */}
         <AnimatePresence>
-        {isExpanded && (
-        <motion.div 
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 'auto' }}
-        exit={{ opacity: 0, height: 0 }}
-        transition={{ duration: 0.2 }}
-        className="grid grid-cols-3 gap-1.5 overflow-hidden"
-        >
+          {isExpanded && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-3 gap-1.5 overflow-hidden"
+            >
         <motion.div 
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -476,9 +456,9 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             <div className="absolute inset-0 border border-cyan-500/20" />
           </motion.div>
         </motion.div>
-        </motion.div>
-        )}
+            </motion.div>
+          )}
         </AnimatePresence>
-        </div>
-        );
-        }
+      </div>
+    );
+  }
