@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 
-export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0 }) {
+export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
   
   // Prepare activity over time (last 7 days)
@@ -54,46 +54,51 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     ]
   ];
 
-  // Event Status Distribution
-  const eventStatusData = useMemo(() => {
-    const statusCounts = {
-      scheduled: 0,
-      active: 0,
-      completed: 0,
-      cancelled: 0
-    };
-    
-    userEvents.forEach(event => {
-      if (statusCounts.hasOwnProperty(event.status)) {
-        statusCounts[event.status]++;
-      }
-    });
-    
-    return [
-      { name: 'Scheduled', value: statusCounts.scheduled, color: '#06b6d4' },
-      { name: 'Active', value: statusCounts.active, color: '#22c55e' },
-      { name: 'Completed', value: statusCounts.completed, color: '#a855f7' },
-      { name: 'Cancelled', value: statusCounts.cancelled, color: '#ef4444' }
-    ].filter(item => item.value > 0);
-  }, [userEvents]);
-
-  // User Engagement Trend (simulated)
-  const engagementData = useMemo(() => {
+  // Redscar Recruitment Numbers (last 7 days)
+  const recruitmentData = useMemo(() => {
     const days = 7;
     const data = [];
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      // Count users who joined on this day
+      const dayRegistrations = allUsers.filter(user => {
+        const userDate = new Date(user.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return userDate === dateStr;
+      }).length;
+      
       data.push({
         date: dateStr,
-        events: Math.floor(Math.random() * 5) + 1,
-        messages: Math.floor(Math.random() * 20) + 5,
-        voiceTime: Math.floor(Math.random() * 60) + 10
+        recruits: dayRegistrations
       });
     }
     return data;
-  }, []);
+  }, [allUsers]);
+
+  // Redscar Flotilla Growth (ships added over last 7 days)
+  const flotillaGrowthData = useMemo(() => {
+    const days = 7;
+    const data = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      // Count ships added on this day
+      const dayShips = fleetAssets.filter(asset => {
+        const assetDate = new Date(asset.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return assetDate === dateStr;
+      }).length;
+      
+      data.push({
+        date: dateStr,
+        ships: dayShips
+      });
+    }
+    return data;
+  }, [fleetAssets]);
 
   const handleExportChart = (chartName) => {
     const link = document.createElement('a');
@@ -206,98 +211,84 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         </ResponsiveContainer>
         </motion.div>
 
-        {/* Event Status Distribution */}
+        {/* Redscar Recruitment Numbers */}
         <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="border border-zinc-800 bg-zinc-900/30 p-2"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="border border-zinc-800 bg-zinc-900/30 p-2"
         >
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <Badge className="text-[6px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">STATUS</Badge>
-            <span className="text-[8px] font-bold text-zinc-300">Event Distribution</span>
-          </div>
-          <button
-            onClick={() => handleExportChart('event-status')}
-            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
-          >
-            <Download className="w-2.5 h-2.5" />
-          </button>
-        </div>
-        <ResponsiveContainer width="100%" height={120}>
-          <PieChart>
-            <Pie
-              data={eventStatusData}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={45}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-              labelStyle={{ fontSize: '9px', fill: '#e4e4e7' }}
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Badge className="text-[6px] bg-emerald-900/30 text-emerald-400 border-emerald-900/50">RECRUIT</Badge>
+              <span className="text-[8px] font-bold text-zinc-300">New Members (7d)</span>
+            </div>
+            <button
+              onClick={() => handleExportChart('recruitment')}
+              className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
             >
-              {eventStatusData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-              labelStyle={{ color: '#e4e4e7' }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+              <Download className="w-2.5 h-2.5" />
+            </button>
+          </div>
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={recruitmentData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+              <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                labelStyle={{ color: '#e4e4e7' }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Bar
+                dataKey="recruits"
+                fill="#22c55e"
+                name="New Recruits"
+                radius={0}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </motion.div>
 
-        {/* User Engagement */}
+        {/* Redscar Flotilla Growth */}
         <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="border border-zinc-800 bg-zinc-900/30 p-2"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="border border-zinc-800 bg-zinc-900/30 p-2"
         >
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <Badge className="text-[6px] bg-orange-900/30 text-orange-400 border-orange-900/50">ENGAGE</Badge>
-            <span className="text-[8px] font-bold text-zinc-300">Activity Metrics</span>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Badge className="text-[6px] bg-orange-900/30 text-orange-400 border-orange-900/50">FLOTILLA</Badge>
+              <span className="text-[8px] font-bold text-zinc-300">Ships Added (7d)</span>
+            </div>
+            <button
+              onClick={() => handleExportChart('flotilla')}
+              className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+            >
+              <Download className="w-2.5 h-2.5" />
+            </button>
           </div>
-          <button
-            onClick={() => handleExportChart('engagement')}
-            className="text-[7px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
-          >
-            <Download className="w-2.5 h-2.5" />
-          </button>
-        </div>
-        <ResponsiveContainer width="100%" height={120}>
-          <AreaChart data={engagementData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
-            <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-              labelStyle={{ color: '#e4e4e7' }}
-            />
-            <Legend wrapperStyle={{ fontSize: '11px' }} />
-            <Area
-              type="monotone"
-              dataKey="events"
-              stackId="1"
-              stroke="#22c55e"
-              fill="#22c55e"
-              fillOpacity={0.6}
-              name="Events"
-            />
-            <Area
-              type="monotone"
-              dataKey="messages"
-              stackId="1"
-              stroke="#3b82f6"
-              fill="#3b82f6"
-              fillOpacity={0.6}
-              name="Messages"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={120}>
+            <AreaChart data={flotillaGrowthData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+              <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                labelStyle={{ color: '#e4e4e7' }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Area
+                type="monotone"
+                dataKey="ships"
+                stroke="#ea580c"
+                fill="#ea580c"
+                fillOpacity={0.7}
+                name="Ships/Vehicles"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </motion.div>
         </div>
 
