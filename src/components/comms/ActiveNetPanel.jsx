@@ -915,7 +915,51 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
     : (room?.remoteParticipants?.size || 0);
 
   return (
-    <div className="h-full flex flex-col gap-4">
+     <div className="h-full flex flex-col gap-4">
+       {/* Join/Leave Button */}
+       {selectedNet && (
+         <div className="shrink-0 px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-sm flex items-center gap-3">
+           <Button
+             onClick={() => {
+               if (connectionState === 'connected') {
+                 setRoom(null);
+                 setConnectionState('disconnected');
+                 onDisconnect?.();
+               } else if (connectionState === 'disconnected') {
+                 // Trigger connection
+                 connect();
+               }
+             }}
+             disabled={connectionState === 'connecting'}
+             className={cn(
+               'gap-2 h-8 px-3 text-xs font-bold uppercase',
+               connectionState === 'connected'
+                 ? 'bg-red-600 hover:bg-red-700 text-white'
+                 : connectionState === 'connecting'
+                 ? 'bg-amber-600 text-white'
+                 : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+             )}
+           >
+             {connectionState === 'connecting' ? (
+               <>
+                 <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                 CONNECTING...
+               </>
+             ) : connectionState === 'connected' ? (
+               <>
+                 <PhoneOff className="w-3 h-3" />
+                 LEAVE
+               </>
+             ) : (
+               <>
+                 <Phone className="w-3 h-3" />
+                 JOIN
+               </>
+             )}
+           </Button>
+         </div>
+       )}
+
       
       {/* Mode Indicator */}
           {isSim && (
