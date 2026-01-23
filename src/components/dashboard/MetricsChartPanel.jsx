@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Activity, TrendingUp, ChevronDown } from 'lucide-react';
+import { Download, Activity, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,18 +8,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
   const [activeChart, setActiveChart] = useState(null);
-  const [isExpanded, setIsExpanded] = useState(true);
   
-  // Active users by UTC hour (last 24 hours)
+  // Active users by UTC hour (24-hour cycle)
   const activeUsersByUTC = useMemo(() => {
     const data = [];
-    const now = new Date();
-    const currentHour = now.getUTCHours();
     const baseCount = allUsers.length * 0.3;
-    
-    for (let i = 23; i >= 0; i--) {
-      const hour = (currentHour - i + 24) % 24;
-      const variance = Math.sin(i / 24 * Math.PI * 2) * baseCount * 0.5;
+    for (let hour = 0; hour < 24; hour++) {
+      // Simulate realistic user distribution across UTC hours
+      const variance = Math.sin(hour / 24 * Math.PI * 2) * baseCount * 0.5;
       const userCount = Math.max(1, Math.floor(baseCount + variance));
       
       const timeStr = hour.toString().padStart(2, '0') + ':00 UTC';
@@ -112,27 +108,17 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   return (
     <div className="space-y-2">
       <motion.div 
-        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-900/30 transition-colors"
+        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
-        onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
           <Activity className="w-3 h-3 text-[#ea580c]" />
           <h3 className="text-[8px] font-bold uppercase text-zinc-300 tracking-widest font-mono">[ DATA TELEMETRY ]</h3>
-          <motion.div
-            animate={{ rotate: isExpanded ? 0 : -90 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-3 h-3 text-zinc-500" />
-          </motion.div>
         </div>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleExportChart('metrics');
-          }}
+          onClick={() => handleExportChart('metrics')}
           className="text-[8px] text-zinc-500 hover:text-[#ea580c] transition-colors flex items-center gap-1 hover:gap-2"
         >
           <Download className="w-3 h-3" />
@@ -141,15 +127,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       </motion.div>
 
       {/* Charts Row - Activity & Treasury */}
-      <AnimatePresence>
-        {isExpanded && (
-       <motion.div 
-         initial={{ opacity: 0, height: 0 }}
-         animate={{ opacity: 1, height: 'auto' }}
-         exit={{ opacity: 0, height: 0 }}
-         transition={{ duration: 0.2 }}
-         className="grid grid-cols-4 gap-2 overflow-hidden"
-       >
+       <div className="grid grid-cols-4 gap-2">
         {/* Activity Over Time */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -367,21 +345,11 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               />
             </AreaChart>
           </ResponsiveContainer>
-        </motion.div>
-        </motion.div>
-        )}
-        </AnimatePresence>
+          </motion.div>
+          </div>
 
-        {/* Summary Stats - Live Indicators */}
-        <AnimatePresence>
-        {isExpanded && (
-        <motion.div 
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 'auto' }}
-        exit={{ opacity: 0, height: 0 }}
-        transition={{ duration: 0.2 }}
-        className="grid grid-cols-3 gap-1.5 overflow-hidden"
-        >
+          {/* Summary Stats - Live Indicators */}
+          <motion.div className="grid grid-cols-3 gap-1.5">
         <motion.div 
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -456,9 +424,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             <div className="absolute inset-0 border border-cyan-500/20" />
           </motion.div>
         </motion.div>
-        </motion.div>
-        )}
-        </AnimatePresence>
-        </div>
-        );
-        }
+      </motion.div>
+    </div>
+  );
+}
