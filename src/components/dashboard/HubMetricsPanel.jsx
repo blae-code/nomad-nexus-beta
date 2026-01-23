@@ -15,8 +15,8 @@ const HubMetricsPanel = memo(function HubMetricsPanel({
 }) {
   return (
     <div>
-      <div className="text-[7px] uppercase text-zinc-400 tracking-widest mb-2 font-bold">ORGANIZATION STATUS</div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="text-[7px] uppercase text-zinc-400 tracking-widest mb-3 font-bold">ORGANIZATION STATUS</div>
+      <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
         <MetricCard
           icon={Users}
           label="Roster"
@@ -198,47 +198,50 @@ const MetricCard = memo(function MetricCard({ icon: Icon, label, value, subtext,
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={cn(
-        'bg-zinc-900/80 border border-zinc-700 p-3 transition-all cursor-pointer group',
-        colorClasses[color]
+        'bg-zinc-900 border border-zinc-700 p-2 transition-all cursor-pointer group flex flex-col',
+        colorClasses[color],
+        'hover:border-[#ea580c]/50 hover:bg-zinc-800/50'
       )}>
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex items-center gap-1.5 mb-1">
           <Icon className={cn(
-            'w-3.5 h-3.5 group-hover:scale-110 transition-transform',
+            'w-3 h-3 group-hover:scale-110 transition-transform shrink-0',
             textColors[color],
             animate && 'animate-pulse'
           )} />
-          <span className="text-[8px] uppercase text-zinc-300 tracking-wider font-bold">{label}</span>
+          <span className="text-[7px] uppercase text-zinc-400 tracking-wider font-bold truncate">{label}</span>
         </div>
-        <div className="text-2xl font-black text-white mb-0.5">{value}</div>
-        <div className={cn('text-[7px] font-medium', textColors[color])}>{subtext}</div>
+        <div className="text-base font-black text-white mb-0.5 leading-tight">{value}</div>
+        <div className={cn('text-[6px] font-medium truncate', textColors[color])}>{subtext}</div>
       </div>
       
       <AnimatePresence>
         {isHovered && details && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.12 }}
             className={cn(
-              'absolute top-0 left-0 right-0 z-50 border-2 p-4 shadow-2xl',
+              'absolute top-full left-0 right-0 z-50 border p-3 mt-1',
               bgColors[color],
-              borderColors[color]
+              borderColors[color],
+              'shadow-xl backdrop-blur-sm'
             )}
             style={{
-              boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+              minWidth: '220px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
             }}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <Icon className={cn('w-4 h-4', textColors[color])} />
-              <span className="text-[10px] uppercase text-zinc-200 tracking-wider font-bold">{label}</span>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Icon className={cn('w-3.5 h-3.5 shrink-0', textColors[color])} />
+              <span className="text-[9px] uppercase text-zinc-100 tracking-wider font-bold">{label}</span>
             </div>
             
-            <div className="space-y-2 mb-3">
+            <div className="space-y-1.5 mb-2">
               {details.stats.map((stat, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <span className="text-[9px] text-zinc-400">{stat.label}</span>
-                  <span className={cn('text-[11px] font-bold', textColors[color])}>{stat.value}</span>
+                <div key={idx} className="flex items-center justify-between gap-2">
+                  <span className="text-[8px] text-zinc-400">{stat.label}</span>
+                  <span className={cn('text-[9px] font-bold', textColors[color])}>{stat.value}</span>
                 </div>
               ))}
             </div>
@@ -247,14 +250,14 @@ const MetricCard = memo(function MetricCard({ icon: Icon, label, value, subtext,
               <button
                 onClick={handleNavigate}
                 className={cn(
-                  'w-full flex items-center justify-between px-3 py-1.5 border transition-all',
-                  'hover:bg-zinc-800/50',
+                  'w-full flex items-center justify-between px-2 py-1 border transition-all text-[8px] font-bold uppercase',
+                  'hover:bg-zinc-800/60',
                   borderColors[color],
                   textColors[color]
                 )}
               >
-                <span className="text-[9px] font-bold uppercase tracking-wider">{details.action}</span>
-                <ChevronRight className="w-3 h-3" />
+                <span>{details.action}</span>
+                <ChevronRight className="w-2.5 h-2.5" />
               </button>
             )}
           </motion.div>
