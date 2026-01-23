@@ -5,6 +5,7 @@ const ENTITIES_TO_CLEAR = [
   'MapMarker',
   'EventLog',
   'EventReport',
+  'PlayerStatus',
   'Incident',
   'EventDutyAssignment',
   'EventRecurrence',
