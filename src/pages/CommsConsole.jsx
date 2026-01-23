@@ -83,6 +83,9 @@ function CommsConsolePage() {
   const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
   const [showSimulation, setShowSimulation] = React.useState(false);
   
+  // Compute effective comms mode (desired vs. actual readiness)
+  const { effectiveMode, fallbackReason } = useCommsReadiness();
+  
   const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
   const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
 
