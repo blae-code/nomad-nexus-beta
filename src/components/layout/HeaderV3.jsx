@@ -495,10 +495,11 @@ export default function HeaderV3() {
         <div className="w-px h-10 bg-zinc-800/50" />
 
         {/* User Identity Badges */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-col gap-1 shrink-0">
+          {/* Row 1: Callsign/Username */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
+              <Badge className={cn('text-[10px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
                 {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
               </Badge>
             </TooltipTrigger>
@@ -507,25 +508,28 @@ export default function HeaderV3() {
             </TooltipContent>
           </Tooltip>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Organization Rank</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          {user?.role === 'admin' && (
+          {/* Row 2: Rank and Role */}
+          <div className="flex items-center gap-1.5">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>
+                <Badge className="text-[9px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs">System Administrator Access</p>
+                <p className="text-xs">Organization Rank</p>
               </TooltipContent>
             </Tooltip>
-          )}
+            
+            {user?.role === 'admin' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className="text-[9px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">System Administrator Access</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
 
         {/* Divider */}
