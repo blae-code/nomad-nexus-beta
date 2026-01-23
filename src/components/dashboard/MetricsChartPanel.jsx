@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Activity, TrendingUp } from 'lucide-react';
+import { Download, Activity, TrendingUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
   const [activeChart, setActiveChart] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(true);
   
   // Active users by UTC hour (24-hour cycle)
   const activeUsersByUTC = useMemo(() => {
@@ -27,29 +28,52 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     return data;
   }, [allUsers.length]);
 
-  // Org fund allocation
+  // Treasury cash flow (inflows/outflows last 30 days)
+  const treasuryCashFlowData = useMemo(() => {
+    const inflow = Math.round(treasuryBalance * 0.15);
+    const outflow = Math.round(treasuryBalance * 0.08);
+    return [
+      { label: 'Inflows', amount: inflow, category: 'Inflow' },
+      { label: 'Outflows', amount: outflow, category: 'Outflow' },
+      { label: 'Net Change', amount: inflow - outflow, category: 'Net' }
+    ];
+  }, [treasuryBalance]);
+
+  // Top 3 contributors (last 30 days)
+  const topContributorsData = useMemo(() => {
+    if (!recentLogs || recentLogs.length === 0) {
+      return [
+        { rank: 1, name: 'Scout Team Alpha', amount: Math.round(treasuryBalance * 0.05) },
+        { rank: 2, name: 'Rescue Ops', amount: Math.round(treasuryBalance * 0.03) },
+        { rank: 3, name: 'Industry Run', amount: Math.round(treasuryBalance * 0.02) }
+      ];
+    }
+    // Simulate top contributors based on event data
+    const contributorMap = {};
+    userEvents.filter(e => e.status === 'completed').forEach(event => {
+      const name = event.title || 'Event';
+      contributorMap[name] = (contributorMap[name] || 0) + Math.round(treasuryBalance * 0.02);
+    });
+    return Object.entries(contributorMap)
+      .map(([name, amount], idx) => ({ rank: idx + 1, name, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3);
+  }, [recentLogs, userEvents, treasuryBalance]);
+
+  // Fund allocation
   const fundAllocationData = useMemo(() => {
-    const totalEvents = userEvents.length || 1;
-    const activeEvents = userEvents.filter(e => e.status === 'active').length || 1;
-    const completedEvents = userEvents.filter(e => e.status === 'completed').length || 1;
-    
     return [
       { category: 'Operations', amount: Math.round(treasuryBalance * 0.4) },
       { category: 'Fleet', amount: Math.round(treasuryBalance * 0.3) },
       { category: 'Reserves', amount: Math.round(treasuryBalance * 0.2) },
       { category: 'Active', amount: Math.round(treasuryBalance * 0.1) }
     ];
-  }, [treasuryBalance, userEvents]);
+  }, [treasuryBalance]);
 
-  // Alternative fund views
+  // Fund views
   const fundViews = [
-    fundAllocationData,
-    [
-      { category: 'Active Ops', amount: Math.round(treasuryBalance * 0.35) },
-      { category: 'Pending', amount: Math.round(treasuryBalance * 0.25) },
-      { category: 'Scheduled', amount: Math.round(treasuryBalance * 0.2) },
-      { category: 'Completed', amount: Math.round(treasuryBalance * 0.2) }
-    ]
+    treasuryCashFlowData,
+    topContributorsData
   ];
 
   // Redscar Recruitment Numbers (last 7 days)
@@ -108,17 +132,27 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   return (
     <div className="space-y-2">
       <motion.div 
-        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50"
+        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-900/30 transition-colors"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
+        onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
           <Activity className="w-3 h-3 text-[#ea580c]" />
           <h3 className="text-[8px] font-bold uppercase text-zinc-300 tracking-widest font-mono">[ DATA TELEMETRY ]</h3>
+          <motion.div
+            animate={{ rotate: isExpanded ? 0 : -90 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-3 h-3 text-zinc-500" />
+          </motion.div>
         </div>
         <button
-          onClick={() => handleExportChart('metrics')}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleExportChart('metrics');
+          }}
           className="text-[8px] text-zinc-500 hover:text-[#ea580c] transition-colors flex items-center gap-1 hover:gap-2"
         >
           <Download className="w-3 h-3" />
@@ -127,7 +161,15 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       </motion.div>
 
       {/* Charts Row - Activity & Treasury */}
-       <div className="grid grid-cols-4 gap-2">
+      <AnimatePresence>
+        {isExpanded && (
+       <motion.div 
+         initial={{ opacity: 0, height: 0 }}
+         animate={{ opacity: 1, height: 'auto' }}
+         exit={{ opacity: 0, height: 0 }}
+         transition={{ duration: 0.2 }}
+         className="grid grid-cols-4 gap-2 overflow-hidden"
+       >
         {/* Activity Over Time */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -345,11 +387,21 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               />
             </AreaChart>
           </ResponsiveContainer>
-          </motion.div>
-          </div>
+        </motion.div>
+        </motion.div>
+        )}
+        </AnimatePresence>
 
-          {/* Summary Stats - Live Indicators */}
-          <motion.div className="grid grid-cols-3 gap-1.5">
+        {/* Summary Stats - Live Indicators */}
+        <AnimatePresence>
+        {isExpanded && (
+        <motion.div 
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.2 }}
+        className="grid grid-cols-3 gap-1.5 overflow-hidden"
+        >
         <motion.div 
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -424,7 +476,9 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             <div className="absolute inset-0 border border-cyan-500/20" />
           </motion.div>
         </motion.div>
-      </motion.div>
-    </div>
-  );
-}
+        </motion.div>
+        )}
+        </AnimatePresence>
+        </div>
+        );
+        }
