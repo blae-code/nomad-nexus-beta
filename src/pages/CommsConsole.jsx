@@ -45,6 +45,8 @@ import { usePTT } from "@/components/hooks/usePTT";
 import PTTHud from "@/components/comms/PTTHud";
 import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
 import { MessageCircle } from "lucide-react";
+import { useCommsMode } from "@/components/comms/useCommsMode";
+import { motion, AnimatePresence } from "framer-motion";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
@@ -59,6 +61,9 @@ function CommsConsolePage() {
   const [connectionError, setConnectionError] = React.useState(null);
   const [effectiveMode, setEffectiveMode] = React.useState('SIM'); // SIM | LIVE
   const [modeFallbackReason, setModeFallbackReason] = React.useState(null);
+  
+  // Get desired mode from comms mode config
+  const { isLive: desiredLive, isSim: desiredSim } = useCommsMode();
   
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
@@ -77,7 +82,9 @@ function CommsConsolePage() {
   const [userPreferences, setUserPreferences] = React.useState({});
   const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
   const [showSimulation, setShowSimulation] = React.useState(false);
-  const { isTransmitting, pttKey } = usePTT(selectedNetId ? (voiceNets || []).find(n => n.id === selectedNetId) : null, userPreferences);
+  
+  const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
+  const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -246,20 +253,36 @@ function CommsConsolePage() {
   }, [selectedEventId, voiceNets.length, isLoading, isProvisioningNets, refetchNets]);
 
   // Reset state when event changes
-  React.useEffect(() => {
-     setSelectedNetId(null);
-     setConnectedNetId(null);
-     setConnectionState('disconnected');
-     setConnectionError(null);
-     setMonitoredNetIds([]);
-  }, [selectedEventId]);
+   React.useEffect(() => {
+      setSelectedNetId(null);
+      setConnectedNetId(null);
+      setConnectionState('disconnected');
+      setConnectionError(null);
+      setMonitoredNetIds([]);
+   }, [selectedEventId]);
+
+   // Compute effective mode based on desired mode + readiness
+   React.useEffect(() => {
+      if (!desiredLive) {
+         setEffectiveMode('SIM');
+         setModeFallbackReason(null);
+         return;
+      }
+
+      // Desired is LIVE - check readiness
+      const hasEnv = Deno?.env?.get?.('LIVEKIT_URL') !== undefined;
+      if (!hasEnv) {
+         setEffectiveMode('SIM');
+         setModeFallbackReason('LiveKit env not configured');
+         return;
+      }
+
+      setEffectiveMode('LIVE');
+      setModeFallbackReason(null);
+   }, [desiredLive]);
 
   // Memoize nets to prevent unnecessary rerenders
   const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
-
-  // Get currently selected and connected nets
-  const selectedNet = memoizedNets.find(n => n.id === selectedNetId) || null;
-  const connectedNet = memoizedNets.find(n => n.id === connectedNetId) || null;
 
   // Handlers for connection state changes from ActiveNetPanel
   const handleConnectSuccess = React.useCallback((netId) => {
@@ -408,9 +431,7 @@ function CommsConsolePage() {
                            <NetList 
                               nets={memoizedNets} 
                               selectedNetId={selectedNetId}
-                              onSelect={(net) => {
-                                setSelectedNetId(net.id);
-                              }}
+                              onSelect={(net) => setSelectedNetId(net?.id || null)}
                               userSquadId={userSquadId}
                               viewMode={viewMode}
                               activityMap={recentActivity}
@@ -465,15 +486,25 @@ function CommsConsolePage() {
                            <div className="shrink-0">
                               <CommsToolbar
                                  selectedNet={selectedNet}
-                                 isConnected={connectedNetId === selectedNetId && connectionState === 'connected'}
-                                 isConnecting={connectionState === 'connecting'}
-                                 connectionError={connectionError}
-                                 isTransmitting={isTransmitting}
+                                 connectionState={connectionState}
                                  onOpenAdvanced={() => setShowAdvancedDrawer(true)}
+                                 isTransmitting={isTransmitting}
                               />
                               <Divider spacing="none" />
                            </div>
                            
+                           {/* Effective Mode Fallback Banner */}
+                           {modeFallbackReason && (
+                              <motion.div
+                                 initial={{ opacity: 0, y: -8 }}
+                                 animate={{ opacity: 1, y: 0 }}
+                                 className="shrink-0 bg-amber-950/50 border-b border-amber-800 p-2 flex items-center gap-2 text-[10px]"
+                              >
+                                 <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+                                 <span className="text-amber-400 font-mono">SIM MODE: {modeFallbackReason}</span>
+                              </motion.div>
+                           )}
+
                            {/* Active Net Chat */}
                            <div className="flex-1 min-h-0 overflow-hidden">
                               {selectedNet ? (
@@ -481,19 +512,11 @@ function CommsConsolePage() {
                                     net={selectedNet} 
                                     user={currentUser} 
                                     eventId={selectedEventId}
-                                    isConnected={connectedNetId === selectedNetId}
-                                    connectionState={connectionState}
-                                    connectionError={connectionError}
                                     effectiveMode={effectiveMode}
-                                    modeFallbackReason={modeFallbackReason}
-                                    onConnecting={() => handleConnecting(selectedNetId)}
-                                    onConnectSuccess={() => handleConnectSuccess(selectedNetId)}
-                                    onDisconnect={() => handleDisconnect()}
-                                    onError={(err) => handleConnectionError(err)}
-                                    onModeChange={(mode, reason) => {
-                                      setEffectiveMode(mode);
-                                      setModeFallbackReason(reason);
-                                    }}
+                                    onConnectSuccess={handleConnectSuccess}
+                                    onConnecting={handleConnecting}
+                                    onDisconnect={handleDisconnect}
+                                    onError={handleConnectionError}
                                  />
                               ) : (
                                  <div className="flex items-center justify-center h-full text-zinc-600">
@@ -588,16 +611,11 @@ function CommsConsolePage() {
                ) : selectedNet ? (
                   <ScrollArea className="flex-1">
                      <div className="p-[var(--space-lg)] space-y-3">
-                        {modeFallbackReason && (
-                          <div className="p-3 bg-amber-950/30 border border-amber-800 rounded text-[10px] text-amber-400 font-mono">
-                            {modeFallbackReason}
-                          </div>
-                        )}
                         <WingStatusPropagation eventId={selectedEventId} />
                         <FleetPingSystem eventId={selectedEventId} />
-                        <FormationCallouts eventId={selectedEventId} currentNetId={selectedNetId} />
-                        <RallyPointManager eventId={selectedEventId} currentNetId={selectedNetId} />
-                        <NetDisciplineQueue netId={selectedNetId} />
+                        <FormationCallouts eventId={selectedEventId} currentNetId={selectedNet?.id} />
+                        <RallyPointManager eventId={selectedEventId} currentNetId={selectedNet?.id} />
+                        <NetDisciplineQueue netId={selectedNet?.id} />
                      </div>
                   </ScrollArea>
                ) : null}
@@ -654,13 +672,13 @@ function CommsConsolePage() {
          />
 
          {/* PTT HUD */}
-         <PTTHud isTransmitting={isTransmitting && selectedNetId} pttKey={pttKey} isMuted={!selectedNetId} />
+         <PTTHud isTransmitting={isTransmitting && selectedNet} pttKey={pttKey} isMuted={!selectedNet} />
 
          {/* Net Switch Overlay */}
          <NetSwitchOverlay 
            nets={memoizedNets} 
-           selectedNetId={selectedNetId}
-           onSelectNet={(net) => setSelectedNetId(net?.id || null)}
+           selectedNet={selectedNet} 
+           onSelectNet={setSelectedNet}
          />
          </PageLayout>
          );
