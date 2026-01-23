@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Radio, AlertTriangle, CheckCircle2, RefreshCw, 
-  Download, Activity, Clock, Zap, MessageSquare, Gamepad2
+  Download, Activity, Clock, Zap, MessageSquare, Gamepad2,
+  Server, Users, Zap as ZapIcon, Shield, TrendingUp, AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CockpitHeader from '@/components/admin/CockpitHeader';
