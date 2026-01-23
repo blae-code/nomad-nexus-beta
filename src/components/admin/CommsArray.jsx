@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils';
 export default function CommsArray() {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [provisionStatus, setProvisionStatus] = useState(null);
+  const [selectedNet, setSelectedNet] = useState(null);
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   const queryClient = useQueryClient();
 
   // Data queries
@@ -59,6 +61,11 @@ export default function CommsArray() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list()
+  });
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => base44.entities.Role.list()
   });
 
   // Mutations
@@ -335,6 +342,10 @@ export default function CommsArray() {
                           onToggleStatus={toggleNetStatus}
                           onToggleDiscipline={toggleDiscipline}
                           onToggleStageMode={toggleStageMode}
+                          onConfigure={() => {
+                            setSelectedNet(net);
+                            setShowAdvancedConfig(true);
+                          }}
                         />
                       ))}
                     </div>
@@ -349,6 +360,22 @@ export default function CommsArray() {
 
       {/* RIGHT PANEL: Voice Utilities & Mapping */}
       <div className="w-80 space-y-3 overflow-y-auto shrink-0">
+        {/* Advanced Config Modal */}
+        {showAdvancedConfig && selectedNet && (
+          <AdvancedNetConfig
+            net={selectedNet}
+            roles={roles}
+            onClose={() => {
+              setShowAdvancedConfig(false);
+              setSelectedNet(null);
+            }}
+            onSave={(data) => {
+              updateNetMutation.mutate({ netId: selectedNet.id, data });
+              setShowAdvancedConfig(false);
+              setSelectedNet(null);
+            }}
+          />
+        )}
         {/* Voice Utilities */}
         <div className="border border-zinc-800 bg-zinc-950 sticky top-0">
           <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
@@ -737,7 +764,7 @@ function FormationCell({ label, count, color, highlight }) {
   );
 }
 
-function NetCard({ net, onToggleStatus, onToggleDiscipline, onToggleStageMode }) {
+function NetCard({ net, onToggleStatus, onToggleDiscipline, onToggleStageMode, onConfigure }) {
   return (
     <div className="bg-zinc-900/50 border border-zinc-800 p-2 relative group hover:border-zinc-700 transition-colors">
       <div className="absolute -top-[1px] -left-[1px] w-1 h-1 border-t border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
@@ -816,6 +843,184 @@ function NetCard({ net, onToggleStatus, onToggleDiscipline, onToggleStageMode })
         <div className="text-[8px] font-mono flex-1">
           <span className="text-zinc-700">RX:</span>
           <span className="text-zinc-500 ml-1">{net.min_rank_to_rx || 'VAG'}</span>
+        </div>
+        <button
+          onClick={onConfigure}
+          className="ml-2 text-zinc-600 hover:text-[#ea580c] transition-colors"
+          title="Configure"
+        >
+          <Settings className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AdvancedNetConfig({ net, roles, onClose, onSave }) {
+  const [config, setConfig] = useState({
+    priority: net.priority || 2,
+    bandwidth_limit: net.bandwidth_limit || 0,
+    max_users: net.max_users || 0,
+    allowed_role_ids: net.allowed_role_ids || [],
+    require_approval: net.require_approval || false,
+    auto_mute_after: net.auto_mute_after || 0,
+    custom_properties: net.custom_properties || {}
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 max-h-[80vh] overflow-y-auto">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between sticky top-0">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-[#ea580c]" />
+            <span className="text-sm font-bold uppercase tracking-wider text-zinc-300 font-mono">
+              NET CONFIG // {net.code}
+            </span>
+          </div>
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+            <span className="text-xl">×</span>
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Priority & Bandwidth */}
+          <div className="border border-zinc-800 bg-zinc-900/30 p-3">
+            <div className="text-[8px] text-zinc-600 uppercase font-bold mb-3 font-mono tracking-widest">
+              PERFORMANCE
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-mono mb-1 block">
+                  Priority Level (1=Highest, 5=Lowest)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={config.priority}
+                  onChange={e => setConfig({...config, priority: parseInt(e.target.value)})}
+                  className="w-full h-7 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono px-2"
+                />
+              </div>
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-mono mb-1 block">
+                  Bandwidth Limit (kbps, 0=Unlimited)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={config.bandwidth_limit}
+                  onChange={e => setConfig({...config, bandwidth_limit: parseInt(e.target.value)})}
+                  className="w-full h-7 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono px-2"
+                />
+              </div>
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-mono mb-1 block">
+                  Max Users (0=Unlimited)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={config.max_users}
+                  onChange={e => setConfig({...config, max_users: parseInt(e.target.value)})}
+                  className="w-full h-7 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono px-2"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Role-Based Permissions */}
+          <div className="border border-zinc-800 bg-zinc-900/30 p-3">
+            <div className="text-[8px] text-zinc-600 uppercase font-bold mb-3 font-mono tracking-widest">
+              ROLE PERMISSIONS
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {roles.map(role => (
+                <label
+                  key={role.id}
+                  className="flex items-center gap-2 text-[9px] text-zinc-400 font-mono p-2 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={config.allowed_role_ids.includes(role.id)}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setConfig({...config, allowed_role_ids: [...config.allowed_role_ids, role.id]});
+                      } else {
+                        setConfig({...config, allowed_role_ids: config.allowed_role_ids.filter(id => id !== role.id)});
+                      }
+                    }}
+                    className="w-3 h-3"
+                  />
+                  <span>{role.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Access Control */}
+          <div className="border border-zinc-800 bg-zinc-900/30 p-3">
+            <div className="text-[8px] text-zinc-600 uppercase font-bold mb-3 font-mono tracking-widest">
+              ACCESS CONTROL
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-[9px] text-zinc-400 font-mono">
+                <input
+                  type="checkbox"
+                  checked={config.require_approval}
+                  onChange={e => setConfig({...config, require_approval: e.target.checked})}
+                  className="w-3 h-3"
+                />
+                <span>Require Admin Approval to Join</span>
+              </label>
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-mono mb-1 block">
+                  Auto-Mute After (seconds, 0=Disabled)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={config.auto_mute_after}
+                  onChange={e => setConfig({...config, auto_mute_after: parseInt(e.target.value)})}
+                  className="w-full h-7 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono px-2"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Properties */}
+          <div className="border border-zinc-800 bg-zinc-900/30 p-3">
+            <div className="text-[8px] text-zinc-600 uppercase font-bold mb-3 font-mono tracking-widest">
+              CUSTOM PROPERTIES
+            </div>
+            <textarea
+              value={JSON.stringify(config.custom_properties, null, 2)}
+              onChange={e => {
+                try {
+                  setConfig({...config, custom_properties: JSON.parse(e.target.value)});
+                } catch {}
+              }}
+              className="w-full h-24 bg-zinc-900 border border-zinc-800 text-[9px] text-zinc-300 font-mono p-2"
+              placeholder='{"key": "value"}'
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-zinc-800 bg-zinc-900/50 flex justify-end gap-2 sticky bottom-0">
+          <button
+            onClick={onClose}
+            className="h-7 px-3 border border-zinc-800 text-zinc-400 hover:border-zinc-700 transition-all text-[9px] font-mono uppercase tracking-wider"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(config)}
+            className="h-7 px-3 bg-[#ea580c] border border-[#ea580c] text-white hover:bg-[#c2410c] transition-all text-[9px] font-mono uppercase tracking-wider"
+          >
+            Save Config
+          </button>
         </div>
       </div>
     </div>
