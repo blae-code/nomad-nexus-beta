@@ -338,6 +338,8 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                        user={selectedUser}
                        roles={roles}
                        onRoleToggle={handleRoleToggle}
+                       onRankChange={handleRankChange}
+                       onFieldChange={handleFieldChange}
                        isAdmin={isAdmin}
                        currentUser={currentUser}
                      />
