@@ -15,7 +15,7 @@ export default function NetChannelChat({ channel, netCode, user }) {
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // Fetch messages for this channel
+  // Fetch messages for this channel (limit to 25, no polling)
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['net-channel-messages', channel?.id],
     queryFn: async () => {
@@ -23,12 +23,14 @@ export default function NetChannelChat({ channel, netCode, user }) {
       const msgs = await base44.entities.Message.filter(
         { channel_id: channel.id },
         '-created_date',
-        50
+        25 // Reduced from 50
       );
       return msgs.reverse();
     },
     enabled: !!channel?.id,
-    refetchInterval: 3000
+    staleTime: 8000,
+    refetchInterval: false, // Real-time sub below handles updates
+    gcTime: 20000
   });
 
   // Subscribe to real-time message updates
