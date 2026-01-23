@@ -47,6 +47,8 @@ import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
 import { MessageCircle } from "lucide-react";
 import { useCommsReadiness } from "@/components/comms/useCommsReadiness";
 import { motion, AnimatePresence } from "framer-motion";
+import CommsStepIndicator from "@/components/comms/CommsStepIndicator";
+import JoinNetButton from "@/components/comms/JoinNetButton";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
