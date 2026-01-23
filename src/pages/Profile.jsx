@@ -314,10 +314,10 @@ export default function ProfilePage() {
                                   <div className="flex items-center justify-between mb-2">
                                      <div className="font-bold text-white">{squad.name}</div>
                                      <Badge className={cn(
-                                        "text-[9px]",
-                                        squad.membership.role === 'leader' ? "bg-[#ea580c] text-white" : "bg-zinc-800 text-zinc-400"
+                                        "text-[9px] font-bold",
+                                        squad.membership.role === 'leader' ? "bg-amber-500 text-black border-amber-400" : "bg-cyan-600 text-white border-cyan-400"
                                      )}>
-                                        {squad.membership.role}
+                                        {squad.membership.role.toUpperCase()}
                                      </Badge>
                                   </div>
                                   {squad.description && (
@@ -514,9 +514,9 @@ export default function ProfilePage() {
                          >
                             {user?.rank || "VAGRANT"}
                          </Badge>
-                         <div className="text-xs text-zinc-500">
-                            {user?.role === 'admin' && <span className="text-[#ea580c] font-bold">SYSTEM ADMIN</span>}
-                            {user?.is_shaman && <span className="text-yellow-500 font-bold ml-2">SHAMAN</span>}
+                         <div className="text-xs font-bold flex gap-2">
+                            {user?.role === 'admin' && <Badge className="bg-red-600 text-white border-red-400">SYSTEM ADMIN</Badge>}
+                            {user?.is_shaman && <Badge className="bg-yellow-500 text-black border-yellow-400">SHAMAN</Badge>}
                          </div>
                       </div>
                    </CardContent>
@@ -536,7 +536,7 @@ export default function ProfilePage() {
                       {user?.role_tags && user.role_tags.length > 0 ? (
                          <div className="flex flex-wrap gap-2">
                             {user.role_tags.map((tag, idx) => (
-                               <Badge key={idx} variant="outline" className="border-[#ea580c] text-[#ea580c] font-mono">
+                               <Badge key={idx} className="bg-emerald-600 text-white border-emerald-400 font-bold">
                                   {tag}
                                </Badge>
                             ))}
@@ -569,7 +569,7 @@ export default function ProfilePage() {
                                   {role.permissions && role.permissions.length > 0 && (
                                      <div className="flex flex-wrap gap-1 mt-2">
                                         {role.permissions.map((perm, idx) => (
-                                           <Badge key={idx} variant="outline" className="text-[10px] border-zinc-700 text-zinc-400">
+                                           <Badge key={idx} className="text-[10px] bg-purple-600 text-white border-purple-400 font-bold">
                                               {perm}
                                            </Badge>
                                         ))}
@@ -626,7 +626,7 @@ export default function ProfilePage() {
                                {moderationActions.mutes.map((mute) => (
                                   <div key={mute.id} className="p-3 bg-zinc-900/50 border border-zinc-800 text-xs">
                                      <div className="flex items-center justify-between mb-1">
-                                        <Badge variant={mute.is_active ? "destructive" : "outline"} className="text-[10px]">
+                                        <Badge className={`text-[10px] font-bold ${mute.is_active ? "bg-red-600 text-white border-red-400" : "bg-zinc-600 text-white border-zinc-400"}`}>
                                            {mute.is_active ? "ACTIVE" : "EXPIRED"}
                                         </Badge>
                                         {mute.expires_at && (
