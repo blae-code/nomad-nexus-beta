@@ -127,15 +127,42 @@ export default function CommsPreflightPanel({ user }) {
         hasWarning = true;
       }
 
-      // 4) Join test (client-side modal simulation)
-      updateCheck('join_test', 'running', 'Simulating...', '');
+      // 4) Client connect attempt (actual LiveKit Room connection)
+      updateCheck('join_test', 'running', 'Connecting...', '');
       try {
-        // Simulate checking if CommsJoinDialog can mount
-        const joinTestPassed = typeof window !== 'undefined';
-        if (!joinTestPassed) throw new Error('DOM unavailable');
-        
-        updateCheck('join_test', 'pass', 'Ready', 'Client join modal can initialize');
-        results.join_test = { status: 'pass', detail: 'Client ready' };
+        if (!results.token_mint?.detail) {
+          throw new Error('No token to test connection');
+        }
+
+        // Extract full token from results (we stored preview, need to re-fetch for real test)
+        const tokenRes = await base44.functions.invoke('generateLiveKitToken', {
+          roomName: `nx-preflight`,
+          userIdentity: user?.id || 'preflight-test'
+        });
+
+        if (!tokenRes.data?.ok || !tokenRes.data?.data?.token) {
+          throw new Error('Failed to get token for connection test');
+        }
+
+        const token = tokenRes.data.data.token;
+        const url = tokenRes.data.data.url;
+
+        if (!url) {
+          throw new Error('No LiveKit URL in token response');
+        }
+
+        // Attempt actual Room connection
+        const room = new Room();
+        const connectStart = Date.now();
+
+        await room.connect(url, token);
+        const connectDuration = Date.now() - connectStart;
+
+        // Successfully connected, now disconnect
+        await room.disconnect();
+
+        updateCheck('join_test', 'pass', 'Connected', `${connectDuration}ms`);
+        results.join_test = { status: 'pass', detail: `${connectDuration}ms round-trip` };
       } catch (err) {
         updateCheck('join_test', 'fail', 'Failed', err.message);
         results.join_test = { status: 'fail', detail: err.message };
