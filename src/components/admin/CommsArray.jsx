@@ -437,6 +437,8 @@ function VoiceUtilityButton({ label, icon: Icon, onClick }) {
 }
 
 function NetHierarchy({ nets, userPresence, voiceNetStatus, users }) {
+  const [hoveredNet, setHoveredNet] = useState(null);
+
   const netsByType = {
     command: nets.filter(n => n.type === 'command'),
     squad: nets.filter(n => n.type === 'squad'),
@@ -456,106 +458,214 @@ function NetHierarchy({ nets, userPresence, voiceNetStatus, users }) {
     return users.find(u => u.id === userId);
   };
 
+  const getSignalColor = (strength = 100) => {
+    if (strength >= 75) return { border: 'border-emerald-500', glow: 'shadow-[0_0_8px_rgba(16,185,129,0.4)]', text: 'text-emerald-500' };
+    if (strength >= 50) return { border: 'border-yellow-500', glow: 'shadow-[0_0_8px_rgba(234,179,8,0.4)]', text: 'text-yellow-500' };
+    if (strength >= 25) return { border: 'border-amber-500', glow: 'shadow-[0_0_8px_rgba(245,158,11,0.4)]', text: 'text-amber-500' };
+    return { border: 'border-red-500', glow: 'shadow-[0_0_8px_rgba(239,68,68,0.4)]', text: 'text-red-500' };
+  };
+
+  // Build topology layers
+  const commandLayer = netsByType.command;
+  const squadLayer = netsByType.squad;
+  const supportLayer = [...netsByType.support, ...netsByType.general];
+
   return (
-    <div className="space-y-3">
-      {Object.entries(netsByType).map(([type, typeNets]) => (
-        typeNets.length > 0 && (
-          <div key={type}>
-            <div className="text-[8px] text-zinc-600 uppercase font-bold mb-1.5 font-mono tracking-widest flex items-center gap-1">
-              <div className={cn(
-                "w-1.5 h-1.5",
-                type === 'command' && "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]",
-                type === 'squad' && "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]",
-                type === 'support' && "bg-cyan-500 shadow-[0_0_4px_rgba(6,182,212,0.5)]",
-                type === 'general' && "bg-zinc-500"
-              )} />
-              <span>{type}</span>
-            </div>
-            <div className="space-y-2 pl-3 border-l border-zinc-800">
-              {typeNets.map(net => {
-                const netStatus = getNetStatus(net.id);
-                const usersOnNet = getUsersOnNet(net.id);
-                const transmitting = usersOnNet.filter(p => p.is_transmitting);
-                
-                return (
-                  <div key={net.id} className="space-y-1">
-                    {/* Net Header */}
-                    <div className="flex items-center gap-1.5">
-                      <div className={cn(
-                        "w-1 h-1",
-                        net.status === 'active' ? "bg-emerald-500 animate-pulse" : "bg-zinc-700"
-                      )} />
-                      <span className="text-zinc-400 text-[9px] font-mono">{net.code}</span>
-                      
-                      {/* Signal Strength */}
-                      {netStatus && (
-                        <SignalStrength strength={netStatus.signal_strength} />
-                      )}
-                      
-                      {/* Interference Indicator */}
-                      {netStatus?.is_jammed && (
-                        <div className="text-[7px] text-red-500 font-mono flex items-center gap-0.5">
-                          <AlertTriangle className="w-2 h-2" />
-                          <span>JAM</span>
-                        </div>
-                      )}
-                      
-                      {/* Packet Loss */}
-                      {netStatus && netStatus.packet_loss_percent > 5 && (
-                        <div className="text-[7px] text-amber-500 font-mono">
-                          {netStatus.packet_loss_percent.toFixed(0)}% LOSS
-                        </div>
-                      )}
-
-                      {/* User Count */}
-                      {usersOnNet.length > 0 && (
-                        <div className="text-[7px] text-zinc-600 font-mono ml-auto">
-                          {usersOnNet.length} USR
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Active Users */}
-                    {usersOnNet.length > 0 && (
-                      <div className="pl-3 space-y-0.5">
-                        {usersOnNet.map(presence => {
-                          const user = getUserById(presence.user_id);
-                          const isTransmitting = presence.is_transmitting;
-                          
-                          return (
-                            <div 
-                              key={presence.id}
-                              className={cn(
-                                "text-[8px] font-mono flex items-center gap-1 py-0.5",
-                                isTransmitting && "text-[#ea580c]"
-                              )}
-                            >
-                              <div className={cn(
-                                "w-0.5 h-0.5 rounded-full",
-                                isTransmitting 
-                                  ? "bg-[#ea580c] shadow-[0_0_6px_rgba(234,88,12,0.8)] animate-pulse" 
-                                  : "bg-emerald-500"
-                              )} />
-                              <span className={cn(
-                                isTransmitting ? "text-[#ea580c] font-bold" : "text-zinc-500"
-                              )}>
-                                {user?.callsign || user?.rsi_handle || 'Unknown'}
-                              </span>
-                              {isTransmitting && (
-                                <span className="text-[6px] text-[#ea580c] uppercase">TX</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+    <div className="space-y-4 relative">
+      {/* Command Layer */}
+      {commandLayer.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[7px] text-red-500 uppercase font-bold font-mono tracking-widest flex items-center gap-1">
+            <div className="h-px flex-1 bg-red-900/30" />
+            <span>COMMAND</span>
+            <div className="h-px flex-1 bg-red-900/30" />
           </div>
-        )
-      ))}
+          <div className="flex flex-wrap gap-2 justify-center">
+            {commandLayer.map(net => (
+              <NetNode
+                key={net.id}
+                net={net}
+                netStatus={getNetStatus(net.id)}
+                usersOnNet={getUsersOnNet(net.id)}
+                users={users}
+                getUserById={getUserById}
+                getSignalColor={getSignalColor}
+                isHovered={hoveredNet === net.id}
+                onHover={setHoveredNet}
+                type="command"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Connection Lines */}
+      {commandLayer.length > 0 && squadLayer.length > 0 && (
+        <div className="flex justify-center">
+          <svg width="100%" height="24" className="overflow-visible">
+            <defs>
+              <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgb(239, 68, 68)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="rgb(16, 185, 129)" stopOpacity="0.2" />
+              </linearGradient>
+            </defs>
+            <line x1="50%" y1="0" x2="50%" y2="24" stroke="url(#connectionGradient)" strokeWidth="1" strokeDasharray="2,2" />
+          </svg>
+        </div>
+      )}
+
+      {/* Squad Layer */}
+      {squadLayer.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[7px] text-emerald-500 uppercase font-bold font-mono tracking-widest flex items-center gap-1">
+            <div className="h-px flex-1 bg-emerald-900/30" />
+            <span>SQUADS</span>
+            <div className="h-px flex-1 bg-emerald-900/30" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {squadLayer.map(net => (
+              <NetNode
+                key={net.id}
+                net={net}
+                netStatus={getNetStatus(net.id)}
+                usersOnNet={getUsersOnNet(net.id)}
+                users={users}
+                getUserById={getUserById}
+                getSignalColor={getSignalColor}
+                isHovered={hoveredNet === net.id}
+                onHover={setHoveredNet}
+                type="squad"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Support Layer */}
+      {supportLayer.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[7px] text-cyan-500 uppercase font-bold font-mono tracking-widest flex items-center gap-1">
+            <div className="h-px flex-1 bg-cyan-900/30" />
+            <span>SUPPORT</span>
+            <div className="h-px flex-1 bg-cyan-900/30" />
+          </div>
+          <div className="flex gap-2">
+            {supportLayer.map(net => (
+              <NetNode
+                key={net.id}
+                net={net}
+                netStatus={getNetStatus(net.id)}
+                usersOnNet={getUsersOnNet(net.id)}
+                users={users}
+                getUserById={getUserById}
+                getSignalColor={getSignalColor}
+                isHovered={hoveredNet === net.id}
+                onHover={setHoveredNet}
+                type="support"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NetNode({ net, netStatus, usersOnNet, users, getUserById, getSignalColor, isHovered, onHover, type }) {
+  const signalStrength = netStatus?.signal_strength || 100;
+  const signalColors = getSignalColor(signalStrength);
+  const hasAnomalies = netStatus?.is_jammed || (netStatus?.packet_loss_percent || 0) > 5;
+  const transmittingUsers = usersOnNet.filter(p => p.is_transmitting);
+
+  const typeColors = {
+    command: { bg: 'bg-red-950/30', border: 'border-red-800', text: 'text-red-400' },
+    squad: { bg: 'bg-emerald-950/30', border: 'border-emerald-800', text: 'text-emerald-400' },
+    support: { bg: 'bg-cyan-950/30', border: 'border-cyan-800', text: 'text-cyan-400' }
+  };
+
+  const colors = typeColors[type] || typeColors.support;
+
+  return (
+    <div
+      className={cn(
+        "relative border transition-all duration-200 cursor-pointer flex-1 min-w-0",
+        colors.bg,
+        isHovered ? signalColors.border : colors.border,
+        isHovered && signalColors.glow,
+        hasAnomalies && "animate-pulse"
+      )}
+      onMouseEnter={() => onHover(net.id)}
+      onMouseLeave={() => onHover(null)}
+    >
+      {/* Anomaly Overlays */}
+      {netStatus?.is_jammed && (
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-red-900 flex items-center justify-center animate-pulse">
+          <AlertTriangle className="w-2 h-2 text-white" />
+        </div>
+      )}
+      {netStatus && netStatus.packet_loss_percent > 5 && (
+        <div className="absolute -bottom-1 -right-1 text-[6px] bg-amber-500 border border-amber-900 px-1 font-mono text-black font-bold">
+          {netStatus.packet_loss_percent.toFixed(0)}%
+        </div>
+      )}
+
+      {/* Net Header */}
+      <div className="p-2 border-b border-zinc-800/50 bg-zinc-900/30">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1">
+            <div className={cn(
+              "w-1 h-1",
+              net.status === 'active' ? "bg-emerald-500 animate-pulse" : "bg-zinc-700"
+            )} />
+            <span className={cn("text-[8px] font-black font-mono tracking-wider", colors.text)}>
+              {net.code}
+            </span>
+          </div>
+          <SignalStrength strength={signalStrength} />
+        </div>
+        <div className="text-[7px] text-zinc-600 font-mono truncate">{net.label}</div>
+      </div>
+
+      {/* User Presence */}
+      <div className="p-1.5 min-h-[24px]">
+        {usersOnNet.length > 0 ? (
+          <div className="space-y-0.5">
+            {usersOnNet.slice(0, 3).map(presence => {
+              const user = getUserById(presence.user_id);
+              const isTransmitting = presence.is_transmitting;
+              
+              return (
+                <div 
+                  key={presence.id}
+                  className={cn(
+                    "text-[7px] font-mono flex items-center gap-1",
+                    isTransmitting && "text-[#ea580c] font-bold"
+                  )}
+                >
+                  <div className={cn(
+                    "w-0.5 h-0.5 rounded-full",
+                    isTransmitting 
+                      ? "bg-[#ea580c] shadow-[0_0_6px_rgba(234,88,12,0.8)] animate-pulse" 
+                      : "bg-emerald-500"
+                  )} />
+                  <span className="truncate">{user?.callsign || user?.rsi_handle || 'UNK'}</span>
+                  {isTransmitting && <span className="text-[6px]">TX</span>}
+                </div>
+              );
+            })}
+            {usersOnNet.length > 3 && (
+              <div className="text-[6px] text-zinc-700 font-mono">+{usersOnNet.length - 3} more</div>
+            )}
+          </div>
+        ) : (
+          <div className="text-[7px] text-zinc-700 font-mono">NO USERS</div>
+        )}
+      </div>
+
+      {/* Bottleneck Indicator */}
+      {usersOnNet.length > 8 && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-amber-500/50" />
+      )}
     </div>
   );
 }
