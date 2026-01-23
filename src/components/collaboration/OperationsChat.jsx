@@ -40,6 +40,13 @@ export default function OperationsChat({ user, className }) {
     refetchInterval: 3000
   });
 
+  // Fetch all users for callsign lookup
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => base44.entities.User.list(),
+    staleTime: 60000
+  });
+
   // Real-time subscription
   useEffect(() => {
     if (!channel?.id) return;
@@ -99,7 +106,7 @@ export default function OperationsChat({ user, className }) {
             </div>
           ) : (
             messages.slice().reverse().map((msg) => (
-              <MessageBubble key={msg.id} message={msg} currentUserId={user?.id} />
+              <MessageBubble key={msg.id} message={msg} currentUserId={user?.id} allUsers={allUsers} />
             ))
           )}
         </div>
@@ -127,8 +134,10 @@ export default function OperationsChat({ user, className }) {
   );
 }
 
-function MessageBubble({ message, currentUserId }) {
+function MessageBubble({ message, currentUserId, allUsers }) {
   const isOwn = message.user_id === currentUserId;
+  const sender = allUsers.find(u => u.id === message.user_id);
+  const callsign = sender?.callsign || message.created_by || 'Unknown';
   
   return (
     <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
@@ -140,7 +149,7 @@ function MessageBubble({ message, currentUserId }) {
       )}>
         {!isOwn && (
           <div className="text-[10px] text-zinc-500 mb-1 font-bold">
-            {message.created_by || 'Unknown'}
+            {callsign}
           </div>
         )}
         <div className="break-words">{message.content}</div>

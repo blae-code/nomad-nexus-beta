@@ -26,7 +26,7 @@ export default function DirectMessaging({ user, recipientId, recipientName, trig
       
       return await base44.entities.Channel.create({
         name: channelName,
-        description: `Direct message between ${user.full_name} and ${recipientName}`,
+        description: `Direct message between ${user.callsign || user.id} and ${recipientName}`,
         is_private: true
       });
     },
@@ -38,6 +38,13 @@ export default function DirectMessaging({ user, recipientId, recipientName, trig
     queryFn: () => base44.entities.Message.filter({ channel_id: dmChannel.id }, '-created_date', 50),
     enabled: !!dmChannel?.id && open,
     refetchInterval: 2000
+  });
+
+  // Fetch all users for callsign lookup
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => base44.entities.User.list(),
+    staleTime: 60000
   });
 
   useEffect(() => {
@@ -107,7 +114,7 @@ export default function DirectMessaging({ user, recipientId, recipientName, trig
                 </div>
               ) : (
                 messages.slice().reverse().map((msg) => (
-                  <DMBubble key={msg.id} message={msg} currentUserId={user?.id} />
+                  <DMBubble key={msg.id} message={msg} currentUserId={user?.id} allUsers={allUsers} />
                 ))
               )}
             </div>
@@ -134,8 +141,10 @@ export default function DirectMessaging({ user, recipientId, recipientName, trig
   );
 }
 
-function DMBubble({ message, currentUserId }) {
+function DMBubble({ message, currentUserId, allUsers }) {
   const isOwn = message.user_id === currentUserId;
+  const sender = allUsers.find(u => u.id === message.user_id);
+  const callsign = sender?.callsign || message.created_by || 'Unknown';
   
   return (
     <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
@@ -145,6 +154,11 @@ function DMBubble({ message, currentUserId }) {
           ? 'bg-blue-950/50 border border-blue-900/50 text-blue-100' 
           : 'bg-zinc-800 border border-zinc-700 text-zinc-200'
       )}>
+        {!isOwn && (
+          <div className="text-[10px] text-zinc-500 mb-1 font-bold">
+            {callsign}
+          </div>
+        )}
         <div className="break-words">{message.content}</div>
         <div className="text-[9px] text-zinc-600 mt-1">
           {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
