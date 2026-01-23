@@ -8,7 +8,9 @@ import DemoPreflight from '@/components/admin/steps/DemoPreflight';
 import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import WipeDataStep from '@/components/admin/steps/WipeDataStep';
 import SeedDataStep from '@/components/admin/steps/SeedDataStep';
-import CommsModeControl from '@/components/admin/CommsModeControl';
+import GovernanceSection from '@/components/admin/sections/GovernanceSection';
+import SystemStatusSection from '@/components/admin/sections/SystemStatusSection';
+import PioneerOverridesSection from '@/components/admin/sections/PioneerOverridesSection';
 
 export const COCKPIT_SECTIONS = [
   {
