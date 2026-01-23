@@ -180,18 +180,21 @@ export default function VoiceControlToolkit() {
                     onClick={() => setAiTranscription(!aiTranscription)}
                     disabled={!aiOptIn}
                     className={cn(
-                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
                       aiTranscription && aiOptIn
-                        ? 'bg-cyan-900/50 text-cyan-300 border border-cyan-700/50'
-                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                        ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50'
+                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                     )}
                   >
+                    <TrendingUp className="w-3.5 h-3.5" />
                     TX
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs font-bold text-cyan-400">Real-time Transcription</p>
-                  <p className="text-[10px] text-zinc-300">Listen & transcribe PTT transmissions</p>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-blue-400">Real-time Transcription</p>
+                    <p className="text-[10px] text-zinc-300">Automatically transcribes all PTT transmissions and voice communications in real-time. Useful for accessibility and maintaining chat logs.</p>
+                  </div>
                 </TooltipContent>
               </Tooltip>
 
@@ -201,18 +204,21 @@ export default function VoiceControlToolkit() {
                     onClick={() => setAiStatusInference(!aiStatusInference)}
                     disabled={!aiOptIn}
                     className={cn(
-                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
                       aiStatusInference && aiOptIn
-                        ? 'bg-amber-900/50 text-amber-300 border border-amber-700/50'
-                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                        ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50'
+                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                     )}
                   >
+                    <Zap className="w-3.5 h-3.5" />
                     INF
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs font-bold text-amber-400">Status Inference</p>
-                  <p className="text-[10px] text-zinc-300">Auto-update user status from voice cues</p>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-blue-400">Status Inference</p>
+                    <p className="text-[10px] text-zinc-300">AI analyzes voice patterns and content to automatically update your status (Available, In-Call, AFK, etc.) without manual intervention.</p>
+                  </div>
                 </TooltipContent>
               </Tooltip>
 
@@ -222,18 +228,21 @@ export default function VoiceControlToolkit() {
                     onClick={() => setAiAnomalyDetection(!aiAnomalyDetection)}
                     disabled={!aiOptIn}
                     className={cn(
-                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
                       aiAnomalyDetection && aiOptIn
-                        ? 'bg-red-900/50 text-red-300 border border-red-700/50'
-                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                        ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50'
+                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                     )}
                   >
-                    AOM
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    ADT
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs font-bold text-red-400">Anomaly Detection</p>
-                  <p className="text-[10px] text-zinc-300">Detect unusual comms patterns & alert</p>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-blue-400">Anomaly Detection</p>
+                    <p className="text-[10px] text-zinc-300">Monitors communication patterns for unusual activity, interference, jamming, or security threats. Alerts you to comms anomalies automatically.</p>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </div>
