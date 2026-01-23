@@ -70,23 +70,11 @@ export const COCKPIT_SECTIONS = [
   },
 ];
 
-export function hasRank(userRank, minRank) {
-  if (!userRank || !minRank) return false;
-  const rankHierarchy = ['vagrant', 'scout', 'voyager', 'founder', 'pioneer'];
-  const userIndex = rankHierarchy.indexOf((userRank || '').toLowerCase());
-  const minIndex = rankHierarchy.indexOf((minRank || '').toLowerCase());
-  return userIndex >= minIndex;
-}
-
 export function hasRank(user, minRank) {
   if (!user) return false;
-  const rankHierarchy = {
-    'pioneer': 4,
-    'founder': 3,
-    'voyager': 2,
-    'scout': 1
-  };
-  const userRank = rankHierarchy[user.rank?.toLowerCase()] || (user.role === 'admin' ? 3 : 0);
-  const requiredRank = rankHierarchy[minRank?.toLowerCase()] || 0;
-  return userRank >= requiredRank;
+  const rankHierarchy = ['vagrant', 'scout', 'voyager', 'founder', 'pioneer'];
+  const userRank = (user.rank || 'vagrant').toLowerCase();
+  const userIndex = rankHierarchy.indexOf(userRank);
+  const minIndex = rankHierarchy.indexOf((minRank || 'vagrant').toLowerCase());
+  return userIndex >= minIndex;
 }
