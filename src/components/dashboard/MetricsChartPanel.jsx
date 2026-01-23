@@ -453,7 +453,9 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             <div className="absolute inset-0 border border-cyan-500/20" />
           </motion.div>
         </motion.div>
-      </motion.div>
-    </div>
-  );
-}
+        </motion.div>
+        )}
+        </AnimatePresence>
+        </div>
+        );
+        }
