@@ -1,31 +1,50 @@
 import React from 'react';
+import { AlertTriangle, Radio } from 'lucide-react';
 
 export default function OpsCommsPanel({ session, user, isCommandRole }) {
-  const comms = session?.brief_artifact?.comms_plan || {};
+  const primaryNet = session?.brief_artifact?.comms_plan?.primary_net;
+  const secondaryNets = session?.brief_artifact?.comms_plan?.secondary_nets || [];
 
   return (
-    <div className="space-y-2 p-2 text-[8px]">
-      <div className="border border-zinc-800 bg-zinc-900/30 p-2">
-        <p className="text-zinc-500 uppercase font-mono mb-1">Primary</p>
-        <p className="text-zinc-300 font-bold">{comms.primary_net || 'Not assigned'}</p>
+    <div className="p-3 space-y-2 text-[8px]">
+      <div>
+        <p className="font-bold text-zinc-400 uppercase mb-1">Primary Net</p>
+        {primaryNet ? (
+          <div className="px-2 py-1 bg-emerald-950/30 border border-emerald-700/50 text-emerald-300 rounded-none">
+            <div className="flex items-center gap-1">
+              <Radio className="w-2.5 h-2.5 animate-pulse" />
+              <span className="font-mono">{primaryNet}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-zinc-600 italic">No primary net configured</p>
+        )}
       </div>
 
-      {comms.secondary_nets?.length > 0 && (
-        <div className="border border-zinc-800 bg-zinc-900/30 p-2">
-          <p className="text-zinc-500 uppercase font-mono mb-1">Secondary ({comms.secondary_nets.length})</p>
+      {secondaryNets.length > 0 && (
+        <div>
+          <p className="font-bold text-zinc-400 uppercase mb-1">Secondary Nets</p>
           <div className="space-y-1">
-            {comms.secondary_nets.map((net, idx) => (
-              <p key={idx} className="text-zinc-400">{net}</p>
+            {secondaryNets.map((netId, idx) => (
+              <div
+                key={idx}
+                className="px-2 py-1 bg-zinc-900/30 border border-zinc-800 text-zinc-400 rounded-none text-[7px]"
+              >
+                {netId}
+              </div>
             ))}
           </div>
         </div>
       )}
 
       {isCommandRole && (
-        <div className="border border-zinc-800/50 bg-zinc-900/20 p-2 mt-3 pt-3">
-          <p className="text-zinc-600 uppercase font-mono text-[7px] mb-2">Command Actions</p>
-          <button className="w-full px-2 py-1.5 bg-red-950/40 border border-red-700/30 text-red-300 text-[7px] font-mono hover:bg-red-950/60">
-            BROADCAST COMMAND
+        <div className="pt-2 border-t border-zinc-800 space-y-1">
+          <p className="font-bold text-zinc-400 uppercase">Command Actions</p>
+          <button className="w-full px-2 py-1 bg-[#ea580c]/20 hover:bg-[#ea580c]/30 border border-[#ea580c]/50 text-[#ea580c] text-[8px] font-bold uppercase transition-colors rounded-none">
+            BROADCAST ORDER
+          </button>
+          <button className="w-full px-2 py-1 bg-yellow-950/20 hover:bg-yellow-950/30 border border-yellow-700/50 text-yellow-300 text-[8px] font-bold uppercase transition-colors rounded-none">
+            DECLARE HOT ZONE
           </button>
         </div>
       )}

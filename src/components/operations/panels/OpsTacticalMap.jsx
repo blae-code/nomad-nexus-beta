@@ -1,33 +1,32 @@
 import React from 'react';
+import { AlertTriangle } from 'lucide-react';
 
-export default function OpsTacticalMap({ session, layer, selectedMarker, onSelectMarker, isCommandRole }) {
+export default function OpsTacticalMap({
+  session,
+  layer = 'personnel',
+  selectedMarker,
+  onSelectMarker,
+  isCommandRole
+}) {
   const markers = session?.brief_artifact?.tactical_markers || [];
 
+  // Placeholder map implementation
+  // In production, integrate with react-leaflet or Three.js for actual tactical map
+
   return (
-    <div className="w-full h-full bg-black flex items-center justify-center border-l border-zinc-800">
-      {markers.length > 0 ? (
-        <div className="p-4 text-center">
-          <p className="text-[9px] text-zinc-500 mb-3">Tactical Map - {layer.toUpperCase()} Layer</p>
-          <div className="grid grid-cols-2 gap-2">
-            {markers.map(marker => (
-              <button
-                key={marker.id}
-                onClick={() => onSelectMarker(marker.id)}
-                className={`p-2 text-[8px] border rounded-none text-left ${
-                  selectedMarker === marker.id
-                    ? 'bg-[#ea580c]/30 border-[#ea580c] text-[#ea580c]'
-                    : 'bg-zinc-800/30 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                }`}
-              >
-                <div className="font-mono font-bold">[{marker.type.toUpperCase()}]</div>
-                <div>{marker.label}</div>
-              </button>
-            ))}
+    <div className="h-full w-full relative bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center p-4">
+      <div className="text-center space-y-2">
+        <AlertTriangle className="w-8 h-8 text-zinc-600 mx-auto" />
+        <p className="text-sm text-zinc-500">TACTICAL MAP INTEGRATION</p>
+        <p className="text-[8px] text-zinc-600">
+          {markers.length} markers loaded | Layer: {layer} | {isCommandRole ? 'Command' : 'Member'} mode
+        </p>
+        {selectedMarker && (
+          <div className="mt-4 p-2 bg-zinc-900 border border-zinc-800 rounded-none">
+            <p className="text-[8px] text-zinc-400">Selected: {selectedMarker.label}</p>
           </div>
-        </div>
-      ) : (
-        <p className="text-[9px] text-zinc-600">No markers defined for this operation</p>
-      )}
+        )}
+      </div>
     </div>
   );
 }
