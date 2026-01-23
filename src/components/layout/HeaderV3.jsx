@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog, Coins, Shield } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
@@ -463,6 +464,7 @@ export default function HeaderV3() {
   };
 
   return (
+    <TooltipProvider delayDuration={200}>
     <header className="h-16 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0"
       style={{
         backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)',
@@ -472,26 +474,58 @@ export default function HeaderV3() {
       {/* LEFT: Brand + Callsign + Presence */}
       <div className="flex items-center gap-2.5 min-w-0 shrink-0">
         {/* NOMAD NEXUS Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
-            <Shield className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h1 className="text-sm font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
-            <p className="text-[7px] font-mono text-zinc-500 tracking-widest">OPERATIONS</p>
-          </div>
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-8 h-8 bg-[#ea580c] border-2 border-[#ea580c] flex items-center justify-center shadow-lg shadow-[#ea580c]/20">
+                <Shield className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-sm font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
+                <p className="text-[7px] font-mono text-zinc-500 tracking-widest">OPERATIONS</p>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Nomad Nexus Command & Control</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Divider */}
         <div className="w-px h-10 bg-zinc-800/50" />
 
         {/* User Identity Badges */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
-            {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
-          </Badge>
-          <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
-          {user?.role === 'admin' && <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className={cn('text-[8px] font-bold', getRankColorClass(user?.rank, 'bg'))}>
+                {user?.callsign || user?.rsi_handle || 'OPERATIVE'}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Your Callsign</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="text-[7px] bg-zinc-800 text-zinc-200 border-zinc-700">{user?.rank || 'VAGRANT'}</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Organization Rank</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          {user?.role === 'admin' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="text-[7px] bg-[#ea580c] text-white border-[#ea580c]">ADMIN</Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">System Administrator Access</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Divider */}
@@ -499,25 +533,31 @@ export default function HeaderV3() {
 
         {/* Status Pill */}
         <div className="relative">
-          <button
-            onClick={() => setStatusMenuOpen(!statusMenuOpen)}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
-              presenceInfo.color,
-              'hover:shadow-sm'
-            )}
-            title="Click to change status"
-          >
-            <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor, 
-              userPresence?.is_transmitting && 'animate-pulse'
-            )} />
-            <div className="hidden md:flex flex-col items-start gap-0.5">
-              <span>{presenceInfo.label}</span>
-              {presenceInfo.sublabel && (
-                <span className="text-[7px] text-zinc-500 font-medium tracking-wider">{presenceInfo.sublabel}</span>
-              )}
-            </div>
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setStatusMenuOpen(!statusMenuOpen)}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
+                  presenceInfo.color,
+                  'hover:shadow-sm'
+                )}
+              >
+                <div className={cn('w-1.5 h-1.5 rounded-full', presenceInfo.dotColor, 
+                  userPresence?.is_transmitting && 'animate-pulse'
+                )} />
+                <div className="hidden md:flex flex-col items-start gap-0.5">
+                  <span>{presenceInfo.label}</span>
+                  {presenceInfo.sublabel && (
+                    <span className="text-[7px] text-zinc-500 font-medium tracking-wider">{presenceInfo.sublabel}</span>
+                  )}
+                </div>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Click to change your status</p>
+            </TooltipContent>
+          </Tooltip>
 
           {statusMenuOpen && (
             <div className="absolute top-full left-0 mt-2 bg-zinc-950 border border-zinc-800/60 z-50 min-w-max overflow-hidden"
@@ -571,17 +611,24 @@ export default function HeaderV3() {
       {/* RIGHT: Telemetry + User Menu */}
       <div className="flex items-center gap-2 shrink-0">
         {/* Personal Ledger */}
-        <motion.button
-          whileHover={{ scale: 1.08 }}
-          onClick={() => window.location.href = createPageUrl('Treasury')}
-          className="hover:opacity-90 transition-opacity cursor-pointer group"
-        >
-          <Badge className="text-[10px] bg-[#ea580c]/20 text-[#ea580c] border-2 border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 group-hover:border-[#ea580c] px-3 py-1.5 transition-all flex items-center gap-1.5">
-            <Coins className="w-3 h-3" />
-            <span className="font-mono font-bold">{((user?.aUEC || 0) / 1000000000).toFixed(2)}B</span>
-            <span className="text-[8px] text-[#ea580c]/80">aUEC</span>
-          </Badge>
-        </motion.button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              onClick={() => window.location.href = createPageUrl('Treasury')}
+              className="hover:opacity-90 transition-opacity cursor-pointer group"
+            >
+              <Badge className="text-[10px] bg-[#ea580c]/20 text-[#ea580c] border-2 border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 group-hover:border-[#ea580c] px-3 py-1.5 transition-all flex items-center gap-1.5">
+                <Coins className="w-3 h-3" />
+                <span className="font-mono font-bold">{((user?.aUEC || 0) / 1000000000).toFixed(2)}B</span>
+                <span className="text-[8px] text-[#ea580c]/80">aUEC</span>
+              </Badge>
+            </motion.button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Personal Treasury Balance</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Ritual Bonfire Widget */}
         <RitualBonfireWidget />
@@ -590,26 +637,39 @@ export default function HeaderV3() {
         <TimeClock />
 
         {/* Connection Status / Diagnostics Trigger */}
-        <button
-          onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
-          className={cn(
-            'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100 cursor-pointer',
-            connectionStatus === 'OPTIMAL'
-              ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-400 hover:border-emerald-600/70'
-              : 'bg-red-950/30 border-red-700/50 text-red-400 hover:border-red-600/70',
-            netDataTickActive && 'border-[#ea580c]/50 bg-[#ea580c]/10'
-          )}
-          title="Click for detailed diagnostics"
-        >
-          <Wifi className="w-2.5 h-2.5" />
-          <span>{latency}ms</span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100 cursor-pointer',
+                connectionStatus === 'OPTIMAL'
+                  ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-400 hover:border-emerald-600/70'
+                  : 'bg-red-950/30 border-red-700/50 text-red-400 hover:border-red-600/70',
+                netDataTickActive && 'border-[#ea580c]/50 bg-[#ea580c]/10'
+              )}
+            >
+              <Wifi className="w-2.5 h-2.5" />
+              <span>{latency}ms</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Connection Status · Click for diagnostics</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Online Count */}
-        <div className="flex items-center gap-1.5 px-2.5 py-2 border border-zinc-800/50 bg-zinc-900/40 text-[9px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-          <span className="font-bold uppercase tracking-wider">{onlineCount}/{window.headerTotalUsers || onlineCount}</span>
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 px-2.5 py-2 border border-zinc-800/50 bg-zinc-900/40 text-[9px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+              <span className="font-bold uppercase tracking-wider">{onlineCount}/{window.headerTotalUsers || onlineCount}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Online Members / Total</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Notifications */}
         <div className="scale-125 origin-right">
@@ -618,18 +678,24 @@ export default function HeaderV3() {
 
         {/* User Menu */}
         <div className="relative">
-          <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className={cn(
-              'flex items-center justify-center w-9 h-9 border text-[10px] font-mono transition-all duration-100',
-              userMenuOpen
-                ? 'bg-[#ea580c]/20 border-[#ea580c]/60 text-[#ea580c]'
-                : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-500 hover:border-zinc-700/50 hover:text-zinc-400'
-            )}
-            title="User Menu"
-          >
-            <Cog className="w-4 h-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className={cn(
+                  'flex items-center justify-center w-9 h-9 border text-[10px] font-mono transition-all duration-100',
+                  userMenuOpen
+                    ? 'bg-[#ea580c]/20 border-[#ea580c]/60 text-[#ea580c]'
+                    : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-500 hover:border-zinc-700/50 hover:text-zinc-400'
+                )}
+              >
+                <Cog className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">User Menu & Settings</p>
+            </TooltipContent>
+          </Tooltip>
 
           {userMenuOpen && (
             <div className="absolute top-full right-0 mt-2 bg-zinc-950 border border-zinc-800/60 z-50 min-w-max overflow-hidden"
@@ -673,6 +739,7 @@ export default function HeaderV3() {
           )}
         </div>
       </div>
+    </TooltipProvider>
 
       {/* Diagnostics Panel */}
       {diagnosticsOpen && (
