@@ -19,13 +19,14 @@ export function createCommsResult(opts: CommsResultOptions) {
   };
 }
 
-export function createTokenResult(token: string, roomName: string, identity: string) {
+export function createTokenResult(token: string, roomName: string, identity: string, url?: string) {
   return createCommsResult({
     ok: true,
     data: {
       token,
       roomName,
       identity,
+      url: url || '',
       expiresAt: new Date(Date.now() + 3600000).toISOString()
     }
   });
