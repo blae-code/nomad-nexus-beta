@@ -378,6 +378,7 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
 }
 
 export default function ActiveNetPanel({ net, user, eventId, onConnectionChange }) {
+  const { isLive, isSim } = useCommsMode();
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
   const [whisperTarget, setWhisperTarget] = React.useState(null);
@@ -390,6 +391,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const [accessReason, setAccessReason] = React.useState("");
   const [hasTemporaryTx, setHasTemporaryTx] = React.useState(false);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
+  const [simParticipants, setSimParticipants] = React.useState([]);
 
   // Fetch channels for this net
   const { data: channels = [] } = useQuery({
@@ -866,23 +868,35 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   return (
     <div className="h-full flex flex-col gap-4">
       
+      {/* Mode Indicator */}
+          {isSim && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-amber-950/30 border border-amber-800 p-2 rounded flex items-center gap-2"
+            >
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-xs text-amber-400 font-mono font-bold">SIM MODE ACTIVE</span>
+            </motion.div>
+          )}
+
       {/* Connection Error Banner */}
-      <AnimatePresence>
-        {connectionError && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-red-950/50 border border-red-900 p-3 rounded flex items-center gap-3"
-          >
-            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-            <div className="flex-1">
-              <div className="text-xs font-bold text-red-400 uppercase">Connection Failed</div>
-              <div className="text-[10px] text-red-300 mt-0.5">{connectionError}</div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <AnimatePresence>
+            {connectionError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-red-950/50 border border-red-900 p-3 rounded flex items-center gap-3"
+              >
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <div className="flex-1">
+                  <div className="text-xs font-bold text-red-400 uppercase">Connection Failed</div>
+                  <div className="text-[10px] text-red-300 mt-0.5">{connectionError}</div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
       {/* Microphone Permission Banner */}
       <AnimatePresence>
@@ -1182,10 +1196,22 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                <span>ENCRYPTION: {connectionToken ? "AES-256" : "NONE"}</span>
              </div>
            </div>
-         </div>
-         </TerminalCard>
-         )}
-         </div>
-         </div>
-         );
+           </div>
+           </TerminalCard>
+           )}
+           </div>
+           </div>
+
+           {/* Room Debug Panel (LIVE mode) */}
+           {isLive && connectionState !== 'disconnected' && (
+           <RoomDebugPanel
+           room={room}
+           roomName={`redscar_${net?.code?.toLowerCase()}`}
+           identity={user?.callsign}
+           token={connectionToken}
+           connectionState={connectionState}
+           lastError={connectionError}
+           />
+           )}
+           );
          }
