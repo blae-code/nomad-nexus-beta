@@ -309,6 +309,14 @@ export default function AccessGatePage() {
               </div>
             )}
 
+            {/* Privacy Cues */}
+            <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded text-[10px] space-y-1 text-zinc-400 font-mono">
+              <p className="text-zinc-500 font-bold mb-2">PRIVACY COMMITMENT</p>
+              <p>• No mailing list</p>
+              <p>• No marketing email</p>
+              <p>• Operational comms stay inside the Dock</p>
+            </div>
+
             {/* Accept Codes */}
             <div className="flex items-start gap-3 pt-2">
               <Checkbox
@@ -331,7 +339,7 @@ export default function AccessGatePage() {
                 id="ai-consent"
               />
               <label htmlFor="ai-consent" className="text-xs text-zinc-400 cursor-pointer pt-0.5">
-                Allow AI-powered features (analytics, summaries, suggestions)
+                Allow AI-powered features (optional, can be changed later)
               </label>
             </div>
 
