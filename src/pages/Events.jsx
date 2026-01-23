@@ -42,6 +42,10 @@ import AIAfterActionReportGenerator from "@/components/ai/AIAfterActionReportGen
 import EventRolesManager from "@/components/events/EventRolesManager";
 import EventMilestoneTracker from "@/components/events/EventMilestoneTracker";
 import { Rocket } from "lucide-react";
+import { SkeletonLoader } from "@/components/feedback/SkeletonLoader";
+import { EmptyStateCard, EmptyStateMessages } from "@/components/feedback/EmptyStateCard";
+import { ErrorStateCard } from "@/components/feedback/ErrorStateCard";
+import { PanelHeader } from "@/components/layout/PanelHeader";
 
 function EventDetail({ id }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -350,20 +354,21 @@ export default function EventsPage() {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 py-2">
           {isLoading ? (
-            <LoadingState message="RETRIEVING OPERATIONS..." />
+            <SkeletonLoader count={3} variant="card" />
+          ) : error ? (
+            <ErrorStateCard
+              title="Failed to Load Operations"
+              description="Unable to retrieve the operations board."
+              error={error}
+              onRetry={() => refetch()}
+            />
           ) : events.length === 0 ? (
-            <EmptyState
-               title="No Scheduled Operations"
-               description="Initialize a new operation to begin planning."
-               action={canCreateEvent(currentUser) && (
-                 <Button 
-                   onClick={() => setShowWizard(true)} 
-                   className="bg-red-900 hover:bg-red-800 text-white text-xs"
-                 >
-                   INITIALIZE OPERATION
-                 </Button>
-               )}
-             />
+            <EmptyStateCard
+              icon={Calendar}
+              {...EmptyStateMessages.NO_EVENTS}
+              action={canCreateEvent(currentUser) ? "Initialize Operation" : undefined}
+              onAction={canCreateEvent(currentUser) ? () => setShowWizard(true) : undefined}
+            />
           ) : (
             <div className="grid gap-2">
                {events.map((event) => {
