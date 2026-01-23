@@ -37,7 +37,6 @@ Deno.serve(async (req) => {
             squads = [];
         }
 
-        const netsCreated = [];
         const eventShort = eventId.slice(0, 8);
 
         // Helper to generate unique room name
