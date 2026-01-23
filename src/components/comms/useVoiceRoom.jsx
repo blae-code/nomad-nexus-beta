@@ -29,29 +29,29 @@ export function useVoiceRoom(roomName, userIdentity) {
   }, [modeData]);
 
   // Mint token for LIVE mode
-  const mintToken = useCallback(async () => {
-    try {
-      setLastError(null);
-      const response = await base44.functions.invoke('generateLiveKitToken', {
-        roomName,
-        userIdentity
-      });
-      // Handle canonical result structure
-      if (response.data?.ok) {
-        setToken(response.data.data.token);
-        return response.data.data.token;
-      } else {
-        const errMsg = response.data?.message || 'Token mint failed';
-        setLastError(errMsg);
-        return null;
-      }
-    } catch (error) {
-      const errMsg = error?.response?.data?.message || error.message;
-      setLastError(errMsg);
-      console.error('Failed to mint token:', error);
-      return null;
-    }
-  }, [roomName, userIdentity]);
+   const mintToken = useCallback(async () => {
+     try {
+       setLastError(null);
+       const response = await base44.functions.invoke('generateLiveKitToken', {
+         roomName,
+         userIdentity
+       });
+       // Handle canonical result structure: { ok: true, data: { token, ... } }
+       if (response.data?.ok && response.data?.data?.token) {
+         setToken(response.data.data.token);
+         return response.data.data;
+       } else {
+         const errMsg = response.data?.message || 'Token mint failed';
+         setLastError(errMsg);
+         return null;
+       }
+     } catch (error) {
+       const errMsg = error?.response?.data?.message || error.message;
+       setLastError(errMsg);
+       console.error('Failed to mint token:', error);
+       return null;
+     }
+   }, [roomName, userIdentity]);
 
   // Join room based on mode
   const joinRoom = useCallback(async () => {
