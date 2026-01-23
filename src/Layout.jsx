@@ -6,8 +6,8 @@ import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
-import MessagingFooter from "@/components/messaging/MessagingFooter";
-import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
+import CommsDockShell from "@/components/comms/CommsDockShell";
+      import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 
 const pageMap = {
   '/': 'hub',
@@ -137,8 +137,8 @@ export default function Layout({ children, currentPageName }) {
             {children}
           </div>
         </AppShellV3>
-        {/* Messaging Console Footer */}
-          {user && <MessagingFooter user={user} />}
+        {/* Comms Dock */}
+          {user && <CommsDockShell user={user} />}
         </div>
 
         {/* User Feedback System */}
