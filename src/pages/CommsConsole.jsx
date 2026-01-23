@@ -260,6 +260,8 @@ function CommsConsolePage() {
 
   // Memoize nets to prevent unnecessary rerenders
   const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
+  
+  const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
 
   // Handlers for connection state changes from ActiveNetPanel
   const handleConnectSuccess = React.useCallback((netId) => {
