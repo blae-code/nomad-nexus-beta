@@ -301,15 +301,21 @@ export default function EventsPage() {
   }, []);
 
   // Only fetch events if user can view them (permission check)
+  // Use bounded query: limit to 50 most recent, sorted by updated_date
   const { data: events, isLoading } = useQuery({
     queryKey: ['events-list'],
     queryFn: async () => {
-      const allEvents = await base44.entities.Event.list();
-      // Filter out archived/deleted events
-      return allEvents.filter(e => e.phase !== 'ARCHIVED');
+      const allEvents = await base44.entities.Event.filter(
+        { phase: { $ne: 'ARCHIVED' } },
+        '-updated_date',
+        50
+      );
+      return allEvents || [];
     },
     initialData: [],
-    enabled: !!currentUser
+    enabled: !!currentUser,
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000
   });
 
   const { users: allUsers, userById } = useUserDirectory();
