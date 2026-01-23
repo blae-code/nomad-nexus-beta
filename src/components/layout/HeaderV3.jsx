@@ -251,6 +251,14 @@ export default function HeaderV3() {
     return () => clearInterval(heartbeat);
   }, [user?.id, userPresence?.status, userPresence?.net_id, userPresence?.event_id, userPresence?.is_transmitting]);
 
+  // Continuous latency monitoring (only when visible)
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const latencyMonitor = setInterval(ping, 15000); // Every 15 seconds when visible
+    return () => clearInterval(latencyMonitor);
+  }, [isVisible]);
+
   // Set offline on window unload
   useEffect(() => {
     if (!user?.id) return;
