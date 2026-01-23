@@ -314,7 +314,7 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                          onClick={() => setSelectedUser(user)}
                          className={`p-3 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-900/50 transition-colors ${selectedUser?.id === user.id ? 'bg-zinc-900 border-l-4 border-l-[#ea580c]' : ''}`}
                        >
-                         <div className="font-bold text-sm text-zinc-200">{user.callsign}</div>
+                         <div className="font-bold text-sm text-zinc-200">{user.callsign || "Operative"}</div>
                          <div className="text-[10px] font-mono text-zinc-500 flex gap-2 mt-1">
                            {(isAdmin || currentUser?.callsign === user.callsign) && user.email && (
                              <>
