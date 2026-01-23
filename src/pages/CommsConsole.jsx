@@ -211,6 +211,17 @@ function CommsConsolePage() {
     initialData: {}
   });
 
+  // Real-time subscription for activity updates
+  React.useEffect(() => {
+    if (!selectedEventId || voiceNets.length === 0) return;
+
+    const unsubscribe = base44.entities.Message.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['comms-activity', selectedEventId] });
+    });
+
+    return () => unsubscribe?.();
+  }, [selectedEventId, voiceNets.length, queryClient]);
+
   // Auto-trigger provisioning when event selected with no nets
   React.useEffect(() => {
      if (selectedEventId && voiceNets.length === 0 && !isLoading && !isProvisioningNets) {
