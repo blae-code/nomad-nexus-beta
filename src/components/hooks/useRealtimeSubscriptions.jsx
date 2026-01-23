@@ -1,49 +1,47 @@
-import { useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 /**
- * Centralized real-time subscription manager
- * Prevents duplicate subscriptions and manages cleanup
+ * Hook to subscribe to real-time updates for entities
+ * Replaces polling with efficient event-driven invalidations
  */
-export function useRealtimeSubscriptions({ enabled = true, entities = [] }) {
+export function useRealtimeSubscription(entityName, queryKeys = []) {
   const queryClient = useQueryClient();
-  const subscriptionsRef = useRef(new Map());
 
   useEffect(() => {
-    if (!enabled || entities.length === 0) return;
+    const entityType = base44.entities[entityName];
+    if (!entityType) return;
 
-    const unsubscribers = [];
-
-    entities.forEach(entityName => {
-      // Prevent duplicate subscriptions
-      if (subscriptionsRef.current.has(entityName)) return;
-
-      try {
-        const unsubscribe = base44.entities[entityName].subscribe((event) => {
-          // Invalidate all queries for this entity
-          queryClient.invalidateQueries({ 
-            predicate: (query) => {
-              const key = query.queryKey[0];
-              return typeof key === 'string' && key.toLowerCase().includes(entityName.toLowerCase());
-            }
-          });
-        });
-
-        subscriptionsRef.current.set(entityName, unsubscribe);
-        unsubscribers.push(() => {
-          unsubscribe();
-          subscriptionsRef.current.delete(entityName);
-        });
-      } catch (error) {
-        console.warn(`Failed to subscribe to ${entityName}:`, error);
-      }
+    const unsubscribe = entityType.subscribe((event) => {
+      // Invalidate affected queries on any entity change
+      queryKeys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
     });
 
-    return () => {
-      unsubscribers.forEach(unsub => {
-        if (typeof unsub === 'function') unsub();
+    return () => unsubscribe?.();
+  }, [entityName, queryKeys, queryClient]);
+}
+
+/**
+ * Hook to batch subscribe to multiple entity types
+ */
+export function useMultipleRealtimeSubscriptions(subscriptions) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unsubscribers = subscriptions.map(({ entityName, queryKeys }) => {
+      const entityType = base44.entities[entityName];
+      if (!entityType) return null;
+
+      return entityType.subscribe((event) => {
+        queryKeys.forEach(key => {
+          queryClient.invalidateQueries({ queryKey: key });
+        });
       });
-    };
-  }, [enabled, entities.join(','), queryClient]);
+    }).filter(Boolean);
+
+    return () => unsubscribers.forEach(unsub => unsub?.());
+  }, [subscriptions, queryClient]);
 }
