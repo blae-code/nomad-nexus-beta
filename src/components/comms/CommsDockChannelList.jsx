@@ -2,9 +2,15 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sortChannels, getChannelIcon } from './channelTaxonomy';
+import { canUser } from './commsPermissionEngine';
 
 export default function CommsDockChannelList({ channels, user, onSelectChannel }) {
-  const sorted = sortChannels(channels, user);
+  // Filter readable channels, then sort
+  const readableChannels = channels.filter(ch => {
+    const result = canUser(user, ch, 'read');
+    return result.allowed;
+  });
+  const sorted = sortChannels(readableChannels, user);
 
   return (
     <div className="space-y-1 p-1">
