@@ -358,25 +358,58 @@ function buildEdges(topologyData, nodes) {
   return edges;
 }
 
-function drawNodes(ctx, nodes) {
+function getNodeStateColor(baseColor, state) {
+  const stateColors = {
+    connected: '#10b981',    // Green
+    connecting: '#eab308',   // Yellow
+    offline: '#ef4444',      // Red
+    unknown: baseColor
+  };
+  return stateColors[state] || baseColor;
+}
+
+function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set()) {
+  const now = Date.now();
+  
   nodes.forEach(node => {
-    // Outer circle
-    ctx.fillStyle = node.color;
-    ctx.globalAlpha = 0.1;
+    const state = nodeStates[node.id] || 'unknown';
+    const nodeColor = getNodeStateColor(node.color, state);
+    const isTransmitting = transmittingNodes.has(node.id);
+    
+    // Pulsing effect for transmitting nodes
+    let pulseRadius = node.radius;
+    if (isTransmitting) {
+      const pulseAmount = Math.sin((now % 1000) / 1000 * Math.PI) * 6;
+      pulseRadius = node.radius + pulseAmount;
+    }
+
+    // Outer glow (pulsing for transmitting, static for others)
+    ctx.fillStyle = nodeColor;
+    ctx.globalAlpha = isTransmitting ? 0.3 : 0.15;
     ctx.beginPath();
-    ctx.arc(node.x, node.y, node.radius + 6, 0, 2 * Math.PI);
+    ctx.arc(node.x, node.y, pulseRadius + 6, 0, 2 * Math.PI);
     ctx.fill();
 
     // Node circle
     ctx.globalAlpha = 1;
-    ctx.fillStyle = node.color;
+    ctx.fillStyle = nodeColor;
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
     ctx.fill();
 
-    // Border
+    // Border (brighter for transmitting)
+    ctx.strokeStyle = isTransmitting ? '#ffffff' : '#09090b';
+    ctx.lineWidth = isTransmitting ? 2.5 : 2;
+    ctx.stroke();
+
+    // State indicator dot (top-right corner)
+    const dotRadius = 4;
+    ctx.fillStyle = nodeColor;
+    ctx.beginPath();
+    ctx.arc(node.x + node.radius - dotRadius, node.y - node.radius + dotRadius, dotRadius, 0, 2 * Math.PI);
+    ctx.fill();
     ctx.strokeStyle = '#09090b';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1;
     ctx.stroke();
 
     // Label
@@ -385,6 +418,13 @@ function drawNodes(ctx, nodes) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(node.label, node.x, node.y);
+
+    // Transmitting indicator text
+    if (isTransmitting) {
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.6)';
+      ctx.font = 'bold 7px monospace';
+      ctx.fillText('TX', node.x, node.y + node.radius + 8);
+    }
   });
 }
 
