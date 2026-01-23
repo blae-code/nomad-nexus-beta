@@ -302,7 +302,7 @@ export default function EventsPage() {
 
   // Only fetch events if user can view them (permission check)
   // Use bounded query: limit to 50 most recent, sorted by updated_date
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, error, refetch } = useQuery({
     queryKey: ['events-list'],
     queryFn: async () => {
       const allEvents = await base44.entities.Event.filter(
