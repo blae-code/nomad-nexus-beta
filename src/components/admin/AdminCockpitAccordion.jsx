@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ChevronDown, AlertTriangle, CheckCircle2, Activity,
-  MessageSquare, Database, Shield, Server, Lock
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminCockpitAccordion({ 
@@ -22,20 +19,18 @@ export default function AdminCockpitAccordion({
 
       {sections.map((section) => {
         const isExpanded = expandedSection === section.id;
-        const isVisible = section.visible !== false && (!section.minRank || hasRank(user, section.minRank));
-        
-        if (!isVisible) return null;
-
         const lastRun = auditLogs.find(
           log => log.step_name === section.id && log.status === 'success'
         );
+        const shouldBeCollapsed = section.collapsed;
 
         return (
           <motion.div
             key={section.id}
             className={cn(
               'border transition-colors',
-              isExpanded ? 'border-[#ea580c]/50 bg-zinc-950/80' : 'border-zinc-800 bg-zinc-950/40 hover:bg-zinc-950/60'
+              isExpanded ? 'border-[#ea580c]/50 bg-zinc-950/80' : 'border-zinc-800 bg-zinc-950/40 hover:bg-zinc-950/60',
+              shouldBeCollapsed && !isExpanded && 'opacity-75'
             )}
           >
             {/* Accordion Header */}
@@ -54,16 +49,9 @@ export default function AdminCockpitAccordion({
                 <span className="text-[10px] font-bold text-zinc-300 uppercase truncate">
                   {section.label}
                 </span>
-                {section.badge && (
-                  <span className={cn(
-                    'text-[7px] px-1.5 py-0.5 font-mono font-bold shrink-0',
-                    section.badge === 'pass'
-                      ? 'bg-green-950/40 text-green-400 border border-green-800/50'
-                      : section.badge === 'warn'
-                      ? 'bg-yellow-950/40 text-yellow-400 border border-yellow-800/50'
-                      : 'bg-red-950/40 text-red-400 border border-red-800/50'
-                  )}>
-                    {section.badge.toUpperCase()}
+                {lastRun && (
+                  <span className="text-[7px] px-1 py-0.5 bg-green-950/40 text-green-400 border border-green-800/50 font-mono font-bold shrink-0">
+                    OK
                   </span>
                 )}
               </div>
@@ -75,7 +63,7 @@ export default function AdminCockpitAccordion({
 
             {/* Accordion Content */}
             <AnimatePresence>
-              {isExpanded && (
+              {isExpanded && section.component && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -98,18 +86,4 @@ export default function AdminCockpitAccordion({
       })}
     </div>
   );
-}
-
-// Helper to check user rank
-function hasRank(user, minRank) {
-  if (!user) return false;
-  const rankHierarchy = {
-    'pioneer': 4,
-    'founder': 3,
-    'voyager': 2,
-    'scout': 1
-  };
-  const userRank = rankHierarchy[user.rank?.toLowerCase()] || 0;
-  const requiredRank = rankHierarchy[minRank?.toLowerCase()] || 0;
-  return userRank >= requiredRank;
 }
