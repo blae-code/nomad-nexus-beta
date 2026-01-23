@@ -362,10 +362,56 @@ export default function VoiceControlToolkit() {
         </div>
       </div>
 
-      {/* Footer - Minimal */}
-      <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[6px] text-zinc-600 font-mono flex items-center justify-center gap-2 whitespace-nowrap">
-        <span>V: PTT</span>
-        <span>M: MUTE</span>
+      {/* Footer - Communications & Shortcuts */}
+      <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-2 space-y-1.5">
+        {/* Keybind Hints */}
+        <div className="text-[6px] text-zinc-600 font-mono flex items-center justify-center gap-3 whitespace-nowrap">
+          <span>CTRL+V: PTT</span>
+          <span>•</span>
+          <span>CTRL+M: MUTE</span>
+        </div>
+        
+        {/* Communication Tools */}
+        <div className="flex gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="flex-1 py-1.5 px-2 text-[8px] font-medium rounded bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <MessageSquare className="w-3 h-3" />
+                <span>DM</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="text-xs font-bold">Direct Messages</p>
+              <p className="text-[10px] text-zinc-300">Quick access to 1-on-1 comms</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="flex-1 py-1.5 px-2 text-[8px] font-medium rounded bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <Radio className="w-3 h-3" />
+                <span>CHANNEL</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="text-xs font-bold">Channel Chat</p>
+              <p className="text-[10px] text-zinc-300">Text comms in current operation</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="flex-1 py-1.5 px-2 text-[8px] font-medium rounded bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                <span>WHISPER</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="text-xs font-bold">Classified Comms</p>
+              <p className="text-[10px] text-zinc-300">Encrypted role/rank targeted messages</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
     </TooltipProvider>
