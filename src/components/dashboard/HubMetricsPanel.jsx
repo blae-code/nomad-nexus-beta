@@ -156,7 +156,7 @@ const HubMetricsPanel = memo(function HubMetricsPanel({
         <div className="text-[7px] uppercase text-zinc-400 tracking-widest font-bold">ORGANIZATION STATUS</div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+          className="text-zinc-500 hover:text-[#ea580c] transition-colors p-1"
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
           <ChevronDown className={cn('w-3 h-3 transition-transform', isCollapsed && 'rotate-180')} />
