@@ -31,6 +31,7 @@ import EventReportingDashboard from "@/components/events/EventReportingDashboard
 import RolePermissionMatrix from "@/components/admin/RolePermissionMatrix";
 import AdminDevTools from "@/components/admin/AdminDevTools";
 import SchemaContractCheck from "@/components/admin/SchemaContractCheck";
+import UserProfileCard from "@/components/admin/UserProfileCard";
 
 export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -312,43 +313,16 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                    </div>
                  </div>
 
-                 {/* User Details & Roles */}
+                 {/* User Profile Card */}
                  <div className="lg:col-span-2">
                    {selectedUser ? (
-                     <Card className="bg-zinc-950 border-zinc-800">
-                       <CardHeader>
-                         <CardTitle className="flex items-center gap-2">
-                           <UserCog className="w-5 h-5 text-[#ea580c]" />
-                           <span className="uppercase">{selectedUser.callsign || selectedUser.rsi_handle}</span>
-                         </CardTitle>
-                         {(isAdmin || currentUser?.callsign === selectedUser.callsign) && (
-                           <div className="text-xs font-mono text-zinc-500">{selectedUser.email}</div>
-                         )}
-                       </CardHeader>
-                       <CardContent>
-                         <div className="mb-6">
-                           <h3 className="text-xs font-bold uppercase text-zinc-500 mb-3">Assign Roles</h3>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                             {roles.map(role => {
-                               const isAssigned = selectedUser.assigned_role_ids?.includes(role.id);
-                               return (
-                                 <div 
-                                   key={role.id}
-                                   onClick={() => handleRoleToggle(role.id)}
-                                   className={`p-3 rounded border cursor-pointer transition-all flex items-center justify-between ${isAssigned ? 'bg-[#ea580c]/10 border-[#ea580c] text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700'}`}
-                                 >
-                                   <div>
-                                     <div className="font-bold text-sm">{role.name}</div>
-                                     <div className="text-[10px] opacity-70">{role.description}</div>
-                                   </div>
-                                   {isAssigned && <Shield className="w-4 h-4 text-[#ea580c]" />}
-                                 </div>
-                               );
-                             })}
-                           </div>
-                         </div>
-                       </CardContent>
-                     </Card>
+                     <UserProfileCard 
+                       user={selectedUser}
+                       roles={roles}
+                       onRoleToggle={handleRoleToggle}
+                       isAdmin={isAdmin}
+                       currentUser={currentUser}
+                     />
                    ) : (
                      <div className="h-full flex flex-col items-center justify-center text-zinc-600">
                        <UserCog className="w-16 h-16 mb-4 opacity-20" />
