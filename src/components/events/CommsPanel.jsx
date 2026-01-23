@@ -197,15 +197,16 @@ export default function CommsPanel({ eventId }) {
                   )}
                 </button>
 
-                {/* Join This Net Button */}
+                {/* DEPRECATED: Local join modal removed (2026-01-23)
+                    Voice joining is now canonical via CommsConsole only */}
                 <Button
                   onClick={() => {
-                    setJoinTarget(selectedNet);
-                    setJoinModalOpen(true);
+                    // Route to canonical CommsConsole path
+                    window.location.href = `/commsconsole?eventId=${eventId}&netId=${selectedNet?.id}`;
                   }}
                   className="w-full bg-emerald-950/30 hover:bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 text-xs h-8"
                 >
-                  JOIN COMMS NET
+                  OPEN COMMS ARRAY
                 </Button>
              </div>
            ) : (
