@@ -12,11 +12,10 @@ import RoleManager from "@/components/auth/RoleManager";
 import SystemChecklist from "@/components/admin/SystemChecklist";
 import EventApprovalQueue from "@/components/admin/EventApprovalQueue";
 import CommsCapabilityContract from "@/components/comms/CommsCapabilityContract";
-import CommsTestPanel from "@/components/admin/CommsTestPanel";
+import CommsArray from "@/components/admin/CommsArray";
 import VoiceNetForm from "@/components/comms/VoiceNetForm";
 import AuditLogViewer from "@/components/admin/AuditLogViewer";
 import UserManagement from "@/components/admin/UserManagement";
-import VoiceNetControls from "@/components/admin/VoiceNetControls";
 import SystemHealthMonitor from "@/components/admin/SystemHealthMonitor";
 import SquadManagement from "@/components/admin/SquadManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -181,10 +180,10 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             <Shield className="w-4 h-4 mr-2" /> ROLES
           </TabsTrigger>
           <TabsTrigger 
-            value="voice-controls"
+            value="comms-array"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
-            <Settings className="w-4 h-4 mr-2" /> VOICE NETS
+            <Radio className="w-4 h-4 mr-2" /> COMMS ARRAY
           </TabsTrigger>
           <TabsTrigger 
             value="health"
@@ -197,18 +196,6 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
             <Users className="w-4 h-4 mr-2" /> SQUADS
-          </TabsTrigger>
-          <TabsTrigger 
-            value="comms-diagnostics"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
-          >
-            <Radio className="w-4 h-4 mr-2" /> DIAGNOSTICS
-          </TabsTrigger>
-          <TabsTrigger 
-            value="comms-provision"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
-          >
-            <TestTube className="w-4 h-4 mr-2" /> PROVISION
           </TabsTrigger>
           {currentUser && hasMinRank(currentUser, 'Scout') && (
             <TabsTrigger 
@@ -423,8 +410,8 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
           </div>
         </TabsContent>
 
-        <TabsContent value="voice-controls">
-          <VoiceNetControls />
+        <TabsContent value="comms-array">
+          <CommsArray />
         </TabsContent>
 
         <TabsContent value="health">
@@ -433,14 +420,6 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
 
         <TabsContent value="squads">
           <SquadManagement />
-        </TabsContent>
-
-        <TabsContent value="comms-diagnostics">
-          <CommsCapabilityContract />
-        </TabsContent>
-
-        <TabsContent value="comms-provision">
-          <CommsTestPanel />
         </TabsContent>
 
         {currentUser && hasMinRank(currentUser, 'Scout') && (

@@ -1,5 +1,6 @@
 import AdminConsole from './pages/AdminConsole';
 import Channels from './pages/Channels';
+import CommandCenter from './pages/CommandCenter';
 import CommsConsole from './pages/CommsConsole';
 import CommsSettings from './pages/CommsSettings';
 import Diagnostics from './pages/Diagnostics';
@@ -20,13 +21,13 @@ import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
-import CommandCenter from './pages/CommandCenter';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AdminConsole": AdminConsole,
     "Channels": Channels,
+    "CommandCenter": CommandCenter,
     "CommsConsole": CommsConsole,
     "CommsSettings": CommsSettings,
     "Diagnostics": Diagnostics,
@@ -47,7 +48,6 @@ export const PAGES = {
     "UserDirectory": UserDirectory,
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
-    "CommandCenter": CommandCenter,
 }
 
 export const pagesConfig = {
