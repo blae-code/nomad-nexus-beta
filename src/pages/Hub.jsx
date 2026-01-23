@@ -100,55 +100,6 @@ export default function HubPage() {
     <div className="h-screen bg-[#09090b] text-zinc-200 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
-          {/* Immersive Org Identity Header - Collapsible */}
-          <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#ea580c]/10 to-zinc-950 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/10 blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
-
-            {/* Collapse Toggle Bar - Always Visible */}
-              <div 
-                className="relative z-20 flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
-              >
-                <div onClick={() => setHeaderCollapsed(!headerCollapsed)} className="flex-1 flex items-center gap-2">
-                  <span className="text-[7px] uppercase text-zinc-300 tracking-wider font-bold">OPS CONTEXT</span>
-                  <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                    <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
-                  </motion.div>
-                </div>
-              </div>
-
-            <motion.div 
-              initial={false}
-              animate={{ height: headerCollapsed ? 0 : 'auto', opacity: headerCollapsed ? 0 : 1 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="relative z-10 p-1.5">
-
-              {/* Compact Metrics & Data */}
-              <div className="space-y-2">
-                <HubMetricsPanel 
-                  allUsers={allUsers}
-                  onlineUsers={onlineUsers}
-                  orgMetrics={orgMetrics}
-                  activeIncidents={activeIncidents}
-                  canAccessTreasury={canAccessTreasury}
-                  treasuryBalance={treasuryBalance}
-                />
-
-                <MetricsChartPanel 
-                  userEvents={userEvents}
-                  allUsers={allUsers}
-                  recentLogs={recentLogs}
-                  treasuryBalance={treasuryBalance}
-                  fleetAssets={fleetAssets}
-                />
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
           {/* Live Operational Pulse - Compact */}
           <div className="border border-[#ea580c]/30 bg-zinc-950/80">
               <div 
@@ -232,6 +183,55 @@ export default function HubPage() {
                   </div>
                   </motion.div>
                   </div>
+
+          {/* Immersive Org Identity Header - Collapsible */}
+          <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#ea580c]/10 to-zinc-950 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/10 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
+
+            {/* Collapse Toggle Bar - Always Visible */}
+              <div 
+                className="relative z-20 flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
+              >
+                <div onClick={() => setHeaderCollapsed(!headerCollapsed)} className="flex-1 flex items-center gap-2">
+                  <span className="text-[7px] uppercase text-zinc-300 tracking-wider font-bold">OPS CONTEXT</span>
+                  <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
+                  </motion.div>
+                </div>
+              </div>
+
+            <motion.div 
+              initial={false}
+              animate={{ height: headerCollapsed ? 0 : 'auto', opacity: headerCollapsed ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="relative z-10 p-1.5">
+
+              {/* Compact Metrics & Data */}
+              <div className="space-y-2">
+                <HubMetricsPanel 
+                  allUsers={allUsers}
+                  onlineUsers={onlineUsers}
+                  orgMetrics={orgMetrics}
+                  activeIncidents={activeIncidents}
+                  canAccessTreasury={canAccessTreasury}
+                  treasuryBalance={treasuryBalance}
+                />
+
+                <MetricsChartPanel 
+                  userEvents={userEvents}
+                  allUsers={allUsers}
+                  recentLogs={recentLogs}
+                  treasuryBalance={treasuryBalance}
+                  fleetAssets={fleetAssets}
+                />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
 
         {/* Main Dashboard Grid */}
