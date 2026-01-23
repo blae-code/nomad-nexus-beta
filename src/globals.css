@@ -6,9 +6,17 @@ body,
 #root {
   height: 100%;
   width: 100%;
+  height: 100vh;
+  width: 100vw;
   overflow: hidden;
   margin: 0;
   padding: 0;
+  /* PWA fullscreen & standalone mode support */
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* Prevent unwanted zoom/pinch on mobile */
+  touch-action: manipulation;
 }
 
 /* ============================================================
@@ -20,6 +28,11 @@ body,
   --gutter: 16px;
   --divider: 1px;
   --container-max: 1280px;
+  /* PWA standalone mode: safe area insets for notches/status bars */
+  --safe-area-inset-top: max(env(safe-area-inset-top), 0px);
+  --safe-area-inset-bottom: max(env(safe-area-inset-bottom), 0px);
+  --safe-area-inset-left: max(env(safe-area-inset-left), 0px);
+  --safe-area-inset-right: max(env(safe-area-inset-right), 0px);
   
   /* Spacing scale (4px increments) */
   --space-xs: 4px;
