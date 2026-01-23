@@ -20,8 +20,9 @@ export default function CommsPanel({ eventId }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
   const [mutedNets, setMutedNets] = React.useState({});
-  const [joinModalOpen, setJoinModalOpen] = React.useState(false);
-  const [joinTarget, setJoinTarget] = React.useState(null);
+  // DEPRECATED: joinModalOpen and joinTarget removed (2026-01-23)
+  // const [joinModalOpen, setJoinModalOpen] = React.useState(false);
+  // const [joinTarget, setJoinTarget] = React.useState(null);
 
   // Fetch current user's event-specific squad assignment
   useQuery({
