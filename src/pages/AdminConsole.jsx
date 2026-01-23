@@ -453,6 +453,18 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
           <SystemHealthMonitor />
         </TabsContent>
 
+        <TabsContent value="schema-contract">
+          <Card className="bg-zinc-950 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Schema Contract Validation</CardTitle>
+              <CardDescription className="text-zinc-400">Detect field drift across core entities in real-time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SchemaContractCheck />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="squads">
           <SquadManagement />
         </TabsContent>
