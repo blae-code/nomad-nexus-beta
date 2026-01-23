@@ -611,7 +611,7 @@ export default function CommandPaletteV3() {
         >
           {/* Pulsing chevrons - left side */}
           <motion.div
-            className="absolute -left-14 top-1/2 -translate-y-1/2 flex gap-0.5 justify-end"
+            className="absolute right-full top-1/2 -translate-y-1/2 mr-2 flex gap-0.5"
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
@@ -621,7 +621,7 @@ export default function CommandPaletteV3() {
           </motion.div>
           {/* Pulsing chevrons - right side */}
           <motion.div
-            className="absolute -right-14 top-1/2 -translate-y-1/2 flex gap-0.5 justify-start"
+            className="absolute left-full top-1/2 -translate-y-1/2 ml-2 flex gap-0.5"
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
