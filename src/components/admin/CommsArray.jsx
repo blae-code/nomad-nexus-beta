@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import TacticalMapPanel from '@/components/admin/TacticalMapPanel';
 
 export default function CommsArray() {
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -444,6 +445,18 @@ export default function CommsArray() {
               <StatRow label="AVG SIGNAL" value={`${Math.round(voiceNetStatus.reduce((acc, s) => acc + (s.signal_strength || 100), 0) / (voiceNetStatus.length || 1))}%`} color="emerald" />
               <StatRow label="PKT LOSS" value={`${(voiceNetStatus.reduce((acc, s) => acc + (s.packet_loss_percent || 0), 0) / (voiceNetStatus.length || 1)).toFixed(1)}%`} color="amber" />
             </div>
+          </div>
+        )}
+
+        {/* Tactical Map */}
+        {selectedEventId && voiceNets.length > 0 && (
+          <div className="border border-zinc-800 bg-zinc-950 h-[500px]">
+            <TacticalMapPanel
+              eventId={selectedEventId}
+              nets={voiceNets}
+              userPresence={userPresence}
+              voiceNetStatus={voiceNetStatus}
+            />
           </div>
         )}
       </div>
