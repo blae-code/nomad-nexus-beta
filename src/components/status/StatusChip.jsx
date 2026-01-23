@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Activity, Skull, Plane, Radio, Zap, Home, AlertTriangle } from "lucide-react";
+import { normalizePlayerStatus } from "@/components/contracts/normalization";
 
 export const STATUS_CONFIG = {
   READY: { color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/50", icon: Radio, label: "READY" },
@@ -14,7 +15,8 @@ export const STATUS_CONFIG = {
 };
 
 export default function StatusChip({ status, showLabel = true, className, size = "sm" }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.OFFLINE;
+  const normalizedStatus = normalizePlayerStatus(status);
+  const config = STATUS_CONFIG[normalizedStatus] || STATUS_CONFIG.OFFLINE;
   const Icon = config.icon;
 
   return (
