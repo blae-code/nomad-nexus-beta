@@ -3,6 +3,7 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
+import { useVisibilityPause } from '@/components/hooks/useVisibilityPause';
 import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash, BookOpen, Lightbulb, Video, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
@@ -30,13 +31,14 @@ export default function HubPage() {
   
   const user = useCurrentUser();
   const { data, isLoading } = useDashboardData(user);
+  const isTabVisible = useVisibilityPause();
   
   // Memoize navigation handlers
   const handleNavigateToEvents = useCallback(() => navigate(createPageUrl('Events')), [navigate]);
   const handleTabChange = useCallback((tab) => setActiveTab(tab), []);
   
   useRealtimeSubscriptions({
-    enabled: !!user,
+    enabled: !!user && isTabVisible,
     entities: ['UserPresence', 'Event', 'EventLog', 'Incident', 'VoiceNet']
   });
 
