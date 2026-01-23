@@ -25,7 +25,9 @@ export default function MessagingFooter({ user }) {
       return allChannels || [];
     },
     enabled: !!user?.id,
-    refetchInterval: 5000
+    staleTime: 30000, // 30s cache
+    refetchInterval: false, // No polling; use subscriptions
+    gcTime: 60000 // Keep in cache for 60s
   });
 
   const { data: currentChannelData } = useQuery({
@@ -34,10 +36,14 @@ export default function MessagingFooter({ user }) {
       if (!selectedChannel) return null;
       const channel = await base44.entities.Channel.get(selectedChannel);
       const members = await base44.entities.User.filter({ id: channel.member_ids || [] });
-      const messages = await base44.entities.Message.filter({ channel_id: selectedChannel }, '-created_date', 50);
+      // Limit to 20 messages for initial load, paginate from there
+      const messages = await base44.entities.Message.filter({ channel_id: selectedChannel }, '-created_date', 20);
       return { channel, members, messages };
     },
-    enabled: !!selectedChannel
+    enabled: !!selectedChannel,
+    staleTime: 15000,
+    refetchInterval: false,
+    gcTime: 30000
   });
 
   const muteUserMutation = useMutation({
