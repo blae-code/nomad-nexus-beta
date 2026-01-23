@@ -30,6 +30,7 @@ import {
   Clock,
   HelpCircle,
   AtSign,
+  Gamepad2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -61,6 +62,9 @@ const iconMap = {
   Activity,
   Rocket,
   MessageSquare,
+  Gamepad2,
+  HelpCircle,
+  AtSign,
 };
 
 export default function CommandPaletteV3() {
@@ -577,11 +581,7 @@ export default function CommandPaletteV3() {
   };
 
   // Memoize icon map
-  const memoizedIconMap = useMemo(() => ({
-    ...iconMap,
-    HelpCircle,
-    AtSign,
-  }), []);
+  const memoizedIconMap = useMemo(() => iconMap, []);
 
   return (
     <>

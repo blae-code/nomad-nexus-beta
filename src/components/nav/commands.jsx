@@ -30,6 +30,9 @@ export const COMMAND_SECTIONS = {
   UTILITY: 'Utility',
 };
 
+// Missing icon imports - add these to CommandPaletteV3.js icon map
+// Gamepad2 (for demo mode)
+
 export const commands = [
   // ===== MISSION CONTROL =====
   {
