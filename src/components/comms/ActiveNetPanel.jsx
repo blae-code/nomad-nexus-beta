@@ -372,7 +372,9 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
       is_active: true 
     }),
     enabled: !!(net?.id && user?.id),
-    refetchInterval: 3000
+    staleTime: 5000,
+    refetchInterval: false,
+    gcTime: 15000
   });
 
   const isAdminMuted = React.useMemo(() => {
