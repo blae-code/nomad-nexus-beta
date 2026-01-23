@@ -77,7 +77,7 @@ export default function OpsMap({ eventId, readOnly = false }) {
 
   const { data: assets = [] } = useQuery({
     queryKey: ['fleet-assets', eventId],
-    queryFn: () => base44.entities.FleetAsset.list(),
+    queryFn: () => base44.entities.FleetAsset.list('-updated_date', 100),
     refetchInterval: 3000
   });
 
@@ -315,19 +315,30 @@ export default function OpsMap({ eventId, readOnly = false }) {
             bounds={[[-85, -180], [85, 180]]}
           />
 
-          {/* Fleet Assets */}
+          {/* Fleet Assets Layer - Status-styled icons */}
           {assets.map((asset) => {
             if (!asset.current_location) return null;
+            const statusColor = {
+              OPERATIONAL: '#10b981',
+              MAINTENANCE: '#f59e0b',
+              DESTROYED: '#dc2626',
+              MISSION: '#3b82f6',
+              UNKNOWN: '#6b7280'
+            }[asset.status] || '#9ca3af';
+
             return (
               <Marker
                 key={`asset-${asset.id}`}
                 position={[asset.current_location.lat, asset.current_location.lng]}
-                icon={createMarkerIcon('asset', '#3b82f6')}
+                icon={createMarkerIcon('asset', statusColor)}
               >
                 <Popup className="dark-popup">
-                  <div className="text-xs font-bold text-white bg-zinc-900 p-2">
-                    <div>{asset.name}</div>
+                  <div className="text-xs text-white bg-zinc-900 p-2 space-y-1">
+                    <div className="font-bold">{asset.name}</div>
                     <div className="text-[10px] text-zinc-400">{asset.model}</div>
+                    <div className={`text-[9px] font-bold ${statusColor === '#10b981' ? 'text-emerald-400' : statusColor === '#dc2626' ? 'text-red-400' : 'text-zinc-400'}`}>
+                      {asset.status}
+                    </div>
                   </div>
                 </Popup>
               </Marker>
@@ -364,13 +375,17 @@ export default function OpsMap({ eventId, readOnly = false }) {
             );
           })}
 
-          {/* Incidents Layer - Severity-based rings */}
+          {/* Incidents Layer - Severity rings/hot zones (active incidents prioritized) */}
           {incidents
-            .filter(inc => inc.status === 'active' && inc.coordinates)
+            .sort((a, b) => {
+              const severityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+              return (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4);
+            })
+            .filter(inc => inc.coordinates)
             .map((inc) => {
               const severityRadius = {
-                CRITICAL: 800,
-                HIGH: 600,
+                CRITICAL: 1000,
+                HIGH: 700,
                 MEDIUM: 400,
                 LOW: 200
               };
@@ -380,26 +395,40 @@ export default function OpsMap({ eventId, readOnly = false }) {
                 MEDIUM: '#3b82f6',
                 LOW: '#10b981'
               };
+              const isActive = inc.status === 'active';
+              const color = severityColors[inc.severity];
+
               return (
                 <React.Fragment key={`incident-${inc.id}`}>
                   <Circle
                     center={[inc.coordinates.lat, inc.coordinates.lng]}
                     radius={severityRadius[inc.severity] || 400}
-                    color={severityColors[inc.severity]}
-                    fillOpacity={0.1}
-                    weight={2}
+                    color={color}
+                    fillOpacity={isActive ? 0.15 : 0.05}
+                    weight={isActive ? 2 : 1}
+                    dashArray={isActive ? undefined : '5, 5'}
                   />
+                  {isActive && (
+                    <Circle
+                      center={[inc.coordinates.lat, inc.coordinates.lng]}
+                      radius={severityRadius[inc.severity] * 0.5}
+                      color={color}
+                      fillOpacity={0.05}
+                      weight={1}
+                    />
+                  )}
                   <Marker
                     position={[inc.coordinates.lat, inc.coordinates.lng]}
-                    icon={createMarkerIcon('hazard', severityColors[inc.severity])}
+                    icon={createMarkerIcon('hazard', color)}
                   >
                     <Popup className="dark-popup">
-                      <div className="text-xs text-white bg-zinc-900 p-3 min-w-[200px]">
+                      <div className={`text-xs text-white p-3 min-w-[200px] space-y-1 ${isActive ? 'bg-red-950' : 'bg-zinc-900'}`}>
                         <div className="font-bold">{inc.title}</div>
-                        <div className={`text-[9px] font-bold ${severityColors[inc.severity] === '#dc2626' ? 'text-red-400' : 'text-zinc-400'}`}>
-                          {inc.severity}
+                        <div className={`text-[9px] font-bold ${color === '#dc2626' ? 'text-red-400' : color === '#f59e0b' ? 'text-amber-400' : 'text-zinc-400'}`}>
+                          {inc.severity} {!isActive && '(Inactive)'}
                         </div>
-                        {inc.description && <div className="text-[9px] text-zinc-300 mt-1">{inc.description}</div>}
+                        {inc.description && <div className="text-[9px] text-zinc-300">{inc.description}</div>}
+                        {inc.priority && <div className="text-[8px] text-zinc-500">Priority: {inc.priority}</div>}
                       </div>
                     </Popup>
                   </Marker>
