@@ -65,10 +65,18 @@ export const COCKPIT_SECTIONS = [
     minRank: 'pioneer',
     visible: true,
     description: 'Sovereign actions (CONFIRM required)',
-    component: null,
+    component: PioneerOverridesSection,
     collapsed: true,
   },
 ];
+
+export function hasRank(userRank, minRank) {
+  if (!userRank || !minRank) return false;
+  const rankHierarchy = ['vagrant', 'scout', 'voyager', 'founder', 'pioneer'];
+  const userIndex = rankHierarchy.indexOf((userRank || '').toLowerCase());
+  const minIndex = rankHierarchy.indexOf((minRank || '').toLowerCase());
+  return userIndex >= minIndex;
+}
 
 export function hasRank(user, minRank) {
   if (!user) return false;
