@@ -1,3 +1,4 @@
+import Academy from './pages/Academy';
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
@@ -25,11 +26,11 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
-import Academy from './pages/Academy';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Academy": Academy,
     "AdminCockpit": AdminCockpit,
     "Channels": Channels,
     "CommandCenter": CommandCenter,
@@ -57,7 +58,6 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
-    "Academy": Academy,
 }
 
 export const pagesConfig = {

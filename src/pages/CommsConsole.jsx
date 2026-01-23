@@ -52,10 +52,16 @@ function CommsConsolePage() {
     const eventId = params.get('eventId');
     return eventId && eventId !== 'undefined' && eventId !== 'null' ? eventId : null;
   });
-  const [selectedNet, setSelectedNet] = React.useState(null);
+  // STATE SEPARATION: selection is independent from connection
+  const [selectedNetId, setSelectedNetId] = React.useState(null);
+  const [connectedNetId, setConnectedNetId] = React.useState(null);
+  const [connectionState, setConnectionState] = React.useState('disconnected'); // disconnected | connecting | connected | error
+  const [connectionError, setConnectionError] = React.useState(null);
+  const [effectiveMode, setEffectiveMode] = React.useState('SIM'); // SIM | LIVE
+  const [modeFallbackReason, setModeFallbackReason] = React.useState(null);
+  
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
-  const [activeNetConnection, setActiveNetConnection] = React.useState(null);
   const [consoleMode, setConsoleMode] = React.useState("ops");
   const [viewMode, setViewMode] = React.useState("line");
   const [selectedDMId, setSelectedDMId] = React.useState(null);
@@ -71,7 +77,7 @@ function CommsConsolePage() {
   const [userPreferences, setUserPreferences] = React.useState({});
   const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
   const [showSimulation, setShowSimulation] = React.useState(false);
-  const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
+  const { isTransmitting, pttKey } = usePTT(selectedNetId ? voiceNets.find(n => n.id === selectedNetId) : null, userPreferences);
 
   React.useEffect(() => {
     const loadUser = async () => {
