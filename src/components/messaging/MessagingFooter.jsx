@@ -78,27 +78,27 @@ export default function MessagingFooter({ user }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950 border-t border-zinc-800">
       {/* Header Bar */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-zinc-950 border-b border-zinc-800/50">
+      <div className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-950 border-b border-zinc-800/50">
         <button
           onClick={() => setIsMinimized(!isMinimized)}
-          className="flex items-center gap-2 hover:text-[#ea580c] transition-colors flex-1 group"
+          className="flex items-center gap-1.5 hover:text-[#ea580c] transition-colors flex-1 group"
         >
-          <ChevronUp className={cn("w-4 h-4 text-zinc-500 group-hover:text-[#ea580c] transition-transform", isMinimized && "rotate-180")} />
-          <span className="text-xs font-mono text-zinc-400 group-hover:text-zinc-200 tracking-wider">MESSAGING CONSOLE</span>
+          <ChevronUp className={cn("w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-transform", isMinimized && "rotate-180")} />
+          <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-200 tracking-wider">MESSAGING</span>
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
+            className="p-0.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
           >
-            {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
+            {isMinimized ? <Maximize2 className="w-2.5 h-2.5" /> : <Minimize2 className="w-2.5 h-2.5" />}
           </button>
           <button
             onClick={() => setIsMinimized(true)}
-            className="p-1.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
+            className="p-0.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-2.5 h-2.5" />
           </button>
         </div>
       </div>
@@ -113,22 +113,22 @@ export default function MessagingFooter({ user }) {
             className="overflow-hidden"
           >
             {/* Tabs */}
-            <div className="flex items-center gap-0 px-3 py-0 bg-zinc-900/30 border-b border-zinc-800/30 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-0 px-2 py-0 bg-zinc-900/30 border-b border-zinc-800/30 overflow-x-auto scrollbar-hide">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2.5 text-xs font-mono border-b-2 transition-all relative group",
+                    "flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono border-b-2 transition-all relative group",
                     activeTab === tab.id
                       ? "border-[#ea580c] text-zinc-100 bg-zinc-900/50"
                       : "border-transparent text-zinc-500 hover:text-zinc-400 hover:border-zinc-700"
                   )}
                 >
-                  <tab.icon className="w-3 h-3" />
-                  <span className="truncate max-w-32">{tab.label}</span>
+                  <tab.icon className="w-2.5 h-2.5" />
+                  <span className="truncate max-w-28">{tab.label}</span>
                   {tab.badge > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-[#ea580c] text-[10px] font-bold rounded text-white">
+                    <span className="ml-0.5 px-1 py-0.5 bg-[#ea580c] text-[8px] font-bold rounded text-white">
                       {tab.badge}
                     </span>
                   )}
