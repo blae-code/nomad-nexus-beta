@@ -264,26 +264,6 @@ function CommsConsolePage() {
       setMonitoredNetIds([]);
    }, [selectedEventId]);
 
-   // Compute effective mode based on desired mode + readiness
-   React.useEffect(() => {
-      if (!desiredLive) {
-         setEffectiveMode('SIM');
-         setModeFallbackReason(null);
-         return;
-      }
-
-      // Desired is LIVE - check readiness
-      const hasEnv = Deno?.env?.get?.('LIVEKIT_URL') !== undefined;
-      if (!hasEnv) {
-         setEffectiveMode('SIM');
-         setModeFallbackReason('LiveKit env not configured');
-         return;
-      }
-
-      setEffectiveMode('LIVE');
-      setModeFallbackReason(null);
-   }, [desiredLive]);
-
   // Memoize nets to prevent unnecessary rerenders
   const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
 
