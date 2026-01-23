@@ -33,10 +33,19 @@ export default function IncidentDashboard({ eventId, onSelectIncident }) {
       // Limit to 30 for performance
       return base44.entities.Incident.filter(baseFilter, '-created_date', 30);
     },
-    staleTime: 15000,
+    staleTime: 8000,
     refetchInterval: false, // Use subscriptions instead
     gcTime: 45000
   });
+
+  // Real-time subscription for incident updates
+  React.useEffect(() => {
+    const unsubscribe = base44.entities.Incident.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['incidents', eventId, filter] });
+    });
+
+    return () => unsubscribe?.();
+  }, [eventId, filter, queryClient]);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => base44.entities.Incident.update(id, { 
