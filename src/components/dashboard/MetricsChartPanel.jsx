@@ -373,11 +373,11 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         <AnimatePresence>
         {isExpanded && (
         <motion.div 
-         initial={{ opacity: 0, height: 0 }}
-         animate={{ opacity: 1, height: 'auto' }}
-         exit={{ opacity: 0, height: 0 }}
-         transition={{ duration: 0.2 }}
-         className="grid grid-cols-3 gap-1.5 overflow-hidden"
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.2 }}
+        className="grid grid-cols-3 gap-1.5 overflow-hidden"
         >
         <motion.div 
           initial={{ opacity: 0, y: 4 }}
