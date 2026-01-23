@@ -35,8 +35,12 @@ const PAGE_BREADCRUMBS = {
   '/events': 'OPERATIONS',
   '/commsconsole': 'COMMS ARRAY',
   '/intelligence': 'INTELLIGENCE',
-  '/adminconsole': 'SYSTEM ADMIN',
-  '/admin': 'SYSTEM ADMIN',
+  '/admin': 'ADMIN COCKPIT',
+  '/universemap': 'TACTICAL MAP',
+  '/rescue': 'RESCUE SYSTEM',
+  '/fleetmanager': 'FLEET MANAGER',
+  '/channels': 'CHANNELS',
+  '/profile': 'PROFILE',
 };
 
 export default function HeaderV3() {

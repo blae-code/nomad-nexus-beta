@@ -1,5 +1,4 @@
 import AdminCockpit from './pages/AdminCockpit';
-import AdminConsole from './pages/AdminConsole';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
 import CommsConsole from './pages/CommsConsole';
@@ -30,7 +29,6 @@ import __Layout from './Layout.jsx';
 
 export const PAGES = {
     "AdminCockpit": AdminCockpit,
-    "AdminConsole": AdminConsole,
     "Channels": Channels,
     "CommandCenter": CommandCenter,
     "CommsConsole": CommsConsole,
