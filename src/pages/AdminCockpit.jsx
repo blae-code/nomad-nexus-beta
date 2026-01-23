@@ -19,6 +19,7 @@ import TacticalMapStep from '@/components/admin/steps/TacticalMapStep';
 import CommsModeControl from '@/components/admin/CommsModeControl';
 import TicketBoard from '@/components/admin/TicketBoard';
 import DemoScenarioController from '@/components/admin/DemoScenarioController';
+import UserManagementTab from '@/components/admin/UserManagementTab';
 
 const READINESS_STEPS = [
   { id: 'schema_check', title: '① Schema Check', component: SchemaCheckStep },
@@ -139,6 +140,9 @@ export default function AdminCockpitPage() {
             <TabsTrigger value="cockpit" className="text-[9px] h-6 px-2">
               Cockpit
             </TabsTrigger>
+            <TabsTrigger value="users" className="text-[9px] h-6 px-2">
+              Users
+            </TabsTrigger>
             <TabsTrigger value="tickets" className="text-[9px] h-6 px-2 flex items-center gap-1">
               <MessageSquare className="w-3 h-3" />
               Feedback
@@ -220,6 +224,11 @@ export default function AdminCockpitPage() {
               {/* RIGHT: Telemetry panel */}
               <TelemetryPanel logs={logs} auditLogs={auditLogs} />
             </div>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="flex-1 overflow-hidden mt-0">
+            <UserManagementTab user={user} />
           </TabsContent>
 
           {/* Feedback Tickets Tab */}
