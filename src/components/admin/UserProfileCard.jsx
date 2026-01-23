@@ -399,8 +399,8 @@ export default function UserProfileCard({
 
           {/* Footer status bar */}
           <div className="border-t border-zinc-800/50 px-4 py-2 bg-zinc-900/30 flex items-center justify-between text-[8px] font-mono text-zinc-600 uppercase tracking-wider">
-            <span>STATUS: ACTIVE</span>
-            <span>SECURED</span>
+            <span>STATUS: {(user.status || "active").toUpperCase()}</span>
+            <span className={user.is_system_administrator ? "text-[#ea580c]" : ""}>{user.is_system_administrator ? "ADMIN" : "SECURED"}</span>
           </div>
         </Card>
       </div>
