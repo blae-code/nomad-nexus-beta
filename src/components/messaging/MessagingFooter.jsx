@@ -108,15 +108,29 @@ export default function MessagingFooter({ user }) {
     ch.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (isMinimized) {
+    return (
+      <div className="bg-zinc-950 border-t border-zinc-800 flex items-center px-2.5 py-1.5 shrink-0 w-full h-auto">
+        <button
+          onClick={() => setIsMinimized(false)}
+          className="flex items-center gap-1.5 hover:text-[#ea580c] transition-colors group"
+        >
+          <ChevronUp className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-transform rotate-180" />
+          <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-200 tracking-wider">MESSAGING</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-zinc-950 border-t border-zinc-800 flex flex-col shrink-0 overflow-hidden w-full h-64">
       {/* Header Bar */}
       <div className="flex items-center gap-2 px-2.5 py-1.5 bg-zinc-950 border-b border-zinc-800/50 shrink-0">
         <button
-          onClick={() => setIsMinimized(!isMinimized)}
+          onClick={() => setIsMinimized(true)}
           className="flex items-center gap-1.5 hover:text-[#ea580c] transition-colors group"
         >
-          <ChevronUp className={cn("w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-transform", isMinimized && "rotate-180")} />
+          <ChevronUp className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-transform" />
           <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-200 tracking-wider">MESSAGING</span>
         </button>
 
