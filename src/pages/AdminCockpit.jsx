@@ -20,19 +20,11 @@ import UserManagementTab from '@/components/admin/UserManagementTab';
 import BootMediaAdmin from '@/components/admin/BootMediaAdmin';
 import CommsPreflightPanel from '@/components/admin/CommsPreflightPanel';
 
-const READINESS_STEPS = [
-  { id: 'schema_check', title: '① Schema Check', component: SchemaCheckStep },
-  { id: 'wipe_data', title: '② Wipe Data', component: WipeDataStep },
-  { id: 'seed_data', title: '③ Seed Faux Week', component: SeedDataStep },
-  { id: 'comms_test', title: '④ Comms Tests', component: CommsTestStep },
-  { id: 'tactical_map', title: '⑤ Tactical Map', component: TacticalMapStep }
-];
-
 export default function AdminCockpitPage() {
   const [user, setUser] = useState(null);
   const [readinessScore, setReadinessScore] = useState(0);
   const [logs, setLogs] = useState([]);
-  const [expandedStep, setExpandedStep] = useState('schema_check');
+  const [expandedSection, setExpandedSection] = useState('readiness');
   const [activeTab, setActiveTab] = useState('cockpit');
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState(null);
