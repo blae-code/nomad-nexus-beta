@@ -148,10 +148,25 @@ export default function AdminCockpitPage() {
                 <span className="font-mono font-bold text-blue-400">OPERATIONAL</span>
               </div>
 
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
-                <MessageSquare className="w-3 h-3 text-green-400" />
+              <div className={`flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border rounded ${
+                effectiveMode === 'LIVE' 
+                  ? 'border-green-700/50' 
+                  : 'border-amber-700/50'
+              }`}>
+                <MessageSquare className={`w-3 h-3 ${
+                  effectiveMode === 'LIVE' 
+                    ? 'text-green-400' 
+                    : 'text-amber-400'
+                }`} />
                 <span className="text-zinc-300">Comms:</span>
-                <span className="font-mono font-bold text-green-400">{demoEnabled ? 'DEMO' : 'LIVE'}</span>
+                <span className={`font-mono font-bold ${
+                  effectiveMode === 'LIVE' 
+                    ? 'text-green-400' 
+                    : 'text-amber-400'
+                }`}>
+                  {demoEnabled ? 'DEMO' : effectiveMode}
+                </span>
+                {fallbackReason && <span className="text-[7px] text-amber-400 ml-1">({fallbackReason.split(' ')[0]})</span>}
               </div>
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
