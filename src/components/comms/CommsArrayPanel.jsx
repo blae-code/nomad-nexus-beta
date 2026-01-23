@@ -356,17 +356,33 @@ function buildNodes(topologyData, width, height) {
 
 function buildEdges(topologyData, nodes) {
   const edges = [];
-  // Command to squads
   const commandNode = nodes.find(n => n.type === 'command');
   const squadNodes = nodes.filter(n => n.type === 'squad');
+  const netNodes = nodes.filter(n => n.type === 'net');
   
+  // Command to squads (operational)
   squadNodes.forEach(squad => {
     edges.push({
       from: commandNode,
       to: squad,
-      type: 'membership'
+      type: 'membership',
+      edgeType: 'operational'
     });
   });
+
+  // Squads to nets (can be operational, whisper, or patch based on context)
+  if (squadNodes.length > 0 && netNodes.length > 0) {
+    squadNodes.slice(0, 1).forEach(squad => {
+      netNodes.forEach((net, idx) => {
+        edges.push({
+          from: squad,
+          to: net,
+          type: 'membership',
+          edgeType: 'operational'
+        });
+      });
+    });
+  }
 
   return edges;
 }
