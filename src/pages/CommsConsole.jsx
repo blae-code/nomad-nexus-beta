@@ -303,7 +303,7 @@ function CommsConsolePage() {
       {/* Main 3-Column Grid */}
       <div className="h-full overflow-hidden flex gap-[var(--gutter)] p-[var(--gutter)]">
          {/* LEFT PANEL: Nets + Event Selector */}
-         <Panel title={consoleMode === 'ops' ? 'Voice Nets' : 'Channels'} className="w-64 flex flex-col overflow-hidden">
+         <Panel title={consoleMode === 'dms' ? 'DMs' : (consoleMode === 'ops' ? 'Voice Nets' : 'Channels')} className="w-64 flex flex-col overflow-hidden">
             {consoleMode === 'ops' ? (
                 <>
                    <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)]">
