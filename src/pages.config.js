@@ -27,6 +27,7 @@ import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import AccessGate from './pages/AccessGate';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
     "AccessGate": AccessGate,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
