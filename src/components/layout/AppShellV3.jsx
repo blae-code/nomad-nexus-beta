@@ -2,6 +2,7 @@ import React from 'react';
 import HeaderV3 from '@/components/layout/HeaderV3';
 import ContextPanel from '@/components/layout/ContextPanel';
 import NoScrollGuard from '@/components/layout/NoScrollGuard';
+import BootSplashOverlay from '@/components/layout/BootSplashOverlay';
 
 /**
  * AppShellV3: Palette-driven, header-only nav
@@ -13,6 +14,9 @@ import NoScrollGuard from '@/components/layout/NoScrollGuard';
 export default function AppShellV3({ children, currentPage, user, showRightPanel = true }) {
   return (
     <div className="h-screen w-screen overflow-hidden bg-zinc-950 flex flex-col">
+      {/* Boot Splash Overlay */}
+      <BootSplashOverlay />
+
       {/* Fixed Header */}
       <HeaderV3 />
 
