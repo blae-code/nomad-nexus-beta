@@ -1,156 +1,206 @@
+/**
+ * CommsJoinDialog: Unified UI for joining voice/text/data nets
+ * 
+ * Handles:
+ * - Event/operation context awareness
+ * - Net selection by type/availability
+ * - Permissions validation
+ * - SIM/LIVE mode transparency
+ */
+
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
-import { Loader, AlertCircle, Radio } from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { useCommsJoin } from './useCommsJoin';
 import { useCommsMode } from './useCommsMode';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Radio, MessageSquare, Database, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function CommsJoinDialog({ 
-  isOpen, 
-  onClose, 
-  netId, 
-  eventId, 
-  onJoinSuccess 
-}) {
-  const { isLive, isSim } = useCommsMode();
-  const [net, setNet] = useState(null);
+export default function CommsJoinDialog({ eventId, onSuccess, onClose, autoJoin = false }) {
+  const { joinComms, leaveComms, state, isLoading, isSimMode } = useCommsJoin();
+  const { mode } = useCommsMode();
+  const [nets, setNets] = useState([]);
+  const [selectedNetId, setSelectedNetId] = useState(null);
+  const [isLoadingNets, setIsLoadingNets] = useState(true);
   const [user, setUser] = useState(null);
-  const [isJoining, setIsJoining] = useState(false);
-  const [error, setError] = useState(null);
 
+  // Fetch available nets for event
   useEffect(() => {
-    if (!isOpen) return;
-    base44.auth.me().then(setUser).catch(() => {});
-    if (netId) {
-      base44.entities.VoiceNet.get(netId).then(setNet).catch(err => {
-        setError('Failed to load voice net details');
-        console.error(err);
-      });
-    }
-  }, [isOpen, netId]);
+    const load = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+
+        if (eventId) {
+          const availableNets = await base44.entities.VoiceNet.filter(
+            { event_id: eventId, status: 'active' },
+            'priority',
+            20
+          );
+          setNets(availableNets || []);
+          
+          // Default to command net or first net
+          const commandNet = availableNets?.find(n => n.type === 'command');
+          setSelectedNetId(commandNet?.id || availableNets?.[0]?.id);
+
+          // Auto-join if specified
+          if (autoJoin && availableNets?.[0]) {
+            joinComms({
+              eventId,
+              netId: availableNets[0].id,
+              metadata: { callsign: currentUser.callsign, rank: currentUser.rank }
+            });
+          }
+        }
+      } catch (error) {
+        console.error('[COMMS JOIN] Failed to load nets:', error);
+      } finally {
+        setIsLoadingNets(false);
+      }
+    };
+
+    load();
+  }, [eventId, autoJoin, joinComms]);
 
   const handleJoin = async () => {
-    if (!user || !net) return;
-
-    setIsJoining(true);
-    setError(null);
-
     try {
-      if (isLive) {
-        // In LIVE mode, actually connect to LiveKit
-        // The ActiveNetPanel will handle the connection
-        toast.success(`Connecting to ${net.label}...`);
-        onJoinSuccess?.();
-        onClose();
-      } else {
-        // In SIM mode, just allow entry
-        toast.success(`Joining ${net.label} (SIM Mode)`);
-        onJoinSuccess?.();
-        onClose();
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to join comms');
-      console.error(err);
-    } finally {
-      setIsJoining(false);
+      await joinComms({
+        eventId,
+        netId: selectedNetId,
+        metadata: { callsign: user?.callsign, rank: user?.rank }
+      });
+      onSuccess?.();
+    } catch (error) {
+      console.error('[COMMS JOIN] Join failed:', error);
     }
   };
 
-  if (!net) return null;
+  // Get icon for net type
+  const getNetIcon = (type) => {
+    switch (type) {
+      case 'voice':
+        return <Radio className="w-4 h-4" />;
+      case 'text':
+        return <MessageSquare className="w-4 h-4" />;
+      case 'data':
+        return <Database className="w-4 h-4" />;
+      default:
+        return <Radio className="w-4 h-4" />;
+    }
+  };
+
+  const selectedNet = nets.find(n => n.id === selectedNetId);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-950 border-zinc-800">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-[#ea580c]" />
-            Join Voice Net
-          </DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            {isSim ? 'SIM MODE: Simulated participants' : 'LIVE MODE: Real-time connection'}
-          </DialogDescription>
-        </DialogHeader>
+    <div className="space-y-4 p-4 bg-zinc-950 border border-zinc-800 rounded-none">
+      {/* Header */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-bold text-white">JOIN COMMS</h3>
+        {isSimMode && (
+          <Badge variant="outline" className="bg-yellow-950/30 text-yellow-300 border-yellow-700/50 text-xs">
+            SIM MODE
+          </Badge>
+        )}
+      </div>
 
-        <div className="space-y-4 py-4">
-          {/* Net Details */}
-          <div className="space-y-3 p-4 bg-zinc-900/30 border border-zinc-800/50 rounded">
-            <div>
-              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Net Code</div>
-              <div className="text-lg font-mono font-bold text-white mt-1">{net.code}</div>
-            </div>
-            <div>
-              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Label</div>
-              <div className="text-sm text-zinc-300 mt-1">{net.label}</div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Type</div>
-                <div className="text-sm text-zinc-300 mt-1 capitalize">{net.type}</div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Discipline</div>
-                <div className={cn(
-                  'text-sm mt-1 capitalize',
-                  net.discipline === 'focused' ? 'text-red-400' : 'text-emerald-400'
-                )}>
-                  {net.discipline}
+      {/* Error state */}
+      {state.lastError && (
+        <div className="flex items-start gap-2 p-2 bg-red-950/30 border border-red-700/50 text-red-300 text-xs">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{state.lastError}</span>
+        </div>
+      )}
+
+      {/* Net selection */}
+      {isLoadingNets ? (
+        <div className="flex items-center justify-center h-24">
+          <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
+        </div>
+      ) : nets.length === 0 ? (
+        <p className="text-xs text-zinc-400">No comms nets available</p>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-zinc-500 font-mono uppercase">Select Net</p>
+          <div className="grid gap-2">
+            {nets.map((net) => (
+              <button
+                key={net.id}
+                onClick={() => setSelectedNetId(net.id)}
+                className={cn(
+                  'flex items-start gap-3 p-2.5 border text-left text-xs transition-all',
+                  selectedNetId === net.id
+                    ? 'bg-[#ea580c]/20 border-[#ea580c]/60 text-[#ea580c]'
+                    : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300'
+                )}
+              >
+                <div className="mt-0.5">
+                  {getNetIcon(net.type || 'voice')}
                 </div>
-              </div>
-            </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold">{net.code}</div>
+                  <div className="text-[11px] text-zinc-500 line-clamp-1">{net.label}</div>
+                  {net.type && (
+                    <Badge variant="outline" className="mt-1 text-[9px] h-5">
+                      {net.type}
+                    </Badge>
+                  )}
+                </div>
+                {net.priority && (
+                  <div className="text-[10px] font-mono text-zinc-600">P{net.priority}</div>
+                )}
+              </button>
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* Mode Indicator */}
-          <div className={cn(
-            'p-3 border rounded text-sm font-mono text-center',
-            isSim ? 'bg-amber-950/30 border-amber-800/50 text-amber-400' : 'bg-emerald-950/30 border-emerald-800/50 text-emerald-400'
-          )}>
-            {isSim ? '⚠ SIMULATION MODE' : '✓ LIVE MODE - ACTUAL CONNECTION'}
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="p-3 bg-red-950/30 border border-red-800/50 rounded flex gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <div className="text-sm text-red-400">{error}</div>
-            </div>
+      {/* Selected net info */}
+      {selectedNet && (
+        <div className="p-2 bg-zinc-900/50 border border-zinc-800 space-y-1">
+          <p className="text-xs font-mono text-zinc-500">TYPE: {selectedNet.type?.toUpperCase() || 'VOICE'}</p>
+          {selectedNet.discipline && (
+            <p className="text-xs font-mono text-zinc-500">DISCIPLINE: {selectedNet.discipline?.toUpperCase()}</p>
           )}
-
-          {/* Min Rank Warning */}
-          {user && net.min_rank_to_rx && (
-            <div className="p-3 bg-zinc-900/30 border border-zinc-800/50 rounded text-xs text-zinc-400">
-              <div className="font-bold text-zinc-300 mb-1">Minimum Rank Required:</div>
-              {net.min_rank_to_rx} or higher to receive on this net.
-            </div>
+          {selectedNet.min_rank_to_rx && (
+            <p className="text-xs font-mono text-zinc-500">MIN RANK: {selectedNet.min_rank_to_rx}</p>
           )}
         </div>
+      )}
 
-        {/* Actions */}
-        <div className="flex gap-3 justify-end">
+      {/* Actions */}
+      <div className="flex gap-2 pt-2">
+        <Button
+          onClick={handleJoin}
+          disabled={!selectedNetId || isLoading || state.isConnecting}
+          className="flex-1 bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs h-8"
+        >
+          {state.isConnecting || isLoading ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              JOINING...
+            </>
+          ) : (
+            'JOIN COMMS'
+          )}
+        </Button>
+        {onClose && (
           <Button
-            variant="outline"
             onClick={onClose}
-            disabled={isJoining}
+            variant="outline"
+            className="text-xs h-8"
           >
-            Cancel
+            CANCEL
           </Button>
-          <Button
-            onClick={handleJoin}
-            disabled={isJoining}
-            className="bg-[#ea580c] hover:bg-[#ea580c]/90"
-          >
-            {isJoining ? (
-              <>
-                <Loader className="w-4 h-4 mr-2 animate-spin" />
-                Joining...
-              </>
-            ) : (
-              'Join Comms'
-            )}
-          </Button>
+        )}
+      </div>
+
+      {/* Connection status */}
+      {state.isConnected && (
+        <div className="p-2 bg-emerald-950/30 border border-emerald-700/50 text-emerald-300 text-xs font-mono">
+          ✓ CONNECTED TO {selectedNet?.code}
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   );
 }
