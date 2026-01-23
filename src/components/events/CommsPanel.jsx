@@ -113,7 +113,8 @@ export default function CommsPanel({ eventId }) {
   if (isLoading) return <div className="h-32 bg-zinc-900/50 rounded" />;
 
   return (
-    <OpsPanel className="flex flex-col overflow-hidden">
+    <>
+      <OpsPanel className="flex flex-col overflow-hidden">
       <OpsPanelHeader className="bg-zinc-900/30 pt-4">
         <div className="flex justify-between items-center w-full">
           <OpsPanelTitle className="flex items-center gap-2">
