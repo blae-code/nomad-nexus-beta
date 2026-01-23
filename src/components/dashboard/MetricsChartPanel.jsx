@@ -109,17 +109,27 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   return (
     <div className="space-y-2">
       <motion.div 
-        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50"
+        className="flex items-center justify-between mb-2 px-2 py-1 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-900/30 transition-colors"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
+        onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
           <Activity className="w-3 h-3 text-[#ea580c]" />
           <h3 className="text-[8px] font-bold uppercase text-zinc-300 tracking-widest font-mono">[ DATA TELEMETRY ]</h3>
+          <motion.div
+            animate={{ rotate: isExpanded ? 0 : -90 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-3 h-3 text-zinc-500" />
+          </motion.div>
         </div>
         <button
-          onClick={() => handleExportChart('metrics')}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleExportChart('metrics');
+          }}
           className="text-[8px] text-zinc-500 hover:text-[#ea580c] transition-colors flex items-center gap-1 hover:gap-2"
         >
           <Download className="w-3 h-3" />
