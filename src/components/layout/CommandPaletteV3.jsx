@@ -8,6 +8,7 @@ import {
   Search,
   ArrowRight,
   ChevronRight,
+  ChevronLeft,
   LayoutGrid,
   Calendar,
   Radio,
