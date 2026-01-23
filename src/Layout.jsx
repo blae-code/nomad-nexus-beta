@@ -10,20 +10,21 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
       import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 
 const pageMap = {
-  '/': 'hub',
-  '/hub': 'hub',
-  '/nomadopsdashboard': 'mission',
-  '/events': 'events',
-  '/commsconsole': 'comms',
-  '/intelligence': 'intelligence',
-  '/admin': 'admin',
-  '/adminconsole': 'admin', // deprecated, redirect to /admin
-  '/universemap': 'universemap',
-  '/fleetmanager': 'fleetmanager',
-  '/rescue': 'rescue',
-  '/channels': 'channels',
-  '/profile': 'profile',
-};
+        '/': 'hub',
+        '/hub': 'hub',
+        '/academy': 'academy',
+        '/nomadopsdashboard': 'mission',
+        '/events': 'events',
+        '/commsconsole': 'comms',
+        '/intelligence': 'intelligence',
+        '/admin': 'admin',
+        '/adminconsole': 'admin', // deprecated, redirect to /admin
+        '/universemap': 'universemap',
+        '/fleetmanager': 'fleetmanager',
+        '/rescue': 'rescue',
+        '/channels': 'channels',
+        '/profile': 'profile',
+      };
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
