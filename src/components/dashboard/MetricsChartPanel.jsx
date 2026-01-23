@@ -138,7 +138,15 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       </motion.div>
 
       {/* Charts Row - Activity & Treasury */}
-       <div className="grid grid-cols-4 gap-2">
+      <AnimatePresence>
+        {isExpanded && (
+       <motion.div 
+         initial={{ opacity: 0, height: 0 }}
+         animate={{ opacity: 1, height: 'auto' }}
+         exit={{ opacity: 0, height: 0 }}
+         transition={{ duration: 0.2 }}
+         className="grid grid-cols-4 gap-2 overflow-hidden"
+       >
         {/* Activity Over Time */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
