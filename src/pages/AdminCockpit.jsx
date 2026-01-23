@@ -39,8 +39,6 @@ export default function AdminCockpitPage() {
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState(null);
   const [isSetupDemo, setIsSetupDemo] = useState(false);
-  const [effectiveCommsMode, setEffectiveCommsMode] = useState('SIM');
-  const [modeFallbackReason, setModeFallbackReason] = useState(null);
   const queryClient = useQueryClient();
 
   // Auth check - gate to Pioneer/Founder (rank check if needed)
@@ -136,12 +134,7 @@ export default function AdminCockpitPage() {
       <div className="h-full overflow-hidden flex flex-col bg-black">
         {/* Header with readiness score & real-time system status */}
           <div className="border-b border-zinc-800 px-4 py-3 shrink-0 space-y-2">
-            <CockpitHeader 
-              readinessScore={readinessScore} 
-              auditLogs={auditLogs}
-              effectiveCommsMode={effectiveCommsMode}
-              modeFallbackReason={modeFallbackReason}
-            />
+            <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} />
 
             {/* System Status Indicators */}
             <div className="flex items-center gap-3 flex-wrap text-[8px]">
@@ -154,7 +147,7 @@ export default function AdminCockpitPage() {
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
                 <MessageSquare className="w-3 h-3 text-green-400" />
                 <span className="text-zinc-300">Comms:</span>
-                <span className="font-mono font-bold text-green-400">LIVE</span>
+                <span className="font-mono font-bold text-green-400">{demoEnabled ? 'DEMO' : 'LIVE'}</span>
               </div>
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
