@@ -571,10 +571,27 @@ export default function CommandPaletteV3() {
       <div ref={containerRef} className="relative max-w-2xl flex-1">
       {/* Main Input */}
       <div className="relative group">
+        {/* Pulsing outer glow when not open - draws attention */}
+        <motion.div
+          className={cn(
+            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/30 to-[#ea580c]/0 blur-2xl rounded',
+            isOpen ? 'hidden' : 'block'
+          )}
+          animate={{
+            opacity: [0.4, 0.8, 0.4],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+
+        {/* Bright glow when open */}
         <div
           className={cn(
-            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/20 to-[#ea580c]/0 blur-xl transition-opacity duration-500',
-            isOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
+            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/40 to-[#ea580c]/0 blur-xl transition-opacity duration-300',
+            isOpen ? 'opacity-100' : 'opacity-0'
           )}
         />
 
@@ -585,8 +602,10 @@ export default function CommandPaletteV3() {
 
         <div
           className={cn(
-            'relative flex items-center h-8 bg-zinc-900 border transition-all duration-200 overflow-hidden focus-within:border-[#ea580c] focus-within:shadow-[0_0_20px_rgba(234,88,12,0.2)]',
-            isOpen ? 'border-[#ea580c] shadow-[0_0_20px_rgba(234,88,12,0.2)]' : 'border-zinc-800 hover:border-zinc-700'
+            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-hidden focus-within:border-[#ea580c] focus-within:shadow-[0_0_25px_rgba(234,88,12,0.4)]',
+            isOpen 
+              ? 'border-[#ea580c] shadow-[0_0_25px_rgba(234,88,12,0.4)]' 
+              : 'border-zinc-800 hover:border-[#ea580c]/50 group-hover:shadow-[0_0_15px_rgba(234,88,12,0.2)]'
           )}
         >
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
@@ -604,9 +623,19 @@ export default function CommandPaletteV3() {
           className="flex-1 h-full bg-transparent border-none text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
           />
 
-          <div className="mr-2 flex items-center gap-1 text-[9px] font-mono text-zinc-600 pointer-events-none">
-            <Command className="w-2 h-2" />
-            <span>K</span>
+          <div className={cn(
+           'mr-2 flex items-center gap-1 text-[9px] font-bold pointer-events-none transition-all',
+           isOpen 
+             ? 'text-[#ea580c]' 
+             : 'text-zinc-500 group-hover:text-[#ea580c]'
+          )}>
+           <motion.div
+             animate={!isOpen ? { scale: [1, 1.2, 1] } : {}}
+             transition={{ duration: 2, repeat: Infinity }}
+           >
+             <Command className="w-2 h-2" />
+           </motion.div>
+           <span>K</span>
           </div>
         </div>
       </div>
