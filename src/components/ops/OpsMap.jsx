@@ -93,22 +93,42 @@ export default function OpsMap({ eventId, readOnly = false }) {
     }
   };
 
-  // Create new marker
+  // Create new marker with persistence + broadcast
   const handleAddMarker = async () => {
     if (selectedLocation && markerLabel.trim()) {
-      await base44.entities.MapMarker.create({
-        event_id: eventId,
-        type: markerType,
-        label: markerLabel,
-        coordinates: {
-          lat: selectedLocation.lat,
-          lng: selectedLocation.lng
+      try {
+        // Persist via backend function for atomic operation + logging
+        const res = await base44.functions.invoke('persistEventMarkers', {
+          event_id: eventId,
+          marker_data: {
+            type: markerType,
+            label: markerLabel,
+            coordinates: {
+              lat: selectedLocation.lat,
+              lng: selectedLocation.lng
+            },
+            color: '#ea580c'
+          }
+        });
+
+        if (res.data.success) {
+          // Broadcast command ping to event
+          await base44.functions.invoke('sendTacticalCommand', {
+            eventId,
+            targetId: eventId,
+            targetType: 'event',
+            message: `Tactical marker placed: ${markerLabel} at ${selectedLocation.lat.toFixed(4)}, ${selectedLocation.lng.toFixed(4)}`
+          });
+
+          setMarkerLabel('');
+          setSelectedLocation(null);
+          setShowNewMarkerForm(false);
+          // Refetch immediately for UI consistency
+          refetchMarkers();
         }
-      });
-      setMarkerLabel('');
-      setSelectedLocation(null);
-      setShowNewMarkerForm(false);
-      refetchMarkers();
+      } catch (err) {
+        console.error('Failed to place marker:', err);
+      }
     }
   };
 
