@@ -19,11 +19,13 @@ export default function NetList({ nets, selectedNetId, onSelect, userSquadId, vi
       const res = await base44.functions.invoke('getLiveKitRoomStatus', { rooms: roomNames });
       // Map roomName back to netId for lookup
       const byNetId = {};
-      nets.forEach(net => {
-        if (net.livekit_room_name && res.data[net.livekit_room_name]) {
-          byNetId[net.id] = res.data[net.livekit_room_name];
-        }
-      });
+      if (res.data?.ok && res.data.data) {
+        nets.forEach(net => {
+          if (net.livekit_room_name && res.data.data[net.livekit_room_name]) {
+            byNetId[net.id] = res.data.data[net.livekit_room_name];
+          }
+        });
+      }
       return byNetId;
     },
     enabled: nets.length > 0,

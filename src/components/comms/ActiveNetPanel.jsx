@@ -545,26 +545,22 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
 
           // 1. Get Token with permission enforcement
           const res = await base44.functions.invoke('generateLiveKitToken', {
-             eventId: eventId,
-             netIds: [net.id]
+             roomName: `op-${eventId}-${net.code}`,
+             userIdentity: user?.id || 'unknown'
           });
-          
+
           if (!mounted) return;
 
-          // Handle errors and warnings
-          if (res.data.errors && res.data.errors.length > 0) {
-             console.error('LiveKit token errors:', res.data.errors);
-             setConnectionError(res.data.errors[0]);
+          // Handle response
+          if (!res.data?.ok) {
+             console.error('LiveKit token error:', res.data?.message);
+             setConnectionError(res.data?.message || 'Failed to mint token');
              setConnectionState("failed");
              return;
           }
-          
-          if (res.data.warnings && res.data.warnings.length > 0) {
-             res.data.warnings.forEach(warn => console.info(`[COMMS] ${warn}`));
-          }
-          
-          const token = res.data.tokens?.[net.id];
-          let url = res.data.url || res.data.livekitUrl;
+
+          const token = res.data?.data?.token;
+          let url = res.data?.data?.url;
 
           if (!token) {
              console.error('[COMMS] No token received for net - insufficient permissions');

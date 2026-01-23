@@ -1,19 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { RoomServiceClient } from 'npm:livekit-server-sdk@2.0.0';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { rooms } = await req.json();
 
     if (!rooms || !Array.isArray(rooms) || rooms.length === 0) {
-      return Response.json({}, { status: 200 }); // Empty result for no rooms
+      return Response.json({
+        ok: true,
+        data: {}
+      });
     }
 
     // Get LiveKit credentials
@@ -22,15 +17,19 @@ Deno.serve(async (req) => {
     const apiSecret = Deno.env.get('LIVEKIT_API_SECRET');
 
     if (!livekitUrl || !apiKey || !apiSecret) {
-      return Response.json({ error: 'LiveKit not configured' }, { status: 500 });
+      return Response.json({
+        ok: false,
+        errorCode: 'ENV_NOT_CONFIGURED',
+        message: 'LiveKit credentials not configured',
+        data: null
+      }, { status: 500 });
     }
 
     // Initialize LiveKit Room Service Client
     const roomClient = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
 
     // Get participant counts for requested rooms
-    // Returns object mapping roomName -> { participantCount, isActive }
-    const roomStatuses = {};
+    const roomStatuses: Record<string, { participantCount: number; isActive: boolean }> = {};
 
     for (const roomName of rooms) {
       try {
@@ -48,10 +47,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json(roomStatuses);
+    return Response.json({
+      ok: true,
+      data: roomStatuses
+    });
 
   } catch (error) {
     console.error('LiveKit room status error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({
+      ok: false,
+      errorCode: 'SERVER_ERROR',
+      message: error.message,
+      data: null
+    }, { status: 500 });
   }
 });

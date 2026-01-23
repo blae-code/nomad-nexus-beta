@@ -90,14 +90,14 @@ export default function CommsPreflightPanel({ user }) {
       try {
         const tokenResponse = await base44.functions.invoke('generateLiveKitToken', {
           roomName: `healthcheck_${Date.now()}`,
-          userName: 'healthcheck_bot'
+          userIdentity: 'healthcheck_bot'
         });
-        
-        if (!tokenResponse.data?.token) {
-          throw new Error('No token returned');
+
+        if (!tokenResponse.data?.ok || !tokenResponse.data?.data?.token) {
+          throw new Error(tokenResponse.data?.message || 'No token returned');
         }
 
-        const tokenPreview = tokenResponse.data.token.substring(0, 20) + '...';
+        const tokenPreview = tokenResponse.data.data.token.substring(0, 20) + '...';
         updateCheck('token_mint', 'pass', 'Minted', tokenPreview);
         results.token_mint = { status: 'pass', detail: tokenPreview };
       } catch (err) {
@@ -110,12 +110,15 @@ export default function CommsPreflightPanel({ user }) {
       updateCheck('status_check', 'running', 'Checking...', '');
       try {
         const statusResponse = await base44.functions.invoke('getLiveKitRoomStatus', {
-          roomName: `healthcheck_${Date.now()}`
+          rooms: [`healthcheck_${Date.now()}`]
         });
-        
-        const status = statusResponse.data?.status || 'unknown';
-        updateCheck('status_check', 'pass', 'OK', `Status: ${status}`);
-        results.status_check = { status: 'pass', detail: status };
+
+        if (!statusResponse.data?.ok) {
+          throw new Error(statusResponse.data?.message || 'Status check failed');
+        }
+
+        updateCheck('status_check', 'pass', 'OK', 'LiveKit API responsive');
+        results.status_check = { status: 'pass', detail: 'OK' };
       } catch (err) {
         // This might warn instead of fail
         updateCheck('status_check', 'warn', 'Partial', err.message);
