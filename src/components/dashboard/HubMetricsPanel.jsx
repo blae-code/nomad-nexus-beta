@@ -16,7 +16,7 @@ const HubMetricsPanel = memo(function HubMetricsPanel({
   return (
     <div>
       <div className="text-[7px] uppercase text-zinc-400 tracking-widest mb-3 font-bold">ORGANIZATION STATUS</div>
-      <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
+      <div className="grid grid-cols-8 gap-2">
         <MetricCard
           icon={Users}
           label="Roster"
