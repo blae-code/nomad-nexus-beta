@@ -266,7 +266,7 @@ export default function CommsPreflightPanel({ user }) {
       </div>
 
       <p className="text-[9px] text-zinc-600 border-t border-zinc-800 pt-2">
-        Results logged to AdminAuditLog. Failures block demo launch.
+        Tests: env → token → room status → real client connect. One click = LIVE works or LIVE fails.
       </p>
     </motion.div>
   );
