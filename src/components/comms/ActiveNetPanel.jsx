@@ -21,6 +21,7 @@ import UserPresencePanel from "./UserPresencePanel";
 import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtils";
 import { usePresence } from "@/components/comms/usePresence";
 import NetChannelChat from "@/components/comms/NetChannelChat";
+import VoiceRecordingControls from "./VoiceRecordingControls";
 
 function CommsLog({ eventId }) {
   const { data: messages } = useQuery({
@@ -918,6 +919,11 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                  <SignalStrength strength={4} className="h-6 gap-1" />
               </div>
            </div>
+
+           {/* Voice Recording Controls */}
+           {canTx && (
+             <VoiceRecordingControls netId={net.id} netLabel={net.label} />
+           )}
 
            {/* Audio Controls */}
            {isAdminMuted ? (

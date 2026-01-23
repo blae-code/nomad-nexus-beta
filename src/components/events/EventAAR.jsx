@@ -4,9 +4,17 @@ import { base44 } from '@/api/base44Client';
 import { FileText, Download, Loader2, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import CommsSummaryGenerator from './CommsSummaryGenerator';
 
-export default function EventAAR({ eventId, eventTitle }) {
+export default function EventAAR({ eventId, eventTitle, event }) {
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch channels for comms summary
+  const { data: channels = [] } = useQuery({
+    queryKey: ['event-channels', eventId],
+    queryFn: () => base44.entities.Channel.list(),
+    enabled: !!eventId
+  });
 
   const { data: report, isLoading: reportLoading, refetch } = useQuery({
     queryKey: ['event-aar', eventId],
@@ -74,14 +82,15 @@ export default function EventAAR({ eventId, eventTitle }) {
           <FileText className="w-4 h-4 text-[#ea580c]" />
           AFTER ACTION REPORT
         </h3>
-        {report && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          {event && <CommsSummaryGenerator event={event} channels={channels} />}
+          {report && (
             <Button size="sm" variant="outline" onClick={handlePrint} className="text-[10px] h-7 gap-1">
               <Printer className="w-3 h-3" />
               Print
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!report ? (
