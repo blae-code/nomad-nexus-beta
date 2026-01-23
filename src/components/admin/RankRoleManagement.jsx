@@ -23,10 +23,10 @@ export default function RankRoleManagement() {
   const isSystemAdmin = currentUser?.is_system_administrator;
   const isPioneer = currentUser?.rank === 'Pioneer';
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['rank-role-users'],
     queryFn: () => base44.asServiceRole.entities.User.list('-created_date', 500),
-    enabled: isSystemAdmin || isPioneer
+    enabled: !!currentUser && (isSystemAdmin || isPioneer)
   });
 
   const { data: roles = [] } = useQuery({
