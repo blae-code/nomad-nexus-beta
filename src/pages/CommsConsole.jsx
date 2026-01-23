@@ -407,13 +407,9 @@ function CommsConsolePage() {
                         ) : (
                            <NetList 
                               nets={memoizedNets} 
-                              selectedNetId={selectedNet?.id} 
+                              selectedNetId={selectedNetId}
                               onSelect={(net) => {
-                                if (activeNetConnection && activeNetConnection !== net.id) {
-                                  console.warn('[COMMS] Switching nets');
-                                }
-                                setSelectedNet(net);
-                                setActiveNetConnection(net.id);
+                                setSelectedNetId(net.id);
                               }}
                               userSquadId={userSquadId}
                               viewMode={viewMode}
@@ -469,16 +465,9 @@ function CommsConsolePage() {
                            <div className="shrink-0">
                               <CommsToolbar
                                  selectedNet={selectedNet}
-                                 onSelectNet={(net) => {
-                                   if (net) {
-                                     setSelectedNet(net);
-                                     setActiveNetConnection(net.id);
-                                   } else {
-                                     setSelectedNet(null);
-                                     setActiveNetConnection(null);
-                                   }
-                                 }}
-                                 isConnected={activeNetConnection === selectedNet?.id}
+                                 isConnected={connectedNetId === selectedNetId && connectionState === 'connected'}
+                                 isConnecting={connectionState === 'connecting'}
+                                 connectionError={connectionError}
                                  isTransmitting={isTransmitting}
                                  onOpenAdvanced={() => setShowAdvancedDrawer(true)}
                               />
@@ -492,12 +481,18 @@ function CommsConsolePage() {
                                     net={selectedNet} 
                                     user={currentUser} 
                                     eventId={selectedEventId}
-                                    onConnectionChange={(netId, isConnected) => {
-                                      if (isConnected) {
-                                        setActiveNetConnection(netId);
-                                      } else if (activeNetConnection === netId) {
-                                        setActiveNetConnection(null);
-                                      }
+                                    isConnected={connectedNetId === selectedNetId}
+                                    connectionState={connectionState}
+                                    connectionError={connectionError}
+                                    effectiveMode={effectiveMode}
+                                    modeFallbackReason={modeFallbackReason}
+                                    onConnecting={() => handleConnecting(selectedNetId)}
+                                    onConnectSuccess={() => handleConnectSuccess(selectedNetId)}
+                                    onDisconnect={() => handleDisconnect()}
+                                    onError={(err) => handleConnectionError(err)}
+                                    onModeChange={(mode, reason) => {
+                                      setEffectiveMode(mode);
+                                      setModeFallbackReason(reason);
                                     }}
                                  />
                               ) : (
@@ -593,11 +588,16 @@ function CommsConsolePage() {
                ) : selectedNet ? (
                   <ScrollArea className="flex-1">
                      <div className="p-[var(--space-lg)] space-y-3">
+                        {modeFallbackReason && (
+                          <div className="p-3 bg-amber-950/30 border border-amber-800 rounded text-[10px] text-amber-400 font-mono">
+                            {modeFallbackReason}
+                          </div>
+                        )}
                         <WingStatusPropagation eventId={selectedEventId} />
                         <FleetPingSystem eventId={selectedEventId} />
-                        <FormationCallouts eventId={selectedEventId} currentNetId={selectedNet?.id} />
-                        <RallyPointManager eventId={selectedEventId} currentNetId={selectedNet?.id} />
-                        <NetDisciplineQueue netId={selectedNet?.id} />
+                        <FormationCallouts eventId={selectedEventId} currentNetId={selectedNetId} />
+                        <RallyPointManager eventId={selectedEventId} currentNetId={selectedNetId} />
+                        <NetDisciplineQueue netId={selectedNetId} />
                      </div>
                   </ScrollArea>
                ) : null}
@@ -654,13 +654,13 @@ function CommsConsolePage() {
          />
 
          {/* PTT HUD */}
-         <PTTHud isTransmitting={isTransmitting && selectedNet} pttKey={pttKey} isMuted={!selectedNet} />
+         <PTTHud isTransmitting={isTransmitting && selectedNetId} pttKey={pttKey} isMuted={!selectedNetId} />
 
          {/* Net Switch Overlay */}
          <NetSwitchOverlay 
            nets={memoizedNets} 
-           selectedNet={selectedNet} 
-           onSelectNet={setSelectedNet}
+           selectedNetId={selectedNetId}
+           onSelectNet={(net) => setSelectedNetId(net?.id || null)}
          />
          </PageLayout>
          );
