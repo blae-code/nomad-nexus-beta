@@ -363,9 +363,9 @@ export default function VoiceControlToolkit() {
       </div>
 
       {/* Footer - Minimal */}
-      <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[7px] text-zinc-600 font-mono flex items-center justify-center gap-4">
-        <span>CTRL+V: PTT</span>
-        <span>CTRL+M: MUTE</span>
+      <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[6px] text-zinc-600 font-mono flex items-center justify-center gap-2 whitespace-nowrap">
+        <span>V: PTT</span>
+        <span>M: MUTE</span>
       </div>
     </div>
     </TooltipProvider>
