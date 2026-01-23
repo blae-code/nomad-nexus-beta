@@ -287,7 +287,7 @@ export default function CommsArrayPanel({
         nodeType={menuState.nodeType}
         position={menuState.position}
         onClose={() => setMenuState({ isOpen: false, nodeId: null, nodeType: null, position: null })}
-        onWhisper={handleWhisper}
+        onWhisper={(nodeId, scope) => handleWhisper(nodeId, scope)}
         onBroadcast={handleBroadcast}
         onRequestPriority={handleRequestPriority}
         onGrantPriority={handleGrantPriority}
