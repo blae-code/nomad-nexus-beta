@@ -255,29 +255,29 @@ export default function ProfilePage() {
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="p-2 space-y-0">
            <Tabs defaultValue="profile" className="w-full flex flex-col h-full">
-              <TabsList className="bg-zinc-900/30 border border-zinc-800 mb-0 shrink-0 overflow-x-auto">
-                 <TabsTrigger value="profile" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+              <TabsList className="bg-zinc-900/30 border-b border-zinc-800 mb-0 shrink-0 overflow-x-auto p-0 h-auto rounded-none">
+                 <TabsTrigger value="profile" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
                     PROFILE
                  </TabsTrigger>
-                 <TabsTrigger value="operational" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
-                    OPERATIONAL
+                 <TabsTrigger value="operational" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
+                    OPS
                  </TabsTrigger>
-                 <TabsTrigger value="presence" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
-                    PRESENCE
+                 <TabsTrigger value="presence" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
+                    STATUS
                  </TabsTrigger>
-                 <TabsTrigger value="personality" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
-                    IDENTITY
+                 <TabsTrigger value="personality" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
+                    ID
                  </TabsTrigger>
-                 <TabsTrigger value="clearance" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
+                 <TabsTrigger value="clearance" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
                     CLEARANCE
                  </TabsTrigger>
-                 <TabsTrigger value="ai-preferences" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white flex items-center gap-1">
+                 <TabsTrigger value="ai-preferences" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150 flex items-center gap-1">
                     <Brain className="w-2.5 h-2.5" />
                     AI
                  </TabsTrigger>
                  {hasModerationActivity && (
-                    <TabsTrigger value="moderation" className="text-[7px] font-bold uppercase tracking-wider transition-all duration-100 border-b-2 text-zinc-400 border-b-transparent hover:text-zinc-200 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-[#ea580c] data-[state=active]:text-white">
-                       MODERATION
+                    <TabsTrigger value="moderation" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
+                       MOD LOG
                     </TabsTrigger>
                  )}
               </TabsList>
