@@ -35,6 +35,32 @@ export default function CommsArray() {
     queryFn: () => base44.entities.Squad.list()
   });
 
+  const { data: userPresence = [] } = useQuery({
+    queryKey: ['user-presence', selectedEventId],
+    queryFn: () => base44.entities.UserPresence.filter({ event_id: selectedEventId }),
+    enabled: !!selectedEventId,
+    refetchInterval: 2000
+  });
+
+  const { data: voiceNetStatus = [] } = useQuery({
+    queryKey: ['voice-net-status', selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      const netIds = voiceNets.map(n => n.id);
+      const statuses = await Promise.all(
+        netIds.map(id => base44.entities.VoiceNetStatus.filter({ net_id: id }).catch(() => []))
+      );
+      return statuses.flat();
+    },
+    enabled: !!selectedEventId && voiceNets.length > 0,
+    refetchInterval: 3000
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   // Mutations
   const provisionMutation = useMutation({
     mutationFn: async (eventId) => {
@@ -356,12 +382,17 @@ export default function CommsArray() {
             <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
               <div className="flex items-center gap-2">
                 <Network className="w-3 h-3 text-cyan-500" />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">NET MAPPING</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">LIVE MONITORING</span>
               </div>
             </div>
             <ScrollArea className="h-[400px]">
               <div className="p-3">
-                <NetHierarchy nets={voiceNets} />
+                <NetHierarchy 
+                  nets={voiceNets} 
+                  userPresence={userPresence}
+                  voiceNetStatus={voiceNetStatus}
+                  users={users}
+                />
               </div>
             </ScrollArea>
           </div>
@@ -379,10 +410,12 @@ export default function CommsArray() {
             <div className="p-3 space-y-2">
               <StatRow label="TOTAL NETS" value={voiceNets.length} />
               <StatRow label="ACTIVE" value={voiceNets.filter(n => n.status === 'active').length} color="emerald" />
-              <StatRow label="INACTIVE" value={voiceNets.filter(n => n.status === 'inactive').length} color="zinc" />
-              <StatRow label="FOCUSED" value={voiceNets.filter(n => n.discipline === 'focused').length} color="red" />
-              <StatRow label="CASUAL" value={voiceNets.filter(n => n.discipline === 'casual').length} color="zinc" />
-              <StatRow label="STAGE MODE" value={voiceNets.filter(n => n.stage_mode).length} color="amber" />
+              <StatRow label="USERS ONLINE" value={userPresence.length} color="cyan" />
+              <StatRow label="TRANSMITTING" value={userPresence.filter(p => p.is_transmitting).length} color="orange" />
+              <div className="h-px bg-zinc-800 my-2" />
+              <StatRow label="JAMMED NETS" value={voiceNetStatus.filter(s => s.is_jammed).length} color="red" />
+              <StatRow label="AVG SIGNAL" value={`${Math.round(voiceNetStatus.reduce((acc, s) => acc + (s.signal_strength || 100), 0) / (voiceNetStatus.length || 1))}%`} color="emerald" />
+              <StatRow label="PKT LOSS" value={`${(voiceNetStatus.reduce((acc, s) => acc + (s.packet_loss_percent || 0), 0) / (voiceNetStatus.length || 1)).toFixed(1)}%`} color="amber" />
             </div>
           </div>
         )}
@@ -403,12 +436,24 @@ function VoiceUtilityButton({ label, icon: Icon, onClick }) {
   );
 }
 
-function NetHierarchy({ nets }) {
+function NetHierarchy({ nets, userPresence, voiceNetStatus, users }) {
   const netsByType = {
     command: nets.filter(n => n.type === 'command'),
     squad: nets.filter(n => n.type === 'squad'),
     support: nets.filter(n => n.type === 'support'),
     general: nets.filter(n => n.type === 'general')
+  };
+
+  const getUsersOnNet = (netId) => {
+    return userPresence.filter(p => p.net_id === netId);
+  };
+
+  const getNetStatus = (netId) => {
+    return voiceNetStatus.find(s => s.net_id === netId);
+  };
+
+  const getUserById = (userId) => {
+    return users.find(u => u.id === userId);
   };
 
   return (
@@ -419,28 +464,125 @@ function NetHierarchy({ nets }) {
             <div className="text-[8px] text-zinc-600 uppercase font-bold mb-1.5 font-mono tracking-widest flex items-center gap-1">
               <div className={cn(
                 "w-1.5 h-1.5",
-                type === 'command' && "bg-red-500",
-                type === 'squad' && "bg-emerald-500",
-                type === 'support' && "bg-cyan-500",
+                type === 'command' && "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]",
+                type === 'squad' && "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]",
+                type === 'support' && "bg-cyan-500 shadow-[0_0_4px_rgba(6,182,212,0.5)]",
                 type === 'general' && "bg-zinc-500"
               )} />
               <span>{type}</span>
             </div>
-            <div className="space-y-1 pl-3 border-l border-zinc-800">
-              {typeNets.map(net => (
-                <div key={net.id} className="text-[9px] font-mono text-zinc-500 flex items-center gap-1.5">
-                  <div className={cn(
-                    "w-1 h-1",
-                    net.status === 'active' ? "bg-emerald-500" : "bg-zinc-700"
-                  )} />
-                  <span className="text-zinc-400">{net.code}</span>
-                  <span className="text-zinc-700">→</span>
-                  <span className="text-zinc-600 truncate text-[8px]">{net.label}</span>
-                </div>
-              ))}
+            <div className="space-y-2 pl-3 border-l border-zinc-800">
+              {typeNets.map(net => {
+                const netStatus = getNetStatus(net.id);
+                const usersOnNet = getUsersOnNet(net.id);
+                const transmitting = usersOnNet.filter(p => p.is_transmitting);
+                
+                return (
+                  <div key={net.id} className="space-y-1">
+                    {/* Net Header */}
+                    <div className="flex items-center gap-1.5">
+                      <div className={cn(
+                        "w-1 h-1",
+                        net.status === 'active' ? "bg-emerald-500 animate-pulse" : "bg-zinc-700"
+                      )} />
+                      <span className="text-zinc-400 text-[9px] font-mono">{net.code}</span>
+                      
+                      {/* Signal Strength */}
+                      {netStatus && (
+                        <SignalStrength strength={netStatus.signal_strength} />
+                      )}
+                      
+                      {/* Interference Indicator */}
+                      {netStatus?.is_jammed && (
+                        <div className="text-[7px] text-red-500 font-mono flex items-center gap-0.5">
+                          <AlertTriangle className="w-2 h-2" />
+                          <span>JAM</span>
+                        </div>
+                      )}
+                      
+                      {/* Packet Loss */}
+                      {netStatus && netStatus.packet_loss_percent > 5 && (
+                        <div className="text-[7px] text-amber-500 font-mono">
+                          {netStatus.packet_loss_percent.toFixed(0)}% LOSS
+                        </div>
+                      )}
+
+                      {/* User Count */}
+                      {usersOnNet.length > 0 && (
+                        <div className="text-[7px] text-zinc-600 font-mono ml-auto">
+                          {usersOnNet.length} USR
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Active Users */}
+                    {usersOnNet.length > 0 && (
+                      <div className="pl-3 space-y-0.5">
+                        {usersOnNet.map(presence => {
+                          const user = getUserById(presence.user_id);
+                          const isTransmitting = presence.is_transmitting;
+                          
+                          return (
+                            <div 
+                              key={presence.id}
+                              className={cn(
+                                "text-[8px] font-mono flex items-center gap-1 py-0.5",
+                                isTransmitting && "text-[#ea580c]"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-0.5 h-0.5 rounded-full",
+                                isTransmitting 
+                                  ? "bg-[#ea580c] shadow-[0_0_6px_rgba(234,88,12,0.8)] animate-pulse" 
+                                  : "bg-emerald-500"
+                              )} />
+                              <span className={cn(
+                                isTransmitting ? "text-[#ea580c] font-bold" : "text-zinc-500"
+                              )}>
+                                {user?.callsign || user?.rsi_handle || 'Unknown'}
+                              </span>
+                              {isTransmitting && (
+                                <span className="text-[6px] text-[#ea580c] uppercase">TX</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )
+      ))}
+    </div>
+  );
+}
+
+function SignalStrength({ strength = 100 }) {
+  const bars = Math.ceil((strength / 100) * 4);
+  const getColor = () => {
+    if (strength >= 75) return 'bg-emerald-500';
+    if (strength >= 50) return 'bg-yellow-500';
+    if (strength >= 25) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4].map(i => (
+        <div
+          key={i}
+          className={cn(
+            "w-0.5 transition-all",
+            i <= bars ? getColor() : "bg-zinc-800",
+            i === 1 && "h-1",
+            i === 2 && "h-1.5",
+            i === 3 && "h-2",
+            i === 4 && "h-2.5"
+          )}
+        />
       ))}
     </div>
   );
@@ -451,6 +593,8 @@ function StatRow({ label, value, color = 'zinc' }) {
     emerald: 'text-emerald-500',
     red: 'text-red-500',
     amber: 'text-amber-500',
+    cyan: 'text-cyan-500',
+    orange: 'text-[#ea580c]',
     zinc: 'text-zinc-500'
   };
 
