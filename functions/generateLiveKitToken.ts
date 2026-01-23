@@ -1,43 +1,35 @@
 /**
  * Generate LiveKit token (LIVE mode)
- * Request: { roomName: string, userIdentity: string }
- * Response: { ok: true, data: { token, roomName, identity, url } }
+ * Returns canonical commsResult structure
  */
 import { AccessToken } from 'npm:livekit@2.0.0';
+import { createCommsResult, createTokenResult } from './_shared/commsResult.ts';
 
 Deno.serve(async (req) => {
   try {
     const { roomName, userIdentity } = await req.json();
 
     if (!roomName || !userIdentity) {
-      return Response.json({
-        ok: false,
-        errorCode: 'INVALID_PARAMS',
-        message: 'roomName and userIdentity required',
-        data: null
-      }, { status: 400 });
+      return Response.json(
+        createCommsResult({
+          ok: false,
+          errorCode: 'INVALID_PARAMS',
+          message: 'roomName and userIdentity required'
+        })
+      );
     }
 
     const apiKey = Deno.env.get('LIVEKIT_API_KEY');
     const apiSecret = Deno.env.get('LIVEKIT_API_SECRET');
-    const livekitUrl = Deno.env.get('LIVEKIT_URL');
 
     if (!apiKey || !apiSecret) {
-      return Response.json({
-        ok: false,
-        errorCode: 'ENV_NOT_CONFIGURED',
-        message: 'LiveKit credentials not configured',
-        data: null
-      }, { status: 500 });
-    }
-
-    if (!livekitUrl) {
-      return Response.json({
-        ok: false,
-        errorCode: 'ENV_NOT_CONFIGURED',
-        message: 'LIVEKIT_URL not configured',
-        data: null
-      }, { status: 500 });
+      return Response.json(
+        createCommsResult({
+          ok: false,
+          errorCode: 'ENV_NOT_CONFIGURED',
+          message: 'LiveKit credentials not configured'
+        })
+      );
     }
 
     // Create token
@@ -53,23 +45,20 @@ Deno.serve(async (req) => {
     });
 
     const token = at.toJwt();
+    const livekitUrl = Deno.env.get('LIVEKIT_URL');
 
-    return Response.json({
-      ok: true,
-      data: {
-        token,
-        roomName,
-        identity: userIdentity,
-        url: livekitUrl
-      }
-    });
+    return Response.json(
+      createTokenResult(token, roomName, userIdentity, livekitUrl)
+    );
   } catch (error) {
     console.error('[generateLiveKitToken] Error:', error);
-    return Response.json({
-      ok: false,
-      errorCode: 'SERVER_ERROR',
-      message: error.message,
-      data: null
-    }, { status: 500 });
+    return Response.json(
+      createCommsResult({
+        ok: false,
+        errorCode: 'SERVER_ERROR',
+        message: error.message
+      }),
+      { status: 500 }
+    );
   }
 });
