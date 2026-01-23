@@ -161,12 +161,12 @@ function CommsConsolePage() {
     refetchInterval: isProvisioningNets ? 1000 : false
   });
 
-  // Fetch recent comms activity for indicators (reduced polling)
+  // Fetch recent comms activity for indicators (no polling, smaller batch)
   const { data: recentActivity } = useQuery({
     queryKey: ['comms-activity', selectedEventId],
     queryFn: async () => {
       try {
-        const msgs = await base44.entities.Message.filter({}, '-created_date', 20);
+        const msgs = await base44.entities.Message.filter({}, '-created_date', 10);
 
         // Map net codes to last activity timestamp
         const activity = {};
@@ -191,7 +191,9 @@ function CommsConsolePage() {
       }
     },
     enabled: voiceNets.length > 0,
-    refetchInterval: 10000,
+    staleTime: 15000,
+    refetchInterval: false,
+    gcTime: 30000,
     initialData: {}
   });
 
