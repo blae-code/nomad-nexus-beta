@@ -1,21 +1,21 @@
 /**
- * UserManagementTab: Admin user management section
+ * UserManagementTab: Admin user management with Command Palette-style layout
  * 
  * Features:
- * - View all users with search/filter
- * - Assign/modify ranks and roles
- * - Manage permissions
- * - Invite new users
+ * - 2-column list/preview layout
+ * - Search & filter with rank visualization
+ * - Rank/role assignment in preview pane
+ * - Invite functionality
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, UserPlus, Edit2, Mail, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, Mail, Filter, CheckCircle2, AlertCircle, Star, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const RANKS = ['Vagrant', 'Scout', 'Voyager', 'Pioneer', 'Founder'];
 const ROLES = ['user', 'admin'];
@@ -31,7 +31,7 @@ const PERMISSIONS = [
 export default function UserManagementTab({ user: currentUser }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-  const [editingUser, setEditingUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -43,6 +43,20 @@ export default function UserManagementTab({ user: currentUser }) {
     queryFn: () => base44.entities.User.list('-created_date', 500),
     enabled: !!currentUser
   });
+
+  // Memoize filtered users
+  const filteredUsers = useMemo(() => {
+    return users.filter(u => {
+      const matchesSearch = !searchQuery || 
+        u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.callsign?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesRole = filterRole === 'all' || u.role === filterRole;
+      
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchQuery, filterRole]);
 
   // Invite user mutation
   const inviteUserMutation = useMutation({
@@ -59,7 +73,6 @@ export default function UserManagementTab({ user: currentUser }) {
   const updateRankMutation = useMutation({
     mutationFn: (data) =>
       base44.auth.updateMe({ rank: data.rank }).then(() => {
-        // Also log audit action
         return base44.entities.AdminAuditLog.create({
           step_name: 'user_management',
           action: `rank_change_${data.userId}`,
@@ -71,20 +84,8 @@ export default function UserManagementTab({ user: currentUser }) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      setEditingUser(null);
+      setSelectedUser(null);
     }
-  });
-
-  // Filter and search
-  const filteredUsers = users.filter(u => {
-    const matchesSearch = !searchQuery || 
-      u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.callsign?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = filterRole === 'all' || u.role === filterRole;
-    
-    return matchesSearch && matchesRole;
   });
 
   const handleInvite = () => {
@@ -97,177 +98,213 @@ export default function UserManagementTab({ user: currentUser }) {
   };
 
   return (
-    <div className="h-full flex flex-col gap-3 overflow-hidden">
-      {/* Header + Search + Invite */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-            User Directory
-          </h3>
-          <Button
-            onClick={() => setShowInviteDialog(!showInviteDialog)}
-            className="h-7 px-2.5 text-[9px] gap-1 bg-blue-950/60 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300"
-          >
-            <UserPlus className="w-3 h-3" />
-            Invite
-          </Button>
+    <div className="h-full flex gap-0 overflow-hidden bg-zinc-950/60" style={{
+      backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)',
+      backgroundSize: '100% 2px',
+    }}>
+      {/* LEFT: User List (flex-1) */}
+      <div className="flex-1 border-r border-zinc-800 flex flex-col min-w-0 overflow-hidden">
+        {/* Context header */}
+        <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 shrink-0">
+          <span className="text-[7px] text-zinc-700">[</span>
+          <span className="text-zinc-400">USER DIRECTORY</span>
+          <span className="text-[7px] text-zinc-700">]</span>
         </div>
 
-        {/* Invite Dialog */}
-        {showInviteDialog && (
-          <div className="border border-zinc-800 bg-zinc-900/50 p-3 space-y-2 rounded-none">
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="user@example.com"
-              className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-blue-600"
-            />
-            <div className="flex gap-2">
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                className="flex-1 px-2 py-1.5 bg-zinc-900 border border-zinc-800 text-white text-xs"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-              <Button
-                onClick={handleInvite}
-                disabled={inviteUserMutation.isPending || !inviteEmail}
-                className="h-8 px-2 text-[9px] bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300"
-              >
-                {inviteUserMutation.isPending ? 'Sending...' : 'Send'}
-              </Button>
+        {/* Search bar */}
+        <div className="px-3 py-2 border-b border-zinc-800 space-y-2 shrink-0">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-2 top-1.5 w-3 h-3 text-zinc-600 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search users..."
+                className="w-full pl-7 pr-2 py-1.5 bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-700"
+              />
             </div>
+            <Button
+              onClick={() => setShowInviteDialog(!showInviteDialog)}
+              className="h-7 px-2.5 text-[8px] gap-1 bg-blue-950/60 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300 shrink-0"
+            >
+              <UserPlus className="w-3 h-3" />
+              Invite
+            </Button>
           </div>
-        )}
 
-        {/* Search + Filter */}
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-2.5 top-2 w-3 h-3 text-zinc-600" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search users..."
-              className="w-full pl-7 pr-2 py-1.5 bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-700"
-            />
-          </div>
-          <div className="flex items-center gap-1 px-2 py-1.5 bg-zinc-900 border border-zinc-800">
+          {/* Filter */}
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900 border border-zinc-800 text-[9px]">
             <Filter className="w-3 h-3 text-zinc-600" />
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="bg-transparent text-white text-xs focus:outline-none"
+              className="bg-transparent text-white focus:outline-none"
             >
               <option value="all">All Roles</option>
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </div>
+
+          {/* Invite dialog */}
+          <AnimatePresence>
+            {showInviteDialog && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border border-zinc-800 bg-zinc-900/50 p-2 space-y-2"
+              >
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-blue-600"
+                />
+                <div className="flex gap-2">
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    className="flex-1 px-2 py-1.5 bg-zinc-900 border border-zinc-800 text-white text-xs"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <Button
+                    onClick={handleInvite}
+                    disabled={inviteUserMutation.isPending || !inviteEmail}
+                    className="h-8 px-2 text-[8px] bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300"
+                  >
+                    {inviteUserMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" /> SEND
+                      </>
+                    ) : (
+                      'SEND'
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* User list */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-20 text-zinc-600 text-[9px]">
+              Loading users...
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="flex items-center justify-center h-20 text-zinc-600 text-[9px]">
+              No users found
+            </div>
+          ) : (
+            filteredUsers.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => setSelectedUser(selectedUser?.id === u.id ? null : u)}
+                className={cn(
+                  'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors duration-150 border-l-2 hover:bg-zinc-900/50',
+                  selectedUser?.id === u.id
+                    ? 'bg-zinc-900 text-white border-l-[#ea580c] border-l-2'
+                    : 'text-zinc-400 border-l-transparent hover:border-l-[#ea580c]/30'
+                )}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-mono truncate">{u.full_name || u.email}</p>
+                  {u.callsign && <p className="text-[8px] text-zinc-500">@{u.callsign}</p>}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {u.role === 'admin' && (
+                    <span className="px-1 py-0.5 bg-[#ea580c]/20 border border-[#ea580c]/50 text-[7px] font-bold text-[#ea580c]">
+                      ADMIN
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[9px] text-zinc-600 font-mono shrink-0">
+          <span>Total: {users.length} · Showing: {filteredUsers.length}</span>
         </div>
       </div>
 
-      {/* User List */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-20 text-zinc-600">
-            <p className="text-[9px]">Loading users...</p>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="flex items-center justify-center h-20 text-zinc-600">
-            <p className="text-[9px]">No users found</p>
-          </div>
-        ) : (
-          filteredUsers.map((u) => (
-            <div
-              key={u.id}
-              className={cn(
-                'border p-2.5 space-y-1.5 hover:bg-zinc-900/40 transition-colors cursor-pointer',
-                editingUser?.id === u.id
-                  ? 'border-blue-700/50 bg-blue-950/20'
-                  : 'border-zinc-800 bg-zinc-950/40'
-              )}
-              onClick={() => setEditingUser(editingUser?.id === u.id ? null : u)}
-            >
-              {/* User header */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-white truncate">
-                    {u.full_name || u.email}
-                  </p>
-                  {u.callsign && (
-                    <p className="text-[8px] text-zinc-500">@{u.callsign}</p>
-                  )}
+      {/* RIGHT: Preview Pane (360px) */}
+      <div className="w-96 border-l border-zinc-800 bg-zinc-900/50 flex flex-col shrink-0 hidden lg:flex overflow-hidden">
+        {selectedUser ? (
+          <>
+            {/* User Header */}
+            <div className="px-4 py-3 border-b border-zinc-800 space-y-1">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs font-bold text-white">{selectedUser.full_name || selectedUser.email}</p>
+                  {selectedUser.callsign && <p className="text-[8px] text-zinc-500">@{selectedUser.callsign}</p>}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {u.role === 'admin' && (
-                    <div className="px-1.5 py-0.5 bg-[#ea580c]/20 border border-[#ea580c]/50 rounded-none">
-                      <span className="text-[8px] font-bold text-[#ea580c]">ADMIN</span>
-                    </div>
-                  )}
-                  <div className={cn(
-                    'px-1.5 py-0.5 border rounded-none',
-                    getRankColorClass(u.rank, 'bg')
-                  )}>
-                    <span className="text-[8px] font-bold">{u.rank || 'Vagrant'}</span>
-                  </div>
-                </div>
+                {selectedUser.role === 'admin' && (
+                  <span className="px-1.5 py-0.5 bg-[#ea580c]/20 border border-[#ea580c]/50 text-[7px] font-bold text-[#ea580c]">
+                    ADMIN
+                  </span>
+                )}
               </div>
-
-              {/* Expanded edit panel */}
-              {editingUser?.id === u.id && (
-                <div className="border-t border-zinc-800 pt-2 space-y-2">
-                  {/* Rank selector */}
-                  <div>
-                    <label className="text-[8px] font-mono text-zinc-600 uppercase">Rank</label>
-                    <select
-                      value={u.rank || 'Vagrant'}
-                      onChange={(e) => {
-                        updateRankMutation.mutate({
-                          userId: u.id,
-                          rank: e.target.value
-                        });
-                      }}
-                      disabled={updateRankMutation.isPending}
-                      className="w-full mt-1 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-700"
-                    >
-                      {RANKS.map(r => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Email + Last Active */}
-                  <div className="text-[8px] text-zinc-500 space-y-0.5">
-                    <p>📧 {u.email}</p>
-                    <p>🕐 {u.updated_date ? new Date(u.updated_date).toLocaleDateString() : 'Never'}</p>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex gap-1.5 pt-1">
-                    <Button
-                      onClick={() => {
-                        navigator.clipboard.writeText(u.email);
-                      }}
-                      className="flex-1 h-6 px-2 text-[8px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
-                    >
-                      <Mail className="w-3 h-3 mr-1" /> Copy Email
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <p className="text-[9px] text-zinc-400">{selectedUser.email}</p>
             </div>
-          ))
-        )}
-      </div>
 
-      {/* Summary */}
-      <div className="border-t border-zinc-800 pt-2 text-[8px] text-zinc-600 space-y-0.5">
-        <p>Total: {users.length} users · Showing: {filteredUsers.length}</p>
-        <p>Admins: {users.filter(u => u.role === 'admin').length}</p>
+            {/* Rank Section */}
+            <div className="px-4 py-2.5 border-b border-zinc-800/50 space-y-1.5">
+              <p className="text-[8px] text-zinc-600 font-mono uppercase">Rank</p>
+              <select
+                value={selectedUser.rank || 'Vagrant'}
+                onChange={(e) => {
+                  updateRankMutation.mutate({
+                    userId: selectedUser.id,
+                    rank: e.target.value
+                  });
+                }}
+                disabled={updateRankMutation.isPending}
+                className={cn(
+                  'w-full px-2 py-1.5 bg-zinc-900 border text-white text-[10px] font-mono focus:outline-none focus:border-[#ea580c]',
+                  getRankColorClass(selectedUser.rank, 'border')
+                )}
+              >
+                {RANKS.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Activity Section */}
+            <div className="px-4 py-2.5 border-b border-zinc-800/50 space-y-2">
+              <p className="text-[8px] text-zinc-600 font-mono uppercase">Activity</p>
+              <div className="space-y-1 text-[8px] text-zinc-500">
+                <p>Created: {new Date(selectedUser.created_date).toLocaleDateString()}</p>
+                <p>Last Active: {new Date(selectedUser.updated_date).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-4 py-2.5 space-y-1.5">
+              <Button
+                onClick={() => navigator.clipboard.writeText(selectedUser.email)}
+                className="w-full h-7 text-[9px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 gap-1"
+              >
+                <Mail className="w-3 h-3" /> COPY EMAIL
+              </Button>
+            </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center px-4 text-center">
+            <p className="text-[9px] text-zinc-600">Select a user to manage</p>
+          </div>
+        )}
       </div>
     </div>
   );
