@@ -12,12 +12,8 @@ import {
 import { cn } from '@/lib/utils';
 import CockpitHeader from '@/components/admin/CockpitHeader';
 import TelemetryPanel from '@/components/admin/TelemetryPanel';
-import SchemaCheckStep from '@/components/admin/steps/SchemaCheckStep';
-import WipeDataStep from '@/components/admin/steps/WipeDataStep';
-import SeedDataStep from '@/components/admin/steps/SeedDataStep';
-import CommsTestStep from '@/components/admin/steps/CommsTestStep';
-import TacticalMapStep from '@/components/admin/steps/TacticalMapStep';
-import CommsModeControl from '@/components/admin/CommsModeControl';
+import AdminCockpitAccordion from '@/components/admin/AdminCockpitAccordion';
+import { COCKPIT_SECTIONS, hasRank } from '@/components/admin/cockpitSectionConfig';
 import TicketBoard from '@/components/admin/TicketBoard';
 import DemoScenarioController from '@/components/admin/DemoScenarioController';
 import UserManagementTab from '@/components/admin/UserManagementTab';
