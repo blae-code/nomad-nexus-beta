@@ -153,7 +153,7 @@ export default function CommsArrayPanel({
     const nodes = buildNodes(topologyData, canvasRef.current.width, canvasRef.current.height);
     const clickedNode = nodes.find(n => {
       const dist = Math.sqrt((n.x - x) ** 2 + (n.y - y) ** 2);
-      return dist < n.radius;
+      return dist < n.radius + 6; // Include glow radius
     });
 
     if (clickedNode) {
@@ -165,6 +165,17 @@ export default function CommsArrayPanel({
       });
     }
   };
+
+  // Handle ESC key to close menu
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMenuState({ isOpen: false, nodeId: null, nodeType: null, position: null });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleWhisper = async (nodeId, scope) => {
     try {
