@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export default function ContextPanel({ currentPage, user }) {
   const [activeNetExpanded, setActiveNetExpanded] = useState(true);
   const [voiceControlsExpanded, setVoiceControlsExpanded] = useState(true);
+  const [aiSettingsExpanded, setAiSettingsExpanded] = useState(false);
   const [contactsExpanded, setContactsExpanded] = useState(true);
 
   return (
