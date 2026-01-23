@@ -56,20 +56,31 @@ export default function CommsModeToggle({ user }) {
   }, [queryClient]);
 
   return (
-    <div className="border border-zinc-800 bg-zinc-950/50 p-4 rounded space-y-3">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Radio className="w-4 h-4 text-[#ea580c]" />
-          <span className="text-sm font-bold uppercase tracking-wider">COMMS MODE</span>
+          <Radio className="w-3 h-3 text-[#ea580c]" />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-300">COMMS MODE</span>
         </div>
-        <Badge className="font-mono text-xs bg-green-950 text-green-400 border-green-800 border">
+        <Badge className={cn(
+          'font-mono text-[8px] border',
+          !canManage && 'opacity-75'
+        )}>
+          <span className="inline-block w-1.5 h-1.5 bg-green-400 rounded-full mr-1" />
           LIVE
         </Badge>
       </div>
 
-      <p className="text-xs text-zinc-400">
-        Live mode: Real LiveKit connections. Two browsers can join the same room and communicate.
+      <p className="text-[8px] text-zinc-500">
+        Real LiveKit connections enabled. Ready for voice operations.
       </p>
+
+      {!canManage && (
+        <div className="text-[7px] flex items-center gap-1 text-zinc-600">
+          <Lock className="w-2.5 h-2.5" />
+          <span>Founder+ required to change</span>
+        </div>
+      )}
     </div>
   );
 }
