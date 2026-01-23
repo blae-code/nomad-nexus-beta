@@ -209,6 +209,12 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             <Activity className="w-4 h-4 mr-2" /> HEALTH
           </TabsTrigger>
           <TabsTrigger 
+            value="schema-contract"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+          >
+            <Database className="w-4 h-4 mr-2" /> SCHEMA CONTRACT
+          </TabsTrigger>
+          <TabsTrigger 
             value="squads"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
