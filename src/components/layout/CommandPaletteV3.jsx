@@ -611,7 +611,7 @@ export default function CommandPaletteV3() {
         >
           {/* Pulsing chevrons - left side */}
           <motion.div
-            className="absolute right-full top-1/2 -translate-y-1/2 mr-2 flex gap-0.5"
+            className="absolute right-full top-0 bottom-0 mr-2 flex items-center gap-0.5"
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
@@ -621,7 +621,7 @@ export default function CommandPaletteV3() {
           </motion.div>
           {/* Pulsing chevrons - right side */}
           <motion.div
-            className="absolute left-full top-1/2 -translate-y-1/2 ml-2 flex gap-0.5"
+            className="absolute left-full top-0 bottom-0 ml-2 flex items-center gap-0.5"
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
@@ -751,7 +751,7 @@ export default function CommandPaletteV3() {
 
               {/* Footer */}
                <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[9px] text-zinc-600 font-mono flex items-center justify-between shrink-0">
-                <span>↑↓ nav • Enter select • Esc close</span>
+                <span>↑↓ nav • ↵ select • esc close</span>
                 <span>READY</span>
               </div>
             </div>
