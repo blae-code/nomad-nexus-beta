@@ -363,7 +363,7 @@ export default function VoiceControlToolkit() {
       </div>
 
       {/* Footer - Communications & Shortcuts */}
-      <div className="border-t border-zinc-800 bg-zinc-900/50 py-2 space-y-1.5 px-3">
+      <div className="w-full border-t border-zinc-800 bg-zinc-900/50 py-2 space-y-1.5 px-3">
         {/* Keybind Hints */}
         <div className="text-[6px] text-zinc-600 font-mono flex items-center justify-center gap-3 whitespace-nowrap">
           <span>CTRL+V: PTT</span>
