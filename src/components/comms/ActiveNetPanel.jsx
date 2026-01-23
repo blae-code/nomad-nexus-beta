@@ -462,6 +462,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
   const roomRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeoutRef = useRef(null);
+  const queryClient = useQueryClient();
 
   // Track user presence on this net
   const { setTransmitting } = usePresence(user?.id, net?.id, eventId);
@@ -1293,7 +1294,6 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                lastError={connectionError}
              />
            )}
-           </div>
            </div>
            );
            }
