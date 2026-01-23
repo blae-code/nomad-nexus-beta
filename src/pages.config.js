@@ -4,6 +4,7 @@ import CommandCenter from './pages/CommandCenter';
 import CommsConsole from './pages/CommsConsole';
 import CommsSettings from './pages/CommsSettings';
 import Diagnostics from './pages/Diagnostics';
+import EventReporting from './pages/EventReporting';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
@@ -21,7 +22,6 @@ import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
-import EventReporting from './pages/EventReporting';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +32,7 @@ export const PAGES = {
     "CommsConsole": CommsConsole,
     "CommsSettings": CommsSettings,
     "Diagnostics": Diagnostics,
+    "EventReporting": EventReporting,
     "Events": Events,
     "FleetManager": FleetManager,
     "Hub": Hub,
@@ -49,7 +50,6 @@ export const PAGES = {
     "UserDirectory": UserDirectory,
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
-    "EventReporting": EventReporting,
 }
 
 export const pagesConfig = {

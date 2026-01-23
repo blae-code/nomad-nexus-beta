@@ -27,6 +27,7 @@ import SituationalAwarenessPanel from "@/components/ai/SituationalAwarenessPanel
 import NetConfigurationAssistant from "@/components/ai/NetConfigurationAssistant";
 import RankRoleManagement from "@/components/admin/RankRoleManagement";
 import EventReportingDashboard from "@/components/events/EventReportingDashboard";
+import RolePermissionMatrix from "@/components/admin/RolePermissionMatrix";
 
 export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -180,6 +181,12 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
             <Shield className="w-4 h-4 mr-2" /> ROLES
+          </TabsTrigger>
+          <TabsTrigger 
+            value="permission-matrix"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+          >
+            <Settings className="w-4 h-4 mr-2" /> PERMISSIONS
           </TabsTrigger>
           <TabsTrigger 
             value="rank-management"
@@ -454,6 +461,10 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             </div>
             <NetConfigurationAssistant eventId={null} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="permission-matrix">
+          <RolePermissionMatrix />
         </TabsContent>
 
         <TabsContent value="rank-management">
