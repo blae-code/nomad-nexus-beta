@@ -187,14 +187,13 @@ export default function CommsArrayPanel({
   };
 
   const handleBroadcast = async (nodeId) => {
-    // Post to live feed
     try {
       await base44.entities.EventLog.create({
         event_id: eventId,
         type: 'command',
         actor_id: currentUser?.id,
-        content: `BROADCAST PING: Target ${nodeId}`,
-        metadata: { target_node: nodeId }
+        content: `BROADCAST PING to ${nodeId}`,
+        metadata: { target_node: nodeId, source: 'comms_array' }
       });
     } catch (err) {
       console.error('[COMMS ARRAY] Broadcast error:', err);
@@ -205,7 +204,7 @@ export default function CommsArrayPanel({
     try {
       await base44.entities.PriorityState.create({
         operation_id: eventId,
-        user_id: currentUser?.id,
+        user_id: currentUser?.id || nodeId,
         state: 'REQUESTED',
         requested_at: new Date().toISOString()
       });
@@ -215,7 +214,6 @@ export default function CommsArrayPanel({
   };
 
   const handleGrantPriority = async (nodeId) => {
-    // Command staff only
     try {
       await base44.entities.PriorityState.create({
         operation_id: eventId,
