@@ -55,7 +55,7 @@ export default function UserProfileCard({
                 <div className="flex-1">
                   <CardTitle className="text-lg font-black uppercase tracking-wide text-zinc-100 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-[#ea580c]" />
-                    {user.callsign || user.rsi_handle || user.full_name}
+                    {user.callsign}
                   </CardTitle>
                   {(isAdmin || currentUser?.callsign === user.callsign) && (
                     <div className="flex items-center gap-2 mt-1.5">
