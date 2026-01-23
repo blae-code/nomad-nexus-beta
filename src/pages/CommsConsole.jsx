@@ -572,6 +572,17 @@ function CommsConsolePage() {
                         </div>
                      </div>
                   </>
+               ) : !showSimulation && !showAIAssistant ? (
+                  <ScrollArea className="flex-1">
+                     <div className="p-[var(--space-lg)]">
+                        <CommsArrayPanel
+                           eventId={selectedEventId}
+                           currentUser={currentUser}
+                           collapsed={effectiveMode !== 'LIVE'}
+                           onWhisperStart={() => {}}
+                        />
+                     </div>
+                  </ScrollArea>
                ) : showSimulation ? (
                  <ScrollArea className="flex-1">
                     <div className="p-[var(--space-lg)]">
