@@ -241,7 +241,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         </ResponsiveContainer>
         </motion.div>
 
-        {/* Redscar Recruitment Numbers */}
+        {/* New NomadNexus Users */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -262,9 +262,9 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                 animate={activeChart === 'recruitment' ? { scale: 1.1, opacity: 1 } : { scale: 1, opacity: 0.7 }}
                 transition={{ duration: 0.2 }}
               >
-                <Badge className="text-[6px] bg-emerald-900/40 text-emerald-300 border-emerald-700/50 font-mono">RECRUIT</Badge>
+                <Badge className="text-[6px] bg-emerald-900/40 text-emerald-300 border-emerald-700/50 font-mono">USERS</Badge>
               </motion.div>
-              <span className="text-[8px] font-bold text-zinc-300">New (7d)</span>
+              <span className="text-[8px] font-bold text-zinc-300">NomadNexus (7d)</span>
             </div>
             <button
               onClick={() => handleExportChart('recruitment')}
@@ -286,7 +286,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               <Bar
                 dataKey="recruits"
                 fill="#22c55e"
-                name="New Recruits"
+                name="New Users"
                 radius={0}
               />
             </BarChart>
