@@ -59,7 +59,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Hub",
+    mainPage: "Events",
     Pages: PAGES,
     Layout: __Layout,
 };

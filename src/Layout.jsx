@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import MessagingFooter from "@/components/messaging/MessagingFooter";
+import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 
 const pageMap = {
   '/': 'hub',
@@ -115,12 +116,15 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </AppShellV3>
         {/* Messaging Console Footer */}
-        {user && <MessagingFooter user={user} />}
-      </div>
+          {user && <MessagingFooter user={user} />}
+        </div>
 
-      {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
-      <LayoutDebugMode />
-    </div>
-    </ErrorBoundary>
-  );
-}
+        {/* User Feedback System */}
+        <RadialFeedbackMenu />
+
+        {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
+        <LayoutDebugMode />
+        </div>
+        </ErrorBoundary>
+        );
+        }
