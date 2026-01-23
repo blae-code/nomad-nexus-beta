@@ -4,6 +4,10 @@
  * Exported as a singleton for use throughout the app
  */
 
+if (typeof window === 'undefined') {
+  var window = {};
+}
+
 class ObservabilityCollector {
   constructor() {
     this.errors = [];
@@ -215,37 +219,36 @@ class ObservabilityCollector {
   }
 }
 
-// Singleton instance - always initialize on client
-let observability;
-
-if (typeof window !== 'undefined') {
+// Singleton instance
+const getObservability = () => {
+  if (typeof window === 'undefined') return null;
   if (!window.__observability) {
     window.__observability = new ObservabilityCollector();
   }
-  observability = window.__observability;
-} else {
-  // Dummy instance for server-side
-  observability = {
-    getHealthStatus: () => 'green',
-    getDiagnosticsSummary: () => ({
-      healthStatus: 'green',
-      lastHeartbeat: null,
-      lastSeedWipe: null,
-      recentErrors: [],
-      requestsPerMin: 0,
-      commsMode: null,
-      liveKitEnv: null,
-      totalErrors: 0,
-      totalRequests: 0
-    }),
-    recordError: () => {},
-    recordNetworkRequest: () => {},
-    recordSubscriptionHeartbeat: () => {},
-    recordSeedWipeRun: () => {},
-    setCommsMode: () => {},
-    setLiveKitEnv: () => {},
-    reset: () => {}
-  };
-}
+  return window.__observability;
+};
 
-export { observability };
+const observability = getObservability() || {
+  getHealthStatus: () => 'green',
+  getDiagnosticsSummary: () => ({
+    healthStatus: 'green',
+    lastHeartbeat: null,
+    lastSeedWipe: null,
+    recentErrors: [],
+    requestsPerMin: 0,
+    commsMode: null,
+    liveKitEnv: null,
+    totalErrors: 0,
+    totalRequests: 0
+  }),
+  getRecentErrors: () => [],
+  recordError: () => {},
+  recordNetworkRequest: () => {},
+  recordSubscriptionHeartbeat: () => {},
+  recordSeedWipeRun: () => {},
+  setCommsMode: () => {},
+  setLiveKitEnv: () => {},
+  reset: () => {}
+};
+
+export { observability, getObservability };

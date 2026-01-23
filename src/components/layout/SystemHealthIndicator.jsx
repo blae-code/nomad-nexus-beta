@@ -15,9 +15,11 @@ export default function SystemHealthIndicator() {
 
   useEffect(() => {
     const updateHealth = () => {
-      setHealthStatus(observability.getHealthStatus());
-      const recentErrors = observability.getRecentErrors(100).length;
-      setErrorCount(recentErrors);
+      if (observability?.getHealthStatus) {
+        setHealthStatus(observability.getHealthStatus());
+        const recentErrors = observability.getRecentErrors?.(100) || [];
+        setErrorCount(recentErrors.length);
+      }
     };
 
     updateHealth();
