@@ -49,11 +49,10 @@ const CheckItem = ({ label, status, message, detail }) => {
 export default function CommsPreflightPanel({ user }) {
   const [isRunning, setIsRunning] = useState(false);
   const [checks, setChecks] = useState({
-    room_name: { status: 'idle', message: '', detail: '' },
-    token_mint: { status: 'idle', message: '', detail: '' },
-    status_check: { status: 'idle', message: '', detail: '' },
-    join_test: { status: 'idle', message: '', detail: '' },
-    channels_seeded: { status: 'idle', message: '', detail: '' }
+   env_check: { status: 'idle', message: '', detail: '' },
+   token_mint: { status: 'idle', message: '', detail: '' },
+   room_status: { status: 'idle', message: '', detail: '' },
+   client_connect: { status: 'idle', message: '', detail: '' }
   });
   const [overallResult, setOverallResult] = useState(null);
 
