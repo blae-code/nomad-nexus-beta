@@ -11,21 +11,22 @@ export default function PersonalLogPanel({ user }) {
   // 1. Vagrant Check
   const isVagrant = user?.rank === 'Vagrant';
 
-  // 2. Fetch Pending Payouts
+  // 2. Fetch Pending Payouts (limit to 5, no polling)
   const { data: pendingPayouts = [] } = useQuery({
     queryKey: ['feed-payouts', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const completedEvents = await base44.entities.Event.list({
-        filter: { status: 'completed' },
-        sort: { end_time: -1 },
-        limit: 5
-      });
+      const completedEvents = await base44.entities.Event.filter(
+        { status: 'completed' },
+        '-end_time',
+        5 // Limit to 5
+      );
       
       const payouts = [];
-      for (const ev of completedEvents) {
-        const status = await base44.entities.PlayerStatus.list({
-          filter: { event_id: ev.id, user_id: user.id }
+      for (const ev of completedEvents.slice(0, 5)) { // Safety limit
+        const status = await base44.entities.PlayerStatus.filter({
+          event_id: ev.id,
+          user_id: user.id
         });
         if (status.length > 0 && (ev.tags?.includes("Industry") || ev.tags?.includes("Rescue"))) {
            payouts.push(ev);
@@ -33,7 +34,10 @@ export default function PersonalLogPanel({ user }) {
       }
       return payouts;
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 30000,
+    refetchInterval: false,
+    gcTime: 60000
   });
 
   // 3. Scout Nomination Logic
