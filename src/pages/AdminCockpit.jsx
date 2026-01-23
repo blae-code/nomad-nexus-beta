@@ -15,6 +15,7 @@ import WipeDataStep from '@/components/admin/steps/WipeDataStep';
 import SeedDataStep from '@/components/admin/steps/SeedDataStep';
 import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import TacticalMapStep from '@/components/admin/steps/TacticalMapStep';
+import CommsModeControl from '@/components/admin/CommsModeControl';
 
 const READINESS_STEPS = [
   { id: 'schema_check', title: '① Schema Check', component: SchemaCheckStep },
@@ -105,6 +106,11 @@ export default function AdminCockpitPage() {
       <div className="h-full overflow-hidden flex flex-col gap-4 p-4 bg-black">
         {/* Header with readiness score & badges */}
         <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} />
+        
+        {/* Comms Mode Control */}
+        <div className="border border-zinc-800 bg-zinc-950/50 p-3">
+          <CommsModeControl />
+        </div>
 
         {/* Main 2-column layout */}
         <div className="flex-1 overflow-hidden flex gap-4 min-h-0">
