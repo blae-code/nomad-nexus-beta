@@ -45,7 +45,7 @@ import { usePTT } from "@/components/hooks/usePTT";
 import PTTHud from "@/components/comms/PTTHud";
 import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
 import { MessageCircle } from "lucide-react";
-import { useCommsMode } from "@/components/comms/useCommsMode";
+import { useCommsReadiness } from "@/components/comms/useCommsReadiness";
 import { motion, AnimatePresence } from "framer-motion";
 
 function CommsConsolePage() {
