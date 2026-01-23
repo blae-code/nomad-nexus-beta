@@ -1,134 +1,187 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useVoiceRoomJoin } from './useVoiceRoomJoin';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useVoiceRoom } from '@/components/comms/useVoiceRoom';
-import { Radio, AlertTriangle, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Wifi, AlertCircle, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function VoiceRoomJoinDialog({ 
   isOpen, 
-  roomName, 
   onClose, 
-  userIdentity,
-  onJoinSuccess 
+  eventId, 
+  netId, 
+  netCode,
+  netLabel 
 }) {
-  const { joinRoom, leaveRoom, connectionState, lastError, token, debug } = useVoiceRoom(roomName, userIdentity);
-  const [isJoining, setIsJoining] = useState(false);
+  const { joinRoom, leaveRoom, connectionState, participants, lastError, isLoading, isSimMode, isLiveMode } = useVoiceRoomJoin();
+  const [hasJoined, setHasJoined] = useState(false);
 
-  const handleJoin = async () => {
-    setIsJoining(true);
-    const success = await joinRoom();
-    if (success && onJoinSuccess) {
-      onJoinSuccess({ roomName, token, identity: userIdentity });
-    }
-    setIsJoining(false);
+  const handleJoin = () => {
+    joinRoom({ eventId, netIds: netId ? [netId] : [], netCode });
+    setHasJoined(true);
+  };
+
+  const handleLeave = () => {
+    leaveRoom();
+    setHasJoined(false);
   };
 
   const handleClose = () => {
-    leaveRoom();
+    if (hasJoined) {
+      leaveRoom();
+      setHasJoined(false);
+    }
     onClose();
   };
 
   const isConnected = connectionState === 'connected';
-  const isConnecting = connectionState === 'connecting';
+  const isFailed = connectionState === 'failed';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 max-w-sm">
+      <DialogContent className="bg-zinc-950 border border-zinc-800 max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-            <Radio className={cn('w-4 h-4', isConnected ? 'text-emerald-500 animate-pulse' : 'text-zinc-500')} />
-            Join Voice Channel
+          <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+            {netLabel || `NET ${netCode}`}
           </DialogTitle>
-          <DialogDescription className="text-zinc-400 font-mono text-xs">
-            {roomName}
+          <DialogDescription className="text-xs text-zinc-400">
+            {isSimMode ? 'Simulated' : 'Live'} voice communication
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Status Display */}
-          <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Mode:</span>
-              <span className={cn(
-                'px-2 py-1 rounded font-bold',
-                debug.mode === 'LIVE' ? 'bg-red-600/20 text-red-400' : 'bg-blue-600/20 text-blue-400'
-              )}>
-                {debug.mode}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Status:</span>
-              <span className={cn(
-                'px-2 py-1 rounded font-bold flex items-center gap-1',
-                isConnected ? 'bg-emerald-600/20 text-emerald-400' :
-                isConnecting ? 'bg-amber-600/20 text-amber-400' :
-                'bg-zinc-700/20 text-zinc-400'
-              )}>
-                {isConnecting && <Loader2 className="w-3 h-3 animate-spin" />}
-                {connectionState.toUpperCase()}
-              </span>
+        <div className="space-y-3">
+          {/* Status Indicator */}
+          <div className={cn(
+            'p-2 rounded border text-xs',
+            isConnected && 'bg-green-950 border-green-800',
+            connectionState === 'connecting' && 'bg-yellow-950 border-yellow-800',
+            !hasJoined && 'bg-zinc-900 border-zinc-800',
+            isFailed && 'bg-red-950 border-red-800'
+          )}>
+            <div className="flex items-center gap-2 font-bold uppercase tracking-wider">
+              {connectionState === 'connecting' && (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Connecting...
+                </>
+              )}
+              {isConnected && (
+                <>
+                  <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
+                  <span className="text-green-300">Connected</span>
+                </>
+              )}
+              {!hasJoined && connectionState === 'disconnected' && (
+                <span className="text-zinc-400">Ready to join</span>
+              )}
+              {isFailed && (
+                <>
+                  <AlertCircle className="w-3 h-3 text-red-400" />
+                  <span className="text-red-300">Connection failed</span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Error Display */}
-          {lastError && (
-            <div className="p-3 bg-red-950/30 border border-red-800 rounded flex gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-red-400 mb-1">Connection Error</p>
-                <p className="text-xs text-red-300">{lastError}</p>
+          {/* Participants */}
+          {hasJoined && (
+            <div className="border border-zinc-800 rounded p-2 text-[9px]">
+              <div className="flex items-center gap-1 mb-1 font-bold text-zinc-400 uppercase tracking-wider">
+                <Users className="w-3 h-3" />
+                Active Participants ({participants.length})
+              </div>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {participants.length > 0 ? (
+                  participants.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between px-1.5 py-1 bg-zinc-900/50 rounded text-zinc-300">
+                      <div className="flex items-center gap-1">
+                        <div className={cn(
+                          'w-2 h-2 rounded-full',
+                          p.isSpeaking ? 'bg-[#ea580c] animate-pulse' : 'bg-zinc-600'
+                        )} />
+                        <span>{p.name}</span>
+                        {p.isLocal && <Badge className="text-[7px] bg-blue-900 text-blue-300">YOU</Badge>}
+                        {p.isMuted && <Badge className="text-[7px] bg-yellow-900 text-yellow-300">MUTED</Badge>}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-zinc-500 py-2 text-center">No participants</div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Info Box for LIVE mode */}
-          {debug.mode === 'LIVE' && (
-            <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded text-xs text-zinc-400">
-              <p className="font-bold mb-1">Live Connection</p>
-              <p>Connecting to real voice server. {debug.tokenMinted ? 'Token ready.' : 'Minting token...'}</p>
+          {/* Error */}
+          {lastError && (
+            <div className="bg-red-950 border border-red-800 rounded p-2 text-[8px] text-red-300">
+              <div className="font-bold mb-1">ERROR:</div>
+              {lastError}
             </div>
           )}
 
-          {/* SIM mode info */}
-          {debug.mode === 'SIM' && (
-            <div className="p-3 bg-blue-900/20 border border-blue-800/50 rounded text-xs text-blue-300">
-              <p className="font-bold mb-1">Simulation Mode</p>
-              <p>Testing with simulated participants and network conditions.</p>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <Button 
-              variant="outline" 
-              onClick={handleClose}
-              className="flex-1"
-            >
-              {isConnected ? 'Close' : 'Cancel'}
-            </Button>
-            {!isConnected && (
-              <Button 
-                onClick={handleJoin}
-                disabled={isJoining || isConnecting}
-                className="flex-1 bg-[#ea580c] hover:bg-[#c2410c] text-white"
-              >
-                {isConnecting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  'Join Channel'
-                )}
-              </Button>
+          {/* Mode Info */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded p-2 text-[8px] text-zinc-400">
+            {isSimMode && (
+              <>
+                <div className="font-bold text-[7px] mb-1 text-purple-400">SIM MODE</div>
+                Simulated participants and activity. Perfect for testing without LiveKit.
+              </>
+            )}
+            {isLiveMode && (
+              <>
+                <div className="font-bold text-[7px] mb-1 text-blue-400">LIVE MODE</div>
+                Connected to real LiveKit infrastructure. Voice transmission enabled.
+              </>
             )}
           </div>
+        </div>
 
-          {isConnected && (
-            <p className="text-xs text-center text-emerald-400 font-bold">
-              ✓ Connected to {roomName}
-            </p>
+        {/* Actions */}
+        <div className="flex gap-2 pt-2 border-t border-zinc-800">
+          {!hasJoined ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClose}
+                className="text-[8px] h-7 flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleJoin}
+                disabled={isLoading}
+                className="text-[8px] h-7 flex-1 bg-[#ea580c] hover:bg-[#c2410c]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  'Join Net'
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLeave}
+                className="text-[8px] h-7 flex-1"
+              >
+                Leave
+              </Button>
+              <Button
+                onClick={handleClose}
+                className="text-[8px] h-7 flex-1 bg-zinc-800 hover:bg-zinc-700"
+              >
+                Close
+              </Button>
+            </>
           )}
         </div>
       </DialogContent>

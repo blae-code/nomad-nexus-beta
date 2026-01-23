@@ -1,77 +1,109 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useVoiceRoomJoin } from './useVoiceRoomJoin';
+import { AlertCircle, Wifi, WifiOff, Clock, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function RoomDebugPanel({ debug, isVisible = false }) {
+export default function RoomDebugPanel({ isVisible = true }) {
+  const { roomName, roomToken, roomUrl, connectionState, lastError, participants, isLiveMode, isSimMode } = useVoiceRoomJoin();
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [updateTime, setUpdateTime] = useState(new Date());
+
+  useEffect(() => {
+    if (autoRefresh) {
+      const interval = setInterval(() => setUpdateTime(new Date()), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh]);
+
   if (!isVisible) return null;
 
-  const getStatusColor = (state) => {
-    switch (state) {
-      case 'connected': return 'bg-emerald-950 border-emerald-700 text-emerald-400';
-      case 'connecting': return 'bg-amber-950 border-amber-700 text-amber-400';
-      case 'disconnected': return 'bg-zinc-900 border-zinc-700 text-zinc-400';
-      case 'error': return 'bg-red-950 border-red-700 text-red-400';
-      default: return 'bg-zinc-900 border-zinc-700 text-zinc-400';
-    }
-  };
+  const connectionStatusColor = {
+    'connected': 'text-green-400 bg-green-950',
+    'connecting': 'text-yellow-400 bg-yellow-950',
+    'disconnected': 'text-gray-400 bg-gray-950',
+    'failed': 'text-red-400 bg-red-950'
+  }[connectionState] || 'text-gray-400 bg-gray-950';
 
-  const getStatusIcon = (state) => {
-    switch (state) {
-      case 'connected': return <CheckCircle2 className="w-3 h-3" />;
-      case 'error': return <AlertCircle className="w-3 h-3" />;
-      default: return <Radio className="w-3 h-3 animate-pulse" />;
-    }
-  };
+  const connectionStatusIcon = {
+    'connected': <Wifi className="w-3 h-3 animate-pulse" />,
+    'connecting': <Clock className="w-3 h-3 animate-spin" />,
+    'disconnected': <WifiOff className="w-3 h-3" />,
+    'failed': <AlertCircle className="w-3 h-3" />
+  }[connectionState];
 
   return (
-    <Card className="bg-zinc-950 border-zinc-800 fixed bottom-4 right-4 w-80 z-50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-bold text-zinc-300 uppercase flex items-center gap-2">
-          <Radio className="w-3 h-3 text-[#ea580c]" />
-          Room Debug
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-xs font-mono">
+    <div className="fixed bottom-4 right-4 bg-zinc-900/95 border border-zinc-700 rounded text-[8px] max-w-xs z-50 backdrop-blur-sm">
+      {/* Header */}
+      <div className="border-b border-zinc-700 p-1.5 bg-zinc-800/50 flex items-center justify-between">
+        <span className="font-bold text-zinc-300 uppercase tracking-wider">ROOM DEBUG</span>
+        <button 
+          onClick={() => setAutoRefresh(!autoRefresh)}
+          className="text-[7px] text-zinc-500 hover:text-zinc-300"
+        >
+          {autoRefresh ? '⟳' : '⊙'}
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-2 space-y-1.5">
         {/* Mode */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
-          <span className="text-zinc-400">Mode:</span>
-          <Badge className={debug.mode === 'LIVE' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}>
-            {debug.mode}
+        <div className="flex items-center justify-between">
+          <span className="text-zinc-500">MODE:</span>
+          <Badge className={isLiveMode ? 'bg-blue-900 text-blue-300' : 'bg-purple-900 text-purple-300'}>
+            {isLiveMode ? 'LIVE' : isSimMode ? 'SIM' : 'UNKNOWN'}
           </Badge>
         </div>
 
+        {/* Room Name */}
+        {roomName && (
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-zinc-500">ROOM:</span>
+            <span className="text-zinc-300 font-mono text-right break-all">{roomName}</span>
+          </div>
+        )}
+
         {/* Connection State */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
-          <span className="text-zinc-400">Status:</span>
-          <div className={cn('flex items-center gap-1 px-2 py-1 rounded', getStatusColor(debug.connectionState))}>
-            {getStatusIcon(debug.connectionState)}
-            <span>{debug.connectionState.toUpperCase()}</span>
+        <div className="flex items-center justify-between">
+          <span className="text-zinc-500">STATE:</span>
+          <div className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded text-[7px] font-bold uppercase', connectionStatusColor)}>
+            {connectionStatusIcon}
+            {connectionState}
           </div>
         </div>
 
         {/* Token Status */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
-          <span className="text-zinc-400">Token:</span>
-          <Badge className={debug.tokenMinted ? 'bg-green-600 text-white' : 'bg-zinc-700 text-zinc-300'}>
-            {debug.tokenMinted ? '✓ MINTED' : 'PENDING'}
-          </Badge>
-        </div>
-
-        {/* Participant Count */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
-          <span className="text-zinc-400">Participants:</span>
-          <span className="text-[#ea580c] font-bold">{debug.participantCount}</span>
-        </div>
-
-        {/* Last Error */}
-        {debug.lastError && (
-          <div className="p-2 bg-red-950/30 border border-red-800 rounded">
-            <div className="text-red-400 text-[10px] break-words">{debug.lastError}</div>
+        {isLiveMode && (
+          <div className="flex items-center justify-between">
+            <span className="text-zinc-500">TOKEN:</span>
+            <Badge className={roomToken ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-400'}>
+              {roomToken ? '✓ MINTED' : '✗ NONE'}
+            </Badge>
           </div>
         )}
-      </CardContent>
-    </Card>
+
+        {/* Participants */}
+        <div className="flex items-center justify-between">
+          <span className="text-zinc-500">USERS:</span>
+          <div className="flex items-center gap-1 text-zinc-300">
+            <Users className="w-3 h-3" />
+            <span className="font-bold">{participants.length}</span>
+          </div>
+        </div>
+
+        {/* Error */}
+        {lastError && (
+          <div className="bg-red-950 border border-red-800 rounded p-1 text-red-300">
+            <div className="font-bold text-[7px] mb-0.5">ERROR:</div>
+            <div className="text-[7px] break-all">{lastError}</div>
+          </div>
+        )}
+
+        {/* Last Update */}
+        <div className="text-[7px] text-zinc-500 text-right pt-1 border-t border-zinc-700 mt-1">
+          {updateTime.toLocaleTimeString()}
+        </div>
+      </div>
+    </div>
   );
 }
