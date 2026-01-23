@@ -214,8 +214,7 @@ export default function UserManagementTab({ user: currentUser }) {
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-mono truncate">{u.full_name || u.email}</p>
-                  {u.callsign && <p className="text-[8px] text-zinc-500">@{u.callsign}</p>}
+                  <p className="text-[10px] font-mono truncate">{u.callsign || `USER-${u.id.slice(0, 8)}`}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {u.role === 'admin' && (
@@ -243,8 +242,8 @@ export default function UserManagementTab({ user: currentUser }) {
             <div className="px-4 py-3 border-b border-zinc-800 space-y-1">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-xs font-bold text-white">{selectedUser.full_name || selectedUser.email}</p>
-                  {selectedUser.callsign && <p className="text-[8px] text-zinc-500">@{selectedUser.callsign}</p>}
+                  <p className="text-xs font-bold text-white">{selectedUser.callsign || `USER-${selectedUser.id.slice(0, 8)}`}</p>
+                  <p className="text-[8px] text-zinc-500">ID: {selectedUser.id.slice(0, 12)}...</p>
                 </div>
                 {selectedUser.role === 'admin' && (
                   <span className="px-1.5 py-0.5 bg-[#ea580c]/20 border border-[#ea580c]/50 text-[7px] font-bold text-[#ea580c]">
@@ -252,7 +251,6 @@ export default function UserManagementTab({ user: currentUser }) {
                   </span>
                 )}
               </div>
-              <p className="text-[9px] text-zinc-400">{selectedUser.email}</p>
             </div>
 
             {/* Rank Section */}
@@ -290,10 +288,10 @@ export default function UserManagementTab({ user: currentUser }) {
             {/* Actions */}
             <div className="px-4 py-2.5 space-y-1.5">
               <Button
-                onClick={() => navigator.clipboard.writeText(selectedUser.email)}
+                onClick={() => navigator.clipboard.writeText(selectedUser.id)}
                 className="w-full h-7 text-[9px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 gap-1"
               >
-                <Mail className="w-3 h-3" /> COPY EMAIL
+                <Mail className="w-3 h-3" /> COPY ID
               </Button>
             </div>
 
