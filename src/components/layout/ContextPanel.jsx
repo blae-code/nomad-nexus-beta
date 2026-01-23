@@ -3,6 +3,7 @@ import VoiceControlToolkit from '@/components/voice/VoiceControlToolkit';
 import EnhancedUserContactBook from '@/components/directory/EnhancedUserContactBook';
 import ActiveNetMonitor from '@/components/voice/ActiveNetMonitor';
 import AISettingsPanel from '@/components/layout/AISettingsPanel';
+import VoiceChannelNavigator from '@/components/comms/VoiceChannelNavigator';
 import { Radio, Users, Brain, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export default function ContextPanel({ currentPage, user }) {
   const [activeNetExpanded, setActiveNetExpanded] = useState(true);
   const [voiceControlsExpanded, setVoiceControlsExpanded] = useState(true);
+  const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [aiSettingsExpanded, setAiSettingsExpanded] = useState(false);
   const [contactsExpanded, setContactsExpanded] = useState(true);
 
@@ -76,9 +78,40 @@ export default function ContextPanel({ currentPage, user }) {
             <VoiceControlToolkit />
           </div>
         )}
-      </div>
+        </div>
 
-      {/* SECTION: AI Settings - Collapsible */}
+        {/* SECTION: Voice Channels - Collapsible */}
+        <div className="border-b border-zinc-800 shrink-0">
+         <Tooltip>
+           <TooltipTrigger asChild>
+             <button
+               onClick={() => setChannelsExpanded(!channelsExpanded)}
+               className="w-full px-3 py-2.5 flex items-center justify-between bg-zinc-900/50 hover:bg-zinc-900 transition-colors"
+             >
+               <div className="flex items-center gap-2">
+                 <Radio className="w-3.5 h-3.5 text-teal-400" />
+                 <span className="text-[9px] font-bold text-zinc-300 uppercase tracking-wider">CHANNELS</span>
+               </div>
+               {channelsExpanded ? (
+                 <ChevronUp className="w-3.5 h-3.5 text-zinc-500" />
+               ) : (
+                 <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+               )}
+             </button>
+           </TooltipTrigger>
+           <TooltipContent>
+             <p className="text-xs">Voice channels organized by event</p>
+           </TooltipContent>
+         </Tooltip>
+
+         {channelsExpanded && (
+           <div className="p-3 max-h-64 overflow-y-auto">
+             <VoiceChannelNavigator />
+           </div>
+         )}
+        </div>
+
+        {/* SECTION: AI Settings - Collapsible */}
       <div className="border-b border-zinc-800 shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
