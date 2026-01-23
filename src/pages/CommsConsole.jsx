@@ -45,7 +45,7 @@ import { usePTT } from "@/components/hooks/usePTT";
 import PTTHud from "@/components/comms/PTTHud";
 import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
 import { MessageCircle } from "lucide-react";
-import { useCommsMode } from "@/components/comms/useCommsMode";
+import { useCommsReadiness } from "@/components/comms/useCommsReadiness";
 import { motion, AnimatePresence } from "framer-motion";
 
 function CommsConsolePage() {
@@ -62,10 +62,6 @@ function CommsConsolePage() {
   
   // Get desired mode from comms mode config
   const { isLive: desiredLive, isSim: desiredSim } = useCommsMode();
-  
-  // Derive effective mode: if LIVE desired but not ready, fallback to SIM
-  const [effectiveMode, setEffectiveMode] = React.useState('SIM');
-  const [modeFallbackReason, setModeFallbackReason] = React.useState(null);
   
   const [monitoredNetIds, setMonitoredNetIds] = React.useState([]);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
@@ -84,6 +80,9 @@ function CommsConsolePage() {
   const [userPreferences, setUserPreferences] = React.useState({});
   const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
   const [showSimulation, setShowSimulation] = React.useState(false);
+  
+  // Compute effective comms mode (desired vs. actual readiness)
+  const { effectiveMode, fallbackReason } = useCommsReadiness();
   
   const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
   const { isTransmitting, pttKey } = usePTT(selectedNet, userPreferences);
@@ -262,26 +261,6 @@ function CommsConsolePage() {
       setConnectionError(null);
       setMonitoredNetIds([]);
    }, [selectedEventId]);
-
-   // Compute effective mode based on desired mode + readiness
-   React.useEffect(() => {
-      if (!desiredLive) {
-         setEffectiveMode('SIM');
-         setModeFallbackReason(null);
-         return;
-      }
-
-      // Desired is LIVE - check readiness
-      const hasEnv = Deno?.env?.get?.('LIVEKIT_URL') !== undefined;
-      if (!hasEnv) {
-         setEffectiveMode('SIM');
-         setModeFallbackReason('LiveKit env not configured');
-         return;
-      }
-
-      setEffectiveMode('LIVE');
-      setModeFallbackReason(null);
-   }, [desiredLive]);
 
   // Memoize nets to prevent unnecessary rerenders
   const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
