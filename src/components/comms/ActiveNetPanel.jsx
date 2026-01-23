@@ -22,6 +22,8 @@ import { getRankColorClass, getUserRankValue } from "@/components/utils/rankUtil
 import { usePresence } from "@/components/comms/usePresence";
 import NetChannelChat from "@/components/comms/NetChannelChat";
 import VoiceRecordingControls from "./VoiceRecordingControls";
+import RoomDebugPanel from "./RoomDebugPanel";
+import { useCommsMode } from '@/components/comms/useCommsMode';
 import { Room, RoomEvent } from 'livekit-client';
 import { normalizePlayerStatusRecords, normalizePlayerStatus } from '@/components/contracts/normalization';
 import { PLAYER_STATUS } from '@/components/contracts/dataContract';
@@ -1204,14 +1206,16 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
 
            {/* Room Debug Panel (LIVE mode) */}
            {isLive && connectionState !== 'disconnected' && (
-           <RoomDebugPanel
-           room={room}
-           roomName={`redscar_${net?.code?.toLowerCase()}`}
-           identity={user?.callsign}
-           token={connectionToken}
-           connectionState={connectionState}
-           lastError={connectionError}
-           />
+             <RoomDebugPanel
+               room={room}
+               roomName={`redscar_${net?.code?.toLowerCase()}`}
+               identity={user?.callsign}
+               token={connectionToken}
+               connectionState={connectionState}
+               lastError={connectionError}
+             />
            )}
+           </div>
+           </div>
            );
-         }
+           }
