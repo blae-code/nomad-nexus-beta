@@ -288,16 +288,26 @@ function CommsConsolePage() {
          {/* LEFT PANEL: Nets + Event Selector */}
          <Panel title={consoleMode === 'ops' ? 'Voice Nets' : 'Channels'} className="w-64 flex flex-col overflow-hidden">
             {consoleMode === 'ops' ? (
-               <>
-                  <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)]">
-                     <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
-                     {selectedEventId && (
-                       <>
-                         <Divider spacing="md" />
-                         <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />
-                       </>
-                     )}
-                  </div>
+                <>
+                   <div className="shrink-0 px-[var(--space-lg)] py-[var(--space-md)]">
+                      <CommsEventSelector selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
+                      {selectedEventId && (
+                        <>
+                          <Divider spacing="md" />
+                          <AICommsSummarizer eventId={selectedEventId} timeRangeMinutes={15} />
+                        </>
+                      )}
+                      <Divider spacing="md" />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowDMPanel(!showDMPanel)}
+                        className="w-full gap-2 text-[10px]"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        Direct Messages
+                      </Button>
+                   </div>
                   
                   <ScrollArea className="flex-1">
                      <div className="p-[var(--space-lg)] space-y-2">
