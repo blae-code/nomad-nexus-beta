@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Send, Pin, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { canPost, canModerate } from './channelTaxonomy';
+import { canPost, canReply, canModerate } from './channelTaxonomy';
 
 export default function CommsDockChannelView({ channel, user, onBack }) {
   const [newPostContent, setNewPostContent] = useState('');
@@ -37,7 +37,10 @@ export default function CommsDockChannelView({ channel, user, onBack }) {
   });
 
   const userCanPost = canPost(user, channel);
+  const userCanReply = canReply(user, channel);
   const userCanModerate = canModerate(user, 'pin');
+  const userCanDelete = canModerate(user, 'delete');
+  const userCanSuspend = canModerate(user, 'suspend');
 
   return (
     <div className="flex flex-col h-full">
