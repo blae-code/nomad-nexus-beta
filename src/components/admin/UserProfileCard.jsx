@@ -216,7 +216,7 @@ export default function UserProfileCard({
         <div className="absolute -bottom-[1px] -right-[1px] w-2 h-2 border-b border-r border-[#ea580c]/50" />
 
         <Card className="bg-zinc-950 border-zinc-800/80 backdrop-blur-sm relative z-10">
-          <CardHeader className="border-b border-zinc-800/50 pb-3">
+          <CardHeader className="border-b border-zinc-800/50 pb-2">
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -249,7 +249,7 @@ export default function UserProfileCard({
             </div>
           </CardHeader>
 
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-3 space-y-3">
              {/* Callsign & Bio Section */}
              <EditableField 
                label="Callsign" 
@@ -440,7 +440,7 @@ export default function UserProfileCard({
           </CardContent>
 
           {/* Footer status bar */}
-          <div className="border-t border-zinc-800/50 px-4 py-2 bg-zinc-900/30 flex items-center justify-between text-[8px] font-mono text-zinc-600 uppercase tracking-wider">
+          <div className="border-t border-zinc-800/50 px-3 py-1.5 bg-zinc-900/30 flex items-center justify-between text-[7px] font-mono text-zinc-600 uppercase tracking-wider">
             <span>STATUS: {(user.status || "active").toUpperCase()}</span>
             <span className={user.is_system_administrator ? "text-[#ea580c]" : ""}>{user.is_system_administrator ? "ADMIN" : "SECURED"}</span>
           </div>
