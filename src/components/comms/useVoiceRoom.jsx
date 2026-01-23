@@ -122,4 +122,4 @@ export function useVoiceRoom(roomName, userIdentity) {
       participantCount: participants.length
     })
   };
-  }
+}

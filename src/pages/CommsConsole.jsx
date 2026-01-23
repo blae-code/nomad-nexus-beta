@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
