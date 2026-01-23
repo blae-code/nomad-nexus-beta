@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { User, Award, Radio, Target, Clock, TrendingUp, AlertCircle, Heart } from 'lucide-react';
+import { User, Award, Radio, Target, Clock, TrendingUp, AlertCircle, Heart, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -13,16 +13,34 @@ const PersonalStatusPanel = memo(function PersonalStatusPanel({
   user,
   userMetrics = {}
 }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
 
   if (!user) return null;
 
   return (
     <div className="mt-4">
-      <div className="text-[7px] uppercase text-zinc-400 tracking-widest mb-3 font-bold">PERSONAL STATUS</div>
-      <div className="grid grid-cols-8 gap-2">
-        {/* Rank/Title */}
-        <MetricCard
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[7px] uppercase text-zinc-400 tracking-widest font-bold">PERSONAL STATUS</div>
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+          title={isCollapsed ? 'Expand' : 'Collapse'}
+        >
+          <ChevronDown className={cn('w-3 h-3 transition-transform', isCollapsed && 'rotate-180')} />
+        </button>
+      </div>
+      <AnimatePresence>
+        {!isCollapsed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-8 gap-2 overflow-hidden"
+          >
+         {/* Rank/Title */}
+         <MetricCard
           icon={Award}
           label="Rank"
           value={user.rank || 'Vagrant'}
@@ -165,12 +183,14 @@ const PersonalStatusPanel = memo(function PersonalStatusPanel({
             route: 'Profile'
           }}
         />
-      </div>
-    </div>
-  );
-});
+          </motion.div>
+        )}
+        </AnimatePresence>
+        </div>
+        );
+        });
 
-const MetricCard = memo(function MetricCard({ icon: Icon, label, value, subtext, color, animate, details }) {
+        const MetricCard = memo(function MetricCard({ icon: Icon, label, value, subtext, color, animate, details }) {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
   
