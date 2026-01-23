@@ -170,6 +170,14 @@ export default function AccessGatePage() {
           </div>
           <h1 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">NEXUS</h1>
           <p className="text-xs font-mono text-zinc-500">Operational Access Portal</p>
+
+          {/* Privacy confidence cue */}
+          <div className="mt-6 pt-4 border-t border-zinc-800">
+            <p className="text-[10px] text-zinc-500 font-mono leading-relaxed">
+              🔒 No mailing list. No marketing email.<br />
+              Operational comms stay inside the Dock.
+            </p>
+          </div>
         </div>
 
         {/* Error Banner */}
@@ -309,14 +317,6 @@ export default function AccessGatePage() {
               </div>
             )}
 
-            {/* Privacy Cues */}
-            <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded text-[10px] space-y-1 text-zinc-400 font-mono">
-              <p className="text-zinc-500 font-bold mb-2">PRIVACY COMMITMENT</p>
-              <p>• No mailing list</p>
-              <p>• No marketing email</p>
-              <p>• Operational comms stay inside the Dock</p>
-            </div>
-
             {/* Accept Codes */}
             <div className="flex items-start gap-3 pt-2">
               <Checkbox
@@ -339,7 +339,7 @@ export default function AccessGatePage() {
                 id="ai-consent"
               />
               <label htmlFor="ai-consent" className="text-xs text-zinc-400 cursor-pointer pt-0.5">
-                Allow AI-powered features (optional, can be changed later)
+                Allow AI-powered features (analytics, summaries, suggestions)
               </label>
             </div>
 
