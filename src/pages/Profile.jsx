@@ -19,6 +19,7 @@ import AIPreferencesPanel from "@/components/profile/AIPreferencesPanel";
 import ProfileOperationalView from "@/components/profile/ProfileOperationalView";
 import ProfilePresenceCard from "@/components/profile/ProfilePresenceCard";
 import ProfilePersonalizationPanel from "@/components/profile/ProfilePersonalizationPanel";
+import ProfileActivityAnalytics from "@/components/profile/ProfileActivityAnalytics";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
@@ -275,12 +276,16 @@ export default function ProfilePage() {
                     <Brain className="w-2.5 h-2.5" />
                     AI
                  </TabsTrigger>
+                 <TabsTrigger value="activity" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150 flex items-center gap-1">
+                    <Activity className="w-2.5 h-2.5" />
+                    ACTIVITY
+                 </TabsTrigger>
                  {hasModerationActivity && (
                     <TabsTrigger value="moderation" className="rounded-none border-b-2 border-transparent data-[state=active]:border-b-[#ea580c] data-[state=active]:bg-zinc-900/50 px-3 py-2 text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30 data-[state=active]:text-white transition-colors duration-150">
                        MOD LOG
                     </TabsTrigger>
                  )}
-              </TabsList>
+                 </TabsList>
 
              {/* Profile Tab */}
              <TabsContent value="profile" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
@@ -469,6 +474,13 @@ export default function ProfilePage() {
                       user={user} 
                       onUpdate={handleAIPreferencesUpdate}
                    />
+                )}
+             </TabsContent>
+
+             {/* Activity Analytics Tab */}
+             <TabsContent value="activity" className="space-y-2 flex-1 min-h-0 overflow-auto p-2">
+                {user && (
+                   <ProfileActivityAnalytics user={user} />
                 )}
              </TabsContent>
 
