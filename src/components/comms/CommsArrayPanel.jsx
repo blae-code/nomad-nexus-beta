@@ -275,7 +275,13 @@ export default function CommsArrayPanel({
             isMuted={isMuted}
             onMuteToggle={() => setIsMuted(!isMuted)}
             onLeaveWhisper={endWhisper}
-            participants={[]}
+            participants={
+              whisperSession.participant_user_ids?.map(id => ({
+                id,
+                name: `User ${id.substring(0, 4)}`
+              })) || []
+            }
+            isTransmitting={transmittingNodes.has(currentUser?.id)}
           />
         )}
       </AnimatePresence>
