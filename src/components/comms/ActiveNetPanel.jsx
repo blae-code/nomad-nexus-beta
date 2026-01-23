@@ -169,6 +169,17 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     gcTime: 20000
   });
 
+  // Real-time subscription for voice mute changes
+  React.useEffect(() => {
+    if (!net?.id) return;
+
+    const unsubscribe = base44.entities.VoiceMute.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['voice-mutes', net.id] });
+    });
+
+    return () => unsubscribe?.();
+  }, [net?.id, queryClient]);
+
   // Mute/Unmute mutations
   const muteMutation = useMutation({
     mutationFn: async ({ userId, reason }) => {
