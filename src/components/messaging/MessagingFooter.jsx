@@ -1,77 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ChevronUp, X, MessageCircle, Users, Bell, FileUp } from 'lucide-react';
+import { ChevronUp, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import DMTab from './DMTab';
-import GroupChatTab from './GroupChatTab';
-import NotificationsTab from './NotificationsTab';
-import FileShareTab from './FileShareTab';
 
 export default function MessagingFooter({ user }) {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [activeTab, setActiveTab] = useState('notifications');
-  const [openTabs, setOpenTabs] = useState(['notifications']);
-  const [dmTabs, setDmTabs] = useState([]);
-  const [groupTabs, setGroupTabs] = useState([]);
-  const queryClient = useQueryClient();
 
-  const { data: unreadCounts = {} } = useQuery({
-    queryKey: ['message-unread', user?.id],
+  const { data: channels = [] } = useQuery({
+    queryKey: ['text-channels', user?.id],
     queryFn: async () => {
-      if (!user?.id) return {};
-      const messages = await base44.entities.Message.list();
-      const counts = { dm: 0, group: 0, notifications: 0 };
-      
-      messages.forEach(msg => {
-        if (!msg.read_by?.includes(user.id) && msg.user_id !== user.id) {
-          counts.dm += 1;
-        }
-      });
-      
-      return counts;
+      if (!user?.id) return [];
+      const allChannels = await base44.entities.Channel.list();
+      return allChannels || [];
     },
     enabled: !!user?.id,
-    refetchInterval: 3000
+    refetchInterval: 5000
   });
-
-  const addDMTab = (userId, userName) => {
-    const tabId = `dm-${userId}`;
-    if (!openTabs.includes(tabId)) {
-      setOpenTabs([...openTabs, tabId]);
-      setDmTabs([...dmTabs, { userId, userName, tabId }]);
-    }
-    setActiveTab(tabId);
-  };
-
-  const addGroupTab = (groupId, groupName) => {
-    const tabId = `group-${groupId}`;
-    if (!openTabs.includes(tabId)) {
-      setOpenTabs([...openTabs, tabId]);
-      setGroupTabs([...groupTabs, { groupId, groupName, tabId }]);
-    }
-    setActiveTab(tabId);
-  };
-
-  const closeTab = (tabId) => {
-    setOpenTabs(openTabs.filter(t => t !== tabId));
-    if (tabId.startsWith('dm-')) {
-      setDmTabs(dmTabs.filter(t => t.tabId !== tabId));
-    } else if (tabId.startsWith('group-')) {
-      setGroupTabs(groupTabs.filter(t => t.tabId !== tabId));
-    }
-    if (activeTab === tabId) {
-      setActiveTab(openTabs[0]);
-    }
-  };
-
-  const tabs = [
-    { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadCounts.notifications },
-    { id: 'file-share', label: 'File Share', icon: FileUp, badge: 0 },
-    ...dmTabs.map(dm => ({ id: dm.tabId, label: `${dm.userName}`, icon: MessageCircle, isDM: true })),
-    ...groupTabs.map(g => ({ id: g.tabId, label: `${g.groupName}`, icon: Users, isGroup: true }))
-  ];
 
   if (!user) return null;
 
