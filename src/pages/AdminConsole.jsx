@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings, Search, UserCog, Save, ChevronLeft, Trash2 } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings, Search, UserCog, Save, ChevronLeft, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
