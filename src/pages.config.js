@@ -23,6 +23,7 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import VoiceNetManager from './pages/VoiceNetManager';
 import SquadDetail from './pages/SquadDetail';
+import UserSettings from './pages/UserSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +53,7 @@ export const PAGES = {
     "UserManager": UserManager,
     "VoiceNetManager": VoiceNetManager,
     "SquadDetail": SquadDetail,
+    "UserSettings": UserSettings,
 }
 
 export const pagesConfig = {
