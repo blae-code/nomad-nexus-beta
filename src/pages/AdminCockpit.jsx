@@ -240,14 +240,41 @@ export default function AdminCockpitPage() {
 
               {/* CENTER: Accordion Sections (flex) */}
               <div className="flex-1 overflow-hidden flex flex-col p-2 gap-2 min-w-0">
-                <AdminCockpitAccordion
-                  sections={COCKPIT_SECTIONS.filter(s => hasRank(user, s.minRank))}
-                  expandedSection={expandedSection}
-                  onExpand={setExpandedSection}
-                  readinessScore={readinessScore}
-                  auditLogs={auditLogs}
-                  user={user}
-                />
+                {getAccessibleSections(user).map((section) => {
+                  const Component = section.component;
+                  const isExpanded = expandedSection === section.id;
+                  
+                  return (
+                    <div key={section.id} className="border border-zinc-800 bg-zinc-950/50 overflow-hidden">
+                      {/* Section Header */}
+                      <button
+                        onClick={() => setExpandedSection(isExpanded ? null : section.id)}
+                        className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-zinc-900/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <section.icon className="w-4 h-4 text-[#ea580c] shrink-0" />
+                          <div className="text-left min-w-0">
+                            <div className="text-[9px] font-bold text-zinc-200">{section.label}</div>
+                            <div className="text-[7px] text-zinc-500">{section.description}</div>
+                          </div>
+                        </div>
+                        <div className="text-[9px] text-zinc-500 shrink-0">
+                          {isExpanded ? '▼' : '▶'}
+                        </div>
+                      </button>
+
+                      {/* Section Content */}
+                      {isExpanded && Component && (
+                        <div className="border-t border-zinc-800 overflow-y-auto max-h-96">
+                          <Component 
+                            user={user}
+                            onAudit={logAuditAction}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* RIGHT SIDEBAR: Telemetry (280px) */}
