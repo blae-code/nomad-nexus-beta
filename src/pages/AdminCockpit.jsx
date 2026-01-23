@@ -58,6 +58,26 @@ export default function AdminCockpitPage() {
     });
   }, []);
 
+  // Derive effective comms mode based on desired + readiness
+  useEffect(() => {
+    if (!desiredLive) {
+      setEffectiveCommsMode('SIM');
+      setModeFallbackReason(null);
+      return;
+    }
+
+    // Desired is LIVE - check readiness
+    checkLiveKitReadiness().then(({ isReady, reason }) => {
+      if (isReady) {
+        setEffectiveCommsMode('LIVE');
+        setModeFallbackReason(null);
+      } else {
+        setEffectiveCommsMode('SIM');
+        setModeFallbackReason(reason);
+      }
+    });
+  }, [desiredLive]);
+
   // Fetch recent audit logs
   const { data: auditLogs = [] } = useQuery({
     queryKey: ['admin-audit-logs'],
