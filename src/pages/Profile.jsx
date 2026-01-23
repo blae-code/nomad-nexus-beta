@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profilePicUrl, setProfilePicUrl] = useState(null);
+  const [isUploadingPic, setIsUploadingPic] = useState(false);
   const { register, handleSubmit, setValue, formState: { isSubmitting } } = useForm();
 
   useEffect(() => {
@@ -27,11 +29,13 @@ export default function ProfilePage() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        setValue("email", currentUser.email || "");
         setValue("callsign", currentUser.callsign || "");
         setValue("rsi_handle", currentUser.rsi_handle || "");
         setValue("bio", currentUser.bio || "");
         setValue("full_name", currentUser.full_name || "");
         setValue("rank", currentUser.rank || "Vagrant");
+        setProfilePicUrl(currentUser.profile_pic_url || null);
       } catch (error) {
         console.error("Failed to load user", error);
       } finally {
@@ -136,11 +140,13 @@ export default function ProfilePage() {
       }
 
       await base44.auth.updateMe({
+        email: data.email,
         callsign: data.callsign,
         rsi_handle: data.rsi_handle,
         bio: data.bio,
         status: data.status,
         voyager_number: data.voyager_number,
+        profile_pic_url: profilePicUrl,
         ...(data.rank !== user?.rank && { rank: data.rank })
       });
 
@@ -169,6 +175,21 @@ export default function ProfilePage() {
     }
   };
 
+  const handleProfilePicUpload = async (file) => {
+    if (!file) return;
+    setIsUploadingPic(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setProfilePicUrl(file_url);
+      toast.success("Profile picture updated");
+    } catch (error) {
+      console.error("Failed to upload profile picture", error);
+      toast.error("Failed to upload profile picture");
+    } finally {
+      setIsUploadingPic(false);
+    }
+  };
+
   const hasModerationActivity = 
     (moderationActions.deletedMessages?.length > 0) || 
     (moderationActions.mutes?.length > 0) || 
@@ -185,10 +206,26 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-200 p-6 overflow-auto">
        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
+          {/* Header with Profile Picture */}
           <div className="flex items-center gap-4 mb-8">
-             <div className="w-16 h-16 bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                <User className="w-8 h-8 text-zinc-500" />
+             <div className="relative group">
+                <div className="w-20 h-20 bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
+                   {profilePicUrl ? (
+                      <img src={profilePicUrl} alt="Profile" className="w-full h-full object-cover" />
+                   ) : (
+                      <User className="w-10 h-10 text-zinc-500" />
+                   )}
+                </div>
+                <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+                   <span className="text-xs text-white font-bold">CHANGE</span>
+                   <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleProfilePicUpload(e.target.files?.[0])}
+                      disabled={isUploadingPic}
+                      className="hidden"
+                   />
+                </label>
              </div>
              <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Operative Profile</h1>
@@ -296,6 +333,17 @@ export default function ProfilePage() {
                    </CardHeader>
                    <CardContent className="p-6 space-y-6">
                       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                         <div className="grid gap-2">
+                            <Label htmlFor="email" className="text-xs uppercase text-[#ea580c] font-bold">Email Address</Label>
+                            <Input 
+                              id="email" 
+                              type="email"
+                              {...register("email")} 
+                              className="bg-zinc-900 border-zinc-800 text-white font-mono focus:border-[#ea580c]"
+                              placeholder="your.email@example.com"
+                            />
+                         </div>
+
                          <div className="grid gap-2">
                             <Label htmlFor="full_name" className="text-xs uppercase text-zinc-500 font-bold">Registered Name (Read Only)</Label>
                             <Input 
