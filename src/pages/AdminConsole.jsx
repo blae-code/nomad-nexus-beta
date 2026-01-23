@@ -1,7 +1,8 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings, Search, UserCog, Save, ChevronLeft, Trash2, Zap, Database } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings, Search, UserCog, Save, ChevronLeft, Trash2, Zap, Database, Power } from "lucide-react";
+import { useCommsMode } from "@/components/comms/useCommsMode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -40,6 +41,7 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [editingRole, setEditingRole] = React.useState(null);
   const queryClient = useQueryClient();
+  const { mode, toggleMode, isPending: isTogglingMode } = useCommsMode();
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -179,7 +181,23 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
       subtitle="CONTROL PANEL"
     >
       <Tabs value={activeTab} onValueChange={setActiveTab} className="px-6 py-6 space-y-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800 rounded-none p-0 h-auto w-full justify-start">
+        <TabsList className="bg-zinc-900 border border-zinc-800 rounded-none p-0 h-auto w-full justify-start relative">
+          {/* Comms Mode Toggle */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pl-4 border-l border-zinc-700">
+            <span className="text-xs text-zinc-500 uppercase font-mono tracking-wider">Comms:</span>
+            <button
+              onClick={() => toggleMode(mode === 'LIVE' ? 'SIM' : 'LIVE')}
+              disabled={isTogglingMode}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all border ${
+                mode === 'LIVE'
+                  ? 'bg-emerald-950/50 border-emerald-700 text-emerald-400 hover:bg-emerald-950'
+                  : 'bg-amber-950/50 border-amber-700 text-amber-400 hover:bg-amber-950'
+              }`}
+            >
+              {isTogglingMode ? '...' : mode}
+            </button>
+          </div>
+
           <TabsTrigger 
             value="approvals"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
