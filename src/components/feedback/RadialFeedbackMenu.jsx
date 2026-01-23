@@ -38,20 +38,20 @@ export default function RadialFeedbackMenu() {
 
   return (
     <>
-      {/* Main Menu Button - Fixed left edge */}
+      {/* Main Menu Button - Fixed right edge */}
       <motion.div
-        className="fixed left-0 top-1/2 -translate-y-1/2 z-40"
-        initial={{ x: -20 }}
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-40"
+        initial={{ x: 20 }}
         whileHover={{ x: 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 border-r border-t border-b border-zinc-800/50 text-[10px] font-mono font-bold uppercase transition-all duration-200',
+            'flex items-center justify-center w-14 h-14 border-l border-t border-b border-zinc-800 text-[10px] font-mono font-bold uppercase transition-all duration-200',
             isOpen
-              ? 'bg-[#ea580c]/20 border-[#ea580c]/60 text-[#ea580c]'
-              : 'bg-zinc-900/40 text-zinc-500 hover:text-zinc-300'
+              ? 'bg-[#ea580c]/40 border-[#ea580c]/80 text-[#ea580c]'
+              : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200'
           )}
           title="User Feedback"
         >
@@ -62,7 +62,7 @@ export default function RadialFeedbackMenu() {
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              className="absolute left-0 top-full mt-1 space-y-1"
+              className="absolute right-0 top-full mt-1 space-y-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -74,7 +74,7 @@ export default function RadialFeedbackMenu() {
                     key={item.id}
                     onClick={() => handleSelect(item)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 border border-r-0 text-[9px] font-mono font-bold uppercase whitespace-nowrap transition-all',
+                      'flex items-center gap-2 px-3 py-2 border border-l-0 text-[9px] font-mono font-bold uppercase whitespace-nowrap transition-all bg-opacity-60 border-opacity-70',
                       item.color
                     )}
                     initial={{ opacity: 0, x: -20 }}
