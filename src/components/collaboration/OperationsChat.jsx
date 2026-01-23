@@ -137,7 +137,7 @@ export default function OperationsChat({ user, className }) {
 function MessageBubble({ message, currentUserId, allUsers }) {
   const isOwn = message.user_id === currentUserId;
   const sender = allUsers.find(u => u.id === message.user_id);
-  const callsign = sender?.callsign || message.created_by || 'Unknown';
+  const callsign = sender?.callsign || sender?.rsi_handle || 'OPERATIVE';
   
   return (
     <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
