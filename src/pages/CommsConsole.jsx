@@ -469,17 +469,28 @@ function CommsConsolePage() {
                      viewMode === 'tactical' ? (
                         <TacticalDashboard eventId={selectedEventId} />
                      ) : (
-                        <>
-                           {/* Comms Toolbar */}
-                           <div className="shrink-0">
-                              <CommsToolbar
-                                 selectedNet={selectedNet}
-                                 connectionState={connectionState}
-                                 onOpenAdvanced={() => setShowAdvancedDrawer(true)}
-                                 isTransmitting={isTransmitting}
-                              />
-                              <Divider spacing="none" />
-                           </div>
+                     <>
+                        {/* Prominent Join Button + Telemetry */}
+                        <div className="shrink-0 p-[var(--space-lg)] space-y-3 bg-zinc-900/50 border-b border-zinc-800">
+                           <JoinNetButton
+                              selectedEventId={selectedEventId}
+                              selectedNetId={selectedNetId}
+                              connectionState={connectionState}
+                              connectionError={connectionError}
+                              onClick={() => selectedNetId && handleConnecting(selectedNetId)}
+                           />
+                        </div>
+
+                        {/* Comms Toolbar */}
+                        <div className="shrink-0">
+                           <CommsToolbar
+                              selectedNet={selectedNet}
+                              connectionState={connectionState}
+                              onOpenAdvanced={() => setShowAdvancedDrawer(true)}
+                              isTransmitting={isTransmitting}
+                           />
+                           <Divider spacing="none" />
+                        </div>
                            
                            {/* Effective Mode Fallback Banner */}
                            {fallbackReason && (
