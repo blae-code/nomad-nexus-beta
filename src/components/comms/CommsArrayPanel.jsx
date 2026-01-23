@@ -428,15 +428,42 @@ function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set()) {
   });
 }
 
-function drawEdges(ctx, edges) {
-  edges.forEach(edge => {
-    ctx.strokeStyle = '#27272a';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
+function drawEdges(ctx, edges, edgeTypes = {}) {
+  const edgeStyleMap = {
+    operational: {
+      color: '#3b82f6',
+      dash: [4, 4],
+      width: 1.5,
+      alpha: 0.6
+    },
+    whisper: {
+      color: '#8b5cf6',
+      dash: [2, 2],
+      width: 2,
+      alpha: 0.8
+    },
+    patch: {
+      color: '#f59e0b',
+      dash: [6, 2],
+      width: 1.5,
+      alpha: 0.7
+    }
+  };
+
+  edges.forEach((edge, idx) => {
+    const edgeKey = `${edge.from.id}-${edge.to.id}`;
+    const edgeType = edgeTypes[edgeKey] || 'operational';
+    const style = edgeStyleMap[edgeType] || edgeStyleMap.operational;
+
+    ctx.strokeStyle = style.color;
+    ctx.globalAlpha = style.alpha;
+    ctx.lineWidth = style.width;
+    ctx.setLineDash(style.dash);
     ctx.beginPath();
     ctx.moveTo(edge.from.x, edge.from.y);
     ctx.lineTo(edge.to.x, edge.to.y);
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
   });
 }
