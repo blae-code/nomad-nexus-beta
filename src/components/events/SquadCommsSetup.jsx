@@ -146,6 +146,10 @@ export default function SquadCommsSetup({
       const createdSquads = [];
       const createdNets = [];
 
+      // Helper to generate standardized room names
+      const eventShort = eventId.slice(0, 8);
+      const genRoomName = (netCode) => `redscar_evt_${eventShort}_${netCode.toLowerCase()}`;
+
       // Create squads
       for (const sq of suggestion.squads) {
         const squad = await base44.entities.Squad.create({
@@ -169,7 +173,9 @@ export default function SquadCommsSetup({
           priority: net.priority,
           event_id: eventId,
           linked_squad_id: linkedSquadId,
-          is_default_for_squad: net.type === 'squad' // Default squad nets
+          is_default_for_squad: net.type === 'squad',
+          livekit_room_name: genRoomName(net.code),
+          status: 'active'
         });
         createdNets.push(voiceNet);
       }
