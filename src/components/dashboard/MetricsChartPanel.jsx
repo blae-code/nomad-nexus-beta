@@ -4,6 +4,7 @@ import { Download, Activity, TrendingUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
@@ -181,18 +182,30 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
          transition={{ duration: 0.2 }}
          className="grid grid-cols-4 gap-2 overflow-hidden"
        >
-        {/* Activity Over Time */}
+        {/* Activity Over Time - ECG Style */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           onHoverStart={() => setActiveChart('utc')}
           onHoverEnd={() => setActiveChart(null)}
-          className={`border transition-all duration-200 p-2 relative group ${
+          className={`border transition-all duration-200 p-2 relative group overflow-hidden ${
             activeChart === 'utc' 
               ? 'border-cyan-500/60 bg-cyan-950/20 shadow-[0_0_12px_rgba(6,182,212,0.15)]' 
-              : 'border-zinc-800 bg-zinc-900/30'
+              : 'border-cyan-700/30 bg-zinc-900/30'
           }`}>
+          {/* ECG Pulse Background */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/5 to-transparent pointer-events-none"
+            animate={{ x: ['100%', '-100%'] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+          />
+          {/* Glow pulse */}
+          <motion.div 
+            className="absolute -inset-1 bg-gradient-radial from-cyan-500/10 to-transparent pointer-events-none"
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-cyan-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-cyan-500 transition-colors duration-200" />
         <div className="flex items-center justify-between mb-1">
@@ -212,34 +225,36 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             <Download className="w-2.5 h-2.5" />
           </button>
         </div>
-        <ResponsiveContainer width="100%" height={120}>
-          <LineChart data={activeUsersByUTC}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#71717a" 
-              style={{ fontSize: '10px' }}
-              tick={{ interval: 3 }}
-            />
-            <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-              labelStyle={{ color: '#e4e4e7' }}
-            />
-            <Legend wrapperStyle={{ fontSize: '11px' }} />
-            <Line
-              type="monotone"
-              dataKey="users"
-              stroke="#06b6d4"
-              strokeWidth={2}
-              dot={false}
-              name="Active Users"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="relative z-10">
+          <ResponsiveContainer width="100%" height={120}>
+             <LineChart data={activeUsersByUTC}>
+               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+               <XAxis 
+                 dataKey="time" 
+                 stroke="#71717a" 
+                 style={{ fontSize: '10px' }}
+                 tick={{ interval: 3 }}
+               />
+               <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+               <Tooltip
+                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                 labelStyle={{ color: '#e4e4e7' }}
+               />
+               <Legend wrapperStyle={{ fontSize: '11px' }} />
+               <Line
+                 type="monotone"
+                 dataKey="users"
+                 stroke="#06b6d4"
+                 strokeWidth={2}
+                 dot={false}
+                 name="Active Users"
+               />
+             </LineChart>
+           </ResponsiveContainer>
+        </div>
         </motion.div>
 
-        {/* Org Fund Allocation */}
+        {/* Org Fund Allocation - Pulse Gallery */}
         <motion.div
           key={fundView}
           initial={{ opacity: 0, x: 8 }}
@@ -248,12 +263,24 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           transition={{ duration: 0.2 }}
           onHoverStart={() => setActiveChart('funds')}
           onHoverEnd={() => setActiveChart(null)}
-          className={`border transition-all duration-200 p-2 relative group ${
+          className={`border transition-all duration-200 p-2 relative group overflow-hidden ${
             activeChart === 'funds' 
               ? 'border-purple-500/60 bg-purple-950/20 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-              : 'border-zinc-800 bg-zinc-900/30'
+              : 'border-purple-700/30 bg-zinc-900/30'
           }`}
         >
+          {/* Rotating glow pulse */}
+          <motion.div 
+            className="absolute -inset-1 bg-gradient-conic from-purple-500/10 via-transparent to-purple-500/10 pointer-events-none"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+          />
+          {/* Breathing glow */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent pointer-events-none"
+            animate={{ opacity: [0.2, 0.5, 0.2] }}
+            transition={{ duration: 3, repeat: Infinity, delay: 0.3 }}
+          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-purple-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-purple-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
@@ -274,44 +301,58 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               ↻
             </button>
           </div>
-          <ResponsiveContainer width="100%" height={120}>
-            <BarChart data={fundViews[fundView]}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis 
-              dataKey={fundView === 0 ? 'label' : 'name'} 
-              stroke="#71717a" 
-              style={{ fontSize: fundView === 0 ? '11px' : '9px' }}
-              tick={{ interval: 0 }}
-            />
-            <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-              labelStyle={{ color: '#e4e4e7' }}
-              formatter={(value) => `${value.toLocaleString()} aUEC`}
-            />
-            <Bar
-              dataKey="amount"
-              fill="#a855f7"
-              name="aUEC"
-              radius={0}
-            />
-          </BarChart>
-          </ResponsiveContainer>
+          <div className="relative z-10">
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart data={fundViews[fundView]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis 
+                dataKey={fundView === 0 ? 'label' : 'name'} 
+                stroke="#71717a" 
+                style={{ fontSize: fundView === 0 ? '11px' : '9px' }}
+                tick={{ interval: 0 }}
+              />
+              <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                labelStyle={{ color: '#e4e4e7' }}
+                formatter={(value) => `${value.toLocaleString()} aUEC`}
+              />
+              <Bar
+                dataKey="amount"
+                fill="#a855f7"
+                name="aUEC"
+                radius={0}
+              />
+            </BarChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
-        {/* New NomadNexus Users */}
+        {/* New NomadNexus Users - Wave Gallery */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           onHoverStart={() => setActiveChart('recruitment')}
           onHoverEnd={() => setActiveChart(null)}
-          className={`border transition-all duration-200 p-2 relative group ${
+          className={`border transition-all duration-200 p-2 relative group overflow-hidden ${
             activeChart === 'recruitment' 
               ? 'border-emerald-500/60 bg-emerald-950/20 shadow-[0_0_12px_rgba(34,197,94,0.15)]' 
-              : 'border-zinc-800 bg-zinc-900/30'
+              : 'border-emerald-700/30 bg-zinc-900/30'
           }`}
         >
+          {/* Wave scanning effect */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-b from-emerald-400/10 via-transparent to-transparent pointer-events-none"
+            animate={{ y: ['100%', '-100%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear', delay: 0.6 }}
+          />
+          {/* Soft breathing glow */}
+          <motion.div 
+            className="absolute inset-0 bg-radial from-emerald-500/5 to-transparent pointer-events-none"
+            animate={{ opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 2.5, repeat: Infinity, delay: 0.6 }}
+          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-emerald-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-emerald-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
@@ -331,39 +372,53 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               <Download className="w-2.5 h-2.5" />
             </button>
           </div>
-          <ResponsiveContainer width="100%" height={120}>
-            <BarChart data={recruitmentData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
-              <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                labelStyle={{ color: '#e4e4e7' }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
-              <Bar
-                dataKey="recruits"
-                fill="#22c55e"
-                name="New Users"
-                radius={0}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="relative z-10">
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart data={recruitmentData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                  labelStyle={{ color: '#e4e4e7' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Bar
+                  dataKey="recruits"
+                  fill="#22c55e"
+                  name="New Users"
+                  radius={0}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
-        {/* Redscar Flotilla Growth */}
+        {/* Redscar Flotilla Growth - Pulse Shimmer */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
           onHoverStart={() => setActiveChart('flotilla')}
           onHoverEnd={() => setActiveChart(null)}
-          className={`border transition-all duration-200 p-2 relative group ${
+          className={`border transition-all duration-200 p-2 relative group overflow-hidden ${
             activeChart === 'flotilla' 
               ? 'border-orange-500/60 bg-orange-950/20 shadow-[0_0_12px_rgba(234,88,12,0.15)]' 
-              : 'border-zinc-800 bg-zinc-900/30'
+              : 'border-orange-700/30 bg-zinc-900/30'
           }`}
         >
+          {/* Shimmer wave right-to-left */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-l from-transparent via-orange-400/8 to-transparent pointer-events-none"
+            animate={{ x: ['-100%', '100%'] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', delay: 1.2 }}
+          />
+          {/* Pulsing corner highlight */}
+          <motion.div 
+            className="absolute inset-0 bg-radial from-orange-500/5 via-transparent to-transparent pointer-events-none"
+            animate={{ opacity: [0.1, 0.3, 0.1] }}
+            transition={{ duration: 2.8, repeat: Infinity, delay: 1.2 }}
+          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-orange-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-orange-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
@@ -383,26 +438,28 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               <Download className="w-2.5 h-2.5" />
             </button>
           </div>
-          <ResponsiveContainer width="100%" height={120}>
-            <AreaChart data={flotillaGrowthData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
-              <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                labelStyle={{ color: '#e4e4e7' }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
-              <Area
-                type="monotone"
-                dataKey="ships"
-                stroke="#ea580c"
-                fill="#ea580c"
-                fillOpacity={0.7}
-                name="Ships/Vehicles"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="relative z-10">
+            <ResponsiveContainer width="100%" height={120}>
+              <AreaChart data={flotillaGrowthData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                  labelStyle={{ color: '#e4e4e7' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Area
+                  type="monotone"
+                  dataKey="ships"
+                  stroke="#ea580c"
+                  fill="#ea580c"
+                  fillOpacity={0.7}
+                  name="Ships/Vehicles"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
         </motion.div>
         )}
