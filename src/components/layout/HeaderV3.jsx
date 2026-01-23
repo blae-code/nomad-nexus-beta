@@ -739,7 +739,6 @@ export default function HeaderV3() {
           )}
         </div>
       </div>
-    </TooltipProvider>
 
       {/* Diagnostics Panel */}
       {diagnosticsOpen && (
@@ -789,5 +788,6 @@ export default function HeaderV3() {
         </div>
       )}
     </header>
+    </TooltipProvider>
   );
 }
