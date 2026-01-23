@@ -29,6 +29,8 @@ import DemoScenarioController from '@/components/admin/DemoScenarioController';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import BootMediaAdmin from '@/components/admin/BootMediaAdmin';
 import CommsPreflightPanel from '@/components/admin/CommsPreflightPanel';
+import { checkLiveKitReadiness } from '@/components/comms/checkLiveKitReadiness';
+import { useCommsMode } from '@/components/comms/useCommsMode';
 
 export default function AdminCockpitPage() {
   const [user, setUser] = useState(null);
@@ -39,7 +41,12 @@ export default function AdminCockpitPage() {
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState(null);
   const [isSetupDemo, setIsSetupDemo] = useState(false);
+  const [effectiveCommsMode, setEffectiveCommsMode] = useState('SIM');
+  const [modeFallbackReason, setModeFallbackReason] = useState(null);
   const queryClient = useQueryClient();
+  
+  // Get desired mode from config
+  const { isLive: desiredLive } = useCommsMode();
 
   // Auth check - gate to Pioneer/Founder (rank check if needed)
   useEffect(() => {
