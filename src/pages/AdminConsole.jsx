@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings, Search, UserCog, Save, ChevronLeft, Trash2, Zap } from "lucide-react";
+import { Shield, Users, Lock, CheckCircle, Clock, Radio, TestTube, Plus, FileText, Activity, Settings, Search, UserCog, Save, ChevronLeft, Trash2, Zap, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -29,6 +29,7 @@ import RankRoleManagement from "@/components/admin/RankRoleManagement";
 import EventReportingDashboard from "@/components/events/EventReportingDashboard";
 import RolePermissionMatrix from "@/components/admin/RolePermissionMatrix";
 import AdminDevTools from "@/components/admin/AdminDevTools";
+import SchemaContractCheck from "@/components/admin/SchemaContractCheck";
 
 export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [currentUser, setCurrentUser] = React.useState(null);
