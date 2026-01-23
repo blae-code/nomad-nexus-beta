@@ -22,80 +22,99 @@ export function useCurrentUser() {
  * Centralized hook for dashboard data - batches all queries
  */
 export function useDashboardData(user) {
-  // Single batch query for all dashboard data
+  // Batch query with staggered requests to avoid rate limits
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard-data', user?.id],
-    staleTime: 20000, // 20 seconds - dashboard data can be slightly stale
-    cacheTime: 300000, // 5 minutes
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
+    refetchInterval: 60000, // Refetch every 60s instead of continuously
     queryFn: async () => {
       if (!user) return null;
 
-      // Fetch everything in parallel
-      const [
-        events,
-        squadMemberships,
-        fleetAssets,
-        activeIncidents,
-        onlineUsers,
-        allUsers,
-        voiceNets,
-        recentLogs,
-        treasuryCoffers,
-        recentMessages
-      ] = await Promise.all([
-        base44.entities.Event.list('-updated_date', 10).catch(() => []),
-        base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }).catch(() => []),
-        base44.entities.FleetAsset.list('-updated_date', 10).catch(() => []),
-        base44.entities.Incident.filter({ status: ['active', 'responding'] }, '-created_date', 5).catch(() => []),
-        base44.entities.UserPresence.filter({ status: ['online', 'in-call'] }).catch(() => []),
-        base44.entities.User.list().catch(() => []),
-        base44.entities.VoiceNet.filter({ status: 'active' }).catch(() => []),
-        base44.entities.EventLog.list('-created_date', 20).catch(() => []),
-        base44.entities.Coffer.list().catch(() => []),
-        base44.entities.Message.list('-created_date', 10).catch(() => [])
-      ]);
+      try {
+        // Batch 1: Essential data (non-user-specific)
+        const [events, allUsers, voiceNets, recentLogs] = await Promise.all([
+          base44.entities.Event.list('-updated_date', 8).catch(() => []),
+          base44.entities.User.list().catch(() => []),
+          base44.entities.VoiceNet.filter({ status: 'active' }, null, 5).catch(() => []),
+          base44.entities.EventLog.list('-created_date', 15).catch(() => [])
+        ]);
 
-      // Fetch squads for memberships (with timeout protection)
-      const squadIds = squadMemberships.map(m => m.squad_id);
-      let userSquads = [];
-      if (squadIds.length > 0) {
-        try {
-          userSquads = await Promise.race([
-            Promise.all(squadIds.map(id => base44.entities.Squad.get(id).catch(() => null))),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-          ]);
-        } catch (err) {
-          console.warn('Squad fetch timeout in dashboard hook');
-          userSquads = [];
+        // Small delay before Batch 2
+        await new Promise(r => setTimeout(r, 100));
+
+        // Batch 2: User-specific data
+        const [squadMemberships, onlineUsers, activeIncidents] = await Promise.all([
+          base44.entities.SquadMembership.filter({ user_id: user.id, status: 'active' }, null, 5).catch(() => []),
+          base44.entities.UserPresence.filter({ status: ['online', 'in-call'] }, null, 10).catch(() => []),
+          base44.entities.Incident.filter({ status: ['active', 'responding'] }, '-created_date', 3).catch(() => [])
+        ]);
+
+        // Small delay before Batch 3
+        await new Promise(r => setTimeout(r, 100));
+
+        // Batch 3: Optional/supplementary data
+        const [fleetAssets, treasuryCoffers] = await Promise.all([
+          base44.entities.FleetAsset.list('-updated_date', 5).catch(() => []),
+          base44.entities.Coffer.list().catch(() => [])
+        ]);
+
+        // Fetch squads with timeout
+        const squadIds = squadMemberships.map(m => m.squad_id).slice(0, 3);
+        let userSquads = [];
+        if (squadIds.length > 0) {
+          try {
+            userSquads = await Promise.race([
+              Promise.all(squadIds.map(id => base44.entities.Squad.get(id).catch(() => null))),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+            ]).catch(() => []);
+          } catch (err) {
+            userSquads = [];
+          }
         }
+
+        // Calculate treasury balance
+        const treasuryBalance = treasuryCoffers.reduce((sum, c) => sum + (c.balance || 0), 0);
+
+        // Filter online users
+        const now = new Date();
+        const activeUsers = onlineUsers.filter(p => {
+          if (!p.last_activity) return true;
+          const lastActivity = new Date(p.last_activity);
+          const diffSeconds = (now - lastActivity) / 1000;
+          return diffSeconds < 30;
+        });
+
+        return {
+          events,
+          squadMemberships,
+          squads: userSquads.filter(Boolean),
+          fleetAssets,
+          recentMessages: [], // Minimal messages for now
+          activeIncidents,
+          onlineUsers: activeUsers,
+          allUsers,
+          voiceNets,
+          recentLogs,
+          treasuryBalance
+        };
+      } catch (err) {
+        console.error('Dashboard data fetch error:', err);
+        return {
+          events: [],
+          squadMemberships: [],
+          squads: [],
+          fleetAssets: [],
+          recentMessages: [],
+          activeIncidents: [],
+          onlineUsers: [],
+          allUsers: [],
+          voiceNets: [],
+          recentLogs: [],
+          treasuryBalance: 0
+        };
       }
-
-      // Calculate treasury balance
-      const treasuryBalance = treasuryCoffers.reduce((sum, c) => sum + (c.balance || 0), 0);
-
-      // Filter online users (active in last 30s)
-      const now = new Date();
-      const activeUsers = onlineUsers.filter(p => {
-        if (!p.last_activity) return true;
-        const lastActivity = new Date(p.last_activity);
-        const diffSeconds = (now - lastActivity) / 1000;
-        return diffSeconds < 30;
-      });
-
-      return {
-        events,
-        squadMemberships,
-        squads: userSquads.filter(Boolean),
-        fleetAssets,
-        recentMessages,
-        activeIncidents,
-        onlineUsers: activeUsers,
-        allUsers,
-        voiceNets,
-        recentLogs,
-        treasuryBalance
-      };
     },
     enabled: !!user
   });
