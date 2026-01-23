@@ -16,8 +16,13 @@ const pageMap = {
   '/events': 'events',
   '/commsconsole': 'comms',
   '/intelligence': 'intelligence',
-  '/adminconsole': 'admin',
   '/admin': 'admin',
+  '/adminconsole': 'admin', // deprecated, redirect to /admin
+  '/universemap': 'universemap',
+  '/fleetmanager': 'fleetmanager',
+  '/rescue': 'rescue',
+  '/channels': 'channels',
+  '/profile': 'profile',
 };
 
 export default function Layout({ children, currentPageName }) {
