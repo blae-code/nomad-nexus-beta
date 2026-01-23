@@ -92,85 +92,88 @@ export default function CommsTestStep({ user, onAudit }) {
     }
   };
 
-  return (
-    <div className="space-y-3">
-      {/* Global Comms Mode Toggle */}
-      <CommsModeToggle />
+  const exportResults = () => {
+    if (!testResults) return;
+    const report = {
+      timestamp: new Date().toISOString(),
+      mode,
+      tests: testResults.tests,
+      summary: {
+        passed: testResults.tests.filter(t => t.status === 'success').length,
+        failed: testResults.tests.filter(t => t.status === 'failure').length,
+        total: testResults.tests.length
+      }
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `comms-test-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-      {/* Test Mode Selection */}
-      <div className="flex items-center gap-2 p-2 bg-zinc-900/50 rounded border border-zinc-800">
-        <button
-          onClick={() => setMode('SIM')}
-          className={cn(
-            'px-2 py-1 text-[9px] font-bold rounded transition-colors',
-            mode === 'SIM'
-              ? 'bg-blue-900/30 text-blue-400 border border-blue-700/50'
-              : 'bg-zinc-800 text-zinc-500'
-          )}
-        >
-          SIM (Test)
-        </button>
-        <button
-          onClick={() => setMode('LIVE')}
-          className={cn(
-            'px-2 py-1 text-[9px] font-bold rounded transition-colors',
-            mode === 'LIVE'
-              ? 'bg-red-900/30 text-red-400 border border-red-700/50'
-              : 'bg-zinc-800 text-zinc-500'
-          )}
-        >
-          LIVE
-        </button>
-      </div>
+  return (
+    <div className="space-y-2">
+      {/* Global Comms Mode Toggle */}
+      <CommsModeToggle user={user} />
 
       {/* Run tests button */}
       <Button
         size="sm"
         onClick={runCommsTest}
         disabled={loading}
-        className="w-full gap-2 text-[10px] h-7"
+        className="w-full gap-2 text-[10px] h-7 bg-[#ea580c]/80 hover:bg-[#ea580c]"
       >
-        <Radio className="w-3 h-3" />
-        {loading ? 'Testing...' : `Run ${mode} Tests`}
+        <Play className="w-3 h-3" />
+        {loading ? 'Testing...' : 'Run Comms Smoke Test'}
       </Button>
 
       {/* Test results */}
       {testResults && (
-        <div className="space-y-1">
+        <div className="space-y-1.5 p-2 bg-zinc-900/50 border border-zinc-800">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[8px] font-mono text-zinc-500 uppercase">
+              {testResults.tests.filter(t => t.status === 'success').length}/{testResults.tests.length} pass
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={exportResults}
+              className="text-[8px] px-1 h-5 gap-1 text-zinc-400 hover:text-[#ea580c]"
+            >
+              <Download className="w-2.5 h-2.5" />
+              Export
+            </Button>
+          </div>
+
           {testResults.tests.map((test, idx) => (
             <div
               key={idx}
               className={cn(
-                'p-2 border rounded text-[9px]',
+                'p-1.5 border text-[8px]',
                 test.status === 'success'
-                  ? 'bg-green-900/20 border-green-700/30'
-                  : 'bg-red-900/20 border-red-700/30'
+                  ? 'bg-green-950/40 border-green-800/50'
+                  : 'bg-red-950/40 border-red-800/50'
               )}
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1.5">
                 {test.status === 'success' ? (
-                  <CheckCircle2 className="w-3 h-3 text-green-400" />
+                  <CheckCircle2 className="w-3 h-3 text-green-400 shrink-0" />
                 ) : (
-                  <AlertCircle className="w-3 h-3 text-red-400" />
+                  <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />
                 )}
                 <span className="font-bold">{test.name}</span>
               </div>
-              <p className={test.status === 'success' ? 'text-green-300' : 'text-red-300'}>
+              <p className={cn(
+                'text-[7px] mt-0.5 ml-4.5',
+                test.status === 'success' ? 'text-green-300' : 'text-red-300'
+              )}>
                 {test.details}
               </p>
             </div>
           ))}
         </div>
-      )}
-
-      {mode === 'LIVE' && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full text-[9px] h-6 border-emerald-700/50 text-emerald-400 hover:bg-emerald-900/20"
-        >
-          Join Healthcheck Room
-        </Button>
       )}
     </div>
   );
