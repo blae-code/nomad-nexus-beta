@@ -58,7 +58,7 @@ export default function HeaderV3() {
     return 'UNKNOWN OPERATIVE';
   }, [user, userById]);
 
-  // Fetch user and initialize presence
+  // Initialize presence via backend function for reliability
   useEffect(() => {
     const initUser = async () => {
       try {
@@ -69,22 +69,22 @@ export default function HeaderV3() {
         const users = await base44.entities.User.list();
         window.headerTotalUsers = users.length;
 
-        // Fetch or create user presence
+        // Initialize presence via backend function
+        const response = await base44.functions.invoke('updateUserPresence', {
+          status: 'online',
+          netId: null,
+          eventId: null,
+          isTransmitting: false
+        });
+
+        if (response.data?.presence) {
+          setUserPresence(response.data.presence);
+        }
+
+        // Fetch all presences for online count
         const presences = await base44.entities.UserPresence.list();
         const userIds = new Set(users.map(u => u.id));
         const validPresences = presences.filter(p => userIds.has(p.user_id));
-
-        let userPres = validPresences.find((p) => p.user_id === currentUser.id);
-
-        // Create if doesn't exist
-        if (!userPres) {
-          userPres = await base44.entities.UserPresence.create({
-            user_id: currentUser.id,
-            status: 'online',
-            last_activity: new Date().toISOString(),
-          });
-        }
-        setUserPresence(userPres);
 
         // Count unique online users (only one presence per user)
         const onlineUserIds = new Set(
@@ -180,14 +180,35 @@ export default function HeaderV3() {
     window.headerFetchPresence = fetchPresence;
   }, [user]);
 
-  // Subscribe to UserPresence changes for real-time updates
+  // Subscribe to ALL UserPresence changes for real-time online count
   useEffect(() => {
     if (!user?.id) return;
     
-    const unsubscribe = base44.entities.UserPresence.subscribe((event) => {
-      // Only update if it's this user's presence
+    const unsubscribe = base44.entities.UserPresence.subscribe(async (event) => {
+      // Update current user's presence
       if (event.id === userPresence?.id || event.data?.user_id === user.id) {
         setUserPresence(event.data || event);
+      }
+
+      // Refresh online count on any presence change
+      try {
+        const [presences, users] = await Promise.all([
+          base44.entities.UserPresence.list(),
+          base44.entities.User.list()
+        ]);
+        
+        const userIds = new Set(users.map(u => u.id));
+        const validPresences = presences.filter(p => userIds.has(p.user_id));
+        
+        const onlineUserIds = new Set(
+          validPresences
+            .filter((p) => p.status !== 'offline')
+            .map(p => p.user_id)
+        );
+        
+        setOnlineCount(onlineUserIds.size);
+      } catch (e) {
+        console.error('Failed to refresh online count:', e);
       }
     });
 
@@ -213,6 +234,47 @@ export default function HeaderV3() {
   useEffect(() => {
     window.headerPing = ping;
   }, []);
+
+  // Heartbeat to keep presence alive and update last_activity
+  useEffect(() => {
+    if (!user?.id || !userPresence) return;
+
+    const heartbeat = setInterval(async () => {
+      try {
+        await base44.functions.invoke('updateUserPresence', {
+          status: userPresence.status,
+          netId: userPresence.net_id || null,
+          eventId: userPresence.event_id || null,
+          isTransmitting: userPresence.is_transmitting || false
+        });
+      } catch (e) {
+        console.error('[PRESENCE] Heartbeat failed:', e);
+      }
+    }, 30000); // Every 30 seconds
+
+    return () => clearInterval(heartbeat);
+  }, [user?.id, userPresence?.status, userPresence?.net_id, userPresence?.event_id, userPresence?.is_transmitting]);
+
+  // Set offline on window unload
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const handleBeforeUnload = () => {
+      // Use synchronous beacon to ensure it fires
+      if (navigator.sendBeacon && userPresence) {
+        const data = new Blob([JSON.stringify({
+          status: 'offline',
+          netId: null,
+          eventId: null,
+          isTransmitting: false
+        })], { type: 'application/json' });
+        navigator.sendBeacon('/api/functions/updateUserPresence', data);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [user?.id, userPresence]);
 
   const handleLogout = () => {
     setUserMenuOpen(false);
@@ -371,24 +433,23 @@ export default function HeaderV3() {
   }, []);
 
   const handleStatusChange = async (newStatus) => {
-    if (!userPresence?.id) {
-      console.error('No presence record to update');
-      return;
-    }
     try {
       // Optimistically update UI first
       const optimisticPresence = { ...userPresence, status: newStatus, last_activity: new Date().toISOString() };
       setUserPresence(optimisticPresence);
       setStatusMenuOpen(false);
       
-      // Then update database
-      const updated = await base44.entities.UserPresence.update(userPresence.id, { 
+      // Update via backend function for reliability
+      const response = await base44.functions.invoke('updateUserPresence', {
         status: newStatus,
-        last_activity: new Date().toISOString(),
+        netId: userPresence?.net_id || null,
+        eventId: userPresence?.event_id || null,
+        isTransmitting: userPresence?.is_transmitting || false
       });
       
-      // Confirm with server response
-      setUserPresence(updated);
+      if (response.data?.presence) {
+        setUserPresence(response.data.presence);
+      }
       
       // Trigger presence refresh for all users
       if (window.headerFetchPresence) {
@@ -398,7 +459,6 @@ export default function HeaderV3() {
       console.error('Failed to update status:', e);
       // Revert optimistic update on error
       fetchPresence();
-      alert(`Failed to update status: ${e.message}`);
     }
   };
 
