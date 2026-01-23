@@ -13,133 +13,160 @@ const HubMetricsPanel = memo(function HubMetricsPanel({
   canAccessTreasury, 
   treasuryBalance 
 }) {
+  // Always show 8 org metrics (flexible count handling)
+  const metrics = [
+    {
+      icon: Users,
+      label: 'Roster',
+      value: allUsers.length,
+      subtext: 'total members',
+      color: 'zinc',
+      details: {
+        stats: [
+          { label: 'Total Members', value: allUsers.length },
+          { label: 'Active Users', value: allUsers.filter(u => u.role !== 'inactive').length },
+          { label: 'Admins', value: allUsers.filter(u => u.role === 'admin').length },
+        ],
+        action: 'View Full Roster',
+        route: 'UserManager'
+      }
+    },
+    {
+      icon: Users,
+      label: 'Online',
+      value: onlineUsers.length,
+      subtext: `${orgMetrics.activeMemberRate}% active`,
+      color: 'emerald',
+      details: {
+        stats: [
+          { label: 'Online Now', value: onlineUsers.length },
+          { label: 'Activity Rate', value: `${orgMetrics.activeMemberRate}%` },
+          { label: 'In Voice', value: onlineUsers.filter(u => u.status === 'in-call').length },
+        ],
+        action: 'View Presence',
+        route: 'Hub'
+      }
+    },
+    {
+      icon: Target,
+      label: 'Operations',
+      value: orgMetrics.activeOperations,
+      subtext: 'active ops',
+      color: 'blue',
+      details: {
+        stats: [
+          { label: 'Active Now', value: orgMetrics.activeOperations },
+          { label: 'Scheduled', value: orgMetrics.scheduledOperations || 0 },
+          { label: 'Pending', value: orgMetrics.pendingOperations || 0 },
+        ],
+        action: 'Operations Board',
+        route: 'Events'
+      }
+    },
+    {
+      icon: Swords,
+      label: 'Squads',
+      value: orgMetrics.totalSquads,
+      subtext: 'operational units',
+      color: 'purple',
+      details: {
+        stats: [
+          { label: 'Total Units', value: orgMetrics.totalSquads },
+          { label: 'Active Squads', value: orgMetrics.activeSquads || orgMetrics.totalSquads },
+          { label: 'Total Members', value: allUsers.length },
+        ],
+        action: 'Manage Squads',
+        route: 'AdminConsole'
+      }
+    },
+    {
+      icon: TrendingUp,
+      label: 'Success Rate',
+      value: `${orgMetrics.missionSuccessRate}%`,
+      subtext: 'ops efficiency',
+      color: 'yellow',
+      details: {
+        stats: [
+          { label: 'Success Rate', value: `${orgMetrics.missionSuccessRate}%` },
+          { label: 'Completed', value: orgMetrics.completedMissions || 0 },
+          { label: 'Failed', value: orgMetrics.failedMissions || 0 },
+        ],
+        action: 'View History',
+        route: 'Events'
+      }
+    },
+    {
+      icon: AlertCircle,
+      label: 'Alerts',
+      value: activeIncidents.length,
+      subtext: orgMetrics.alertStatus,
+      color: 'red',
+      animate: activeIncidents.length > 0,
+      show: true,
+      details: {
+        stats: [
+          { label: 'Active Alerts', value: activeIncidents.length },
+          { label: 'Critical', value: activeIncidents.filter(i => i.severity === 'CRITICAL').length },
+          { label: 'Response Time', value: '2.4m avg' },
+        ],
+        action: 'Incident Center',
+        route: 'Hub'
+      }
+    },
+    {
+      icon: Coins,
+      label: 'Treasury',
+      value: canAccessTreasury ? `${(treasuryBalance / 1000000).toFixed(1)}M` : '--',
+      subtext: 'aUEC reserves',
+      color: 'yellow',
+      show: canAccessTreasury,
+      details: {
+        stats: [
+          { label: 'Total Balance', value: canAccessTreasury ? `${(treasuryBalance / 1000000).toFixed(2)}M aUEC` : '--' },
+          { label: 'Last Transaction', value: 'Recent' },
+          { label: 'Status', value: 'Healthy' },
+        ],
+        action: 'View Treasury',
+        route: 'Treasury'
+      }
+    },
+    {
+      icon: Shield,
+      label: 'System',
+      value: 'Nominal',
+      subtext: 'all systems',
+      color: 'cyan',
+      show: true,
+      details: {
+        stats: [
+          { label: 'Status', value: 'Operational' },
+          { label: 'Uptime', value: '99.9%' },
+          { label: 'Last Check', value: 'Now' },
+        ],
+        action: 'Diagnostics',
+        route: 'AdminConsole'
+      }
+    }
+  ];
+
   return (
     <div>
       <div className="text-[7px] uppercase text-zinc-400 tracking-widest mb-3 font-bold">ORGANIZATION STATUS</div>
       <div className="grid grid-cols-8 gap-2">
-        <MetricCard
-          icon={Users}
-          label="Roster"
-          value={allUsers.length}
-          subtext="total members"
-          color="zinc"
-          details={{
-            stats: [
-              { label: 'Total Members', value: allUsers.length },
-              { label: 'Active Users', value: allUsers.filter(u => u.role !== 'inactive').length },
-              { label: 'Admins', value: allUsers.filter(u => u.role === 'admin').length },
-            ],
-            action: 'View Full Roster',
-            route: 'UserManager'
-          }}
-        />
-
-        <MetricCard
-          icon={Users}
-          label="Online"
-          value={onlineUsers.length}
-          subtext={`${orgMetrics.activeMemberRate}% active`}
-          color="emerald"
-          details={{
-            stats: [
-              { label: 'Online Now', value: onlineUsers.length },
-              { label: 'Activity Rate', value: `${orgMetrics.activeMemberRate}%` },
-              { label: 'In Voice', value: onlineUsers.filter(u => u.status === 'in-call').length },
-            ],
-            action: 'View Presence',
-            route: 'Hub'
-          }}
-        />
-
-        <MetricCard
-          icon={Target}
-          label="Operations"
-          value={orgMetrics.activeOperations}
-          subtext="active ops"
-          color="blue"
-          details={{
-            stats: [
-              { label: 'Active Now', value: orgMetrics.activeOperations },
-              { label: 'Scheduled', value: orgMetrics.scheduledOperations || 0 },
-              { label: 'Pending', value: orgMetrics.pendingOperations || 0 },
-            ],
-            action: 'Operations Board',
-            route: 'Events'
-          }}
-        />
-
-        <MetricCard
-          icon={Swords}
-          label="Squads"
-          value={orgMetrics.totalSquads}
-          subtext="operational units"
-          color="purple"
-          details={{
-            stats: [
-              { label: 'Total Units', value: orgMetrics.totalSquads },
-              { label: 'Active Squads', value: orgMetrics.activeSquads || orgMetrics.totalSquads },
-              { label: 'Total Members', value: allUsers.length },
-            ],
-            action: 'Manage Squads',
-            route: 'AdminConsole'
-          }}
-        />
-
-        <MetricCard
-          icon={TrendingUp}
-          label="Success Rate"
-          value={`${orgMetrics.missionSuccessRate}%`}
-          subtext="ops efficiency"
-          color="yellow"
-          details={{
-            stats: [
-              { label: 'Success Rate', value: `${orgMetrics.missionSuccessRate}%` },
-              { label: 'Completed', value: orgMetrics.completedMissions || 0 },
-              { label: 'Failed', value: orgMetrics.failedMissions || 0 },
-            ],
-            action: 'View History',
-            route: 'Events'
-          }}
-        />
-
-        {activeIncidents.length > 0 && (
-          <MetricCard
-            icon={AlertCircle}
-            label="Alerts"
-            value={activeIncidents.length}
-            subtext={orgMetrics.alertStatus}
-            color="red"
-            animate
-            details={{
-              stats: [
-                { label: 'Active Alerts', value: activeIncidents.length },
-                { label: 'Critical', value: activeIncidents.filter(i => i.severity === 'CRITICAL').length },
-                { label: 'Response Time', value: '2.4m avg' },
-              ],
-              action: 'Incident Center',
-              route: 'Hub'
-            }}
-          />
-        )}
-
-        {canAccessTreasury && (
-          <MetricCard
-            icon={Coins}
-            label="Treasury"
-            value={`${(treasuryBalance / 1000000).toFixed(1)}M`}
-            subtext="aUEC reserves"
-            color="yellow"
-            details={{
-              stats: [
-                { label: 'Total Balance', value: `${(treasuryBalance / 1000000).toFixed(2)}M aUEC` },
-                { label: 'Last Transaction', value: 'Recent' },
-                { label: 'Status', value: 'Healthy' },
-              ],
-              action: 'View Treasury',
-              route: 'Treasury'
-            }}
-          />
-        )}
+        {metrics.map((metric, idx) => (
+          metric.show !== false && (
+            <MetricCard
+              key={idx}
+              icon={metric.icon}
+              label={metric.label}
+              value={metric.value}
+              subtext={metric.subtext}
+              color={metric.color}
+              animate={metric.animate}
+              details={metric.details}
+            />
+          )
+        ))}
       </div>
     </div>
   );
