@@ -1202,7 +1202,6 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
            </TerminalCard>
            )}
            </div>
-           </div>
 
            {/* Room Debug Panel (LIVE mode) */}
            {isLive && connectionState !== 'disconnected' && (
@@ -1215,6 +1214,7 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
                lastError={connectionError}
              />
            )}
+           </div>
            </div>
            );
            }
