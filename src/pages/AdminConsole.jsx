@@ -25,6 +25,7 @@ import PageShell from "@/components/layout/PageShell";
 import AnomalyDetectionPanel from "@/components/ai/AnomalyDetectionPanel";
 import SituationalAwarenessPanel from "@/components/ai/SituationalAwarenessPanel";
 import NetConfigurationAssistant from "@/components/ai/NetConfigurationAssistant";
+import RankRoleManagement from "@/components/admin/RankRoleManagement";
 
 export default function AdminConsolePage({ initialTab = "approvals" }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -178,6 +179,12 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
             <Shield className="w-4 h-4 mr-2" /> ROLES
+          </TabsTrigger>
+          <TabsTrigger 
+            value="rank-management"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
+          >
+            <Shield className="w-4 h-4 mr-2" /> RANK MGMT
           </TabsTrigger>
           <TabsTrigger 
             value="comms-array"
@@ -440,6 +447,10 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             </div>
             <NetConfigurationAssistant eventId={null} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="rank-management">
+          <RankRoleManagement />
         </TabsContent>
       </Tabs>
     </PageShell>
