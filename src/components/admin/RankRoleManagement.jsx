@@ -222,14 +222,22 @@ export default function RankRoleManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.length === 0 && (
+                {usersLoading ? (
+                  <tr>
+                    <td colSpan="5" className="p-8 text-center">
+                      <div className="text-sm text-zinc-600">Loading users...</div>
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="p-8 text-center">
                       <Users className="w-12 h-12 text-zinc-800 mx-auto mb-3" />
-                      <div className="text-sm text-zinc-600">No users found</div>
+                      <div className="text-sm text-zinc-600">
+                        {searchQuery ? 'No users match your search' : `No users found (Total loaded: ${users.length})`}
+                      </div>
                     </td>
                   </tr>
-                )}
+                ) : null}
                 {filteredUsers.map(user => (
                   <tr key={user.id} className="border-b border-zinc-900/50 hover:bg-zinc-900/30 transition-colors">
                     <td className="p-3">
