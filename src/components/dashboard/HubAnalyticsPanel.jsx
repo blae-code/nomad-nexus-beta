@@ -196,7 +196,7 @@ export default function HubAnalyticsPanel({ userEvents, allUsers, recentLogs, vo
                     <AlertTriangle className="w-2.5 h-2.5 text-red-400" />
                     <span className="text-zinc-300">{type}</span>
                   </div>
-                  <Badge variant="outline" className="text-[6px] px-1 bg-red-950/30 text-red-300 border-red-900">{count}</Badge>
+                  <span className="text-[6px] px-1 bg-red-950/30 text-red-300 border border-red-900 rounded">{count}</span>
                 </div>
               ))
             ) : (
