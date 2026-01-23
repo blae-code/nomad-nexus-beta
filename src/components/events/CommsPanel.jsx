@@ -11,6 +11,7 @@ import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOTION } from "@/components/utils/motionConstants";
 import { SignalStrength, PermissionBadge, TerminalCard, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
+import CommsJoinModal from "@/components/comms/CommsJoinModal";
 
 export default function CommsPanel({ eventId }) {
   const [selectedNetId, setSelectedNetId] = React.useState(null);
@@ -18,6 +19,8 @@ export default function CommsPanel({ eventId }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [userSquadId, setUserSquadId] = React.useState(null);
   const [mutedNets, setMutedNets] = React.useState({});
+  const [joinModalOpen, setJoinModalOpen] = React.useState(false);
+  const [joinTarget, setJoinTarget] = React.useState(null);
 
   // Fetch current user's event-specific squad assignment
   useQuery({
@@ -192,6 +195,17 @@ export default function CommsPanel({ eventId }) {
                      />
                   )}
                 </button>
+
+                {/* Join This Net Button */}
+                <Button
+                  onClick={() => {
+                    setJoinTarget(selectedNet);
+                    setJoinModalOpen(true);
+                  }}
+                  className="w-full bg-emerald-950/30 hover:bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 text-xs h-8"
+                >
+                  JOIN COMMS NET
+                </Button>
              </div>
            ) : (
              <div className="text-center py-8 flex flex-col items-center justify-center opacity-50">
@@ -255,5 +269,13 @@ export default function CommsPanel({ eventId }) {
          </div>
         </div>
         </OpsPanel>
+
+        {/* Join Modal */}
+        <CommsJoinModal
+          net={joinTarget}
+          eventId={eventId}
+          open={joinModalOpen}
+          onOpenChange={setJoinModalOpen}
+        />
         );
-}
+        }
