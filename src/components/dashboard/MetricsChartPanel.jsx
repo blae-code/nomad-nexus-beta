@@ -365,10 +365,20 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>
-        </div>
+        </motion.div>
+        )}
+        </AnimatePresence>
 
-      {/* Summary Stats - Live Indicators */}
-       <motion.div className="grid grid-cols-3 gap-1.5">
+        {/* Summary Stats - Live Indicators */}
+        <AnimatePresence>
+        {isExpanded && (
+        <motion.div 
+         initial={{ opacity: 0, height: 0 }}
+         animate={{ opacity: 1, height: 'auto' }}
+         exit={{ opacity: 0, height: 0 }}
+         transition={{ duration: 0.2 }}
+         className="grid grid-cols-3 gap-1.5 overflow-hidden"
+        >
         <motion.div 
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
