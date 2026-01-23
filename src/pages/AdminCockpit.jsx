@@ -248,7 +248,7 @@ export default function AdminCockpitPage() {
             </TabsContent>
 
             {/* Users Tab */}
-            <TabsContent value="users" className="flex-1 overflow-hidden mt-0 p-3">
+            <TabsContent value="users" className="flex-1 overflow-hidden mt-0">
               <UserManagementTab user={user} />
             </TabsContent>
 
