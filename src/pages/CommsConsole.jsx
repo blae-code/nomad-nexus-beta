@@ -651,7 +651,7 @@ function CommsConsolePage() {
          />
 
          {/* PTT HUD */}
-         <PTTHud isTransmitting={isTransmitting && selectedNet} pttKey={pttKey} isMuted={!selectedNet} />
+         <PTTHud isTransmitting={isTransmitting && selectedNetId} pttKey={pttKey} isMuted={!selectedNetId} />
 
          {/* Net Switch Overlay */}
          <NetSwitchOverlay 
