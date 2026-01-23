@@ -17,7 +17,7 @@ export default function ContextPanel({ currentPage, user }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="h-full flex flex-col bg-zinc-950 overflow-hidden">
+    <div className="h-full flex flex-col bg-zinc-950 overflow-hidden pb-12">
       {/* SECTION: Active Voice Nets - Always Visible */}
       <div className="border-b border-zinc-800 shrink-0">
         <Tooltip>
