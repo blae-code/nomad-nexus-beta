@@ -150,7 +150,7 @@ export default function HubAnalyticsPanel({ userEvents, allUsers, recentLogs, vo
             {statusData.map((d, i) => (
               <div key={i} className="flex items-center justify-between">
                 <span>{d.name}</span>
-                <Badge variant="outline" className="text-[6px] px-1">{d.value}</Badge>
+                <span className="text-[6px] px-1 border border-zinc-700 rounded bg-zinc-900/50">{d.value}</span>
               </div>
             ))}
           </div>
