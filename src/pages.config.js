@@ -13,6 +13,7 @@ import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
 import OperationControl from './pages/OperationControl';
+import OperationWorkspace from './pages/OperationWorkspace';
 import Profile from './pages/Profile';
 import Ranks from './pages/Ranks';
 import Rescue from './pages/Rescue';
@@ -24,7 +25,6 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
-import OperationWorkspace from './pages/OperationWorkspace';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +44,7 @@ export const PAGES = {
     "NomadOpsDashboard": NomadOpsDashboard,
     "NotificationSettings": NotificationSettings,
     "OperationControl": OperationControl,
+    "OperationWorkspace": OperationWorkspace,
     "Profile": Profile,
     "Ranks": Ranks,
     "Rescue": Rescue,
@@ -55,7 +56,6 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
-    "OperationWorkspace": OperationWorkspace,
 }
 
 export const pagesConfig = {

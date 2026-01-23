@@ -193,14 +193,12 @@ export default function HubPage() {
 
             {/* Collapse Toggle Bar - Always Visible */}
               <div 
-                className="relative z-20 flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
+                onClick={() => setHeaderCollapsed(!headerCollapsed)}
+                className="relative z-20 flex items-center justify-end p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
               >
-                <div onClick={() => setHeaderCollapsed(!headerCollapsed)} className="flex-1 flex items-center gap-2">
-                  <span className="text-[7px] uppercase text-zinc-300 tracking-wider font-bold">OPS CONTEXT</span>
-                  <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                    <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
-                  </motion.div>
-                </div>
+                <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
+                </motion.div>
               </div>
 
             <motion.div 
@@ -265,7 +263,7 @@ export default function HubPage() {
                    <span className="text-[8px] uppercase text-zinc-300 tracking-wider font-bold">Training & Tutorials</span>
                  </div>
                  <motion.div animate={{ rotate: trainingCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                   <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                   <ChevronRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-blue-400 transition-colors" />
                  </motion.div>
                </div>
 
