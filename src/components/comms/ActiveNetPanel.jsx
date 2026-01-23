@@ -77,19 +77,25 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   const myId = currentUser?.id;
   const isAdmin = currentUser?.role === 'admin';
 
-  // Track active speakers from LiveKit
+  // Track active speakers from LiveKit - cleanup ensures no duplicate listeners
   React.useEffect(() => {
-    if (!room || !room.on) return;
+    if (!room) return;
 
     const handleSpeakersChanged = (speakers) => {
       const speakerIds = new Set(speakers.map(p => p.identity));
       setActiveSpeakers(speakerIds);
     };
 
+    // Add listener
     room.on(RoomEvent.ActiveSpeakersChanged, handleSpeakersChanged);
-    
+
+    // Cleanup: remove listener on unmount or room change
     return () => {
-      room.off(RoomEvent.ActiveSpeakersChanged, handleSpeakersChanged);
+      try {
+        room.off(RoomEvent.ActiveSpeakersChanged, handleSpeakersChanged);
+      } catch (err) {
+        console.warn('[COMMS] Failed to remove speaker listener:', err);
+      }
     };
   }, [room]);
 
