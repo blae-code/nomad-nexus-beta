@@ -97,9 +97,7 @@ export function useDashboardData(user) {
         treasuryBalance
       };
     },
-    enabled: !!user,
-    staleTime: 10000, // 10 seconds
-    refetchInterval: 15000 // 15 seconds
+    enabled: !!user
   });
 
   return { data, isLoading, error };
