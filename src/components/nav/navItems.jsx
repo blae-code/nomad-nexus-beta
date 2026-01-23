@@ -16,6 +16,7 @@ import {
 /**
  * Single source of truth for navigation structure.
  * Sections must be exactly: Mission Control, Operations, Comms, Intelligence, Administration
+ * NOTE: Rank hierarchies should import from utils/ranks.ts, not define locally
  */
 
 export const navItems = [
@@ -144,22 +145,12 @@ export const navItems = [
     items: [
       {
         id: 'admin',
-        label: 'Admin Console',
+        label: 'Admin Cockpit',
         icon: Shield,
-        route: '/adminconsole',
-        page: 'AdminConsole',
+        route: '/admin',
+        page: 'AdminCockpit',
         minRank: 'Pioneer',
         roles: ['admin'],
-        badgeKey: null,
-      },
-      {
-        id: 'treasury',
-        label: 'Treasury',
-        icon: Coins,
-        route: '/treasury',
-        page: 'Treasury',
-        minRank: 'Pioneer',
-        roles: [],
         badgeKey: null,
       },
     ],
@@ -196,19 +187,13 @@ export function getVisibleNavItems(user) {
 }
 
 /**
- * Rank hierarchy for permission checking
+ * DEPRECATED: Import getRankValue from utils/ranks.ts instead
+ * Kept here for backwards compatibility; will be removed in future cleanup pass
  */
-const RANK_HIERARCHY = {
-  Pioneer: 6,
-  Founder: 5,
-  Voyager: 4,
-  Scout: 3,
-  Affiliate: 2,
-  Vagrant: 1,
-};
+import { getRankValue as _getRankValue } from '@/utils/ranks';
 
 export function getRankValue(rank) {
-  return RANK_HIERARCHY[rank] || 0;
+  return _getRankValue(rank);
 }
 
 /**

@@ -69,8 +69,8 @@ export default function HeaderV3() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
 
-        // Fetch all users for total count
-        const users = await base44.entities.User.list();
+        // Fetch all users for total count (BOUNDED: limit 500 for large orgs)
+        const users = await base44.entities.User.list('-updated_date', 500);
         window.headerTotalUsers = users.length;
 
         // Initialize presence via backend function
@@ -85,8 +85,8 @@ export default function HeaderV3() {
           setUserPresence(response.data.presence);
         }
 
-        // Fetch all presences for online count
-        const presences = await base44.entities.UserPresence.list();
+        // Fetch all presences for online count (BOUNDED: limit 500)
+        const presences = await base44.entities.UserPresence.list('-updated_date', 500);
         const userIds = new Set(users.map(u => u.id));
         const validPresences = presences.filter(p => userIds.has(p.user_id));
 
@@ -152,8 +152,8 @@ export default function HeaderV3() {
   const fetchPresence = async () => {
     try {
       const [presences, users] = await Promise.all([
-        base44.entities.UserPresence.list(),
-        base44.entities.User.list()
+        base44.entities.UserPresence.list('-updated_date', 500),
+        base44.entities.User.list('-updated_date', 500)
       ]);
 
       const userIds = new Set(users.map(u => u.id));
@@ -189,26 +189,26 @@ export default function HeaderV3() {
     if (!user?.id) return;
     
     const unsubscribe = base44.entities.UserPresence.subscribe(async (event) => {
-      // Update current user's presence
-      if (event.id === userPresence?.id || event.data?.user_id === user.id) {
-        setUserPresence(event.data || event);
-      }
+       // Update current user's presence
+       if (event.id === userPresence?.id || event.data?.user_id === user.id) {
+         setUserPresence(event.data || event);
+       }
 
-      // Refresh online count on any presence change (presences only, users cached from init)
-      try {
-        const presences = await base44.entities.UserPresence.list();
-        
-        const onlineUserIds = new Set(
-          presences
-            .filter((p) => p.status !== 'offline')
-            .map(p => p.user_id)
-        );
-        
-        setOnlineCount(onlineUserIds.size);
-      } catch (e) {
-        console.error('Failed to refresh online count:', e);
-      }
-    });
+       // Refresh online count on any presence change (presences only, users cached from init)
+       try {
+         const presences = await base44.entities.UserPresence.list('-updated_date', 500);
+
+         const onlineUserIds = new Set(
+           presences
+             .filter((p) => p.status !== 'offline')
+             .map(p => p.user_id)
+         );
+
+         setOnlineCount(onlineUserIds.size);
+       } catch (e) {
+         console.error('Failed to refresh online count:', e);
+       }
+     });
 
     return () => unsubscribe?.();
   }, [user?.id]);
