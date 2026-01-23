@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
                 code: "COMMAND",
                 label: "Mission Command",
                 type: "command",
+                discipline: "focused",
                 priority: 1,
                 min_rank_to_tx: "Voyager",
                 min_rank_to_rx: "Scout",
@@ -62,6 +63,7 @@ Deno.serve(async (req) => {
                 code: "GENERAL",
                 label: "General Chatter",
                 type: "general",
+                discipline: "casual",
                 priority: 3,
                 status: "active",
                 livekit_room_name: genRoomName("GENERAL")
