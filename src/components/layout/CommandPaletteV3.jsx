@@ -603,12 +603,27 @@ export default function CommandPaletteV3() {
 
         <div
           className={cn(
-            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-hidden focus-within:border-[#ea580c] focus-within:shadow-[0_0_25px_rgba(234,88,12,0.4)]',
+            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-visible focus-within:border-[#ea580c] focus-within:shadow-[0_0_25px_rgba(234,88,12,0.4)]',
             isOpen 
               ? 'border-[#ea580c] shadow-[0_0_25px_rgba(234,88,12,0.4)]' 
               : 'border-zinc-800 hover:border-[#ea580c]/50 group-hover:shadow-[0_0_15px_rgba(234,88,12,0.2)]'
           )}
         >
+          {/* Pulsing chevrons */}
+          <motion.div
+            className="absolute -left-6 top-1/2 -translate-y-1/2"
+            animate={{ x: [0, -4, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-[#ea580c]/60" />
+          </motion.div>
+          <motion.div
+            className="absolute -right-6 top-1/2 -translate-y-1/2"
+            animate={{ x: [0, 4, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-[#ea580c]/60" />
+          </motion.div>
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
 
           <input
