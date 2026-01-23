@@ -611,23 +611,23 @@ export default function CommandPaletteV3() {
         >
           {/* Pulsing chevrons - left side */}
           <motion.div
-            className="absolute right-full top-0 bottom-0 mr-2 flex items-center gap-0.5"
+            className="absolute right-full top-1/2 -translate-y-1/3 mr-2 flex gap-0.5"
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/80" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/60" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/40" />
+            <ChevronLeft className="w-4 h-4 text-[#ea580c]/80 -translate-y-0.5" />
+            <ChevronLeft className="w-4 h-4 text-[#ea580c]/60 -translate-y-0.5" />
+            <ChevronLeft className="w-4 h-4 text-[#ea580c]/40 -translate-y-0.5" />
           </motion.div>
           {/* Pulsing chevrons - right side */}
           <motion.div
-            className="absolute left-full top-0 bottom-0 ml-2 flex items-center gap-0.5"
+            className="absolute left-full top-1/2 -translate-y-1/3 ml-2 flex gap-0.5"
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/40" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/60" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/80" />
+            <ChevronRight className="w-4 h-4 text-[#ea580c]/40 -translate-y-0.5" />
+            <ChevronRight className="w-4 h-4 text-[#ea580c]/60 -translate-y-0.5" />
+            <ChevronRight className="w-4 h-4 text-[#ea580c]/80 -translate-y-0.5" />
           </motion.div>
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
 
@@ -751,7 +751,7 @@ export default function CommandPaletteV3() {
 
               {/* Footer */}
                <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[9px] text-zinc-600 font-mono flex items-center justify-between shrink-0">
-                <span>↑↓ nav • ↵ select • esc close</span>
+                <span>↑↓ nav • Enter select • Esc close</span>
                 <span>READY</span>
               </div>
             </div>
