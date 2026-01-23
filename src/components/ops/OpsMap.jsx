@@ -119,12 +119,20 @@ export default function OpsMap({ eventId, readOnly = false }) {
     }
   });
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates for all layers
   useEffect(() => {
     if (!eventId) return;
-    const unsubMarkers = base44.entities.MapMarker.subscribe(() => refetchMarkers());
-    return () => unsubMarkers?.();
-  }, [eventId, refetchMarkers]);
+    
+    const unsubs = [
+      base44.entities.MapMarker.subscribe(() => refetchMarkers()),
+      base44.entities.PlayerStatus.subscribe(() => queryClient.invalidateQueries({ queryKey: ['player-status', eventId] })),
+      base44.entities.Incident.subscribe(() => queryClient.invalidateQueries({ queryKey: ['incidents', eventId] })),
+      base44.entities.TacticalCommand.subscribe(() => queryClient.invalidateQueries({ queryKey: ['tactical-commands', eventId] })),
+      base44.entities.FleetAsset.subscribe(() => queryClient.invalidateQueries({ queryKey: ['fleet-assets', eventId] }))
+    ];
+    
+    return () => unsubs.forEach(u => u?.());
+  }, [eventId, refetchMarkers, queryClient]);
 
   // Handle map click to place marker
   const handleMapClick = (latlng) => {
