@@ -456,6 +456,10 @@ export default function CommandPaletteV3() {
         console.log('Distress sent');
         break;
       
+      case 'openAdminCockpit':
+        navigate(createPageUrl('AdminCockpit'));
+        break;
+
       case 'openDiagnostics':
         setDiagOpen(true);
         setIsOpen(false);
