@@ -240,8 +240,16 @@ function CommsConsolePage() {
     );
   }
 
+  // Handle DM selection
+  const handleSelectDM = (thread) => {
+    setSelectedDMId(thread.id);
+    setConsoleMode('dms');
+    setSelectedChannel(thread);
+    setShowDMPanel(false);
+  };
+
   // Build header actions based on mode
-  const headerActions = consoleMode === 'ops' ? (
+  const headerActions = (consoleMode === 'ops' || consoleMode === 'dms') ? (
     <div className="flex items-center gap-3">
       <Button
         variant="ghost"
