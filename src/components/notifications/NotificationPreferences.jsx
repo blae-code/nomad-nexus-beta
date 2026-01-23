@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Volume2, Radio } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Bell, Volume2, Radio, Mail, Smartphone, AlertCircle, Calendar, Users, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function NotificationPreferences({ user }) {
   const queryClient = useQueryClient();
@@ -53,6 +55,24 @@ export default function NotificationPreferences({ user }) {
     createOrUpdateMutation.mutate(prefData);
   };
 
+  const handleNotificationTypeToggle = (type) => {
+    const currentTypes = globalPref?.notification_types || [];
+    const newTypes = currentTypes.includes(type)
+      ? currentTypes.filter(t => t !== type)
+      : [...currentTypes, type];
+    
+    handleGlobalPreferenceChange('notification_types', newTypes);
+  };
+
+  const handleDeliveryMethodToggle = (method) => {
+    const currentMethods = globalPref?.delivery_methods || ['in_app', 'push', 'sound'];
+    const newMethods = currentMethods.includes(method)
+      ? currentMethods.filter(m => m !== method)
+      : [...currentMethods, method];
+    
+    handleGlobalPreferenceChange('delivery_methods', newMethods);
+  };
+
   const handleChannelMute = (channelId, isMuted) => {
     const existingPref = channelPrefs.find(p => p.channel_id === channelId);
     const prefData = existingPref
@@ -78,72 +98,209 @@ export default function NotificationPreferences({ user }) {
     setExpandedChannels(newExpanded);
   };
 
+  const eventNotificationTypes = [
+    { id: 'event_assignment', label: 'Event Assignments', description: 'When you are assigned to an operation', icon: Calendar },
+    { id: 'event_update', label: 'Event Updates', description: 'Changes to operations you are involved in', icon: Calendar },
+    { id: 'event_phase_change', label: 'Phase Changes', description: 'When an operation moves to a new phase', icon: Calendar },
+    { id: 'high_priority_alert', label: 'High Priority Alerts', description: 'Critical system-wide alerts', icon: AlertCircle },
+    { id: 'incident_alert', label: 'Incident Alerts', description: 'New incidents and emergencies', icon: Shield },
+    { id: 'rescue_request', label: 'Rescue Requests', description: 'Distress calls and rescue operations', icon: Shield },
+    { id: 'squad_invitation', label: 'Squad Invitations', description: 'Invitations to join squads', icon: Users },
+    { id: 'comms_net_activity', label: 'Comms Net Activity', description: 'Voice net changes and activity', icon: Radio },
+  ];
+
+  const communicationTypes = [
+    { id: 'mention', label: 'Mentions', description: 'When someone mentions you', icon: Bell },
+    { id: 'direct_message', label: 'Direct Messages', description: 'Private messages sent to you', icon: Mail },
+    { id: 'channel_activity', label: 'Channel Activity', description: 'New messages in channels', icon: Radio },
+  ];
+
+  const systemTypes = [
+    { id: 'moderation', label: 'Moderation Actions', description: 'Moderation alerts and warnings', icon: Shield },
+    { id: 'system', label: 'System Updates', description: 'System announcements and updates', icon: Bell },
+  ];
+
+  const deliveryMethods = [
+    { id: 'in_app', label: 'In-App', description: 'Show notifications within the application', icon: Bell },
+    { id: 'push', label: 'Push', description: 'Browser push notifications', icon: Smartphone },
+    { id: 'email', label: 'Email', description: 'Send notifications to your email', icon: Mail },
+    { id: 'sound', label: 'Sound', description: 'Play alert sounds', icon: Volume2 },
+  ];
+
+  const activeTypes = globalPref?.notification_types || [];
+  const activeMethods = globalPref?.delivery_methods || ['in_app', 'push', 'sound'];
+
   return (
-    <div className="space-y-6">
-      {/* Global Preferences */}
+    <div className="space-y-4">
+      {/* Delivery Methods */}
       <Card className="bg-zinc-950 border-zinc-800">
         <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
-          <CardTitle className="text-lg font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[#ea580c]" />
-            Global Notification Settings
+          <CardTitle className="text-base font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-[#ea580c]" />
+            Delivery Methods
           </CardTitle>
           <CardDescription className="text-xs font-mono text-zinc-600">
-            Default notification behavior across all channels
+            Choose how you want to receive notifications
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          {/* Push Notifications */}
-          <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded">
-            <div className="flex items-center gap-3">
-              <Radio className="w-4 h-4 text-[#ea580c]" />
-              <div>
-                <div className="text-sm font-bold text-white">Push Notifications</div>
-                <div className="text-xs text-zinc-500">Receive push alerts for important events</div>
+        <CardContent className="p-4 space-y-2">
+          {deliveryMethods.map((method) => {
+            const MethodIcon = method.icon;
+            const isActive = activeMethods.includes(method.id);
+            
+            return (
+              <div
+                key={method.id}
+                onClick={() => handleDeliveryMethodToggle(method.id)}
+                className={cn(
+                  'flex items-center justify-between p-3 border cursor-pointer transition-all',
+                  isActive 
+                    ? 'bg-[#ea580c]/10 border-[#ea580c]/50 hover:border-[#ea580c]' 
+                    : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <MethodIcon className={cn('w-4 h-4', isActive ? 'text-[#ea580c]' : 'text-zinc-500')} />
+                  <div>
+                    <div className={cn('text-sm font-bold', isActive ? 'text-white' : 'text-zinc-400')}>
+                      {method.label}
+                    </div>
+                    <div className="text-xs text-zinc-500">{method.description}</div>
+                  </div>
+                </div>
+                <Checkbox checked={isActive} />
               </div>
-            </div>
-            <Switch
-              checked={globalPref?.push_enabled ?? true}
-              onCheckedChange={(value) =>
-                handleGlobalPreferenceChange('push_enabled', value)
-              }
-            />
-          </div>
+            );
+          })}
+        </CardContent>
+      </Card>
 
-          {/* Sound Notifications */}
-          <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded">
-            <div className="flex items-center gap-3">
-              <Volume2 className="w-4 h-4 text-[#ea580c]" />
-              <div>
-                <div className="text-sm font-bold text-white">Sound Alerts</div>
-                <div className="text-xs text-zinc-500">Play sound for incoming notifications</div>
+      {/* Event & Operations Notifications */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
+          <CardTitle className="text-base font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#ea580c]" />
+            Event & Operations
+          </CardTitle>
+          <CardDescription className="text-xs font-mono text-zinc-600">
+            Notifications related to operations and events
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 space-y-2">
+          {eventNotificationTypes.map((type) => {
+            const TypeIcon = type.icon;
+            const isActive = activeTypes.length === 0 || activeTypes.includes(type.id);
+            
+            return (
+              <div
+                key={type.id}
+                onClick={() => handleNotificationTypeToggle(type.id)}
+                className={cn(
+                  'flex items-center justify-between p-3 border cursor-pointer transition-all',
+                  isActive 
+                    ? 'bg-emerald-950/20 border-emerald-800/50 hover:border-emerald-700' 
+                    : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <TypeIcon className={cn('w-4 h-4', isActive ? 'text-emerald-400' : 'text-zinc-500')} />
+                  <div>
+                    <div className={cn('text-sm font-bold', isActive ? 'text-white' : 'text-zinc-400')}>
+                      {type.label}
+                    </div>
+                    <div className="text-xs text-zinc-500">{type.description}</div>
+                  </div>
+                </div>
+                <Checkbox checked={isActive} />
               </div>
-            </div>
-            <Switch
-              checked={globalPref?.sound_enabled ?? true}
-              onCheckedChange={(value) =>
-                handleGlobalPreferenceChange('sound_enabled', value)
-              }
-            />
-          </div>
+            );
+          })}
+        </CardContent>
+      </Card>
 
-          {/* Notification Types */}
-          <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded">
-            <div className="text-sm font-bold text-white mb-2">Notification Types</div>
-            <div className="flex flex-wrap gap-2">
-              {['mention', 'direct_message', 'channel_activity', 'moderation', 'system'].map(
-                (type) => (
-                  <Badge
-                    key={type}
-                    variant="outline"
-                    className="border-[#ea580c] text-[#ea580c] text-[11px] capitalize cursor-pointer hover:bg-[#ea580c]/10"
-                  >
-                    ✓ {type.replace('_', ' ')}
-                  </Badge>
-                )
-              )}
-            </div>
-            <p className="text-[10px] text-zinc-600 mt-2">All notification types enabled</p>
-          </div>
+      {/* Communication Notifications */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
+          <CardTitle className="text-base font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
+            <Mail className="w-4 h-4 text-[#ea580c]" />
+            Communication
+          </CardTitle>
+          <CardDescription className="text-xs font-mono text-zinc-600">
+            Messages and mentions
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 space-y-2">
+          {communicationTypes.map((type) => {
+            const TypeIcon = type.icon;
+            const isActive = activeTypes.length === 0 || activeTypes.includes(type.id);
+            
+            return (
+              <div
+                key={type.id}
+                onClick={() => handleNotificationTypeToggle(type.id)}
+                className={cn(
+                  'flex items-center justify-between p-3 border cursor-pointer transition-all',
+                  isActive 
+                    ? 'bg-blue-950/20 border-blue-800/50 hover:border-blue-700' 
+                    : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <TypeIcon className={cn('w-4 h-4', isActive ? 'text-blue-400' : 'text-zinc-500')} />
+                  <div>
+                    <div className={cn('text-sm font-bold', isActive ? 'text-white' : 'text-zinc-400')}>
+                      {type.label}
+                    </div>
+                    <div className="text-xs text-zinc-500">{type.description}</div>
+                  </div>
+                </div>
+                <Checkbox checked={isActive} />
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* System Notifications */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader className="border-b border-zinc-900 bg-zinc-900/20">
+          <CardTitle className="text-base font-bold text-zinc-200 uppercase tracking-wide flex items-center gap-2">
+            <Shield className="w-4 h-4 text-[#ea580c]" />
+            System & Moderation
+          </CardTitle>
+          <CardDescription className="text-xs font-mono text-zinc-600">
+            Administrative notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 space-y-2">
+          {systemTypes.map((type) => {
+            const TypeIcon = type.icon;
+            const isActive = activeTypes.length === 0 || activeTypes.includes(type.id);
+            
+            return (
+              <div
+                key={type.id}
+                onClick={() => handleNotificationTypeToggle(type.id)}
+                className={cn(
+                  'flex items-center justify-between p-3 border cursor-pointer transition-all',
+                  isActive 
+                    ? 'bg-purple-950/20 border-purple-800/50 hover:border-purple-700' 
+                    : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <TypeIcon className={cn('w-4 h-4', isActive ? 'text-purple-400' : 'text-zinc-500')} />
+                  <div>
+                    <div className={cn('text-sm font-bold', isActive ? 'text-white' : 'text-zinc-400')}>
+                      {type.label}
+                    </div>
+                    <div className="text-xs text-zinc-500">{type.description}</div>
+                  </div>
+                </div>
+                <Checkbox checked={isActive} />
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
