@@ -23,6 +23,8 @@ import { usePresence } from "@/components/comms/usePresence";
 import NetChannelChat from "@/components/comms/NetChannelChat";
 import VoiceRecordingControls from "./VoiceRecordingControls";
 import { Room, RoomEvent } from 'livekit-client';
+import { normalizePlayerStatusRecords, normalizePlayerStatus } from '@/components/contracts/normalization';
+import { PLAYER_STATUS } from '@/components/contracts/dataContract';
 
 function CommsLog({ eventId }) {
   const queryClient = useQueryClient();
@@ -115,7 +117,7 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     };
   }, [room]);
 
-  const { data: statuses } = useQuery({
+  const { data: rawStatuses = [] } = useQuery({
     queryKey: ['net-roster-statuses', eventId],
     queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }),
     enabled: !!eventId,
@@ -124,6 +126,11 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     gcTime: 15000,
     initialData: []
   });
+
+  // Normalize all statuses to canonical form
+  const statuses = React.useMemo(() => {
+    return normalizePlayerStatusRecords(rawStatuses);
+  }, [rawStatuses]);
 
   // Real-time subscription for player status updates
   React.useEffect(() => {
@@ -213,18 +220,19 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
 
     return participantUsers.map(u => {
        const status = statuses.find(s => s.user_id === u.id);
+       const normalizedStatus = normalizePlayerStatus(status?.status || PLAYER_STATUS.READY);
        const isSpeaking = activeSpeakers.has(u.id);
        const voiceMute = voiceMutes.find(m => m.user_id === u.id && m.is_active);
        return { 
           ...u, 
-          status: status?.status || 'READY',
+          status: normalizedStatus,
           role: status?.role || 'OTHER',
           isSpeaking,
           isAdminMuted: !!voiceMute,
           muteId: voiceMute?.id
        };
     }).sort((a, b) => {
-       const priority = { DISTRESS: 0, DOWN: 1, ENGAGED: 2, READY: 3, OFFLINE: 4 };
+       const priority = { [PLAYER_STATUS.DISTRESS]: 0, [PLAYER_STATUS.DOWN]: 1, [PLAYER_STATUS.ENGAGED]: 2, [PLAYER_STATUS.READY]: 3, [PLAYER_STATUS.OFFLINE]: 4 };
        return (priority[a.status] || 99) - (priority[b.status] || 99);
     });
   }, [room, participantUsers, statuses, activeSpeakers, voiceMutes]);
@@ -265,7 +273,7 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
              return (
              <div key={participant.id} className={cn(
                "bg-zinc-900/50 p-2 rounded border transition-all",
-               (participant.status === 'DOWN' || participant.status === 'DISTRESS') ? "border-red-900/50 bg-red-950/10" : 
+               (participant.status === PLAYER_STATUS.DOWN || participant.status === PLAYER_STATUS.DISTRESS) ? "border-red-900/50 bg-red-950/10" : 
                participant.isAdminMuted ? "border-red-800/50 bg-red-950/20" : 
                "border-zinc-800/50"
              )}>
