@@ -90,14 +90,7 @@ export default function MessagingFooter({ user }) {
           <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-200 tracking-wider">MESSAGING</span>
         </button>
 
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => setIsMinimized(true)}
-            className="p-0.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition-colors"
-          >
-            <X className="w-2.5 h-2.5" />
-          </button>
-        </div>
+
       </div>
 
       <AnimatePresence>
