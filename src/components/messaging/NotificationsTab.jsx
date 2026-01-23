@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, Bell, AlertCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 export default function NotificationsTab({ user }) {
   const queryClient = useQueryClient();
   const [, setRefreshTime] = useState(0);
+  const { getDisplayName } = useUserDirectory();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['message-notifications', user?.id],
@@ -69,7 +71,7 @@ export default function NotificationsTab({ user }) {
                   <MessageCircle className="w-3.5 h-3.5 text-[#ea580c] flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className="text-zinc-200 truncate font-bold text-[10px]">
-                      {notif.created_by || 'Unknown'}
+                      {getDisplayName(notif.created_by) || 'Unknown'}
                     </div>
                     <div className="text-zinc-500 mt-0.5 line-clamp-2 text-[9px]">
                       {notif.content}
