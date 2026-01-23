@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { observability } from '@/functions/observability';
 import { cn } from '@/lib/utils';
 
 /**
@@ -15,9 +14,10 @@ export default function SystemHealthIndicator() {
 
   useEffect(() => {
     const updateHealth = () => {
-      if (observability?.getHealthStatus) {
-        setHealthStatus(observability.getHealthStatus());
-        const recentErrors = observability.getRecentErrors?.(100) || [];
+      const obs = window.__observability;
+      if (obs?.getHealthStatus) {
+        setHealthStatus(obs.getHealthStatus());
+        const recentErrors = obs.getRecentErrors?.(100) || [];
         setErrorCount(recentErrors.length);
       }
     };
