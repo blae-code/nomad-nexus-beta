@@ -2,10 +2,18 @@ import React from "react";
 import { Shield, Copy, Mail, Zap, Lock, Activity, Badge as BadgeIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const RANKS = ["Pioneer", "Founder", "Voyager", "Scout", "Affiliate", "Vagrant"];
 
 export default function UserProfileCard({ 
   user, 
@@ -103,12 +111,18 @@ export default function UserProfileCard({
 
               {editingRank ? (
                 <div className="flex gap-2">
-                  <Input
-                    value={newRank}
-                    onChange={(e) => setNewRank(e.target.value)}
-                    className="bg-zinc-900 border-zinc-700 text-xs h-7"
-                    placeholder="e.g. Pioneer, Voyager"
-                  />
+                  <Select value={newRank} onValueChange={setNewRank}>
+                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-xs h-7">
+                      <SelectValue placeholder="Select rank" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-700">
+                      {RANKS.map((rank) => (
+                        <SelectItem key={rank} value={rank}>
+                          {rank}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button
                     size="sm"
                     onClick={handleRankSave}
