@@ -51,9 +51,9 @@ export default function AdminCockpitPage() {
   // Calculate readiness score based on last runs
   useEffect(() => {
     const stepStatus = {};
-    READINESS_STEPS.forEach(step => {
-      const lastRun = auditLogs.find(log => log.step_name === step.id && log.status === 'success');
-      stepStatus[step.id] = lastRun ? 20 : 0;
+    ['readiness', 'comms', 'data'].forEach(sectionId => {
+      const lastRun = auditLogs.find(log => log.step_name === sectionId && log.status === 'success');
+      stepStatus[sectionId] = lastRun ? 33 : 0;
     });
     const score = Object.values(stepStatus).reduce((a, b) => a + b, 0);
     setReadinessScore(Math.min(score, 100));
