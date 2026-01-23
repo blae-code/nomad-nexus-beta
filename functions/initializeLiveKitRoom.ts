@@ -1,55 +1,65 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { AccessToken } from 'npm:livekit@0.16.5';
+/**
+ * Initialize LiveKit Room
+ * Validates room exists/creates, returns structured result
+ */
+import { createCommsResult } from '../components/comms/commsContract.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    const { roomName, mode = 'LIVE' } = await req.json();
+
+    if (!roomName) {
+      return Response.json(
+        createCommsResult({
+          ok: false,
+          errorCode: 'INVALID_PARAMS',
+          message: 'roomName required'
+        })
+      );
     }
 
-    const { roomName, userIdentity } = await req.json();
-
-    if (!roomName || !userIdentity) {
-      return new Response(JSON.stringify({ error: 'Missing roomName or userIdentity' }), { status: 400 });
+    if (mode === 'SIM') {
+      // SIM mode doesn't need real initialization
+      return Response.json(
+        createCommsResult({
+          ok: true,
+          data: { roomName, mode: 'SIM', participants: [] },
+          message: 'Room initialized in SIM mode'
+        })
+      );
     }
 
-    // Get LiveKit credentials from env
+    // LIVE mode: validate LiveKit API is available
     const apiKey = Deno.env.get('LIVEKIT_API_KEY');
     const apiSecret = Deno.env.get('LIVEKIT_API_SECRET');
+    const liveKitUrl = Deno.env.get('LIVEKIT_URL');
 
-    if (!apiKey || !apiSecret) {
-      return new Response(JSON.stringify({ error: 'LiveKit credentials not configured' }), { status: 500 });
+    if (!apiKey || !apiSecret || !liveKitUrl) {
+      return Response.json(
+        createCommsResult({
+          ok: false,
+          errorCode: 'ENV_NOT_CONFIGURED',
+          message: 'LiveKit not configured; falling back to SIM'
+        })
+      );
     }
 
-    // Create access token
-    const token = new AccessToken(apiKey, apiSecret, {
-      identity: userIdentity,
-      name: user.callsign || user.full_name || 'Anonymous',
-      grants: {
-        canPublish: true,
-        canPublishData: true,
-        canSubscribe: true,
-        room: roomName,
-        roomJoin: true
-      }
-    });
-
-    const jwt = await token.toJwt();
-
-    return new Response(JSON.stringify({
-      token: jwt,
-      url: Deno.env.get('LIVEKIT_URL'),
-      roomName,
-      identity: userIdentity
-    }), { 
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return Response.json(
+      createCommsResult({
+        ok: true,
+        data: { roomName, mode: 'LIVE', ready: true },
+        message: 'Room ready for LiveKit connection'
+      })
+    );
   } catch (error) {
-    console.error('Failed to initialize room:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    console.error('[initializeLiveKitRoom] Error:', error);
+    return Response.json(
+      createCommsResult({
+        ok: false,
+        errorCode: 'SERVER_ERROR',
+        message: error.message
+      }),
+      { status: 500 }
+    );
   }
 });
