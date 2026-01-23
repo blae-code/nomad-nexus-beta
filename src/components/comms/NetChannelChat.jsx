@@ -33,17 +33,18 @@ export default function NetChannelChat({ channel, netCode, user }) {
     gcTime: 20000
   });
 
-  // Subscribe to real-time message updates
+  // Subscribe to real-time message updates via WebSocket
   useEffect(() => {
     if (!channel?.id) return;
 
     const unsubscribe = base44.entities.Message.subscribe((event) => {
+      // Only invalidate if message belongs to current channel
       if (event.data?.channel_id === channel.id) {
         queryClient.invalidateQueries({ queryKey: ['net-channel-messages', channel.id] });
       }
     });
 
-    return unsubscribe;
+    return () => unsubscribe?.();
   }, [channel?.id, queryClient]);
 
   // Fetch user details for messages
