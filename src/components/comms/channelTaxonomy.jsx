@@ -1,6 +1,7 @@
 /**
  * Canonical Comms Dock Channel Taxonomy
  * Enforces structure across ORG, ROLE, SQUAD, and OPERATION scopes
+ * Authority: commsPolicyConfig.js is the source of truth for permissions
  */
 
 export const CANONICAL_CHANNELS = {
@@ -147,33 +148,22 @@ export const CANONICAL_CHANNELS = {
   }
 };
 
-// Permission validation
+// Permission validation (now sourced from commsPolicyConfig)
+import { checkPermission, checkModeration, getChannelPolicy } from './commsPolicyConfig';
+
 export const canPost = (user, channel) => {
   if (channel.is_locked) return false;
+  return checkPermission(user, channel, 'post');
+};
 
-  const policyMap = {
-    FOUNDERS_ONLY: user.rank === 'Founder',
-    PIONEERS_PLUS: ['Founder', 'Voyager', 'Pioneer'].includes(user.rank),
-    SCOUTS_PLUS: ['Founder', 'Voyager', 'Pioneer', 'Scout'].includes(user.rank),
-    ROLE_MEMBERS: channel.membership?.includes(user.id),
-    MEMBERS: channel.membership?.includes(user.id),
-    ALL: true
-  };
-
-  return policyMap[channel.post_policy] || false;
+export const canReply = (user, channel, isThreadReply = false) => {
+  if (channel.is_locked) return false;
+  // If thread reply, policy may allow even if top-level reply is disabled
+  return checkPermission(user, channel, 'reply');
 };
 
 export const canModerate = (user, action = 'pin') => {
-  const actionMap = {
-    pin: ['Voyager', 'Founder'],
-    lock: ['Voyager', 'Founder'],
-    hide: ['Voyager', 'Founder'],
-    delete: ['Founder'],
-    suspend: ['Founder'],
-    edit_policy: ['Founder']
-  };
-
-  return actionMap[action]?.includes(user.rank) || false;
+  return checkModeration(user, action);
 };
 
 export const getChannelIcon = (type) => {
