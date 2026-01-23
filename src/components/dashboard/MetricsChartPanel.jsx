@@ -90,14 +90,27 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       .slice(0, 3);
   }, [recentLogs, userEvents, treasuryBalance]);
 
-  // Fund allocation
+  // Fund allocation (as continuous line data over days)
   const fundAllocationData = useMemo(() => {
-    return [
-      { category: 'Operations', amount: Math.round(treasuryBalance * 0.4) },
-      { category: 'Fleet', amount: Math.round(treasuryBalance * 0.3) },
-      { category: 'Reserves', amount: Math.round(treasuryBalance * 0.2) },
-      { category: 'Active', amount: Math.round(treasuryBalance * 0.1) }
-    ];
+    const days = 7;
+    const data = [];
+    const baseInflow = Math.round(treasuryBalance * 0.15);
+    const baseOutflow = Math.round(treasuryBalance * 0.08);
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - 1 - i));
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      // Simulate trending inflow/outflow
+      const variance = Math.sin((i / days) * Math.PI * 2) * baseInflow * 0.3;
+      data.push({
+        date: dateStr,
+        inflow: Math.max(0, baseInflow + variance),
+        outflow: baseOutflow + (Math.random() - 0.5) * baseOutflow * 0.2
+      });
+    }
+    return data;
   }, [treasuryBalance]);
 
   // Fund views
@@ -132,29 +145,37 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     return data;
   }, [allUsers]);
 
-  // Peak hours distribution
+  // Peak hours distribution (as continuous line data)
   const peakHoursData = useMemo(() => {
     const hours = {};
     for (let hour = 0; hour < 24; hour++) {
       hours[hour] = Math.floor(Math.random() * 20 + 10);
     }
-    return [
-      { range: '00-08', value: Object.values(hours).slice(0, 8).reduce((a, b) => a + b, 0) / 8 },
-      { range: '08-16', value: Object.values(hours).slice(8, 16).reduce((a, b) => a + b, 0) / 8 },
-      { range: '16-24', value: Object.values(hours).slice(16, 24).reduce((a, b) => a + b, 0) / 8 }
-    ];
+    return Array.from({ length: 24 }, (_, i) => ({
+      hour: i.toString().padStart(2, '0') + ':00',
+      value: hours[i]
+    }));
   }, []);
 
-  // Fleet status breakdown
+  // Fleet status trend (as continuous line data over days)
   const fleetStatusData = useMemo(() => {
-    const statuses = {};
-    fleetAssets.forEach(asset => {
-      statuses[asset.status] = (statuses[asset.status] || 0) + 1;
-    });
-    return Object.entries(statuses).map(([status, count]) => ({
-      status: status.charAt(0).toUpperCase() + status.slice(1),
-      count
-    }));
+    const days = 7;
+    const data = [];
+    const baseFleet = fleetAssets.length || 10;
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - 1 - i));
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      // Simulate fleet growth over time
+      const growth = Math.floor((i / days) * baseFleet * 0.2);
+      data.push({
+        date: dateStr,
+        total: baseFleet + growth
+      });
+    }
+    return data;
   }, [fleetAssets]);
 
   // Redscar Flotilla Growth (ships added over last 7 days)
@@ -275,18 +296,18 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                  </ResponsiveContainer>
               </motion.div>
             ) : (
-              <motion.div key="activity-peak" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                <ResponsiveContainer width="100%" height={120}>
-                  <BarChart data={peakHoursData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                    <XAxis dataKey="range" stroke="#71717a" style={{ fontSize: '10px' }} />
-                    <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
-                    <Bar dataKey="value" fill="#06b6d4" name="Peak Avg" radius={0} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </motion.div>
-            )}
+               <motion.div key="activity-peak" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                 <ResponsiveContainer width="100%" height={120}>
+                   <LineChart data={peakHoursData}>
+                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                     <XAxis dataKey="hour" stroke="#71717a" style={{ fontSize: '10px' }} tick={{ interval: 3 }} />
+                     <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                     <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                     <Line type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={2} dot={false} name="Peak Avg" isAnimationActive={true} animationDuration={600} />
+                   </LineChart>
+                 </ResponsiveContainer>
+               </motion.div>
+             )}
           </AnimatePresence>
         </div>
         </motion.div>
@@ -328,27 +349,33 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           </div>
           <div className="relative z-10">
             <ResponsiveContainer width="100%" height={120}>
-              <BarChart data={fundViews[fundView]}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis 
-                dataKey={fundView === 0 ? 'label' : 'name'} 
-                stroke="#71717a" 
-                style={{ fontSize: fundView === 0 ? '11px' : '9px' }}
-                tick={{ interval: 0 }}
-              />
-              <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                labelStyle={{ color: '#e4e4e7' }}
-                formatter={(value) => `${value.toLocaleString()} aUEC`}
-              />
-              <Bar
-                dataKey="amount"
-                fill="#a855f7"
-                name="aUEC"
-                radius={0}
-              />
-            </BarChart>
+              {fundView === 0 ? (
+                <LineChart data={fundAllocationData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                  <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                  <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                    labelStyle={{ color: '#e4e4e7' }}
+                    formatter={(value) => `${value.toLocaleString()} aUEC`}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  <Line type="monotone" dataKey="inflow" stroke="#a855f7" strokeWidth={2} dot={false} name="Inflow" isAnimationActive={true} animationDuration={600} />
+                  <Line type="monotone" dataKey="outflow" stroke="#ec4899" strokeWidth={2} dot={false} name="Outflow" isAnimationActive={true} animationDuration={600} />
+                </LineChart>
+              ) : (
+                <LineChart data={treasuryCashFlowData.map((d, i) => ({ ...d, x: i }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                  <XAxis dataKey="label" stroke="#71717a" style={{ fontSize: '11px' }} />
+                  <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
+                    labelStyle={{ color: '#e4e4e7' }}
+                    formatter={(value) => `${value.toLocaleString()} aUEC`}
+                  />
+                  <Line type="linear" dataKey="amount" stroke="#a855f7" strokeWidth={2} dot={{ fill: '#a855f7', r: 3 }} name="aUEC" isAnimationActive={true} animationDuration={600} />
+                </LineChart>
+              )}
             </ResponsiveContainer>
           </div>
         </motion.div>
@@ -390,14 +417,14 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               {recruitmentView === 0 ? (
                 <motion.div key="recruit-daily" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                   <ResponsiveContainer width="100%" height={120}>
-                    <BarChart data={recruitmentData}>
+                    <LineChart data={recruitmentData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                       <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
                       <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Bar dataKey="recruits" fill="#22c55e" name="Daily New" radius={0} />
-                    </BarChart>
+                      <Line type="monotone" dataKey="recruits" stroke="#22c55e" strokeWidth={2} dot={false} name="Daily New" isAnimationActive={true} animationDuration={600} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </motion.div>
               ) : (
@@ -409,7 +436,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
                       <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Line type="monotone" dataKey="cumulative" stroke="#22c55e" strokeWidth={2} dot={false} name="Total Recruits" />
+                      <Line type="monotone" dataKey="cumulative" stroke="#22c55e" strokeWidth={2} dot={false} name="Total Recruits" isAnimationActive={true} animationDuration={600} />
                     </LineChart>
                   </ResponsiveContainer>
                 </motion.div>
@@ -455,26 +482,27 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               {flotillaView === 0 ? (
                 <motion.div key="flotilla-trend" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                   <ResponsiveContainer width="100%" height={120}>
-                    <AreaChart data={flotillaGrowthData}>
+                    <LineChart data={flotillaGrowthData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                       <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
                       <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Area type="monotone" dataKey="ships" stroke="#ea580c" fill="#ea580c" fillOpacity={0.7} name="Total Assets" />
-                    </AreaChart>
+                      <Line type="monotone" dataKey="ships" stroke="#ea580c" strokeWidth={2} dot={false} name="Total Assets" isAnimationActive={true} animationDuration={600} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </motion.div>
               ) : (
                 <motion.div key="flotilla-status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                   <ResponsiveContainer width="100%" height={120}>
-                    <BarChart data={fleetStatusData}>
+                    <LineChart data={fleetStatusData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                      <XAxis dataKey="status" stroke="#71717a" style={{ fontSize: '10px' }} />
+                      <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
                       <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
-                      <Bar dataKey="count" fill="#ea580c" name="By Status" radius={0} />
-                    </BarChart>
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Line type="monotone" dataKey="total" stroke="#ea580c" strokeWidth={2} dot={false} name="Fleet Total" isAnimationActive={true} animationDuration={600} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </motion.div>
               )}
