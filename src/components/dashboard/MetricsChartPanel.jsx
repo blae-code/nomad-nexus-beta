@@ -10,13 +10,16 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   const [activeChart, setActiveChart] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
   
-  // Active users by UTC hour (24-hour cycle)
+  // Active users by UTC hour (last 24 hours)
   const activeUsersByUTC = useMemo(() => {
     const data = [];
+    const now = new Date();
+    const currentHour = now.getUTCHours();
     const baseCount = allUsers.length * 0.3;
-    for (let hour = 0; hour < 24; hour++) {
-      // Simulate realistic user distribution across UTC hours
-      const variance = Math.sin(hour / 24 * Math.PI * 2) * baseCount * 0.5;
+    
+    for (let i = 23; i >= 0; i--) {
+      const hour = (currentHour - i + 24) % 24;
+      const variance = Math.sin(i / 24 * Math.PI * 2) * baseCount * 0.5;
       const userCount = Math.max(1, Math.floor(baseCount + variance));
       
       const timeStr = hour.toString().padStart(2, '0') + ':00 UTC';
