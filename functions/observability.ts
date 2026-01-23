@@ -215,11 +215,37 @@ class ObservabilityCollector {
   }
 }
 
-// Singleton instance
-if (typeof window !== 'undefined' && !window.__observability) {
-  window.__observability = new ObservabilityCollector();
-}
+// Singleton instance - always initialize on client
+let observability;
 
-const observability = typeof window !== 'undefined' ? window.__observability : null;
+if (typeof window !== 'undefined') {
+  if (!window.__observability) {
+    window.__observability = new ObservabilityCollector();
+  }
+  observability = window.__observability;
+} else {
+  // Dummy instance for server-side
+  observability = {
+    getHealthStatus: () => 'green',
+    getDiagnosticsSummary: () => ({
+      healthStatus: 'green',
+      lastHeartbeat: null,
+      lastSeedWipe: null,
+      recentErrors: [],
+      requestsPerMin: 0,
+      commsMode: null,
+      liveKitEnv: null,
+      totalErrors: 0,
+      totalRequests: 0
+    }),
+    recordError: () => {},
+    recordNetworkRequest: () => {},
+    recordSubscriptionHeartbeat: () => {},
+    recordSeedWipeRun: () => {},
+    setCommsMode: () => {},
+    setLiveKitEnv: () => {},
+    reset: () => {}
+  };
+}
 
 export { observability };
