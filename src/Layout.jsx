@@ -29,55 +29,42 @@ const pageMap = {
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [memberProfile, setMemberProfile] = useState(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    initializeAccessToken();
-    base44.auth.me().then(async u => {
-      setUser(u);
-      if (!u) {
-        setIsLoadingProfile(false);
-        return;
-      }
-
-      // Check for member profile
+    const initApp = async () => {
       try {
-        const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
-        setMemberProfile(profiles?.[0] || null);
-      } catch (err) {
-        console.warn('Profile fetch failed:', err);
-        setMemberProfile(null);
+        initializeAccessToken();
+        const u = await base44.auth.me();
+        setUser(u);
+
+        if (u && location.pathname !== '/access-gate') {
+          // Check for member profile
+          const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+          const profile = profiles?.[0];
+
+          if (!profile || !profile.onboarding_completed) {
+            // Redirect to access gate
+            window.location.href = '/access-gate';
+            return;
+          }
+          setMemberProfile(profile);
+        }
+      } catch (error) {
+        console.error('Init error:', error);
       } finally {
-        setIsLoadingProfile(false);
+        setLoading(false);
       }
-    }).catch(() => {
-      setIsLoadingProfile(false);
-    });
+    };
+
+    initApp();
     
     // Redirect root to Hub page if not already there
     if (location.pathname === '/' || location.pathname === '') {
       window.history.replaceState({}, '', '/hub');
     }
   }, [location.pathname]);
-
-  // Gate access: if not onboarded and not on access-gate page, redirect
-  if (!isLoadingProfile && user && !memberProfile?.onboarding_completed && location.pathname !== '/access-gate') {
-    window.location.href = '/access-gate';
-    return null;
-  }
-
-  // Show loading while profile is loading
-  if (isLoadingProfile) {
-    return (
-      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
-        <div className="text-center">
-          <Radio className="w-12 h-12 text-[#ea580c] animate-pulse mx-auto mb-4" />
-          <p className="text-sm font-mono text-zinc-500">LOADING PROFILE...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Register service worker for PWA support
   useEffect(() => {
