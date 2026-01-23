@@ -15,6 +15,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
   const [userActivityView, setUserActivityView] = useState(0); // 0: line, 1: peak distribution
   const [recruitmentView, setRecruitmentView] = useState(0); // 0: daily, 1: cumulative
   const [flotillaView, setFlotillaView] = useState(0); // 0: trend, 1: status breakdown
+  const [showPersonalFunds, setShowPersonalFunds] = useState(false); // Toggle between org and personal funds
   
   // Update time every minute to shift the 24-hour window
   useEffect(() => {
@@ -37,6 +38,15 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
     );
 
     return () => intervals.forEach(clearInterval);
+  }, []);
+
+  // Toggle between org and personal funds every 8 seconds
+  useEffect(() => {
+    const fundToggleInterval = setInterval(() => {
+      setShowPersonalFunds(prev => !prev);
+    }, 8000);
+
+    return () => clearInterval(fundToggleInterval);
   }, []);
   
   // Active users by UTC hour (24-hour rolling window)
@@ -91,7 +101,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
       .slice(0, 3);
   }, [recentLogs, userEvents, treasuryBalance]);
 
-  // Fund allocation (as continuous line data over days)
+  // Org fund allocation (as continuous line data over days)
   const fundAllocationData = useMemo(() => {
     const days = 7;
     const data = [];
@@ -109,6 +119,29 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         date: dateStr,
         inflow: Math.max(0, baseInflow + variance),
         outflow: baseOutflow + (Math.random() - 0.5) * baseOutflow * 0.2
+      });
+    }
+    return data;
+  }, [treasuryBalance]);
+
+  // Personal fund allocation (user's personal earnings)
+  const personalFundAllocationData = useMemo(() => {
+    const days = 7;
+    const data = [];
+    const basePersonalIncome = Math.round(treasuryBalance * 0.02); // ~2% of org balance
+    const basePersonalSpend = Math.round(treasuryBalance * 0.01); // ~1% of org balance
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - 1 - i));
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      // Personal funds trend (less stable than org)
+      const variance = Math.sin((i / days) * Math.PI * 2) * basePersonalIncome * 0.4;
+      data.push({
+        date: dateStr,
+        inflow: Math.max(0, basePersonalIncome + variance),
+        outflow: basePersonalSpend + (Math.random() - 0.5) * basePersonalSpend * 0.3
       });
     }
     return data;
@@ -338,7 +371,9 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               >
                 <Badge className="text-[6px] bg-purple-900/40 text-purple-300 border-purple-700/50 font-mono">AUEC</Badge>
                 </motion.div>
-                <span className="text-[8px] font-bold text-zinc-300 font-mono">{fundView === 0 ? 'Cash Flow' : 'Top Contributors'}</span>
+                <span className="text-[8px] font-bold text-zinc-300 font-mono">
+                  {fundView === 0 ? (showPersonalFunds ? 'Personal Flow' : 'Org Cash Flow') : 'Top Contributors'}
+                </span>
             </div>
             <button
               onClick={() => setFundView((fundView + 1) % fundViews.length)}
@@ -349,33 +384,41 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             </button>
           </div>
           <div className="relative z-10">
-            <ResponsiveContainer width="100%" height={120}>
+            <AnimatePresence mode="wait">
               {fundView === 0 ? (
-                <LineChart data={fundAllocationData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                  <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
-                  <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-                  <Tooltip
-                    content={<AUECTooltip view={fundView} />}
-                    contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '11px' }} />
-                  <Line type="monotone" dataKey="inflow" stroke="#a855f7" strokeWidth={2} dot={false} name="Inflow" isAnimationActive={true} animationDuration={600} />
-                  <Line type="monotone" dataKey="outflow" stroke="#ec4899" strokeWidth={2} dot={false} name="Outflow" isAnimationActive={true} animationDuration={600} />
-                </LineChart>
+                <motion.div key={showPersonalFunds ? 'personal' : 'org'} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.3 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={showPersonalFunds ? personalFundAllocationData : fundAllocationData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                      <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <Tooltip
+                        content={<AUECTooltip view={fundView} />}
+                        contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Line type="monotone" dataKey="inflow" stroke={showPersonalFunds ? '#a78bfa' : '#a855f7'} strokeWidth={2} dot={false} name="Inflow" isAnimationActive={true} animationDuration={600} />
+                      <Line type="monotone" dataKey="outflow" stroke={showPersonalFunds ? '#f472b6' : '#ec4899'} strokeWidth={2} dot={false} name="Outflow" isAnimationActive={true} animationDuration={600} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
               ) : (
-                <LineChart data={treasuryCashFlowData.map((d, i) => ({ ...d, x: i, date: d.label }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                  <XAxis dataKey="label" stroke="#71717a" style={{ fontSize: '11px' }} />
-                  <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
-                  <Tooltip
-                    content={<AUECTooltip view={fundView} />}
-                    contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
-                  />
-                  <Line type="linear" dataKey="amount" stroke="#a855f7" strokeWidth={2} dot={{ fill: '#a855f7', r: 3 }} name="aUEC" isAnimationActive={true} animationDuration={600} />
-                </LineChart>
+                <motion.div key="contributors" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.3 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={treasuryCashFlowData.map((d, i) => ({ ...d, x: i, date: d.label }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                      <XAxis dataKey="label" stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <Tooltip
+                        content={<AUECTooltip view={fundView} />}
+                        contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
+                      />
+                      <Line type="linear" dataKey="amount" stroke="#a855f7" strokeWidth={2} dot={{ fill: '#a855f7', r: 3 }} name="aUEC" isAnimationActive={true} animationDuration={600} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
               )}
-            </ResponsiveContainer>
+            </AnimatePresence>
           </div>
         </motion.div>
 
