@@ -4,7 +4,7 @@
  * Fail-closed: unknown rank → VAGRANT; missing rules → deny
  */
 
-import { COMMS_REGISTRY } from './commsRegistry.js';
+import { COMMS_REGISTRY } from './commsRegistry';
 
 const RANK_ORDER = COMMS_REGISTRY.enums.rank;
 
