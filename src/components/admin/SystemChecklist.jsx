@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle2, XCircle, Clock, Play, AlertTriangle, Shield, Radio, Users, Lock, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Play, AlertTriangle, Shield, Radio, Users, Lock, RefreshCw, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -285,9 +285,73 @@ const CHECKLIST_ITEMS = [
   }
 ];
 
+const REPAIR_GUIDES = {
+  "event-create": {
+    title: "Event Creation Failed",
+    steps: [
+      "Verify Event entity exists in database",
+      "Check Event entity schema is valid",
+      "Ensure user has create permissions",
+      "Review database connection logs",
+      "Try creating event manually via UI"
+    ]
+  },
+  "comms-init": {
+    title: "Comms Initialization Failed",
+    steps: [
+      "Verify VoiceNet entity exists",
+      "Check event creation automation hooks",
+      "Verify backend initializeEventComms function",
+      "Check for entity creation permission errors",
+      "Manually create COMMAND, ALPHA, BRAVO nets"
+    ]
+  },
+  "livekit-token": {
+    title: "LiveKit Token Generation Failed",
+    steps: [
+      "Verify LIVEKIT_API_KEY and LIVEKIT_API_SECRET are set",
+      "Check LIVEKIT_URL is correct and accessible",
+      "Review generateLiveKitToken function logic",
+      "Test LiveKit API directly with credentials",
+      "Check for network connectivity to LiveKit service"
+    ]
+  },
+  "tx-rx-enforcement": {
+    title: "TX/RX Permission Enforcement Failed",
+    steps: [
+      "Verify permission checking logic in generateLiveKitToken",
+      "Check rank definitions are loaded correctly",
+      "Ensure user rank data is populated",
+      "Review VoiceNet min_rank_to_tx/rx fields",
+      "Test permission logic with different user ranks"
+    ]
+  },
+  "room-uniqueness": {
+    title: "Room Name Uniqueness Failed",
+    steps: [
+      "Review room naming convention: event-{eventId}-net-{code}",
+      "Verify unique IDs are being generated correctly",
+      "Check for any duplicate event/net creation",
+      "Review livekit_room_name generation logic",
+      "Test with fresh events and nets"
+    ]
+  },
+  "room-status-api": {
+    title: "Room Status API Failed",
+    steps: [
+      "Verify getLiveKitRoomStatus function exists",
+      "Check LiveKit room listing API availability",
+      "Review function return structure",
+      "Verify LiveKit credentials for admin API",
+      "Check network access to LiveKit service"
+    ]
+  }
+};
+
 export default function SystemChecklist({ user }) {
   const queryClient = useQueryClient();
   const [runningTests, setRunningTests] = useState(new Set());
+  const [expandedRepair, setExpandedRepair] = useState(null);
 
   // Fetch latest results
   const { data: results } = useQuery({
@@ -488,22 +552,49 @@ export default function SystemChecklist({ user }) {
                     </CardHeader>
                     
                     {result && (
-                      <CardContent className="pt-0">
-                        <div className="bg-black/50 rounded p-3 border border-zinc-900">
-                          <div className="text-[10px] font-mono text-zinc-500 mb-1">
-                            Last tested: {new Date(result.created_date).toLocaleString()}
-                          </div>
-                          <div className={cn(
-                            "text-xs font-mono",
-                            result.status === "pass" ? "text-emerald-400" :
-                            result.status === "fail" ? "text-red-400" :
-                            "text-amber-400"
-                          )}>
-                            {result.details}
-                          </div>
-                        </div>
-                      </CardContent>
-                    )}
+                       <CardContent className="pt-0 space-y-3">
+                         <div className="bg-black/50 rounded p-3 border border-zinc-900">
+                           <div className="text-[10px] font-mono text-zinc-500 mb-1">
+                             Last tested: {new Date(result.created_date).toLocaleString()}
+                           </div>
+                           <div className={cn(
+                             "text-xs font-mono",
+                             result.status === "pass" ? "text-emerald-400" :
+                             result.status === "fail" ? "text-red-400" :
+                             "text-amber-400"
+                           )}>
+                             {result.details}
+                           </div>
+                         </div>
+
+                         {result.status === "fail" && REPAIR_GUIDES[item.id] && (
+                           <div className="space-y-2">
+                             <button
+                               onClick={() => setExpandedRepair(expandedRepair === item.id ? null : item.id)}
+                               className="w-full flex items-center gap-2 px-3 py-2 rounded border border-amber-800/50 bg-amber-950/20 hover:bg-amber-950/40 transition-colors text-xs text-amber-300 font-mono"
+                             >
+                               <Wrench className="w-3 h-3" />
+                               Repair Path
+                               <span className="ml-auto text-[10px] opacity-70">{expandedRepair === item.id ? '▼' : '▶'}</span>
+                             </button>
+
+                             {expandedRepair === item.id && (
+                               <div className="bg-black/30 rounded p-3 border border-amber-800/30 space-y-2">
+                                 <div className="text-[10px] font-bold text-amber-400">{REPAIR_GUIDES[item.id].title}</div>
+                                 <ol className="space-y-1.5">
+                                   {REPAIR_GUIDES[item.id].steps.map((step, idx) => (
+                                     <li key={idx} className="text-[10px] text-amber-300/80 font-mono flex gap-2">
+                                       <span className="text-amber-500 flex-shrink-0">{idx + 1}.</span>
+                                       <span>{step}</span>
+                                     </li>
+                                   ))}
+                                 </ol>
+                               </div>
+                             )}
+                           </div>
+                         )}
+                       </CardContent>
+                     )}
                   </Card>
                 );
               })}
