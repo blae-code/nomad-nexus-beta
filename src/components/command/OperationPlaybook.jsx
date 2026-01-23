@@ -1,239 +1,379 @@
 import React, { useState } from 'react';
-import { Book, CheckCircle, Circle, Clock, Users, Shield, ChevronDown, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, Search, CheckSquare, AlertTriangle, Users, Radio, Shield, Zap, FileText } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
-export default function OperationPlaybook() {
-  const [selectedPlaybook, setSelectedPlaybook] = useState(null);
-  const [expandedSections, setExpandedSections] = useState(new Set(['procedures']));
-  const [checkedItems, setCheckedItems] = useState(new Set());
-
-  const { data: playbooks = [] } = useQuery({
-    queryKey: ['operation-playbooks'],
-    queryFn: async () => await base44.entities.OperationPlaybook.filter({ is_active: true }),
-    initialData: []
-  });
-
-  const toggleSection = (section) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(section)) {
-      newExpanded.delete(section);
-    } else {
-      newExpanded.add(section);
-    }
-    setExpandedSections(newExpanded);
-  };
-
-  const toggleChecklistItem = (itemId) => {
-    const newChecked = new Set(checkedItems);
-    if (newChecked.has(itemId)) {
-      newChecked.delete(itemId);
-    } else {
-      newChecked.add(itemId);
-    }
-    setCheckedItems(newChecked);
-  };
-
-  const priorityColors = {
-    CRITICAL: 'text-red-400 border-red-500/30 bg-red-950/20',
-    HIGH: 'text-orange-400 border-orange-500/30 bg-orange-950/20',
-    STANDARD: 'text-blue-400 border-blue-500/30 bg-blue-950/20',
-    LOW: 'text-zinc-400 border-zinc-700 bg-zinc-900/20'
-  };
-
-  if (!selectedPlaybook && playbooks.length === 0) {
-    return (
-      <div className="border border-zinc-800 bg-zinc-950/50 p-4 text-center">
-        <Book className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-        <div className="text-[10px] text-zinc-500">No playbooks available</div>
-      </div>
-    );
+const PLAYBOOK_PROCEDURES = {
+  combat: {
+    title: 'Combat Operations',
+    icon: Shield,
+    color: 'red',
+    procedures: [
+      {
+        id: 'combat-1',
+        name: 'Ship-to-Ship Combat',
+        description: 'Standard procedures for engaging hostile vessels',
+        checklist: [
+          'Verify target identification (IFF)',
+          'Confirm weapons hot authorization',
+          'Establish tactical formation',
+          'Designate primary/secondary targets',
+          'Monitor shield and hull status',
+          'Coordinate fire discipline',
+          'Prepare for immediate withdrawal if needed'
+        ]
+      },
+      {
+        id: 'combat-2',
+        name: 'Ground Assault',
+        description: 'Coordinated ground combat operations',
+        checklist: [
+          'Brief all squad members on objectives',
+          'Assign fire teams and sectors',
+          'Establish rally points',
+          'Test comms before engagement',
+          'Confirm medical support availability',
+          'Set ROE (Rules of Engagement)',
+          'Designate extraction points'
+        ]
+      }
+    ]
+  },
+  rescue: {
+    title: 'Rescue Operations',
+    icon: AlertTriangle,
+    color: 'orange',
+    procedures: [
+      {
+        id: 'rescue-1',
+        name: 'Emergency Medical Response',
+        description: 'Rapid response for medical emergencies',
+        checklist: [
+          'Receive distress signal and location',
+          'Dispatch nearest medical ship',
+          'Establish secure comms with casualty',
+          'Coordinate with local security',
+          'Prepare medical bay',
+          'Execute extraction under cover',
+          'Transport to medical facility',
+          'File incident report'
+        ]
+      },
+      {
+        id: 'rescue-2',
+        name: 'Ship Recovery',
+        description: 'Recover disabled or abandoned vessels',
+        checklist: [
+          'Survey area for hostiles',
+          'Approach with caution',
+          'Scan for survivors',
+          'Secure the vessel',
+          'Assess damage and repair options',
+          'Tow or pilot to safe location',
+          'Document findings'
+        ]
+      }
+    ]
+  },
+  comms: {
+    title: 'Communications Setup',
+    icon: Radio,
+    color: 'blue',
+    procedures: [
+      {
+        id: 'comms-1',
+        name: 'Event Comms Provisioning',
+        description: 'Setting up communications for operations',
+        checklist: [
+          'Create command net (priority 1)',
+          'Create squad nets as needed',
+          'Assign net codes and labels',
+          'Set discipline (casual vs focused)',
+          'Configure rank/role permissions',
+          'Test all nets before go-live',
+          'Brief participants on net usage',
+          'Monitor net health during ops'
+        ]
+      },
+      {
+        id: 'comms-2',
+        name: 'Emergency Comms Protocol',
+        description: 'Procedures for compromised communications',
+        checklist: [
+          'Switch to backup frequencies',
+          'Implement radio silence if needed',
+          'Use brevity codes',
+          'Verify authentication',
+          'Re-establish command net first',
+          'Account for all units',
+          'Resume normal comms when secure'
+        ]
+      }
+    ]
+  },
+  logistics: {
+    title: 'Logistics & Support',
+    icon: Users,
+    color: 'cyan',
+    procedures: [
+      {
+        id: 'logistics-1',
+        name: 'Resource Management',
+        description: 'Managing org resources and treasury',
+        checklist: [
+          'Assess current treasury balance',
+          'Allocate funds for operation',
+          'Request additional resources if needed',
+          'Track expenditures',
+          'Distribute earnings post-op',
+          'Update resource logs',
+          'Plan for resupply'
+        ]
+      },
+      {
+        id: 'logistics-2',
+        name: 'Fleet Deployment',
+        description: 'Coordinating fleet assets',
+        checklist: [
+          'Review operation requirements',
+          'Select appropriate vessels',
+          'Assign pilots/crew',
+          'Verify ship readiness',
+          'Coordinate departure times',
+          'Establish formation',
+          'Monitor fuel and consumables'
+        ]
+      }
+    ]
+  },
+  training: {
+    title: 'Training & Drills',
+    icon: Zap,
+    color: 'purple',
+    procedures: [
+      {
+        id: 'training-1',
+        name: 'New Member Orientation',
+        description: 'Onboarding new organization members',
+        checklist: [
+          'Welcome message and org overview',
+          'Assign mentor/buddy',
+          'Tour of systems and tools',
+          'Voice comms test',
+          'Rank and role explanation',
+          'First training exercise',
+          'Answer questions and provide resources'
+        ]
+      },
+      {
+        id: 'training-2',
+        name: 'Combat Readiness Drill',
+        description: 'Regular drills to maintain combat effectiveness',
+        checklist: [
+          'Schedule drill time',
+          'Brief scenario objectives',
+          'Form teams and assign roles',
+          'Execute scenario',
+          'Debrief and identify improvements',
+          'Update training records',
+          'Schedule next drill'
+        ]
+      }
+    ]
+  },
+  admin: {
+    title: 'Administrative',
+    icon: FileText,
+    color: 'zinc',
+    procedures: [
+      {
+        id: 'admin-1',
+        name: 'After Action Report (AAR)',
+        description: 'Post-operation documentation',
+        checklist: [
+          'Gather all event logs',
+          'Interview key participants',
+          'Document objectives completed',
+          'Note challenges encountered',
+          'List lessons learned',
+          'Calculate success metrics',
+          'Generate formal AAR',
+          'Share with leadership'
+        ]
+      },
+      {
+        id: 'admin-2',
+        name: 'Incident Investigation',
+        description: 'Investigating operational incidents',
+        checklist: [
+          'Collect incident details',
+          'Interview witnesses',
+          'Review comms logs',
+          'Identify root cause',
+          'Assess impact',
+          'Recommend corrective actions',
+          'Document findings',
+          'Implement improvements'
+        ]
+      }
+    ]
   }
+};
+
+export default function OperationPlaybook({ user }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeChecklist, setActiveChecklist] = useState({});
+
+  const filteredPlaybook = Object.entries(PLAYBOOK_PROCEDURES).reduce((acc, [key, category]) => {
+    const filteredProcedures = category.procedures.filter(proc =>
+      proc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      proc.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    if (filteredProcedures.length > 0) {
+      acc[key] = { ...category, procedures: filteredProcedures };
+    }
+    return acc;
+  }, {});
+
+  const toggleChecklistItem = (procId, itemIndex) => {
+    setActiveChecklist(prev => ({
+      ...prev,
+      [`${procId}-${itemIndex}`]: !prev[`${procId}-${itemIndex}`]
+    }));
+  };
+
+  const resetChecklist = (procId, itemCount) => {
+    const updates = {};
+    for (let i = 0; i < itemCount; i++) {
+      updates[`${procId}-${i}`] = false;
+    }
+    setActiveChecklist(prev => ({ ...prev, ...updates }));
+  };
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-[8px] font-bold uppercase text-zinc-600 tracking-wider">OPERATION PLAYBOOKS</h3>
-      
-      {!selectedPlaybook ? (
-        <div className="space-y-1">
-          {playbooks.map(playbook => (
-            <motion.button
-              key={playbook.id}
-              whileHover={{ scale: 1.01 }}
-              onClick={() => setSelectedPlaybook(playbook)}
-              className={cn(
-                'w-full text-left border p-2 transition-all',
-                priorityColors[playbook.priority]
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-[9px] font-bold text-white mb-0.5">{playbook.title}</div>
-                  <div className="text-[7px] text-zinc-400 line-clamp-1">{playbook.description}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[6px] uppercase text-zinc-500 px-1 py-0.5 bg-zinc-900/50 border border-zinc-800">
-                      {playbook.scenario_type}
-                    </span>
-                    {playbook.minimum_personnel > 1 && (
-                      <span className="text-[6px] text-zinc-500 flex items-center gap-0.5">
-                        <Users className="w-2 h-2" />
-                        {playbook.minimum_personnel}+
-                      </span>
-                    )}
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="border border-zinc-800 bg-zinc-950/50 p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Input
+            placeholder="Search procedures..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-zinc-900 border-zinc-800"
+          />
+        </div>
+      </div>
+
+      {/* Playbook Categories */}
+      <Accordion type="single" collapsible className="space-y-2">
+        {Object.entries(filteredPlaybook).map(([key, category]) => {
+          const Icon = category.icon;
+          const colorMap = {
+            red: 'text-red-400 border-red-900/50 bg-red-950/20',
+            orange: 'text-orange-400 border-orange-900/50 bg-orange-950/20',
+            blue: 'text-blue-400 border-blue-900/50 bg-blue-950/20',
+            cyan: 'text-cyan-400 border-cyan-900/50 bg-cyan-950/20',
+            purple: 'text-purple-400 border-purple-900/50 bg-purple-950/20',
+            zinc: 'text-zinc-400 border-zinc-800 bg-zinc-950/50'
+          };
+
+          return (
+            <AccordionItem key={key} value={key} className="border border-zinc-800 bg-zinc-950/50">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-zinc-900/30">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 border ${colorMap[category.color]}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-bold text-zinc-200">{category.title}</div>
+                    <div className="text-xs text-zinc-500">{category.procedures.length} procedures</div>
                   </div>
                 </div>
-                <ChevronRight className="w-3 h-3 text-zinc-500 shrink-0" />
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {/* Header */}
-          <div className="border border-zinc-800 bg-zinc-950 p-2">
-            <button
-              onClick={() => {
-                setSelectedPlaybook(null);
-                setCheckedItems(new Set());
-              }}
-              className="text-[7px] text-zinc-500 hover:text-zinc-300 mb-2"
-            >
-              ← BACK TO PLAYBOOKS
-            </button>
-            <div className="text-sm font-bold text-white mb-1">{selectedPlaybook.title}</div>
-            <div className="text-[8px] text-zinc-400 mb-2">{selectedPlaybook.description}</div>
-            <div className="flex items-center gap-2">
-              <span className={cn('text-[6px] uppercase px-1 py-0.5 border', priorityColors[selectedPlaybook.priority])}>
-                {selectedPlaybook.priority}
-              </span>
-              <span className="text-[6px] uppercase text-zinc-500 px-1 py-0.5 bg-zinc-900/50 border border-zinc-800">
-                {selectedPlaybook.scenario_type}
-              </span>
-            </div>
-          </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-3 mt-2">
+                  {category.procedures.map(procedure => {
+                    const completedItems = procedure.checklist.filter((_, i) =>
+                      activeChecklist[`${procedure.id}-${i}`]
+                    ).length;
+                    const progress = Math.round((completedItems / procedure.checklist.length) * 100);
 
-          {/* Procedures Section */}
-          {selectedPlaybook.procedures && selectedPlaybook.procedures.length > 0 && (
-            <div className="border border-zinc-800 bg-zinc-950/50">
-              <button
-                onClick={() => toggleSection('procedures')}
-                className="w-full flex items-center justify-between p-2 hover:bg-zinc-900/30"
-              >
-                <span className="text-[8px] font-bold uppercase text-zinc-400">PROCEDURES</span>
-                {expandedSections.has('procedures') ? 
-                  <ChevronDown className="w-3 h-3 text-zinc-500" /> : 
-                  <ChevronRight className="w-3 h-3 text-zinc-500" />
-                }
-              </button>
-              <AnimatePresence>
-                {expandedSections.has('procedures') && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-2 space-y-1 border-t border-zinc-800">
-                      {selectedPlaybook.procedures.map((proc, idx) => (
-                        <div key={idx} className="p-1.5 bg-zinc-900/50 border border-zinc-800">
-                          <div className="flex items-start gap-2">
-                            <span className="text-[8px] font-bold text-[#ea580c] shrink-0">
-                              {proc.step_number}.
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-[8px] font-bold text-white mb-0.5">{proc.title}</div>
-                              <div className="text-[7px] text-zinc-400">{proc.description}</div>
-                              {proc.estimated_time && (
-                                <div className="text-[6px] text-zinc-500 flex items-center gap-1 mt-0.5">
-                                  <Clock className="w-2 h-2" />
-                                  {proc.estimated_time}
-                                </div>
-                              )}
-                            </div>
+                    return (
+                      <div key={procedure.id} className="border border-zinc-800 bg-zinc-900/30 p-3">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="text-sm font-bold text-zinc-200 mb-1">{procedure.name}</div>
+                            <div className="text-xs text-zinc-500">{procedure.description}</div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {completedItems}/{procedure.checklist.length}
+                          </Badge>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mb-3">
+                          <div className="h-1.5 bg-zinc-800 rounded overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 transition-all duration-300"
+                              style={{ width: `${progress}%` }}
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
 
-          {/* Checklist Section */}
-          {selectedPlaybook.checklist && selectedPlaybook.checklist.length > 0 && (
-            <div className="border border-zinc-800 bg-zinc-950/50">
-              <button
-                onClick={() => toggleSection('checklist')}
-                className="w-full flex items-center justify-between p-2 hover:bg-zinc-900/30"
-              >
-                <span className="text-[8px] font-bold uppercase text-zinc-400">CHECKLIST</span>
-                {expandedSections.has('checklist') ? 
-                  <ChevronDown className="w-3 h-3 text-zinc-500" /> : 
-                  <ChevronRight className="w-3 h-3 text-zinc-500" />
-                }
-              </button>
-              <AnimatePresence>
-                {expandedSections.has('checklist') && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-2 space-y-1 border-t border-zinc-800 max-h-48 overflow-y-auto">
-                      {selectedPlaybook.checklist.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => toggleChecklistItem(item.id)}
-                          className="w-full flex items-center gap-2 p-1 hover:bg-zinc-900/50 transition-colors text-left"
-                        >
-                          {checkedItems.has(item.id) ? (
-                            <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
-                          ) : (
-                            <Circle className="w-3 h-3 text-zinc-600 shrink-0" />
-                          )}
-                          <span className={cn(
-                            'text-[8px] flex-1',
-                            checkedItems.has(item.id) ? 'text-zinc-500 line-through' : 'text-zinc-200',
-                            item.critical && 'font-bold text-red-400'
-                          )}>
-                            {item.item}
-                          </span>
-                          {item.critical && (
-                            <Shield className="w-2.5 h-2.5 text-red-400 shrink-0" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+                        {/* Checklist */}
+                        <div className="space-y-2 mb-3">
+                          {procedure.checklist.map((item, index) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <Checkbox
+                                id={`${procedure.id}-${index}`}
+                                checked={!!activeChecklist[`${procedure.id}-${index}`]}
+                                onCheckedChange={() => toggleChecklistItem(procedure.id, index)}
+                                className="mt-0.5"
+                              />
+                              <label
+                                htmlFor={`${procedure.id}-${index}`}
+                                className={`text-xs cursor-pointer ${
+                                  activeChecklist[`${procedure.id}-${index}`]
+                                    ? 'text-zinc-500 line-through'
+                                    : 'text-zinc-300'
+                                }`}
+                              >
+                                {item}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
 
-          {/* Progress */}
-          {selectedPlaybook.checklist && selectedPlaybook.checklist.length > 0 && (
-            <div className="border border-zinc-800 bg-zinc-950/50 p-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[7px] text-zinc-500 uppercase">Progress</span>
-                <span className="text-[7px] font-mono text-zinc-300">
-                  {checkedItems.size} / {selectedPlaybook.checklist.length}
-                </span>
-              </div>
-              <div className="h-1.5 bg-zinc-900 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(checkedItems.size / selectedPlaybook.checklist.length) * 100}%` }}
-                  className="h-full bg-emerald-500"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resetChecklist(procedure.id, procedure.checklist.length)}
+                            className="text-xs h-7"
+                          >
+                            Reset
+                          </Button>
+                          {progress === 100 && (
+                            <Badge className="bg-emerald-900/50 text-emerald-300 border-emerald-800">
+                              <CheckSquare className="w-3 h-3 mr-1" />
+                              Complete
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
     </div>
   );
 }
