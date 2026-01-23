@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Radio, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import CommsModeToggle from '@/components/admin/CommsModeToggle';
 
 export default function CommsTestStep({ user, onAudit }) {
   const [mode, setMode] = useState('SIM');
@@ -92,8 +93,11 @@ export default function CommsTestStep({ user, onAudit }) {
   };
 
   return (
-    <div className="space-y-2">
-      {/* Mode toggle */}
+    <div className="space-y-3">
+      {/* Global Comms Mode Toggle */}
+      <CommsModeToggle />
+
+      {/* Test Mode Selection */}
       <div className="flex items-center gap-2 p-2 bg-zinc-900/50 rounded border border-zinc-800">
         <button
           onClick={() => setMode('SIM')}
