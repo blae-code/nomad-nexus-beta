@@ -390,8 +390,22 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
       if (!net?.id) return [];
       return base44.entities.Channel.filter({ squad_id: net.id });
     },
-    enabled: !!net?.id
+    enabled: !!net?.id,
+    staleTime: 10000,
+    refetchInterval: false,
+    gcTime: 30000
   });
+
+  // Real-time subscription for channel updates
+  useEffect(() => {
+    if (!net?.id) return;
+
+    const unsubscribe = base44.entities.Channel.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['net-channels', net.id] });
+    });
+
+    return () => unsubscribe?.();
+  }, [net?.id, queryClient]);
 
   const [room, setRoom] = useState(null);
   const roomRef = useRef(null);
