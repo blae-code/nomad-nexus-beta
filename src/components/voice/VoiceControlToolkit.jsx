@@ -116,16 +116,6 @@ export default function VoiceControlToolkit() {
           <div className="flex items-center gap-2">
             <span className={cn('text-[8px] font-mono font-bold', getLatencyColor())}>{Math.round(latency)}ms</span>
             <div className="h-3 w-px bg-zinc-800" />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge className="text-[7px] px-1.5 py-0 bg-zinc-800 text-zinc-400 border-zinc-700 cursor-help">
-                    {onlineUsers.length}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-xs">Online Users Connected</p>
-                </TooltipContent>
-              </Tooltip>
           </div>
         </div>
       </div>
