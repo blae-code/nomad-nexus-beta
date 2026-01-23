@@ -137,7 +137,9 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     queryKey: ['voice-mutes', net.id],
     queryFn: () => base44.entities.VoiceMute.filter({ net_id: net.id, is_active: true }),
     enabled: !!net.id,
-    refetchInterval: 5000
+    staleTime: 8000,
+    refetchInterval: false,
+    gcTime: 20000
   });
 
   // Mute/Unmute mutations
