@@ -161,7 +161,7 @@ export default function AdminCockpitPage() {
       <div className="h-full overflow-hidden flex flex-col bg-black">
         {/* Header with readiness score & real-time system status */}
           <div className="border-b border-zinc-800 px-4 py-3 shrink-0 space-y-2">
-            <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} />
+            <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} effectiveCommsMode={effectiveCommsMode} modeFallbackReason={modeFallbackReason} />
 
             {/* System Status Indicators */}
             <div className="flex items-center gap-3 flex-wrap text-[8px]">
