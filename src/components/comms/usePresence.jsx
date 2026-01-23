@@ -1,66 +1,68 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 
 export function usePresence(userId, netId, eventId = null) {
-  const presenceIdRef = useRef(null);
+  const lastUpdateRef = useRef(null);
 
   useEffect(() => {
-    if (!userId || !netId) return;
+    if (!userId) return;
 
     const updatePresence = async () => {
       try {
-        const existing = await base44.entities.UserPresence.filter({
-          user_id: userId,
-          net_id: netId
+        const response = await base44.functions.invoke('updateUserPresence', {
+          status: netId ? 'in-call' : 'online',
+          netId: netId || null,
+          eventId: eventId || null,
+          isTransmitting: false
         });
-
-        if (existing.length > 0) {
-          await base44.entities.UserPresence.update(existing[0].id, {
-            last_activity: new Date().toISOString(),
-            status: 'online'
-          });
-          presenceIdRef.current = existing[0].id;
-        } else {
-          const created = await base44.entities.UserPresence.create({
-            user_id: userId,
-            net_id: netId,
-            event_id: eventId,
-            status: 'online',
-            last_activity: new Date().toISOString()
-          });
-          presenceIdRef.current = created.id;
+        
+        if (response.data?.presence) {
+          lastUpdateRef.current = response.data.presence;
         }
       } catch (error) {
         console.error('[PRESENCE] Failed to update:', error);
       }
     };
 
+    // Initial update on mount or net change
     updatePresence();
-    const interval = setInterval(updatePresence, 5000);
+    
+    // Heartbeat every 10 seconds while on net
+    const interval = netId ? setInterval(updatePresence, 10000) : null;
 
     return () => {
-      clearInterval(interval);
-      if (presenceIdRef.current) {
-        base44.entities.UserPresence.update(presenceIdRef.current, {
-          status: 'offline',
-          last_activity: new Date().toISOString()
+      if (interval) clearInterval(interval);
+      
+      // Set offline when leaving net
+      if (netId) {
+        base44.functions.invoke('updateUserPresence', {
+          status: 'online',
+          netId: null,
+          eventId: null,
+          isTransmitting: false
         }).catch(() => {});
       }
     };
   }, [userId, netId, eventId]);
 
   return {
-    setTransmitting: async (isTransmitting) => {
-      if (presenceIdRef.current) {
-        try {
-          await base44.entities.UserPresence.update(presenceIdRef.current, {
-            is_transmitting: isTransmitting,
-            last_activity: new Date().toISOString()
-          });
-        } catch (error) {
-          console.error('[PRESENCE] Failed to update transmitting:', error);
+    setTransmitting: useCallback(async (isTransmitting) => {
+      if (!userId) return;
+      
+      try {
+        const response = await base44.functions.invoke('updateUserPresence', {
+          status: isTransmitting ? 'transmitting' : 'in-call',
+          netId: netId || null,
+          eventId: eventId || null,
+          isTransmitting
+        });
+        
+        if (response.data?.presence) {
+          lastUpdateRef.current = response.data.presence;
         }
+      } catch (error) {
+        console.error('[PRESENCE] Failed to update transmitting:', error);
       }
-    }
+    }, [userId, netId, eventId])
   };
 }
