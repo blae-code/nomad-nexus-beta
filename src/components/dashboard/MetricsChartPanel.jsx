@@ -272,31 +272,34 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           </button>
         </div>
         <div className="relative z-10">
-          <ResponsiveContainer width="100%" height={120}>
-             <LineChart data={activeUsersByUTC}>
-               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-               <XAxis 
-                 dataKey="time" 
-                 stroke="#71717a" 
-                 style={{ fontSize: '10px' }}
-                 tick={{ interval: 3 }}
-               />
-               <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-               <Tooltip
-                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                 labelStyle={{ color: '#e4e4e7' }}
-               />
-               <Legend wrapperStyle={{ fontSize: '11px' }} />
-               <Line
-                 type="monotone"
-                 dataKey="users"
-                 stroke="#06b6d4"
-                 strokeWidth={2}
-                 dot={false}
-                 name="Active Users"
-               />
-             </LineChart>
-           </ResponsiveContainer>
+          <AnimatePresence mode="wait">
+            {userActivityView === 0 ? (
+              <motion.div key="activity-line" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <ResponsiveContainer width="100%" height={120}>
+                   <LineChart data={activeUsersByUTC}>
+                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                     <XAxis dataKey="time" stroke="#71717a" style={{ fontSize: '10px' }} tick={{ interval: 3 }} />
+                     <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                     <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                     <Legend wrapperStyle={{ fontSize: '11px' }} />
+                     <Line type="monotone" dataKey="users" stroke="#06b6d4" strokeWidth={2} dot={false} name="Active Users" />
+                   </LineChart>
+                 </ResponsiveContainer>
+              </motion.div>
+            ) : (
+              <motion.div key="activity-peak" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                <ResponsiveContainer width="100%" height={120}>
+                  <BarChart data={peakHoursData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                    <XAxis dataKey="range" stroke="#71717a" style={{ fontSize: '10px' }} />
+                    <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                    <Bar dataKey="value" fill="#06b6d4" name="Peak Avg" radius={0} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         </motion.div>
 
@@ -419,24 +422,35 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             </button>
           </div>
           <div className="relative z-10">
-            <ResponsiveContainer width="100%" height={120}>
-              <BarChart data={recruitmentData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
-                <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                  labelStyle={{ color: '#e4e4e7' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Bar
-                  dataKey="recruits"
-                  fill="#22c55e"
-                  name="New Users"
-                  radius={0}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <AnimatePresence mode="wait">
+              {recruitmentView === 0 ? (
+                <motion.div key="recruit-daily" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart data={recruitmentData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                      <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Bar dataKey="recruits" fill="#22c55e" name="Daily New" radius={0} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              ) : (
+                <motion.div key="recruit-cumulative" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={recruitmentData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                      <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Line type="monotone" dataKey="cumulative" stroke="#22c55e" strokeWidth={2} dot={false} name="Total Recruits" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
 
@@ -485,26 +499,34 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
             </button>
           </div>
           <div className="relative z-10">
-            <ResponsiveContainer width="100%" height={120}>
-              <AreaChart data={flotillaGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
-                <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                  labelStyle={{ color: '#e4e4e7' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Area
-                  type="monotone"
-                  dataKey="ships"
-                  stroke="#ea580c"
-                  fill="#ea580c"
-                  fillOpacity={0.7}
-                  name="Ships/Vehicles"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <AnimatePresence mode="wait">
+              {flotillaView === 0 ? (
+                <motion.div key="flotilla-trend" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <AreaChart data={flotillaGrowthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                      <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
+                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Area type="monotone" dataKey="ships" stroke="#ea580c" fill="#ea580c" fillOpacity={0.7} name="Total Assets" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              ) : (
+                <motion.div key="flotilla-status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart data={fleetStatusData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                      <XAxis dataKey="status" stroke="#71717a" style={{ fontSize: '10px' }} />
+                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Bar dataKey="count" fill="#ea580c" name="By Status" radius={0} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
         </motion.div>
