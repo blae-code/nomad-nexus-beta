@@ -21,6 +21,9 @@ import {
   MapPin,
   CheckCircle2,
   AlertTriangle,
+  MessageSquare,
+  Send,
+  Inbox,
 } from 'lucide-react';
 
 export const COMMAND_SECTIONS = {
