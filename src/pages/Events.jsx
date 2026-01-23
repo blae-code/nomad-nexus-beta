@@ -39,6 +39,9 @@ import EventCommandStaff from "@/components/events/EventCommandStaff";
 import EventReadinessChecklist from "@/components/events/EventReadinessChecklist";
 import AITacticalAdvisor from "@/components/ai/AITacticalAdvisor";
 import AIAfterActionReportGenerator from "@/components/ai/AIAfterActionReportGenerator";
+import EventCalendarView from "@/components/events/EventCalendarView";
+import EventRoleManager from "@/components/events/EventRoleManager";
+import EventReportExporter from "@/components/events/EventReportExporter";
 import { Rocket } from "lucide-react";
 
 function EventDetail({ id }) {
@@ -196,6 +199,7 @@ function EventDetail({ id }) {
 
                 {/* Column 2: Personnel & Comms */}
                 <div className="space-y-2 overflow-y-auto">
+                  <EventRoleManager eventId={event.id} canEdit={canEditEvent(currentUser, event)} />
                   <EventParticipants eventId={event.id} />
                   <SquadManager eventId={event.id} />
                   <CommsPanel eventId={event.id} />
@@ -204,6 +208,7 @@ function EventDetail({ id }) {
 
                 {/* Column 3: AI & Analysis */}
                 <div className="space-y-2 overflow-y-auto">
+                  <EventReportExporter eventId={event.id} />
                   <AITacticalAdvisor eventId={event.id} />
                   <AIInsightsPanel eventId={event.id} />
                   <EventEconomy eventId={event.id} />
@@ -287,6 +292,7 @@ export default function EventsPage() {
   const [wizardData, setWizardData] = useState(null);
   const [showCommsSetup, setShowCommsSetup] = useState(false);
   const [newEventId, setNewEventId] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
 
   // Check for Detail View
   const params = new URLSearchParams(window.location.search);
@@ -325,14 +331,36 @@ export default function EventsPage() {
             <h2 className={cn(TYPOGRAPHY.H2, "text-white text-xl")}>OPERATIONS BOARD</h2>
              <p className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500")}>Upcoming missions and deployments</p>
           </div>
-          {canCreateEvent(currentUser) && (
-            <Button 
-              onClick={() => setShowWizard(true)} 
-              className="bg-red-900 hover:bg-red-800 text-white text-xs h-7 px-3"
-            >
-              INITIALIZE OPERATION
-            </Button>
-          )}
+          <div className="flex gap-2">
+            <div className="flex border border-zinc-800 h-7">
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "px-3 text-[9px] font-mono uppercase tracking-wider transition-colors",
+                  viewMode === 'list' ? "bg-[#ea580c] text-white" : "text-zinc-400 hover:text-zinc-300"
+                )}
+              >
+                LIST
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={cn(
+                  "px-3 text-[9px] font-mono uppercase tracking-wider transition-colors",
+                  viewMode === 'calendar' ? "bg-[#ea580c] text-white" : "text-zinc-400 hover:text-zinc-300"
+                )}
+              >
+                CALENDAR
+              </button>
+            </div>
+            {canCreateEvent(currentUser) && (
+              <Button 
+                onClick={() => setShowWizard(true)} 
+                className="bg-red-900 hover:bg-red-800 text-white text-xs h-7 px-3"
+              >
+                INITIALIZE OPERATION
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -354,6 +382,8 @@ export default function EventsPage() {
                  </Button>
                )}
              />
+          ) : viewMode === 'calendar' ? (
+            <EventCalendarView />
           ) : (
             <div className="grid gap-2">
                {events.map((event) => {
