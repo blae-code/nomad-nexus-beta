@@ -8,7 +8,7 @@ import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 export default function NotificationsTab({ user }) {
   const queryClient = useQueryClient();
-  const [, setRefreshTime] = useState(0);
+  const [refreshTime, setRefreshTime] = useState(0);
   const { getDisplayName } = useUserDirectory();
 
   const { data: notifications = [] } = useQuery({
