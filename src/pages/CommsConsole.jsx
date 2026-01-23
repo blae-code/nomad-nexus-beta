@@ -384,7 +384,18 @@ function CommsConsolePage() {
                   {/* CENTER PANEL: Active Net / Chat */}
                   <Panel title={consoleMode === 'dms' ? 'Conversation' : (consoleMode === 'ops' ? 'Active Net' : 'Ready Room')} className="flex-1 flex flex-col overflow-hidden" body={false}>
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-               {consoleMode === 'ops' ? (
+                {consoleMode === 'dms' ? (
+                   selectedChannel ? (
+                      <ChatInterface channel={selectedChannel} user={currentUser} />
+                   ) : (
+                      <div className="flex items-center justify-center h-full text-zinc-600">
+                         <div className="text-center">
+                            <MessageCircle className="w-16 h-16 mb-4 opacity-20" />
+                            <p className="text-sm uppercase tracking-widest">No Conversation Selected</p>
+                         </div>
+                      </div>
+                   )
+                ) : consoleMode === 'ops' ? (
                   selectedEventId ? (
                      viewMode === 'tactical' ? (
                         <TacticalDashboard eventId={selectedEventId} />
