@@ -3,6 +3,7 @@ import { Mic, Volume2, Settings, Radio, Zap, Activity, AlertCircle, Wifi, Volume
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { TYPOGRAPHY } from '@/components/utils/typographySystem';
 import { useVoiceAudio } from '@/components/hooks/useVoiceAudio';
@@ -98,6 +99,7 @@ export default function VoiceControlToolkit() {
   };
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="flex flex-col bg-zinc-950/50 rounded overflow-hidden">
       {/* Compact Status Bar */}
       <div className="px-3 py-2 bg-zinc-900/50 border-b border-zinc-800 shrink-0">
@@ -114,9 +116,16 @@ export default function VoiceControlToolkit() {
           <div className="flex items-center gap-2">
             <span className={cn('text-[8px] font-mono font-bold', getLatencyColor())}>{Math.round(latency)}ms</span>
             <div className="h-3 w-px bg-zinc-800" />
-            <Badge className="text-[7px] px-1.5 py-0 bg-zinc-800 text-zinc-400 border-zinc-700">
-              {onlineUsers.length}
-            </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className="text-[7px] px-1.5 py-0 bg-zinc-800 text-zinc-400 border-zinc-700 cursor-help">
+                    {onlineUsers.length}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">Online Users Connected</p>
+                </TooltipContent>
+              </Tooltip>
           </div>
         </div>
       </div>
@@ -262,5 +271,6 @@ export default function VoiceControlToolkit() {
         <span>CTRL+M: Mute</span>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
