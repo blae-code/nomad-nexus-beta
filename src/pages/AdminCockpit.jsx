@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Radio, AlertTriangle, CheckCircle2, RefreshCw, 
-  Download, Activity, Clock, Zap, MessageSquare
+  Download, Activity, Clock, Zap, MessageSquare, Gamepad2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CockpitHeader from '@/components/admin/CockpitHeader';
@@ -18,6 +18,7 @@ import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import TacticalMapStep from '@/components/admin/steps/TacticalMapStep';
 import CommsModeControl from '@/components/admin/CommsModeControl';
 import TicketBoard from '@/components/admin/TicketBoard';
+import DemoScenarioController from '@/components/admin/DemoScenarioController';
 
 const READINESS_STEPS = [
   { id: 'schema_check', title: '① Schema Check', component: SchemaCheckStep },
@@ -33,6 +34,9 @@ export default function AdminCockpitPage() {
   const [logs, setLogs] = useState([]);
   const [expandedStep, setExpandedStep] = useState('schema_check');
   const [activeTab, setActiveTab] = useState('cockpit');
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  const [demoScenario, setDemoScenario] = useState(null);
+  const [isSetupDemo, setIsSetupDemo] = useState(false);
   const queryClient = useQueryClient();
 
   // Auth check - gate to Pioneer/Founder (rank check if needed)
@@ -93,6 +97,25 @@ export default function AdminCockpitPage() {
     }
   };
 
+  // Setup demo scenario
+  const handleEnableDemo = async () => {
+    setIsSetupDemo(true);
+    try {
+      const response = await base44.functions.invoke('setupDemoScenario', {});
+      setDemoScenario(response.data?.scenario);
+      setDemoEnabled(true);
+    } catch (err) {
+      console.error('Demo setup failed:', err);
+    } finally {
+      setIsSetupDemo(false);
+    }
+  };
+
+  const handleDisableDemo = () => {
+    setDemoEnabled(false);
+    setDemoScenario(null);
+  };
+
   if (!user) {
     return (
       <div className="h-full flex items-center justify-center bg-black">
@@ -124,6 +147,29 @@ export default function AdminCockpitPage() {
 
           {/* Cockpit Tab */}
           <TabsContent value="cockpit" className="flex-1 overflow-hidden flex flex-col gap-4 mt-0">
+            {/* Demo Scenario Toggle */}
+            <div className="border border-zinc-800 bg-zinc-950/50 p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] font-mono font-bold text-zinc-400 uppercase">Demo Mode</div>
+                  <p className="text-[8px] text-zinc-600 mt-0.5">5-step guided operational walkthrough</p>
+                </div>
+                <Button
+                  onClick={demoEnabled ? handleDisableDemo : handleEnableDemo}
+                  disabled={isSetupDemo}
+                  className={cn(
+                    'text-[9px] h-8 px-3 font-bold uppercase flex items-center gap-2',
+                    demoEnabled
+                      ? 'bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300'
+                      : 'bg-blue-950/60 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300'
+                  )}
+                >
+                  <Gamepad2 className="w-3 h-3" />
+                  {demoEnabled ? 'Active' : 'Enable'}
+                </Button>
+              </div>
+            </div>
+
             {/* Comms Mode Control */}
             <div className="border border-zinc-800 bg-zinc-950/50 p-3">
               <CommsModeControl />
@@ -181,6 +227,17 @@ export default function AdminCockpitPage() {
             <TicketBoard user={user} />
           </TabsContent>
         </Tabs>
+
+        {/* Demo Sequence Guide */}
+        {demoEnabled && demoScenario && (
+          <DemoScenarioController 
+            scenario={demoScenario}
+            onStepChange={(stepIndex, highlight) => {
+              // Can be used to highlight elements
+              window.dispatchEvent(new CustomEvent('demo:highlight', { detail: { target: highlight } }));
+            }}
+          />
+        )}
       </div>
     </PageLayout>
   );
