@@ -8,7 +8,8 @@ import CommsDockPollsTab from './tabs/CommsDockPollsTab';
 import CommsDockRiggsyTab from './tabs/CommsDockRiggsyTab';
 import CommsDockInboxTab from './tabs/CommsDockInboxTab';
 import CommsDockDebugPanel from './CommsDockDebugPanel';
-// DEPRECATED: useVoiceRoom removed from dock - voice joining now routed to CommsConsole
+// DEPRECATED: useVoiceRoom disabled in dock (2026-01-23)
+// Voice joining is now canonical via CommsConsole + ActiveNetPanel only
 // import { useVoiceRoom } from './useVoiceRoom';
 
 const TABS = [
@@ -23,8 +24,8 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [unreadCounts, setUnreadCounts] = useState({});
   const queryClient = useQueryClient();
-  // DEPRECATED: Voice joining removed from dock (useVoiceRoom disabled)
-  // Redirect users to CommsConsole for LIVE voice connection
+  // DEPRECATED: voiceRoom disabled (2026-01-23) — use CommsConsole instead
+  // const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
 
   // Fetch unread counts
   const { data: readStates = [] } = useQuery({
@@ -147,8 +148,8 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
             {activeTab === 'inbox' && <CommsDockInboxTab user={user} />}
           </div>
 
-          {/* Debug Panel (Admin Only) - DEPRECATED: removed voice room debug */}
-          {/* {user?.role === 'admin' && <CommsDockDebugPanel debug={voiceRoom.debug} user={user} />} */}
+          {/* Debug Panel (Admin Only) — DEPRECATED, voice deps removed */}
+          {/* Disabled until voice room hook re-stabilized */}
         </div>
       )}
     </div>
