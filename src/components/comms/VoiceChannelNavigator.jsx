@@ -1,11 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ChevronRight, Lock, Unlock, Clock, ArrowRight } from 'lucide-react';
-import { createPageUrl } from '@/utils';
+import { ChevronRight, Lock, Unlock, Plus, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
 
 export default function VoiceChannelNavigator() {
   const [expandedEvents, setExpandedEvents] = React.useState(new Set());
@@ -24,18 +23,10 @@ export default function VoiceChannelNavigator() {
     staleTime: 10000
   });
 
-  // Fetch next 5 planned/scheduled operations
-  const { data: upcomingOps = [] } = useQuery({
-    queryKey: ['navigator-upcoming-ops'],
-    queryFn: async () => {
-      const now = new Date();
-      const ops = await base44.entities.Event.filter(
-        { status: ['scheduled', 'pending'] },
-        'start_time',
-        5
-      );
-      return ops.filter(op => new Date(op.start_time) > now);
-    },
+  // Fetch recent messages for quick access
+  const { data: recentMessages = [] } = useQuery({
+    queryKey: ['navigator-recent-messages'],
+    queryFn: () => base44.entities.Message.list('-updated_date', 10),
     staleTime: 30000
   });
 
@@ -93,60 +84,33 @@ export default function VoiceChannelNavigator() {
   }
 
   return (
-    <div className="space-y-3 text-xs">
-      {/* Upcoming Operations Widget */}
-      {upcomingOps.length > 0 && (
-        <div className="space-y-1 border-t border-zinc-800/50 pt-2">
-          <div className="px-2 py-1 text-[8px] font-bold uppercase text-zinc-500 tracking-wider flex items-center justify-between">
-            <span>UPCOMING OPS</span>
-            <span className="text-[7px] text-zinc-700">({upcomingOps.length})</span>
-          </div>
-          <div className="space-y-1">
-            {upcomingOps.map(op => (
-              <Link
-                key={op.id}
-                to={createPageUrl('Events') + `?id=${op.id}`}
-                className="block px-2 py-1.5 rounded text-left transition-all bg-zinc-900/30 hover:bg-zinc-800/50 border border-zinc-800/50 hover:border-[#ea580c]/40 group"
-              >
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-[9px] font-mono font-bold text-zinc-200 truncate flex-1 group-hover:text-[#ea580c] transition-colors">
-                    {op.title}
-                  </span>
-                  <span className={cn(
-                    'px-1 py-0.5 text-[7px] font-bold uppercase shrink-0 border rounded-none',
-                    getOpTypeBadge(op.event_type)
-                  )}>
-                    {op.event_type}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2 text-[8px] text-zinc-500">
-                  <div className="flex items-center gap-1 min-w-0">
-                    <Clock className="w-2.5 h-2.5 shrink-0" />
-                    <span className="truncate">{new Date(op.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  {op.priority && (
-                    <span className={cn(
-                      'px-1 py-0 text-[7px] font-bold uppercase shrink-0 border rounded-none',
-                      op.priority === 'CRITICAL' ? 'bg-red-950/40 text-red-300 border-red-700/30' :
-                      op.priority === 'HIGH' ? 'bg-orange-950/40 text-orange-300 border-orange-700/30' :
-                      'bg-zinc-800/40 text-zinc-300 border-zinc-700/30'
-                    )}>
-                      {op.priority}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-          <Link
-            to={createPageUrl('Events')}
-            className="flex items-center justify-between px-2 py-1 text-[8px] text-zinc-500 hover:text-[#ea580c] transition-colors group"
-          >
-            <span className="font-mono">SEE ALL</span>
-            <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+    <div className="space-y-2 text-xs">
+      {/* Voice Comms Management */}
+      <div className="space-y-1 border-b border-zinc-800/50 pb-2">
+        <div className="px-2 py-1 text-[8px] font-bold uppercase text-zinc-500 tracking-wider">
+          Manage Comms
         </div>
-      )}
+        <div className="flex gap-1 px-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 h-7 text-[8px] border-zinc-700 hover:border-[#ea580c] hover:text-[#ea580c]"
+            onClick={() => toast.info('Create voice net coming soon', { duration: 2000 })}
+          >
+            <Plus className="w-3 h-3 mr-1" />
+            Create Net
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 h-7 text-[8px] border-zinc-700 hover:border-zinc-600"
+            onClick={() => toast.info('Net settings coming soon', { duration: 2000 })}
+          >
+            <Settings className="w-3 h-3 mr-1" />
+            Settings
+          </Button>
+        </div>
+      </div>
 
       {/* Global/Open Channels */}
       {groupedNets[null]?.length > 0 && (
