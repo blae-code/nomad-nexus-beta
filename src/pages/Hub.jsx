@@ -147,8 +147,7 @@ export default function HubPage() {
           </div>
 
           {/* Live Operational Pulse - Compact */}
-          {recentLogs.length > 0 && (
-            <div className="border border-[#ea580c]/30 bg-zinc-950/80">
+          <div className="border border-[#ea580c]/30 bg-zinc-950/80">
               <div 
                 onClick={() => setPulseCollapsed(!pulseCollapsed)}
                 className="flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors"
@@ -170,7 +169,7 @@ export default function HubPage() {
                 className="overflow-hidden"
                 >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 p-1.5 border-t border-zinc-800/30">
-                {recentLogs.slice(0, 4).map((log, i) => {
+                {recentLogs.length > 0 ? recentLogs.slice(0, 4).map((log, i) => {
                   const getNavigationTarget = (log) => {
                     if (log.event_id) return () => navigate(createPageUrl('Events'));
                     if (log.type === 'RESCUE') return () => navigate(createPageUrl('Rescue'));
@@ -222,11 +221,14 @@ export default function HubPage() {
                       </div>
                     </motion.div>
                   );
-                  })}
+                  }) : (
+                   <div className="col-span-4 text-center py-4 text-[8px] text-zinc-500">
+                     No recent activity
+                   </div>
+                  )}
                   </div>
                   </motion.div>
                   </div>
-                  )}
         </div>
 
         {/* Main Dashboard Grid */}
