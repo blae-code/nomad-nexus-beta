@@ -147,12 +147,7 @@ export default function HubPage() {
 
           {/* Live Operational Pulse - Compact */}
           {recentLogs.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="border border-[#ea580c]/30 bg-zinc-950/80"
-            >
+            <div className="border border-[#ea580c]/30 bg-zinc-950/80">
               <div 
                 onClick={() => setPulseCollapsed(!pulseCollapsed)}
                 className="flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors"
@@ -229,7 +224,7 @@ export default function HubPage() {
                   })}
                   </div>
                   </motion.div>
-                  </motion.div>
+                  </div>
                   )}
         </div>
 
