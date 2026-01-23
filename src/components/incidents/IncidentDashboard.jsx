@@ -30,9 +30,12 @@ export default function IncidentDashboard({ eventId, onSelectIncident }) {
       if (filter !== 'all') {
         baseFilter.status = filter;
       }
-      return base44.entities.Incident.filter(baseFilter, '-created_date', 50);
+      // Limit to 30 for performance
+      return base44.entities.Incident.filter(baseFilter, '-created_date', 30);
     },
-    refetchInterval: 10000
+    staleTime: 15000,
+    refetchInterval: false, // Use subscriptions instead
+    gcTime: 45000
   });
 
   const updateStatusMutation = useMutation({
