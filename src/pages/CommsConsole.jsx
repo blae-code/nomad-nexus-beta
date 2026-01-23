@@ -368,6 +368,13 @@ function CommsConsolePage() {
 
   return (
     <PageLayout title="Comms Array" actions={headerActions}>
+      {/* 3-Step Indicator */}
+      <CommsStepIndicator 
+        selectedEventId={selectedEventId} 
+        selectedNetId={selectedNetId}
+        connectionState={connectionState}
+      />
+
       {/* Main 3-Column Grid */}
       <div className="h-full overflow-hidden flex gap-[var(--gutter)] p-[var(--gutter)]">
          {/* LEFT PANEL: Nets + Event Selector */}
