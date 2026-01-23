@@ -350,10 +350,12 @@ export default function VoiceControlToolkit() {
       {/* Footer - Communications & Shortcuts */}
       <div className="w-full border-t border-zinc-800 bg-zinc-900/50 py-2 space-y-1.5 px-3">
         {/* Keybind Hints */}
-        <div className="text-[6px] text-zinc-600 font-mono flex items-center justify-center gap-3 whitespace-nowrap">
-          <span>CTRL+V: PTT</span>
-          <span>•</span>
-          <span>CTRL+M: MUTE</span>
+        <div className="text-[9px] text-zinc-200 font-mono flex items-center justify-center gap-4 whitespace-nowrap bg-zinc-800/30 py-1.5 rounded px-2">
+          <span className="font-bold text-[#ea580c]">CTRL+V</span>
+          <span className="text-zinc-500">PTT</span>
+          <span className="text-zinc-600">•</span>
+          <span className="font-bold text-[#ea580c]">CTRL+M</span>
+          <span className="text-zinc-500">MUTE</span>
         </div>
         
         {/* Communication Tools */}
