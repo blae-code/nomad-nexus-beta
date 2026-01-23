@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Crown, Star, Lock, AlertCircle, CheckCircle, Users, Search } from "lucide-react";
+import { Shield, Crown, Star, Lock, AlertCircle, CheckCircle, Users, Search, RefreshCw } from "lucide-react";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -23,11 +23,23 @@ export default function RankRoleManagement() {
   const isSystemAdmin = currentUser?.is_system_administrator;
   const isPioneer = currentUser?.rank === 'Pioneer';
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useQuery({
     queryKey: ['rank-role-users'],
     queryFn: () => base44.asServiceRole.entities.User.list('-created_date', 500),
-    enabled: !!currentUser && (isSystemAdmin || isPioneer)
+    enabled: !!currentUser && (isSystemAdmin || isPioneer),
+    refetchInterval: 10000
   });
+
+  // Real-time subscription for user changes
+  useEffect(() => {
+    if (!currentUser || (!isSystemAdmin && !isPioneer)) return;
+
+    const unsubscribe = base44.entities.User.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ['rank-role-users'] });
+    });
+
+    return unsubscribe;
+  }, [currentUser, isSystemAdmin, isPioneer, queryClient]);
 
   const { data: roles = [] } = useQuery({
     queryKey: ['rank-role-roles'],
@@ -195,17 +207,31 @@ export default function RankRoleManagement() {
       <Card className="bg-zinc-950 border-zinc-800">
         <CardHeader className="border-b border-zinc-900">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm uppercase font-bold tracking-wider text-zinc-400">
+            <CardTitle className="text-sm uppercase font-bold tracking-wider text-zinc-400 flex items-center gap-2">
               User Directory
+              <Badge variant="outline" className="text-[9px] font-mono text-zinc-600">
+                {users.length} TOTAL
+              </Badge>
             </CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-              <Input
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 pl-8 h-8 text-xs"
-              />
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => refetchUsers()}
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 text-zinc-500 hover:text-[#ea580c]"
+                disabled={usersLoading}
+              >
+                <RefreshCw className={cn("w-4 h-4", usersLoading && "animate-spin")} />
+              </Button>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                <Input
+                  placeholder="Search callsign, RSI handle..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="bg-zinc-900 border-zinc-800 pl-8 h-8 text-xs"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
