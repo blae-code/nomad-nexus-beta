@@ -21,6 +21,7 @@ import TicketBoard from '@/components/admin/TicketBoard';
 import DemoScenarioController from '@/components/admin/DemoScenarioController';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import BootMediaAdmin from '@/components/admin/BootMediaAdmin';
+import CommsPreflightPanel from '@/components/admin/CommsPreflightPanel';
 
 const READINESS_STEPS = [
   { id: 'schema_check', title: '① Schema Check', component: SchemaCheckStep },
@@ -154,8 +155,11 @@ export default function AdminCockpitPage() {
                   FEEDBACK
                 </TabsTrigger>
                 <TabsTrigger value="boot-media" className="text-[9px] h-7 px-3 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-[#ea580c]">
-                  🎬 BOOT MEDIA
-                </TabsTrigger>
+                   🎬 BOOT MEDIA
+                 </TabsTrigger>
+                 <TabsTrigger value="comms-preflight" className="text-[9px] h-7 px-3 data-[state=active]:bg-zinc-900 data-[state=active]:border-b-2 data-[state=active]:border-[#ea580c]">
+                   📡 COMMS PREFLIGHT
+                 </TabsTrigger>
                 </TabsList>
                 </div>
 
@@ -264,6 +268,11 @@ export default function AdminCockpitPage() {
             {/* Boot Media Tab */}
             <TabsContent value="boot-media" className="flex-1 overflow-hidden mt-0 p-3 overflow-y-auto">
               <BootMediaAdmin />
+            </TabsContent>
+
+            {/* Comms Preflight Tab */}
+            <TabsContent value="comms-preflight" className="flex-1 overflow-hidden mt-0 p-3 overflow-y-auto">
+              <CommsPreflightPanel user={user} />
             </TabsContent>
           </Tabs>
         </div>
