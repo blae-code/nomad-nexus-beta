@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Shield, Tag, Save, History, AlertTriangle, MessageSquare, Pin, Radio } from "lucide-react";
+import { User, Shield, Tag, Save, History, AlertTriangle, MessageSquare, Pin, Radio, Brain, Activity, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import AIPreferencesPanel from "@/components/profile/AIPreferencesPanel";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -137,19 +139,33 @@ export default function ProfilePage() {
         callsign: data.callsign,
         rsi_handle: data.rsi_handle,
         bio: data.bio,
+        status: data.status,
+        voyager_number: data.voyager_number,
         ...(data.rank !== user?.rank && { rank: data.rank })
       });
 
       const updatedUser = await base44.auth.me();
       setUser(updatedUser);
-      
+
       // Notify header to refresh user data
       window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: updatedUser }));
-      
+
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Update failed", error);
       toast.error("Failed to update profile");
+    }
+  };
+
+  const handleAIPreferencesUpdate = async (prefs) => {
+    try {
+      await base44.auth.updateMe(prefs);
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: updatedUser }));
+    } catch (error) {
+      console.error("Failed to update AI preferences", error);
+      throw error;
     }
   };
 
@@ -183,19 +199,23 @@ export default function ProfilePage() {
           </div>
 
           <Tabs defaultValue="profile" className="w-full">
-             <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
-                <TabsTrigger value="profile" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                   Profile
-                </TabsTrigger>
-                <TabsTrigger value="clearance" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                   Clearance & Roles
-                </TabsTrigger>
-                {hasModerationActivity && (
-                   <TabsTrigger value="moderation" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                      Moderation History
-                   </TabsTrigger>
-                )}
-             </TabsList>
+                 <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
+                    <TabsTrigger value="profile" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                       Profile
+                    </TabsTrigger>
+                    <TabsTrigger value="clearance" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                       Clearance & Roles
+                    </TabsTrigger>
+                    <TabsTrigger value="ai-preferences" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white flex items-center gap-2">
+                       <Brain className="w-4 h-4" />
+                       AI Customization
+                    </TabsTrigger>
+                    {hasModerationActivity && (
+                       <TabsTrigger value="moderation" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                          Moderation History
+                       </TabsTrigger>
+                    )}
+                 </TabsList>
 
              {/* Profile Tab */}
              <TabsContent value="profile" className="space-y-6">
@@ -316,6 +336,32 @@ export default function ProfilePage() {
                             />
                          </div>
 
+                         <div className="grid gap-2">
+                            <Label htmlFor="status" className="text-xs uppercase text-zinc-500 font-bold">Status</Label>
+                            <Select defaultValue={user?.status || "active"}>
+                              <SelectTrigger {...register("status")} className="bg-zinc-900 border-zinc-800">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-900 border-zinc-800">
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                                <SelectItem value="on_leave">On Leave</SelectItem>
+                              </SelectContent>
+                            </Select>
+                         </div>
+
+                         {user?.rank === "Voyager" && (
+                           <div className="grid gap-2">
+                              <Label htmlFor="voyager_number" className="text-xs uppercase text-[#ea580c] font-bold">Voyager Number</Label>
+                              <Input 
+                                id="voyager_number" 
+                                {...register("voyager_number")} 
+                                className="bg-zinc-900 border-zinc-800 text-white font-mono"
+                                placeholder="Your Voyager designation"
+                              />
+                           </div>
+                         )}
+
                          {/* Rank Selection - Only available to Vagrant on first login */}
                          {user?.rank === 'Vagrant' && (
                            <div className="grid gap-2 pt-4 border-t border-zinc-900/50">
@@ -347,6 +393,16 @@ export default function ProfilePage() {
                       </form>
                    </CardContent>
                 </Card>
+             </TabsContent>
+
+             {/* AI Customization Tab */}
+             <TabsContent value="ai-preferences" className="space-y-6">
+                {user && (
+                   <AIPreferencesPanel 
+                      user={user} 
+                      onUpdate={handleAIPreferencesUpdate}
+                   />
+                )}
              </TabsContent>
 
              {/* Clearance & Roles Tab */}
