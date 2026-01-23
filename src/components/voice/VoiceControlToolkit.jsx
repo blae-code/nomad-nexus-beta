@@ -114,8 +114,6 @@ export default function VoiceControlToolkit() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={cn('text-[8px] font-mono font-bold', getLatencyColor())}>{Math.round(latency)}ms</span>
-            <div className="h-3 w-px bg-zinc-800" />
           </div>
         </div>
       </div>
