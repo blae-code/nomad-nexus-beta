@@ -223,11 +223,30 @@ const PLAYBOOK_PROCEDURES = {
   }
 };
 
-export default function OperationPlaybook({ user }) {
+export default function OperationPlaybook({ user, selectedEvent, userRole }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChecklist, setActiveChecklist] = useState({});
 
+  // Filter playbooks based on user role and event type
+  const relevantPlaybooks = useMemo(() => {
+    const canViewAll = userRole.permissions.includes('full_control') || userRole.permissions.includes('tactical_control');
+    const eventType = selectedEvent?.event_type || 'focused';
+    
+    if (canViewAll) {
+      return Object.keys(PLAYBOOK_PROCEDURES);
+    }
+    
+    // Limited roles see relevant playbooks only
+    const allowedPlaybooks = ['comms'];
+    if (userRole.permissions.includes('incident_response')) {
+      allowedPlaybooks.push('rescue');
+    }
+    return allowedPlaybooks;
+  }, [userRole, selectedEvent]);
+
   const filteredPlaybook = Object.entries(PLAYBOOK_PROCEDURES).reduce((acc, [key, category]) => {
+    if (!relevantPlaybooks.includes(key)) return acc;
+    
     const filteredProcedures = category.procedures.filter(proc =>
       proc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       proc.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -255,6 +274,19 @@ export default function OperationPlaybook({ user }) {
 
   return (
     <div className="space-y-4">
+      {/* Context Header */}
+      <div className="border border-zinc-800 bg-zinc-950/50 p-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-zinc-200">{selectedEvent.title}</div>
+            <div className="text-[10px] text-zinc-500">Your Role: {userRole.label}</div>
+          </div>
+          <Badge variant="outline" className="text-[10px]">
+            {Object.keys(filteredPlaybook).length} playbook{Object.keys(filteredPlaybook).length !== 1 ? 's' : ''}
+          </Badge>
+        </div>
+      </div>
+
       {/* Search */}
       <div className="border border-zinc-800 bg-zinc-950/50 p-4">
         <div className="relative">

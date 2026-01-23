@@ -5,17 +5,31 @@ import { Radio, Users, MessageSquare, Signal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-export default function CommsIntegrationPanel({ voiceNets, channels, events }) {
+export default function CommsIntegrationPanel({ voiceNets, channels, selectedEvent, userRole }) {
+  const canManageComms = userRole.permissions.includes('comms_management');
+  const canControlNets = userRole.permissions.includes('net_control');
+  
   const activeNets = voiceNets.filter(n => n.status === 'active');
   const commandNets = activeNets.filter(n => n.type === 'command');
   const squadNets = activeNets.filter(n => n.type === 'squad');
 
   return (
     <div className="space-y-4">
+      {/* Permission Indicator */}
+      {(canManageComms || canControlNets) && (
+        <div className="border border-blue-900/50 bg-blue-950/20 p-3">
+          <p className="text-xs text-blue-300 font-bold">
+            ✓ You have communications {canManageComms ? 'management' : 'control'} authority
+          </p>
+        </div>
+      )}
+
       {/* Voice Net Status Grid */}
       <div className="border border-zinc-800 bg-zinc-950/50">
         <div className="px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
-          <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">Voice Network Status</h3>
+          <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">
+            Voice Networks — {selectedEvent.title}
+          </h3>
           <Link to={createPageUrl('CommsConsole')}>
             <Button size="sm" variant="outline" className="text-xs h-7">
               Open Comms Console
@@ -90,37 +104,7 @@ export default function CommsIntegrationPanel({ voiceNets, channels, events }) {
         </div>
       </div>
 
-      {/* Operational Events with Comms */}
-      <div className="border border-zinc-800 bg-zinc-950/50">
-        <div className="px-4 py-2 border-b border-zinc-800">
-          <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">Operations with Active Comms</h3>
-        </div>
-        <div className="p-4 space-y-2">
-          {events.length === 0 ? (
-            <p className="text-xs text-zinc-500 italic">No active operations</p>
-          ) : (
-            events.map(event => {
-              const eventNets = voiceNets.filter(n => n.event_id === event.id);
-              return (
-                <Link key={event.id} to={createPageUrl('Events')}>
-                  <div className="p-3 border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900/50 transition-colors cursor-pointer">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold text-zinc-200">{event.title}</span>
-                      <Badge variant="outline" className="text-[10px]">{event.phase}</Badge>
-                    </div>
-                    {eventNets.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
-                        <Radio className="w-3 h-3" />
-                        <span>{eventNets.length} voice nets active</span>
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      </div>
+
 
       {/* Quick Comms Actions */}
       <div className="grid grid-cols-2 gap-3">

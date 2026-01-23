@@ -9,11 +9,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Play, Square, AlertTriangle, Radio, Megaphone, Plus, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function OperationQuickActions({ user, events, incidents }) {
+export default function OperationQuickActions({ user, selectedEvent, events, incidents, userRole }) {
   const queryClient = useQueryClient();
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [showNewIncident, setShowNewIncident] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
+
+  const canControlOps = userRole.permissions.includes('full_control') || userRole.permissions.includes('tactical_control');
+  const canBroadcast = userRole.permissions.includes('broadcast');
+  const canManagePersonnel = userRole.permissions.includes('personnel_assignment');
+  const canTransitionPhase = userRole.permissions.includes('phase_transitions');
 
   const activeEvents = events.filter(e => e.status === 'active');
   const scheduledEvents = events.filter(e => e.status === 'scheduled');
@@ -66,22 +71,46 @@ export default function OperationQuickActions({ user, events, incidents }) {
 
   return (
     <div className="space-y-4">
+      {/* Current Operation Status */}
+      <div className="border border-zinc-800 bg-zinc-950/50 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">CURRENT OPERATION</h3>
+          <Badge variant="outline" className="text-[10px]">{selectedEvent.phase}</Badge>
+        </div>
+        <div className="space-y-2">
+          <div className="text-sm font-bold text-zinc-200">{selectedEvent.title}</div>
+          <div className="text-xs text-zinc-500">{selectedEvent.description}</div>
+          {canTransitionPhase && selectedEvent.status === 'active' && (
+            <Button
+              size="sm"
+              onClick={() => endEventMutation.mutate(selectedEvent.id)}
+              className="gap-2 bg-red-900/50 hover:bg-red-900"
+            >
+              <Square className="w-3 h-3" />
+              Complete Operation
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Quick Action Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Dialog open={showNewEvent} onOpenChange={setShowNewEvent}>
-          <DialogTrigger asChild>
-            <Button className="h-20 flex flex-col gap-2 bg-emerald-950/50 border border-emerald-900/50 hover:bg-emerald-900/30">
-              <Plus className="w-5 h-5 text-emerald-400" />
-              <span className="text-xs text-zinc-200 font-bold">NEW OPERATION</span>
-            </Button>
-          </DialogTrigger>
+        {canControlOps && (
+          <Dialog open={showNewEvent} onOpenChange={setShowNewEvent}>
+            <DialogTrigger asChild>
+              <Button className="h-20 flex flex-col gap-2 bg-emerald-950/50 border border-emerald-900/50 hover:bg-emerald-900/30">
+                <Plus className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs text-zinc-200 font-bold">NEW OPERATION</span>
+              </Button>
+            </DialogTrigger>
           <DialogContent className="bg-zinc-950 border-zinc-800">
             <DialogHeader>
               <DialogTitle className="text-zinc-200">Create New Operation</DialogTitle>
             </DialogHeader>
             <NewEventForm onSubmit={createEventMutation.mutate} />
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        )}
 
         <Dialog open={showNewIncident} onOpenChange={setShowNewIncident}>
           <DialogTrigger asChild>
@@ -98,7 +127,8 @@ export default function OperationQuickActions({ user, events, incidents }) {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showBroadcast} onOpenChange={setShowBroadcast}>
+        {canBroadcast && (
+          <Dialog open={showBroadcast} onOpenChange={setShowBroadcast}>
           <DialogTrigger asChild>
             <Button className="h-20 flex flex-col gap-2 bg-orange-950/50 border border-orange-900/50 hover:bg-orange-900/30">
               <Megaphone className="w-5 h-5 text-orange-400" />
@@ -111,50 +141,27 @@ export default function OperationQuickActions({ user, events, incidents }) {
             </DialogHeader>
             <BroadcastForm />
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        )}
       </div>
 
-      {/* Active Operations */}
-      <div className="border border-zinc-800 bg-zinc-950/50">
-        <div className="px-4 py-2 border-b border-zinc-800">
-          <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">Active Operations</h3>
+      {/* Permission Notice for Limited Roles */}
+      {!canControlOps && (
+        <div className="border border-zinc-800 bg-zinc-900/30 p-3">
+          <p className="text-xs text-zinc-500 italic">
+            Your role: <span className="text-zinc-300 font-bold">{userRole.label}</span> — Limited operational controls
+          </p>
         </div>
-        <div className="p-4 space-y-2">
-          {activeEvents.length === 0 ? (
-            <p className="text-xs text-zinc-500 italic">No active operations</p>
-          ) : (
-            activeEvents.map(event => (
-              <div key={event.id} className="flex items-center justify-between p-3 border border-zinc-800 bg-zinc-900/30">
-                <div>
-                  <div className="text-sm font-bold text-zinc-200">{event.title}</div>
-                  <div className="text-xs text-zinc-500">Phase: {event.phase}</div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => endEventMutation.mutate(event.id)}
-                  disabled={endEventMutation.isPending}
-                  className="gap-2"
-                >
-                  <Square className="w-3 h-3" />
-                  End Op
-                </Button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Scheduled Operations */}
-      <div className="border border-zinc-800 bg-zinc-950/50">
-        <div className="px-4 py-2 border-b border-zinc-800">
-          <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">Scheduled Operations</h3>
-        </div>
-        <div className="p-4 space-y-2">
-          {scheduledEvents.length === 0 ? (
-            <p className="text-xs text-zinc-500 italic">No scheduled operations</p>
-          ) : (
-            scheduledEvents.slice(0, 5).map(event => (
+      {/* Scheduled Operations - Only for commanders */}
+      {canControlOps && scheduledEvents.length > 0 && (
+        <div className="border border-zinc-800 bg-zinc-950/50">
+          <div className="px-4 py-2 border-b border-zinc-800">
+            <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">Scheduled Operations</h3>
+          </div>
+          <div className="p-4 space-y-2">
+            {scheduledEvents.slice(0, 5).map(event => (
               <div key={event.id} className="flex items-center justify-between p-3 border border-zinc-800 bg-zinc-900/30">
                 <div>
                   <div className="text-sm font-bold text-zinc-200">{event.title}</div>
@@ -162,20 +169,22 @@ export default function OperationQuickActions({ user, events, incidents }) {
                     {new Date(event.start_time).toLocaleString()}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => startEventMutation.mutate(event.id)}
-                  disabled={startEventMutation.isPending}
-                  className="gap-2 bg-emerald-900/50 hover:bg-emerald-900"
-                >
-                  <Play className="w-3 h-3" />
-                  Start
-                </Button>
+                {canTransitionPhase && (
+                  <Button
+                    size="sm"
+                    onClick={() => startEventMutation.mutate(event.id)}
+                    disabled={startEventMutation.isPending}
+                    className="gap-2 bg-emerald-900/50 hover:bg-emerald-900"
+                  >
+                    <Play className="w-3 h-3" />
+                    Start
+                  </Button>
+                )}
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Active Incidents */}
       <div className="border border-red-900/50 bg-red-950/20">
