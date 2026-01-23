@@ -4,7 +4,6 @@ import { X, Send, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { observability } from '@/functions/observability';
 
 /**
  * Feedback Submit Form Modal
@@ -36,9 +35,9 @@ export default function FeedbackSubmitForm({ open, onOpenChange, feedbackType, o
     setError(null);
 
     try {
-      // Capture context from observability
-      const diagnostics = observability?.getDiagnosticsSummary?.();
-      const recentErrors = observability?.getRecentErrors?.(10) || [];
+      // Capture context from observability singleton
+      const obs = window.__observability;
+      const recentErrors = obs?.getRecentErrors?.(10) || [];
 
       // Get page context
       const pageContext = window.location.pathname;
@@ -189,7 +188,7 @@ export default function FeedbackSubmitForm({ open, onOpenChange, feedbackType, o
                       <div>• Page: {window.location.pathname}</div>
                       <div>• Browser: {navigator.userAgent.split(' ').slice(-2).join(' ')}</div>
                       <div>• Time: {new Date().toLocaleTimeString()}</div>
-                      <div>• Errors captured: {observability?.getRecentErrors?.(10)?.length || 0}</div>
+                      <div>• Errors captured: {window.__observability?.getRecentErrors?.(10)?.length || 0}</div>
                     </div>
                   </div>
 
