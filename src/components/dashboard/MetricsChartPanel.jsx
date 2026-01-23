@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
   const [activeChart, setActiveChart] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(true);
   
   // Active users by UTC hour (24-hour cycle)
   const activeUsersByUTC = useMemo(() => {
