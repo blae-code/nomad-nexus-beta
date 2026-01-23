@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 
 export default function NotificationsTab({ user }) {
   const queryClient = useQueryClient();
+  const [, setRefreshTime] = useState(0);
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['message-notifications', user?.id],
@@ -28,6 +29,14 @@ export default function NotificationsTab({ user }) {
     });
     return unsubscribe;
   }, [user?.id, queryClient]);
+
+  // Update timestamps every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTime(prev => prev + 1);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getTimeAgo = (date) => {
     const now = new Date();
@@ -66,7 +75,7 @@ export default function NotificationsTab({ user }) {
                       {notif.content}
                     </div>
                   </div>
-                  <span className="text-[8px] text-zinc-600 flex-shrink-0">
+                  <span className="text-[8px] text-zinc-600 flex-shrink-0" key={`time-${notif.id}-${refreshTime}`}>
                     {getTimeAgo(notif.created_date)}
                   </span>
                 </div>
