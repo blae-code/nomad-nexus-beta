@@ -262,7 +262,7 @@ export const commands = [
     description: 'Create a new poll',
     minRank: 'Scout'
   },
-  // Canonical channel shortcuts
+  // Canonical channel shortcuts (generated from commsRegistry)
   {
     id: 'ch-announcements',
     type: 'NAVIGATION',
@@ -271,7 +271,7 @@ export const commands = [
     keywords: ['channel', 'announcements', 'org', 'broadcast'],
     icon: 'Bell',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-announcements' },
+    handlerArgs: { slug: 'org-announcements' },
     description: 'Founder org-wide announcements',
     minRank: 'Vagrant'
   },
@@ -283,7 +283,7 @@ export const commands = [
     keywords: ['channel', 'briefings', 'operations', 'ops'],
     icon: 'FileText',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-ops-briefings' },
+    handlerArgs: { slug: 'org-ops-briefings' },
     description: 'Pre-op briefs with discussion',
     minRank: 'Scout'
   },
@@ -295,7 +295,7 @@ export const commands = [
     keywords: ['channel', 'sitrep', 'situation', 'report'],
     icon: 'Radio',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-ops-sitrep' },
+    handlerArgs: { slug: 'org-ops-sitrep' },
     description: 'Real-time situation reports',
     minRank: 'Scout'
   },
@@ -307,7 +307,7 @@ export const commands = [
     keywords: ['channel', 'distress', 'rescue', 'dispatch'],
     icon: 'AlertTriangle',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-distress-dispatch' },
+    handlerArgs: { slug: 'org-distress-dispatch' },
     description: 'Rescue alerts & coordination',
     minRank: 'Scout'
   },
@@ -319,7 +319,7 @@ export const commands = [
     keywords: ['channel', 'general', 'casual', 'chat'],
     icon: 'MessageSquare',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-general-comms' },
+    handlerArgs: { slug: 'org-general-comms' },
     description: 'Org-wide casual discussion',
     minRank: 'Vagrant'
   },
@@ -331,7 +331,7 @@ export const commands = [
     keywords: ['channel', 'intel', 'intelligence', 'ledger'],
     icon: 'Eye',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-intel-ledger' },
+    handlerArgs: { slug: 'org-intel-ledger' },
     description: 'Shared intelligence reports',
     minRank: 'Scout'
   },
@@ -343,7 +343,7 @@ export const commands = [
     keywords: ['channel', 'logistics', 'market', 'trading'],
     icon: 'TrendingUp',
     handler: 'openChannel',
-    handlerArgs: { canonical_key: 'org-market-logistics' },
+    handlerArgs: { slug: 'org-market-logistics' },
     description: 'Industry & supply coordination',
     minRank: 'Vagrant'
   },
