@@ -574,8 +574,12 @@ export default function CommandPaletteV3() {
       '/events': 'OPERATIONS BOARD',
       '/commsconsole': 'COMMS ARRAY',
       '/intelligence': 'INTELLIGENCE',
-      '/adminconsole': 'SYSTEM ADMIN',
-      '/admin': 'SYSTEM ADMIN',
+      '/admin': 'ADMIN COCKPIT',
+      '/universemap': 'TACTICAL MAP',
+      '/fleetmanager': 'FLEET MANAGER',
+      '/rescue': 'RESCUE SYSTEM',
+      '/channels': 'CHANNELS',
+      '/profile': 'PROFILE',
     };
     return breadcrumbs[path] || 'OPERATIONS';
   };
