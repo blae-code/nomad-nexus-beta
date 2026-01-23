@@ -671,8 +671,25 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
        mounted = false;
        if (qualityInterval) clearInterval(qualityInterval);
        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+
+       // Remove all event listeners before disconnecting
+       if (currentRoom && eventListeners.length > 0) {
+          try {
+             eventListeners.forEach(({ event, handler }) => {
+                currentRoom.off(event, handler);
+             });
+             console.log(`[COMMS] Cleaned up ${eventListeners.length} event listeners`);
+          } catch (err) {
+             console.warn('[COMMS] Error removing event listeners:', err);
+          }
+       }
+
        if (currentRoom) {
-          currentRoom.disconnect();
+          try {
+             currentRoom.disconnect();
+          } catch (err) {
+             console.warn('[COMMS] Error disconnecting:', err);
+          }
           roomRef.current = null;
        }
        setRoom(null);
