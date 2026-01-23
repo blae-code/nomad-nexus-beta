@@ -29,8 +29,7 @@ import DemoScenarioController from '@/components/admin/DemoScenarioController';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import BootMediaAdmin from '@/components/admin/BootMediaAdmin';
 import CommsPreflightPanel from '@/components/admin/CommsPreflightPanel';
-import { checkLiveKitReadiness } from '@/components/comms/checkLiveKitReadiness';
-import { useCommsMode } from '@/components/comms/useCommsMode';
+import { useCommsReadiness } from '@/components/comms/useCommsReadiness';
 
 export default function AdminCockpitPage() {
   const [user, setUser] = useState(null);
@@ -41,12 +40,10 @@ export default function AdminCockpitPage() {
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState(null);
   const [isSetupDemo, setIsSetupDemo] = useState(false);
-  const [effectiveCommsMode, setEffectiveCommsMode] = useState('SIM');
-  const [modeFallbackReason, setModeFallbackReason] = useState(null);
   const queryClient = useQueryClient();
   
-  // Get desired mode from config
-  const { isLive: desiredLive } = useCommsMode();
+  // Get effective comms mode
+  const { effectiveMode, fallbackReason } = useCommsReadiness();
 
   // Auth check - gate to Pioneer/Founder (rank check if needed)
   useEffect(() => {
@@ -57,26 +54,6 @@ export default function AdminCockpitPage() {
       setUser(u);
     });
   }, []);
-
-  // Derive effective comms mode based on desired + readiness
-  useEffect(() => {
-    if (!desiredLive) {
-      setEffectiveCommsMode('SIM');
-      setModeFallbackReason(null);
-      return;
-    }
-
-    // Desired is LIVE - check readiness
-    checkLiveKitReadiness().then(({ isReady, reason }) => {
-      if (isReady) {
-        setEffectiveCommsMode('LIVE');
-        setModeFallbackReason(null);
-      } else {
-        setEffectiveCommsMode('SIM');
-        setModeFallbackReason(reason);
-      }
-    });
-  }, [desiredLive]);
 
   // Fetch recent audit logs
   const { data: auditLogs = [] } = useQuery({
@@ -161,7 +138,7 @@ export default function AdminCockpitPage() {
       <div className="h-full overflow-hidden flex flex-col bg-black">
         {/* Header with readiness score & real-time system status */}
           <div className="border-b border-zinc-800 px-4 py-3 shrink-0 space-y-2">
-            <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} effectiveCommsMode={effectiveCommsMode} modeFallbackReason={modeFallbackReason} />
+            <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} />
 
             {/* System Status Indicators */}
             <div className="flex items-center gap-3 flex-wrap text-[8px]">
@@ -172,10 +149,9 @@ export default function AdminCockpitPage() {
               </div>
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
-                <MessageSquare className={cn("w-3 h-3", effectiveCommsMode === 'LIVE' ? 'text-green-400' : 'text-amber-400')} />
+                <MessageSquare className="w-3 h-3 text-green-400" />
                 <span className="text-zinc-300">Comms:</span>
-                <span className={cn("font-mono font-bold", effectiveCommsMode === 'LIVE' ? 'text-green-400' : 'text-amber-400')}>{effectiveCommsMode}</span>
-                {modeFallbackReason && <span className="text-[7px] text-amber-300">({modeFallbackReason})</span>}
+                <span className="font-mono font-bold text-green-400">{demoEnabled ? 'DEMO' : 'LIVE'}</span>
               </div>
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
