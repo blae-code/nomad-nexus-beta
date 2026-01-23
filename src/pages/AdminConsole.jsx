@@ -132,6 +132,24 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
     });
   };
 
+  const handleRankChange = (newRank) => {
+    if (!selectedUser) return;
+    setSelectedUser({ ...selectedUser, rank: newRank });
+    updateUserMutation.mutate({
+      id: selectedUser.id,
+      data: { rank: newRank }
+    });
+  };
+
+  const handleFieldChange = (field, value) => {
+    if (!selectedUser) return;
+    setSelectedUser({ ...selectedUser, [field]: value });
+    updateUserMutation.mutate({
+      id: selectedUser.id,
+      data: { [field]: value }
+    });
+  };
+
   const handleSaveRole = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
