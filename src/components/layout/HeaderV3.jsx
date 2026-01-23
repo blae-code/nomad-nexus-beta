@@ -182,7 +182,7 @@ export default function HeaderV3() {
     window.headerFetchPresence = fetchPresence;
   }, [user]);
 
-  // Subscribe to ALL UserPresence changes for real-time online count
+  // Subscribe to ALL UserPresence changes for real-time online count (no redundant user list fetch)
   useEffect(() => {
     if (!user?.id) return;
     
@@ -192,18 +192,12 @@ export default function HeaderV3() {
         setUserPresence(event.data || event);
       }
 
-      // Refresh online count on any presence change
+      // Refresh online count on any presence change (presences only, users cached from init)
       try {
-        const [presences, users] = await Promise.all([
-          base44.entities.UserPresence.list(),
-          base44.entities.User.list()
-        ]);
-        
-        const userIds = new Set(users.map(u => u.id));
-        const validPresences = presences.filter(p => userIds.has(p.user_id));
+        const presences = await base44.entities.UserPresence.list();
         
         const onlineUserIds = new Set(
-          validPresences
+          presences
             .filter((p) => p.status !== 'offline')
             .map(p => p.user_id)
         );
@@ -215,7 +209,7 @@ export default function HeaderV3() {
     });
 
     return () => unsubscribe?.();
-  }, [user?.id, userPresence?.id]);
+  }, [user?.id]);
 
   // Ping for latency on demand (called from voice channel events)
   const ping = async () => {
