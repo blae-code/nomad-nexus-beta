@@ -28,6 +28,10 @@ export default function CommsArrayPanel({
     currentUser?.id
   );
 
+  const [nodeStates, setNodeStates] = useState({});
+  const [transmittingNodes, setTransmittingNodes] = useState(new Set());
+  const [edgeTypes, setEdgeTypes] = useState({});
+
   // Fetch comms topology data
   const { data: topologyData } = useQuery({
     queryKey: ['comms-topology', eventId],
@@ -41,23 +45,73 @@ export default function CommsArrayPanel({
       const event = await base44.entities.Event.filter({ id: eventId });
       const commandStaff = event?.[0]?.command_staff || {};
 
-      // Fetch voice nets
+      // Fetch voice nets with connection states
       const nets = await base44.entities.VoiceNet.filter({ event_id: eventId });
 
       // Fetch player statuses
       const statuses = await base44.entities.PlayerStatus.filter({ event_id: eventId });
 
+      // Fetch whisper sessions (active)
+      const whispers = await base44.entities.WhisperSession.filter({
+        operation_id: eventId,
+        status: 'ACTIVE'
+      });
+
+      // Fetch net patches
+      const patches = await base44.entities.NetPatch.filter({ event_id: eventId });
+
       return {
         squads,
         commandStaff,
         nets,
-        statuses
+        statuses,
+        whispers,
+        patches
       };
     },
     enabled: !!eventId,
-    staleTime: 10000,
+    staleTime: 8000,
     gcTime: 30000
   });
+
+  // Update node states and edge types when topology changes
+  useEffect(() => {
+    if (!topologyData) return;
+
+    const states = {};
+    const edges = {};
+
+    // Update node states based on player statuses
+    topologyData.statuses?.forEach(status => {
+      states[status.user_id] = mapStatusToState(status.status);
+    });
+
+    // Track transmitting nodes from voice nets
+    const transmitting = new Set();
+    topologyData.nets?.forEach(net => {
+      if (net.active_speaker_user_id) {
+        transmitting.add(net.active_speaker_user_id);
+      }
+    });
+    setTransmittingNodes(transmitting);
+
+    // Map edge types
+    topologyData.whispers?.forEach(whisper => {
+      edges[`whisper-${whisper.id}`] = 'whisper';
+    });
+
+    topologyData.patches?.forEach(patch => {
+      edges[`patch-${patch.id}`] = 'patch';
+    });
+
+    // Default to operational for squad-command links
+    topologyData.squads?.forEach(squad => {
+      edges[`squad-${squad.id}`] = 'operational';
+    });
+
+    setNodeStates(states);
+    setEdgeTypes(edges);
+  }, [topologyData]);
 
   // Draw canvas topology
   const drawTopology = useCallback(() => {
