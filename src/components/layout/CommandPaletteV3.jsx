@@ -751,7 +751,7 @@ export default function CommandPaletteV3() {
 
               {/* Footer */}
                <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[9px] text-zinc-600 font-mono flex items-center justify-between shrink-0">
-                <span>↑↓ nav • ↵ select • esc close</span>
+                <span>↑↓ nav • Enter select • Esc close</span>
                 <span>READY</span>
               </div>
             </div>
