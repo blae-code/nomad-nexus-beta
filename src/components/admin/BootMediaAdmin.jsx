@@ -181,22 +181,31 @@ export default function BootMediaAdmin() {
             />
 
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={config.boot_video_url}
-                readOnly
-                className="text-xs px-2 py-1 border border-zinc-700 bg-zinc-900 text-zinc-400 flex-1 font-mono"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCopyUrl}
-                className="text-xs gap-1"
-              >
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copied ? 'Copied' : 'Copy'}
-              </Button>
-            </div>
+               <input
+                 type="text"
+                 value={config.boot_video_url}
+                 readOnly
+                 className="text-xs px-2 py-1 border border-zinc-700 bg-zinc-900 text-zinc-400 flex-1 font-mono"
+               />
+               <Button
+                 size="sm"
+                 variant="outline"
+                 onClick={handleCopyUrl}
+                 className="text-xs gap-1"
+               >
+                 {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                 {copied ? 'Copied' : 'Copy'}
+               </Button>
+               <Button
+                 size="sm"
+                 variant="outline"
+                 onClick={handleRemoveFile}
+                 className="text-xs gap-1 text-red-400 hover:text-red-300 hover:border-red-500/50"
+               >
+                 <Trash2 className="w-3 h-3" />
+                 Remove
+               </Button>
+             </div>
           </div>
         )}
 
