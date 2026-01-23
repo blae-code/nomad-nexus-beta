@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone, MicOff, Volume2 } from "lucide-react";
 import NetStatusBar from "@/components/comms/NetStatusBar";
 import { motion, AnimatePresence } from "framer-motion";
+import ConnectionTelemetryStrip from "./ConnectionTelemetryStrip";
 import { hasMinRank } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
