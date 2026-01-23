@@ -549,7 +549,7 @@ function CommsConsolePage() {
 
          {/* RIGHT PANEL: Fleet / Status / AI (OPS Mode) */}
          {consoleMode === 'ops' && (
-            <Panel title={viewMode === 'tactical' ? 'Incidents' : 'Fleet Status'} className="w-72 flex flex-col overflow-hidden" body={false}>
+            <Panel title={viewMode === 'tactical' ? 'Incidents' : 'Topology'} className="w-72 flex flex-col overflow-hidden" body={false}>
                {viewMode === 'tactical' ? (
                   <>
                      <ScrollArea className="flex-1">
