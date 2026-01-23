@@ -50,8 +50,10 @@ export default function UserProfileCard({
   };
 
   const handleFieldChange = (field, value) => {
-    onFieldChange?.(field, value);
-    toast.success(`${field} updated`);
+    if (onFieldChange) {
+      onFieldChange(field, value);
+      toast.success(`${field} updated`);
+    }
   };
 
   const toggleEditField = (field) => {
@@ -141,11 +143,11 @@ export default function UserProfileCard({
             disabled={!fieldCanEdit}
             className={cn(
               "w-full text-left px-3 py-2 rounded border transition-all text-xs font-mono",
-              fieldCanEdit && "cursor-pointer hover:border-[#ea580c]/50 bg-zinc-900/50 border-zinc-800/50 text-zinc-300",
+              fieldCanEdit && "cursor-pointer hover:border-[#ea580c]/50 bg-zinc-900/50 border-zinc-800/50 text-zinc-300 hover:text-zinc-200",
               !fieldCanEdit && "cursor-not-allowed opacity-50 bg-zinc-900/20 border-zinc-800/30 text-zinc-500"
             )}
           >
-            {value || <span className="text-zinc-600">—</span>}
+            {value ? <span className="text-zinc-100">{value}</span> : <span className="text-zinc-600">—</span>}
           </button>
         )}
       </div>
@@ -154,11 +156,22 @@ export default function UserProfileCard({
 
   const ToggleField = ({ label, field, value, icon: Icon }) => {
     const fieldCanEdit = canEditField(field);
+    const [isChanging, setIsChanging] = React.useState(false);
+    
+    const handleToggle = async () => {
+      if (!fieldCanEdit) return;
+      setIsChanging(true);
+      try {
+        await handleFieldChange(field, !value);
+      } finally {
+        setIsChanging(false);
+      }
+    };
     
     return (
       <div className={cn(
         "flex items-center justify-between px-3 py-2 rounded border transition-all",
-        fieldCanEdit ? "bg-zinc-900/30 border-zinc-800/50" : "bg-zinc-900/15 border-zinc-800/30 opacity-60"
+        fieldCanEdit ? "bg-zinc-900/30 border-zinc-800/50 cursor-pointer hover:border-zinc-700" : "bg-zinc-900/15 border-zinc-800/30 opacity-60"
       )}>
         <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
           {Icon && <Icon className="w-3 h-3 text-[#ea580c]" />}
@@ -166,8 +179,8 @@ export default function UserProfileCard({
           {!fieldCanEdit && <span className="text-[9px] text-zinc-700 ml-auto">(Admin Only)</span>}
         </label>
         <button
-          onClick={() => fieldCanEdit && handleFieldChange(field, !value)}
-          disabled={!fieldCanEdit}
+          onClick={handleToggle}
+          disabled={!fieldCanEdit || isChanging}
           className={cn(
             "w-8 h-4 rounded-full border transition-all",
             value
@@ -272,7 +285,10 @@ export default function UserProfileCard({
                </label>
 
                {canEditField("rank") ? (
-                 <Select value={user.rank || ""} onValueChange={onRankChange}>
+                 <Select value={user.rank || ""} onValueChange={(val) => {
+                   onRankChange?.(val);
+                   toast.success("Rank updated");
+                 }}>
                    <SelectTrigger className={cn(
                      "bg-zinc-900 border-zinc-700 text-xs h-8 font-mono",
                      "hover:border-[#ea580c]/50 focus:border-[#ea580c] focus:ring-0"
