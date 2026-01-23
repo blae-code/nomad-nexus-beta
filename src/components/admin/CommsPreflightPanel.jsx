@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, CheckCircle2, AlertCircle, XCircle, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
-import { connect } from 'livekit-client';
 
 const CheckItem = ({ label, status, message, detail }) => {
   const icons = {
