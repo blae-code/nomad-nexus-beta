@@ -280,7 +280,7 @@ export default function HeaderV3() {
   // Get current page breadcrumb
   const breadcrumb = PAGE_BREADCRUMBS[location.pathname.toLowerCase()] || 'OPERATIONS';
 
-  // Fetch operational context
+  // Fetch operational context (only when visible, skip polling if hidden)
   const { data: activeEvent } = useQuery({
     queryKey: ['header-active-event', user?.id],
     queryFn: async () => {
@@ -288,11 +288,12 @@ export default function HeaderV3() {
       const events = await base44.entities.Event.filter({ 
         assigned_user_ids: user.id,
         status: ['active', 'pending']
-      });
+      }, '-updated_date', 1);
       return events[0] || null;
     },
-    enabled: !!user,
-    refetchInterval: 15000
+    enabled: !!user && isVisible,
+    refetchInterval: isVisible ? 20000 : false, // 20s when visible, disable when hidden
+    staleTime: 5000
   });
 
   const { data: activeSquadMemberships } = useQuery({
@@ -304,8 +305,9 @@ export default function HeaderV3() {
         status: 'active' 
       });
     },
-    enabled: !!user,
-    refetchInterval: 30000
+    enabled: !!user && isVisible,
+    refetchInterval: isVisible ? 45000 : false, // 45s when visible, disable when hidden
+    staleTime: 10000
   });
 
   const { data: activeNet } = useQuery({
@@ -314,8 +316,9 @@ export default function HeaderV3() {
       if (!userPresence?.net_id) return null;
       return await base44.entities.VoiceNet.get(userPresence.net_id);
     },
-    enabled: !!userPresence?.net_id,
-    refetchInterval: 10000
+    enabled: !!userPresence?.net_id && isVisible,
+    refetchInterval: isVisible ? 12000 : false, // 12s when visible, disable when hidden
+    staleTime: 3000
   });
 
   // Determine presence pill color/label with operational context
