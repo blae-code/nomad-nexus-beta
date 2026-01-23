@@ -8,6 +8,10 @@ import { cn } from '@/lib/utils';
 import CommsRadialMenu from '@/components/comms/CommsRadialMenu';
 import WhisperStrip from '@/components/comms/WhisperStrip';
 import { useWhisper } from '@/components/comms/useWhisper';
+import { usePermissionEngine } from '@/components/hooks/usePermissionEngine';
+import { useDutyLens } from '@/components/hooks/useDutyLens';
+import DutyLensToggle from '@/components/comms/DutyLensToggle';
+import CommandNodeRoster from '@/components/comms/CommandNodeRoster';
 
 /**
  * CommsArrayPanel: 2D network topology visualization
@@ -20,8 +24,14 @@ export default function CommsArrayPanel({
   onWhisperStart
 }) {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const [commandRosterExpanded, setCommandRosterExpanded] = useState(false);
   const [menuState, setMenuState] = useState({ isOpen: false, nodeId: null, nodeType: null, position: null });
+  const [connectedNetId, setConnectedNetId] = useState(null);
   const canvasRef = React.useRef(null);
+
+  // Permission and duty lens
+  const { roles, capabilities } = usePermissionEngine(currentUser?.id, eventId);
+  const { lens, setLens, effectiveLens } = useDutyLens(connectedNetId, null);
 
   const { whisperSession, startWhisper, endWhisper, isMuted, setIsMuted } = useWhisper(
     eventId,
@@ -178,6 +188,12 @@ export default function CommsArrayPanel({
   }, []);
 
   const handleWhisper = async (nodeId, scope) => {
+    // Check permissions
+    if (!capabilities.canWhisper?.(scope)) {
+      console.warn('[COMMS ARRAY] Whisper scope not permitted:', scope);
+      return;
+    }
+
     try {
       await startWhisper(nodeId, scope);
       onWhisperStart?.();
@@ -187,13 +203,18 @@ export default function CommsArrayPanel({
   };
 
   const handleBroadcast = async (nodeId) => {
+    if (!capabilities.canBroadcast?.()) {
+      console.warn('[COMMS ARRAY] Broadcast not permitted');
+      return;
+    }
+
     try {
       await base44.entities.EventLog.create({
         event_id: eventId,
         type: 'command',
         actor_id: currentUser?.id,
         content: `BROADCAST PING to ${nodeId}`,
-        metadata: { target_node: nodeId, source: 'comms_array' }
+        metadata: { target_node: nodeId, source: 'comms_array', lens: effectiveLens }
       });
     } catch (err) {
       console.error('[COMMS ARRAY] Broadcast error:', err);
@@ -239,6 +260,11 @@ export default function CommsArrayPanel({
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-[#ea580c]" />
           <span className="text-xs font-bold uppercase">Comms Array Topology</span>
+          {roles?.isCommandStaff && (
+            <span className="text-[9px] font-mono px-1.5 py-0.5 bg-[#ea580c]/10 border border-[#ea580c]/30 text-[#ea580c] rounded">
+              CMD
+            </span>
+          )}
         </div>
         {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
       </div>
@@ -252,6 +278,11 @@ export default function CommsArrayPanel({
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
+            {/* Duty Lens Toggle */}
+            <div className="p-2 border-b border-zinc-800 bg-zinc-950/50">
+              <DutyLensToggle connectedNetId={connectedNetId} userSquadId={null} />
+            </div>
+
             <canvas
               ref={canvasRef}
               width={400}
@@ -260,11 +291,20 @@ export default function CommsArrayPanel({
               className="w-full bg-black cursor-crosshair border-t border-zinc-800"
             />
             <div className="p-2 border-t border-zinc-800 text-[9px] text-zinc-600">
-              Click nodes for comms options. Whisper creates private side-channel.
+              Lens: {effectiveLens} • Click nodes for comms options
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Command Node Roster Expansion */}
+      {!isCollapsed && roles?.isCommandStaff && (
+        <CommandNodeRoster
+          eventId={eventId}
+          isExpanded={commandRosterExpanded}
+          onToggleExpand={() => setCommandRosterExpanded(!commandRosterExpanded)}
+        />
+      )}
 
       {/* Whisper Strip */}
       <AnimatePresence>
