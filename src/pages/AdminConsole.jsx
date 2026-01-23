@@ -177,19 +177,7 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             value="users"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
           >
-            <Users className="w-4 h-4 mr-2" /> USERS & ROLES
-          </TabsTrigger>
-          <TabsTrigger 
-            value="permission-matrix"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
-          >
-            <Settings className="w-4 h-4 mr-2" /> PERMISSIONS
-          </TabsTrigger>
-          <TabsTrigger 
-            value="rank-management"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-6 py-3 text-zinc-400 font-mono uppercase text-xs tracking-wider"
-          >
-            <Shield className="w-4 h-4 mr-2" /> RANK MGMT
+            <Users className="w-4 h-4 mr-2" /> USER MGMT
           </TabsTrigger>
           <TabsTrigger 
             value="comms-array"
@@ -260,18 +248,30 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
         <TabsContent value="users" className="space-y-4">
           <InnerTabs defaultValue="operatives" className="w-full">
             <InnerTabsList className="bg-zinc-900 border border-zinc-800 rounded-none p-0 h-auto w-full justify-start">
-              <InnerTabsTrigger 
-                value="operatives"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-4 py-2 text-zinc-400 font-mono uppercase text-xs"
-              >
-                OPERATIVES
-              </InnerTabsTrigger>
-              <InnerTabsTrigger 
-                value="roles"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-4 py-2 text-zinc-400 font-mono uppercase text-xs"
-              >
-                ROLE DEFINITIONS
-              </InnerTabsTrigger>
+             <InnerTabsTrigger 
+               value="operatives"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-4 py-2 text-zinc-400 font-mono uppercase text-xs"
+             >
+               OPERATIVES
+             </InnerTabsTrigger>
+             <InnerTabsTrigger 
+               value="roles"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-4 py-2 text-zinc-400 font-mono uppercase text-xs"
+             >
+               ROLE DEFINITIONS
+             </InnerTabsTrigger>
+             <InnerTabsTrigger 
+               value="ranks"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-4 py-2 text-zinc-400 font-mono uppercase text-xs"
+             >
+               RANK MANAGEMENT
+             </InnerTabsTrigger>
+             <InnerTabsTrigger 
+               value="permissions"
+               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#ea580c] data-[state=active]:bg-zinc-800/50 px-4 py-2 text-zinc-400 font-mono uppercase text-xs"
+             >
+               PERMISSIONS
+             </InnerTabsTrigger>
             </InnerTabsList>
 
             <InnerTabsContent value="operatives">
@@ -297,6 +297,12 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                        >
                          <div className="font-bold text-sm text-zinc-200">{user.callsign || user.rsi_handle || user.full_name}</div>
                          <div className="text-[10px] font-mono text-zinc-500 flex gap-2 mt-1">
+                           {(isAdmin || currentUser?.callsign === user.callsign) && user.email && (
+                             <>
+                               <span className="text-zinc-400">{user.email}</span>
+                               <span>•</span>
+                             </>
+                           )}
                            <span>{user.rank}</span>
                            <span>•</span>
                            <span className="text-zinc-400">{(user.assigned_role_ids?.length || 0)} Roles</span>
@@ -315,7 +321,9 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                            <UserCog className="w-5 h-5 text-[#ea580c]" />
                            <span className="uppercase">{selectedUser.callsign || selectedUser.rsi_handle}</span>
                          </CardTitle>
-                         <div className="text-xs font-mono text-zinc-500">{selectedUser.email}</div>
+                         {(isAdmin || currentUser?.callsign === selectedUser.callsign) && (
+                           <div className="text-xs font-mono text-zinc-500">{selectedUser.email}</div>
+                         )}
                        </CardHeader>
                        <CardContent>
                          <div className="mb-6">
@@ -456,10 +464,18 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
                  </div>
                </div>
             </InnerTabsContent>
-          </InnerTabs>
-        </TabsContent>
 
-        <TabsContent value="comms-array">
+            <InnerTabsContent value="ranks">
+             <RankRoleManagement />
+            </InnerTabsContent>
+
+            <InnerTabsContent value="permissions">
+             <RolePermissionMatrix />
+            </InnerTabsContent>
+            </InnerTabs>
+            </TabsContent>
+
+            <TabsContent value="comms-array">
           <CommsArray />
         </TabsContent>
 
@@ -501,14 +517,6 @@ export default function AdminConsolePage({ initialTab = "approvals" }) {
             </div>
             <NetConfigurationAssistant eventId={null} />
           </div>
-        </TabsContent>
-
-        <TabsContent value="permission-matrix">
-          <RolePermissionMatrix />
-        </TabsContent>
-
-        <TabsContent value="rank-management">
-          <RankRoleManagement />
         </TabsContent>
 
         <TabsContent value="event-reporting">
