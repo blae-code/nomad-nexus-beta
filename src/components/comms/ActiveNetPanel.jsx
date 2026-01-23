@@ -1216,6 +1216,5 @@ export default function ActiveNetPanel({ net, user, eventId, onConnectionChange 
              />
            )}
            </div>
-           </div>
            );
            }
