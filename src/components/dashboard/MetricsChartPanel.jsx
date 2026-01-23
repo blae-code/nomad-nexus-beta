@@ -228,7 +228,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
          transition={{ duration: 0.2 }}
          className="grid grid-cols-4 gap-2 overflow-hidden"
        >
-        {/* Activity Over Time - ECG Style */}
+        {/* Activity Over Time */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -240,18 +240,6 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               ? 'border-cyan-500/60 bg-cyan-950/20 shadow-[0_0_12px_rgba(6,182,212,0.15)]' 
               : 'border-cyan-700/30 bg-zinc-900/30'
           }`}>
-          {/* ECG Pulse Background */}
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/5 to-transparent pointer-events-none"
-            animate={{ x: ['100%', '-100%'] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-          />
-          {/* Glow pulse */}
-          <motion.div 
-            className="absolute -inset-1 bg-gradient-radial from-cyan-500/10 to-transparent pointer-events-none"
-            animate={{ opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-cyan-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-cyan-500 transition-colors duration-200" />
         <div className="flex items-center justify-between mb-1">
@@ -303,7 +291,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
         </div>
         </motion.div>
 
-        {/* Org Fund Allocation - Pulse Gallery */}
+        {/* Org Fund Allocation */}
         <motion.div
           key={fundView}
           initial={{ opacity: 0, x: 8 }}
@@ -318,18 +306,6 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               : 'border-purple-700/30 bg-zinc-900/30'
           }`}
         >
-          {/* Rotating glow pulse */}
-          <motion.div 
-            className="absolute -inset-1 bg-gradient-conic from-purple-500/10 via-transparent to-purple-500/10 pointer-events-none"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-          />
-          {/* Breathing glow */}
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent pointer-events-none"
-            animate={{ opacity: [0.2, 0.5, 0.2] }}
-            transition={{ duration: 3, repeat: Infinity, delay: 0.3 }}
-          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-purple-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-purple-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
@@ -377,7 +353,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           </div>
         </motion.div>
 
-        {/* New NomadNexus Users - Wave Gallery */}
+        {/* New NomadNexus Users */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -390,18 +366,6 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               : 'border-emerald-700/30 bg-zinc-900/30'
           }`}
         >
-          {/* Wave scanning effect */}
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-b from-emerald-400/10 via-transparent to-transparent pointer-events-none"
-            animate={{ y: ['100%', '-100%'] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'linear', delay: 0.6 }}
-          />
-          {/* Soft breathing glow */}
-          <motion.div 
-            className="absolute inset-0 bg-radial from-emerald-500/5 to-transparent pointer-events-none"
-            animate={{ opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 2.5, repeat: Infinity, delay: 0.6 }}
-          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-emerald-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-emerald-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
@@ -454,7 +418,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
           </div>
         </motion.div>
 
-        {/* Redscar Flotilla Growth - Pulse Shimmer */}
+        {/* Redscar Flotilla Growth */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -467,18 +431,6 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
               : 'border-orange-700/30 bg-zinc-900/30'
           }`}
         >
-          {/* Shimmer wave right-to-left */}
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-l from-transparent via-orange-400/8 to-transparent pointer-events-none"
-            animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', delay: 1.2 }}
-          />
-          {/* Pulsing corner highlight */}
-          <motion.div 
-            className="absolute inset-0 bg-radial from-orange-500/5 via-transparent to-transparent pointer-events-none"
-            animate={{ opacity: [0.1, 0.3, 0.1] }}
-            transition={{ duration: 2.8, repeat: Infinity, delay: 1.2 }}
-          />
           <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-zinc-700 group-hover:border-orange-500 transition-colors duration-200" />
           <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-zinc-700 group-hover:border-orange-500 transition-colors duration-200" />
           <div className="flex items-center justify-between mb-1">
