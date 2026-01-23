@@ -158,7 +158,7 @@ export default function AdminCockpitPage() {
             {/* Cockpit Tab - 3 column layout */}
             <TabsContent value="cockpit" className="flex-1 overflow-hidden mt-0 flex gap-0">
               {/* LEFT SIDEBAR: Status & Controls (280px) */}
-              <div className="w-72 border-r border-zinc-800 overflow-y-auto flex flex-col gap-3 p-3 bg-zinc-950/60 shrink-0">
+              <div className="w-72 border-r border-zinc-800 overflow-y-auto flex flex-col gap-2 p-2 bg-zinc-950/60 shrink-0">
                 {/* Demo Mode Card */}
                 <div className="border border-zinc-800 bg-zinc-900/50 p-2.5 space-y-2">
                   <div className="flex items-center justify-between">
@@ -209,9 +209,9 @@ export default function AdminCockpitPage() {
               </div>
 
               {/* CENTER: Main Content (flex) */}
-              <div className="flex-1 overflow-hidden flex flex-col p-3 gap-3 min-w-0">
+              <div className="flex-1 overflow-hidden flex flex-col p-2 gap-2 min-w-0">
                 <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest shrink-0">READINESS RUNBOOK</h2>
-                <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+                <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
                   {READINESS_STEPS.map((step) => {
                     const Component = step.component;
                     const isExpanded = expandedStep === step.id;
@@ -242,7 +242,7 @@ export default function AdminCockpitPage() {
               </div>
 
               {/* RIGHT SIDEBAR: Telemetry (320px) */}
-              <div className="w-80 border-l border-zinc-800 overflow-hidden flex flex-col p-3 bg-zinc-950/60 shrink-0">
+              <div className="w-80 border-l border-zinc-800 overflow-hidden flex flex-col p-2 bg-zinc-950/60 shrink-0">
                 <TelemetryPanel logs={logs} auditLogs={auditLogs} />
               </div>
             </TabsContent>
