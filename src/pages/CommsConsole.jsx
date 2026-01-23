@@ -44,6 +44,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { usePTT } from "@/components/hooks/usePTT";
 import PTTHud from "@/components/comms/PTTHud";
 import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
+import { MessageCircle } from "lucide-react";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
