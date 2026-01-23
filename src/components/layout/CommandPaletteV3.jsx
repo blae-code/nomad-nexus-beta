@@ -473,6 +473,22 @@ export default function CommandPaletteV3() {
         }
         break;
 
+      case 'toggleDemoMode':
+        window.dispatchEvent(new CustomEvent('toggleDemoMode'));
+        break;
+
+      case 'seedData':
+        if (confirm('Populate demo data? This will seed 7 days of sample events.')) {
+          window.dispatchEvent(new CustomEvent('seedDemoData'));
+        }
+        break;
+
+      case 'wipeData':
+        if (confirm('WARNING: This will permanently delete ALL operational data. Continue?')) {
+          window.dispatchEvent(new CustomEvent('wipeAllData'));
+        }
+        break;
+
       // Context-aware event handlers
       case 'editEventDetails':
         navigate(createPageUrl(`Events?id=${contextId}`));
