@@ -17,6 +17,14 @@ import {
 const RANKS = ["Pioneer", "Founder", "Voyager", "Scout", "Affiliate", "Vagrant"];
 const STATUSES = ["active", "inactive", "on_leave"];
 
+const FIELD_PRESETS = {
+  callsign: ["Operative", "Pilot", "Medic", "Engineer", "Scout", "Lead"],
+  status: ["active", "inactive", "on_leave"],
+  rsi_handle: [],
+  bio: [],
+  voyager_number: []
+};
+
 export default function UserProfileCard({ 
   user, 
   roles, 
@@ -58,43 +66,44 @@ export default function UserProfileCard({
 
   const EditableField = ({ label, field, value, type = "text", icon: Icon }) => {
     const isEditing = editingFields[field];
+    const presets = FIELD_PRESETS[field] || [];
+    const hasPresets = presets.length > 0;
     
     return (
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
-            {Icon && <Icon className="w-3 h-3 text-[#ea580c]" />}
-            {label}
-          </label>
-          {!isEditing && canEdit && (
-            <button
-              onClick={() => toggleEditField(field)}
-              className="text-[9px] font-mono text-zinc-600 hover:text-[#ea580c] transition-colors"
-            >
-              EDIT
-            </button>
-          )}
-        </div>
+        <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
+          {Icon && <Icon className="w-3 h-3 text-[#ea580c]" />}
+          {label}
+        </label>
         
         {isEditing && canEdit ? (
-          <div className="flex gap-2">
-            {type === "select" ? (
-              <Select value={value} onValueChange={(val) => handleFieldChange(field, val)}>
-                <SelectTrigger className="bg-zinc-900 border-zinc-700 text-xs h-7">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  {(field === "status" ? STATUSES : []).map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-2">
+            {hasPresets ? (
+              <div className="flex flex-wrap gap-1.5">
+                {presets.map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => {
+                      handleFieldChange(field, preset);
+                      toggleEditField(field);
+                    }}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-mono rounded border transition-all",
+                      value === preset
+                        ? "bg-[#ea580c]/20 border-[#ea580c]/50 text-[#ea580c]"
+                        : "bg-zinc-900/50 border-zinc-800/50 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
+                    )}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             ) : (
               <Input
+                autoFocus
                 value={value || ""}
                 onChange={(e) => handleFieldChange(field, e.target.value)}
+                onBlur={() => toggleEditField(field)}
                 className="bg-zinc-900 border-zinc-700 text-xs h-7"
                 placeholder={`Enter ${label.toLowerCase()}`}
               />
@@ -103,15 +112,24 @@ export default function UserProfileCard({
               size="sm"
               variant="outline"
               onClick={() => toggleEditField(field)}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-full"
             >
-              Done
+              Cancel
             </Button>
           </div>
         ) : (
-          <div className="px-3 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded text-xs font-mono text-zinc-300">
+          <button
+            onClick={() => canEdit && toggleEditField(field)}
+            disabled={!canEdit}
+            className={cn(
+              "w-full text-left px-3 py-2 rounded border transition-all",
+              canEdit && "cursor-pointer hover:border-[#ea580c]/50",
+              !canEdit && "cursor-not-allowed opacity-60",
+              "bg-zinc-900/50 border-zinc-800/50 text-xs font-mono text-zinc-300"
+            )}
+          >
             {value || <span className="text-zinc-600">—</span>}
-          </div>
+          </button>
         )}
       </div>
     );
