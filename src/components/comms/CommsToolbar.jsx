@@ -5,23 +5,19 @@ import { Phone, PhoneOff, Settings2, Radio, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * Core comms actions toolbar.
- * Single source of truth for:
- * - net selector (passed in via selectedNet)
- * - join/leave button
- * - mute / PTT status
- * - connection indicator
- *
- * Secondary controls moved to Advanced drawer.
+ * Comms toolbar — display-only for connection status and net info.
+ * Join/Leave moved to ActiveNetPanel to keep connection state in one place.
  */
 export default function CommsToolbar({
   selectedNet,
-  onSelectNet,
-  isConnected,
+  connectionState,
   isTransmitting,
   onOpenAdvanced,
   className = '',
 }) {
+  const isConnected = connectionState === 'connected';
+  const isConnecting = connectionState === 'connecting';
+
   return (
     <div className={cn('flex items-center gap-3 h-10 bg-zinc-900 border border-zinc-800 px-3 rounded-sm', className)}>
       {/* Net Info Display */}
@@ -39,22 +35,6 @@ export default function CommsToolbar({
       {/* Separator */}
       <div className="w-px h-5 bg-zinc-800 mx-1" />
 
-      {/* Join/Leave Button */}
-      {selectedNet && (
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => onSelectNet(isConnected ? null : selectedNet)}
-          className={cn(
-            'h-6 w-6 p-0',
-            isConnected ? 'text-red-500 hover:text-red-400 hover:bg-red-950/20' : 'text-emerald-600 hover:text-emerald-400 hover:bg-emerald-950/20'
-          )}
-          title={isConnected ? 'Leave Call' : 'Join Voice'}
-        >
-          {isConnected ? <PhoneOff className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
-        </Button>
-      )}
-
       {/* PTT/Mute Status */}
       {selectedNet && isConnected && (
         <div className="flex items-center gap-1">
@@ -66,17 +46,17 @@ export default function CommsToolbar({
         </div>
       )}
 
-      {/* Connection Indicator */}
+      {/* Connection Status Indicator */}
       {selectedNet && (
         <div className="flex items-center gap-1">
           <div
             className={cn(
-              'w-2 h-2 rounded-full animate-pulse',
-              isConnected ? 'bg-emerald-500' : 'bg-zinc-600'
+              'w-2 h-2 rounded-full',
+              isConnected ? 'bg-emerald-500 animate-pulse' : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-zinc-600'
             )}
           />
           <span className="text-[9px] text-zinc-500 font-mono">
-            {isConnected ? 'CONNECTED' : 'STANDBY'}
+            {isConnecting ? 'CONNECTING...' : isConnected ? 'CONNECTED' : 'DISCONNECTED'}
           </span>
         </div>
       )}
