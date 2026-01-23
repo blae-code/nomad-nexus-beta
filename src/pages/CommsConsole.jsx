@@ -377,12 +377,12 @@ function CommsConsolePage() {
                         />
                      </div>
                   </ScrollArea>
-               </>
-            )}
-         </Panel>
+                  </>
+                  )}
+                  </Panel>
 
-         {/* CENTER PANEL: Active Net / Chat */}
-         <Panel title={consoleMode === 'ops' ? 'Active Net' : 'Ready Room'} className="flex-1 flex flex-col overflow-hidden" body={false}>
+                  {/* CENTER PANEL: Active Net / Chat */}
+                  <Panel title={consoleMode === 'dms' ? 'Conversation' : (consoleMode === 'ops' ? 'Active Net' : 'Ready Room')} className="flex-1 flex flex-col overflow-hidden" body={false}>
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                {consoleMode === 'ops' ? (
                   selectedEventId ? (
