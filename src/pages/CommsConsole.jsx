@@ -144,6 +144,7 @@ function CommsConsolePage() {
   });
 
   const [isProvisioningNets, setIsProvisioningNets] = React.useState(false);
+  const queryClient = useQueryClient();
   
   const { data: voiceNets, isLoading, refetch: refetchNets } = useQuery({
     queryKey: ['voice-nets', selectedEventId],
@@ -158,8 +159,21 @@ function CommsConsolePage() {
         : allNets.filter(n => !n.event_id);
     },
     initialData: [],
-    refetchInterval: isProvisioningNets ? 1000 : false
+    staleTime: 8000,
+    refetchInterval: isProvisioningNets ? 1000 : false, // Only poll during provisioning
+    gcTime: 20000
   });
+
+  // Real-time subscription for voice net updates
+  React.useEffect(() => {
+    if (isProvisioningNets) return; // Skip subscription during provisioning
+
+    const unsubscribe = base44.entities.VoiceNet.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['voice-nets', selectedEventId] });
+    });
+
+    return () => unsubscribe?.();
+  }, [selectedEventId, isProvisioningNets, queryClient]);
 
   // Fetch recent comms activity for indicators (no polling, smaller batch)
   const { data: recentActivity } = useQuery({
