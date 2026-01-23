@@ -262,12 +262,12 @@ export default function CommsPanel({ eventId }) {
              })}
            </div>
         </div>
-        </div>
+
         <div className="py-1 px-2 bg-zinc-950 border-t border-zinc-900">
-         <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
+          <div className="w-full flex justify-between text-[9px] text-zinc-700 font-mono">
             <span>STATUS: ONLINE</span>
             <span>ENCRYPTION: NONE</span>
-         </div>
+          </div>
         </div>
         </div>
         </OpsPanel>
