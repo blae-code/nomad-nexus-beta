@@ -158,38 +158,145 @@ export const COMMS_POLICY = {
   ]
 };
 
-// Permission checking helper
-export const checkPermission = (user, channel, action) => {
+/**
+ * Permission Evaluation Engine (Deterministic Rules)
+ * 
+ * 1. Membership first (fail-closed)
+ * 2. Permission rules as OR (any match = grant)
+ * 3. Rank comparison (ordinal)
+ * 4. Unknown rank → VAGRANT (fail-closed)
+ * 5. Channel LOCK overrides (except moderators)
+ * 6. Reply policy enforced regardless
+ * 7. Template validation for structured posts
+ */
+
+const RANK_ORDER = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
+
+const normalizeRank = (rank) => {
+  // Default unknown ranks to VAGRANT (fail-closed)
+  return RANK_ORDER.includes(rank) ? rank : 'VAGRANT';
+};
+
+const rankAtLeast = (userRank, minRank) => {
+  const userIdx = RANK_ORDER.indexOf(normalizeRank(userRank));
+  const minIdx = RANK_ORDER.indexOf(normalizeRank(minRank));
+  return userIdx >= minIdx;
+};
+
+/**
+ * Evaluate single permission rule
+ */
+const evaluateRule = (user, rule) => {
+  // Rule: rankAtLeast
+  if (rule.rankAtLeast) {
+    if (!rankAtLeast(user.rank, rule.rankAtLeast)) {
+      return false;
+    }
+    // Rank requirement met; check threadOnly constraint
+    return !rule.threadOnly; // If threadOnly, caller must handle context
+  }
+
+  // Rule: roleIn
+  if (rule.roleIn && user.roles) {
+    return rule.roleIn.some(r => user.roles.includes(r));
+  }
+
+  return false;
+};
+
+/**
+ * Main Permission Evaluator
+ * 
+ * Returns { allowed: boolean, reason: string }
+ */
+export const evaluatePermission = (user, channel, action, context = {}) => {
+  // Fail-closed: no policy found
   const chPolicy = COMMS_POLICY.channels.find(ch => ch.slug === channel.slug);
-  if (!chPolicy) return false;
+  if (!chPolicy) {
+    return { allowed: false, reason: 'Channel policy not found' };
+  }
 
+  // 1. Check channel LOCK (overrides POST/REPLY except for moderators)
+  if (channel.is_locked && ['post', 'reply'].includes(action)) {
+    const canUnlock = checkModeration(user, 'lock');
+    if (!canUnlock) {
+      return { allowed: false, reason: 'Channel is locked' };
+    }
+  }
+
+  // 2. Check membership rule (fail-closed first)
+  if (chPolicy.membershipRule?.type !== 'ANY') {
+    const hasMembership = channel.membership?.includes(user.id);
+    if (!hasMembership) {
+      return { allowed: false, reason: 'Not a channel member' };
+    }
+  }
+
+  // 3. Enforce reply policy by channel mode
+  if (action === 'reply') {
+    const replySetting = chPolicy.settings?.replies || 'ENABLED';
+    if (replySetting === 'DISABLED') {
+      return { allowed: false, reason: 'Replies disabled on this channel' };
+    }
+    if (replySetting === 'THREAD_ONLY' && !context.isThreadReply) {
+      return { allowed: false, reason: 'Replies only in threads' };
+    }
+  }
+
+  // 4. Evaluate action permissions (OR logic: any match = grant)
   const perms = chPolicy.permissions[action];
-  if (!perms || perms.length === 0) return false;
+  if (!perms || perms.length === 0) {
+    return { allowed: false, reason: `No permissions defined for ${action}` };
+  }
 
-  // Check each permission rule with OR logic
-  return perms.some(rule => {
-    if (rule.rankAtLeast) {
-      const rankOrder = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
-      const userRankIdx = rankOrder.indexOf(user.rank);
-      const minRankIdx = rankOrder.indexOf(rule.rankAtLeast);
-      if (userRankIdx < minRankIdx) return false;
-      if (rule.threadOnly && action === 'reply') return true;
-      return true;
-    }
-    if (rule.roleIn && user.roles) {
-      return rule.roleIn.some(r => user.roles.includes(r));
-    }
-    return false;
-  });
+  const hasPermission = perms.some(rule => evaluateRule(user, rule));
+  if (!hasPermission) {
+    return { allowed: false, reason: `Insufficient permissions for ${action}` };
+  }
+
+  return { allowed: true, reason: 'Permitted' };
+};
+
+/**
+ * Validate post against template requirements
+ */
+export const validatePostTemplate = (channel, postData) => {
+  const chPolicy = COMMS_POLICY.channels.find(ch => ch.slug === channel.slug);
+  if (!chPolicy) return { valid: true }; // Fail-open on unknown channel
+
+  const requiredTemplate = chPolicy.settings?.requireTemplate;
+  if (!requiredTemplate) {
+    return { valid: true }; // No template required
+  }
+
+  const templateDef = COMMS_POLICY.templates?.[requiredTemplate];
+  if (!templateDef) {
+    return { valid: false, reason: `Template ${requiredTemplate} not defined` };
+  }
+
+  // For structured templates, require specific fields in postData.fields
+  if (postData.template_type !== requiredTemplate) {
+    return { valid: false, reason: `Post must use template ${requiredTemplate}` };
+  }
+
+  return { valid: true, template: templateDef };
+};
+
+/**
+ * Legacy helpers (backward compat)
+ */
+export const checkPermission = (user, channel, action) => {
+  const result = evaluatePermission(user, channel, action);
+  return result.allowed;
 };
 
 export const checkModeration = (user, action) => {
   const mods = COMMS_POLICY.defaults.moderation;
-  const rankOrder = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
-  const userRankIdx = rankOrder.indexOf(user.rank);
+  const userRank = normalizeRank(user.rank);
+  const userRankIdx = RANK_ORDER.indexOf(userRank);
 
   for (const rank of ['FOUNDER', 'PIONEER', 'VOYAGER']) {
-    const minRankIdx = rankOrder.indexOf(rank);
+    const minRankIdx = RANK_ORDER.indexOf(rank);
     if (userRankIdx >= minRankIdx && mods[rank]?.includes(action)) {
       return true;
     }
