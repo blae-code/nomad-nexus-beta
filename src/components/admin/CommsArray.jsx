@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Radio, Network, Trash2, Wand2, Power, Lock, Unlock,
-  Settings, Shield, AlertTriangle, CheckCircle, Loader2
+  Shield, AlertTriangle, CheckCircle, Loader2, Zap, Command
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -126,271 +124,303 @@ export default function CommsArray() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header & Event Selector */}
-      <Card className="bg-zinc-950 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-sm font-bold uppercase text-zinc-300 flex items-center gap-2">
-            <Radio className="w-4 h-4 text-[#ea580c]" />
-            Communications Array Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <label className="text-xs text-zinc-500 uppercase font-bold mb-1.5 block">Target Event</label>
-            <Select value={selectedEventId || ''} onValueChange={setSelectedEventId}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 h-9">
-                <SelectValue placeholder="Select event to manage..." />
-              </SelectTrigger>
-              <SelectContent>
-                {events.map(event => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title} — {new Date(event.start_time).toLocaleDateString()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="space-y-3 max-w-7xl">
+      {/* Technical Header */}
+      <div className="relative border border-zinc-800 bg-zinc-950">
+        <div className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t border-l border-[#ea580c]" />
+        <div className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t border-r border-[#ea580c]" />
+        <div className="absolute -bottom-[1px] -left-[1px] w-2 h-2 border-b border-l border-[#ea580c]" />
+        <div className="absolute -bottom-[1px] -right-[1px] w-2 h-2 border-b border-r border-[#ea580c]" />
+        
+        <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-900/30">
+          <div className="flex items-center gap-2">
+            <Radio className="w-3.5 h-3.5 text-[#ea580c]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">COMMS ARRAY // CONTROL INTERFACE</span>
           </div>
+        </div>
 
-          {selectedEventId && (
-            <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800 rounded text-xs">
-              <span className="text-zinc-400">Active Nets:</span>
-              <span className="font-bold text-white">{voiceNets.length}</span>
+        <div className="p-3 space-y-2">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <div className="text-[8px] text-zinc-600 uppercase font-mono mb-1 tracking-wider">TARGET EVENT</div>
+              <Select value={selectedEventId || ''} onValueChange={setSelectedEventId}>
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 h-7 text-xs font-mono">
+                  <SelectValue placeholder="SELECT TARGET..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {events.map(event => (
+                    <SelectItem key={event.id} value={event.id} className="text-xs font-mono">
+                      {event.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Formation Preview */}
-      <Card className="bg-zinc-950 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-sm font-bold uppercase text-zinc-300 flex items-center gap-2">
-            <Network className="w-4 h-4 text-cyan-500" />
-            Formation Structure
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-3 mb-3">
-            <div className="bg-zinc-900/50 border border-amber-900/30 p-3 rounded text-center">
-              <div className="text-2xl font-black text-amber-500">{fleets.length}</div>
-              <div className="text-[9px] text-zinc-500 uppercase mt-1">Fleets</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-cyan-900/30 p-3 rounded text-center">
-              <div className="text-2xl font-black text-cyan-500">{wings.length}</div>
-              <div className="text-[9px] text-zinc-500 uppercase mt-1">Wings</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-emerald-900/30 p-3 rounded text-center">
-              <div className="text-2xl font-black text-emerald-500">{regularSquads.length}</div>
-              <div className="text-[9px] text-zinc-500 uppercase mt-1">Squads</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-zinc-700 p-3 rounded text-center">
-              <div className="text-2xl font-black text-zinc-400">2</div>
-              <div className="text-[9px] text-zinc-500 uppercase mt-1">Support</div>
-            </div>
+            {selectedEventId && (
+              <div className="w-24">
+                <div className="text-[8px] text-zinc-600 uppercase font-mono mb-1 tracking-wider">NETS</div>
+                <div className="h-7 flex items-center justify-center bg-zinc-900 border border-zinc-800">
+                  <span className="text-sm font-black text-[#ea580c] font-mono">{voiceNets.length}</span>
+                </div>
+              </div>
+            )}
           </div>
-          
-          <div className="text-xs text-zinc-500 p-2 bg-zinc-900/30 border border-zinc-800 rounded font-mono">
-            Expected: <span className="text-emerald-500 font-bold">{expectedNetCount} nets</span>
+        </div>
+      </div>
+
+      {/* Formation Grid */}
+      <div className="border border-zinc-800 bg-zinc-950">
+        <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
+          <div className="flex items-center gap-2">
+            <Network className="w-3 h-3 text-cyan-500" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">FORMATION</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="p-3">
+          <div className="grid grid-cols-5 gap-2">
+            <FormationCell label="FLEETS" count={fleets.length} color="amber" />
+            <FormationCell label="WINGS" count={wings.length} color="cyan" />
+            <FormationCell label="SQUADS" count={regularSquads.length} color="emerald" />
+            <FormationCell label="SUPPORT" count={2} color="zinc" />
+            <FormationCell label="EXPECTED" count={expectedNetCount} color="orange" highlight />
+          </div>
+        </div>
+      </div>
 
       {/* Provision Controls */}
       {selectedEventId && (
-        <Card className="bg-zinc-950 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase text-zinc-300 flex items-center gap-2">
-              <Wand2 className="w-4 h-4 text-emerald-500" />
-              Provisioning
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="border border-zinc-800 bg-zinc-950">
+          <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
+            <div className="flex items-center gap-2">
+              <Command className="w-3 h-3 text-emerald-500" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">PROVISION</span>
+            </div>
+          </div>
+          <div className="p-3 space-y-2">
             <div className="flex gap-2">
-              <Button
+              <button
                 onClick={handleProvision}
                 disabled={provisionMutation.isPending || voiceNets.length > 0}
-                className="flex-1 bg-emerald-900 hover:bg-emerald-800 h-9 text-xs"
+                className={cn(
+                  "flex-1 h-8 flex items-center justify-center gap-2 border transition-all font-mono text-xs uppercase tracking-wider",
+                  provisionMutation.isPending || voiceNets.length > 0
+                    ? "bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed"
+                    : "bg-emerald-950 border-emerald-800 text-emerald-400 hover:bg-emerald-900 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                )}
               >
                 {provisionMutation.isPending ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                    Provisioning...
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Provisioning...</span>
                   </>
                 ) : (
                   <>
-                    <Wand2 className="w-3.5 h-3.5 mr-2" />
-                    Auto-Provision
+                    <Zap className="w-3 h-3" />
+                    <span>Auto-Provision</span>
                   </>
                 )}
-              </Button>
+              </button>
 
               {voiceNets.length > 0 && (
-                <Button
+                <button
                   onClick={handleDeleteAll}
                   disabled={deleteAllMutation.isPending}
-                  variant="destructive"
-                  className="h-9 text-xs"
+                  className="h-8 px-3 flex items-center gap-2 bg-red-950 border border-red-800 text-red-400 hover:bg-red-900 transition-all font-mono text-xs uppercase tracking-wider"
                 >
-                  <Trash2 className="w-3.5 h-3.5 mr-1" />
-                  Delete All
-                </Button>
+                  <Trash2 className="w-3 h-3" />
+                  <span>Purge</span>
+                </button>
               )}
             </div>
 
             {voiceNets.length > 0 && (
-              <div className="text-xs text-amber-500 p-2 bg-amber-950/20 border border-amber-900/30 rounded">
-                ⚠️ Nets exist. Delete all to re-provision.
+              <div className="text-[9px] text-amber-500 p-2 bg-amber-950/10 border border-amber-900/30 font-mono">
+                <AlertTriangle className="w-3 h-3 inline mr-1" />
+                NETS EXIST // PURGE TO RE-PROVISION
               </div>
             )}
 
             {provisionStatus && (
               <div className={cn(
-                "p-3 rounded border text-xs",
+                "p-2 border text-[9px] font-mono",
                 provisionStatus.success 
-                  ? "bg-emerald-950/20 border-emerald-900/30 text-emerald-400" 
-                  : "bg-red-950/20 border-red-900/30 text-red-400"
+                  ? "bg-emerald-950/20 border-emerald-900/50 text-emerald-400" 
+                  : "bg-red-950/20 border-red-900/50 text-red-400"
               )}>
-                <div className="flex items-center gap-2 mb-2 font-bold">
+                <div className="flex items-center gap-1.5 mb-1.5 font-bold uppercase tracking-wider">
                   {provisionStatus.success ? (
-                    <CheckCircle className="w-3.5 h-3.5" />
+                    <CheckCircle className="w-3 h-3" />
                   ) : (
-                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <AlertTriangle className="w-3 h-3" />
                   )}
-                  {provisionStatus.success ? 'Success' : 'Failed'}
+                  {provisionStatus.success ? 'SUCCESS' : 'FAILED'}
                 </div>
                 {provisionStatus.success && provisionStatus.data?.summary && (
-                  <div className="space-y-0.5 font-mono text-[10px]">
-                    <div>Fleet: {provisionStatus.data.summary.fleet_command || 0}</div>
-                    <div>Wings: {provisionStatus.data.summary.wings || 0}</div>
-                    <div>Squads: {provisionStatus.data.summary.squads || 0}</div>
-                    <div>Support: {provisionStatus.data.summary.support || 0}</div>
-                    <div className="font-bold pt-1 border-t border-zinc-800 mt-1">
-                      Total: {provisionStatus.data.summary.total || 0}
+                  <div className="space-y-0.5 pl-4">
+                    <div>FLT: {provisionStatus.data.summary.fleet_command || 0}</div>
+                    <div>WNG: {provisionStatus.data.summary.wings || 0}</div>
+                    <div>SQD: {provisionStatus.data.summary.squads || 0}</div>
+                    <div>SUP: {provisionStatus.data.summary.support || 0}</div>
+                    <div className="font-bold pt-1 border-t border-zinc-800 mt-1 text-emerald-500">
+                      TOT: {provisionStatus.data.summary.total || 0}
                     </div>
                   </div>
                 )}
                 {!provisionStatus.success && (
-                  <div className="font-mono text-[10px]">{provisionStatus.error}</div>
+                  <div className="pl-4">{provisionStatus.error}</div>
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Net Grid */}
       {selectedEventId && voiceNets.length > 0 && (
-        <Card className="bg-zinc-950 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase text-zinc-300 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-zinc-500" />
-              Active Nets ({voiceNets.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-2">
-                {Object.entries(netsByType).map(([type, nets]) => (
-                  nets.length > 0 && (
-                    <div key={type}>
-                      <div className="text-[9px] text-zinc-600 uppercase font-bold mb-1.5 px-1">
-                        {type} ({nets.length})
-                      </div>
-                      <div className="space-y-1.5">
-                        {nets.map(net => (
-                          <NetCard
-                            key={net.id}
-                            net={net}
-                            onToggleStatus={toggleNetStatus}
-                            onToggleDiscipline={toggleDiscipline}
-                            onToggleStageMode={toggleStageMode}
-                          />
-                        ))}
-                      </div>
+        <div className="border border-zinc-800 bg-zinc-950">
+          <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Radio className="w-3 h-3 text-zinc-500" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 font-mono">ACTIVE NETS</span>
+            </div>
+            <Badge className="bg-[#ea580c]/10 text-[#ea580c] border-[#ea580c]/30 text-[8px] h-4 px-1.5 font-mono">
+              {voiceNets.length}
+            </Badge>
+          </div>
+          <ScrollArea className="h-[450px]">
+            <div className="p-3 space-y-2">
+              {Object.entries(netsByType).map(([type, nets]) => (
+                nets.length > 0 && (
+                  <div key={type}>
+                    <div className="text-[8px] text-zinc-600 uppercase font-bold mb-1.5 font-mono tracking-widest flex items-center gap-1.5">
+                      <div className="h-px flex-1 bg-zinc-800" />
+                      <span>{type}</span>
+                      <span className="text-zinc-700">({nets.length})</span>
+                      <div className="h-px flex-1 bg-zinc-800" />
                     </div>
-                  )
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                    <div className="space-y-1">
+                      {nets.map(net => (
+                        <NetCard
+                          key={net.id}
+                          net={net}
+                          onToggleStatus={toggleNetStatus}
+                          onToggleDiscipline={toggleDiscipline}
+                          onToggleStageMode={toggleStageMode}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
       )}
+    </div>
+  );
+}
+
+function FormationCell({ label, count, color, highlight }) {
+  const colorClasses = {
+    amber: 'border-amber-900/30 text-amber-500',
+    cyan: 'border-cyan-900/30 text-cyan-500',
+    emerald: 'border-emerald-900/30 text-emerald-500',
+    zinc: 'border-zinc-700 text-zinc-400',
+    orange: 'border-[#ea580c]/30 text-[#ea580c] bg-[#ea580c]/5'
+  };
+
+  return (
+    <div className={cn(
+      "border bg-zinc-900/50 p-2 text-center",
+      colorClasses[color],
+      highlight && "font-bold"
+    )}>
+      <div className={cn("text-xl font-black font-mono", highlight && "text-2xl")}>{count}</div>
+      <div className="text-[8px] text-zinc-600 uppercase mt-0.5 font-mono tracking-wider">{label}</div>
     </div>
   );
 }
 
 function NetCard({ net, onToggleStatus, onToggleDiscipline, onToggleStageMode }) {
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded p-3">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="text-sm font-black font-mono text-white">{net.code}</div>
+    <div className="bg-zinc-900/50 border border-zinc-800 p-2 relative group hover:border-zinc-700 transition-colors">
+      <div className="absolute -top-[1px] -left-[1px] w-1 h-1 border-t border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
+      <div className="absolute -top-[1px] -right-[1px] w-1 h-1 border-t border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
+      
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="text-xs font-black font-mono text-white tracking-wider">{net.code}</div>
+          <div className={cn(
+            "w-1.5 h-1.5",
+            net.status === 'active' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-zinc-700"
+          )} />
+        </div>
+        <div className="flex items-center gap-1">
           <Badge className={cn(
-            "text-[8px] h-4 px-1.5",
-            net.status === 'active' ? "bg-emerald-900 text-emerald-400" : "bg-zinc-800 text-zinc-500"
+            "text-[7px] h-3.5 px-1 font-mono uppercase",
+            net.discipline === 'focused' ? "bg-red-900/50 text-red-400 border-red-800" : "bg-zinc-800 text-zinc-500 border-zinc-700"
           )}>
-            {net.status}
-          </Badge>
-          <Badge className={cn(
-            "text-[8px] h-4 px-1.5",
-            net.discipline === 'focused' ? "bg-red-900 text-red-400" : "bg-zinc-800 text-zinc-400"
-          )}>
-            {net.discipline}
+            {net.discipline[0]}
           </Badge>
           {net.stage_mode && (
-            <Badge className="bg-amber-900 text-amber-400 text-[8px] h-4 px-1.5">STAGE</Badge>
+            <Badge className="bg-amber-900/50 text-amber-400 border-amber-800 text-[7px] h-3.5 px-1 font-mono">STG</Badge>
           )}
         </div>
       </div>
 
-      <div className="text-xs text-zinc-400 mb-3">{net.label}</div>
+      <div className="text-[9px] text-zinc-500 mb-2 font-mono truncate">{net.label}</div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Button
-          size="sm"
-          variant="outline"
+      <div className="grid grid-cols-3 gap-1 mb-1.5">
+        <button
           onClick={() => onToggleStatus(net)}
-          className="h-7 text-[10px] gap-1"
+          className={cn(
+            "h-6 flex items-center justify-center gap-1 border transition-all text-[8px] font-mono uppercase tracking-wider",
+            net.status === 'active'
+              ? "bg-emerald-950/50 border-emerald-800 text-emerald-400 hover:bg-emerald-900/50"
+              : "bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700"
+          )}
         >
-          {net.status === 'active' ? <Power className="w-3 h-3" /> : <Power className="w-3 h-3 opacity-50" />}
-          {net.status === 'active' ? 'On' : 'Off'}
-        </Button>
+          <Power className="w-2.5 h-2.5" />
+          <span>{net.status === 'active' ? 'ON' : 'OFF'}</span>
+        </button>
 
-        <Button
-          size="sm"
-          variant="outline"
+        <button
           onClick={() => onToggleDiscipline(net)}
           className={cn(
-            "h-7 text-[10px] gap-1",
-            net.discipline === 'focused' ? "border-red-800 text-red-400" : "border-zinc-700"
+            "h-6 flex items-center justify-center gap-1 border transition-all text-[8px] font-mono uppercase tracking-wider",
+            net.discipline === 'focused'
+              ? "bg-red-950/50 border-red-800 text-red-400 hover:bg-red-900/50"
+              : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700"
           )}
         >
-          <Shield className="w-3 h-3" />
-          {net.discipline === 'focused' ? 'Focus' : 'Casual'}
-        </Button>
+          <Shield className="w-2.5 h-2.5" />
+          <span>{net.discipline === 'focused' ? 'FOC' : 'CAS'}</span>
+        </button>
 
-        <Button
-          size="sm"
-          variant="outline"
+        <button
           onClick={() => onToggleStageMode(net)}
           className={cn(
-            "h-7 text-[10px] gap-1",
-            net.stage_mode ? "border-amber-800 text-amber-400" : "border-zinc-700"
+            "h-6 flex items-center justify-center gap-1 border transition-all text-[8px] font-mono uppercase tracking-wider",
+            net.stage_mode
+              ? "bg-amber-950/50 border-amber-800 text-amber-400 hover:bg-amber-900/50"
+              : "bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700"
           )}
         >
-          {net.stage_mode ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-          Stage
-        </Button>
+          {net.stage_mode ? <Lock className="w-2.5 h-2.5" /> : <Unlock className="w-2.5 h-2.5" />}
+          <span>STG</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-zinc-800">
-        <div className="text-[9px]">
-          <span className="text-zinc-600">TX:</span>
-          <span className="text-zinc-400 ml-1 font-mono">{net.min_rank_to_tx || 'Vagrant'}</span>
+      <div className="flex items-center gap-2 pt-1.5 border-t border-zinc-800">
+        <div className="text-[8px] font-mono flex-1">
+          <span className="text-zinc-700">TX:</span>
+          <span className="text-zinc-500 ml-1">{net.min_rank_to_tx || 'VAG'}</span>
         </div>
-        <div className="text-[9px]">
-          <span className="text-zinc-600">RX:</span>
-          <span className="text-zinc-400 ml-1 font-mono">{net.min_rank_to_rx || 'Vagrant'}</span>
+        <div className="w-px h-3 bg-zinc-800" />
+        <div className="text-[8px] font-mono flex-1">
+          <span className="text-zinc-700">RX:</span>
+          <span className="text-zinc-500 ml-1">{net.min_rank_to_rx || 'VAG'}</span>
         </div>
       </div>
     </div>
