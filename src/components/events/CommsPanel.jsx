@@ -11,7 +11,8 @@ import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOTION } from "@/components/utils/motionConstants";
 import { SignalStrength, PermissionBadge, TerminalCard, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
-import CommsJoinModal from "@/components/comms/CommsJoinModal";
+// DEPRECATED: CommsJoinModal disabled (2026-01-23)
+// import CommsJoinModal from "@/components/comms/CommsJoinModal";
 
 export default function CommsPanel({ eventId }) {
   const [selectedNetId, setSelectedNetId] = React.useState(null);
