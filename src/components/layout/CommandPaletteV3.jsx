@@ -609,25 +609,25 @@ export default function CommandPaletteV3() {
               : 'border-zinc-800 hover:border-[#ea580c]/50 group-hover:shadow-[0_0_15px_rgba(234,88,12,0.2)]'
           )}
         >
-          {/* Pulsing chevrons - left side */}
+          {/* Pulsing chevrons - left side (pointing inward) */}
           <motion.div
-            className="absolute right-full top-1/2 -translate-y-1/3 mr-2 flex gap-0.5"
+            className="absolute right-full top-1/2 -translate-y-1/2 mr-2 flex gap-0.5"
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/80 -translate-y-0.5" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/60 -translate-y-0.5" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/40 -translate-y-0.5" />
+            <ChevronRight className="w-4 h-4 text-[#ea580c]/40" />
+            <ChevronRight className="w-4 h-4 text-[#ea580c]/60" />
+            <ChevronRight className="w-4 h-4 text-[#ea580c]/80" />
           </motion.div>
-          {/* Pulsing chevrons - right side */}
+          {/* Pulsing chevrons - right side (pointing inward) */}
           <motion.div
-            className="absolute left-full top-1/2 -translate-y-1/3 ml-2 flex gap-0.5"
+            className="absolute left-full top-1/2 -translate-y-1/2 ml-2 flex gap-0.5"
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/40 -translate-y-0.5" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/60 -translate-y-0.5" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/80 -translate-y-0.5" />
+            <ChevronLeft className="w-4 h-4 text-[#ea580c]/80" />
+            <ChevronLeft className="w-4 h-4 text-[#ea580c]/60" />
+            <ChevronLeft className="w-4 h-4 text-[#ea580c]/40" />
           </motion.div>
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
 
