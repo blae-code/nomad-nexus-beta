@@ -1,140 +1,74 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Copy, CheckCircle, AlertCircle, Zap } from 'lucide-react';
-import { toast } from 'sonner';
+import { AlertCircle, CheckCircle2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function RoomDebugPanel({ room, roomName, identity, token, connectionState, lastError }) {
-  if (!room || !roomName) return null;
+export default function RoomDebugPanel({ debug, isVisible = false }) {
+  if (!isVisible) return null;
 
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied`);
+  const getStatusColor = (state) => {
+    switch (state) {
+      case 'connected': return 'bg-emerald-950 border-emerald-700 text-emerald-400';
+      case 'connecting': return 'bg-amber-950 border-amber-700 text-amber-400';
+      case 'disconnected': return 'bg-zinc-900 border-zinc-700 text-zinc-400';
+      case 'error': return 'bg-red-950 border-red-700 text-red-400';
+      default: return 'bg-zinc-900 border-zinc-700 text-zinc-400';
+    }
   };
 
-  const participantCount = (room?.remoteParticipants?.size || 0) + (room?.localParticipant ? 1 : 0);
-  
-  const getStatusColor = () => {
-    if (connectionState === 'connected') return 'text-emerald-500';
-    if (connectionState === 'reconnecting') return 'text-amber-500';
-    if (connectionState === 'failed') return 'text-red-500';
-    return 'text-zinc-500';
+  const getStatusIcon = (state) => {
+    switch (state) {
+      case 'connected': return <CheckCircle2 className="w-3 h-3" />;
+      case 'error': return <AlertCircle className="w-3 h-3" />;
+      default: return <Radio className="w-3 h-3 animate-pulse" />;
+    }
   };
-
-  const localParticipant = room?.localParticipant;
-  const micEnabled = localParticipant?.isMicrophoneEnabled();
-  const cameraEnabled = localParticipant?.isCameraEnabled();
 
   return (
-    <Card className="bg-zinc-950 border-zinc-800/50">
+    <Card className="bg-zinc-950 border-zinc-800 fixed bottom-4 right-4 w-80 z-50">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-mono">DEBUG: ROOM STATE</CardTitle>
-            <Badge 
-              variant="outline" 
-              className={cn(
-                'text-[9px] px-1.5 py-0.5',
-                connectionState === 'connected' ? 'border-emerald-500 text-emerald-500' :
-                connectionState === 'failed' ? 'border-red-500 text-red-500' :
-                'border-zinc-600 text-zinc-400'
-              )}
-            >
-              {connectionState?.toUpperCase()}
-            </Badge>
-          </div>
-          <Zap className="w-3 h-3 text-zinc-600" />
-        </div>
+        <CardTitle className="text-xs font-bold text-zinc-300 uppercase flex items-center gap-2">
+          <Radio className="w-3 h-3 text-[#ea580c]" />
+          Room Debug
+        </CardTitle>
       </CardHeader>
-
-      <CardContent className="space-y-2">
-        {/* Room Name */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
-          <span className="text-zinc-500 font-mono">ROOM:</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-zinc-300">{roomName}</span>
-            <button
-              onClick={() => copyToClipboard(roomName, 'Room name')}
-              className="p-1 hover:bg-zinc-700 rounded transition-colors"
-            >
-              <Copy className="w-3 h-3 text-zinc-500 hover:text-zinc-300" />
-            </button>
-          </div>
+      <CardContent className="space-y-2 text-xs font-mono">
+        {/* Mode */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
+          <span className="text-zinc-400">Mode:</span>
+          <Badge className={debug.mode === 'LIVE' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}>
+            {debug.mode}
+          </Badge>
         </div>
 
-        {/* Identity */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
-          <span className="text-zinc-500 font-mono">IDENTITY:</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-zinc-300">{identity || 'UNKNOWN'}</span>
-            <button
-              onClick={() => copyToClipboard(identity || '', 'Identity')}
-              className="p-1 hover:bg-zinc-700 rounded transition-colors"
-            >
-              <Copy className="w-3 h-3 text-zinc-500 hover:text-zinc-300" />
-            </button>
+        {/* Connection State */}
+        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
+          <span className="text-zinc-400">Status:</span>
+          <div className={cn('flex items-center gap-1 px-2 py-1 rounded', getStatusColor(debug.connectionState))}>
+            {getStatusIcon(debug.connectionState)}
+            <span>{debug.connectionState.toUpperCase()}</span>
           </div>
         </div>
 
         {/* Token Status */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
-          <span className="text-zinc-500 font-mono">TOKEN:</span>
-          <div className="flex items-center gap-2">
-            {token ? (
-              <>
-                <CheckCircle className="w-3 h-3 text-emerald-500" />
-                <span className="text-emerald-500 font-mono text-[9px]">MINTED</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-3 h-3 text-red-500" />
-                <span className="text-red-500 font-mono text-[9px]">PENDING</span>
-              </>
-            )}
-          </div>
+        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
+          <span className="text-zinc-400">Token:</span>
+          <Badge className={debug.tokenMinted ? 'bg-green-600 text-white' : 'bg-zinc-700 text-zinc-300'}>
+            {debug.tokenMinted ? '✓ MINTED' : 'PENDING'}
+          </Badge>
         </div>
 
         {/* Participant Count */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
-          <span className="text-zinc-500 font-mono">PEERS:</span>
-          <span className="font-mono text-zinc-300">{participantCount}</span>
+        <div className="flex items-center justify-between p-2 bg-zinc-900/50 border border-zinc-800">
+          <span className="text-zinc-400">Participants:</span>
+          <span className="text-[#ea580c] font-bold">{debug.participantCount}</span>
         </div>
 
-        {/* Media State */}
-        <div className="flex items-center justify-between p-2 bg-zinc-900/30 border border-zinc-800/30 rounded text-[10px]">
-          <span className="text-zinc-500 font-mono">MEDIA:</span>
-          <div className="flex items-center gap-2">
-            <span className={cn(
-              'font-mono text-[9px] px-1.5 py-0.5 rounded border',
-              micEnabled ? 'border-emerald-600 text-emerald-500 bg-emerald-950/30' : 'border-zinc-600 text-zinc-500 bg-zinc-900/30'
-            )}>
-              MIC {micEnabled ? 'ON' : 'OFF'}
-            </span>
-            <span className={cn(
-              'font-mono text-[9px] px-1.5 py-0.5 rounded border',
-              cameraEnabled ? 'border-emerald-600 text-emerald-500 bg-emerald-950/30' : 'border-zinc-600 text-zinc-500 bg-zinc-900/30'
-            )}>
-              CAM {cameraEnabled ? 'ON' : 'OFF'}
-            </span>
-          </div>
-        </div>
-
-        {/* Last Error (if any) */}
-        {lastError && (
-          <div className="p-2 bg-red-950/30 border border-red-800/30 rounded text-[10px]">
-            <div className="text-red-500 font-mono font-bold mb-1">LAST ERROR:</div>
-            <div className="text-red-400 text-[9px] font-mono break-words">{lastError}</div>
-          </div>
-        )}
-
-        {/* Connection Quality (if connected) */}
-        {connectionState === 'connected' && room?.localParticipant && (
-          <div className="p-2 bg-emerald-950/20 border border-emerald-800/30 rounded text-[10px]">
-            <div className="text-emerald-600 font-mono font-bold mb-1">QUALITY:</div>
-            <div className="text-emerald-500 text-[9px] font-mono">
-              {room.localParticipant.lastConnectionQuality?.toUpperCase() || 'CHECKING'}
-            </div>
+        {/* Last Error */}
+        {debug.lastError && (
+          <div className="p-2 bg-red-950/30 border border-red-800 rounded">
+            <div className="text-red-400 text-[10px] break-words">{debug.lastError}</div>
           </div>
         )}
       </CardContent>
