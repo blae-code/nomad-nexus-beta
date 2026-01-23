@@ -58,25 +58,37 @@ export default function UserProfileCard({
   };
 
   const toggleEditField = (field) => {
+    if (!canEditField(field)) return;
     setEditingFields(prev => ({
       ...prev,
       [field]: !prev[field]
     }));
   };
 
+  const canEditField = (field) => {
+    // Rank can only be edited by Pioneers or Admins
+    if (field === "rank") {
+      return isAdmin || currentUser?.rank === "Pioneer";
+    }
+    // Other fields can be edited by anyone with general edit permission
+    return canEdit;
+  };
+
   const EditableField = ({ label, field, value, type = "text", icon: Icon }) => {
     const isEditing = editingFields[field];
     const presets = FIELD_PRESETS[field] || [];
     const hasPresets = presets.length > 0;
+    const fieldCanEdit = canEditField(field);
     
     return (
       <div className="space-y-1.5">
         <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
           {Icon && <Icon className="w-3 h-3 text-[#ea580c]" />}
           {label}
+          {!fieldCanEdit && <span className="text-[9px] text-zinc-600 ml-auto">(Admin Only)</span>}
         </label>
         
-        {isEditing && canEdit ? (
+        {isEditing && fieldCanEdit ? (
           <div className="space-y-2">
             {hasPresets ? (
               <div className="flex flex-wrap gap-1.5">
@@ -119,13 +131,12 @@ export default function UserProfileCard({
           </div>
         ) : (
           <button
-            onClick={() => canEdit && toggleEditField(field)}
-            disabled={!canEdit}
+            onClick={() => fieldCanEdit && toggleEditField(field)}
+            disabled={!fieldCanEdit}
             className={cn(
-              "w-full text-left px-3 py-2 rounded border transition-all",
-              canEdit && "cursor-pointer hover:border-[#ea580c]/50",
-              !canEdit && "cursor-not-allowed opacity-60",
-              "bg-zinc-900/50 border-zinc-800/50 text-xs font-mono text-zinc-300"
+              "w-full text-left px-3 py-2 rounded border transition-all text-xs font-mono",
+              fieldCanEdit && "cursor-pointer hover:border-[#ea580c]/50 bg-zinc-900/50 border-zinc-800/50 text-zinc-300",
+              !fieldCanEdit && "cursor-not-allowed opacity-50 bg-zinc-900/20 border-zinc-800/30 text-zinc-500"
             )}
           >
             {value || <span className="text-zinc-600">—</span>}
@@ -136,21 +147,27 @@ export default function UserProfileCard({
   };
 
   const ToggleField = ({ label, field, value, icon: Icon }) => {
+    const fieldCanEdit = canEditField(field);
+    
     return (
-      <div className="flex items-center justify-between px-3 py-2 bg-zinc-900/30 border border-zinc-800/50 rounded">
+      <div className={cn(
+        "flex items-center justify-between px-3 py-2 rounded border transition-all",
+        fieldCanEdit ? "bg-zinc-900/30 border-zinc-800/50" : "bg-zinc-900/15 border-zinc-800/30 opacity-60"
+      )}>
         <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
           {Icon && <Icon className="w-3 h-3 text-[#ea580c]" />}
           {label}
+          {!fieldCanEdit && <span className="text-[9px] text-zinc-700 ml-auto">(Admin Only)</span>}
         </label>
         <button
-          onClick={() => canEdit && handleFieldChange(field, !value)}
-          disabled={!canEdit}
+          onClick={() => fieldCanEdit && handleFieldChange(field, !value)}
+          disabled={!fieldCanEdit}
           className={cn(
             "w-8 h-4 rounded-full border transition-all",
             value
               ? "bg-[#ea580c]/30 border-[#ea580c]/50"
               : "bg-zinc-800/30 border-zinc-700/50",
-            !canEdit && "opacity-50 cursor-not-allowed"
+            !fieldCanEdit && "opacity-50 cursor-not-allowed"
           )}
         >
           <div className={cn(
@@ -245,8 +262,9 @@ export default function UserProfileCard({
                  <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
                    <Zap className="w-3 h-3 text-[#ea580c]" />
                    RANK ASSIGNMENT
+                   {!canEditField("rank") && <span className="text-[9px] text-zinc-700">(Admin Only)</span>}
                  </label>
-                 {!editingRank && canEdit && (
+                 {!editingRank && canEditField("rank") && (
                     <button
                       onClick={() => setEditingRank(true)}
                       className="text-[9px] font-mono text-zinc-600 hover:text-[#ea580c] transition-colors"
@@ -256,7 +274,7 @@ export default function UserProfileCard({
                   )}
                </div>
 
-               {editingRank ? (
+               {editingRank && canEditField("rank") ? (
                  <div className="flex gap-2">
                    <Select value={newRank} onValueChange={setNewRank}>
                      <SelectTrigger className="bg-zinc-900 border-zinc-700 text-xs h-7">
@@ -287,7 +305,12 @@ export default function UserProfileCard({
                    </Button>
                  </div>
                ) : (
-                 <div className="px-3 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded text-xs font-mono text-zinc-300">
+                 <div className={cn(
+                   "px-3 py-2 rounded text-xs font-mono",
+                   canEditField("rank") 
+                     ? "bg-zinc-900/50 border border-zinc-800/50 text-zinc-300" 
+                     : "bg-zinc-900/20 border border-zinc-800/30 text-zinc-500 opacity-60"
+                 )}>
                    {user.rank || <span className="text-zinc-600">UNASSIGNED</span>}
                  </div>
                )}
