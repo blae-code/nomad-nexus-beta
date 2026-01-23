@@ -116,6 +116,20 @@ export default function BootMediaAdmin() {
     }
   };
 
+  const handleRemoveFile = async () => {
+    if (!config) return;
+    try {
+      const updated = await base44.entities.AppConfig.update(config.id, {
+        boot_video_url: null,
+        boot_video_enabled: false
+      });
+      setConfig(updated);
+      setError(null);
+    } catch (err) {
+      setError('Failed to remove video');
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-4 text-zinc-400 text-sm">Loading...</div>;
   }
