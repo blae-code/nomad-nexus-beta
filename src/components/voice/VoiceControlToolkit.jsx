@@ -110,13 +110,15 @@ export default function VoiceControlToolkit() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Mic Status Indicator */}
-            <div className={cn('w-2 h-2 rounded-full transition-all', 
-              voiceActive ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
-              micEnabled && !isMuted ? 'bg-emerald-500' : 'bg-zinc-700'
-            )} />
-            <span className="text-[8px] text-zinc-400 font-mono uppercase">
-              {voiceActive ? 'TRANSMITTING' : micEnabled && !isMuted ? 'READY' : 'STANDBY'}
-            </span>
+            <div className="flex items-center gap-2">
+              <div className={cn('w-2 h-2 rounded-full transition-all', 
+                voiceActive ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
+                micEnabled && !isMuted ? 'bg-emerald-500' : 'bg-zinc-700'
+              )} />
+              <span className="text-[8px] text-zinc-400 font-mono uppercase">
+                {voiceActive ? 'TRANSMITTING' : micEnabled && !isMuted ? 'READY' : 'STANDBY'}
+              </span>
+            </div>
             
             {/* Divider */}
             <div className="h-3 w-px bg-zinc-700" />
@@ -192,7 +194,75 @@ export default function VoiceControlToolkit() {
               />
             </div>
           )}
-        </div>
+
+          {/* AI PTT Features Row - Only visible when AI is enabled */}
+          {aiOptIn && (
+            <div className="flex gap-1 mt-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setAiTranscription(!aiTranscription)}
+                    disabled={!aiOptIn}
+                    className={cn(
+                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      aiTranscription && aiOptIn
+                        ? 'bg-cyan-900/50 text-cyan-300 border border-cyan-700/50'
+                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                    )}
+                  >
+                    TX
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs font-bold text-cyan-400">Real-time Transcription</p>
+                  <p className="text-[10px] text-zinc-300">Listen & transcribe PTT transmissions</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setAiStatusInference(!aiStatusInference)}
+                    disabled={!aiOptIn}
+                    className={cn(
+                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      aiStatusInference && aiOptIn
+                        ? 'bg-amber-900/50 text-amber-300 border border-amber-700/50'
+                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                    )}
+                  >
+                    INF
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs font-bold text-amber-400">Status Inference</p>
+                  <p className="text-[10px] text-zinc-300">Auto-update user status from voice cues</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setAiAnomalyDetection(!aiAnomalyDetection)}
+                    disabled={!aiOptIn}
+                    className={cn(
+                      'flex-1 py-1 text-[8px] font-medium rounded transition-all',
+                      aiAnomalyDetection && aiOptIn
+                        ? 'bg-red-900/50 text-red-300 border border-red-700/50'
+                        : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                    )}
+                  >
+                    AOM
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs font-bold text-red-400">Anomaly Detection</p>
+                  <p className="text-[10px] text-zinc-300">Detect unusual comms patterns & alert</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+          </div>
 
         {/* Audio Processing - Minimal Toggles */}
         <div className="px-3 py-2 border-b border-zinc-800">
