@@ -246,6 +246,15 @@ function CommsConsolePage() {
       <Button
         variant="ghost"
         size="sm"
+        onClick={() => setShowMessageSearch(true)}
+        className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
+      >
+        <Search className="w-4 h-4" />
+        <span className="text-[10px] font-mono">Msgs</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setShowSearch(true)}
         className="gap-2 text-xs text-zinc-500 hover:text-zinc-300"
       >
