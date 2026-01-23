@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { ActiveUsersTooltip, AUECTooltip, UsersTooltip, FleetTooltip } from '@/components/dashboard/MetricsTooltip';
 
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {
   const [fundView, setFundView] = useState(0);
@@ -289,7 +290,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                      <XAxis dataKey="time" stroke="#71717a" style={{ fontSize: '10px' }} tick={{ interval: 3 }} />
                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                     <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                     <Tooltip content={<ActiveUsersTooltip />} contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }} />
                      <Legend wrapperStyle={{ fontSize: '11px' }} />
                      <Line type="monotone" dataKey="users" stroke="#06b6d4" strokeWidth={2} dot={false} name="Active Users" />
                    </LineChart>
@@ -302,7 +303,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                      <XAxis dataKey="hour" stroke="#71717a" style={{ fontSize: '10px' }} tick={{ interval: 3 }} />
                      <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                     <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                     <Tooltip content={<ActiveUsersTooltip />} contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }} />
                      <Line type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={2} dot={false} name="Peak Avg" isAnimationActive={true} animationDuration={600} />
                    </LineChart>
                  </ResponsiveContainer>
@@ -355,23 +356,21 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                   <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                   <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                    labelStyle={{ color: '#e4e4e7' }}
-                    formatter={(value) => `${value.toLocaleString()} aUEC`}
+                    content={<AUECTooltip view={fundView} />}
+                    contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <Line type="monotone" dataKey="inflow" stroke="#a855f7" strokeWidth={2} dot={false} name="Inflow" isAnimationActive={true} animationDuration={600} />
                   <Line type="monotone" dataKey="outflow" stroke="#ec4899" strokeWidth={2} dot={false} name="Outflow" isAnimationActive={true} animationDuration={600} />
                 </LineChart>
               ) : (
-                <LineChart data={treasuryCashFlowData.map((d, i) => ({ ...d, x: i }))}>
+                <LineChart data={treasuryCashFlowData.map((d, i) => ({ ...d, x: i, date: d.label }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                   <XAxis dataKey="label" stroke="#71717a" style={{ fontSize: '11px' }} />
                   <YAxis stroke="#71717a" style={{ fontSize: '11px' }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }}
-                    labelStyle={{ color: '#e4e4e7' }}
-                    formatter={(value) => `${value.toLocaleString()} aUEC`}
+                    content={<AUECTooltip view={fundView} />}
+                    contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }}
                   />
                   <Line type="linear" dataKey="amount" stroke="#a855f7" strokeWidth={2} dot={{ fill: '#a855f7', r: 3 }} name="aUEC" isAnimationActive={true} animationDuration={600} />
                 </LineChart>
@@ -421,7 +420,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                       <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Tooltip content={<UsersTooltip view={recruitmentView} />} contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
                       <Line type="monotone" dataKey="recruits" stroke="#22c55e" strokeWidth={2} dot={false} name="Daily New" isAnimationActive={true} animationDuration={600} />
                     </LineChart>
@@ -434,7 +433,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                       <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Tooltip content={<UsersTooltip view={recruitmentView} />} contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
                       <Line type="monotone" dataKey="cumulative" stroke="#22c55e" strokeWidth={2} dot={false} name="Total Recruits" isAnimationActive={true} animationDuration={600} />
                     </LineChart>
@@ -486,7 +485,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                       <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Tooltip content={<FleetTooltip view={flotillaView} />} contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
                       <Line type="monotone" dataKey="ships" stroke="#ea580c" strokeWidth={2} dot={false} name="Total Assets" isAnimationActive={true} animationDuration={600} />
                     </LineChart>
@@ -499,7 +498,7 @@ export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, tr
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                       <XAxis dataKey="date" stroke="#71717a" style={{ fontSize: '11px' }} />
                       <YAxis stroke="#71717a" style={{ fontSize: '11px' }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: 0 }} labelStyle={{ color: '#e4e4e7' }} />
+                      <Tooltip content={<FleetTooltip view={flotillaView} />} contentStyle={{ backgroundColor: 'transparent', border: 'none', padding: 0 }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
                       <Line type="monotone" dataKey="total" stroke="#ea580c" strokeWidth={2} dot={false} name="Fleet Total" isAnimationActive={true} animationDuration={600} />
                     </LineChart>
