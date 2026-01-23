@@ -34,12 +34,29 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [location.pathname]);
 
+  // Register service worker for PWA support
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .then(() => console.log('Service Worker registered'))
+        .catch((err) => console.warn('Service Worker registration failed:', err));
+    }
+  }, []);
+
   // Ensure root path always maps to hub
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
 
   return (
     <ErrorBoundary>
     <div className="h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
+      {/* PWA Meta Tags */}
+      <meta name="theme-color" content="#ea580c" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="apple-mobile-web-app-title" content="Nexus" />
+      <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+      <link rel="manifest" href="/manifest.json" />
+      <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23ea580c' rx='48'/><circle cx='96' cy='60' r='12' fill='%23090a0b'/><circle cx='96' cy='96' r='12' fill='%23090a0b'/><circle cx='96' cy='132' r='12' fill='%23090a0b'/></svg>" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
