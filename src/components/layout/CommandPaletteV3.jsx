@@ -277,7 +277,7 @@ export default function CommandPaletteV3() {
     if (parsedQuery.mode === 'help') {
       return {
         'HELP': [
-          { id: 'help-ctrl-k', label: 'Ctrl/Cmd+K', keywords: ['open'], icon: 'Command', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Open/close command palette' },
+          { id: 'help-ctrl-k', label: 'Ctrl+K', keywords: ['open'], icon: 'Command', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Open/close command palette' },
           { id: 'help-slash', label: '/', keywords: ['command'], icon: 'Radio', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Enter command mode (actions first)' },
           { id: 'help-question', label: '?', keywords: ['help'], icon: 'HelpCircle', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Show this help' },
           { id: 'help-at', label: '@', keywords: ['people'], icon: 'AtSign', handler: 'none', type: 'ACTION', section: 'HELP', description: 'Filter by people/presence' },
