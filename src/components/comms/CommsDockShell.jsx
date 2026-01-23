@@ -7,6 +7,8 @@ import CommsDockCommsTab from './tabs/CommsDockCommsTab';
 import CommsDockPollsTab from './tabs/CommsDockPollsTab';
 import CommsDockRiggsyTab from './tabs/CommsDockRiggsyTab';
 import CommsDockInboxTab from './tabs/CommsDockInboxTab';
+import CommsDockDebugPanel from './CommsDockDebugPanel';
+import { useVoiceRoom } from './useVoiceRoom';
 
 const TABS = [
   { id: 'comms', label: 'COMMS', icon: MessageSquare },
@@ -20,6 +22,7 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [unreadCounts, setUnreadCounts] = useState({});
   const queryClient = useQueryClient();
+  const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
 
   // Fetch unread counts
   const { data: readStates = [] } = useQuery({
@@ -140,12 +143,15 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
             {activeTab === 'inbox' && <CommsDockInboxTab user={user} />}
           </div>
 
+          {/* Debug Panel (Admin Only) */}
+          <CommsDockDebugPanel debug={voiceRoom.debug} user={user} />
+
           {/* Footer Hint */}
           <div className="px-2 py-1 border-t border-zinc-800 text-[8px] text-zinc-600 shrink-0">
             Press <span className="font-mono bg-zinc-800 px-1">Esc</span> to close
           </div>
-        </div>
-      )}
-    </>
-  );
-}
+          </div>
+          )}
+          </>
+          );
+          }
