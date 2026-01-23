@@ -379,27 +379,14 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   );
 }
 
-export default function ActiveNetPanel({ 
-  net, 
-  user, 
-  eventId,
-  isConnected,
-  connectionState: parentConnectionState,
-  connectionError: parentConnectionError,
-  effectiveMode,
-  modeFallbackReason,
-  onConnecting,
-  onConnectSuccess,
-  onDisconnect,
-  onError,
-  onModeChange
-}) {
-  const { isLive, isSim, simConfig } = useCommsMode();
+export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onConnectSuccess, onConnecting, onDisconnect, onError }) {
+  const { isSim, simConfig } = useCommsMode();
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
   const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
-  const [localConnectionError, setLocalConnectionError] = React.useState(null);
+  const [connectionState, setConnectionState] = React.useState(isSim ? "connected" : "disconnected");
+  const [connectionError, setConnectionError] = React.useState(null);
   const [micPermissionDenied, setMicPermissionDenied] = React.useState(false);
   const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0, quality: 'excellent' });
   const [accessDenied, setAccessDenied] = React.useState(false);
@@ -542,60 +529,61 @@ export default function ActiveNetPanel({
 
     // SIM mode: fake connection
     if (effectiveMode === 'SIM') {
-      onConnectSuccess?.();
+      onConnectSuccess?.(net.id);
       return;
     }
 
     const connect = async () => {
-        try {
-           if (!mounted) return;
-           onConnecting?.();
-           setLocalConnectionError(null);
-           setMicPermissionDenied(false);
-           setConnectionToken(null);
-           setLivekitUrl(null);
-           setWhisperTarget(null);
+       try {
+          if (!mounted) return;
+          setConnectionState("connecting");
+          onConnecting?.(net.id);
+          setConnectionError(null);
+          setMicPermissionDenied(false);
+          setConnectionToken(null);
+          setLivekitUrl(null);
+          setWhisperTarget(null);
 
-           // 1. Get Token with permission enforcement
-           const res = await base44.functions.invoke('generateLiveKitToken', {
-              roomName: `op-${eventId}-${net.code}`,
-              userIdentity: user?.id || 'unknown'
-           });
+          // 1. Get Token with permission enforcement
+          const res = await base44.functions.invoke('generateLiveKitToken', {
+             roomName: `op-${eventId}-${net.code}`,
+             userIdentity: user?.id || 'unknown'
+          });
 
-           if (!mounted) return;
+          if (!mounted) return;
 
-           // Handle response - if LIVE fails, fallback to SIM with reason
-           if (!res.data?.ok) {
-              const reason = res.data?.message || 'Failed to mint token';
-              console.warn('[COMMS] LIVE mode failed, falling back to SIM:', reason);
-              onModeChange?.('SIM', `LIVE unavailable: ${reason}`);
-              onConnectSuccess?.();
-              return;
-           }
+          // Handle response
+          if (!res.data?.ok) {
+             const err = res.data?.message || 'Failed to mint token';
+             console.error('LiveKit token error:', err);
+             setConnectionError(err);
+             setConnectionState("failed");
+             onError?.(err);
+             return;
+          }
 
-           const token = res.data?.data?.token;
-           let url = res.data?.data?.url;
-
-           if (!url) {
-              console.warn('[COMMS] No LiveKit URL, falling back to SIM');
-              onModeChange?.('SIM', 'LIVE unavailable: No server URL');
-              onConnectSuccess?.();
-              return;
-           }
+          const token = res.data?.data?.token;
+          let url = res.data?.data?.url;
 
           if (!token) {
-             const reason = 'Insufficient permissions for this net';
-             console.warn('[COMMS] Token unavailable, falling back to SIM:', reason);
-             onModeChange?.('SIM', `LIVE unavailable: ${reason}`);
-             onConnectSuccess?.();
+             console.error('[COMMS] No token received for net - insufficient permissions');
+             setConnectionError('Insufficient permissions for this net');
+             setConnectionState("failed");
+             return;
+          }
+
+          if (!url) {
+             console.error('[COMMS] No LiveKit URL provided in response', res.data);
+             setConnectionError('Server error: Missing LiveKit configuration');
+             setConnectionState("failed");
              return;
           }
 
           // Validate and normalize URL
           if (typeof url !== 'string' || url.length === 0) {
-             console.warn('[COMMS] Invalid URL, falling back to SIM');
-             onModeChange?.('SIM', 'LIVE unavailable: Invalid server URL');
-             onConnectSuccess?.();
+             console.error('[COMMS] Invalid URL format:', typeof url, url);
+             setConnectionError('Invalid server URL');
+             setConnectionState("failed");
              return;
           }
 
@@ -612,9 +600,9 @@ export default function ActiveNetPanel({
           }
 
           if (typeof token !== 'string' || token.length === 0) {
-             console.warn('[COMMS] Invalid token, falling back to SIM');
-             onModeChange?.('SIM', 'LIVE unavailable: Invalid authentication');
-             onConnectSuccess?.();
+             console.error('[COMMS] Invalid token format:', typeof token);
+             setConnectionError('Invalid authentication token');
+             setConnectionState("failed");
              return;
           }
 
@@ -699,8 +687,24 @@ export default function ActiveNetPanel({
 
           const handleDisconnected = (reason) => {
              console.log(`[COMMS] Disconnected: ${reason}`);
-             if (mounted && parentConnectionState !== "disconnected") {
-                onDisconnect?.();
+             if (mounted && connectionState !== "disconnected") {
+                const attemptReconnect = () => {
+                   if (!mounted) return;
+                   reconnectAttempts.current += 1;
+                   const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
+                   console.log(`[COMMS] Reconnect attempt ${reconnectAttempts.current} in ${backoffDelay}ms`);
+                   setConnectionState("reconnecting");
+                   setConnectionError(`Reconnecting... (attempt ${reconnectAttempts.current})`);
+                   reconnectTimeoutRef.current = setTimeout(() => {
+                      if (mounted && reconnectAttempts.current < 5) {
+                         connect();
+                      } else {
+                         setConnectionState("failed");
+                         setConnectionError("Connection lost - max retries reached");
+                      }
+                   }, backoffDelay);
+                };
+                attemptReconnect();
              }
           };
 
@@ -733,8 +737,9 @@ export default function ActiveNetPanel({
           }
 
           setRoom(currentRoom);
+          setConnectionState("connected");
           reconnectAttempts.current = 0; // Reset on successful connection
-          onConnectSuccess?.();
+          onConnectSuccess?.(net.id);
           console.log(`[COMMS] Connected to ${net.code}`);
 
           // Monitor connection quality
@@ -768,13 +773,11 @@ export default function ActiveNetPanel({
        } catch (err) {
           console.error("LiveKit Connection Failed:", err);
           if (mounted) {
-             const reason = err.message || 'Connection failed';
-             console.warn('[COMMS] LIVE connection error, falling back to SIM:', reason);
-             onModeChange?.('SIM', `LIVE unavailable: ${reason}`);
-             onConnectSuccess?.();
-          }
-       }
-       };
+             setConnectionError(err.message || 'Connection failed');
+             setConnectionState("failed");
+                }
+             }
+             };
 
              connect();
 
@@ -804,10 +807,11 @@ export default function ActiveNetPanel({
                 roomRef.current = null;
              }
              setRoom(null);
+             setConnectionState("disconnected");
              reconnectAttempts.current = 0;
              onDisconnect?.();
              };
-             }, [net?.id, user?.id, eventId, effectiveMode, onConnecting, onConnectSuccess, onDisconnect, onModeChange]);
+             }, [net?.id, user?.id, eventId, isSim, onConnectionChange]);
 
   // Audio Handling - Mic Publish/Unpublish with audio processing
   useEffect(() => {
@@ -913,26 +917,21 @@ export default function ActiveNetPanel({
   return (
     <div className="h-full flex flex-col gap-4">
       
-      {/* Mode Indicator & Fallback Banner */}
-          {effectiveMode === 'SIM' && (
+      {/* Mode Indicator */}
+          {isSim && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-amber-950/30 border border-amber-800 p-2 rounded flex items-center gap-2"
             >
               <div className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-xs text-amber-400 font-mono font-bold">
-                {modeFallbackReason ? 'SIM MODE (FALLBACK)' : 'SIM MODE ACTIVE'}
-              </span>
-              {modeFallbackReason && (
-                <span className="text-[10px] text-amber-300 ml-auto">{modeFallbackReason}</span>
-              )}
+              <span className="text-xs text-amber-400 font-mono font-bold">SIM MODE ACTIVE</span>
             </motion.div>
           )}
 
       {/* Connection Error Banner */}
           <AnimatePresence>
-            {parentConnectionError && (
+            {connectionError && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -941,8 +940,8 @@ export default function ActiveNetPanel({
               >
                 <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                 <div className="flex-1">
-                  <div className="text-xs font-bold text-red-400 uppercase">Connection Error</div>
-                  <div className="text-[10px] text-red-300 mt-0.5">{parentConnectionError}</div>
+                  <div className="text-xs font-bold text-red-400 uppercase">Connection Failed</div>
+                  <div className="text-[10px] text-red-300 mt-0.5">{connectionError}</div>
                 </div>
               </motion.div>
             )}
