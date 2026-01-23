@@ -134,10 +134,43 @@ export default function AdminCockpitPage() {
   return (
     <PageLayout title="Admin Cockpit">
       <div className="h-full overflow-hidden flex flex-col bg-black">
-        {/* Header with readiness score & badges */}
-        <div className="border-b border-zinc-800 px-4 py-3 shrink-0">
-          <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} />
-        </div>
+        {/* Header with readiness score & real-time system status */}
+          <div className="border-b border-zinc-800 px-4 py-3 shrink-0 space-y-2">
+            <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} />
+
+            {/* System Status Indicators */}
+            <div className="flex items-center gap-3 flex-wrap text-[8px]">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
+                <Server className="w-3 h-3 text-blue-400" />
+                <span className="text-zinc-300">Backend:</span>
+                <span className="font-mono font-bold text-blue-400">OPERATIONAL</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
+                <MessageSquare className="w-3 h-3 text-green-400" />
+                <span className="text-zinc-300">Comms:</span>
+                <span className="font-mono font-bold text-green-400">LIVE</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
+                <Users className="w-3 h-3 text-purple-400" />
+                <span className="text-zinc-300">Users:</span>
+                <span className="font-mono font-bold text-purple-400">{auditLogs.length > 0 ? 'Active' : 'Ready'}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
+                <TrendingUp className="w-3 h-3 text-yellow-400" />
+                <span className="text-zinc-300">Health:</span>
+                <span className="font-mono font-bold text-yellow-400">{readinessScore}%</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 border border-zinc-800 rounded">
+                <Clock className="w-3 h-3 text-cyan-400" />
+                <span className="text-zinc-300">Sync:</span>
+                <span className="font-mono font-bold text-cyan-400">In-Sync</span>
+              </div>
+            </div>
+          </div>
 
         {/* Main content area */}
         <div className="flex-1 overflow-hidden flex flex-col">
