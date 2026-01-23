@@ -52,7 +52,6 @@ export default function HeaderV3() {
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [readinessState, setReadinessState] = useState('green'); // green, amber, red
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const location = useLocation();
   
   // Safe callsign/rank resolution via directory
@@ -668,11 +667,10 @@ export default function HeaderV3() {
         )}
         <ObservabilityDiagnostics isOpen={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
 
-        {/* Connection Status / Diagnostics Trigger */}
+        {/* Connection Status */}
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all duration-100 cursor-pointer',
                 connectionStatus === 'OPTIMAL'
@@ -680,13 +678,14 @@ export default function HeaderV3() {
                   : 'bg-red-950/30 border-red-700/50 text-red-400 hover:border-red-600/70',
                 netDataTickActive && 'border-[#ea580c]/50 bg-[#ea580c]/10'
               )}
+              disabled
             >
               <Wifi className="w-2.5 h-2.5" />
               <span>{latency}ms</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">Connection Status · Click for diagnostics</p>
+            <p className="text-xs">Connection Status</p>
           </TooltipContent>
         </Tooltip>
 
@@ -772,53 +771,7 @@ export default function HeaderV3() {
         </div>
       </div>
 
-      {/* Diagnostics Panel */}
-      {diagnosticsOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setDiagnosticsOpen(false)}>
-          <div className="absolute right-0 top-14 w-80 max-h-[calc(100vh-56px)] bg-zinc-950 border border-zinc-800/60 border-t-0 overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%)',
-              backgroundSize: '100% 2px',
-            }}
-          >
-            <div className="px-3 py-2 border-b border-zinc-800/40 bg-zinc-900/50">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">diagnostics</span>
-                <button
-                  onClick={() => setDiagnosticsOpen(false)}
-                  className="text-zinc-600 hover:text-zinc-400 text-sm leading-none"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            <div className="p-3 space-y-2 text-[9px] font-mono">
-              <div className="flex justify-between text-zinc-500">
-                <span className="uppercase tracking-wider">CONN</span>
-                <span className={connectionStatus === 'OPTIMAL' ? 'text-emerald-400' : 'text-red-400'}>{connectionStatus}</span>
-              </div>
-              <div className="flex justify-between text-zinc-500">
-                <span className="uppercase tracking-wider">LATENCY</span>
-                <span className={latency > 300 ? 'text-red-400' : latency > 150 ? 'text-yellow-400' : 'text-emerald-400'}>{latency}ms</span>
-              </div>
-              <div className="flex justify-between text-zinc-500">
-                <span className="uppercase tracking-wider">STATUS</span>
-                <span className={
-                  readinessState === 'green' ? 'text-emerald-400' :
-                  readinessState === 'amber' ? 'text-yellow-400' : 'text-red-400'
-                }>
-                  {readinessState === 'green' ? 'NOMINAL' : readinessState === 'amber' ? 'CAUTION' : 'ALERT'}
-                </span>
-              </div>
-              <div className="flex justify-between text-zinc-500">
-                <span className="uppercase tracking-wider">ONLINE</span>
-                <span className="text-cyan-400">{onlineCount}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </header>
     </TooltipProvider>
   );
