@@ -45,56 +45,25 @@ export default function MessagingFooter({ user }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            {/* Tabs */}
-            <div className="flex items-center gap-0 px-2 py-0 bg-zinc-900/30 border-b border-zinc-800/30 overflow-x-auto scrollbar-hide">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono border-b-2 transition-all relative group",
-                    activeTab === tab.id
-                      ? "border-[#ea580c] text-zinc-100 bg-zinc-900/50"
-                      : "border-transparent text-zinc-500 hover:text-zinc-400 hover:border-zinc-700"
-                  )}
-                >
-                  <tab.icon className="w-2.5 h-2.5" />
-                  <span className="truncate max-w-28">{tab.label}</span>
-                  {tab.badge > 0 && (
-                    <span className="ml-0.5 px-1 py-0.5 bg-[#ea580c] text-[8px] font-bold rounded text-white">
-                      {tab.badge}
-                    </span>
-                  )}
-                  {tab.isDM || tab.isGroup ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeTab(tab.id);
-                      }}
-                      className="ml-1 text-zinc-600 hover:text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-
-            {/* Content Area */}
-            <div className="bg-zinc-950 h-96 overflow-hidden flex flex-col">
-              {activeTab === 'notifications' && (
-                <NotificationsTab user={user} unreadCounts={unreadCounts} />
-              )}
-              {activeTab === 'file-share' && (
-                <FileShareTab user={user} />
-              )}
-              {dmTabs.map(dm => activeTab === dm.tabId && (
-                <DMTab key={dm.tabId} user={user} recipientId={dm.userId} recipientName={dm.userName} />
-              ))}
-              {groupTabs.map(g => activeTab === g.tabId && (
-                <GroupChatTab key={g.tabId} user={user} groupId={g.groupId} groupName={g.groupName} />
-              ))}
-            </div>
+            {/* Channels List */}
+             <div className="bg-zinc-900/30 border-b border-zinc-800/30 p-2 flex-1 overflow-y-auto">
+               <div className="space-y-1">
+                 {channels.length === 0 ? (
+                   <p className="text-[10px] text-zinc-500 italic">No channels available</p>
+                 ) : (
+                   channels.map(channel => (
+                     <a
+                       key={channel.id}
+                       href={`/channels/${channel.id}`}
+                       className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/30 rounded transition-all"
+                     >
+                       <Hash className="w-2.5 h-2.5" />
+                       <span className="truncate">{channel.name}</span>
+                     </a>
+                   ))
+                 )}
+               </div>
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
