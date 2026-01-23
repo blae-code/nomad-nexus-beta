@@ -34,6 +34,9 @@ export default function VoiceControlToolkit() {
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const [aiOptIn, setAiOptIn] = useState(true);
+  const [aiTranscription, setAiTranscription] = useState(false);
+  const [aiStatusInference, setAiStatusInference] = useState(false);
+  const [aiAnomalyDetection, setAiAnomalyDetection] = useState(false);
 
   // Fetch online users for presence indicator
   const { data: onlineUsers = [] } = useQuery({
