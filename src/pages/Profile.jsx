@@ -15,6 +15,9 @@ import { getRankColorClass } from "@/components/utils/rankUtils";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import AIPreferencesPanel from "@/components/profile/AIPreferencesPanel";
+import ProfileOperationalView from "@/components/profile/ProfileOperationalView";
+import ProfilePresenceCard from "@/components/profile/ProfilePresenceCard";
+import ProfilePersonalizationPanel from "@/components/profile/ProfilePersonalizationPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
@@ -236,23 +239,32 @@ export default function ProfilePage() {
           </div>
 
           <Tabs defaultValue="profile" className="w-full">
-                 <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
-                    <TabsTrigger value="profile" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                       Profile
+              <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
+                 <TabsTrigger value="profile" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                    Profile
+                 </TabsTrigger>
+                 <TabsTrigger value="operational" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                    Operational
+                 </TabsTrigger>
+                 <TabsTrigger value="presence" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                    Presence
+                 </TabsTrigger>
+                 <TabsTrigger value="personality" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                    Identity
+                 </TabsTrigger>
+                 <TabsTrigger value="clearance" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                    Clearance & Roles
+                 </TabsTrigger>
+                 <TabsTrigger value="ai-preferences" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    AI Customization
+                 </TabsTrigger>
+                 {hasModerationActivity && (
+                    <TabsTrigger value="moderation" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
+                       Moderation History
                     </TabsTrigger>
-                    <TabsTrigger value="clearance" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                       Clearance & Roles
-                    </TabsTrigger>
-                    <TabsTrigger value="ai-preferences" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white flex items-center gap-2">
-                       <Brain className="w-4 h-4" />
-                       AI Customization
-                    </TabsTrigger>
-                    {hasModerationActivity && (
-                       <TabsTrigger value="moderation" className="data-[state=active]:bg-[#ea580c] data-[state=active]:text-white">
-                          Moderation History
-                       </TabsTrigger>
-                    )}
-                 </TabsList>
+                 )}
+              </TabsList>
 
              {/* Profile Tab */}
              <TabsContent value="profile" className="space-y-6">
@@ -441,6 +453,36 @@ export default function ProfilePage() {
                       </form>
                    </CardContent>
                 </Card>
+             </TabsContent>
+
+             {/* Operational Tab */}
+             <TabsContent value="operational" className="space-y-6">
+                {user && (
+                   <ProfileOperationalView 
+                      user={user} 
+                      onUpdate={handleAIPreferencesUpdate}
+                   />
+                )}
+             </TabsContent>
+
+             {/* Presence Tab */}
+             <TabsContent value="presence" className="space-y-6">
+                {user && (
+                   <ProfilePresenceCard 
+                      user={user} 
+                      onUpdate={handleAIPreferencesUpdate}
+                   />
+                )}
+             </TabsContent>
+
+             {/* Personality Tab */}
+             <TabsContent value="personality" className="space-y-6">
+                {user && (
+                   <ProfilePersonalizationPanel 
+                      user={user} 
+                      onUpdate={handleAIPreferencesUpdate}
+                   />
+                )}
              </TabsContent>
 
              {/* AI Customization Tab */}
