@@ -3,6 +3,7 @@ import { Shield, Copy, Mail, Zap, Lock, Activity, Badge as BadgeIcon } from "luc
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -18,11 +19,7 @@ const RANKS = ["Pioneer", "Founder", "Voyager", "Scout", "Affiliate", "Vagrant"]
 const STATUSES = ["active", "inactive", "on_leave"];
 
 const FIELD_PRESETS = {
-  callsign: ["Operative", "Pilot", "Medic", "Engineer", "Scout", "Lead"],
-  status: ["active", "inactive", "on_leave"],
-  rsi_handle: [],
-  bio: [],
-  voyager_number: []
+  status: ["active", "inactive", "on_leave"]
 };
 
 export default function UserProfileCard({ 
@@ -74,7 +71,7 @@ export default function UserProfileCard({
     return canEdit;
   };
 
-  const EditableField = ({ label, field, value, type = "text", icon: Icon }) => {
+  const EditableField = ({ label, field, value, type = "text", icon: Icon, isLongForm = false }) => {
     const isEditing = editingFields[field];
     const presets = FIELD_PRESETS[field] || [];
     const hasPresets = presets.length > 0;
@@ -110,6 +107,15 @@ export default function UserProfileCard({
                   </button>
                 ))}
               </div>
+            ) : isLongForm ? (
+              <Textarea
+                autoFocus
+                value={value || ""}
+                onChange={(e) => handleFieldChange(field, e.target.value)}
+                onBlur={() => toggleEditField(field)}
+                className="bg-zinc-900 border-zinc-700 text-xs min-h-20 resize-none"
+                placeholder={`Enter ${label.toLowerCase()}`}
+              />
             ) : (
               <Input
                 autoFocus
@@ -251,6 +257,7 @@ export default function UserProfileCard({
                field="bio" 
                value={user.bio}
                icon={Activity}
+               isLongForm={true}
              />
 
              {/* Divider */}
@@ -258,59 +265,37 @@ export default function UserProfileCard({
 
              {/* Rank Section */}
              <div className="space-y-2">
-               <div className="flex items-center justify-between">
-                 <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
-                   <Zap className="w-3 h-3 text-[#ea580c]" />
-                   RANK ASSIGNMENT
-                   {!canEditField("rank") && <span className="text-[9px] text-zinc-700">(Admin Only)</span>}
-                 </label>
-                 {!editingRank && canEditField("rank") && (
-                    <button
-                      onClick={() => setEditingRank(true)}
-                      className="text-[9px] font-mono text-zinc-600 hover:text-[#ea580c] transition-colors"
-                    >
-                      EDIT
-                    </button>
-                  )}
-               </div>
+               <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
+                 <Zap className="w-3 h-3 text-[#ea580c]" />
+                 RANK ASSIGNMENT
+                 {!canEditField("rank") && <span className="text-[9px] text-zinc-700">(Admin Only)</span>}
+               </label>
 
-               {editingRank && canEditField("rank") ? (
-                 <div className="flex gap-2">
-                   <Select value={newRank} onValueChange={setNewRank}>
-                     <SelectTrigger className="bg-zinc-900 border-zinc-700 text-xs h-7">
-                       <SelectValue placeholder="Select rank" />
-                     </SelectTrigger>
-                     <SelectContent className="bg-zinc-900 border-zinc-700">
-                       {RANKS.map((rank) => (
-                         <SelectItem key={rank} value={rank}>
+               {canEditField("rank") ? (
+                 <Select value={user.rank || ""} onValueChange={onRankChange}>
+                   <SelectTrigger className={cn(
+                     "bg-zinc-900 border-zinc-700 text-xs h-8 font-mono",
+                     "hover:border-[#ea580c]/50 focus:border-[#ea580c] focus:ring-0"
+                   )}>
+                     <SelectValue placeholder="Select rank" />
+                   </SelectTrigger>
+                   <SelectContent className="bg-zinc-950 border-zinc-800">
+                     {RANKS.map((rank) => (
+                       <SelectItem 
+                         key={rank} 
+                         value={rank}
+                         className="font-mono text-xs cursor-pointer hover:bg-[#ea580c]/10 focus:bg-[#ea580c]/20"
+                       >
+                         <span className="flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c]" />
                            {rank}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
-                   <Button
-                     size="sm"
-                     onClick={handleRankSave}
-                     className="bg-[#ea580c] hover:bg-[#c2410c] h-7 text-xs"
-                   >
-                     Save
-                   </Button>
-                   <Button
-                     size="sm"
-                     variant="outline"
-                     onClick={() => setEditingRank(false)}
-                     className="h-7 text-xs"
-                   >
-                     Cancel
-                   </Button>
-                 </div>
+                         </span>
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
                ) : (
-                 <div className={cn(
-                   "px-3 py-2 rounded text-xs font-mono",
-                   canEditField("rank") 
-                     ? "bg-zinc-900/50 border border-zinc-800/50 text-zinc-300" 
-                     : "bg-zinc-900/20 border border-zinc-800/30 text-zinc-500 opacity-60"
-                 )}>
+                 <div className="px-3 py-2 rounded text-xs font-mono bg-zinc-900/20 border border-zinc-800/30 text-zinc-500 opacity-60">
                    {user.rank || <span className="text-zinc-600">UNASSIGNED</span>}
                  </div>
                )}
@@ -342,14 +327,14 @@ export default function UserProfileCard({
              <ToggleField 
                label="System Admin" 
                field="is_system_administrator" 
-               value={user.is_system_administrator}
+               value={user.is_system_administrator || false}
                icon={Lock}
              />
 
              <ToggleField 
                label="Shaman" 
                field="is_shaman" 
-               value={user.is_shaman}
+               value={user.is_shaman || false}
                icon={Zap}
              />
 
