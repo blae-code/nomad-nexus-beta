@@ -258,6 +258,91 @@ export const commands = [
     description: 'Create a new poll',
     minRank: 'Scout'
   },
+  // Canonical channel shortcuts
+  {
+    id: 'ch-announcements',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: Announcements',
+    keywords: ['channel', 'announcements', 'org', 'broadcast'],
+    icon: 'Bell',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-announcements' },
+    description: 'Founder org-wide announcements',
+    minRank: 'Vagrant'
+  },
+  {
+    id: 'ch-ops-briefings',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: Ops Briefings',
+    keywords: ['channel', 'briefings', 'operations', 'ops'],
+    icon: 'FileText',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-ops-briefings' },
+    description: 'Pre-op briefs with discussion',
+    minRank: 'Scout'
+  },
+  {
+    id: 'ch-ops-sitrep',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: SITREP',
+    keywords: ['channel', 'sitrep', 'situation', 'report'],
+    icon: 'Radio',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-ops-sitrep' },
+    description: 'Real-time situation reports',
+    minRank: 'Scout'
+  },
+  {
+    id: 'ch-distress',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: Distress Dispatch',
+    keywords: ['channel', 'distress', 'rescue', 'dispatch'],
+    icon: 'AlertTriangle',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-distress-dispatch' },
+    description: 'Rescue alerts & coordination',
+    minRank: 'Scout'
+  },
+  {
+    id: 'ch-general',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: General Comms',
+    keywords: ['channel', 'general', 'casual', 'chat'],
+    icon: 'MessageSquare',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-general-comms' },
+    description: 'Org-wide casual discussion',
+    minRank: 'Vagrant'
+  },
+  {
+    id: 'ch-intel',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: Intel Ledger',
+    keywords: ['channel', 'intel', 'intelligence', 'ledger'],
+    icon: 'Eye',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-intel-ledger' },
+    description: 'Shared intelligence reports',
+    minRank: 'Scout'
+  },
+  {
+    id: 'ch-logistics',
+    type: 'NAVIGATION',
+    section: COMMAND_SECTIONS.COMMS,
+    label: 'Channel: Market & Logistics',
+    keywords: ['channel', 'logistics', 'market', 'trading'],
+    icon: 'TrendingUp',
+    handler: 'openChannel',
+    handlerArgs: { canonical_key: 'org-market-logistics' },
+    description: 'Industry & supply coordination',
+    minRank: 'Vagrant'
+  },
   {
     id: 'ops-open-active',
     type: 'ACTION',
