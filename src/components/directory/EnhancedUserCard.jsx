@@ -110,7 +110,8 @@ export default function EnhancedUserCard({
         {/* Status Badge */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-mono text-zinc-600 uppercase">STATUS</span>
-          <Badge className={cn(
+          <div className={cn(
+            'inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold',
             'text-[9px] font-mono uppercase',
             status === 'online' && 'bg-emerald-950 text-emerald-300 border-emerald-700',
             status === 'idle' && 'bg-yellow-950 text-yellow-300 border-yellow-700',
@@ -120,7 +121,7 @@ export default function EnhancedUserCard({
             status === 'transmitting' && 'bg-red-950 text-red-300 border-red-700'
           )}>
             {status}
-          </Badge>
+          </div>
         </div>
 
         {/* Last Seen (when offline) */}
