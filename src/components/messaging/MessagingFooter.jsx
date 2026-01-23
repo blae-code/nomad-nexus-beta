@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
@@ -25,10 +25,21 @@ export default function MessagingFooter({ user }) {
       return allChannels || [];
     },
     enabled: !!user?.id,
-    staleTime: 30000, // 30s cache
-    refetchInterval: false, // No polling; use subscriptions
-    gcTime: 60000 // Keep in cache for 60s
+    staleTime: 30000,
+    refetchInterval: false,
+    gcTime: 60000
   });
+
+  // Real-time subscription for channels
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = base44.entities.Channel.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['text-channels', user?.id] });
+    });
+
+    return () => unsubscribe?.();
+  }, [user?.id, queryClient]);
 
   const { data: currentChannelData } = useQuery({
     queryKey: ['channel-details', selectedChannel],
@@ -36,7 +47,6 @@ export default function MessagingFooter({ user }) {
       if (!selectedChannel) return null;
       const channel = await base44.entities.Channel.get(selectedChannel);
       const members = await base44.entities.User.filter({ id: channel.member_ids || [] });
-      // Limit to 20 messages for initial load, paginate from there
       const messages = await base44.entities.Message.filter({ channel_id: selectedChannel }, '-created_date', 20);
       return { channel, members, messages };
     },
@@ -45,6 +55,19 @@ export default function MessagingFooter({ user }) {
     refetchInterval: false,
     gcTime: 30000
   });
+
+  // Real-time subscription for channel details (members, messages)
+  useEffect(() => {
+    if (!selectedChannel) return;
+
+    const messageUnsub = base44.entities.Message.subscribe((event) => {
+      if (event.data?.channel_id === selectedChannel) {
+        queryClient.invalidateQueries({ queryKey: ['channel-details', selectedChannel] });
+      }
+    });
+
+    return () => messageUnsub?.();
+  }, [selectedChannel, queryClient]);
 
   const muteUserMutation = useMutation({
     mutationFn: async ({ userId, duration }) => {
