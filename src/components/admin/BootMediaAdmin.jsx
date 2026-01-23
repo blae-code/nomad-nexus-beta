@@ -18,24 +18,33 @@ export default function BootMediaAdmin() {
 
   const loadConfig = async () => {
     try {
-      const configs = await base44.entities.AppConfig.filter({ key: 'global' });
-      let appConfig = configs.length > 0 ? configs[0] : null;
+      let configs = await base44.entities.AppConfig.list();
+      let appConfig = configs.find(c => c.key === 'global');
 
       if (!appConfig) {
         // Create default config
-        appConfig = await base44.entities.AppConfig.create({
-          key: 'global',
-          boot_video_enabled: false,
-          boot_video_mode: 'FIRST_VISIT',
-          boot_video_max_ms: 6000,
-          boot_video_skip_enabled: true
-        });
+        try {
+          appConfig = await base44.entities.AppConfig.create({
+            key: 'global',
+            boot_video_enabled: false,
+            boot_video_mode: 'FIRST_VISIT',
+            boot_video_max_ms: 6000,
+            boot_video_skip_enabled: true
+          });
+        } catch (createErr) {
+          console.error('Create AppConfig error:', createErr);
+          setError(`Failed to create config: ${createErr.message}`);
+          setIsLoading(false);
+          return;
+        }
       }
 
       setConfig(appConfig);
+      setError(null);
       setIsLoading(false);
     } catch (err) {
-      setError('Failed to load config');
+      console.error('Load config error:', err);
+      setError(`Failed to load config: ${err.message}`);
       setIsLoading(false);
     }
   };
