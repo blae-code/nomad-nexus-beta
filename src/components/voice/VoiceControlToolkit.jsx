@@ -105,14 +105,39 @@ export default function VoiceControlToolkit() {
       {/* Compact Status Bar */}
       <div className="px-3 py-2 bg-zinc-900/50 border-b border-zinc-800 shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={cn('w-2 h-2 rounded-full transition-all', 
-              voiceActive ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
-              micEnabled && !isMuted ? 'bg-emerald-500' : 'bg-zinc-700'
-            )} />
-            <span className="text-[8px] text-zinc-400 font-mono uppercase">
-              {voiceActive ? 'TRANSMITTING' : micEnabled && !isMuted ? 'READY' : 'STANDBY'}
-            </span>
+          <div className="flex items-center gap-3">
+            {/* Mic Status Indicator */}
+            <div className="flex items-center gap-2">
+              <div className={cn('w-2 h-2 rounded-full transition-all', 
+                voiceActive ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
+                micEnabled && !isMuted ? 'bg-emerald-500' : 'bg-zinc-700'
+              )} />
+              <span className="text-[8px] text-zinc-400 font-mono uppercase">
+                {voiceActive ? 'TRANSMITTING' : micEnabled && !isMuted ? 'READY' : 'STANDBY'}
+              </span>
+            </div>
+            
+            {/* Divider */}
+            <div className="h-3 w-px bg-zinc-700" />
+            
+            {/* AI Preference Indicator */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setAiOptIn(!aiOptIn)}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] font-mono transition-all hover:bg-zinc-800"
+                >
+                  <Zap className={cn("w-3 h-3", aiOptIn ? "text-[#ea580c]" : "text-zinc-600")} />
+                  <span className={cn("uppercase font-bold", aiOptIn ? "text-[#ea580c]" : "text-zinc-500")}>
+                    {aiOptIn ? 'AI ON' : 'AI OFF'}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">{aiOptIn ? 'AI Features Enabled' : 'AI Features Disabled'}</p>
+                <p className="text-[10px] text-zinc-400">Click to toggle</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-2">
           </div>
