@@ -12,6 +12,8 @@ import NotificationCenter from '@/components/notifications/NotificationCenter';
 import CommandPaletteV3 from '@/components/layout/CommandPaletteV3';
 import TimeClock from '@/components/layout/TimeClock';
 import RitualBonfireWidget from '@/components/dashboard/RitualBonfireWidget';
+import SystemHealthIndicator from '@/components/layout/SystemHealthIndicator';
+import ObservabilityDiagnostics from '@/components/admin/ObservabilityDiagnostics';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect as useReactEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -50,6 +52,7 @@ export default function HeaderV3() {
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [readinessState, setReadinessState] = useState('green'); // green, amber, red
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const location = useLocation();
   
   // Safe callsign/rank resolution via directory
@@ -643,6 +646,27 @@ export default function HeaderV3() {
         
         {/* Time Clocks */}
         <TimeClock />
+
+        {/* System Health Indicator */}
+        <SystemHealthIndicator />
+
+        {/* Diagnostics Drawer (Admin Only) */}
+        {user?.role === 'admin' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setDiagnosticsOpen(!diagnosticsOpen)}
+                className="flex items-center gap-1.5 px-2.5 py-2 border border-zinc-800/50 bg-zinc-900/40 text-[9px] font-mono font-bold uppercase hidden lg:flex transition-all hover:border-zinc-700/50 hover:text-[#ea580c] text-zinc-500 cursor-pointer"
+              >
+                ◆ debug
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">System Diagnostics (Admin)</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        <ObservabilityDiagnostics isOpen={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
 
         {/* Connection Status / Diagnostics Trigger */}
         <Tooltip>
