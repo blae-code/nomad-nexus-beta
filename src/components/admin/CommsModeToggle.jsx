@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { hasRank } from '@/components/admin/cockpitSectionConfig';
 
-export default function CommsModeToggle() {
+export default function CommsModeToggle({ user }) {
   const queryClient = useQueryClient();
 
   // Fetch current comms mode (always LIVE)
@@ -20,6 +20,8 @@ export default function CommsModeToggle() {
     },
     staleTime: 5000
   });
+
+  const canManage = hasRank(user, 'founder');
 
   // Ensure LIVE mode on mount
   React.useEffect(() => {
