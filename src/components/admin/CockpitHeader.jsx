@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, Clock, Zap } from 'lucide-react';
+import { Download, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CommsModeToggle from './CommsModeToggle';
 
 export default function CockpitHeader({ readinessScore, auditLogs }) {
-  const [commsMode, setCommsMode] = useState('LIVE');
 
   // Check LiveKit environment
   const hasLiveKit = true; // Check at runtime via cockpit tests
@@ -19,7 +19,6 @@ export default function CockpitHeader({ readinessScore, auditLogs }) {
     const report = {
       cockpit: {
         readiness_score: readinessScore,
-        comms_mode: commsMode,
         livekit: hasLiveKit ? 'READY' : 'MISSING',
         last_run: lastRunTime,
         exported_at: new Date().toISOString()
@@ -74,22 +73,9 @@ export default function CockpitHeader({ readinessScore, auditLogs }) {
           </div>
         </div>
 
-        {/* Right side: Mode, last run, export */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] text-zinc-500 uppercase font-mono">COMMS MODE</p>
-            <button
-              onClick={() => setCommsMode(commsMode === 'LIVE' ? 'SIM' : 'LIVE')}
-              className={cn(
-                'px-2 py-1 text-[9px] font-bold border rounded transition-colors',
-                commsMode === 'LIVE'
-                  ? 'bg-red-900/30 border-red-700/50 text-red-400'
-                  : 'bg-blue-900/30 border-blue-700/50 text-blue-400'
-              )}
-            >
-              {commsMode}
-            </button>
-          </div>
+        {/* Right side: Comms mode, last run, export */}
+        <div className="flex items-center gap-4">
+          <CommsModeToggle />
 
           <div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-mono">
             <Clock className="w-3 h-3" />
