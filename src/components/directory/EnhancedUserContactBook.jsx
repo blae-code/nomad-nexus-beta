@@ -240,7 +240,7 @@ export default function EnhancedUserContactBook() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       userList = userList.filter(p => {
-        const callsign = userDirectory[p.user_id]?.callsign || '';
+        const callsign = userDirectory[p.user_id]?.callsign || 'Operative';
         const rank = userDirectory[p.user_id]?.rank || '';
         return callsign.toLowerCase().includes(query) || rank.toLowerCase().includes(query);
       });
@@ -261,8 +261,8 @@ export default function EnhancedUserContactBook() {
     // Sorting
     const sortFn = {
       'name': (a, b) => {
-        const nameA = (userDirectory[a.user_id]?.callsign || '').toUpperCase();
-        const nameB = (userDirectory[b.user_id]?.callsign || '').toUpperCase();
+        const nameA = (userDirectory[a.user_id]?.callsign || 'Operative').toUpperCase();
+        const nameB = (userDirectory[b.user_id]?.callsign || 'Operative').toUpperCase();
         return nameA.localeCompare(nameB);
       },
       'status': (a, b) => {
@@ -306,7 +306,7 @@ export default function EnhancedUserContactBook() {
 
   const renderUserRow = (presence, compact = false) => {
     const user = userDirectory[presence.user_id];
-    const callsign = user?.callsign || 'UNKNOWN';
+    const callsign = user?.callsign || 'Operative';
     const rank = user?.rank || presence.user?.rank || 'VAGRANT';
     const isFav = favorites.has(presence.user_id);
     const isMuted = mutedUsers.has(presence.user_id);
