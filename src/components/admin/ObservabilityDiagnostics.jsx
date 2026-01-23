@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, RefreshCw, Clock, AlertCircle, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
-import { observability, useDiagnostics } from '@/utils/observability';
+import { observability } from '@/functions/observability';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -10,8 +10,25 @@ import { Button } from '@/components/ui/button';
  * Shows errors, heartbeats, comms mode, LiveKit status, network metrics
  */
 export default function ObservabilityDiagnostics({ isOpen, onClose }) {
-  const diagnostics = useDiagnostics();
+  const [diagnostics, setDiagnostics] = useState(observability?.getDiagnosticsSummary?.() || {});
   const [expandedSection, setExpandedSection] = useState('overview');
+
+  useEffect(() => {
+    if (!observability) return;
+    
+    const updateDiagnostics = () => {
+      setDiagnostics(observability.getDiagnosticsSummary());
+    };
+
+    updateDiagnostics();
+    const interval = setInterval(updateDiagnostics, 2000);
+    window.addEventListener('observability:error', updateDiagnostics);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('observability:error', updateDiagnostics);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
