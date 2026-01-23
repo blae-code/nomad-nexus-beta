@@ -15,6 +15,7 @@ export default function UserProfileCard({
   isAdmin,
   currentUser 
 }) {
+  const canEdit = isAdmin || currentUser?.rank === "Pioneer";
   const [editingRank, setEditingRank] = React.useState(false);
   const [newRank, setNewRank] = React.useState(user?.rank || "");
 
@@ -90,14 +91,14 @@ export default function UserProfileCard({
                   <Zap className="w-3 h-3 text-[#ea580c]" />
                   RANK ASSIGNMENT
                 </label>
-                {!editingRank && (
-                  <button
-                    onClick={() => setEditingRank(true)}
-                    className="text-[9px] font-mono text-zinc-600 hover:text-[#ea580c] transition-colors"
-                  >
-                    EDIT
-                  </button>
-                )}
+                {!editingRank && canEdit && (
+                   <button
+                     onClick={() => setEditingRank(true)}
+                     className="text-[9px] font-mono text-zinc-600 hover:text-[#ea580c] transition-colors"
+                   >
+                     EDIT
+                   </button>
+                 )}
               </div>
 
               {editingRank ? (
@@ -156,13 +157,16 @@ export default function UserProfileCard({
                     return (
                       <button
                         key={role.id}
-                        onClick={() => onRoleToggle(role.id)}
+                        onClick={() => canEdit && onRoleToggle(role.id)}
+                        disabled={!canEdit}
                         className={cn(
-                          "w-full text-left p-2 rounded border transition-all duration-150 group relative",
-                          isAssigned
-                            ? "bg-[#ea580c]/10 border-[#ea580c]/50 hover:border-[#ea580c] text-zinc-100"
-                            : "bg-zinc-900/30 border-zinc-800/50 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200"
-                        )}
+                           "w-full text-left p-2 rounded border transition-all duration-150 group relative",
+                           canEdit && "cursor-pointer",
+                           !canEdit && "opacity-60 cursor-not-allowed",
+                           isAssigned
+                             ? "bg-[#ea580c]/10 border-[#ea580c]/50 hover:border-[#ea580c] text-zinc-100"
+                             : "bg-zinc-900/30 border-zinc-800/50 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                         )}
                       >
                         <div className="flex items-center justify-between">
                           <div>
