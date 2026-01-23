@@ -124,34 +124,59 @@ export default function VoiceControlToolkit() {
       {/* Main Controls - Compact */}
       <div className="space-y-0">
         {/* PTT & Quick Actions */}
-        <div className="px-3 py-2 border-b border-zinc-800 space-y-2">
-          {/* Compact PTT */}
-          <button
-            onMouseDown={() => {
-              if (!isMuted) {
-                setMicEnabled(true);
-                setVoiceActive(true);
-              }
-            }}
-            onMouseUp={() => setVoiceActive(false)}
-            onMouseLeave={() => setVoiceActive(false)}
-            disabled={isMuted}
-            className={cn(
-              'w-full h-8 rounded font-bold uppercase text-[9px] transition-all flex items-center justify-center gap-1.5',
-              voiceActive
-                ? 'bg-red-600 text-white shadow-lg shadow-red-900/50 scale-[0.98]'
-                : isMuted
-                ? 'bg-zinc-900/50 text-zinc-600 cursor-not-allowed'
-                : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white'
-            )}
-          >
-            <Mic className="w-3 h-3" />
-            {voiceActive ? 'TRANSMITTING' : isMuted ? 'MUTED' : 'PUSH TO TALK'}
-          </button>
+        <div className="px-3 py-2 border-b border-zinc-800">
+          {/* Single Row - Three Compact Buttons */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => {
+                // Toggle PTT mode on/off without triggering mic
+                setMicEnabled(!micEnabled);
+              }}
+              disabled={isMuted}
+              className={cn(
+                'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
+                micEnabled && !isMuted
+                  ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-700/50'
+                  : isMuted
+                  ? 'bg-zinc-900/50 text-zinc-600 cursor-not-allowed'
+                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              )}
+              title="Toggle Push-to-Talk Mode"
+            >
+              <Radio className="w-3.5 h-3.5" />
+              PTT
+            </button>
+            <button
+              onClick={handleMute}
+              className={cn(
+                'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
+                isMuted
+                  ? 'bg-red-900/50 text-red-300 border border-red-700/50'
+                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              )}
+              title={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              {isMuted ? 'MUTED' : 'MUTE'}
+            </button>
+            <button
+              onClick={handleDeafen}
+              className={cn(
+                'flex-1 flex items-center justify-center h-8 rounded font-bold uppercase text-[9px] transition-all gap-1.5',
+                isDeafened
+                  ? 'bg-red-900/50 text-red-300 border border-red-700/50'
+                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              )}
+              title={isDeafened ? 'Undeafen' : 'Deafen'}
+            >
+              {isDeafened ? <VolumeX className="w-3.5 h-3.5" /> : <Headphones className="w-3.5 h-3.5" />}
+              {isDeafened ? 'DEAF' : 'DEAFEN'}
+            </button>
+          </div>
           
           {/* Input Level - Compact */}
           {micEnabled && !isMuted && (
-            <div className="h-1 bg-zinc-900 rounded-full overflow-hidden">
+            <div className="h-1 bg-zinc-900 rounded-full overflow-hidden mt-2">
               <div
                 className={cn("h-full transition-all rounded-full", 
                   inputLevel > 200 ? 'bg-red-500' : 
@@ -161,34 +186,6 @@ export default function VoiceControlToolkit() {
               />
             </div>
           )}
-
-          {/* Quick Toggles - Icon Only */}
-          <div className="flex gap-1">
-            <button
-              onClick={handleMute}
-              className={cn(
-                'flex-1 flex items-center justify-center h-7 rounded transition-all',
-                isMuted
-                  ? 'bg-red-900/50 text-red-300 hover:bg-red-900/70'
-                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-              )}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              onClick={handleDeafen}
-              className={cn(
-                'flex-1 flex items-center justify-center h-7 rounded transition-all',
-                isDeafened
-                  ? 'bg-red-900/50 text-red-300 hover:bg-red-900/70'
-                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-              )}
-              title={isDeafened ? 'Undeafen' : 'Deafen'}
-            >
-              {isDeafened ? <VolumeX className="w-3.5 h-3.5" /> : <Headphones className="w-3.5 h-3.5" />}
-            </button>
-          </div>
         </div>
 
         {/* Audio Processing - Minimal Toggles */}
