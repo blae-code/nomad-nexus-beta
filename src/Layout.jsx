@@ -6,6 +6,7 @@ import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
+import MessagingFooter from "@/components/messaging/MessagingFooter";
 
 const pageMap = {
   '/': 'hub',
@@ -108,10 +109,13 @@ export default function Layout({ children, currentPageName }) {
 
       {/* AppShellV3: No left rail, palette-driven nav */}
       <AppShellV3 currentPage={currentPage} user={user}>
-              <div className="pt-14">
+              <div className="pt-14 pb-72">
                 {children}
               </div>
             </AppShellV3>
+
+      {/* Messaging Console Footer */}
+      {user && <MessagingFooter user={user} />}
 
       {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
       <LayoutDebugMode />
