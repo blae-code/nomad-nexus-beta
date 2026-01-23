@@ -120,10 +120,21 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
     queryFn: () => base44.entities.PlayerStatus.filter({ event_id: eventId }),
     enabled: !!eventId,
     staleTime: 5000,
-    refetchInterval: false, // Prefer real-time subscriptions
+    refetchInterval: false,
     gcTime: 15000,
     initialData: []
   });
+
+  // Real-time subscription for player status updates
+  React.useEffect(() => {
+    if (!eventId) return;
+
+    const unsubscribe = base44.entities.PlayerStatus.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['net-roster-statuses', eventId] });
+    });
+
+    return () => unsubscribe?.();
+  }, [eventId, queryClient]);
 
   // Fetch user records for all connected participants
   const participantIds = React.useMemo(() => {
