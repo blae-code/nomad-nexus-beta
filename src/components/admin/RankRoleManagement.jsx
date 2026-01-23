@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Crown, Star, Lock, AlertCircle, CheckCircle, Users, Search, RefreshCw } from "lucide-react";
 import { getRankColorClass } from "@/components/utils/rankUtils";
+import { useUserPermissions } from "@/components/auth/useUserPermissions";
+import { PERMISSIONS } from "@/components/auth/permissionConstants";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +17,7 @@ export default function RankRoleManagement() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
+  const { hasPermission } = useUserPermissions();
 
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -22,6 +25,13 @@ export default function RankRoleManagement() {
 
   const isSystemAdmin = currentUser?.is_system_administrator;
   const isPioneer = currentUser?.rank === 'Pioneer';
+  
+  // Permission checks
+  const canChangeRank = hasPermission(PERMISSIONS.CHANGE_USER_RANK) || isSystemAdmin || isPioneer;
+  const canPromoteToVoyager = hasPermission(PERMISSIONS.PROMOTE_TO_VOYAGER) || isSystemAdmin || isPioneer;
+  const canPromoteToFounder = hasPermission(PERMISSIONS.PROMOTE_TO_FOUNDER) || isSystemAdmin || isPioneer;
+  const canPromoteToPioneer = hasPermission(PERMISSIONS.PROMOTE_TO_PIONEER) || isSystemAdmin;
+  const canGrantSystemAdmin = hasPermission(PERMISSIONS.GRANT_SYSTEM_ADMIN) || isSystemAdmin;
 
   const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useQuery({
     queryKey: ['rank-role-users'],
@@ -84,6 +94,24 @@ export default function RankRoleManagement() {
   });
 
   const handleRankChange = async (userId, newRank, voyagerNumber = null) => {
+    // Permission checks
+    if (!canChangeRank) {
+      toast.error("You don't have permission to change ranks");
+      return;
+    }
+    if (newRank === 'Voyager' && !canPromoteToVoyager) {
+      toast.error("You don't have permission to promote to Voyager");
+      return;
+    }
+    if (newRank === 'Founder' && !canPromoteToFounder) {
+      toast.error("You don't have permission to promote to Founder");
+      return;
+    }
+    if (newRank === 'Pioneer' && !canPromoteToPioneer) {
+      toast.error("You don't have permission to designate Pioneer");
+      return;
+    }
+
     try {
       const data = { rank: newRank };
       if (newRank === 'Voyager' && voyagerNumber) {
@@ -96,6 +124,10 @@ export default function RankRoleManagement() {
   };
 
   const handleToggleSystemAdmin = async (userId, currentStatus) => {
+    if (!canGrantSystemAdmin) {
+      toast.error("You don't have permission to grant System Admin access");
+      return;
+    }
     await updateUserMutation.mutateAsync({
       userId,
       data: { is_system_administrator: !currentStatus }
@@ -154,7 +186,7 @@ export default function RankRoleManagement() {
       </div>
 
       {/* Quick Actions */}
-      {isSystemAdmin && (
+      {(canPromoteToPioneer || canGrantSystemAdmin) && (
         <Card className="bg-zinc-950 border-zinc-800">
           <CardHeader className="border-b border-zinc-900">
             <CardTitle className="text-sm uppercase font-bold tracking-wider text-zinc-400">
@@ -163,41 +195,45 @@ export default function RankRoleManagement() {
           </CardHeader>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => {
-                  const user = prompt("Enter user callsign to designate as Pioneer:");
-                  if (user) {
-                    const foundUser = users.find(u => u.callsign === user || u.rsi_handle === user);
-                    if (foundUser) {
-                      handleRankChange(foundUser.id, 'Pioneer');
-                    } else {
-                      toast.error("User not found");
+              {canPromoteToPioneer && (
+                <Button
+                  onClick={() => {
+                    const user = prompt("Enter user callsign to designate as Pioneer:");
+                    if (user) {
+                      const foundUser = users.find(u => u.callsign === user || u.rsi_handle === user);
+                      if (foundUser) {
+                        handleRankChange(foundUser.id, 'Pioneer');
+                      } else {
+                        toast.error("User not found");
+                      }
                     }
-                  }
-                }}
-                className="bg-red-900/20 border border-red-900 text-red-500 hover:bg-red-900/30"
-                disabled={!!currentPioneer}
-              >
-                <Crown className="w-4 h-4 mr-2" />
-                Designate Pioneer
-              </Button>
-              <Button
-                onClick={() => {
-                  const user = prompt("Enter user callsign to grant System Admin:");
-                  if (user) {
-                    const foundUser = users.find(u => u.callsign === user || u.rsi_handle === user);
-                    if (foundUser) {
-                      handleToggleSystemAdmin(foundUser.id, foundUser.is_system_administrator);
-                    } else {
-                      toast.error("User not found");
+                  }}
+                  className="bg-red-900/20 border border-red-900 text-red-500 hover:bg-red-900/30"
+                  disabled={!!currentPioneer}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Designate Pioneer
+                </Button>
+              )}
+              {canGrantSystemAdmin && (
+                <Button
+                  onClick={() => {
+                    const user = prompt("Enter user callsign to grant System Admin:");
+                    if (user) {
+                      const foundUser = users.find(u => u.callsign === user || u.rsi_handle === user);
+                      if (foundUser) {
+                        handleToggleSystemAdmin(foundUser.id, foundUser.is_system_administrator);
+                      } else {
+                        toast.error("User not found");
+                      }
                     }
-                  }
-                }}
-                className="bg-purple-900/20 border border-purple-900 text-purple-500 hover:bg-purple-900/30"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Grant Sys Admin
-              </Button>
+                  }}
+                  className="bg-purple-900/20 border border-purple-900 text-purple-500 hover:bg-purple-900/30"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Grant Sys Admin
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -370,7 +406,12 @@ export default function RankRoleManagement() {
                     const isCurrentRank = selectedUser.rank === rank;
                     const isPioneerRank = rank === 'Pioneer';
                     const isPioneerTaken = isPioneerRank && currentPioneer?.id !== selectedUser.id && currentPioneer;
-                    const canAssign = isSystemAdmin || (isPioneer && rank !== 'Pioneer');
+                    
+                    // Permission-based access control
+                    let canAssign = canChangeRank;
+                    if (rank === 'Voyager') canAssign = canPromoteToVoyager;
+                    if (rank === 'Founder') canAssign = canPromoteToFounder;
+                    if (rank === 'Pioneer') canAssign = canPromoteToPioneer;
 
                     return (
                       <button
@@ -394,7 +435,7 @@ export default function RankRoleManagement() {
                           "p-3 border text-left transition-all",
                           isCurrentRank && "border-[#ea580c] bg-[#ea580c]/10",
                           !isCurrentRank && !isPioneerTaken && canAssign && "border-zinc-800 hover:border-zinc-700",
-                          isPioneerTaken && "opacity-50 cursor-not-allowed border-zinc-900"
+                          (!canAssign || isPioneerTaken) && "opacity-50 cursor-not-allowed border-zinc-900"
                         )}
                       >
                         <div className={cn("text-sm font-bold", getRankColorClass(rank, 'text'))}>
@@ -403,6 +444,9 @@ export default function RankRoleManagement() {
                         {isPioneerTaken && (
                           <div className="text-[9px] text-red-500 mt-1">Assigned</div>
                         )}
+                        {!canAssign && !isPioneerTaken && (
+                          <div className="text-[9px] text-zinc-700 mt-1">No Permission</div>
+                        )}
                       </button>
                     );
                   })}
@@ -410,7 +454,7 @@ export default function RankRoleManagement() {
               </div>
 
               {/* System Administrator */}
-              {isSystemAdmin && (
+              {canGrantSystemAdmin && (
                 <div className="space-y-3">
                   <h3 className="text-xs uppercase font-bold text-purple-500 tracking-wider flex items-center gap-2">
                     <Shield className="w-4 h-4" />
