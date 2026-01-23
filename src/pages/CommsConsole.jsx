@@ -57,6 +57,9 @@ function CommsConsolePage() {
   const [activeNetConnection, setActiveNetConnection] = React.useState(null);
   const [consoleMode, setConsoleMode] = React.useState("ops");
   const [viewMode, setViewMode] = React.useState("line");
+  const [selectedDMId, setSelectedDMId] = React.useState(null);
+  const [showDMPanel, setShowDMPanel] = React.useState(false);
+  const [showMessageSearch, setShowMessageSearch] = React.useState(false);
   const [showAIAssistant, setShowAIAssistant] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
