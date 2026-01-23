@@ -1,79 +1,147 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// In-memory rate limiter (5 min lockout after 10 failures)
+const failureMap = new Map();
+
+function checkRateLimit(userId) {
+  const key = `${userId}:redeem`;
+  const record = failureMap.get(key);
+  
+  if (!record) return { allowed: true };
+  if (Date.now() - record.lastFailure > 5 * 60 * 1000) {
+    failureMap.delete(key);
+    return { allowed: true };
+  }
+  
+  if (record.failures >= 10) {
+    const remaining = Math.ceil((5 * 60 * 1000 - (Date.now() - record.lastFailure)) / 1000);
+    return { allowed: false, remaining };
+  }
+  
+  return { allowed: true };
+}
+
+function recordFailure(userId) {
+  const key = `${userId}:redeem`;
+  const record = failureMap.get(key) || { failures: 0, lastFailure: Date.now() };
+  record.failures++;
+  record.lastFailure = Date.now();
+  failureMap.set(key, record);
+}
+
+function clearFailures(userId) {
+  const key = `${userId}:redeem`;
+  failureMap.delete(key);
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user) {
-      return Response.json({ error: 'User not authenticated' }, { status: 401 });
+      return Response.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { code } = await req.json();
+    // Rate limit check
+    const limit = checkRateLimit(user.id);
+    if (!limit.allowed) {
+      return Response.json({
+        error: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
+        lockout_seconds: limit.remaining
+      }, { status: 429 });
+    }
+
+    const payload = await req.json();
+    const { code } = payload;
 
     if (!code || typeof code !== 'string') {
-      return Response.json({ error: 'Invalid code format' }, { status: 400 });
+      recordFailure(user.id);
+      return Response.json({ error: 'Invalid code' }, { status: 400 });
     }
 
-    const upperCode = code.toUpperCase().trim();
-
-    // Fetch the access key
-    const keys = await base44.asServiceRole.entities.AccessKey.filter({ code: upperCode }, '-created_date', 1);
+    // Find key (atomically)
+    const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+    
     if (!keys || keys.length === 0) {
-      return Response.json({ error: 'Access key not found' }, { status: 404 });
+      recordFailure(user.id);
+      return Response.json({ error: 'Invalid access code' }, { status: 404 });
     }
 
     const key = keys[0];
 
-    // Validate status
+    // Validation checks
     if (key.status === 'REVOKED') {
-      return Response.json({ error: 'Access key has been revoked' }, { status: 403 });
+      recordFailure(user.id);
+      return Response.json({ error: 'This access code has been revoked' }, { status: 403 });
     }
 
-    if (key.status === 'EXPIRED') {
-      return Response.json({ error: 'Access key has expired' }, { status: 403 });
+    if (key.status === 'EXPIRED' || (key.expires_at && new Date(key.expires_at) < new Date())) {
+      // Mark as expired if not already
+      if (key.status !== 'EXPIRED') {
+        await base44.asServiceRole.entities.AccessKey.update(key.id, { status: 'EXPIRED' });
+      }
+      recordFailure(user.id);
+      return Response.json({ error: 'This access code has expired' }, { status: 403 });
     }
 
-    // Check expiration
-    if (new Date(key.expires_at) < new Date()) {
-      await base44.asServiceRole.entities.AccessKey.update(key.id, { status: 'EXPIRED' });
-      return Response.json({ error: 'Access key has expired' }, { status: 403 });
+    if (key.uses_count >= key.max_uses) {
+      recordFailure(user.id);
+      return Response.json({ error: 'This access code has reached its usage limit' }, { status: 403 });
     }
 
     // Check if user already redeemed this key
     if (key.redeemed_by_user_ids && key.redeemed_by_user_ids.includes(user.id)) {
-      return Response.json({ error: 'You have already redeemed this key' }, { status: 400 });
+      recordFailure(user.id);
+      return Response.json({ error: 'You have already redeemed this code' }, { status: 403 });
     }
 
-    // Check max uses
-    if (key.uses_count >= key.max_uses) {
-      return Response.json({ error: 'Access key has reached max uses' }, { status: 403 });
-    }
-
-    // Update key atomically
-    const newUsesCount = key.uses_count + 1;
-    const newRedeemedIds = [...(key.redeemed_by_user_ids || []), user.id];
-    const newStatus = newUsesCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
+    // Redeem atomically
+    const newRedeemed = [...(key.redeemed_by_user_ids || []), user.id];
+    const newUseCount = key.uses_count + 1;
+    const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
 
     await base44.asServiceRole.entities.AccessKey.update(key.id, {
-      uses_count: newUsesCount,
-      redeemed_by_user_ids: newRedeemedIds,
+      uses_count: newUseCount,
+      redeemed_by_user_ids: newRedeemed,
       status: newStatus
     });
 
-    // Log redemption
+    // Get or create member profile
+    let profile = null;
+    const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
+    if (profiles && profiles.length > 0) {
+      profile = profiles[0];
+    }
+
+    // If profile doesn't exist yet, return success and let client create it in next step
+    // If it exists, update rank/roles
+    if (profile) {
+      await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
+        rank: key.grants_rank || 'VAGRANT',
+        roles: [...(profile.roles || []), ...(key.grants_roles || [])]
+      });
+    }
+
+    clearFailures(user.id);
+
+    // Log successful redemption
     await base44.asServiceRole.entities.AdminAuditLog.create({
       actor_user_id: user.id,
-      action: 'REDEEM_ACCESS_KEY',
-      payload: { code: upperCode, grants_rank: key.grants_rank, grants_roles: key.grants_roles },
-      created_at: new Date().toISOString()
-    });
+      action: 'redeem_access_key',
+      payload: { code, rank: key.grants_rank, roles: key.grants_roles },
+      executed_by: user.id,
+      executed_at: new Date().toISOString(),
+      step_name: 'access_control',
+      status: 'success'
+    }).catch(err => console.error('Audit log error:', err));
 
     return Response.json({
       success: true,
       grants_rank: key.grants_rank,
-      grants_roles: key.grants_roles
-    }, { status: 200 });
+      grants_roles: key.grants_roles,
+      message: 'Access code redeemed successfully'
+    });
   } catch (error) {
     console.error('redeemAccessKey error:', error);
     return Response.json({ error: error.message }, { status: 500 });
