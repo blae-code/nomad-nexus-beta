@@ -3,7 +3,7 @@
  * Returns canonical commsResult structure
  */
 import { AccessToken } from 'npm:livekit@2.0.0';
-import { createCommsResult, createTokenResult } from '../components/comms/commsContract.js';
+import { createCommsResult, createTokenResult } from './_shared/commsResult.ts';
 
 Deno.serve(async (req) => {
   try {
