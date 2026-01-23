@@ -14,6 +14,16 @@ import CockpitHeader from '@/components/admin/CockpitHeader';
 import TelemetryPanel from '@/components/admin/TelemetryPanel';
 import AdminCockpitAccordion from '@/components/admin/AdminCockpitAccordion';
 import { COCKPIT_SECTIONS, hasRank } from '@/components/admin/cockpitSectionConfig';
+
+// Utility to filter accessible sections by user rank
+const getAccessibleSections = (user) => {
+  return COCKPIT_SECTIONS.filter(section => {
+    const rankHierarchy = ['vagrant', 'scout', 'voyager', 'founder', 'pioneer'];
+    const userRankIndex = rankHierarchy.indexOf((user?.rank || 'vagrant').toLowerCase());
+    const minRankIndex = rankHierarchy.indexOf((section.minRank || 'vagrant').toLowerCase());
+    return userRankIndex >= minRankIndex && section.visible;
+  });
+};
 import TicketBoard from '@/components/admin/TicketBoard';
 import DemoScenarioController from '@/components/admin/DemoScenarioController';
 import UserManagementTab from '@/components/admin/UserManagementTab';
