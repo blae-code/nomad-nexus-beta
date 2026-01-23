@@ -288,6 +288,19 @@ export default function CommsArrayPanel({
 }
 
 // Helper functions
+function mapStatusToState(status) {
+  const stateMap = {
+    'READY': 'connected',
+    'IN_QUANTUM': 'connecting',
+    'ENGAGED': 'connected',
+    'DOWN': 'offline',
+    'RTB': 'connected',
+    'OFFLINE': 'offline',
+    'DISTRESS': 'offline'
+  };
+  return stateMap[status] || 'unknown';
+}
+
 function buildNodes(topologyData, width, height) {
   const nodes = [];
   if (!topologyData) return nodes;
