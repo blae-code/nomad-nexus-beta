@@ -31,6 +31,7 @@ import { PLAYER_STATUS } from '@/components/contracts/dataContract';
 import CommsPreflight from '@/components/comms/CommsPreflight';
 import CommsStateChip from './CommsStateChip';
 import CommsFailoverBanner from './CommsFailoverBanner';
+import CommsFallbackPanel from './CommsFallbackPanel';
 
 function CommsLog({ eventId }) {
   const queryClient = useQueryClient();
@@ -401,6 +402,33 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
   const [showPreflight, setShowPreflight] = React.useState(false);
   const [preflightCompleted, setPreflightCompleted] = React.useState(false);
   const [pendingConnect, setPendingConnect] = React.useState(false);
+  const [fallbackDetail, setFallbackDetail] = React.useState(null);
+
+  const isTimeoutReason = React.useCallback((reason) => {
+    if (!reason) return false;
+    return /timeout|timed out/i.test(reason);
+  }, []);
+
+  const isNetworkError = React.useCallback((error) => {
+    if (!error) return false;
+    const message = (error?.message || error || '').toString();
+    return /network|failed to fetch|fetch failed|econnrefused|enotfound|eai_again/i.test(message);
+  }, []);
+
+  const isLiveKitConfigError = React.useCallback((errorCode) => {
+    return ['ENV_NOT_CONFIGURED', 'INSECURE_LIVEKIT_URL'].includes(errorCode);
+  }, []);
+
+  const triggerFallback = React.useCallback((detail) => {
+    setFallbackDetail(detail || 'LiveKit service unavailable');
+    setConnectionState('failed');
+  }, []);
+
+  React.useEffect(() => {
+    if (isTimeoutReason(fallbackReason)) {
+      triggerFallback(fallbackReason);
+    }
+  }, [fallbackReason, isTimeoutReason, triggerFallback]);
 
   // Generate SIM participants (consistent, plausible)
   const generateSimParticipants = React.useCallback(() => {
@@ -582,11 +610,16 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
 
           // Handle response
           if (!res.data?.ok) {
+             const errorCode = res.data?.errorCode;
              const err = res.data?.message || 'Failed to mint token';
              console.error('[COMMS] Token mint failed:', err);
              setConnectionError(err);
              setConnectionState("failed");
              onError?.(err);
+             if (isLiveKitConfigError(errorCode)) {
+               triggerFallback(err);
+               return;
+             }
              // Mark session failover so UI falls back to SIM
              if (typeof window !== 'undefined' && window.__commsMarkFailover) {
                window.__commsMarkFailover(`Token mint failed: ${err}`);
@@ -608,6 +641,7 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              console.error('[COMMS] No LiveKit URL provided in response', res.data);
              setConnectionError('Server error: Missing LiveKit configuration');
              setConnectionState("failed");
+             triggerFallback('LiveKit URL not configured');
              return;
           }
 
@@ -638,6 +672,7 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
             setConnectionError('Insecure comms endpoint blocked.');
             setConnectionState("failed");
             onError?.('Insecure comms endpoint blocked.');
+            triggerFallback('Insecure comms endpoint blocked.');
             return;
           }
 
@@ -819,6 +854,9 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              setConnectionError(errMsg);
              setConnectionState("failed");
              onError?.(errMsg);
+             if (isNetworkError(err)) {
+               triggerFallback(errMsg);
+             }
              // Mark session failover
              if (typeof window !== 'undefined' && window.__commsMarkFailover) {
                window.__commsMarkFailover(`Connect failed: ${errMsg}`);
@@ -976,6 +1014,22 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              </div>
           </div>
        </div>
+    );
+  }
+
+  if (fallbackDetail) {
+    return (
+      <CommsFallbackPanel
+        detail={fallbackDetail}
+        onRetry={() => {
+          setFallbackDetail(null);
+          setConnectionError(null);
+          setConnectionState('disconnected');
+          onRetryLive?.();
+          setPendingConnect(true);
+          setTimeout(() => setPendingConnect(false), 100);
+        }}
+      />
     );
   }
 
