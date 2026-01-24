@@ -37,6 +37,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
   useEffect(() => {
     const timeoutPromise = (ms) => new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Timeout')), ms)
