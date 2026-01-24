@@ -1,52 +1,27 @@
-// src/pages.config.js
-// Compatibility config: guarantees named exports used across the app.
-
-const pagesGlob = import.meta.glob('./pages/*.jsx', { eager: true });
-
-function pageNameFromPath(path) {
-  const m = path.match(/\/([^/]+)\.jsx$/);
-  return m?.[1] ?? null;
-}
-
-// ✅ MUST exist as named exports (various components import these)
-export const PAGE_ROUTE_OVERRIDES = {
-  Hub: '/hub',
-  AccessGate: '/accessgate',
-  AdminCockpit: '/admin',
-  PageNotFound: '/404',
-};
+/**
+ * Page Configuration
+ * Maps page names to their metadata
+ */
 
 export const PAGE_ROUTE_ALIASES = {
-  '/': '/hub',
-  '/home': '/hub',
-  '/index': '/hub',
-  '/login': '/accessgate',
-  '/access-gate': '/accessgate',
-  '/accessGate': '/accessgate',
+  'comms-console': '/commsconsole',
+  'fleet-manager': '/fleetmanager',
+  'access-gate': '/access-gate',
 };
 
-function routeFromName(name) {
-  if (!name) return '/';
-  if (PAGE_ROUTE_OVERRIDES[name]) return PAGE_ROUTE_OVERRIDES[name];
-  return `/${name.toLowerCase()}`;
-}
+export const PAGE_ROUTE_OVERRIDES = {
+  'admin-console': 'admin',
+};
 
-export const pagesConfig = Object.entries(pagesGlob)
-  .map(([path, mod]) => {
-    const name = pageNameFromPath(path);
-    const Comp = mod?.default ?? (name ? mod?.[name] : null);
-    if (!name || typeof Comp !== 'function') return null;
-    return { name, route: routeFromName(name), component: Comp, file: path };
-  })
-  .filter(Boolean);
+const pages = {
+  hub: { path: '/hub', label: 'Hub' },
+  events: { path: '/events', label: 'Events' },
+  comms: { path: '/commsconsole', label: 'Comms' },
+  admin: { path: '/admin', label: 'Admin' },
+  rescue: { path: '/rescue', label: 'Rescue' },
+  channels: { path: '/channels', label: 'Channels' },
+  profile: { path: '/profile', label: 'Profile' },
+  'access-gate': { path: '/access-gate', label: 'Access Gate' },
+};
 
-export const PAGES = pagesConfig.reduce((acc, p) => {
-  acc[p.name] = p;
-  return acc;
-}, {});
-
-export function resolveRouteAlias(pathname = '/') {
-  return PAGE_ROUTE_ALIASES[pathname] ?? pathname;
-}
-
-export default pagesConfig;
+export default pages;
