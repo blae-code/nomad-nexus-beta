@@ -41,22 +41,27 @@ export default function Layout({ children, currentPageName }) {
         const u = await base44.auth.me();
         setUser(u);
 
-        // Skip profile check if already on access gate
+        // Allow access-gate to render without profile check
         if (location.pathname === '/access-gate') {
-          setMemberProfile(null);
+          setLoading(false);
           return;
         }
 
-        // Check for member profile
-        const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
-        const profile = profiles?.[0];
+        // Check for member profile - only for other pages
+        try {
+          const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+          const profile = profiles?.[0];
 
-        if (!profile || !profile.onboarding_completed) {
-          // Redirect to access gate
-          window.location.href = '/access-gate';
-          return;
+          if (!profile || !profile.onboarding_completed) {
+            // Redirect to access gate
+            window.location.href = '/access-gate';
+            return;
+          }
+          setMemberProfile(profile);
+        } catch (err) {
+          console.error('[LAYOUT] Profile check failed:', err);
+          // Allow through if profile check fails to prevent lockout
         }
-        setMemberProfile(profile);
       } catch (error) {
         console.error('Init error:', error);
       } finally {
@@ -165,13 +170,20 @@ export default function Layout({ children, currentPageName }) {
 
       {/* AppShellV3: No left rail, palette-driven nav */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AppShellV3 currentPage={currentPage} user={user}>
-          <div className="pt-14 pb-2">
+        {currentPage === 'access-gate' ? (
+          // Access gate: full-screen, no chrome
+          <div className="h-full w-full">
             {children}
           </div>
-        </AppShellV3>
-        {/* Comms Dock */}
-          {user && <CommsDockShell user={user} />}
+        ) : (
+          <AppShellV3 currentPage={currentPage} user={user}>
+            <div className="pt-14 pb-2">
+              {children}
+            </div>
+          </AppShellV3>
+        )}
+        {/* Comms Dock - hide on access gate */}
+          {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
         </div>
 
         {/* User Feedback System */}
