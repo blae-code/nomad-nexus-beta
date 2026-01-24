@@ -483,7 +483,7 @@ export default function HeaderV3() {
     <header
       className={cn(
         HEADER_BASE_CLASS,
-        'flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0'
+        'flex items-center justify-between px-[var(--gutter)] z-50 gap-3 fixed top-0 left-0 right-0'
       )}
       style={HEADER_SURFACE_STYLE}
     >
