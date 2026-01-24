@@ -213,6 +213,23 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  console.log("[Layout] Rendering main layout, currentPage:", currentPage);
+  
+  const SafeAppShellV3 = resolveComponent(AppShellV3);
+  const SafeCommsDockShell = resolveComponent(CommsDockShell);
+  const SafeRadialFeedbackMenu = resolveComponent(RadialFeedbackMenu);
+  const SafeLayoutDebugMode = resolveComponent(LayoutDebugMode);
+  
+  if (!isFn(SafeAppShellV3)) {
+    console.error("[Layout] AppShellV3 failed to resolve");
+    return (
+      <SafePageWrapper 
+        component={AppShellV3} 
+        fallbackMessage="AppShellV3 component failed to load" 
+      />
+    );
+  }
+
   return (
     <ErrorBoundary>
       {/* TODO: Move meta/link/style tags to index.html or head manager after demo */}
@@ -225,21 +242,21 @@ export default function Layout({ children, currentPageName }) {
               {children}
             </div>
           ) : (
-            <AppShellV3 currentPage={currentPage} user={user}>
+            <SafeAppShellV3 currentPage={currentPage} user={user}>
               <div className="pt-14 pb-2">
                 {children}
               </div>
-            </AppShellV3>
+            </SafeAppShellV3>
           )}
           {/* Comms Dock - hide on access gate */}
-          {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
+          {user && currentPage !== 'access-gate' && isFn(SafeCommsDockShell) ? <SafeCommsDockShell user={user} /> : null}
         </div>
 
         {/* User Feedback System */}
-        <RadialFeedbackMenu />
+        {isFn(SafeRadialFeedbackMenu) ? <SafeRadialFeedbackMenu /> : null}
 
         {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
-        <LayoutDebugMode />
+        {isFn(SafeLayoutDebugMode) ? <SafeLayoutDebugMode /> : null}
       </div>
     </ErrorBoundary>
   );
