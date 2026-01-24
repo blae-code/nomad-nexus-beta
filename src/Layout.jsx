@@ -11,6 +11,9 @@ import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/styles/theme";
 
+// Helper: normalize module objects to actual components
+const asComponent = (x) => (x && typeof x === 'object' && 'default' in x ? x.default : x);
+
 const accessGatePath = createPageUrl('AccessGate');
 const accessGateAliases = new Set(
   [accessGatePath, '/accessgate', '/AccessGate', '/login'].map((path) => path.toLowerCase()),
