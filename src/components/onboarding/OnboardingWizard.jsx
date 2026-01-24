@@ -36,6 +36,8 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
   const [aiConsent, setAiConsent] = useState(false);
   const [useHistory, setUseHistory] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [hasSeenGuide, setHasSeenGuide] = useState(false);
 
   const step = steps[currentStep];
 
