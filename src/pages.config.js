@@ -68,8 +68,8 @@ export const PAGES = {
     "VoiceNetManager": VoiceNetManager,
 }
 
-export const pagesConfig = {
-    mainPage: "Hub",
-    Pages: PAGES,
-    Layout: __Layout,
+export const PAGE_ROUTE_OVERRIDES = {};
+export const PAGE_ROUTE_ALIASES = {};
+export const pagesConfig = { /* ... */ };
+export default pagesConfig;
 };
