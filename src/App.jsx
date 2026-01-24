@@ -12,10 +12,13 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { createPageUrl } from '@/utils';
 import AccessGate from './pages/AccessGate';
 
-const { Pages, Layout, mainPage } = pagesConfig;
-const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
-const AccessGatePage = Pages.AccessGate ?? AccessGate;
+const resolvedPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? {} : pagesConfig ?? {});
+const Layout = pagesConfig?.Layout;
+const mainPage = pagesConfig?.mainPage;
+const mainPageKey = mainPage ?? Object.keys(resolvedPages)[0];
+const MainPage = mainPageKey ? resolvedPages[mainPageKey] : () => <></>;
+const AccessGatePage = resolvedPages.AccessGate ?? AccessGate;
+const hasAccessGate = Boolean(resolvedPages.AccessGate);
 const accessGatePaths = [
   PAGE_ROUTE_OVERRIDES?.AccessGate ?? createPageUrl('AccessGate'),
   ...(PAGE_ROUTE_ALIASES?.AccessGate ?? []),
@@ -56,7 +59,7 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
-      {!Pages.AccessGate && accessGatePaths.map((path) => (
+      {!hasAccessGate && accessGatePaths.map((path) => (
         <Route
           key={`access-gate-fallback-${path}`}
           path={path}
@@ -67,7 +70,7 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
-      {Object.entries(Pages).flatMap(([pageKey, Page]) => {
+      {Object.entries(resolvedPages).flatMap(([pageKey, Page]) => {
         const canonicalPath = PAGE_ROUTE_OVERRIDES?.[pageKey] ?? createPageUrl(pageKey);
         const aliases = PAGE_ROUTE_ALIASES?.[pageKey] ?? [];
         const paths = [canonicalPath, ...aliases];
