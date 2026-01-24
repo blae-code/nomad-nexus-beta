@@ -767,6 +767,9 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
                 const attemptReconnect = () => {
                    if (!mounted) return;
                    reconnectAttempts.current += 1;
+                   if (typeof window !== 'undefined') {
+                     window.__observability?.recordLiveKitReconnectAttempt?.(net.id, net.code);
+                   }
                    const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
                    console.log(`[COMMS] Reconnect attempt ${reconnectAttempts.current} in ${backoffDelay}ms`);
                    setConnectionState("reconnecting");
@@ -805,6 +808,9 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
 
           // 4. Connect
           console.log(`[COMMS] Connecting to LiveKit: ${url} with token length: ${token.length}`);
+          if (typeof window !== 'undefined') {
+            window.__observability?.recordLiveKitConnectionStart?.(net.id, net.code);
+          }
           await currentRoom.connect(url, token);
           
           if (!mounted) {
@@ -816,6 +822,9 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
           setConnectionState("connected");
           reconnectAttempts.current = 0; // Reset on successful connection
           onConnectSuccess?.(net.id);
+          if (typeof window !== 'undefined') {
+            window.__observability?.recordLiveKitConnectionSuccess?.(net.id);
+          }
           console.log(`[COMMS] Connected to ${net.code}`);
 
           // Monitor connection quality
@@ -843,6 +852,9 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              
              if (mounted) {
                 setConnectionQuality({ packetLoss, latency, quality: stats });
+                if (typeof window !== 'undefined') {
+                  window.__observability?.recordLiveKitLatencySample?.(net.id, latency, net.code);
+                }
              }
           }, 3000);
 

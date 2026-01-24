@@ -33,7 +33,19 @@ export default function ObservabilityDiagnostics({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const { healthStatus, lastHeartbeat, lastSeedWipe, recentErrors, requestsPerMin, commsMode, liveKitEnv, totalErrors } = diagnostics;
+  const {
+    healthStatus,
+    lastHeartbeat,
+    lastSeedWipe,
+    recentErrors = [],
+    requestsPerMin,
+    commsMode,
+    liveKitEnv,
+    totalErrors,
+    liveKitNets = [],
+    commsRequests = [],
+    verboseRequestsEnabled = false
+  } = diagnostics;
 
   const healthColor = {
     green: 'text-emerald-400',
@@ -125,6 +137,46 @@ export default function ObservabilityDiagnostics({ isOpen, onClose }) {
                 <div className="flex justify-between text-zinc-500">
                   <span>Total Errors</span>
                   <span className="text-zinc-300">{totalErrors}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Logging */}
+          <div className="bg-zinc-900/40 border border-zinc-800/50 p-2">
+            <button
+              onClick={() => setExpandedSection(expandedSection === 'logging' ? null : 'logging')}
+              className="w-full flex items-center justify-between text-[9px] font-mono font-bold uppercase hover:text-[#ea580c] transition-colors text-left py-1 px-1"
+            >
+              <span>Logging</span>
+              <span className="text-[8px] text-zinc-500">
+                {verboseRequestsEnabled ? 'VERBOSE' : 'COMMS ONLY'}
+              </span>
+            </button>
+
+            {expandedSection === 'logging' && (
+              <div className="space-y-1 pl-2 border-l border-zinc-800/40 text-[8px] font-mono mt-1">
+                <div className="flex items-center justify-between text-zinc-500">
+                  <span>Verbose Requests</span>
+                  <button
+                    onClick={() => {
+                      const obs = window.__observability;
+                      obs?.setVerboseRequests?.(!verboseRequestsEnabled);
+                      setDiagnostics(obs?.getDiagnosticsSummary?.() || {});
+                    }}
+                    className={cn(
+                      'text-[8px] font-bold px-2 py-1 rounded border',
+                      verboseRequestsEnabled
+                        ? 'text-emerald-300 border-emerald-500/40 bg-emerald-900/20'
+                        : 'text-zinc-300 border-zinc-700/60 bg-zinc-900/40'
+                    )}
+                    type="button"
+                  >
+                    {verboseRequestsEnabled ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+                <div className="text-[7px] text-zinc-500">
+                  Toggle to capture all network requests (not just comms APIs).
                 </div>
               </div>
             )}
@@ -267,6 +319,91 @@ export default function ObservabilityDiagnostics({ isOpen, onClose }) {
                   </span>
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* LiveKit Net Metrics */}
+          <div className="bg-zinc-900/40 border border-zinc-800/50 p-2">
+            <button
+              onClick={() => setExpandedSection(expandedSection === 'livekit-nets' ? null : 'livekit-nets')}
+              className="w-full flex items-center justify-between text-[9px] font-mono font-bold uppercase hover:text-[#ea580c] transition-colors text-left py-1 px-1"
+            >
+              <span>LiveKit Nets</span>
+              <span className="text-[8px] text-zinc-500">
+                {liveKitNets.length ? `${liveKitNets.length} NETS` : '⊘ NONE'}
+              </span>
+            </button>
+
+            {expandedSection === 'livekit-nets' && liveKitNets.length > 0 && (
+              <div className="space-y-1 pl-2 border-l border-zinc-800/40 text-[8px] font-mono mt-1">
+                {liveKitNets.map((net) => (
+                  <div key={net.netId} className="space-y-1 border border-zinc-800/50 bg-zinc-950/40 p-1">
+                    <div className="flex justify-between text-zinc-400">
+                      <span className="font-bold">{net.netCode || net.netId}</span>
+                      <span className="text-[7px] text-zinc-500">{net.samples || 0} joins</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Avg connect</span>
+                      <span className="text-zinc-300">
+                        {net.avgConnectionTime ? `${Math.round(net.avgConnectionTime)}ms` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Reconnects</span>
+                      <span className="text-zinc-300">{net.reconnectAttempts ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Avg jitter</span>
+                      <span className="text-zinc-300">
+                        {net.avgJitter ? `${Math.round(net.avgJitter)}ms` : '—'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {expandedSection === 'livekit-nets' && liveKitNets.length === 0 && (
+              <div className="text-[8px] text-zinc-500 pl-2 mt-1">No LiveKit metrics captured yet.</div>
+            )}
+          </div>
+
+          {/* Comms API Calls */}
+          <div className="bg-zinc-900/40 border border-zinc-800/50 p-2">
+            <button
+              onClick={() => setExpandedSection(expandedSection === 'comms-calls' ? null : 'comms-calls')}
+              className="w-full flex items-center justify-between text-[9px] font-mono font-bold uppercase hover:text-[#ea580c] transition-colors text-left py-1 px-1"
+            >
+              <span>Comms API Calls</span>
+              <span className="text-[8px] text-zinc-500">
+                {commsRequests.length ? `${commsRequests.length} RECENT` : '⊘ NONE'}
+              </span>
+            </button>
+
+            {expandedSection === 'comms-calls' && commsRequests.length > 0 && (
+              <div className="space-y-1 pl-2 border-l border-zinc-800/40 mt-1 max-h-[220px] overflow-y-auto">
+                {commsRequests.map((request, index) => {
+                  const isFailure = request.status === 0 || request.status >= 400;
+                  return (
+                    <div key={`${request.timestamp}-${index}`} className="text-[7px] font-mono p-1 bg-zinc-950/40 border border-zinc-800/40">
+                      <div className="flex justify-between text-zinc-400">
+                        <span className="truncate">{request.url}</span>
+                        <span className={cn('ml-2', isFailure ? 'text-red-400' : 'text-emerald-400')}>
+                          {request.status || 'ERR'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[6px] text-zinc-500">
+                        <span>{request.duration}ms</span>
+                        <span>{request.timestamp ? new Date(request.timestamp).toLocaleTimeString() : '—'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {expandedSection === 'comms-calls' && commsRequests.length === 0 && (
+              <div className="text-[8px] text-zinc-500 pl-2 mt-1">No recent comms API calls.</div>
             )}
           </div>
 
