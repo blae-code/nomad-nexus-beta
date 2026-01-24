@@ -35,18 +35,31 @@ export default function Layout({ children, currentPageName }) {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
+  // Show loading state while initializing to prevent flicker
+  if (loading && location.pathname !== '/access-gate') {
+    return (
+      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-500">INITIALIZING...</p>
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
     const initApp = async () => {
       try {
         initializeAccessToken();
-        const u = await base44.auth.me();
-        setUser(u);
-
-        // Allow access-gate to render without profile check
+        
+        // Allow access-gate to render without auth checks (it's a public gate page)
         if (location.pathname === '/access-gate') {
           setLoading(false);
           return;
         }
+
+        const u = await base44.auth.me();
+        setUser(u);
 
         // Check for member profile - only for other pages
         try {
@@ -54,9 +67,9 @@ export default function Layout({ children, currentPageName }) {
           const profile = profiles?.[0];
 
           if (!profile || !profile.onboarding_completed) {
-            // Redirect to access gate - use navigate to prevent flicker
+            // Set loading to false first to prevent flicker
             setLoading(false);
-            // Delay redirect to prevent render-time redirects
+            // Then navigate in next tick to prevent render-time redirect
             setTimeout(() => {
               window.location.href = '/access-gate';
             }, 0);
