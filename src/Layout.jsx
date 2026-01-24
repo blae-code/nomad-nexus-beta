@@ -11,9 +11,6 @@ import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/styles/theme";
 
-// Helper: normalize module objects to actual components
-const asComponent = (x) => (x && typeof x === 'object' && 'default' in x ? x.default : x);
-
 const accessGatePath = createPageUrl('AccessGate');
 const accessGateAliases = new Set(
   [accessGatePath, '/accessgate', '/AccessGate', '/login'].map((path) => path.toLowerCase()),
@@ -171,9 +168,6 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Normalize children component (could be module object)
-  const ChildComponent = asComponent(children);
-
   return (
     <ErrorBoundary>
     <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
@@ -260,17 +254,17 @@ export default function Layout({ children, currentPageName }) {
       {/* AppShellV3: No left rail, palette-driven nav */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {currentPage === 'access-gate' ? (
-          // Access gate: full-screen, no chrome
-          <div className="h-full w-full">
-            <ChildComponent />
-          </div>
-        ) : (
-          <AppShellV3 currentPage={currentPage} user={user}>
-            <div className="pt-14 pb-2">
-              <ChildComponent />
-            </div>
-          </AppShellV3>
-        )}
+           // Access gate: full-screen, no chrome
+           <div className="h-full w-full">
+             {children}
+           </div>
+         ) : (
+           <AppShellV3 currentPage={currentPage} user={user}>
+             <div className="pt-14 pb-2">
+               {children}
+             </div>
+           </AppShellV3>
+         )}
         {/* Comms Dock - hide on access gate */}
           {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
         </div>
