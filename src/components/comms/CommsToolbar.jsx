@@ -27,58 +27,36 @@ export default function CommsToolbar({
     <div className={cn('flex items-center gap-3 h-10 bg-zinc-900 border border-zinc-800 px-3 rounded-sm', className)}>
       {/* Net Info Display */}
       {selectedNet ? (
-        <div className="flex items-center gap-2 min-w-0">
-          <Badge variant="outline" className="text-[9px] h-5 px-1.5 font-mono bg-zinc-800 border-zinc-700 text-zinc-300">
-            {selectedNet.code}
-          </Badge>
-          <span className="text-xs text-zinc-400 font-mono truncate">{selectedNet.label}</span>
-        </div>
-      ) : (
-        <span className="text-xs text-zinc-600 font-mono italic">No Net Selected</span>
-      )}
-
-      {/* Separator */}
-      <div className="w-px h-5 bg-zinc-800 mx-1" />
-
-      {/* PTT/Mute Status */}
-      {selectedNet && isConnected && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge variant="outline" className="text-[9px] h-5 px-1.5 font-mono bg-zinc-800 border-zinc-700 text-zinc-300">
+              {selectedNet.code}
+            </Badge>
+            <span className="text-xs text-zinc-400 font-mono truncate">{selectedNet.label}</span>
+          </div>
+          
+          {/* TX Badge */}
           {isTransmitting && (
             <Badge className="text-[9px] h-5 px-1.5 bg-red-500/30 text-red-300 border border-red-500/50 animate-pulse">
               TX
             </Badge>
           )}
-        </div>
-      )}
 
-      {/* Connection State Indicator */}
-      {selectedNet && (
-        <div className="flex items-center gap-1">
-          {isConnecting && (
-            <>
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[9px] text-blue-400 font-mono">CONNECTING...</span>
-            </>
-          )}
-          {isConnected && (
-            <>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[9px] text-emerald-400 font-mono">CONNECTED</span>
-            </>
-          )}
-          {!isConnecting && !isConnected && (
-            <>
-              <div className="w-2 h-2 rounded-full bg-zinc-600" />
-              <span className="text-[9px] text-zinc-500 font-mono">DISCONNECTED</span>
-            </>
-          )}
-          {connectionError && (
-            <>
-              <AlertCircle className="w-3 h-3 text-red-500 ml-1" />
-              <span className="text-[9px] text-red-400 font-mono">{connectionError}</span>
-            </>
-          )}
+          <div className="w-px h-5 bg-zinc-800" />
+
+          {/* Unified State Chip */}
+          <CommsStateChip
+            mode={mode}
+            connectionState={connectionState}
+            roomName={selectedNet.code}
+            participants={participantCount}
+            lastError={lastError}
+            onRetry={onRetry}
+            compact={true}
+          />
         </div>
+      ) : (
+        <span className="text-xs text-zinc-600 font-mono italic">No Net Selected</span>
       )}
 
       {/* Spacer */}
