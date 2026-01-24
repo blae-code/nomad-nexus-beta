@@ -47,17 +47,8 @@ function rankClosestMatches(attemptedPath, candidates, limit = 5) {
 }
 
 export default function PageNotFound() {
-  const routeAliases = pagesConfig?.PAGE_ROUTE_ALIASES ?? {};
-  const routeOverrides = pagesConfig?.PAGE_ROUTE_OVERRIDES ?? {};
-
   const candidatePaths = useMemo(() => {
     const paths = new Set();
-
-    // Add only target routes from aliases (not the config keys)
-    Object.values(routeAliases).forEach((path) => paths.add(path));
-
-    // Add only target routes from overrides (not the config keys)
-    Object.values(routeOverrides).forEach((path) => paths.add(path));
 
     // Add real navigable pages only
     const commonPages = [
