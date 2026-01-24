@@ -9,7 +9,7 @@ import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
-import { theme } from "@/styles/theme";
+import { theme } from "@/components/theme";
 
 const accessGatePath = createPageUrl('AccessGate');
 const accessGateAliases = new Set(
