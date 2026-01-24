@@ -1,17 +1,20 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCommsMode } from './useCommsMode';
 
 /**
- * Determines the effective comms mode by checking if LIVE is truly ready.
- * Returns: { effectiveMode: 'LIVE' | 'SIM', fallbackReason: string | null }
+ * Determines the effective comms mode with failover logic.
+ * If LIVE fails (env, token, join), falls back to SIM with explicit reason.
+ * Returns: { effectiveMode, fallbackReason, retryLive, desiredLive, isReady }
  */
 export function useCommsReadiness() {
   const { isLive: desiredLive } = useCommsMode();
+  const queryClient = useQueryClient();
+  const [sessionFailover, setSessionFailover] = React.useState(null);
 
   // Query to verify LIVE readiness (check env, token minting capability, etc.)
-  const { data: readinessData = {} } = useQuery({
+  const { data: readinessData = {}, refetch } = useQuery({
     queryKey: ['comms-readiness'],
     queryFn: async () => {
       try {
@@ -24,18 +27,44 @@ export function useCommsReadiness() {
         };
       }
     },
-    staleTime: 30000, // Recheck every 30 seconds
-    refetchInterval: 60000, // Refetch every minute
-    enabled: desiredLive // Only check if LIVE is desired
+    staleTime: 30000,
+    refetchInterval: desiredLive && !sessionFailover ? 60000 : false, // Stop polling if session failover active
+    enabled: desiredLive
   });
 
   // Determine effective mode
-  const effectiveMode = desiredLive && readinessData?.isReady ? 'LIVE' : 'SIM';
-  const fallbackReason = effectiveMode === 'SIM' && desiredLive ? readinessData?.reason : null;
+  let effectiveMode = 'SIM';
+  let fallbackReason = null;
+
+  if (desiredLive) {
+    if (sessionFailover) {
+      // Session-level failover is active
+      effectiveMode = 'SIM';
+      fallbackReason = sessionFailover;
+    } else if (readinessData?.isReady) {
+      effectiveMode = 'LIVE';
+    } else {
+      effectiveMode = 'SIM';
+      fallbackReason = readinessData?.reason || 'LIVE readiness check failed';
+    }
+  }
+
+  // Retry LIVE: clear session failover and refetch readiness
+  const retryLive = React.useCallback(() => {
+    setSessionFailover(null);
+    refetch();
+  }, [refetch]);
+
+  // Mark session failover (called when connect attempt fails)
+  const markFailover = React.useCallback((reason) => {
+    setSessionFailover(reason);
+  }, []);
 
   return {
     effectiveMode,
     fallbackReason,
+    retryLive,
+    markFailover,
     desiredLive,
     isReady: readinessData?.isReady || false
   };

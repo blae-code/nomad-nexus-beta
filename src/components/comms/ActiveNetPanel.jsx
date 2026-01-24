@@ -30,6 +30,7 @@ import { normalizePlayerStatusRecords, normalizePlayerStatus } from '@/component
 import { PLAYER_STATUS } from '@/components/contracts/dataContract';
 import CommsPreflight from '@/components/comms/CommsPreflight';
 import CommsStateChip from './CommsStateChip';
+import CommsFailoverBanner from './CommsFailoverBanner';
 
 function CommsLog({ eventId }) {
   const queryClient = useQueryClient();
@@ -382,13 +383,13 @@ function NetRoster({ net, eventId, currentUserState, onWhisper, room }) {
   );
 }
 
-export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onConnectSuccess, onConnecting, onDisconnect, onError }) {
+export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fallbackReason, onRetryLive, onConnectSuccess, onConnecting, onDisconnect, onError }) {
   const { isSim, simConfig } = useCommsMode();
   const [audioState, setAudioState] = React.useState(null);
   const [connectionToken, setConnectionToken] = React.useState(null);
   const [whisperTarget, setWhisperTarget] = React.useState(null);
   const [livekitUrl, setLivekitUrl] = React.useState(null);
-  const [connectionState, setConnectionState] = React.useState(isSim ? "connected" : "disconnected");
+  const [connectionState, setConnectionState] = React.useState(effectiveMode === 'SIM' ? "connected" : "disconnected");
   const [connectionError, setConnectionError] = React.useState(null);
   const [micPermissionDenied, setMicPermissionDenied] = React.useState(false);
   const [connectionQuality, setConnectionQuality] = React.useState({ packetLoss: 0, latency: 0, quality: 'excellent' });
@@ -582,10 +583,14 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
           // Handle response
           if (!res.data?.ok) {
              const err = res.data?.message || 'Failed to mint token';
-             console.error('LiveKit token error:', err);
+             console.error('[COMMS] Token mint failed:', err);
              setConnectionError(err);
              setConnectionState("failed");
              onError?.(err);
+             // Mark session failover so UI falls back to SIM
+             if (typeof window !== 'undefined' && window.__commsMarkFailover) {
+               window.__commsMarkFailover(`Token mint failed: ${err}`);
+             }
              return;
           }
 
@@ -798,12 +803,18 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
           }, 3000);
 
        } catch (err) {
-          console.error("LiveKit Connection Failed:", err);
+          console.error('[COMMS] Connection failed:', err);
           if (mounted) {
-             setConnectionError(err.message || 'Connection failed');
+             const errMsg = err.message || 'Connection failed';
+             setConnectionError(errMsg);
              setConnectionState("failed");
-                }
+             onError?.(errMsg);
+             // Mark session failover
+             if (typeof window !== 'undefined' && window.__commsMarkFailover) {
+               window.__commsMarkFailover(`Connect failed: ${errMsg}`);
              }
+          }
+       }
              };
 
              connect();
@@ -965,6 +976,20 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
 
   return (
      <div className="h-full flex flex-col gap-4">
+      {/* Failover Banner */}
+      {fallbackReason && (
+        <CommsFailoverBanner
+          fallbackReason={fallbackReason}
+          onRetry={() => {
+            setConnectionError(null);
+            setConnectionState('disconnected');
+            onRetryLive?.();
+            setPendingConnect(true);
+            setTimeout(() => setPendingConnect(false), 100);
+          }}
+        />
+      )}
+
       {/* State Chip */}
       <div className="shrink-0">
         <CommsStateChip
@@ -981,8 +1006,6 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
           }}
         />
       </div>
-
-
 
       {/* Microphone Permission Banner */}
       <AnimatePresence>

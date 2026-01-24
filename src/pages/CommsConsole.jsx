@@ -51,6 +51,7 @@ import CommsStepIndicator from "@/components/comms/CommsStepIndicator";
       import JoinNetButton from "@/components/comms/JoinNetButton";
       import CommsArrayPanel from "@/components/comms/CommsArrayPanel";
       import CommsStateChip from "@/components/comms/CommsStateChip";
+import CommsFailoverBanner from "@/components/comms/CommsFailoverBanner";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
@@ -83,7 +84,17 @@ function CommsConsolePage() {
   const [showSimulation, setShowSimulation] = React.useState(false);
   
   // Compute effective comms mode (desired vs. actual readiness)
-  const { effectiveMode, fallbackReason } = useCommsReadiness();
+  const { effectiveMode, fallbackReason, retryLive, markFailover } = useCommsReadiness();
+
+  // Expose markFailover globally for ActiveNetPanel to call on failures
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__commsMarkFailover = markFailover;
+      return () => {
+        delete window.__commsMarkFailover;
+      };
+    }
+  }, [markFailover]);
   
   const { isTransmitting, pttKey } = usePTT(null, userPreferences);
 
@@ -502,15 +513,12 @@ function CommsConsolePage() {
                               <Divider spacing="none" />
                            </div>
                            
-                           {/* Fallback Reason */}
-                           {fallbackReason && (
-                             <motion.div
-                                initial={{ opacity: 0, y: -8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="shrink-0 bg-amber-950/20 border-b border-amber-800/50 px-3 py-1.5 text-[9px] text-amber-400 font-mono"
-                             >
-                                {fallbackReason}
-                             </motion.div>
+                           {/* Fallback Banner - only show if not viewing a net (general context) */}
+                           {fallbackReason && !selectedNet && (
+                             <CommsFailoverBanner
+                               fallbackReason={fallbackReason}
+                               onRetry={retryLive}
+                             />
                            )}
 
                            {/* Active Net Chat */}
@@ -521,6 +529,8 @@ function CommsConsolePage() {
                                     user={currentUser} 
                                     eventId={selectedEventId}
                                     effectiveMode={effectiveMode}
+                                    fallbackReason={fallbackReason}
+                                    onRetryLive={retryLive}
                                     onConnectSuccess={handleConnectSuccess}
                                     onConnecting={handleConnecting}
                                     onDisconnect={handleDisconnect}
