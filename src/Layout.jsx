@@ -113,6 +113,14 @@ export default function Layout({ children, currentPageName }) {
         // Fetch user with 8s timeout
         let u;
         try {
+          const isAuthenticated = await base44.auth.isAuthenticated();
+          if (!isAuthenticated) {
+            // Not authenticated - redirect to AccessGate, never call redirectToLogin
+            console.log('[LAYOUT] User not authenticated, redirecting to AccessGate');
+            setLoading(false);
+            navigate(accessGatePath, { replace: true });
+            return;
+          }
           u = await Promise.race([
             base44.auth.me(),
             timeoutPromise(8000)
