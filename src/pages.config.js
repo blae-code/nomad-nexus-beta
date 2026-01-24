@@ -1,4 +1,3 @@
-
-import config from '@/components/pages/config.js';
+import config from "./components/pages/config.js";
 export default config;
-export * from '@/components/pages/config.js';
+export * from "./components/pages/config.js";
