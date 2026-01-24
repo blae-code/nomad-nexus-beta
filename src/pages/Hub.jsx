@@ -282,7 +282,6 @@ export default function HubPage() {
         </div>
 
         {/* Main Dashboard Grid */}
-         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
            <div className="space-y-0 flex flex-col min-h-0 flex-1 p-2">
              {/* Training & Tutorials Widget - Collapsible */}
              <div className="border border-zinc-800 bg-zinc-950/50 mb-2 shrink-0">
