@@ -123,6 +123,13 @@ export default function CommsArrayPanel({
     setEdgeTypes(edges);
   }, [topologyData]);
 
+  // Fetch squad memberships for dual-hatted detection
+  const { data: squadMemberships = [] } = useQuery({
+    queryKey: ['comms-squad-memberships'],
+    queryFn: () => base44.entities.SquadMembership.filter({}),
+    staleTime: 30000
+  });
+
   // Draw canvas topology
   const drawTopology = useCallback(() => {
     const canvas = canvasRef.current;
@@ -139,13 +146,13 @@ export default function CommsArrayPanel({
     ctx.fillRect(0, 0, width, height);
 
     // Draw nodes
-    const nodes = buildNodes(topologyData, width, height);
-    drawNodes(ctx, nodes, nodeStates, transmittingNodes);
+    const nodes = buildNodes(topologyData, width, height, squadMemberships, topologyData.commandStaff);
+    drawNodes(ctx, nodes, nodeStates, transmittingNodes, effectiveLens);
 
     // Draw edges
     const edges = buildEdges(topologyData, nodes);
-    drawEdges(ctx, edges, edgeTypes);
-  }, [topologyData, nodeStates, transmittingNodes, edgeTypes]);
+    drawEdges(ctx, edges, edgeTypes, effectiveLens);
+  }, [topologyData, nodeStates, transmittingNodes, edgeTypes, squadMemberships, effectiveLens]);
 
   useEffect(() => {
     drawTopology();
@@ -160,7 +167,7 @@ export default function CommsArrayPanel({
     const y = e.clientY - rect.top;
 
     // Check if click hit a node
-    const nodes = buildNodes(topologyData, canvasRef.current.width, canvasRef.current.height);
+    const nodes = buildNodes(topologyData, canvasRef.current.width, canvasRef.current.height, squadMemberships, topologyData?.commandStaff);
     const clickedNode = nodes.find(n => {
       const dist = Math.sqrt((n.x - x) ** 2 + (n.y - y) ** 2);
       return dist < n.radius + 6; // Include glow radius
@@ -356,14 +363,14 @@ function mapStatusToState(status) {
   return stateMap[status] || 'unknown';
 }
 
-function buildNodes(topologyData, width, height) {
+function buildNodes(topologyData, width, height, squadMemberships = [], commandStaff = []) {
   const nodes = [];
   if (!topologyData) return nodes;
 
   const centerX = width / 2;
   const centerY = height / 2;
 
-  // Command node (center)
+  // Command node (GROUP NODE showing count)
   nodes.push({
     id: 'command',
     type: 'command',
@@ -371,7 +378,8 @@ function buildNodes(topologyData, width, height) {
     x: centerX,
     y: centerY - 60,
     radius: 24,
-    color: '#ea580c'
+    color: '#ea580c',
+    staffCount: commandStaff.length
   });
 
   // Squad nodes (circle around command)
@@ -381,6 +389,14 @@ function buildNodes(topologyData, width, height) {
   squads.forEach((squad, idx) => {
     const angle = (idx / squadCount) * 2 * Math.PI;
     const radius = 100;
+    
+    // Check if squad leader is dual-hatted (in command staff)
+    const squadLeadMembership = squadMemberships.find(m => 
+      m.squad_id === squad.id && m.role === 'LEADER'
+    );
+    const isDualHatted = squadLeadMembership && 
+      commandStaff.some(cs => cs.user_id === squadLeadMembership.user_id);
+    
     nodes.push({
       id: squad.id,
       type: 'squad',
@@ -388,7 +404,8 @@ function buildNodes(topologyData, width, height) {
       x: centerX + Math.cos(angle) * radius,
       y: centerY + Math.sin(angle) * radius,
       radius: 20,
-      color: '#3b82f6'
+      color: '#3b82f6',
+      isDualHatted
     });
   });
 
@@ -452,13 +469,18 @@ function getNodeStateColor(baseColor, state) {
   return stateColors[state] || baseColor;
 }
 
-function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set()) {
+function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set(), effectiveLens = 'AUTO') {
   const now = Date.now();
   
   nodes.forEach(node => {
     const state = nodeStates[node.id] || 'unknown';
     const nodeColor = getNodeStateColor(node.color, state);
     const isTransmitting = transmittingNodes.has(node.id);
+    
+    // Emphasis based on lens
+    const isEmphasized = 
+      (effectiveLens === 'COMMAND' && node.type === 'command') ||
+      (effectiveLens === 'SQUAD' && node.type === 'squad');
     
     // Pulsing effect for transmitting nodes
     let pulseRadius = node.radius;
@@ -467,11 +489,11 @@ function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set()) {
       pulseRadius = node.radius + pulseAmount;
     }
 
-    // Outer glow (pulsing for transmitting, static for others)
-    ctx.fillStyle = nodeColor;
-    ctx.globalAlpha = isTransmitting ? 0.3 : 0.15;
+    // Outer glow (pulsing for transmitting, static for others, orange for emphasized)
+    ctx.fillStyle = isEmphasized ? '#ea580c' : nodeColor;
+    ctx.globalAlpha = isTransmitting ? 0.3 : isEmphasized ? 0.25 : 0.15;
     ctx.beginPath();
-    ctx.arc(node.x, node.y, pulseRadius + 6, 0, 2 * Math.PI);
+    ctx.arc(node.x, node.y, pulseRadius + (isEmphasized ? 8 : 6), 0, 2 * Math.PI);
     ctx.fill();
 
     // Node circle
@@ -481,27 +503,37 @@ function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set()) {
     ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
     ctx.fill();
 
-    // Border (brighter for transmitting)
-    ctx.strokeStyle = isTransmitting ? '#ffffff' : '#09090b';
-    ctx.lineWidth = isTransmitting ? 2.5 : 2;
+    // Border (purple for dual-hatted, orange for emphasized, white for transmitting)
+    ctx.strokeStyle = node.isDualHatted ? '#a855f7' : isTransmitting ? '#ffffff' : isEmphasized ? '#ea580c' : '#09090b';
+    ctx.lineWidth = node.isDualHatted ? 3 : isTransmitting ? 2.5 : isEmphasized ? 3 : 2;
     ctx.stroke();
 
-    // State indicator dot (top-right corner)
-    const dotRadius = 4;
-    ctx.fillStyle = nodeColor;
-    ctx.beginPath();
-    ctx.arc(node.x + node.radius - dotRadius, node.y - node.radius + dotRadius, dotRadius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.strokeStyle = '#09090b';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // Staff count for command node (GROUP NODE)
+    if (node.type === 'command' && node.staffCount) {
+      ctx.fillStyle = '#09090b';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.staffCount.toString(), node.x, node.y + 1);
+    } else {
+      // Label
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.label, node.x, node.y);
+    }
 
-    // Label
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 10px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(node.label, node.x, node.y);
+    // Dual-hatted badge (small SL indicator)
+    if (node.isDualHatted) {
+      ctx.fillStyle = '#a855f7';
+      ctx.fillRect(node.x - 6, node.y - node.radius - 4, 12, 8);
+      ctx.fillStyle = '#09090b';
+      ctx.font = 'bold 7px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SL', node.x, node.y - node.radius);
+    }
 
     // Transmitting indicator text
     if (isTransmitting) {
@@ -512,7 +544,7 @@ function drawNodes(ctx, nodes, nodeStates = {}, transmittingNodes = new Set()) {
   });
 }
 
-function drawEdges(ctx, edges, edgeTypes = {}) {
+function drawEdges(ctx, edges, edgeTypes = {}, effectiveLens = 'AUTO') {
   const edgeStyleMap = {
     operational: {
       color: '#3b82f6',
@@ -539,10 +571,15 @@ function drawEdges(ctx, edges, edgeTypes = {}) {
     const edgeType = edgeTypes[edgeKey] || 'operational';
     const style = edgeStyleMap[edgeType] || edgeStyleMap.operational;
 
-    ctx.strokeStyle = style.color;
-    ctx.globalAlpha = style.alpha;
-    ctx.lineWidth = style.width;
-    ctx.setLineDash(style.dash);
+    // Emphasize edges based on duty lens
+    const isEmphasized = 
+      (effectiveLens === 'COMMAND' && edge.from.type === 'command') ||
+      (effectiveLens === 'SQUAD' && edge.from.type === 'squad');
+
+    ctx.strokeStyle = isEmphasized ? '#ea580c' : style.color;
+    ctx.globalAlpha = isEmphasized ? 0.9 : style.alpha;
+    ctx.lineWidth = isEmphasized ? 2.5 : style.width;
+    ctx.setLineDash(isEmphasized ? [] : style.dash);
     ctx.beginPath();
     ctx.moveTo(edge.from.x, edge.from.y);
     ctx.lineTo(edge.to.x, edge.to.y);

@@ -17,13 +17,14 @@ export default function CommsRadialMenu({
   onWhisper,
   onBroadcast,
   onRequestPriority,
-  onGrantPriority
+  onGrantPriority,
+  capabilities = {}
 }) {
   const [submenu, setSubmenu] = useState(null);
 
   if (!isOpen || !position) return null;
 
-  const items = getMenuItems(nodeType);
+  const items = getMenuItems(nodeType, capabilities, onBroadcast, onRequestPriority, onGrantPriority, () => setSubmenu('whisper'));
 
   const handleWhisperClick = () => {
     setSubmenu('whisper');
@@ -123,7 +124,7 @@ export default function CommsRadialMenu({
             ) : (
               // Whisper submenu
               <WhisperSubmenu
-                scopes={['ONE', 'ROLE', 'SQUAD', 'WING', 'FLEET']}
+                scopes={capabilities.whisperScopes || ['ONE']}
                 onSelect={handleWhisperSubmit}
                 onBack={() => setSubmenu(null)}
               />
@@ -221,46 +222,48 @@ function WhisperSubmenu({ scopes, onSelect, onBack }) {
 }
 
 /**
- * Get menu items based on node type
+ * Get menu items based on node type and capabilities
  */
-function getMenuItems(nodeType) {
-  const baseItems = [
-    {
+function getMenuItems(nodeType, capabilities, onBroadcast, onRequestPriority, onGrantPriority, onWhisperMenu) {
+  const items = [];
+
+  // Whisper (always visible if user has any whisper scope)
+  if (capabilities.whisperScopes?.length > 0) {
+    items.push({
       id: 'whisper',
       label: 'Whisper',
       icon: MessageSquare,
       submenu: true,
-      onClick: () => {} // Handled by parent
-    },
-    {
-      id: 'broadcast',
-      label: 'Broadcast Ping',
-      icon: Radio,
-      onClick: () => {
-        // Broadcast ping action
-      }
-    }
-  ];
-
-  if (nodeType === 'command') {
-    baseItems.push({
-      id: 'priority',
-      label: 'Manage Priority',
-      icon: Crown,
-      onClick: () => {
-        // Manage priority speaker
-      }
-    });
-  } else if (nodeType === 'squad' || nodeType === 'user') {
-    baseItems.push({
-      id: 'priority',
-      label: 'Request Priority',
-      icon: Crown,
-      onClick: () => {
-        // Request priority speaker
-      }
+      onClick: onWhisperMenu
     });
   }
 
-  return baseItems;
+  // Broadcast (only if user can broadcast)
+  if (capabilities.broadcast) {
+    items.push({
+      id: 'broadcast',
+      label: 'Broadcast Ping',
+      icon: Radio,
+      onClick: onBroadcast
+    });
+  }
+
+  // Priority management
+  if (nodeType === 'command' && capabilities.grantPriority) {
+    items.push({
+      id: 'priority',
+      label: 'Manage Priority',
+      icon: Crown,
+      onClick: onGrantPriority
+    });
+  } else if ((nodeType === 'squad' || nodeType === 'user') && capabilities.requestPriority) {
+    items.push({
+      id: 'priority',
+      label: 'Request Priority',
+      icon: Crown,
+      onClick: onRequestPriority
+    });
+  }
+
+  return items;
 }
