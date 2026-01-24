@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';
 import AppShellV3 from "@/components/layout/AppShellV3";
 import LayoutDebugMode from "@/components/layout/LayoutDebugMode";
@@ -27,6 +27,7 @@ const pageMap = {
         '/profile': 'profile',
         '/settings': 'settings',
         '/access-gate': 'access-gate',
+        '/accessgate': 'access-gate', // Support both hyphenated and non-hyphenated
       };
 
 export default function Layout({ children, currentPageName }) {
@@ -34,6 +35,7 @@ export default function Layout({ children, currentPageName }) {
   const [memberProfile, setMemberProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Show loading state while initializing to prevent flicker
   if (loading && location.pathname !== '/access-gate') {
@@ -69,10 +71,8 @@ export default function Layout({ children, currentPageName }) {
           if (!profile || !profile.onboarding_completed) {
             // Set loading to false first to prevent flicker
             setLoading(false);
-            // Then navigate in next tick to prevent render-time redirect
-            setTimeout(() => {
-              window.location.href = '/access-gate';
-            }, 0);
+            // Navigate using react-router to prevent full page reload
+            navigate('/access-gate', { replace: true });
             return;
           }
           setMemberProfile(profile);
