@@ -1,3 +1,6 @@
+// src/pages.config.js
+// Single source of truth for routing + page discovery.
+// Provides BOTH named exports and a default export to satisfy old + new imports.
 import AccessGate from './pages/AccessGate';
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
@@ -31,43 +34,33 @@ import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import __Layout from './Layout.jsx';
 
-
-export const PAGES = {
-    "AccessGate": AccessGate,
-    "AdminCockpit": AdminCockpit,
-    "Channels": Channels,
-    "CommandCenter": CommandCenter,
-    "CommsConsole": CommsConsole,
-    "CommsDevTest": CommsDevTest,
-    "CommsSettings": CommsSettings,
-    "Diagnostics": Diagnostics,
-    "EventReporting": EventReporting,
-    "Events": Events,
-    "FleetManager": FleetManager,
-    "Hub": Hub,
-    "Intelligence": Intelligence,
-    "MissionControl": MissionControl,
-    "NomadOpsDashboard": NomadOpsDashboard,
-    "NotificationSettings": NotificationSettings,
-    "OperationControl": OperationControl,
-    "OperationWorkspace": OperationWorkspace,
-    "PageNotFound": PageNotFound,
-    "Profile": Profile,
-    "Ranks": Ranks,
-    "Rescue": Rescue,
-    "RoleManager": RoleManager,
-    "Settings": Settings,
-    "SquadDetail": SquadDetail,
-    "Treasury": Treasury,
-    "UniverseMap": UniverseMap,
-    "UserDirectory": UserDirectory,
-    "UserManager": UserManager,
-    "UserSettings": UserSettings,
-    "VoiceNetManager": VoiceNetManager,
-}
+const pagesGlob = import.meta.glob('./pages/*.jsx', { eager: true });
 
 export const pagesConfig = {
     mainPage: "Hub",
     Pages: PAGES,
     Layout: __Layout,
 };
+<<<<<<< HEAD
+
+export function resolveRouteAlias(pathname = '/') {
+  return PAGE_ROUTE_ALIASES[pathname] ?? pathname;
+}
+
+export function getPageByPath(pathname = '/') {
+  const resolved = resolveRouteAlias(pathname);
+
+  // Exact route match
+  const byRoute = pagesConfig.find((p) => p.route === resolved);
+
+  // Try match by name (/hub -> Hub)
+  const slug = resolved.replace(/^\/+/, '');
+  const byName = pagesConfig.find((p) => p.name.toLowerCase() === slug.toLowerCase());
+  return byName ?? null;
+}
+
+// Default export maintained for legacy imports like: import pagesConfig from '@/pages.config'
+export default pagesConfig;
+
+=======
+>>>>>>> 5c2b417fe45fed091068b422d078f8d762d300b2
