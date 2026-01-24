@@ -21,6 +21,7 @@ import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
 import IncidentHeatmap from "@/components/incidents/IncidentHeatmap";
 import ReportExporter from "@/components/dashboard/ReportExporter";
 import AnnouncementsTicker from "@/components/dashboard/AnnouncementsTicker";
+import { isDemoMode } from '@/lib/demo-mode';
 
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
@@ -100,7 +101,7 @@ export default function HubPage() {
 
   // Watchdog: force recovery after data stall (always at top level)
   useEffect(() => {
-    if (!isLoading) return;
+    if (!isLoading || isDemoMode()) return;
 
     const watchdog = setTimeout(() => {
       console.error('[HUB] Loading watchdog triggered - data fetch stalled');
