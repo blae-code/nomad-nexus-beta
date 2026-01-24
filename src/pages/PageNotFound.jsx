@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { createPageUrl } from '@/utils';
+import pagesConfig from '@/pages.config';
 import { ChevronRight, Home } from 'lucide-react';
 
 /**
