@@ -47,8 +47,8 @@ function rankClosestMatches(attemptedPath, candidates, limit = 5) {
 }
 
 export default function PageNotFound() {
-  const routeAliases = pagesConfig?.PAGE_ROUTE_ALIASES ?? {};
-  const routeOverrides = pagesConfig?.PAGE_ROUTE_OVERRIDES ?? {};
+  const routeAliases = {};
+  const routeOverrides = {};
 
   const candidatePaths = useMemo(() => {
     const paths = new Set();
