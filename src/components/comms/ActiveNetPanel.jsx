@@ -28,6 +28,7 @@ import { useCommsMode } from '@/components/comms/useCommsMode';
 import { Room, RoomEvent } from 'livekit-client';
 import { normalizePlayerStatusRecords, normalizePlayerStatus } from '@/components/contracts/normalization';
 import { PLAYER_STATUS } from '@/components/contracts/dataContract';
+import CommsPreflight from '@/components/comms/CommsPreflight';
 
 function CommsLog({ eventId }) {
   const queryClient = useQueryClient();
@@ -395,6 +396,9 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
   const [hasTemporaryTx, setHasTemporaryTx] = React.useState(false);
   const [selectedChannel, setSelectedChannel] = React.useState(null);
   const [simParticipants, setSimParticipants] = React.useState(null);
+  const [showPreflight, setShowPreflight] = React.useState(false);
+  const [preflightCompleted, setPreflightCompleted] = React.useState(false);
+  const [pendingConnect, setPendingConnect] = React.useState(false);
 
   // Generate SIM participants (consistent, plausible)
   const generateSimParticipants = React.useCallback(() => {
@@ -486,6 +490,22 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
     return myVoiceMute && myVoiceMute.length > 0;
   }, [myVoiceMute]);
 
+  // Check preflight status on mount
+  useEffect(() => {
+    const checkPreflight = async () => {
+      try {
+        const prefs = await base44.entities.VoicePrefs.filter({ user_id: user.id });
+        setPreflightCompleted(prefs?.[0]?.preflight_completed || false);
+      } catch (err) {
+        console.error('[ACTIVE NET] Preflight check error:', err);
+      }
+    };
+
+    if (user?.id && effectiveMode === 'LIVE') {
+      checkPreflight();
+    }
+  }, [user?.id, effectiveMode]);
+
   useEffect(() => {
     if (!net || !user) return;
 
@@ -532,6 +552,11 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
     if (effectiveMode === 'SIM') {
       onConnectSuccess?.(net.id);
       return;
+    }
+
+    // LIVE mode: check preflight before connecting
+    if (effectiveMode === 'LIVE' && !preflightCompleted && !pendingConnect) {
+      return; // Don't auto-connect, wait for user to click Join
     }
 
     const connect = async () => {
@@ -812,7 +837,29 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
              reconnectAttempts.current = 0;
              onDisconnect?.();
              };
-             }, [net?.id, user?.id, eventId, isSim, onConnectionChange]);
+             }, [net?.id, user?.id, eventId, effectiveMode, preflightCompleted, pendingConnect]);
+
+             // Handle preflight completion and trigger connect
+             const handlePreflightComplete = async (prefs) => {
+             setShowPreflight(false);
+             setPreflightCompleted(true);
+             setPendingConnect(true);
+
+             // Trigger re-render which will auto-connect now that preflight is done
+             setTimeout(() => {
+             setPendingConnect(false);
+             }, 100);
+             };
+
+             // Handle Join button click
+             const handleJoinClick = () => {
+             if (effectiveMode === 'LIVE' && !preflightCompleted) {
+             setShowPreflight(true);
+             } else {
+             setPendingConnect(true);
+             setTimeout(() => setPendingConnect(false), 100);
+             }
+             };
 
   // Audio Handling - Mic Publish/Unpublish with audio processing
   useEffect(() => {
@@ -916,50 +963,7 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
     : (room?.remoteParticipants?.size || 0);
 
   return (
-     <div className="h-full flex flex-col gap-4">
-       {/* Join/Leave Button */}
-       {selectedNet && (
-         <div className="shrink-0 px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-sm flex items-center gap-3">
-           <Button
-             onClick={() => {
-               if (connectionState === 'connected') {
-                 setRoom(null);
-                 setConnectionState('disconnected');
-                 onDisconnect?.();
-               } else if (connectionState === 'disconnected') {
-                 // Trigger connection
-                 connect();
-               }
-             }}
-             disabled={connectionState === 'connecting'}
-             className={cn(
-               'gap-2 h-8 px-3 text-xs font-bold uppercase',
-               connectionState === 'connected'
-                 ? 'bg-red-600 hover:bg-red-700 text-white'
-                 : connectionState === 'connecting'
-                 ? 'bg-amber-600 text-white'
-                 : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-             )}
-           >
-             {connectionState === 'connecting' ? (
-               <>
-                 <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                 CONNECTING...
-               </>
-             ) : connectionState === 'connected' ? (
-               <>
-                 <PhoneOff className="w-3 h-3" />
-                 LEAVE
-               </>
-             ) : (
-               <>
-                 <Phone className="w-3 h-3" />
-                 JOIN
-               </>
-             )}
-           </Button>
-         </div>
-       )}
+     <div className="h-full flex flex-col gap-4">{/* Removed Join/Leave button - now handled by JoinNetButton in NetList */}
 
       
       {/* Mode Indicator */}
@@ -1349,6 +1353,14 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
                lastError={connectionError}
              />
            )}
+
+      {/* Preflight Modal */}
+      <CommsPreflight
+        isOpen={showPreflight}
+        onComplete={handlePreflightComplete}
+        onCancel={() => setShowPreflight(false)}
+        eventMode={net?.discipline === 'focused' ? 'focused' : 'casual'}
+      />
            </div>
            );
            }
