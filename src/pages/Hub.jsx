@@ -123,7 +123,7 @@ export default function HubPage() {
   }
 
     return (
-    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
+    <>
       {/* Onboarding Overlay */}
       {showOnboarding && (
         <HubOnboardingOverlay onComplete={() => setShowOnboarding(false)} />
