@@ -10,10 +10,16 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { createPageUrl } from '@/utils';
+import AccessGate from './pages/AccessGate';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
+const AccessGatePage = Pages.AccessGate ?? AccessGate;
+const accessGatePaths = [
+  PAGE_ROUTE_OVERRIDES?.AccessGate ?? createPageUrl('AccessGate'),
+  ...(PAGE_ROUTE_ALIASES?.AccessGate ?? []),
+];
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
@@ -50,6 +56,17 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
+      {!Pages.AccessGate && accessGatePaths.map((path) => (
+        <Route
+          key={`access-gate-fallback-${path}`}
+          path={path}
+          element={
+            <LayoutWrapper currentPageName="AccessGate">
+              <AccessGatePage />
+            </LayoutWrapper>
+          }
+        />
+      ))}
       {Object.entries(Pages).flatMap(([pageKey, Page]) => {
         const canonicalPath = PAGE_ROUTE_OVERRIDES?.[pageKey] ?? createPageUrl(pageKey);
         const aliases = PAGE_ROUTE_ALIASES?.[pageKey] ?? [];

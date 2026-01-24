@@ -619,6 +619,8 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              return;
           }
 
+          const isDev = import.meta.env.DEV;
+
           // Ensure URL is properly formatted (wss:// for WebSocket)
           url = url.trim();
           if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
@@ -629,6 +631,14 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              } else {
                 url = 'wss://' + url;
              }
+          }
+
+          if (!isDev && url.startsWith('ws://')) {
+            console.error('[COMMS] Insecure LiveKit URL blocked:', url);
+            setConnectionError('Insecure comms endpoint blocked.');
+            setConnectionState("failed");
+            onError?.('Insecure comms endpoint blocked.');
+            return;
           }
 
           if (typeof token !== 'string' || token.length === 0) {
