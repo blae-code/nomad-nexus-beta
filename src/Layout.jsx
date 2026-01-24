@@ -37,7 +37,7 @@ const resolveComponent = (x) => {
 const isFn = (x) => typeof x === "function";
 const SafePageWrapper = ({ component: Comp, fallbackMessage }) => {
   const ResolvedComp = resolveComponent(Comp);
-  
+
   if (!isFn(ResolvedComp)) {
     return (
       <div style={{ padding: "24px", background: "#1a1a1a", color: "#fff", borderRadius: "8px", margin: "24px" }}>
@@ -51,7 +51,7 @@ const SafePageWrapper = ({ component: Comp, fallbackMessage }) => {
       </div>
     );
   }
-  
+
   return <ResolvedComp />;
 };
 
@@ -61,25 +61,25 @@ const accessGateAliases = new Set(
 );
 
 const pageMap = {
-        '/': 'hub',
-        '/hub': 'hub',
-        '/academy': 'academy',
-        '/nomadopsdashboard': 'mission',
-        '/events': 'events',
-        '/commsconsole': 'comms',
-        '/intelligence': 'intelligence',
-        '/admin': 'admin',
-        '/adminconsole': 'admin', // deprecated, redirect to /admin
-        '/universemap': 'universemap',
-        '/fleetmanager': 'fleetmanager',
-        '/rescue': 'rescue',
-        '/channels': 'channels',
-        '/profile': 'profile',
-        '/settings': 'settings',
-        '/access-gate': 'access-gate',
-        '/accessgate': 'access-gate', // Support both hyphenated and non-hyphenated
-        '/login': 'access-gate', // Route /login to access-gate
-      };
+  '/': 'hub',
+  '/hub': 'hub',
+  '/academy': 'academy',
+  '/nomadopsdashboard': 'mission',
+  '/events': 'events',
+  '/commsconsole': 'comms',
+  '/intelligence': 'intelligence',
+  '/admin': 'admin',
+  '/adminconsole': 'admin', // deprecated, redirect to /admin
+  '/universemap': 'universemap',
+  '/fleetmanager': 'fleetmanager',
+  '/rescue': 'rescue',
+  '/channels': 'channels',
+  '/profile': 'profile',
+  '/settings': 'settings',
+  '/access-gate': 'access-gate',
+  '/accessgate': 'access-gate', // Support both hyphenated and non-hyphenated
+  '/login': 'access-gate', // Route /login to access-gate
+};
 
 const iconAccent = theme.colors.accent.replace('#', '%23');
 const iconBackground = theme.colors.background.replace('#', '%23');
@@ -94,7 +94,7 @@ export default function Layout({ children, currentPageName }) {
 
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
   useEffect(() => {
-    const timeoutPromise = (ms) => new Promise((_, reject) => 
+    const timeoutPromise = (ms) => new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Timeout')), ms)
     );
 
@@ -103,7 +103,7 @@ export default function Layout({ children, currentPageName }) {
         initializeAccessToken();
 
         const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
-        
+
         // Allow access-gate to render without auth checks (it's a public gate page)
         if (isAccessGatePath) {
           setLoading(false);
@@ -184,12 +184,11 @@ export default function Layout({ children, currentPageName }) {
     return () => clearTimeout(watchdog);
   }, [location.pathname, navigate]);
 
-  // Register service worker for PWA support
+  // DEMO: disable service worker to prevent stale hashed asset 404s
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-        .then(() => console.log('Service Worker registered'))
-        .catch((err) => console.warn('Service Worker registration failed:', err));
+      navigator.serviceWorker.getRegistrations?.().then((rs) => rs.forEach((r) => r.unregister()));
+      caches?.keys?.().then((keys) => keys.forEach((k) => caches.delete(k)));
     }
   }, []);
 
@@ -222,18 +221,18 @@ export default function Layout({ children, currentPageName }) {
   }
 
   console.log("[Layout] Rendering main layout, currentPage:", currentPage);
-  
+
   const SafeAppShellV3 = resolveComponent(AppShellV3);
   const SafeCommsDockShell = resolveComponent(CommsDockShell);
   const SafeRadialFeedbackMenu = resolveComponent(RadialFeedbackMenu);
   const SafeLayoutDebugMode = resolveComponent(LayoutDebugMode);
-  
+
   if (!isFn(SafeAppShellV3)) {
     console.error("[Layout] AppShellV3 failed to resolve");
     return (
-      <SafePageWrapper 
-        component={AppShellV3} 
-        fallbackMessage="AppShellV3 component failed to load" 
+      <SafePageWrapper
+        component={AppShellV3}
+        fallbackMessage="AppShellV3 component failed to load"
       />
     );
   }
@@ -269,4 +268,4 @@ export default function Layout({ children, currentPageName }) {
       </div>
     </ErrorBoundary>
   );
-  }
+}
