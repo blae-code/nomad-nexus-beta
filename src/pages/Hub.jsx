@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { createPageUrl } from "@/utils";
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
@@ -75,7 +75,7 @@ export default function HubPage() {
     const onlineCount = onlineUsers.length;
     const completedEvents = userEvents.filter(e => e.status === 'completed').length;
     const activeOps = userEvents.filter(e => e.status === 'active').length;
-    
+
     return {
       activeMemberRate: totalUsers > 0 ? Math.round((onlineCount / totalUsers) * 100) : 0,
       activeOperations: activeOps,
@@ -86,16 +86,19 @@ export default function HubPage() {
     };
   }, [allUsers.length, onlineUsers.length, userEvents, userSquads.length, activeIncidents.length, recentLogs.length]);
 
-  // Loading state with watchdog
-  if (isLoading) {
-    React.useEffect(() => {
-      const watchdog = setTimeout(() => {
-        console.error('[HUB] Loading watchdog triggered - data fetch stalled');
-        window.location.href = '/access-gate';
-      }, 10000);
-      return () => clearTimeout(watchdog);
-    }, []);
+  // Watchdog: force recovery after data stall (always at top level)
+  useEffect(() => {
+    if (!isLoading) return;
 
+    const watchdog = setTimeout(() => {
+      console.error('[HUB] Loading watchdog triggered - data fetch stalled');
+      window.location.href = '/access-gate';
+    }, 10000);
+    return () => clearTimeout(watchdog);
+  }, [isLoading]);
+
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center space-y-2">
@@ -105,7 +108,7 @@ export default function HubPage() {
         </div>
       </div>
     );
-    }
+  }
 
     return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
