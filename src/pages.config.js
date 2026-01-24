@@ -1,27 +1,58 @@
-/**
- * Page Configuration
- * Maps page names to their metadata
- */
+import { lazy } from 'react';
+import DefaultLayout from '@/Layout';
+import { createPageUrl } from '@/utils';
 
-export const PAGE_ROUTE_ALIASES = {
-  'comms-console': '/commsconsole',
-  'fleet-manager': '/fleetmanager',
-  'access-gate': '/access-gate',
+const pageModules = import.meta.glob('./pages/**/*.jsx');
+
+const normalizePageKey = (path) => {
+  const fileName = path.split('/').pop() ?? '';
+  return fileName.replace(/\.[^/.]+$/, '');
 };
 
 export const PAGE_ROUTE_OVERRIDES = {
-  'admin-console': 'admin',
+  AccessGate: '/access-gate',
+  CommsConsole: '/comms-console',
+  FleetManager: '/fleet-manager',
+  UniverseMap: '/universe-map',
 };
 
-const pages = {
-  hub: { path: '/hub', label: 'Hub' },
-  events: { path: '/events', label: 'Events' },
-  comms: { path: '/commsconsole', label: 'Comms' },
-  admin: { path: '/admin', label: 'Admin' },
-  rescue: { path: '/rescue', label: 'Rescue' },
-  channels: { path: '/channels', label: 'Channels' },
-  profile: { path: '/profile', label: 'Profile' },
-  'access-gate': { path: '/access-gate', label: 'Access Gate' },
+export const PAGE_ROUTE_ALIASES = {
+  Hub: ['/'],
+  Admin: ['/adminconsole'],
+  AccessGate: ['/accessgate'],
+  CommsConsole: ['/commsconsole'],
+  FleetManager: ['/fleetmanager'],
+  UniverseMap: ['/universemap'],
 };
 
-export default pages;
+const Pages = Object.fromEntries(
+  Object.entries(pageModules).map(([path, importer]) => {
+    const pageKey = normalizePageKey(path);
+    const Component = lazy(async () => {
+      const module = await importer();
+      return module;
+    });
+
+    return [pageKey, Component];
+  }),
+);
+
+export const pagesConfig = Object.keys(Pages)
+  .sort()
+  .map((pageKey) => {
+    const canonicalPath = PAGE_ROUTE_OVERRIDES[pageKey] ?? createPageUrl(pageKey);
+    return {
+      path: canonicalPath,
+      name: pageKey,
+    };
+  });
+
+const config = {
+  Pages,
+  Layout: DefaultLayout,
+  mainPage: 'Hub',
+};
+
+export const { Layout, mainPage } = config;
+
+export default config;

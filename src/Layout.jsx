@@ -10,11 +10,11 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
+import { isDemoMode } from "@/lib/demo-mode";
 
 // DEMO: stub Base44 platform endpoints that are currently 500'ing.
 // IMPORTANT: must run at module load (not inside useEffect) to catch early requests.
-const __DEMO_STUB_B44__ =
-  typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demo");
+const __DEMO_STUB_B44__ = typeof window !== "undefined" && isDemoMode();
 
 function __safeDefine(obj, key, value) {
   try {
@@ -293,6 +293,11 @@ export default function Layout({ children, currentPageName }) {
     <ErrorBoundary>
       {/* TODO: Move meta/link/style tags to index.html or head manager after demo */}
       <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
+        {isDemoMode() && (
+          <div className="w-full bg-amber-900/60 text-amber-100 text-[10px] font-mono uppercase tracking-widest px-3 py-1 border-b border-amber-700/50">
+            Demo Mode • Local data + simulated services
+          </div>
+        )}
         {/* AppShellV3: No left rail, palette-driven nav */}
         <div className="flex-1 flex flex-col overflow-hidden pb-12">
           {currentPage === 'access-gate' ? (
