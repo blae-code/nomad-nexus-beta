@@ -11,6 +11,50 @@ import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
 
+// ============================================================
+// Component Resolver: Handle ESM module objects gracefully
+// ============================================================
+const resolveComponent = (x) => {
+  if (!x) return null;
+  // ESM module object: { default: Component }
+  if (typeof x === "object" && x.default && typeof x.default === "function") {
+    console.log("[Layout] Resolved ESM module to default export");
+    return x.default;
+  }
+  // Wrapped component: { Component: fn }
+  if (typeof x === "object" && x.Component && typeof x.Component === "function") {
+    console.log("[Layout] Resolved wrapped component");
+    return x.Component;
+  }
+  // Already a function
+  if (typeof x === "function") {
+    return x;
+  }
+  console.warn("[Layout] Unresolvable component:", x);
+  return null;
+};
+
+const isFn = (x) => typeof x === "function";
+const SafePageWrapper = ({ component: Comp, fallbackMessage }) => {
+  const ResolvedComp = resolveComponent(Comp);
+  
+  if (!isFn(ResolvedComp)) {
+    return (
+      <div style={{ padding: "24px", background: "#1a1a1a", color: "#fff", borderRadius: "8px", margin: "24px" }}>
+        <h2 style={{ marginTop: 0, color: "#ff6b6b" }}>⚠️ Page Load Error</h2>
+        <p>{fallbackMessage}</p>
+        <pre style={{ whiteSpace: "pre-wrap", background: "#0a0a0a", padding: "12px", borderRadius: "4px", fontSize: "12px", color: "#888" }}>
+          {`Component type: ${typeof Comp}\n`}
+          {Comp && typeof Comp === "object" ? `Keys: ${Object.keys(Comp).join(", ")}\n` : ""}
+          {`Resolved to: ${typeof ResolvedComp}`}
+        </pre>
+      </div>
+    );
+  }
+  
+  return <ResolvedComp />;
+};
+
 const accessGatePath = createPageUrl('AccessGate');
 const accessGateAliases = new Set(
   [accessGatePath, '/accessgate', '/AccessGate', '/login'].map((path) => path.toLowerCase()),
