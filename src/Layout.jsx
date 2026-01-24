@@ -171,6 +171,9 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  // Normalize children component (could be module object)
+  const ChildComponent = asComponent(children);
+
   return (
     <ErrorBoundary>
     <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
