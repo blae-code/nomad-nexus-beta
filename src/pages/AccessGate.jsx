@@ -73,7 +73,7 @@ export default function AccessGate() {
   };
 
   const handleReturnHome = () => {
-    window.location.href = '/';
+    navigate('/', { replace: true });
   };
 
   // Show onboarding wizard after successful key redemption
