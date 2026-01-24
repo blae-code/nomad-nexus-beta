@@ -3,11 +3,11 @@
  * Prevents build failure in /src/lib/NavigationTracker.jsx
  */
 
-const PAGE_ROUTE_ALIASES = {
+export const PAGE_ROUTE_ALIASES = {
   '/login': '/access-gate'
 };
 
-const PAGE_ROUTE_OVERRIDES = {};
+export const PAGE_ROUTE_OVERRIDES = {};
 
 export default {
   PAGE_ROUTE_ALIASES,
