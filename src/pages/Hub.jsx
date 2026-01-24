@@ -30,7 +30,9 @@ export default function HubPage() {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [pulseCollapsed, setPulseCollapsed] = useState(false);
   const [trainingCollapsed, setTrainingCollapsed] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const user = useCurrentUser();
   const { data, isLoading } = useDashboardData(user);
