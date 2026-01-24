@@ -17,6 +17,7 @@ import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
 import OperationControl from './pages/OperationControl';
 import OperationWorkspace from './pages/OperationWorkspace';
+import PageNotFound from './pages/PageNotFound';
 import Profile from './pages/Profile';
 import Ranks from './pages/Ranks';
 import Rescue from './pages/Rescue';
@@ -29,7 +30,6 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
-import PageNotFound from './pages/PageNotFound';
 import config from './pages/config';
 import __Layout from './Layout.jsx';
 
@@ -54,6 +54,7 @@ export const PAGES = {
     "NotificationSettings": NotificationSettings,
     "OperationControl": OperationControl,
     "OperationWorkspace": OperationWorkspace,
+    "PageNotFound": PageNotFound,
     "Profile": Profile,
     "Ranks": Ranks,
     "Rescue": Rescue,
@@ -66,7 +67,6 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
-    "PageNotFound": PageNotFound,
     "config": config,
 }
 
