@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import FeatureOnboardingFlow from '@/components/onboarding/FeatureOnboardingFlow';
+import PostOnboardingGuide from '@/components/onboarding/PostOnboardingGuide';
 
 const steps = [
   { id: 'welcome', title: 'Welcome', icon: Shield },
