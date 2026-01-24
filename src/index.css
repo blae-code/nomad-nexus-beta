@@ -160,3 +160,62 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .ui-interactive {
+    @apply transition-all duration-200 ease-out transform-gpu;
+  }
+  .ui-interactive:hover {
+    @apply shadow-[0_0_16px_rgba(234,88,12,0.18)] brightness-110;
+  }
+  .ui-interactive:focus-visible {
+    @apply outline-none ring-2 ring-[#ea580c]/70 ring-offset-2 ring-offset-background;
+  }
+  .ui-interactive:active {
+    @apply translate-y-[1px] scale-[0.99] brightness-110;
+  }
+  .ui-interactive:disabled,
+  .ui-interactive[aria-disabled="true"] {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .ui-control {
+    @apply transition-all duration-200 ease-out transform-gpu;
+  }
+  .ui-control:hover {
+    @apply border-[#ea580c]/40 shadow-[0_0_14px_rgba(234,88,12,0.12)];
+  }
+  .ui-control:focus-visible {
+    @apply outline-none ring-2 ring-[#ea580c]/70 ring-offset-2 ring-offset-background border-[#ea580c]/60;
+  }
+  .ui-control:active {
+    @apply scale-[0.99];
+  }
+  .ui-control:disabled,
+  .ui-control[aria-disabled="true"] {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .ui-link {
+    @apply transition-colors duration-200 ease-out;
+  }
+  .ui-link:hover {
+    @apply text-[#ea580c] drop-shadow-[0_0_6px_rgba(234,88,12,0.6)];
+  }
+  .ui-link:focus-visible {
+    @apply outline-none ring-2 ring-[#ea580c]/70 ring-offset-2 ring-offset-background;
+  }
+  .ui-link:active {
+    @apply text-[#ea580c]/90;
+  }
+
+  .ui-card {
+    @apply transition-all duration-200 ease-out transform-gpu;
+  }
+  .ui-card:hover {
+    @apply border-[#ea580c]/30 shadow-[0_0_20px_rgba(234,88,12,0.12)] -translate-y-0.5;
+  }
+  .ui-card:focus-within {
+    @apply ring-2 ring-[#ea580c]/50 ring-offset-2 ring-offset-background;
+  }
+}
