@@ -1,4 +1,3 @@
-import Academy from './pages/Academy';
 import AccessGate from './pages/AccessGate';
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
@@ -34,7 +33,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Academy": Academy,
     "AccessGate": AccessGate,
     "AdminCockpit": AdminCockpit,
     "Channels": Channels,
