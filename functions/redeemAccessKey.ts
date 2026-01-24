@@ -37,9 +37,13 @@ function clearFailures(userId) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    // Allow unauthenticated users to redeem; they'll create profile in onboarding
+    const userId = user?.id || 'anonymous';
 
     // Rate limit check
-    const limit = checkRateLimit(user.id);
+    const limit = checkRateLimit(userId);
     if (!limit.allowed) {
       return Response.json({
         error: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
