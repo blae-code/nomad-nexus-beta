@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/components/utils/routes";
 
 const pageMap = {
         '/': 'hub',
@@ -26,7 +26,7 @@ const pageMap = {
         '/channels': 'channels',
         '/profile': 'profile',
         '/settings': 'settings',
-        '/access-gate': 'access-gate',
+        [ROUTES.ACCESS_GATE]: 'access-gate',
       };
 
 export default function Layout({ children, currentPageName }) {
