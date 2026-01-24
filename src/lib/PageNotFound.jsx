@@ -51,14 +51,31 @@ const rankClosestMatches = (requestedKey, pageKeys) => {
         .slice(0, 3);
 };
 
+const getConfiguredPageKeys = () => {
+    const dynamicPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? null : pagesConfig ?? {});
+    const dynamicKeys = dynamicPages && typeof dynamicPages === 'object' ? Object.keys(dynamicPages) : [];
+    if (dynamicKeys.length > 0) {
+        return dynamicKeys;
+    }
+
+    if (Array.isArray(pagesConfig)) {
+        return pagesConfig
+            .map((page) => page.name)
+            .filter(Boolean);
+    }
+
+    return [];
+};
+
 export default function PageNotFound() {
     const location = useLocation();
     const requestedPath = location.pathname || '/';
     const requestedKey = requestedPath.replace('/', '');
-    const pageKeys = Object.keys(pagesConfig.Pages ?? {});
+    const dynamicPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? null : pagesConfig ?? {});
+    const pageKeys = getConfiguredPageKeys();
     const closestMatches = rankClosestMatches(requestedKey, pageKeys);
     const accessGatePaths = buildAccessGatePaths();
-    const hasAccessGate = Boolean(pagesConfig.Pages?.AccessGate);
+    const hasAccessGate = Boolean(dynamicPages?.AccessGate);
     const isAccessGateRequest = normalize(requestedKey) === 'accessgate';
 
     const { data: authData, isFetched } = useQuery({

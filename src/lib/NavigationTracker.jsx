@@ -7,8 +7,11 @@ import { pagesConfig } from '@/pages.config';
 export default function NavigationTracker() {
     const location = useLocation();
     const { isAuthenticated } = useAuth();
-    const { Pages, mainPage } = pagesConfig;
-    const mainPageKey = mainPage ?? Object.keys(Pages)[0];
+    const resolvedPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? {} : pagesConfig ?? {});
+    const fallbackPageKeys = Array.isArray(pagesConfig)
+        ? pagesConfig.map((page) => page.name).filter(Boolean)
+        : [];
+    const mainPageKey = pagesConfig?.mainPage ?? Object.keys(resolvedPages)[0] ?? fallbackPageKeys[0];
 
     // Post navigation changes to parent window
     useEffect(() => {
@@ -31,12 +34,13 @@ export default function NavigationTracker() {
             const pathSegment = pathname.replace(/^\//, '').split('/')[0];
             
             // Try case-insensitive lookup in Pages config
-            const pageKeys = Object.keys(Pages);
-            const matchedKey = pageKeys.find(
+            const pageKeys = Object.keys(resolvedPages);
+            const candidateKeys = pageKeys.length > 0 ? pageKeys : fallbackPageKeys;
+            const matchedKey = candidateKeys.find(
                 key => key.toLowerCase() === pathSegment.toLowerCase()
             );
             
-            pageName = matchedKey || null;
+            pageName = matchedKey ?? null;
         }
 
         if (isAuthenticated && pageName) {
@@ -44,7 +48,7 @@ export default function NavigationTracker() {
                 // Silently fail - logging shouldn't break the app
             });
         }
-    }, [location, isAuthenticated, Pages, mainPageKey]);
+    }, [location, isAuthenticated, resolvedPages, mainPageKey, fallbackPageKeys]);
 
     return null;
 }
