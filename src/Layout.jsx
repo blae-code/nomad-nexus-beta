@@ -108,11 +108,6 @@ export default function Layout({ children, currentPageName }) {
     }, 12000);
 
     initApp();
-    
-    // Redirect root to Hub page if not already there
-    if (location.pathname === '/' || location.pathname === '') {
-      window.history.replaceState({}, '', '/hub');
-    }
 
     return () => clearTimeout(watchdog);
   }, [location.pathname, navigate]);
@@ -125,6 +120,13 @@ export default function Layout({ children, currentPageName }) {
         .catch((err) => console.warn('Service Worker registration failed:', err));
     }
   }, []);
+
+  // Redirect root to /hub using react-router
+  useEffect(() => {
+    if (location.pathname === '/' || location.pathname === '') {
+      navigate('/hub', { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   // Ensure root path always maps to hub
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
