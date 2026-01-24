@@ -82,6 +82,19 @@ export default function AccessGate() {
     );
   }
 
+  // Show loading state while checking admin bypass
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
+        <div className="text-center">
+          <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Checking Authorization...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden relative">
       {/* Background Effects */}
