@@ -76,3 +76,4 @@ export const pagesConfig = {
 export const PAGE_ROUTE_ALIASES = {};
 export const PAGE_ROUTE_OVERRIDES = {};
 export default { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
+export default pagesConfig;
