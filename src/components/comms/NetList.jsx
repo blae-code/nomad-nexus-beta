@@ -7,8 +7,20 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import VoiceCallIndicator from "./VoiceCallIndicator";
+import JoinNetButton from "./JoinNetButton";
 
-export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor }) {
+export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor, effectiveMode = 'SIM' }) {
+  const [connectingNetId, setConnectingNetId] = React.useState(null);
+  
+  const handleJoinNet = async (net) => {
+    setConnectingNetId(net.id);
+    onSelect(net);
+  };
+
+  const handleLeaveNet = async (net) => {
+    setConnectingNetId(null);
+    onSelect(null);
+  };
   
   // Fetch room statuses for participant counts
   const { data: roomStatuses } = useQuery({

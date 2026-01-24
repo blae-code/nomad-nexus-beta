@@ -420,6 +420,7 @@ function CommsConsolePage() {
                               eventId={selectedEventId}
                               monitoredNetIds={monitoredNetIds}
                               onToggleMonitor={toggleMonitor}
+                              effectiveMode={effectiveMode}
                            />
                         )}
                      </div>

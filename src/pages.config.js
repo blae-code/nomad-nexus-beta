@@ -1,4 +1,5 @@
 import Academy from './pages/Academy';
+import AccessGate from './pages/AccessGate';
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
@@ -19,6 +20,7 @@ import Profile from './pages/Profile';
 import Ranks from './pages/Ranks';
 import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
+import Settings from './pages/Settings';
 import SquadDetail from './pages/SquadDetail';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
@@ -26,13 +28,12 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
-import AccessGate from './pages/AccessGate';
-import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Academy": Academy,
+    "AccessGate": AccessGate,
     "AdminCockpit": AdminCockpit,
     "Channels": Channels,
     "CommandCenter": CommandCenter,
@@ -53,6 +54,7 @@ export const PAGES = {
     "Ranks": Ranks,
     "Rescue": Rescue,
     "RoleManager": RoleManager,
+    "Settings": Settings,
     "SquadDetail": SquadDetail,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
@@ -60,8 +62,6 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
-    "AccessGate": AccessGate,
-    "Settings": Settings,
 }
 
 export const pagesConfig = {
