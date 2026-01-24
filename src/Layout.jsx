@@ -75,7 +75,14 @@ export default function Layout({ children, currentPageName }) {
           return;
         }
 
-        // Check for member profile with 8s timeout - only for other pages
+        // Admin bypass: system admins skip profile/onboarding checks
+        if (u.role === 'admin') {
+          console.log('[LAYOUT] Admin bypass - skipping profile check');
+          setLoading(false);
+          return;
+        }
+
+        // Check for member profile with 8s timeout - only for non-admin users
         try {
           const profiles = await Promise.race([
             base44.entities.MemberProfile.filter({ user_id: u.id }),
