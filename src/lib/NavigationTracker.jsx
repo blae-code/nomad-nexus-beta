@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { pagesConfig } from '@/pages.config';
 
 // Minimal, stable tracker: post URL changes + optional activity logging
+export { default } from '@/components/lib/NavigationTracker';
 export default function NavigationTracker() {
   const location = useLocation();
 
