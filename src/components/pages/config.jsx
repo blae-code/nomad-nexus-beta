@@ -1,4 +1,3 @@
-
 /**
  * Pages Configuration
  * Central registry for route aliases and overrides
@@ -28,9 +27,10 @@ const PAGE_ROUTE_OVERRIDES = {
   '/login': '/AccessGate',
 };
 
-export { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
-
-export default {
+const pagesConfig = {
   PAGE_ROUTE_ALIASES,
   PAGE_ROUTE_OVERRIDES,
 };
+
+export default pagesConfig;
+export { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
