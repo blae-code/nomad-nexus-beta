@@ -54,13 +54,13 @@ export default function PageNotFound() {
   const candidatePaths = useMemo(() => {
     const paths = new Set();
 
-    // Add alias paths
+    // Add only target routes from aliases (not the config keys)
     Object.values(routeAliases).forEach((path) => paths.add(path));
 
-    // Add override paths
+    // Add only target routes from overrides (not the config keys)
     Object.values(routeOverrides).forEach((path) => paths.add(path));
 
-    // Add common page paths via createPageUrl
+    // Add real navigable pages only
     const commonPages = [
       'hub',
       'events',
@@ -82,7 +82,7 @@ export default function PageNotFound() {
       }
     });
 
-    // Always include /login
+    // Always include /login (alias for access-gate)
     paths.add('/login');
     paths.add('/');
 
