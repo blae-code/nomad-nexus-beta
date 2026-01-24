@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { Room } from 'livekit-client';
 import CommsStateChip from '@/components/comms/CommsStateChip';
+import { useCommsReadiness } from '@/components/comms/useCommsReadiness';
 
 const CheckItem = ({ label, status, message, detail }) => {
   const icons = {
@@ -57,8 +58,7 @@ export default function CommsPreflightPanel({ user }) {
     channels_seeded: { status: 'idle', message: '', detail: '' }
   });
   const [overallResult, setOverallResult] = useState(null);
-  const [connectionState, setConnectionState] = useState('disconnected');
-  const [lastError, setLastError] = useState(null);
+  const { effectiveMode, fallbackReason } = useCommsReadiness();
 
   const updateCheck = (key, status, message, detail) => {
     setChecks(prev => ({
@@ -70,8 +70,6 @@ export default function CommsPreflightPanel({ user }) {
   const runPreflightCheck = async () => {
     setIsRunning(true);
     setOverallResult(null);
-    setConnectionState('connecting');
-    setLastError(null);
     const startTime = performance.now();
     const results = {};
     let hasFailure = false;
@@ -134,7 +132,6 @@ export default function CommsPreflightPanel({ user }) {
 
       // 4) Client connect attempt (actual LiveKit Room connection)
       updateCheck('join_test', 'running', 'Connecting...', '');
-      setConnectionState('connecting');
       try {
         if (!results.token_mint?.detail) {
           throw new Error('No token to test connection');
@@ -164,17 +161,12 @@ export default function CommsPreflightPanel({ user }) {
         await room.connect(url, token);
         const connectDuration = Date.now() - connectStart;
 
-        // Successfully connected
-        setConnectionState('connected');
-
-        // Now disconnect
+        // Successfully connected, now disconnect
         await room.disconnect();
 
         updateCheck('join_test', 'pass', 'Connected', `${connectDuration}ms`);
         results.join_test = { status: 'pass', detail: `${connectDuration}ms round-trip` };
       } catch (err) {
-        setConnectionState('error');
-        setLastError(err.message);
         updateCheck('join_test', 'fail', 'Failed', err.message);
         results.join_test = { status: 'fail', detail: err.message };
         hasFailure = true;
@@ -203,10 +195,6 @@ export default function CommsPreflightPanel({ user }) {
       // Determine overall result
       const overallStatus = hasFailure ? 'FAIL' : hasWarning ? 'WARN' : 'PASS';
       setOverallResult(overallStatus);
-      
-      if (!hasFailure) {
-        setConnectionState('connected');
-      }
 
       // Log to AdminAuditLog
       const duration = performance.now() - startTime;
@@ -223,13 +211,8 @@ export default function CommsPreflightPanel({ user }) {
     } catch (err) {
       console.error('Preflight check error:', err);
       setOverallResult('FAIL');
-      setConnectionState('error');
-      setLastError(err.message);
     } finally {
       setIsRunning(false);
-      if (connectionState === 'connecting') {
-        setConnectionState('disconnected');
-      }
     }
   };
 
@@ -241,15 +224,16 @@ export default function CommsPreflightPanel({ user }) {
       className="space-y-3 p-3 border border-zinc-800 bg-zinc-950/50"
     >
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <h3 className="text-sm font-bold text-white mb-2">Comms Preflight</h3>
+        <div className="flex items-center gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-white">Comms Preflight</h3>
+            <p className="text-[10px] text-zinc-500 mt-0.5">Smoke test before go-live</p>
+          </div>
           <CommsStateChip
-            mode="LIVE"
-            connectionState={connectionState}
-            roomName="nx-preflight"
-            lastError={lastError}
-            onRetry={runPreflightCheck}
-            compact={false}
+            mode={effectiveMode}
+            connectionState={isRunning ? 'connecting' : overallResult === 'PASS' ? 'connected' : overallResult === 'FAIL' ? 'error' : 'disconnected'}
+            lastError={fallbackReason}
+            compact={true}
           />
         </div>
         <Button
