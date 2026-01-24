@@ -16,14 +16,29 @@ export default function BootSplashOverlay() {
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(motionQuery.matches);
 
+    // Watchdog: force dismiss after 5s if still loading config
+    const watchdog = setTimeout(() => {
+      console.warn('[BOOT OVERLAY] Config load timeout - dismissing');
+      setIsLoading(false);
+      setShouldShow(false);
+    }, 5000);
+
     // Load AppConfig
     const loadConfig = async () => {
       try {
-        const configs = await base44.entities.AppConfig.filter({ key: 'global' });
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Config fetch timeout')), 3000)
+        );
+        
+        const configs = await Promise.race([
+          base44.entities.AppConfig.filter({ key: 'global' }),
+          timeoutPromise
+        ]);
         const appConfig = configs.length > 0 ? configs[0] : null;
 
         if (!appConfig) {
           setIsLoading(false);
+          clearTimeout(watchdog);
           return;
         }
 
@@ -47,13 +62,18 @@ export default function BootSplashOverlay() {
 
         setShouldShow(display);
         setIsLoading(false);
+        clearTimeout(watchdog);
       } catch (error) {
-        console.error('Failed to load AppConfig:', error);
+        console.error('[BOOT OVERLAY] Failed to load AppConfig:', error);
         setIsLoading(false);
+        setShouldShow(false);
+        clearTimeout(watchdog);
       }
     };
 
     loadConfig();
+    
+    return () => clearTimeout(watchdog);
   }, []);
 
   const handleDismiss = () => {
@@ -150,6 +170,7 @@ export default function BootSplashOverlay() {
           className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-[10px] text-zinc-400 font-mono"
         >
           <span className="animate-pulse">● Loading...</span>
+          <span className="text-[8px] text-zinc-700 ml-2">BOOT OVERLAY</span>
         </motion.div>
       </motion.div>
     </AnimatePresence>
