@@ -41,9 +41,14 @@ export default function Layout({ children, currentPageName }) {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const isVisualTest = import.meta.env.VITE_VISUAL_TEST === 'true';
 
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
   useEffect(() => {
+    if (isVisualTest) {
+      setLoading(false);
+      return undefined;
+    }
     const timeoutPromise = (ms) => new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Timeout')), ms)
     );
@@ -124,7 +129,7 @@ export default function Layout({ children, currentPageName }) {
     initApp();
 
     return () => clearTimeout(watchdog);
-  }, [location.pathname, navigate]);
+  }, [isVisualTest, location.pathname, navigate]);
 
   // Register service worker for PWA support
   useEffect(() => {
