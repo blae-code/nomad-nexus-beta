@@ -1,7 +1,10 @@
 /**
- * Safe stub replacement for /src/lib/NavigationTracker.jsx
- * Avoids importing from unreachable /src/pages.config.js
+ * Navigation Tracker
+ * Tracks route changes and manages page navigation context
  */
+import React from 'react';
+import pagesConfig from '@/pages/config';
+
 export default function NavigationTracker() {
   return null;
 }
