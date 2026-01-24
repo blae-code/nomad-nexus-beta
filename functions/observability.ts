@@ -164,7 +164,8 @@ class ObservabilityCollector {
   }
 
   setLiveKitEnv(env) {
-    this.liveKitEnv = { env, timestamp: new Date().toISOString() };
+    const normalized = typeof env === 'string' ? { status: env } : (env || {});
+    this.liveKitEnv = { ...normalized, timestamp: new Date().toISOString() };
   }
 
   /**
