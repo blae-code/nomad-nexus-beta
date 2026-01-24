@@ -599,7 +599,7 @@ export default function CommandPaletteV3() {
         {/* Pulsing outer glow when not open - draws attention */}
         <motion.div
           className={cn(
-            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/30 to-[#ea580c]/0 blur-2xl rounded',
+            'absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/30 to-accent/0 blur-2xl rounded',
             isOpen ? 'hidden' : 'block'
           )}
           animate={{
@@ -615,22 +615,22 @@ export default function CommandPaletteV3() {
         {/* Bright glow when open */}
         <div
           className={cn(
-            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/40 to-[#ea580c]/0 blur-xl transition-opacity duration-300',
+            'absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/40 to-accent/0 blur-xl transition-opacity duration-300',
             isOpen ? 'opacity-100' : 'opacity-0'
           )}
         />
 
-        <div className="absolute -top-[1px] -left-[1px] w-3 h-3 border-t border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
-        <div className="absolute -top-[1px] -right-[1px] w-3 h-3 border-t border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
-        <div className="absolute -bottom-[1px] -left-[1px] w-3 h-3 border-b border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
-        <div className="absolute -bottom-[1px] -right-[1px] w-3 h-3 border-b border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
+        <div className="absolute -top-[1px] -left-[1px] w-3 h-3 border-t border-l border-zinc-700 group-hover:border-accent transition-colors" />
+        <div className="absolute -top-[1px] -right-[1px] w-3 h-3 border-t border-r border-zinc-700 group-hover:border-accent transition-colors" />
+        <div className="absolute -bottom-[1px] -left-[1px] w-3 h-3 border-b border-l border-zinc-700 group-hover:border-accent transition-colors" />
+        <div className="absolute -bottom-[1px] -right-[1px] w-3 h-3 border-b border-r border-zinc-700 group-hover:border-accent transition-colors" />
 
         <div
           className={cn(
-            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-visible focus-within:border-[#ea580c] focus-within:shadow-[0_0_25px_rgba(234,88,12,0.4)]',
+            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-visible focus-within:border-accent focus-within:shadow-[0_0_25px_hsl(var(--accent)/0.4)]',
             isOpen 
-              ? 'border-[#ea580c] shadow-[0_0_25px_rgba(234,88,12,0.4)]' 
-              : 'border-zinc-800 hover:border-[#ea580c]/50 group-hover:shadow-[0_0_15px_rgba(234,88,12,0.2)]'
+              ? 'border-accent shadow-[0_0_25px_hsl(var(--accent)/0.4)]' 
+              : 'border-zinc-800 hover:border-accent/50 group-hover:shadow-[0_0_15px_hsl(var(--accent)/0.2)]'
           )}
         >
           {/* Pulsing chevrons - left side (pointing inward) */}
@@ -639,9 +639,9 @@ export default function CommandPaletteV3() {
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/40" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/60" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/80" />
+            <ChevronRight className="w-4 h-4 text-accent/40" />
+            <ChevronRight className="w-4 h-4 text-accent/60" />
+            <ChevronRight className="w-4 h-4 text-accent/80" />
           </motion.div>
           {/* Pulsing chevrons - right side (pointing inward) */}
           <motion.div
@@ -649,9 +649,9 @@ export default function CommandPaletteV3() {
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/80" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/60" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/40" />
+            <ChevronLeft className="w-4 h-4 text-accent/80" />
+            <ChevronLeft className="w-4 h-4 text-accent/60" />
+            <ChevronLeft className="w-4 h-4 text-accent/40" />
           </motion.div>
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
 
@@ -671,8 +671,8 @@ export default function CommandPaletteV3() {
           <div className={cn(
            'mr-2 flex items-center gap-1 text-[9px] font-bold pointer-events-none transition-all',
            isOpen 
-             ? 'text-[#ea580c]' 
-             : 'text-zinc-500 group-hover:text-[#ea580c]'
+             ? 'text-accent' 
+             : 'text-zinc-500 group-hover:text-accent'
           )}>
             <span className="text-[8px] font-bold">Ctrl</span>
             <span>+K</span>
@@ -736,16 +736,16 @@ export default function CommandPaletteV3() {
                                setSelectedCommand(cmd);
                              }}
                              className={cn(
-                               'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 group relative focus:outline-none focus:bg-zinc-900 focus:text-[#ea580c] focus:border-l-2 focus:border-[#ea580c]',
-                               isContext && 'bg-[#ea580c]/5 border-l-2 border-[#ea580c]/30',
+                               'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 group relative focus:outline-none focus:bg-zinc-900 focus:text-accent focus:border-l-2 focus:border-accent',
+                               isContext && 'bg-accent/5 border-l-2 border-accent/30',
                                isSelected
-                                 ? cn('bg-zinc-900 text-[#ea580c] border-l-2 border-[#ea580c]', isContext && 'bg-[#ea580c]/20')
-                                 : cn('text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-[#ea580c]/10')
+                                 ? cn('bg-zinc-900 text-accent border-l-2 border-accent', isContext && 'bg-accent/20')
+                                 : cn('text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-accent/10')
                              )}
                            >
-                             <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-[#ea580c]')} />
+                             <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-accent')} />
                              <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
-                             {isContext && <span className="text-[7px] text-[#ea580c] uppercase font-bold">CTX</span>}
+                             {isContext && <span className="text-[7px] text-accent uppercase font-bold">CTX</span>}
                              <button
                                onClick={(e) => {
                                  e.stopPropagation();
@@ -753,11 +753,11 @@ export default function CommandPaletteV3() {
                                }}
                                className={cn(
                                  'shrink-0 p-1 rounded transition-opacity',
-                                 isPinned ? 'text-[#ea580c]' : 'text-zinc-600 group-hover:text-zinc-500'
+                                 isPinned ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-500'
                                )}
                                title={isPinned ? 'Unpin' : 'Pin'}
                              >
-                               <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} />
+                               <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-accent')} />
                              </button>
                            </button>
                          );
@@ -783,7 +783,7 @@ export default function CommandPaletteV3() {
                     <div className="flex items-center gap-2 mb-2">
                       {(() => {
                         const Icon = getIcon(selectedCommand.icon);
-                        return <Icon className="w-4 h-4 text-[#ea580c]" />;
+                        return <Icon className="w-4 h-4 text-accent" />;
                       })()}
                       <span className="text-xs font-bold text-white">{selectedCommand.label}</span>
                     </div>
