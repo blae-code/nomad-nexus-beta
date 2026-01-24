@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Activity, MessageSquare, Database, Users, Server, Lock
+  Activity, MessageSquare, Database, Users, Server, Lock, Key
 } from 'lucide-react';
 
 // Section components
@@ -11,6 +11,7 @@ import SeedDataStep from '@/components/admin/steps/SeedDataStep';
 import GovernanceSection from '@/components/admin/sections/GovernanceSection';
 import SystemStatusSection from '@/components/admin/sections/SystemStatusSection';
 import PioneerOverridesSection from '@/components/admin/sections/PioneerOverridesSection';
+import AccessKeyManager from '@/components/admin/AccessKeyManager';
 
 export const COCKPIT_SECTIONS = [
   {
