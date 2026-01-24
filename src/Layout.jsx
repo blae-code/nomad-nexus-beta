@@ -170,89 +170,10 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <ErrorBoundary>
-    <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
-      {/* PWA Meta Tags */}
-      <meta name="theme-color" content={theme.colors.accent} />
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      <meta name="apple-mobile-web-app-title" content="Nexus" />
-      <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-      <link rel="manifest" href="/manifest.json" />
-      <link
-        rel="icon"
-        type="image/svg+xml"
-        href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='${iconAccent}' rx='48'/><circle cx='96' cy='60' r='12' fill='${iconBackground}'/><circle cx='96' cy='96' r='12' fill='${iconBackground}'/><circle cx='96' cy='132' r='12' fill='${iconBackground}'/></svg>`}
-      />
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-
-        :root {
-          --font-sans: 'Rajdhani', sans-serif;
-          --font-mono: 'JetBrains Mono', monospace;
-          --radius: 0px !important;
-          --rail-w-collapsed: 72px;
-          --rail-w-expanded: 240px;
-          --gutter: 16px;
-          --divider-color: hsl(var(--border));
-        }
-
-        body {
-          font-family: var(--font-sans);
-          background-color: hsl(var(--background));
-          color: hsl(var(--foreground));
-        }
-        
-        /* Force sharp corners on everything */
-        * {
-          border-radius: 0px !important;
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: hsl(var(--card));
-        }
-        ::-webkit-scrollbar-thumb {
-          background: hsl(var(--surface-strong));
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: hsl(var(--accent));
-        }
-
-        /* Global button hover effect */
-        button, .button-hover-effect {
-          transition: all 0.1s ease-out;
-        }
-        button:hover, .button-hover-effect:hover {
-          border-color: hsl(var(--accent)) !important;
-          box-shadow: 0 0 8px hsl(var(--accent) / 0.2);
-        }
-        
-        /* Technical borders */
-        .tech-border {
-          border: 1px solid hsl(var(--border));
-          position: relative;
-        }
-        .tech-border:after {
-          content: '';
-          position: absolute;
-          top: -1px;
-          left: -1px;
-          width: 6px;
-          height: 6px;
-          border-top: 1px solid hsl(var(--accent));
-          border-left: 1px solid hsl(var(--accent));
-          opacity: 0.5;
-        }
-      `}</style>
-
-
-
-      {/* AppShellV3: No left rail, palette-driven nav */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* TODO: Move meta/link/style tags to index.html or head manager after demo */}
+      <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
+        {/* AppShellV3: No left rail, palette-driven nav */}
+        <div className="flex-1 flex flex-col overflow-hidden">
         {currentPage === 'access-gate' ? (
            // Access gate: full-screen, no chrome
            <div className="h-full w-full">
