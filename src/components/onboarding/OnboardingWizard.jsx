@@ -110,6 +110,17 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
     }
   };
 
+  // Show guide when user finishes wizard
+  if (showGuide) {
+    return <PostOnboardingGuide onClose={() => {
+      toast.success('Welcome to Nomad Nexus!');
+      setTimeout(() => {
+        onComplete?.();
+        window.location.href = '/hub';
+      }, 800);
+    }} />;
+  }
+
   return (
     <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden relative">
       {/* Background Effects */}
