@@ -197,6 +197,7 @@ export default function Layout({ children, currentPageName }) {
 
   // Show loading state while initializing (AFTER all hooks)
   if (loading && !accessGateAliases.has(location.pathname.toLowerCase())) {
+    console.log("[Layout] Displaying loading state");
     return (
       <div className="h-screen bg-background text-foreground flex items-center justify-center relative overflow-hidden">
         {/* Background Effects */}
