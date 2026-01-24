@@ -4,10 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Key, ArrowLeft, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 
 export default function AccessGate() {
   const [accessKey, setAccessKey] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [grantedRank, setGrantedRank] = useState(null);
+  const [grantedRoles, setGrantedRoles] = useState([]);
 
   const handleRedeemKey = async () => {
     if (!accessKey.trim()) {
@@ -18,16 +22,16 @@ export default function AccessGate() {
     setIsRedeeming(true);
     try {
       const result = await base44.functions.invoke('redeemAccessKey', { 
-        access_key: accessKey.trim() 
+        code: accessKey.trim() 
       });
 
       if (result.data?.success) {
-        toast.success('Access key redeemed! Redirecting...');
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        toast.success('Access key redeemed!');
+        setGrantedRank(result.data.grants_rank);
+        setGrantedRoles(result.data.grants_roles || []);
+        setShowOnboarding(true);
       } else {
-        toast.error(result.data?.message || 'Invalid access key');
+        toast.error(result.data?.error || 'Invalid access key');
       }
     } catch (error) {
       console.error('[ACCESS GATE] Redeem error:', error);
@@ -45,6 +49,17 @@ export default function AccessGate() {
   const handleReturnHome = () => {
     window.location.href = '/';
   };
+
+  // Show onboarding wizard after successful key redemption
+  if (showOnboarding) {
+    return (
+      <OnboardingWizard 
+        grantedRank={grantedRank}
+        grantedRoles={grantedRoles}
+        onComplete={() => setShowOnboarding(false)}
+      />
+    );
+  }
 
   return (
     <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden">
