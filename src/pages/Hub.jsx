@@ -97,9 +97,9 @@ export default function HubPage() {
     }, []);
 
     return (
-      <div className="min-h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
           <div className="text-sm text-zinc-400 font-mono">LOADING OPERATIONAL DATA...</div>
           <div className="text-[8px] text-zinc-700 mt-4">HUB LOADER</div>
         </div>
@@ -108,19 +108,19 @@ export default function HubPage() {
     }
 
     return (
-    <div className="h-screen bg-[#09090b] text-zinc-200 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
           {/* Live Operational Pulse - Compact */}
-          <div className="border border-[#ea580c]/30 bg-zinc-950/80">
+          <div className="border border-accent/30 bg-zinc-950/80">
               <div 
                 onClick={() => setPulseCollapsed(!pulseCollapsed)}
                 className="flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Flame className="w-3 h-3 text-[#ea580c] animate-pulse" />
+                  <Flame className="w-3 h-3 text-accent animate-pulse" />
                   <span className="text-[8px] uppercase text-zinc-300 tracking-wider font-bold">PULSE</span>
-                  <Badge className="text-[6px] bg-[#ea580c] text-white border-[#ea580c] animate-pulse">LIVE</Badge>
+                  <Badge className="text-[6px] bg-accent text-white border-accent animate-pulse">LIVE</Badge>
                 </div>
                 <motion.div animate={{ rotate: pulseCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
                   <ChevronRight className="w-3 h-3 text-zinc-500" />
@@ -149,9 +149,9 @@ export default function HubPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={getNavigationTarget(log)}
-                      className="bg-zinc-900/70 border border-zinc-800 p-1.5 hover:border-[#ea580c]/50 transition-all cursor-pointer group relative overflow-hidden"
+                      className="bg-zinc-900/70 border border-zinc-800 p-1.5 hover:border-accent/50 transition-all cursor-pointer group relative overflow-hidden"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/5 to-[#ea580c]/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/5 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity" />
                       
                       <div className="relative flex items-start gap-1.5 text-[9px]">
                         <div className={cn(
@@ -199,9 +199,9 @@ export default function HubPage() {
                   <AnnouncementsTicker announcements={[]} />
 
                   {/* Immersive Org Identity Header - Collapsible */}
-          <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#ea580c]/10 to-zinc-950 relative overflow-hidden">
+          <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-accent/10 to-zinc-950 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/10 blur-3xl" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
 
             {/* Collapse Toggle Bar - Always Visible */}
@@ -210,7 +210,7 @@ export default function HubPage() {
                 className="relative z-20 flex items-center justify-end p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors group border-b border-zinc-800/50"
               >
                 <motion.div animate={{ rotate: headerCollapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors" />
+                  <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-accent transition-colors" />
                 </motion.div>
               </div>
 
@@ -334,7 +334,7 @@ export default function HubPage() {
                       className={cn(
                         'flex items-center gap-1 px-2 py-1.5 text-[7px] font-bold uppercase tracking-wider transition-all duration-100 whitespace-nowrap border-b-2',
                         activeTab === tab.id
-                          ? 'text-white bg-zinc-900 border-b-[#ea580c]'
+                          ? 'text-white bg-zinc-900 border-b-accent'
                           : 'text-zinc-500 border-b-transparent hover:text-zinc-300'
                       )}
                     >

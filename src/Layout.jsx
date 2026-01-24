@@ -9,6 +9,7 @@ import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
+import { theme } from "@/styles/theme";
 
 const accessGatePath = createPageUrl('AccessGate');
 const accessGateAliases = new Set(
@@ -34,6 +35,9 @@ const pageMap = {
         '/access-gate': 'access-gate',
         '/accessgate': 'access-gate', // Support both hyphenated and non-hyphenated
       };
+
+const iconAccent = theme.colors.accent.replace('#', '%23');
+const iconBackground = theme.colors.background.replace('#', '%23');
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -148,13 +152,13 @@ export default function Layout({ children, currentPageName }) {
   // Show loading state while initializing (AFTER all hooks)
   if (loading && !accessGateAliases.has(location.pathname.toLowerCase())) {
     return (
-      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center relative overflow-hidden">
+      <div className="h-screen bg-background text-foreground flex items-center justify-center relative overflow-hidden">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/5 blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,hsl(var(--accent)/0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 blur-3xl" />
 
         <div className="text-center relative z-10">
-          <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-16 h-16 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Initializing Nexus...</p>
           <p className="text-[10px] font-mono text-zinc-700 mt-4">AUTHENTICATING SESSION</p>
         </div>
@@ -164,15 +168,19 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <ErrorBoundary>
-    <div className="h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-[#ea580c]/30 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
       {/* PWA Meta Tags */}
-      <meta name="theme-color" content="#ea580c" />
+      <meta name="theme-color" content={theme.colors.accent} />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       <meta name="apple-mobile-web-app-title" content="Nexus" />
       <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
       <link rel="manifest" href="/manifest.json" />
-      <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23ea580c' rx='48'/><circle cx='96' cy='60' r='12' fill='%23090a0b'/><circle cx='96' cy='96' r='12' fill='%23090a0b'/><circle cx='96' cy='132' r='12' fill='%23090a0b'/></svg>" />
+      <link
+        rel="icon"
+        type="image/svg+xml"
+        href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='${iconAccent}' rx='48'/><circle cx='96' cy='60' r='12' fill='${iconBackground}'/><circle cx='96' cy='96' r='12' fill='${iconBackground}'/><circle cx='96' cy='132' r='12' fill='${iconBackground}'/></svg>`}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -183,13 +191,13 @@ export default function Layout({ children, currentPageName }) {
           --rail-w-collapsed: 72px;
           --rail-w-expanded: 240px;
           --gutter: 16px;
-          --divider-color: #27272a;
+          --divider-color: hsl(var(--border));
         }
 
         body {
           font-family: var(--font-sans);
-          background-color: #09090b;
-          color: #e4e4e7;
+          background-color: hsl(var(--background));
+          color: hsl(var(--foreground));
         }
         
         /* Force sharp corners on everything */
@@ -203,13 +211,13 @@ export default function Layout({ children, currentPageName }) {
           height: 6px;
         }
         ::-webkit-scrollbar-track {
-          background: #18181b;
+          background: hsl(var(--card));
         }
         ::-webkit-scrollbar-thumb {
-          background: #3f3f46;
+          background: hsl(var(--surface-strong));
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #ea580c;
+          background: hsl(var(--accent));
         }
 
         /* Global button hover effect */
@@ -217,13 +225,13 @@ export default function Layout({ children, currentPageName }) {
           transition: all 0.1s ease-out;
         }
         button:hover, .button-hover-effect:hover {
-          border-color: #ea580c !important;
-          box-shadow: 0 0 8px rgba(234, 88, 12, 0.2);
+          border-color: hsl(var(--accent)) !important;
+          box-shadow: 0 0 8px hsl(var(--accent) / 0.2);
         }
         
         /* Technical borders */
         .tech-border {
-          border: 1px solid #27272a;
+          border: 1px solid hsl(var(--border));
           position: relative;
         }
         .tech-border:after {
@@ -233,8 +241,8 @@ export default function Layout({ children, currentPageName }) {
           left: -1px;
           width: 6px;
           height: 6px;
-          border-top: 1px solid #ea580c;
-          border-left: 1px solid #ea580c;
+          border-top: 1px solid hsl(var(--accent));
+          border-left: 1px solid hsl(var(--accent));
           opacity: 0.5;
         }
       `}</style>
