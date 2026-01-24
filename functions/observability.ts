@@ -16,8 +16,11 @@ class ObservabilityCollector {
     this.seedWipeLog = null;
     this.commsMode = null;
     this.liveKitEnv = null;
+    this.liveKitMetrics = {};
+    this.liveKitConnectionStarts = {};
     this.maxErrors = 50;
     this.maxRequests = 100;
+    this.maxLiveKitSamples = 20;
     this.enableVerboseRequests = Boolean(
       typeof import.meta !== 'undefined' && import.meta.env?.DEV
     );
@@ -111,6 +114,20 @@ class ObservabilityCollector {
     }
   }
 
+  getRecentCommsRequests(limit = 10) {
+    return this.networkRequests
+      .filter((request) => this.isCommsRequest(request.url))
+      .slice(0, limit);
+  }
+
+  setVerboseRequests(enabled) {
+    this.enableVerboseRequests = Boolean(enabled);
+  }
+
+  getVerboseRequestsEnabled() {
+    return this.enableVerboseRequests;
+  }
+
   sanitizeUrl(rawUrl = '') {
     if (!rawUrl) return rawUrl;
 
@@ -165,6 +182,84 @@ class ObservabilityCollector {
 
   setLiveKitEnv(env) {
     this.liveKitEnv = { env, timestamp: new Date().toISOString() };
+  }
+
+  getLiveKitMetrics(netId, netCode) {
+    if (!netId) return null;
+    if (!this.liveKitMetrics[netId]) {
+      this.liveKitMetrics[netId] = {
+        netId,
+        netCode: netCode || netId,
+        connectionTimes: [],
+        reconnectAttempts: 0,
+        latencySamples: [],
+        jitterSamples: [],
+        lastLatency: null
+      };
+    }
+    if (netCode) {
+      this.liveKitMetrics[netId].netCode = netCode;
+    }
+    return this.liveKitMetrics[netId];
+  }
+
+  recordLiveKitConnectionStart(netId, netCode) {
+    const metrics = this.getLiveKitMetrics(netId, netCode);
+    if (!metrics) return;
+    this.liveKitConnectionStarts[netId] = Date.now();
+  }
+
+  recordLiveKitConnectionSuccess(netId) {
+    const metrics = this.getLiveKitMetrics(netId);
+    if (!metrics) return;
+    const startTime = this.liveKitConnectionStarts[netId];
+    if (!startTime) return;
+    const duration = Date.now() - startTime;
+    metrics.connectionTimes.unshift(duration);
+    if (metrics.connectionTimes.length > this.maxLiveKitSamples) {
+      metrics.connectionTimes.pop();
+    }
+    delete this.liveKitConnectionStarts[netId];
+  }
+
+  recordLiveKitReconnectAttempt(netId, netCode) {
+    const metrics = this.getLiveKitMetrics(netId, netCode);
+    if (!metrics) return;
+    metrics.reconnectAttempts += 1;
+  }
+
+  recordLiveKitLatencySample(netId, latencyMs, netCode) {
+    const metrics = this.getLiveKitMetrics(netId, netCode);
+    if (!metrics || typeof latencyMs !== 'number' || Number.isNaN(latencyMs)) return;
+    metrics.latencySamples.unshift(latencyMs);
+    if (metrics.latencySamples.length > this.maxLiveKitSamples) {
+      metrics.latencySamples.pop();
+    }
+    if (metrics.lastLatency !== null) {
+      const jitter = Math.abs(latencyMs - metrics.lastLatency);
+      metrics.jitterSamples.unshift(jitter);
+      if (metrics.jitterSamples.length > this.maxLiveKitSamples) {
+        metrics.jitterSamples.pop();
+      }
+    }
+    metrics.lastLatency = latencyMs;
+  }
+
+  getAverage(values = []) {
+    if (!values.length) return null;
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return total / values.length;
+  }
+
+  getLiveKitNetSummaries() {
+    return Object.values(this.liveKitMetrics).map((metrics) => ({
+      netId: metrics.netId,
+      netCode: metrics.netCode,
+      avgConnectionTime: this.getAverage(metrics.connectionTimes),
+      avgJitter: this.getAverage(metrics.jitterSamples),
+      reconnectAttempts: metrics.reconnectAttempts,
+      samples: metrics.connectionTimes.length
+    }));
   }
 
   /**
@@ -227,6 +322,8 @@ class ObservabilityCollector {
     const recentErrors = this.getRecentErrors(5);
     const requestsPerMin = this.getRequestsPerMinute();
     const healthStatus = this.getHealthStatus();
+    const commsRequests = this.getRecentCommsRequests(10);
+    const liveKitNets = this.getLiveKitNetSummaries();
 
     return {
       healthStatus,
@@ -237,7 +334,10 @@ class ObservabilityCollector {
       commsMode: this.commsMode,
       liveKitEnv: this.liveKitEnv,
       totalErrors: this.errors.length,
-      totalRequests: this.networkRequests.length
+      totalRequests: this.networkRequests.length,
+      commsRequests,
+      liveKitNets,
+      verboseRequestsEnabled: this.enableVerboseRequests
     };
   }
 
@@ -249,6 +349,8 @@ class ObservabilityCollector {
     this.networkRequests = [];
     this.subscriptionHeartbeats = [];
     this.seedWipeLog = null;
+    this.liveKitMetrics = {};
+    this.liveKitConnectionStarts = {};
   }
 }
 
@@ -272,15 +374,26 @@ const observability = getObservability() || {
     commsMode: null,
     liveKitEnv: null,
     totalErrors: 0,
-    totalRequests: 0
+    totalRequests: 0,
+    commsRequests: [],
+    liveKitNets: [],
+    verboseRequestsEnabled: false
   }),
   getRecentErrors: () => [],
   recordError: () => {},
   recordNetworkRequest: () => {},
+  getRecentCommsRequests: () => [],
+  setVerboseRequests: () => {},
+  getVerboseRequestsEnabled: () => false,
   recordSubscriptionHeartbeat: () => {},
   recordSeedWipeRun: () => {},
   setCommsMode: () => {},
   setLiveKitEnv: () => {},
+  recordLiveKitConnectionStart: () => {},
+  recordLiveKitConnectionSuccess: () => {},
+  recordLiveKitReconnectAttempt: () => {},
+  recordLiveKitLatencySample: () => {},
+  getLiveKitNetSummaries: () => [],
   reset: () => {}
 };
 
