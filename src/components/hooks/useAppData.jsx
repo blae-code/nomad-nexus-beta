@@ -10,9 +10,19 @@ export function useCurrentUser() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.auth.me()
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Auth timeout')), 5000)
+    );
+
+    Promise.race([
+      base44.auth.me(),
+      timeoutPromise
+    ])
       .then(setUser)
-      .catch(() => setUser(null));
+      .catch((err) => {
+        console.error('[useCurrentUser] Auth failed or timed out:', err);
+        setUser(null);
+      });
   }, []);
 
   return user;

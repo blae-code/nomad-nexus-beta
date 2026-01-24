@@ -86,13 +86,22 @@ export default function HubPage() {
     };
   }, [allUsers.length, onlineUsers.length, userEvents, userSquads.length, activeIncidents.length, recentLogs.length]);
 
-  // Loading state
+  // Loading state with watchdog
   if (isLoading) {
+    React.useEffect(() => {
+      const watchdog = setTimeout(() => {
+        console.error('[HUB] Loading watchdog triggered - data fetch stalled');
+        window.location.href = '/access-gate';
+      }, 10000);
+      return () => clearTimeout(watchdog);
+    }, []);
+
     return (
       <div className="min-h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
         <div className="text-center space-y-2">
           <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto" />
           <div className="text-sm text-zinc-400 font-mono">LOADING OPERATIONAL DATA...</div>
+          <div className="text-[8px] text-zinc-700 mt-4">HUB LOADER</div>
         </div>
       </div>
     );
