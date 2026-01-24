@@ -1,36 +1,26 @@
-/**
- * Pages Configuration
- * Central registry for route aliases and overrides
- */
+import __Layout from './Layout.jsx';
 
-const PAGE_ROUTE_ALIASES = {
-  '/nomadopsdashboard': '/NomadOpsDashboard',
-  '/commsconsole': '/CommsConsole',
-  '/adminconsole': '/AdminCockpit',
-};
+// Load pages from filesystem (eager so Base44 router can read immediately)
+const pagesGlob = import.meta.glob('./pages/*.jsx', { eager: true });
 
-const PAGE_ROUTE_OVERRIDES = {
-  '/': '/Hub',
-  '/hub': '/Hub',
-  '/academy': '/Academy',
-  '/events': '/Events',
-  '/intelligence': '/Intelligence',
-  '/admin': '/AdminCockpit',
-  '/universemap': '/UniverseMap',
-  '/fleetmanager': '/FleetManager',
-  '/rescue': '/Rescue',
-  '/channels': '/Channels',
-  '/profile': '/Profile',
-  '/settings': '/Settings',
-  '/access-gate': '/AccessGate',
-  '/accessgate': '/AccessGate',
-  '/login': '/AccessGate',
-};
+export const PAGES = Object.entries(pagesGlob).reduce((acc, [path, mod]) => {
+  const name = path.match(/\/([^/]+)\.jsx$/)?.[1];
+  const Comp = mod?.default ?? mod?.[name];
+  if (name && typeof Comp === 'function') acc[name] = Comp;
+  return acc;
+}, {});
 
-const pagesConfig = {
-  PAGE_ROUTE_ALIASES,
+// Keep these exports because various app files import them
+export const PAGE_ROUTE_OVERRIDES = {};
+export const PAGE_ROUTE_ALIASES = {}; // ✅ REQUIRED (fixes your current crash)
+
+// Base44 expects pagesConfig and also tolerates a default export
+export const pagesConfig = {
+  mainPage: 'Hub',
+  Pages: PAGES,
+  Layout: __Layout,
   PAGE_ROUTE_OVERRIDES,
+  PAGE_ROUTE_ALIASES,
 };
 
 export default pagesConfig;
-export { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
