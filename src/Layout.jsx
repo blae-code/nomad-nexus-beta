@@ -41,18 +41,22 @@ export default function Layout({ children, currentPageName }) {
         const u = await base44.auth.me();
         setUser(u);
 
-        if (u && location.pathname !== '/access-gate') {
-          // Check for member profile
-          const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
-          const profile = profiles?.[0];
-
-          if (!profile || !profile.onboarding_completed) {
-            // Redirect to access gate
-            window.location.href = '/access-gate';
-            return;
-          }
-          setMemberProfile(profile);
+        // Skip profile check if already on access gate
+        if (location.pathname === '/access-gate') {
+          setMemberProfile(null);
+          return;
         }
+
+        // Check for member profile
+        const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+        const profile = profiles?.[0];
+
+        if (!profile || !profile.onboarding_completed) {
+          // Redirect to access gate
+          window.location.href = '/access-gate';
+          return;
+        }
+        setMemberProfile(profile);
       } catch (error) {
         console.error('Init error:', error);
       } finally {
