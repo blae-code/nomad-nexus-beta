@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const { code } = payload;
 
     if (!code || typeof code !== 'string') {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'Invalid code' }, { status: 400 });
     }
 
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
     
     if (!keys || keys.length === 0) {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'Invalid access code' }, { status: 404 });
     }
 
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
 
     // Validation checks
     if (key.status === 'REVOKED') {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'This access code has been revoked' }, { status: 403 });
     }
 
@@ -80,18 +80,18 @@ Deno.serve(async (req) => {
       if (key.status !== 'EXPIRED') {
         await base44.asServiceRole.entities.AccessKey.update(key.id, { status: 'EXPIRED' });
       }
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'This access code has expired' }, { status: 403 });
     }
 
     if (key.uses_count >= key.max_uses) {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'This access code has reached its usage limit' }, { status: 403 });
     }
 
-    // Check if user already redeemed this key
-    if (key.redeemed_by_user_ids && key.redeemed_by_user_ids.includes(user.id)) {
-      recordFailure(user.id);
+    // Check if user already redeemed this key (only if authenticated)
+    if (user && key.redeemed_by_user_ids && key.redeemed_by_user_ids.includes(user.id)) {
+      recordFailure(userId);
       return Response.json({ error: 'You have already redeemed this code' }, { status: 403 });
     }
 
