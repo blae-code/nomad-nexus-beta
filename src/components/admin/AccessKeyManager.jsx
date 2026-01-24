@@ -3,224 +3,216 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Copy, Trash2, Plus, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Copy, Plus, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function AccessKeyManager() {
-  const [showForm, setShowForm] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [grantRank, setGrantRank] = useState('VAGRANT');
-  const [maxUses, setMaxUses] = useState(1);
+  const [expiryDays, setExpiryDays] = useState('7');
   const [note, setNote] = useState('');
-  const [issuingKey, setIssuingKey] = useState(false);
-  const [issued, setIssued] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch access keys
+  // Fetch all access keys
   const { data: keys = [], isLoading } = useQuery({
     queryKey: ['access-keys'],
-    queryFn: () => base44.entities.AccessKey.list('-created_date', 50),
+    queryFn: () => base44.entities.AccessKey.list('-created_date', 100),
+    staleTime: 30000,
   });
 
-  // Issue key
-  const handleIssueKey = async (e) => {
-    e.preventDefault();
-    setIssuingKey(true);
-
-    try {
-      const response = await base44.functions.invoke('issueAccessKey', {
-        grants_rank: grantRank,
-        max_uses: maxUses,
-        note: note || undefined
-      });
-
-      setIssued(response.data);
-      queryClient.invalidateQueries({ queryKey: ['access-keys'] });
+  // Generate key mutation
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + parseInt(expiryDays));
       
-      // Reset form
-      setGrantRank('VAGRANT');
-      setMaxUses(1);
-      setNote('');
-      setShowForm(false);
-    } catch (err) {
-      console.error('Issue key error:', err);
-      alert('Failed to issue key: ' + err.message);
-    } finally {
-      setIssuingKey(false);
-    }
-  };
-
-  // Revoke key
-  const handleRevokeKey = async (code) => {
-    if (!confirm('Revoke this key? It cannot be used anymore.')) return;
-
-    try {
-      await base44.functions.invoke('revokeAccessKey', { code });
+      const result = await base44.functions.invoke('issueAccessKey', {
+        grants_rank: grantRank,
+        grants_roles: [],
+        expires_at: expiresAt.toISOString(),
+        max_uses: 1,
+        note
+      });
+      return result.data;
+    },
+    onSuccess: (data) => {
+      toast.success('Key generated: ' + data.code);
       queryClient.invalidateQueries({ queryKey: ['access-keys'] });
-    } catch (err) {
-      console.error('Revoke error:', err);
-      alert('Failed to revoke key');
+      setNote('');
+      setIsGenerating(false);
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to generate key');
     }
+  });
+
+  // Revoke key mutation
+  const revokeMutation = useMutation({
+    mutationFn: (keyId) => base44.entities.AccessKey.update(keyId, { status: 'REVOKED' }),
+    onSuccess: () => {
+      toast.success('Key revoked');
+      queryClient.invalidateQueries({ queryKey: ['access-keys'] });
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to revoke key');
+    }
+  });
+
+  const handleCopy = (code) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Copied to clipboard');
   };
 
-  const statusColor = (status) => {
-    return {
-      'ACTIVE': 'text-green-400 bg-green-950/30',
-      'REDEEMED': 'text-blue-400 bg-blue-950/30',
-      'REVOKED': 'text-red-400 bg-red-950/30',
-      'EXPIRED': 'text-amber-400 bg-amber-950/30'
-    }[status] || 'text-zinc-400 bg-zinc-800/30';
-  };
+  const activeKeys = keys.filter(k => k.status === 'ACTIVE');
+  const usedKeys = keys.filter(k => k.status === 'REDEEMED');
+  const revokedKeys = keys.filter(k => k.status === 'REVOKED' || k.status === 'EXPIRED');
 
   return (
-    <div className="space-y-4">
-      {/* Issued Key Banner */}
-      {issued && (
-        <div className="p-3 bg-green-950/40 border border-green-800/60 rounded space-y-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-            <p className="text-xs font-mono text-green-300 font-bold">Key Issued Successfully</p>
+    <div className="space-y-6">
+      {/* Generate New Key Card */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Generate Invite Key</h3>
+        
+        <div className="space-y-3 mb-4">
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Rank</label>
+              <select
+                value={grantRank}
+                onChange={(e) => setGrantRank(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs px-2 py-1.5 rounded"
+              >
+                <option value="VAGRANT">Vagrant</option>
+                <option value="SCOUT">Scout</option>
+                <option value="VOYAGER">Voyager</option>
+                <option value="FOUNDER">Founder</option>
+                <option value="PIONEER">Pioneer</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Expires In (Days)</label>
+              <Input
+                type="number"
+                value={expiryDays}
+                onChange={(e) => setExpiryDays(e.target.value)}
+                min="1"
+                max="365"
+                className="bg-zinc-800 border-zinc-700 text-xs h-9"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Note (Optional)</label>
+              <Input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g., Discord: username"
+                className="bg-zinc-800 border-zinc-700 text-xs h-9"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-zinc-950/60 p-2 rounded">
-            <code className="flex-1 text-xs font-mono text-white">{issued.code}</code>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-6 h-6"
-              onClick={() => {
-                navigator.clipboard.writeText(issued.code);
-              }}
-            >
-              <Copy className="w-3 h-3 text-zinc-400 hover:text-zinc-200" />
-            </Button>
-          </div>
+
           <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIssued(null)}
-            className="text-[10px] w-full"
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            className="w-full bg-[#ea580c] hover:bg-[#ea580c]/90 text-white text-xs font-bold gap-2"
           >
-            Dismiss
+            <Plus className="w-3.5 h-3.5" />
+            {generateMutation.isPending ? 'Generating...' : 'Generate Key'}
           </Button>
         </div>
-      )}
-
-      {/* Issue Key Form */}
-      {showForm ? (
-        <form onSubmit={handleIssueKey} className="space-y-3 p-3 bg-zinc-900/50 border border-zinc-800">
-          <div>
-            <label className="text-xs font-mono text-zinc-400">Rank</label>
-            <select
-              value={grantRank}
-              onChange={(e) => setGrantRank(e.target.value)}
-              disabled={issuingKey}
-              className="w-full h-8 px-2 text-xs bg-zinc-950 border border-zinc-700 text-white rounded mt-1"
-            >
-              <option>VAGRANT</option>
-              <option>SCOUT</option>
-              <option>VOYAGER</option>
-              <option>FOUNDER</option>
-              <option>PIONEER</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-mono text-zinc-400">Max Uses</label>
-            <Input
-              type="number"
-              min="1"
-              max="100"
-              value={maxUses}
-              onChange={(e) => setMaxUses(parseInt(e.target.value))}
-              disabled={issuingKey}
-              className="h-8 text-xs bg-zinc-950 border-zinc-700 mt-1"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-mono text-zinc-400">Note (optional)</label>
-            <Input
-              placeholder="e.g., Squad recruitment batch #1"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              disabled={issuingKey}
-              className="h-8 text-xs bg-zinc-950 border-zinc-700 mt-1"
-            />
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowForm(false)}
-              disabled={issuingKey}
-              className="text-xs flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={issuingKey}
-              className="text-xs flex-1 bg-[#ea580c] hover:bg-[#ea580c]/90"
-            >
-              {issuingKey && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-              Issue Key
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <Button
-          onClick={() => setShowForm(true)}
-          size="sm"
-          className="w-full gap-2 text-xs bg-[#ea580c] hover:bg-[#ea580c]/90"
-        >
-          <Plus className="w-3 h-3" />
-          Issue New Key
-        </Button>
-      )}
+      </div>
 
       {/* Keys List */}
-      <div className="space-y-2 max-h-96 overflow-y-auto">
+      <div className="space-y-4">
         {isLoading ? (
-          <div className="text-center py-4 text-xs text-zinc-500">Loading keys...</div>
-        ) : keys.length === 0 ? (
-          <div className="text-center py-4 text-xs text-zinc-500">No keys issued yet</div>
+          <div className="text-center text-zinc-500 text-xs py-4">Loading keys...</div>
         ) : (
-          keys.map((key) => (
-            <div
-              key={key.id}
-              className="p-3 bg-zinc-900/30 border border-zinc-800 text-xs space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <code className="font-mono text-white bg-zinc-950/60 px-2 py-1 rounded">
-                  {key.code}
-                </code>
-                <span className={cn('text-[9px] font-bold uppercase px-2 py-1 rounded', statusColor(key.status))}>
-                  {key.status}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[10px]">
-                <div className="space-y-0.5">
-                  <p className="text-zinc-400">Rank: <span className="text-[#ea580c] font-bold">{key.grants_rank}</span></p>
-                  <p className="text-zinc-400">Uses: <span className="text-white">{key.uses_count}/{key.max_uses}</span></p>
-                  {key.note && <p className="text-zinc-500 italic">{key.note}</p>}
+          <>
+            {/* Active Keys */}
+            {activeKeys.length > 0 && (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Active Keys ({activeKeys.length})
+                </h4>
+                <div className="space-y-2">
+                  {activeKeys.map(key => (
+                    <div key={key.id} className="bg-zinc-800/50 rounded p-3 flex items-center justify-between text-xs gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-mono font-bold text-white">{key.code}</div>
+                        <div className="text-[9px] text-zinc-500">
+                          {key.note && `Note: ${key.note} • `}
+                          Rank: {key.grants_rank} • Expires: {new Date(key.expires_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCopy(key.code)}
+                          className="h-7 px-2 text-[10px]"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => revokeMutation.mutate(key.id)}
+                          disabled={revokeMutation.isPending}
+                          className="h-7 px-2 text-[10px] text-red-500 hover:text-red-400"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-
-                {key.status === 'ACTIVE' && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleRevokeKey(key.code)}
-                    className="w-6 h-6"
-                  >
-                    <Trash2 className="w-3 h-3 text-red-400 hover:text-red-300" />
-                  </Button>
-                )}
               </div>
-            </div>
-          ))
+            )}
+
+            {/* Used Keys */}
+            {usedKeys.length > 0 && (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-3 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />
+                  Redeemed Keys ({usedKeys.length})
+                </h4>
+                <div className="space-y-2">
+                  {usedKeys.map(key => (
+                    <div key={key.id} className="bg-zinc-800/50 rounded p-3 text-xs">
+                      <div className="font-mono font-bold text-zinc-400">{key.code}</div>
+                      <div className="text-[9px] text-zinc-500">
+                        Redeemed by {key.redeemed_by_user_ids?.length || 0} user(s)
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Revoked/Expired Keys */}
+            {revokedKeys.length > 0 && (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-1.5">
+                  <AlertCircle className="w-3 h-3" />
+                  Revoked/Expired ({revokedKeys.length})
+                </h4>
+                <div className="space-y-2">
+                  {revokedKeys.map(key => (
+                    <div key={key.id} className="bg-zinc-800/50 rounded p-3 text-xs">
+                      <div className="font-mono font-bold text-zinc-500 line-through">{key.code}</div>
+                      <div className="text-[9px] text-zinc-600">Status: {key.status}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {keys.length === 0 && (
+              <div className="text-center text-zinc-500 text-xs py-8">No keys yet. Generate one above.</div>
+            )}
+          </>
         )}
       </div>
     </div>
