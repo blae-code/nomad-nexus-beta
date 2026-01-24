@@ -23,6 +23,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import NavItem from "@/components/layout/NavItem";
+import { SURFACE_BG_CLASS, SURFACE_BORDER_CLASS } from "@/components/layout/headerStyles";
 
 /**
  * ⚠️ DEPRECATED: ActivityBar (Legacy)
@@ -80,28 +82,21 @@ export default function ActivityBar() {
     }
   });
 
-  const NavItem = ({ icon: Icon, label, page, alertColor, isAlertActive, path, pulseFast }) => {
+  const ActivityNavItem = ({ icon: Icon, label, page, alertColor, isAlertActive, path, pulseFast }) => {
     const isActive = window.location.pathname.includes(page);
     
     return (
       <TooltipProvider delayDuration={0}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <a 
-              href={path || createPageUrl(page)} 
-              className={cn(
-                "relative w-10 h-10 flex items-center justify-center border transition-all duration-200 group",
-                isActive 
-                  ? "bg-zinc-900 border-orange-500 text-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.1)]" 
-                  : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300 hover:bg-zinc-900"
-              )}
+            <NavItem
+              href={path || createPageUrl(page)}
+              icon={Icon}
+              isActive={isActive}
+              size="md"
             >
-              <Icon className="w-5 h-5" />
               
               {/* Corner Accents (Tech Look) */}
-              <div className="absolute top-0 left-0 w-1 h-1 border-t border-l border-current opacity-0 group-hover:opacity-50 transition-opacity" />
-              <div className="absolute bottom-0 right-0 w-1 h-1 border-b border-r border-current opacity-0 group-hover:opacity-50 transition-opacity" />
-
               {/* Status Indicator Light */}
               {isAlertActive && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -109,7 +104,7 @@ export default function ActivityBar() {
                   <span className={cn("relative inline-flex rounded-full h-3 w-3", alertColor)}></span>
                 </span>
               )}
-            </a>
+            </NavItem>
           </TooltipTrigger>
           <TooltipContent side="right" className="bg-zinc-950 border border-zinc-800 text-zinc-200 font-mono text-xs tracking-widest uppercase rounded-none">
             <p>{label}</p>
@@ -120,9 +115,15 @@ export default function ActivityBar() {
   };
 
   return (
-    <aside className="w-14 bg-[#0c0c0e] border-r border-zinc-800 flex flex-col items-center py-4 gap-2 shrink-0 z-40 shadow-xl">
+    <aside
+      className={cn(
+        "w-14 flex flex-col items-center py-4 gap-2 shrink-0 z-40 shadow-xl border-r",
+        SURFACE_BG_CLASS,
+        SURFACE_BORDER_CLASS
+      )}
+    >
       
-      <NavItem 
+      <ActivityNavItem 
         icon={LayoutGrid} 
         label="Hub" 
         page="Hub" 
@@ -130,7 +131,7 @@ export default function ActivityBar() {
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={Target} 
         label="Operations" 
         page="Events" 
@@ -138,7 +139,7 @@ export default function ActivityBar() {
         isAlertActive={hasEventSoon}
       />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={Radio} 
         label="Comms" 
         page="CommsConsole" 
@@ -146,7 +147,7 @@ export default function ActivityBar() {
         isAlertActive={isCommsConnected}
       />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={ShieldAlert} 
         label="Rescue" 
         page="CommsConsole" 
@@ -158,13 +159,13 @@ export default function ActivityBar() {
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={Rocket} 
         label="Fleet" 
         page="FleetManager" 
       />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={Coins} 
         label="Treasury" 
         page="Treasury" 
@@ -172,13 +173,13 @@ export default function ActivityBar() {
 
       <div className="w-8 h-[1px] bg-zinc-800/50 my-1" />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={MessageSquare} 
         label="Channels" 
         page="Channels" 
       />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={Users} 
         label="Roster" 
         page="Ranks" 
@@ -186,13 +187,13 @@ export default function ActivityBar() {
 
       <div className="flex-1" />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={UserCircle} 
         label="Profile" 
         page="Profile" 
       />
 
-      <NavItem 
+      <ActivityNavItem 
         icon={Lock} 
         label="Admin" 
         page="Admin" 

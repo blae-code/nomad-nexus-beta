@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Settings, ChevronLeft, ChevronRight, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { navItems, getVisibleNavItems } from '@/components/nav/navItems';
+import { getVisibleNavItems } from '@/components/nav/navItems';
+import NavItem from '@/components/layout/NavItem';
+import { SURFACE_BG_CLASS, SURFACE_BORDER_CLASS } from '@/components/layout/headerStyles';
 import {
   Tooltip,
   TooltipContent,
@@ -64,12 +66,14 @@ export default function NavRail({ currentPage, user, isExpanded, onToggleExpand 
       <nav
         ref={navRef}
         className={cn(
-          'flex flex-col h-screen bg-zinc-950 border-r border-[var(--divider-color)] overflow-hidden transition-all duration-200',
+          'flex flex-col h-screen overflow-hidden transition-all duration-200 border-r',
+          SURFACE_BG_CLASS,
+          SURFACE_BORDER_CLASS,
           isExpanded ? 'w-[var(--rail-w-expanded)]' : 'w-[var(--rail-w-collapsed)]'
         )}
       >
         {/* Logo / Branding */}
-        <div className="h-10 flex items-center justify-center shrink-0 border-b border-[var(--divider-color)]">
+        <div className={cn('h-10 flex items-center justify-center shrink-0 border-b', SURFACE_BORDER_CLASS)}>
           <div className="w-8 h-8 bg-[#ea580c] flex items-center justify-center border border-[#ea580c]">
             <Radio className="w-5 h-5 text-white" />
           </div>
@@ -86,7 +90,7 @@ export default function NavRail({ currentPage, user, isExpanded, onToggleExpand 
             <div key={section.section} className="flex flex-col">
               {/* Section Header (only in expanded) */}
               {isExpanded && (
-                <div className="px-3 py-2 text-xs font-black text-zinc-500 uppercase tracking-widest border-t border-zinc-800 first:border-t-0">
+                <div className="px-3 py-2 text-xs font-black text-zinc-500 uppercase tracking-widest border-t border-zinc-800/70 first:border-t-0">
                   {section.section}
                 </div>
               )}
@@ -103,21 +107,20 @@ export default function NavRail({ currentPage, user, isExpanded, onToggleExpand 
                   const itemEl = (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link
+                        <NavItem
                           key={item.id}
                           to={createPageUrl(item.page)}
                           data-nav-index={globalIdx}
                           onFocus={() => setFocusedIndex(globalIdx)}
+                          size="rail"
+                          icon={Icon}
+                          isActive={isActive}
                           className={cn(
-                            'flex items-center gap-2 h-12 px-2 transition-colors border border-2',
-                            isActive
-                              ? 'bg-[#ea580c]/20 border-[#ea580c] text-[#ea580c]'
-                              : focusedIndex === globalIdx
-                                ? 'bg-zinc-800/50 border-zinc-700 text-zinc-100'
-                                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                            'px-2',
+                            isExpanded ? 'justify-start' : 'justify-center',
+                            focusedIndex === globalIdx && !isActive && 'bg-zinc-900/80 border-zinc-700/80 text-zinc-100'
                           )}
                         >
-                          <Icon className="w-5 h-5 shrink-0" />
                           {isExpanded && (
                             <span className="text-xs font-bold uppercase truncate">
                               {item.label}
@@ -129,7 +132,7 @@ export default function NavRail({ currentPage, user, isExpanded, onToggleExpand 
                               0
                             </span>
                           )}
-                        </Link>
+                        </NavItem>
                       </TooltipTrigger>
                       {!isExpanded && (
                         <TooltipContent side="right">{item.label}</TooltipContent>
@@ -148,20 +151,23 @@ export default function NavRail({ currentPage, user, isExpanded, onToggleExpand 
         <div className="flex-1" />
 
         {/* Footer: Collapse Toggle + Settings + User */}
-        <div className="flex flex-col gap-1 p-1 border-t border-[var(--divider-color)]">
+        <div className={cn('flex flex-col gap-1 p-1 border-t', SURFACE_BORDER_CLASS)}>
           {/* Collapse/Expand Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <NavItem
+                as="button"
+                type="button"
                 onClick={onToggleExpand}
-                className="flex items-center justify-center h-12 border border-2 border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300 transition-colors"
+                size="rail"
+                className="justify-center"
               >
                 {isExpanded ? (
                   <ChevronLeft className="w-5 h-5" />
                 ) : (
                   <ChevronRight className="w-5 h-5" />
                 )}
-              </button>
+              </NavItem>
             </TooltipTrigger>
             {!isExpanded && (
               <TooltipContent side="right">
@@ -173,12 +179,12 @@ export default function NavRail({ currentPage, user, isExpanded, onToggleExpand 
           {/* Settings */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link
+              <NavItem
                 to={createPageUrl('Profile')}
-                className="flex items-center justify-center h-12 border border-2 border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300 transition-colors"
-              >
-                <Settings className="w-5 h-5" />
-              </Link>
+                size="rail"
+                icon={Settings}
+                className="justify-center"
+              />
             </TooltipTrigger>
             {!isExpanded && (
               <TooltipContent side="right">Settings</TooltipContent>
