@@ -184,6 +184,9 @@ export default function HeaderV3() {
     }
   };
 
+  // Safe global defaults for telemetry
+  const headerTotalUsersValue = Number(window?.headerTotalUsers) || 0;
+  
   // Expose for manual triggering from voice events
   useEffect(() => {
     window.headerFetchPresence = fetchPresence;
@@ -700,7 +703,7 @@ export default function HeaderV3() {
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 px-2.5 py-2 border border-zinc-800/50 bg-zinc-900/40 text-[9px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-              <span className="font-bold uppercase tracking-wider">{onlineCount}/{window.headerTotalUsers || onlineCount}</span>
+              <span className="font-bold uppercase tracking-wider">{onlineCount}/{headerTotalUsersValue || onlineCount}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent>
