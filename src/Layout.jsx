@@ -43,7 +43,7 @@ export default function Layout({ children, currentPageName }) {
         setUser(u);
 
         // Allow access-gate to render without profile check
-        if (location.pathname === ROUTES.ACCESS_GATE) {
+        if (location.pathname === ROUTES.ACCESS_GATE || location.pathname === '/access-gate') {
           setLoading(false);
           return;
         }
