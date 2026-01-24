@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,27 @@ export default function AccessGate() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [grantedRank, setGrantedRank] = useState('VAGRANT');
   const [grantedRoles, setGrantedRoles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Admin bypass: check if user is admin and skip access gate
+  useEffect(() => {
+    const checkAdminBypass = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (user?.role === 'admin') {
+          // Admin bypass - redirect to home
+          window.location.href = '/';
+          return;
+        }
+      } catch (error) {
+        // Not authenticated, continue with access gate
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminBypass();
+  }, []);
 
   const handleRedeemKey = async () => {
     if (!accessKey.trim()) {
