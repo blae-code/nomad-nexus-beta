@@ -37,19 +37,6 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Show loading state while initializing to prevent flicker
-  if (loading && location.pathname.toLowerCase() !== '/access-gate') {
-    return (
-      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm font-mono text-zinc-500">INITIALIZING...</p>
-          <p className="text-[8px] font-mono text-zinc-700 mt-4">LAYOUT INIT</p>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     const timeoutPromise = (ms) => new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Timeout')), ms)
@@ -140,6 +127,19 @@ export default function Layout({ children, currentPageName }) {
 
   // Ensure root path always maps to hub
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
+
+  // Show loading state while initializing (AFTER all hooks)
+  if (loading && location.pathname.toLowerCase() !== '/access-gate') {
+    return (
+      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-500">INITIALIZING...</p>
+          <p className="text-[8px] font-mono text-zinc-700 mt-4">LAYOUT INIT</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
