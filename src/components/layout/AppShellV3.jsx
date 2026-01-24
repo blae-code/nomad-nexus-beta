@@ -13,6 +13,7 @@ import { SURFACE_BG_CLASS, SURFACE_BORDER_CLASS } from '@/components/layout/head
  */
 
 export default function AppShellV3({ children, currentPage, user, showRightPanel = true }) {
+  console.log('[AppShellV3] Rendering, currentPage:', currentPage);
   return (
     <div className="h-screen w-screen overflow-hidden bg-zinc-950 flex flex-col">
       {/* Boot Splash Overlay */}

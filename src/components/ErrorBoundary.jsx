@@ -23,6 +23,7 @@ class ErrorBoundary extends React.Component {
   };
 
   render() {
+    console.log('[ErrorBoundary] Render called, hasError:', this.state.hasError);
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">

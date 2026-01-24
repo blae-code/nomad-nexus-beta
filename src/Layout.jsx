@@ -41,6 +41,7 @@ const iconAccent = theme.colors.accent.replace('#', '%23');
 const iconBackground = theme.colors.background.replace('#', '%23');
 
 export default function Layout({ children, currentPageName }) {
+  console.log('[LAYOUT] Component mounting...');
   const [user, setUser] = useState(null);
   const [memberProfile, setMemberProfile] = useState(null);
   const [loading, setLoading] = useState(true);
