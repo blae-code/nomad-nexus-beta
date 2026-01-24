@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Radio, Settings, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { pagesConfig as PAGES_CONFIG } from '@/pages.config';
+import pagesConfig from '@/pages.config';
 import { base44 } from '@/api/base44Client';
 
 /**
@@ -27,9 +27,9 @@ export default function LeftNavRail({ currentPage, user }) {
     }
 
     // Update navigation items when rank/admin status changes
-    if (PAGES_CONFIG?.getNavItemsForUser) {
-      setNavSections(PAGES_CONFIG.getNavItemsForUser(userRank, isAdmin));
-      setMoreItems(PAGES_CONFIG.getMoreItemsForUser(userRank, isAdmin));
+    if (pagesConfig?.getNavItemsForUser) {
+      setNavSections(pagesConfig.getNavItemsForUser(userRank, isAdmin));
+      setMoreItems(pagesConfig.getMoreItemsForUser(userRank, isAdmin));
     }
   }, [user, userRank, isAdmin]);
 

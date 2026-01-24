@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { pagesConfig, PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.config';
+import pagesConfig, { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.config';
 import { createPageUrl } from '@/utils';
 
 const normalize = (value = '') => value.toLowerCase().replace(/[\s-_]/g, '');
