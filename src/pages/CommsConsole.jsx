@@ -489,14 +489,14 @@ function CommsConsolePage() {
                                  connectionState={connectionState}
                                  onOpenAdvanced={() => setShowAdvancedDrawer(true)}
                                  isTransmitting={isTransmitting}
-                                 effectiveMode={effectiveMode}
-                                 roomName={selectedNet ? `${selectedEventId}-${selectedNet.code}` : null}
-                                 participants={0}
+                                 mode={effectiveMode}
+                                 participantCount={0}
                                  lastError={connectionError}
                                  onRetry={() => {
-                                    setConnectionState('disconnected');
-                                    setConnectionError(null);
-                                    setTimeout(() => handleConnecting(selectedNetId), 100);
+                                   setConnectionState('disconnected');
+                                   setConnectionError(null);
+                                   setSelectedNetId(null);
+                                   setTimeout(() => setSelectedNetId(selectedNet?.id), 100);
                                  }}
                               />
                               <Divider spacing="none" />
