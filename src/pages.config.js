@@ -31,43 +31,55 @@ import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import __Layout from './Layout.jsx';
 
-
 export const PAGES = {
-    "AccessGate": AccessGate,
-    "AdminCockpit": AdminCockpit,
-    "Channels": Channels,
-    "CommandCenter": CommandCenter,
-    "CommsConsole": CommsConsole,
-    "CommsDevTest": CommsDevTest,
-    "CommsSettings": CommsSettings,
-    "Diagnostics": Diagnostics,
-    "EventReporting": EventReporting,
-    "Events": Events,
-    "FleetManager": FleetManager,
-    "Hub": Hub,
-    "Intelligence": Intelligence,
-    "MissionControl": MissionControl,
-    "NomadOpsDashboard": NomadOpsDashboard,
-    "NotificationSettings": NotificationSettings,
-    "OperationControl": OperationControl,
-    "OperationWorkspace": OperationWorkspace,
-    "PageNotFound": PageNotFound,
-    "Profile": Profile,
-    "Ranks": Ranks,
-    "Rescue": Rescue,
-    "RoleManager": RoleManager,
-    "Settings": Settings,
-    "SquadDetail": SquadDetail,
-    "Treasury": Treasury,
-    "UniverseMap": UniverseMap,
-    "UserDirectory": UserDirectory,
-    "UserManager": UserManager,
-    "UserSettings": UserSettings,
-    "VoiceNetManager": VoiceNetManager,
-}
+  Academy,
+  AccessGate,
+  AdminCockpit,
+  Channels,
+  CommandCenter,
+  CommsConsole,
+  CommsDevTest,
+  CommsSettings,
+  Diagnostics,
+  EventReporting,
+  Events,
+  FleetManager,
+  Hub,
+  Intelligence,
+  MissionControl,
+  NomadOpsDashboard,
+  NotificationSettings,
+  OperationControl,
+  OperationWorkspace,
+  PageNotFound,
+  Profile,
+  Ranks,
+  Rescue,
+  RoleManager,
+  Settings,
+  SquadDetail,
+  Treasury,
+  UniverseMap,
+  UserDirectory,
+  UserManager,
+  UserSettings,
+  VoiceNetManager,
+};
 
+<<<<<<< HEAD
+export const PAGE_ROUTE_OVERRIDES = {};
+export const PAGE_ROUTE_ALIASES = {};
+
+export const pagesConfig = {
+  mainPage: 'Hub',
+  Pages: PAGES,
+  Layout: __Layout,
+=======
 export const pagesConfig = {
     mainPage: "Hub",
     Pages: PAGES,
     Layout: __Layout,
+>>>>>>> a02e20338eaf2e550226a966646894d036ef3566
 };
+
+export default pagesConfig;
