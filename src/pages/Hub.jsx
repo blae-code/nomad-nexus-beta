@@ -129,8 +129,7 @@ export default function HubPage() {
         <HubOnboardingOverlay onComplete={() => setShowOnboarding(false)} />
       )}
 
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
+      <div className="p-2.5 space-y-2 overflow-y-auto">
           {/* Live Operational Pulse - Compact */}
           <div className="border border-accent/30 bg-zinc-950/80">
               <div 
