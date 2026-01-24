@@ -1,63 +1,45 @@
 // src/pages.config.js
-// Single source of truth for routing + page discovery.
-// Provides BOTH named exports and a default export to satisfy old + new imports.
-import AccessGate from './pages/AccessGate';
-import AdminCockpit from './pages/AdminCockpit';
-import Channels from './pages/Channels';
-import CommandCenter from './pages/CommandCenter';
-import CommsConsole from './pages/CommsConsole';
-import CommsDevTest from './pages/CommsDevTest';
-import CommsSettings from './pages/CommsSettings';
-import Diagnostics from './pages/Diagnostics';
-import EventReporting from './pages/EventReporting';
-import Events from './pages/Events';
-import FleetManager from './pages/FleetManager';
-import Hub from './pages/Hub';
-import Intelligence from './pages/Intelligence';
-import MissionControl from './pages/MissionControl';
-import NomadOpsDashboard from './pages/NomadOpsDashboard';
-import NotificationSettings from './pages/NotificationSettings';
-import OperationControl from './pages/OperationControl';
-import OperationWorkspace from './pages/OperationWorkspace';
-import PageNotFound from './pages/PageNotFound';
-import Profile from './pages/Profile';
-import Ranks from './pages/Ranks';
-import Rescue from './pages/Rescue';
-import RoleManager from './pages/RoleManager';
-import Settings from './pages/Settings';
-import SquadDetail from './pages/SquadDetail';
-import Treasury from './pages/Treasury';
-import UniverseMap from './pages/UniverseMap';
-import UserDirectory from './pages/UserDirectory';
-import UserManager from './pages/UserManager';
-import UserSettings from './pages/UserSettings';
-import VoiceNetManager from './pages/VoiceNetManager';
-import __Layout from './Layout.jsx';
+// Compatibility config: guarantees named exports used across the app.
 
 const pagesGlob = import.meta.glob('./pages/*.jsx', { eager: true });
 
-export const pagesConfig = {
-    mainPage: "Hub",
-    Pages: PAGES,
-    Layout: __Layout,
+function pageNameFromPath(path) {
+  const m = path.match(/\/([^/]+)\.jsx$/);
+  return m?.[1] ?? null;
+}
+
+function routeFromName(name) {
+  if (!name) return '/';
+  if (name.toLowerCase() === 'hub') return '/hub';
+  return `/${name.toLowerCase()}`;
+}
+
+// ✅ MUST exist as a named export (AdminCockpit/AccessGate/PageNotFound depend on it)
+export const PAGE_ROUTE_ALIASES = {
+  '/': '/hub',
+  '/home': '/hub',
+  '/index': '/hub',
+  '/login': '/accessgate',
+  '/access-gate': '/accessgate',
+  '/accessGate': '/accessgate',
 };
+
+export const pagesConfig = Object.entries(pagesGlob)
+  .map(([path, mod]) => {
+    const name = pageNameFromPath(path);
+    const Comp = mod?.default ?? (name ? mod?.[name] : null);
+    if (!name || typeof Comp !== 'function') return null;
+    return { name, route: routeFromName(name), component: Comp, file: path };
+  })
+  .filter(Boolean);
+
+export const PAGES = pagesConfig.reduce((acc, p) => {
+  acc[p.name] = p;
+  return acc;
+}, {});
 
 export function resolveRouteAlias(pathname = '/') {
   return PAGE_ROUTE_ALIASES[pathname] ?? pathname;
 }
 
-export function getPageByPath(pathname = '/') {
-  const resolved = resolveRouteAlias(pathname);
-
-  // Exact route match
-  const byRoute = pagesConfig.find((p) => p.route === resolved);
-
-  // Try match by name (/hub -> Hub)
-  const slug = resolved.replace(/^\/+/, '');
-  const byName = pagesConfig.find((p) => p.name.toLowerCase() === slug.toLowerCase());
-  return byName ?? null;
-}
-
-// Default export maintained for legacy imports like: import pagesConfig from '@/pages.config'
 export default pagesConfig;
-
