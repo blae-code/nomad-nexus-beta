@@ -8,7 +8,12 @@ import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
+import { createPageUrl } from "@/utils";
 
+const accessGatePath = createPageUrl('AccessGate');
+const accessGateAliases = new Set(
+  [accessGatePath, '/accessgate', '/AccessGate'].map((path) => path.toLowerCase()),
+);
 
 const pageMap = {
         '/': 'hub',
@@ -46,9 +51,11 @@ export default function Layout({ children, currentPageName }) {
     const initApp = async () => {
       try {
         initializeAccessToken();
+
+        const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
         
         // Allow access-gate to render without auth checks (it's a public gate page)
-        if (location.pathname.toLowerCase() === '/access-gate') {
+        if (isAccessGatePath) {
           setLoading(false);
           return;
         }
@@ -64,7 +71,7 @@ export default function Layout({ children, currentPageName }) {
         } catch (authError) {
           console.error('[LAYOUT] Auth failed or timed out:', authError);
           setLoading(false);
-          navigate('/AccessGate', { replace: true });
+          navigate(accessGatePath, { replace: true });
           return;
         }
 
@@ -80,7 +87,7 @@ export default function Layout({ children, currentPageName }) {
             // Set loading to false first to prevent flicker
             setLoading(false);
             // Navigate using react-router to prevent full page reload
-            navigate('/AccessGate', { replace: true });
+            navigate(accessGatePath, { replace: true });
             return;
           }
           setMemberProfile(profile);
@@ -92,7 +99,7 @@ export default function Layout({ children, currentPageName }) {
       } catch (error) {
         console.error('[LAYOUT] Init error:', error);
         setLoading(false);
-        navigate('/AccessGate', { replace: true });
+        navigate(accessGatePath, { replace: true });
       } finally {
         setLoading(false);
       }
@@ -102,8 +109,8 @@ export default function Layout({ children, currentPageName }) {
     const watchdog = setTimeout(() => {
       console.error('[LAYOUT] Init watchdog triggered - forcing recovery');
       setLoading(false);
-      if (location.pathname.toLowerCase() !== '/accessgate') {
-        navigate('/AccessGate', { replace: true });
+      if (!accessGateAliases.has(location.pathname.toLowerCase())) {
+        navigate(accessGatePath, { replace: true });
       }
     }, 12000);
 
@@ -132,7 +139,7 @@ export default function Layout({ children, currentPageName }) {
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
 
   // Show loading state while initializing (AFTER all hooks)
-  if (loading && location.pathname.toLowerCase() !== '/accessgate') {
+  if (loading && !accessGateAliases.has(location.pathname.toLowerCase())) {
     return (
       <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center relative overflow-hidden">
         {/* Background Effects */}

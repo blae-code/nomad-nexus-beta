@@ -4,11 +4,12 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
-import { pagesConfig } from './pages.config'
+import { pagesConfig, PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { createPageUrl } from '@/utils';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -49,17 +50,23 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
+      {Object.entries(Pages).flatMap(([pageKey, Page]) => {
+        const canonicalPath = PAGE_ROUTE_OVERRIDES?.[pageKey] ?? createPageUrl(pageKey);
+        const aliases = PAGE_ROUTE_ALIASES?.[pageKey] ?? [];
+        const paths = [canonicalPath, ...aliases];
+
+        return paths.map((path) => (
+          <Route
+            key={`${pageKey}-${path}`}
+            path={path}
+            element={
+              <LayoutWrapper currentPageName={pageKey}>
+                <Page />
+              </LayoutWrapper>
+            }
+          />
+        ));
+      })}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
