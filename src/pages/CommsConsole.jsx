@@ -50,6 +50,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CommsStepIndicator from "@/components/comms/CommsStepIndicator";
       import JoinNetButton from "@/components/comms/JoinNetButton";
       import CommsArrayPanel from "@/components/comms/CommsArrayPanel";
+      import CommsStateChip from "@/components/comms/CommsStateChip";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
@@ -320,6 +321,22 @@ function CommsConsolePage() {
   // Build header actions based on mode
   const headerActions = (consoleMode === 'ops' || consoleMode === 'dms') ? (
     <div className="flex items-center gap-3">
+      <CommsStateChip
+        mode={effectiveMode}
+        connectionState={connectionState}
+        roomName={selectedNet?.code}
+        participants={0}
+        lastError={connectionError}
+        onRetry={() => {
+          if (selectedNet) {
+            setConnectionState('disconnected');
+            setConnectionError(null);
+            // Re-select to trigger reconnect
+            setSelectedNetId(null);
+            setTimeout(() => setSelectedNetId(selectedNet.id), 100);
+          }
+        }}
+      />
       <Button
         variant="ghost"
         size="sm"
@@ -476,16 +493,15 @@ function CommsConsolePage() {
                               <Divider spacing="none" />
                            </div>
                            
-                           {/* Effective Mode Fallback Banner */}
+                           {/* Fallback Reason */}
                            {fallbackReason && (
-                              <motion.div
-                                 initial={{ opacity: 0, y: -8 }}
-                                 animate={{ opacity: 1, y: 0 }}
-                                 className="shrink-0 bg-amber-950/50 border-b border-amber-800 p-2 flex items-center gap-2 text-[10px]"
-                              >
-                                 <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-                                 <span className="text-amber-400 font-mono">SIM MODE: {fallbackReason}</span>
-                              </motion.div>
+                             <motion.div
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="shrink-0 bg-amber-950/20 border-b border-amber-800/50 px-3 py-1.5 text-[9px] text-amber-400 font-mono"
+                             >
+                                {fallbackReason}
+                             </motion.div>
                            )}
 
                            {/* Active Net Chat */}

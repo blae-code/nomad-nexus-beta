@@ -29,6 +29,7 @@ import { Room, RoomEvent } from 'livekit-client';
 import { normalizePlayerStatusRecords, normalizePlayerStatus } from '@/components/contracts/normalization';
 import { PLAYER_STATUS } from '@/components/contracts/dataContract';
 import CommsPreflight from '@/components/comms/CommsPreflight';
+import CommsStateChip from '@/components/comms/CommsStateChip';
 
 function CommsLog({ eventId }) {
   const queryClient = useQueryClient();
@@ -963,38 +964,25 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
     : (room?.remoteParticipants?.size || 0);
 
   return (
-     <div className="h-full flex flex-col gap-4">{/* Removed Join/Leave button - now handled by JoinNetButton in NetList */}
+     <div className="h-full flex flex-col gap-4">
+      {/* State Chip */}
+      <div className="shrink-0">
+        <CommsStateChip
+          mode={effectiveMode}
+          connectionState={connectionState}
+          roomName={net?.code}
+          participants={participantCount}
+          lastError={connectionError}
+          onRetry={() => {
+            setConnectionError(null);
+            setConnectionState('disconnected');
+            setPendingConnect(true);
+            setTimeout(() => setPendingConnect(false), 100);
+          }}
+        />
+      </div>
 
-      
-      {/* Mode Indicator */}
-          {isSim && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-amber-950/30 border border-amber-800 p-2 rounded flex items-center gap-2"
-            >
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-xs text-amber-400 font-mono font-bold">SIM MODE ACTIVE</span>
-            </motion.div>
-          )}
 
-      {/* Connection Error Banner */}
-          <AnimatePresence>
-            {connectionError && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-red-950/50 border border-red-900 p-3 rounded flex items-center gap-3"
-              >
-                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-                <div className="flex-1">
-                  <div className="text-xs font-bold text-red-400 uppercase">Connection Failed</div>
-                  <div className="text-[10px] text-red-300 mt-0.5">{connectionError}</div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
       {/* Microphone Permission Banner */}
       <AnimatePresence>
@@ -1184,13 +1172,20 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, onCo
 
            {/* Connection Telemetry Strip */}
            <ConnectionTelemetryStrip
-             mode={isSim ? 'SIM' : 'LIVE'}
+             mode={effectiveMode}
              state={connectionState}
+             roomName={net?.code}
              participantCount={participantCount}
              isMicEnabled={audioState?.isTransmitting || false}
              isTransmitting={isTransmitting}
              pttKey="Space"
              errorMessage={connectionError}
+             onRetry={() => {
+               setConnectionError(null);
+               setConnectionState('disconnected');
+               setPendingConnect(true);
+               setTimeout(() => setPendingConnect(false), 100);
+             }}
            />
 
            {/* Net Status Bar */}
