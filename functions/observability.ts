@@ -8,6 +8,12 @@ if (typeof window === 'undefined') {
   var window = {};
 }
 
+const COMMS_ENDPOINT_SEGMENTS = [
+  '/generateLiveKitToken',
+  '/getLiveKitRoomStatus',
+  '/verifyCommsReadiness'
+];
+
 class ObservabilityCollector {
   constructor() {
     this.errors = [];
@@ -129,11 +135,9 @@ class ObservabilityCollector {
 
   isCommsRequest(rawUrl = '') {
     const safeUrl = this.sanitizeUrl(rawUrl);
-    return [
-      '/generateLiveKitToken',
-      '/getLiveKitRoomStatus',
-      '/verifyCommsReadiness'
-    ].some((segment) => safeUrl.includes(segment));
+    // Use endsWith to avoid matching unrelated endpoints that merely contain the segment.
+    // Example: "/api/generateLiveKitToken-status" should not be treated as a comms request.
+    return COMMS_ENDPOINT_SEGMENTS.some((segment) => safeUrl.endsWith(segment));
   }
 
   recordSubscriptionHeartbeat(netId, eventId, status) {
