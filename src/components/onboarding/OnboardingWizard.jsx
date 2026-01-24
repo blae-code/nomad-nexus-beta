@@ -18,6 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import FeatureOnboardingFlow from '@/components/onboarding/FeatureOnboardingFlow';
 
 const steps = [
   { id: 'welcome', title: 'Welcome', icon: Shield },
