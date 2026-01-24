@@ -77,7 +77,7 @@ export default function PageNotFound() {
     paths.add('/');
 
     return Array.from(paths);
-  }, [routeAliases, routeOverrides]);
+  }, []);
 
   const attemptedPath = window.location.pathname;
   const closestMatches = rankClosestMatches(attemptedPath, candidatePaths);
