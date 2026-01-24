@@ -23,10 +23,15 @@ const STAFF_ROLES = [
 ];
 
 export default function EventCommandStaff({ event, canEdit }) {
-   const [staff, setStaff] = React.useState(event.command_staff || {});
+  const safeEvent = event ?? {};
+  const [staff, setStaff] = React.useState(safeEvent.command_staff || {});
 
-   const staffUserIds = Object.values(event.command_staff || {}).filter(Boolean);
-   const { users, userById } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
+  const staffUserIds = Object.values(safeEvent.command_staff || {}).filter(Boolean);
+  const { users } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
+
+  if (!safeEvent.id) {
+    return null;
+  }
 
   const handleAssignRole = async (roleKey, userId) => {
     if (!canEdit) return;

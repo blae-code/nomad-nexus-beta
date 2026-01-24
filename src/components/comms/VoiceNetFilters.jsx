@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export default function VoiceNetFilters({
-  filters,
+  filters = {},
   onFiltersChange,
   squads = [],
   hasActive = true
