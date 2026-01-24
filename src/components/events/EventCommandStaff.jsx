@@ -26,8 +26,7 @@ export default function EventCommandStaff({ event, canEdit }) {
   const safeEvent = event ?? {};
   const [staff, setStaff] = React.useState(safeEvent.command_staff || {});
 
-  const staffUserIds = Object.values(safeEvent.command_staff || {}).filter(Boolean);
-  const { users } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
+  const { users } = useUserDirectory(null);
 
   if (!safeEvent.id) {
     return null;
