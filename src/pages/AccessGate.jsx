@@ -14,15 +14,19 @@ export default function AccessGate() {
   const [grantedRank, setGrantedRank] = useState('VAGRANT');
   const [grantedRoles, setGrantedRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const initDoneRef = useRef(false);
 
-  // Admin bypass: check if user is admin and skip access gate
+  // Admin bypass: check if user is admin and skip access gate (run once)
   useEffect(() => {
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
+
     const checkAdminBypass = async () => {
       try {
         const user = await base44.auth.me();
         if (user?.role === 'admin') {
-          // Admin bypass - redirect to home
-          window.location.href = '/';
+          navigate('/', { replace: true });
           return;
         }
       } catch (error) {
@@ -33,7 +37,7 @@ export default function AccessGate() {
     };
 
     checkAdminBypass();
-  }, []);
+  }, [navigate]);
 
   const handleRedeemKey = async () => {
     if (!accessKey.trim()) {
