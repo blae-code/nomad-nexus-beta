@@ -47,6 +47,15 @@ export default function ObservabilityDiagnostics({ isOpen, onClose }) {
     red: 'ALERT'
   }[healthStatus] || 'UNKNOWN';
 
+  const liveKitStatus = (liveKitEnv?.status || liveKitEnv?.env || 'unknown').toUpperCase();
+  const liveKitStatusColor = {
+    CONFIGURED: 'text-emerald-400',
+    DEVELOPMENT: 'text-yellow-400',
+    MISSING: 'text-red-400',
+    MISCONFIGURED: 'text-red-400',
+    UNKNOWN: 'text-zinc-500'
+  }[liveKitStatus] || 'text-zinc-500';
+
   return (
     <AnimatePresence>
       <motion.div
@@ -224,17 +233,33 @@ export default function ObservabilityDiagnostics({ isOpen, onClose }) {
               className="w-full flex items-center justify-between text-[9px] font-mono font-bold uppercase hover:text-[#ea580c] transition-colors text-left py-1 px-1"
             >
               <span>LiveKit</span>
-              <span className="text-[8px] text-zinc-500">
-                {liveKitEnv?.env || '⊘ UNKNOWN'}
+              <span className={cn('text-[8px]', liveKitStatusColor)}>
+                {liveKitStatus === 'UNKNOWN' ? '⊘ UNKNOWN' : liveKitStatus}
               </span>
             </button>
 
             {expandedSection === 'livekit' && liveKitEnv && (
               <div className="space-y-1 pl-2 border-l border-zinc-800/40 text-[8px] font-mono mt-1">
                 <div className="flex justify-between text-zinc-500">
-                  <span>Env</span>
-                  <span className="text-zinc-300">{liveKitEnv.env}</span>
+                  <span>Status</span>
+                  <span className={cn('text-zinc-300', liveKitStatusColor)}>{liveKitStatus}</span>
                 </div>
+                {liveKitEnv.missingVars?.length > 0 && (
+                  <div className="flex justify-between text-zinc-500">
+                    <span>Missing</span>
+                    <span className="text-red-300">{liveKitEnv.missingVars.join(', ')}</span>
+                  </div>
+                )}
+                {liveKitEnv.warning && (
+                  <div className="text-yellow-400/80">
+                    ⚠ {liveKitEnv.warning}
+                  </div>
+                )}
+                {liveKitEnv.reason && liveKitEnv.reason !== liveKitEnv.warning && (
+                  <div className="text-zinc-500">
+                    {liveKitEnv.reason}
+                  </div>
+                )}
                 <div className="flex justify-between text-zinc-500">
                   <span>Time</span>
                   <span className="text-zinc-300">
