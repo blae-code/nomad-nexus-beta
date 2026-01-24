@@ -132,13 +132,17 @@ export default function Layout({ children, currentPageName }) {
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
 
   // Show loading state while initializing (AFTER all hooks)
-  if (loading && location.pathname.toLowerCase() !== '/access-gate') {
+  if (loading && location.pathname.toLowerCase() !== '/accessgate') {
     return (
-      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm font-mono text-zinc-500">INITIALIZING...</p>
-          <p className="text-[8px] font-mono text-zinc-700 mt-4">LAYOUT INIT</p>
+      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/5 blur-3xl" />
+
+        <div className="text-center relative z-10">
+          <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Initializing Nexus...</p>
+          <p className="text-[10px] font-mono text-zinc-700 mt-4">AUTHENTICATING SESSION</p>
         </div>
       </div>
     );

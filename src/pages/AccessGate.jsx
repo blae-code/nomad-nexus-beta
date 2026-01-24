@@ -62,11 +62,22 @@ export default function AccessGate() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden">
+    <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden relative">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#ea580c]/5 blur-3xl" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
+
+      {/* Loading Overlay */}
+      {isRedeeming && (
+        <div className="absolute inset-0 bg-[#09090b]/90 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Verifying Access Key...</p>
+            <p className="text-[10px] font-mono text-zinc-700 mt-2">AUTHENTICATING</p>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md px-6">

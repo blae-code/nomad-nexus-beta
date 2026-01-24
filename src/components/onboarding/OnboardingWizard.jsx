@@ -103,7 +103,7 @@ export default function OnboardingWizard({ grantedRank, grantedRoles, onComplete
   };
 
   return (
-    <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden">
+    <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden relative">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
       <motion.div
@@ -118,6 +118,21 @@ export default function OnboardingWizard({ grantedRank, grantedRoles, onComplete
           ease: "easeInOut"
         }}
       />
+
+      {/* Loading Overlay */}
+      {isSubmitting && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 bg-[#09090b]/90 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Creating Your Profile...</p>
+            <p className="text-[10px] font-mono text-zinc-700 mt-2">INITIALIZING MEMBER RECORD</p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-3xl px-6">
