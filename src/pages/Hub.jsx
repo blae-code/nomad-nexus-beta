@@ -291,14 +291,14 @@ export default function HubPage() {
                >
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border-t border-zinc-800/50">
                    {[
-                     { icon: Lightbulb, label: 'Getting Started', desc: 'Core concepts & setup' },
-                     { icon: Radio, label: 'Voice Comms', desc: 'Net & channel guide' },
-                     { icon: Calendar, label: 'Events & Ops', desc: 'Planning & execution' },
-                     { icon: Users, label: 'Squad Management', desc: 'Teams & roles' }
+                     { icon: Lightbulb, label: 'Getting Started', desc: 'Core concepts & setup', route: 'Academy' },
+                     { icon: Radio, label: 'Voice Comms', desc: 'Net & channel guide', route: 'Academy' },
+                     { icon: Calendar, label: 'Events & Ops', desc: 'Planning & execution', route: 'Academy' },
+                     { icon: Users, label: 'Squad Management', desc: 'Teams & roles', route: 'Academy' }
                    ].map((item, i) => {
                      const ItemIcon = item.icon;
                      return (
-                       <div key={i} className="bg-zinc-900/50 border border-zinc-800 p-2.5 hover:border-blue-500/30 hover:bg-zinc-900 transition-all cursor-pointer group">
+                       <button key={i} onClick={() => navigate(createPageUrl(item.route))} className="bg-zinc-900/50 border border-zinc-800 p-2.5 hover:border-blue-500/30 hover:bg-zinc-900 transition-all cursor-pointer group text-left">
                          <div className="flex items-start gap-2">
                            <ItemIcon className="w-4 h-4 text-blue-500 shrink-0 mt-0.5 group-hover:text-blue-400 transition-colors" />
                            <div className="min-w-0 flex-1">
@@ -306,7 +306,7 @@ export default function HubPage() {
                              <div className="text-[7px] text-zinc-500 mt-0.5">{item.desc}</div>
                            </div>
                          </div>
-                       </div>
+                       </button>
                      );
                    })}
                  </div>
