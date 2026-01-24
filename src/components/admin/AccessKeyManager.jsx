@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Copy, Plus, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Copy, Plus, Trash2, CheckCircle2, Clock, AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ export default function AccessKeyManager() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [grantRank, setGrantRank] = useState('VAGRANT');
   const [note, setNote] = useState('');
+  const [generatedKey, setGeneratedKey] = useState(null);
   const queryClient = useQueryClient();
 
   // Fetch all access keys
@@ -32,7 +33,7 @@ export default function AccessKeyManager() {
       return result.data;
     },
     onSuccess: (data) => {
-      toast.success('Key generated: ' + data.code);
+      setGeneratedKey(data);
       queryClient.invalidateQueries({ queryKey: ['access-keys'] });
       setNote('');
       setIsGenerating(false);
@@ -65,6 +66,55 @@ export default function AccessKeyManager() {
 
   return (
     <div className="space-y-6">
+      {/* Generated Key Modal */}
+      {generatedKey && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-orange-500/50 rounded-lg p-6 max-w-sm w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Key Generated</h3>
+              <button
+                onClick={() => setGeneratedKey(null)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-400">Your invite key has been created. Copy it below and share with the user.</p>
+              
+              <div className="bg-zinc-800 border border-zinc-700 rounded p-3 flex items-center justify-between gap-2">
+                <code className="font-mono font-bold text-emerald-400 text-sm truncate">{generatedKey.code}</code>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedKey.code);
+                    toast.success('Copied to clipboard');
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy
+                </Button>
+              </div>
+
+              {generatedKey.note && (
+                <div className="text-[9px] text-zinc-500">
+                  <strong>Note:</strong> {generatedKey.note}
+                </div>
+              )}
+
+              <Button
+                onClick={() => setGeneratedKey(null)}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Generate New Key Card */}
       <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
         <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Generate Invite Key</h3>
