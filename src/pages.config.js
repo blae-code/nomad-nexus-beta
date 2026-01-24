@@ -30,6 +30,13 @@ import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import __Layout from './Layout.jsx';
 
+export const PAGE_ROUTE_OVERRIDES = {
+    AccessGate: '/access-gate',
+};
+
+export const PAGE_ROUTE_ALIASES = {
+    AccessGate: ['/AccessGate', '/accessgate'],
+};
 
 export const PAGES = {
     "Academy": Academy,

@@ -1,11 +1,65 @@
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { pagesConfig, PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.config';
+import { createPageUrl } from '@/utils';
 
+const normalize = (value = '') => value.toLowerCase().replace(/[\s-_]/g, '');
 
-export default function PageNotFound({}) {
+const buildAccessGatePaths = () => {
+    const canonical = PAGE_ROUTE_OVERRIDES?.AccessGate ?? createPageUrl('AccessGate');
+    const aliases = PAGE_ROUTE_ALIASES?.AccessGate ?? [];
+    return [canonical, ...aliases];
+};
+
+const levenshtein = (left = '', right = '') => {
+    const leftLength = left.length;
+    const rightLength = right.length;
+    if (!leftLength) return rightLength;
+    if (!rightLength) return leftLength;
+
+    const matrix = Array.from({ length: leftLength + 1 }, () => new Array(rightLength + 1).fill(0));
+    for (let i = 0; i <= leftLength; i += 1) matrix[i][0] = i;
+    for (let j = 0; j <= rightLength; j += 1) matrix[0][j] = j;
+
+    for (let i = 1; i <= leftLength; i += 1) {
+        for (let j = 1; j <= rightLength; j += 1) {
+            const cost = left[i - 1] === right[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + cost,
+            );
+        }
+    }
+
+    return matrix[leftLength][rightLength];
+};
+
+const rankClosestMatches = (requestedKey, pageKeys) => {
+    const normalizedRequested = normalize(requestedKey);
+
+    return pageKeys
+        .map((key) => {
+            const normalizedKey = normalize(key);
+            const distance = levenshtein(normalizedRequested, normalizedKey);
+            const longest = Math.max(normalizedRequested.length, normalizedKey.length) || 1;
+            const score = 1 - distance / longest;
+            return { key, score };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+};
+
+export default function PageNotFound() {
     const location = useLocation();
-    const pageName = location.pathname.substring(1);
+    const requestedPath = location.pathname || '/';
+    const requestedKey = requestedPath.replace('/', '');
+    const pageKeys = Object.keys(pagesConfig.Pages ?? {});
+    const closestMatches = rankClosestMatches(requestedKey, pageKeys);
+    const accessGatePaths = buildAccessGatePaths();
+    const hasAccessGate = Boolean(pagesConfig.Pages?.AccessGate);
+    const isAccessGateRequest = normalize(requestedKey) === 'accessgate';
 
     const { data: authData, isFetched } = useQuery({
         queryKey: ['user'],
@@ -16,60 +70,84 @@ export default function PageNotFound({}) {
             } catch (error) {
                 return { user: null, isAuthenticated: false };
             }
-        }
+        },
     });
-    
+
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
-            <div className="max-w-md w-full">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-[#09090b] text-zinc-200">
+            <div className="max-w-lg w-full border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm p-8">
                 <div className="text-center space-y-6">
-                    {/* 404 Error Code */}
                     <div className="space-y-2">
-                        <h1 className="text-7xl font-light text-slate-300">404</h1>
-                        <div className="h-0.5 w-16 bg-slate-200 mx-auto"></div>
+                        <p className="text-[10px] font-mono uppercase text-zinc-500 tracking-[0.3em]">Mission Control</p>
+                        <h1 className="text-6xl font-light text-zinc-500">404</h1>
+                        <div className="h-px w-20 bg-zinc-800 mx-auto"></div>
                     </div>
-                    
-                    {/* Main Message */}
+
                     <div className="space-y-3">
-                        <h2 className="text-2xl font-medium text-slate-800">
-                            Page Not Found
-                        </h2>
-                        <p className="text-slate-600 leading-relaxed">
-                            The page <span className="font-medium text-slate-700">"{pageName}"</span> could not be found in this application.
+                        <h2 className="text-2xl font-semibold text-zinc-100">Route Not Found</h2>
+                        <p className="text-sm text-zinc-400 leading-relaxed">
+                            The requested route <span className="font-mono text-zinc-200">{requestedPath}</span> is not registered.
                         </p>
                     </div>
-                    
-                    {/* Admin Note */}
-                    {isFetched && authData.isAuthenticated && authData.user?.role === 'admin' && (
-                        <div className="mt-8 p-4 bg-slate-100 rounded-lg border border-slate-200">
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center mt-0.5">
-                                    <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                                </div>
-                                <div className="text-left space-y-1">
-                                    <p className="text-sm font-medium text-slate-700">Admin Note</p>
-                                    <p className="text-sm text-slate-600 leading-relaxed">
-                                        This could mean that the AI hasn't implemented this page yet. Ask it to implement it in the chat.
-                                    </p>
-                                </div>
+
+                    <div className="grid gap-4 text-left bg-zinc-900/40 border border-zinc-800 p-4">
+                        <div>
+                            <p className="text-[10px] uppercase font-mono text-zinc-500">Requested Route</p>
+                            <p className="text-sm font-mono text-zinc-200">{requestedPath}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] uppercase font-mono text-zinc-500">Closest Matches</p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {closestMatches.map((match) => (
+                                    <span
+                                        key={match.key}
+                                        className="text-xs font-mono text-zinc-300 border border-zinc-800 px-2 py-1 bg-zinc-950/60"
+                                    >
+                                        {match.key}
+                                    </span>
+                                ))}
                             </div>
                         </div>
+                    </div>
+
+                    {isAccessGateRequest && !hasAccessGate && (
+                        <div className="text-left border border-amber-900/50 bg-amber-950/20 p-4 space-y-2">
+                            <p className="text-[10px] uppercase font-mono text-amber-400 tracking-widest">
+                                Access Gate missing
+                            </p>
+                            <p className="text-xs text-amber-200">Check pages.config.js registration.</p>
+                            <p className="text-xs text-amber-200">Check filename casing.</p>
+                            <p className="text-xs text-amber-200">Check default export.</p>
+                        </div>
                     )}
-                    
-                    {/* Action Button */}
-                    <div className="pt-6">
-                        <button 
-                            onClick={() => window.location.href = '/'} 
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+
+                    {isFetched && authData.isAuthenticated && authData.user?.role === 'admin' && (
+                        <div className="mt-4 p-4 border border-zinc-800 bg-zinc-900/60 text-left">
+                            <p className="text-[10px] uppercase font-mono text-zinc-500 tracking-widest">Admin Note</p>
+                            <p className="text-xs text-zinc-400 leading-relaxed mt-2">
+                                This route may not be implemented yet. Validate page registration or ask the AI to implement it.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        {hasAccessGate && (
+                            <button
+                                onClick={() => (window.location.href = accessGatePaths[0])}
+                                className="inline-flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#ea580c] hover:bg-[#ea580c]/90 transition-colors duration-200"
+                            >
+                                Go to Access Gate
+                            </button>
+                        )}
+                        <button
+                            onClick={() => (window.location.href = '/')}
+                            className="inline-flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-300 border border-zinc-800 hover:border-[#ea580c]/50 hover:text-white transition-colors duration-200"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            Go Home
+                            Return to Command Hub
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    )
+    );
 }
