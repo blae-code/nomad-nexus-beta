@@ -10,7 +10,7 @@ export default function AccessGate() {
   const [accessKey, setAccessKey] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [grantedRank, setGrantedRank] = useState(null);
+  const [grantedRank, setGrantedRank] = useState('VAGRANT');
   const [grantedRoles, setGrantedRoles] = useState([]);
 
   const handleRedeemKey = async () => {
