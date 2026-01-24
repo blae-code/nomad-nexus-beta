@@ -619,26 +619,25 @@ export default function ActiveNetPanel({ net, user, eventId, effectiveMode, fall
              return;
           }
 
-          const isDev = import.meta.env.DEV;
+          const envMode = (import.meta.env.MODE || '').toLowerCase();
+          const isDev = !envMode || envMode === 'development';
 
           // Ensure URL is properly formatted (wss:// for WebSocket)
           url = url.trim();
-          if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
-             if (url.startsWith('http://')) {
-                url = 'ws://' + url.substring(7);
-             } else if (url.startsWith('https://')) {
-                url = 'wss://' + url.substring(8);
-             } else {
-                url = 'wss://' + url;
-             }
-          }
-
-          if (!isDev && url.startsWith('ws://')) {
+          if (!isDev && (url.startsWith('http://') || url.startsWith('ws://'))) {
             console.error('[COMMS] Insecure LiveKit URL blocked:', url);
             setConnectionError('Insecure comms endpoint blocked.');
             setConnectionState("failed");
             onError?.('Insecure comms endpoint blocked.');
             return;
+          }
+
+          if (url.startsWith('https://')) {
+            url = `wss://${url.substring(8)}`;
+          } else if (url.startsWith('http://')) {
+            url = `ws://${url.substring(7)}`;
+          } else if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
+            url = `${isDev ? 'ws' : 'wss'}://${url}`;
           }
 
           if (typeof token !== 'string' || token.length === 0) {
