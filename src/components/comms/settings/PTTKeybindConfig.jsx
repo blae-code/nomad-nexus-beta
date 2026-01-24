@@ -1,26 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { KeySquare, Keyboard, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const VALID_KEYS = [
-  'Space', 'Enter', 'Tab', 'Shift', 'Control', 'Alt',
+  'Space', 'Enter', 'Tab', 'Shift', 'Control', 'Alt', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight',
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
   'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'
 ];
 
+const PTT_KEY_OPTIONS = [
+  { value: 'Space', label: 'Space' },
+  { value: 'ControlLeft', label: 'Left Ctrl' },
+  { value: 'AltRight', label: 'Right Alt' },
+];
+
+const PTT_KEY_LABELS = {
+  Space: 'Space',
+  ControlLeft: 'Left Ctrl',
+  AltRight: 'Right Alt',
+};
+
 export default function PTTKeybindConfig({ preferences, setPreferences }) {
   const [isListening, setIsListening] = useState(false);
-  const [displayKey, setDisplayKey] = useState(preferences.pttKey);
+  const [displayKey, setDisplayKey] = useState(preferences.pttKey || 'Space');
+
+  const getDisplayLabel = (key) => PTT_KEY_LABELS[key] || key;
+
+  useEffect(() => {
+    setDisplayKey(preferences.pttKey || 'Space');
+  }, [preferences.pttKey]);
 
   const handleKeyCapture = (e) => {
     e.preventDefault();
-    const key = e.key;
-    const keyName = key === ' ' ? 'Space' : key.charAt(0).toUpperCase() + key.slice(1);
+    const key = e.code || e.key;
+    const keyName = key === 'Space'
+      ? 'Space'
+      : key === 'ControlLeft'
+      ? 'ControlLeft'
+      : key === 'AltRight'
+      ? 'AltRight'
+      : e.key.charAt(0).toUpperCase() + e.key.slice(1);
 
     if (VALID_KEYS.includes(keyName) || VALID_KEYS.includes(key.toUpperCase())) {
       setDisplayKey(keyName);
@@ -50,7 +75,7 @@ export default function PTTKeybindConfig({ preferences, setPreferences }) {
               <p className="text-sm text-zinc-400 mb-2">Current Keybind</p>
               <Badge className="bg-[#ea580c]/20 border border-[#ea580c]/50 text-[#ea580c] text-base py-2 px-4 font-mono">
                 <KeySquare className="w-4 h-4 mr-2 inline" />
-                {displayKey}
+                {getDisplayLabel(displayKey)}
               </Badge>
             </div>
             <Button
@@ -88,6 +113,41 @@ export default function PTTKeybindConfig({ preferences, setPreferences }) {
               <Badge variant="outline" className="border-zinc-700">+more...</Badge>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <KeySquare className="w-5 h-5 text-[#ea580c]" />
+            <div>
+              <CardTitle>Quick PTT Presets</CardTitle>
+              <CardDescription>Pick a common PTT key combo from the dropdown.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={preferences.pttKey || 'Space'}
+            onValueChange={(value) => {
+              setDisplayKey(value);
+              setPreferences(prev => ({
+                ...prev,
+                pttKey: value,
+              }));
+            }}
+          >
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue placeholder="Select PTT key..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              {PTT_KEY_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 

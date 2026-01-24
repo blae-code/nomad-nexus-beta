@@ -96,7 +96,7 @@ function CommsConsolePage() {
     }
   }, [markFailover]);
   
-  const { isTransmitting, pttKey } = usePTT(null, userPreferences);
+  const { isTransmitting, pttKeyLabel, pttWarning } = usePTT(null, userPreferences);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -701,7 +701,12 @@ function CommsConsolePage() {
          />
 
          {/* PTT HUD */}
-         <PTTHud isTransmitting={isTransmitting && selectedNetId} pttKey={pttKey} isMuted={!selectedNetId} />
+         <PTTHud
+           isTransmitting={isTransmitting && selectedNetId}
+           pttKey={pttKeyLabel}
+           pttWarning={pttWarning}
+           isMuted={!selectedNetId}
+         />
 
          {/* Net Switch Overlay */}
          <NetSwitchOverlay 
