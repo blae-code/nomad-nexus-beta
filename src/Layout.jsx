@@ -13,7 +13,7 @@ import { theme } from "@/styles/theme";
 
 const accessGatePath = createPageUrl('AccessGate');
 const accessGateAliases = new Set(
-  [accessGatePath, '/accessgate', '/AccessGate'].map((path) => path.toLowerCase()),
+  [accessGatePath, '/accessgate', '/AccessGate', '/login'].map((path) => path.toLowerCase()),
 );
 
 const pageMap = {
@@ -34,6 +34,7 @@ const pageMap = {
         '/settings': 'settings',
         '/access-gate': 'access-gate',
         '/accessgate': 'access-gate', // Support both hyphenated and non-hyphenated
+        '/login': 'access-gate', // Route /login to access-gate
       };
 
 const iconAccent = theme.colors.accent.replace('#', '%23');
