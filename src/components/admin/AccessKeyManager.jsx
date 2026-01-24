@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 export default function AccessKeyManager() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [grantRank, setGrantRank] = useState('VAGRANT');
-  const [expiryDays, setExpiryDays] = useState('7');
   const [note, setNote] = useState('');
   const queryClient = useQueryClient();
 
@@ -24,13 +23,9 @@ export default function AccessKeyManager() {
   // Generate key mutation
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + parseInt(expiryDays));
-      
       const result = await base44.functions.invoke('issueAccessKey', {
         grants_rank: grantRank,
         grants_roles: [],
-        expires_at: expiresAt.toISOString(),
         max_uses: 1,
         note
       });
@@ -75,7 +70,7 @@ export default function AccessKeyManager() {
         <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Generate Invite Key</h3>
         
         <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Rank</label>
               <select
@@ -89,17 +84,6 @@ export default function AccessKeyManager() {
                 <option value="FOUNDER">Founder</option>
                 <option value="PIONEER">Pioneer</option>
               </select>
-            </div>
-            <div>
-              <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Expires In (Days)</label>
-              <Input
-                type="number"
-                value={expiryDays}
-                onChange={(e) => setExpiryDays(e.target.value)}
-                min="1"
-                max="365"
-                className="bg-zinc-800 border-zinc-700 text-xs h-9"
-              />
             </div>
             <div>
               <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Note (Optional)</label>
@@ -143,7 +127,7 @@ export default function AccessKeyManager() {
                         <div className="font-mono font-bold text-white">{key.code}</div>
                         <div className="text-[9px] text-zinc-500">
                           {key.note && `Note: ${key.note} • `}
-                          Rank: {key.grants_rank} • Expires: {new Date(key.expires_at).toLocaleDateString()}
+                          Rank: {key.grants_rank} • Permanent
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
