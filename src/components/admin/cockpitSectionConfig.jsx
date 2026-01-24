@@ -51,6 +51,15 @@ export const COCKPIT_SECTIONS = [
     component: GovernanceSection,
   },
   {
+    id: 'access-keys',
+    label: 'Invite Keys',
+    icon: Key,
+    minRank: 'founder',
+    visible: true,
+    description: 'Generate and manage access keys for registration',
+    component: AccessKeyManager,
+  },
+  {
     id: 'system',
     label: 'System Status',
     icon: Server,
