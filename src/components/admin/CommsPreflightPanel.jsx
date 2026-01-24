@@ -154,6 +154,11 @@ export default function CommsPreflightPanel({ user }) {
           throw new Error('No LiveKit URL in token response');
         }
 
+        const isDev = import.meta.env.DEV;
+        if (!isDev && url.startsWith('ws://')) {
+          throw new Error('Insecure comms endpoint blocked.');
+        }
+
         // Attempt actual Room connection
         const room = new Room();
         const connectStart = Date.now();

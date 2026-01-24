@@ -18,6 +18,9 @@ class ObservabilityCollector {
     this.liveKitEnv = null;
     this.maxErrors = 50;
     this.maxRequests = 100;
+    this.enableVerboseRequests = Boolean(
+      typeof import.meta !== 'undefined' && import.meta.env?.DEV
+    );
     
     this.initErrorHandler();
     this.initNetworkMonitor();
@@ -61,25 +64,30 @@ class ObservabilityCollector {
     window.fetch = (...args) => {
       const startTime = performance.now();
       const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+      const shouldLog = this.shouldLogRequest(url);
       
       return originalFetch.apply(window, args).then(response => {
         const duration = Math.round(performance.now() - startTime);
-        this.recordNetworkRequest({
-          url,
-          status: response.status,
-          duration,
-          timestamp: new Date().toISOString()
-        });
+        if (shouldLog) {
+          this.recordNetworkRequest({
+            url: this.sanitizeUrl(url),
+            status: response.status,
+            duration,
+            timestamp: new Date().toISOString()
+          });
+        }
         return response;
       }).catch(error => {
         const duration = Math.round(performance.now() - startTime);
-        this.recordNetworkRequest({
-          url,
-          status: 0,
-          error: error.message,
-          duration,
-          timestamp: new Date().toISOString()
-        });
+        if (shouldLog) {
+          this.recordNetworkRequest({
+            url: this.sanitizeUrl(url),
+            status: 0,
+            error: error.message,
+            duration,
+            timestamp: new Date().toISOString()
+          });
+        }
         throw error;
       });
     };
@@ -101,6 +109,31 @@ class ObservabilityCollector {
     if (this.networkRequests.length > this.maxRequests) {
       this.networkRequests.pop();
     }
+  }
+
+  sanitizeUrl(rawUrl = '') {
+    if (!rawUrl) return rawUrl;
+
+    try {
+      const parsed = new URL(rawUrl, window.location.origin);
+      return `${parsed.origin}${parsed.pathname}`;
+    } catch (error) {
+      return rawUrl.split('?')[0];
+    }
+  }
+
+  shouldLogRequest(rawUrl = '') {
+    if (this.enableVerboseRequests) return true;
+    return this.isCommsRequest(rawUrl);
+  }
+
+  isCommsRequest(rawUrl = '') {
+    const safeUrl = this.sanitizeUrl(rawUrl);
+    return [
+      '/generateLiveKitToken',
+      '/getLiveKitRoomStatus',
+      '/verifyCommsReadiness'
+    ].some((segment) => safeUrl.includes(segment));
   }
 
   recordSubscriptionHeartbeat(netId, eventId, status) {
