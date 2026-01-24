@@ -235,7 +235,7 @@ export default function Layout({ children, currentPageName }) {
       {/* TODO: Move meta/link/style tags to index.html or head manager after demo */}
       <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
         {/* AppShellV3: No left rail, palette-driven nav */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden pb-12">
           {currentPage === 'access-gate' ? (
             // Access gate: full-screen, no chrome
             <div className="h-full w-full">
@@ -248,9 +248,10 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </SafeAppShellV3>
           )}
-          {/* Comms Dock - hide on access gate */}
-          {user && currentPage !== 'access-gate' && isFn(SafeCommsDockShell) ? <SafeCommsDockShell user={user} /> : null}
         </div>
+
+        {/* Comms Dock - hide on access gate */}
+        {user && currentPage !== 'access-gate' && isFn(SafeCommsDockShell) ? <SafeCommsDockShell user={user} /> : null}
 
         {/* User Feedback System */}
         {isFn(SafeRadialFeedbackMenu) ? <SafeRadialFeedbackMenu /> : null}

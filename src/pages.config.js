@@ -73,7 +73,3 @@ export const pagesConfig = {
     Pages: PAGES,
     Layout: __Layout,
 };
-export const PAGE_ROUTE_ALIASES = {};
-export const PAGE_ROUTE_OVERRIDES = {};
-export default { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
-export default pagesConfig;
