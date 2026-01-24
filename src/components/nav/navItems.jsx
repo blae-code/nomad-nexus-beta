@@ -24,6 +24,17 @@ export const navItems = [
     section: 'Mission Control',
     items: [
       {
+        id: 'access-gate',
+        label: 'Access Gate',
+        icon: Shield,
+        route: '/access-gate',
+        page: 'AccessGate',
+        minRank: 'Vagrant',
+        roles: [],
+        badgeKey: null,
+        hidden: true, // Hidden from nav but route is registered
+      },
+      {
         id: 'hub',
         label: 'Command Hub',
         icon: Radio,
@@ -169,6 +180,9 @@ export function getVisibleNavItems(user) {
   const filtered = navItems.map(section => ({
     ...section,
     items: section.items.filter(item => {
+      // Skip hidden items
+      if (item.hidden) return false;
+      
       // Check rank
       const minRankValue = getRankValue(item.minRank);
       if (userRankValue < minRankValue) return false;
