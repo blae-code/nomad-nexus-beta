@@ -593,7 +593,7 @@ export default function CommandPaletteV3() {
 
   return (
     <>
-      <div ref={containerRef} className="relative max-w-2xl flex-1">
+      <div ref={containerRef} className="relative w-full max-w-2xl flex-1 min-w-0">
       {/* Main Input */}
       <div className="relative group">
         {/* Pulsing outer glow when not open - draws attention */}
@@ -635,7 +635,7 @@ export default function CommandPaletteV3() {
         >
           {/* Pulsing chevrons - left side (pointing inward) */}
           <motion.div
-            className="absolute right-full top-1/2 -translate-y-1/2 mr-2 flex gap-0.5"
+            className="absolute right-full top-1/2 -translate-y-1/2 mr-2 hidden md:flex gap-0.5"
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
@@ -645,7 +645,7 @@ export default function CommandPaletteV3() {
           </motion.div>
           {/* Pulsing chevrons - right side (pointing inward) */}
           <motion.div
-            className="absolute left-full top-1/2 -translate-y-1/2 ml-2 flex gap-0.5"
+            className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden md:flex gap-0.5"
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >

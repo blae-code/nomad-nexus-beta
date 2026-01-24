@@ -23,11 +23,11 @@ export default function AppShellV3({ children, currentPage, user, showRightPanel
       {/* Body: 2-column layout (no left rail) */}
       <div className="flex-1 h-full overflow-hidden flex gap-0">
         {/* Main content (full width or minus right panel) */}
-        <div className="flex-1 h-full overflow-hidden flex flex-col">{children}</div>
+        <div className="flex-1 h-full overflow-y-auto overflow-x-hidden flex flex-col">{children}</div>
 
         {/* Optional right context panel */}
           {showRightPanel && (
-            <div className="w-80 h-full overflow-hidden border-l border-zinc-800 bg-zinc-950 flex flex-col shrink-0">
+            <div className="hidden lg:flex lg:w-80 h-full overflow-hidden border-l border-zinc-800 bg-zinc-950 flex-col shrink-0">
               <ContextPanel currentPage={currentPage} user={user} />
             </div>
           )}

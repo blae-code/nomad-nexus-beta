@@ -477,14 +477,14 @@ export default function HeaderV3() {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <header className="h-16 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0"
+    <header className="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-2 sm:gap-3 fixed top-0 left-0 right-0"
       style={{
         backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)',
         backgroundSize: '100% 2px',
       }}
     >
       {/* LEFT: Brand + Callsign + Presence */}
-      <div className="flex items-center gap-2.5 min-w-0 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
         {/* NOMAD NEXUS Logo */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -494,7 +494,7 @@ export default function HeaderV3() {
               </div>
               <div>
                 <h1 className="text-sm font-black uppercase tracking-tighter text-white drop-shadow-lg">NOMAD NEXUS</h1>
-                <p className="text-[7px] font-mono text-zinc-500 tracking-widest">OPERATIONS</p>
+                <p className="text-[7px] font-mono text-zinc-500 tracking-widest hidden sm:block">OPERATIONS</p>
               </div>
             </div>
           </TooltipTrigger>
@@ -504,10 +504,10 @@ export default function HeaderV3() {
         </Tooltip>
 
         {/* Divider */}
-        <div className="w-px h-10 bg-zinc-800/50" />
+        <div className="w-px h-10 bg-zinc-800/50 hidden sm:block" />
 
         {/* User Identity Badges */}
-        <div className="flex flex-col gap-1 shrink-0">
+        <div className="hidden sm:flex flex-col gap-1 shrink-0">
           {/* Row 1: Callsign/Username */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -554,7 +554,7 @@ export default function HeaderV3() {
               <button
                 onClick={() => setStatusMenuOpen(!statusMenuOpen)}
                 className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-2 border text-[9px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
+                  'flex items-center gap-1.5 px-2 py-1.5 border text-[9px] font-mono font-bold uppercase shrink-0 transition-all duration-100',
                   presenceInfo.color,
                   'hover:shadow-sm'
                 )}
@@ -622,7 +622,7 @@ export default function HeaderV3() {
             <motion.button
               whileHover={{ scale: 1.08 }}
               onClick={() => window.location.href = createPageUrl('Treasury')}
-              className="hover:opacity-90 transition-opacity cursor-pointer group hidden sm:flex"
+              className="hover:opacity-90 transition-opacity cursor-pointer group hidden md:flex"
             >
               <Badge className="text-[10px] bg-[#ea580c]/20 text-[#ea580c] border-2 border-[#ea580c]/50 group-hover:bg-[#ea580c]/30 group-hover:border-[#ea580c] px-3 py-1.5 transition-all flex items-center gap-1.5">
                 <Coins className="w-3 h-3" />
@@ -638,20 +638,26 @@ export default function HeaderV3() {
       </div>
 
       {/* CENTER: Command Palette */}
-      <div className="flex-1 flex items-center justify-center max-w-[560px]">
+      <div className="flex-1 flex items-center justify-center min-w-0 px-2 sm:px-0">
         <CommandPaletteV3 />
       </div>
 
       {/* RIGHT: Telemetry + User Menu */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Ritual Bonfire Widget */}
-        <RitualBonfireWidget />
+        <div className="hidden lg:flex">
+          <RitualBonfireWidget />
+        </div>
         
         {/* Time Clocks */}
-        <TimeClock />
+        <div className="hidden md:flex">
+          <TimeClock />
+        </div>
 
         {/* System Health Indicator */}
-        <SystemHealthIndicator />
+        <div className="hidden md:flex">
+          <SystemHealthIndicator />
+        </div>
 
         {/* Diagnostics Drawer (Admin Only) */}
         {user?.role === 'admin' && (
@@ -707,7 +713,7 @@ export default function HeaderV3() {
         </Tooltip>
 
         {/* Notifications */}
-        <div className="scale-125 origin-right">
+        <div className="scale-110 sm:scale-125 origin-right">
           <NotificationCenter user={user} />
         </div>
 
