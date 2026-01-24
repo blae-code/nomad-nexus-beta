@@ -1,4 +1,3 @@
-
 // Route configuration export for NavigationTracker and routing
 // Maps page keys to their actual routes
 
