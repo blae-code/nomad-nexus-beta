@@ -38,7 +38,7 @@ export default function EventCommandStaff({ event, canEdit }) {
 
     try {
       const updated = { ...staff, [roleKey]: userId };
-      await base44.entities.Event.update(event.id, { command_staff: updated });
+      await base44.entities.Event.update(safeEvent.id, { command_staff: updated });
       setStaff(updated);
       toast.success('STAFF ASSIGNMENT UPDATED');
     } catch (err) {
@@ -51,7 +51,7 @@ export default function EventCommandStaff({ event, canEdit }) {
 
     try {
       const updated = { ...staff, [roleKey]: null };
-      await base44.entities.Event.update(event.id, { command_staff: updated });
+      await base44.entities.Event.update(safeEvent.id, { command_staff: updated });
       setStaff(updated);
       toast.success('STAFF ASSIGNMENT REMOVED');
     } catch (err) {
