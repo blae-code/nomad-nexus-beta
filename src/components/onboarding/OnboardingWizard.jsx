@@ -27,7 +27,7 @@ const steps = [
   { id: 'complete', title: 'Ready', icon: CheckCircle2 }
 ];
 
-export default function OnboardingWizard({ grantedRank, grantedRoles, onComplete }) {
+export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles = [], onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [callsign, setCallsign] = useState('');
   const [bio, setBio] = useState('');
@@ -59,8 +59,8 @@ export default function OnboardingWizard({ grantedRank, grantedRoles, onComplete
         await base44.entities.MemberProfile.create({
           user_id: user.id,
           callsign: callsign.trim(),
-          rank: grantedRank || 'VAGRANT',
-          roles: grantedRoles || [],
+          rank: grantedRank,
+          roles: Array.isArray(grantedRoles) ? grantedRoles : [],
           onboarding_completed: true,
           accepted_codes_at: codesAccepted ? new Date().toISOString() : null,
           ai_consent: aiConsent
