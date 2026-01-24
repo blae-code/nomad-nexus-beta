@@ -99,7 +99,7 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
     toast.success('Welcome to Nomad Nexus!');
     setTimeout(() => {
       onComplete?.();
-      window.location.href = '/hub';
+      window.location.href = '/hub?showOnboarding=true';
     }, 1000);
   };
 
