@@ -262,12 +262,12 @@ export default function Layout({ children, currentPageName }) {
         {currentPage === 'access-gate' ? (
           // Access gate: full-screen, no chrome
           <div className="h-full w-full">
-            {children}
+            <ChildComponent />
           </div>
         ) : (
           <AppShellV3 currentPage={currentPage} user={user}>
             <div className="pt-14 pb-2">
-              {children}
+              <ChildComponent />
             </div>
           </AppShellV3>
         )}
