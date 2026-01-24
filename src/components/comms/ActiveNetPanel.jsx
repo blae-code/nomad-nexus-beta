@@ -29,6 +29,7 @@ import { Room, RoomEvent } from 'livekit-client';
 import { normalizePlayerStatusRecords, normalizePlayerStatus } from '@/components/contracts/normalization';
 import { PLAYER_STATUS } from '@/components/contracts/dataContract';
 import CommsPreflight from '@/components/comms/CommsPreflight';
+import CommsStateChip from './CommsStateChip';
 import CommsStateChip from '@/components/comms/CommsStateChip';
 
 function CommsLog({ eventId }) {
