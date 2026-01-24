@@ -47,7 +47,7 @@ const PAGE_BREADCRUMBS = {
 export default function HeaderV3() {
   const [time, setTime] = useState(new Date());
   const [user, setUser] = useState(null);
-  const [userPresence, setUserPresence] = useState(null);
+  const [userPresence, setUserPresence] = useState({});
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState('OPTIMAL');
@@ -472,7 +472,7 @@ export default function HeaderV3() {
     } catch (e) {
       console.error('Failed to update status:', e);
       // Revert optimistic update on error
-      fetchPresence();
+      setUserPresence({});
     }
   };
 
