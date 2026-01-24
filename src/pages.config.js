@@ -41,7 +41,6 @@ export const pagesConfig = {
     Pages: PAGES,
     Layout: __Layout,
 };
-<<<<<<< HEAD
 
 export function resolveRouteAlias(pathname = '/') {
   return PAGE_ROUTE_ALIASES[pathname] ?? pathname;
@@ -62,5 +61,3 @@ export function getPageByPath(pathname = '/') {
 // Default export maintained for legacy imports like: import pagesConfig from '@/pages.config'
 export default pagesConfig;
 
-=======
->>>>>>> 5c2b417fe45fed091068b422d078f8d762d300b2
