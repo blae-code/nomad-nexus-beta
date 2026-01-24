@@ -78,7 +78,15 @@ function EventDetail({ id }) {
   const { data: allAssets } = useQuery({ queryKey: ['event-assets-detail'], queryFn: () => base44.entities.FleetAsset.list(), initialData: [] });
 
   if (isLoading) {
-    return <div className="h-full flex items-center justify-center bg-zinc-950"><LoadingState message="LOADING OPERATION..." /></div>;
+    return (
+      <div className="h-full flex items-center justify-center bg-[#09090b] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
+        <div className="text-center relative z-10">
+          <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Loading Operation...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!event) {
@@ -94,9 +102,9 @@ function EventDetail({ id }) {
   }
 
   return (
-    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
+    <div className="h-full bg-[#09090b] text-zinc-100 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 flex flex-col">
-        <div className="h-full flex flex-col overflow-hidden px-3 py-2 lg:px-4 lg:py-3 max-w-full">
+        <div className="h-full flex flex-col overflow-hidden px-2 py-2 max-w-full">
         
           {/* Ultra-Compact Header */}
           <div className="shrink-0 mb-2">
@@ -331,18 +339,18 @@ export default function EventsPage() {
 
   // Render List View - Compact layout for 1440p
   return (
-    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden pt-14">
+    <div className="h-full bg-[#09090b] text-zinc-100 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="shrink-0 border-b border-zinc-800 px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <h2 className={cn(TYPOGRAPHY.H2, "text-white text-xl")}>OPERATIONS BOARD</h2>
-             <p className={cn(TYPOGRAPHY.LABEL_SM, "text-zinc-500")}>Upcoming missions and deployments</p>
+            <h2 className="text-xl font-black uppercase tracking-tighter text-white">OPERATIONS BOARD</h2>
+            <p className="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Upcoming Missions & Deployments</p>
           </div>
           {canCreateEvent(currentUser) && (
             <Button 
               onClick={() => setShowWizard(true)} 
-              className="bg-red-900 hover:bg-red-800 text-white text-xs h-7 px-3"
+              className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-[8px] h-7 px-3 font-bold uppercase"
             >
               INITIALIZE OPERATION
             </Button>

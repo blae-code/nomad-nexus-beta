@@ -124,10 +124,12 @@ export default function AdminCockpitPage() {
 
   if (!user) {
     return (
-      <div className="h-full flex items-center justify-center bg-black">
-        <div className="text-center">
-          <Radio className="w-12 h-12 text-[#ea580c] animate-pulse mx-auto mb-4" />
-          <p className="text-sm font-mono text-zinc-500">LOADING COCKPIT...</p>
+      <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
+        <div className="text-center relative z-10">
+          <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Loading Cockpit...</p>
+          <p className="text-[10px] font-mono text-zinc-700 mt-4">ADMIN INIT</p>
         </div>
       </div>
     );
@@ -135,7 +137,7 @@ export default function AdminCockpitPage() {
 
   return (
     <PageLayout title="Admin Cockpit">
-      <div className="h-full overflow-hidden flex flex-col bg-black">
+      <div className="h-full overflow-hidden flex flex-col bg-[#09090b]">
         {/* Header with readiness score & real-time system status */}
           <div className="border-b border-zinc-800 px-4 py-3 shrink-0 space-y-2">
             <CockpitHeader readinessScore={readinessScore} auditLogs={auditLogs} effectiveCommsMode={effectiveMode} modeFallbackReason={fallbackReason} />

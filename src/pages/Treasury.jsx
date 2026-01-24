@@ -43,25 +43,28 @@ export default function TreasuryPage() {
   if (isLoading) return <div className="min-h-screen bg-zinc-950 p-10 text-zinc-500">Loading Treasury...</div>;
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 p-6 pt-20 overflow-auto">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-           <div>
-             <h1 className="text-4xl font-black uppercase tracking-tighter text-white flex items-center gap-2">
-               <Shield className="w-8 h-8 text-[#ea580c]" /> 
-               TREASURY
-             </h1>
-             <p className="text-xs font-mono text-zinc-600 mt-2 tracking-widest">SQUAD FUNDS & ARMORY MANAGEMENT</p>
-           </div>
+    <div className="h-screen bg-[#09090b] text-zinc-100 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="shrink-0 border-b border-zinc-800 px-4 py-2">
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-[#ea580c]" />
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tighter text-white">TREASURY</h1>
+              <p className="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Squad Funds & Armory Management</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Content */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-2 p-2">
 
            {/* Coffer List */}
-           <div className="lg:col-span-4 space-y-2">
-              <div className="text-[10px] font-bold uppercase text-zinc-600 px-1 tracking-wider mb-3">ACTIVE FUNDS</div>
+           <div className="lg:col-span-4 space-y-2 overflow-y-auto">
+              <div className="text-[8px] font-bold uppercase text-zinc-500 px-1 tracking-wider mb-2">ACTIVE FUNDS</div>
               {coffersWithBalance.length === 0 && (
-                 <div className="p-4 text-center border border-zinc-800/50 bg-zinc-950 text-zinc-600 text-[10px] font-mono">
+                 <div className="p-3 text-center border border-zinc-800 bg-zinc-950 text-zinc-600 text-[8px] font-mono">
                     NO COFFERS INITIALIZED
                  </div>
               )}
@@ -70,52 +73,53 @@ export default function TreasuryPage() {
                    key={coffer.id} 
                    onClick={() => setSelectedCoffer(coffer)}
                    className={cn(
-                      "w-full text-left p-3 border transition-all duration-100",
+                      "w-full text-left p-2 border transition-all",
                       selectedCoffer?.id === coffer.id 
                          ? "bg-zinc-900/60 border-[#ea580c]/50" 
-                         : "bg-zinc-950 border-zinc-800/50 hover:border-zinc-700/50"
+                         : "bg-zinc-950 border-zinc-800 hover:border-zinc-700"
                    )}
                  >
-                    <div className="flex justify-between items-start mb-2">
-                       <div className="flex items-center gap-2">
-                          <Coins className={cn("w-3.5 h-3.5", selectedCoffer?.id === coffer.id ? "text-[#ea580c]" : "text-zinc-600")} />
-                          <h4 className={cn("text-xs font-bold", selectedCoffer?.id === coffer.id ? "text-white" : "text-zinc-300")}>{coffer.name}</h4>
+                    <div className="flex justify-between items-start mb-1.5">
+                       <div className="flex items-center gap-1.5">
+                          <Coins className={cn("w-3 h-3", selectedCoffer?.id === coffer.id ? "text-[#ea580c]" : "text-zinc-600")} />
+                          <h4 className={cn("text-[9px] font-bold uppercase", selectedCoffer?.id === coffer.id ? "text-white" : "text-zinc-300")}>{coffer.name}</h4>
                        </div>
-                       <span className="text-[9px] font-mono uppercase text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 border border-zinc-800">{coffer.type}</span>
+                       <span className="text-[7px] font-mono uppercase text-zinc-600 bg-zinc-900/50 px-1 py-0.5 border border-zinc-800">{coffer.type}</span>
                     </div>
-                    <div className="text-lg font-mono font-bold text-zinc-200">
-                       {(coffer.balance || 0).toLocaleString()} <span className="text-[#ea580c] text-sm">¤</span>
+                    <div className="text-base font-mono font-bold text-zinc-200">
+                       {(coffer.balance || 0).toLocaleString()} <span className="text-[#ea580c] text-xs">¤</span>
                     </div>
-                    {coffer.description && <div className="text-[9px] text-zinc-600 mt-1 line-clamp-1">{coffer.description}</div>}
+                    {coffer.description && <div className="text-[7px] text-zinc-600 mt-1 line-clamp-1">{coffer.description}</div>}
                  </button>
               ))}
            </div>
 
            {/* Transaction View */}
-           <div className="lg:col-span-8">
+           <div className="lg:col-span-8 overflow-hidden flex flex-col">
               {selectedCoffer ? (
-                 <div className="border border-zinc-800/50 bg-zinc-950 h-full min-h-[500px] flex flex-col">
-                    <div className="border-b border-zinc-800/50 p-4 flex flex-row items-center justify-between shrink-0">
+                 <div className="border border-zinc-800 bg-zinc-950 h-full flex flex-col">
+                    <div className="border-b border-zinc-800 p-2 flex flex-row items-center justify-between shrink-0">
                        <div>
-                          <div className="text-sm font-bold text-white uppercase tracking-wider">
+                          <div className="text-[9px] font-bold text-white uppercase tracking-wider">
                              {selectedCoffer.name} LEDGER
                           </div>
-                          <p className="text-[9px] text-zinc-600 mt-1 font-mono">TRANSACTION HISTORY</p>
+                          <p className="text-[7px] text-zinc-600 mt-0.5 font-mono uppercase">Transaction History</p>
                        </div>
                        {canEditResources(currentUser) && <TransactionForm cofferId={selectedCoffer.id} />}
                     </div>
-                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                    <div className="flex-1 min-h-0 overflow-y-auto p-2">
                        <TransactionHistory cofferId={selectedCoffer.id} />
                     </div>
                  </div>
               ) : (
-                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-zinc-600 border border-zinc-800/50 bg-zinc-950">
-                    <Wallet className="w-12 h-12 mb-4 opacity-20" />
-                    <p className="text-xs font-mono tracking-widest uppercase">SELECT A COFFER</p>
+                 <div className="h-full flex flex-col items-center justify-center text-zinc-600 border border-zinc-800 bg-zinc-950">
+                    <Wallet className="w-10 h-10 mb-3 opacity-20" />
+                    <p className="text-[8px] font-mono tracking-widest uppercase">Select a Coffer</p>
                  </div>
               )}
            </div>
 
+          </div>
         </div>
       </div>
     </div>
