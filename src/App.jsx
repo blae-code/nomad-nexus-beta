@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
-import { pagesConfig, PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from './pages.config'
+import pagesConfig, { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
