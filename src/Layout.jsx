@@ -54,8 +54,12 @@ export default function Layout({ children, currentPageName }) {
           const profile = profiles?.[0];
 
           if (!profile || !profile.onboarding_completed) {
-            // Redirect to access gate
-            window.location.href = '/access-gate';
+            // Redirect to access gate - use navigate to prevent flicker
+            setLoading(false);
+            // Delay redirect to prevent render-time redirects
+            setTimeout(() => {
+              window.location.href = '/access-gate';
+            }, 0);
             return;
           }
           setMemberProfile(profile);
