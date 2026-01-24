@@ -64,7 +64,7 @@ export default function Layout({ children, currentPageName }) {
         } catch (authError) {
           console.error('[LAYOUT] Auth failed or timed out:', authError);
           setLoading(false);
-          navigate('/access-gate', { replace: true });
+          navigate('/AccessGate', { replace: true });
           return;
         }
 
@@ -80,7 +80,7 @@ export default function Layout({ children, currentPageName }) {
             // Set loading to false first to prevent flicker
             setLoading(false);
             // Navigate using react-router to prevent full page reload
-            navigate('/access-gate', { replace: true });
+            navigate('/AccessGate', { replace: true });
             return;
           }
           setMemberProfile(profile);
@@ -92,7 +92,7 @@ export default function Layout({ children, currentPageName }) {
       } catch (error) {
         console.error('[LAYOUT] Init error:', error);
         setLoading(false);
-        navigate('/access-gate', { replace: true });
+        navigate('/AccessGate', { replace: true });
       } finally {
         setLoading(false);
       }
@@ -102,8 +102,8 @@ export default function Layout({ children, currentPageName }) {
     const watchdog = setTimeout(() => {
       console.error('[LAYOUT] Init watchdog triggered - forcing recovery');
       setLoading(false);
-      if (location.pathname.toLowerCase() !== '/access-gate') {
-        navigate('/access-gate', { replace: true });
+      if (location.pathname.toLowerCase() !== '/accessgate') {
+        navigate('/AccessGate', { replace: true });
       }
     }, 12000);
 
