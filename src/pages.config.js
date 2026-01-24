@@ -30,6 +30,8 @@ import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import __Layout from './Layout.jsx';
+import Academy from './pages/Academy';
+
 
 export const PAGES = {
   Academy,
@@ -65,6 +67,8 @@ export const PAGES = {
   UserSettings,
   VoiceNetManager,
 };
+export const PAGE_ROUTE_OVERRIDES = {};
+export const PAGE_ROUTE_ALIASES = {};
 
 export const pagesConfig = {
     mainPage: "Hub",
