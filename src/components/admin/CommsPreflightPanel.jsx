@@ -6,6 +6,22 @@ import { base44 } from '@/api/base44Client';
 import { Room } from 'livekit-client';
 import CommsStateChip from '@/components/comms/CommsStateChip';
 import { useCommsReadiness } from '@/components/comms/useCommsReadiness';
+import CommsFallbackPanel from '@/components/comms/CommsFallbackPanel';
+
+const shouldTriggerFallbackFromError = (error) => {
+  if (!error) return false;
+  const message = (error?.message || error || '').toString();
+  return /network|failed to fetch|fetch failed|econnrefused|enotfound|eai_again/i.test(message);
+};
+
+const isTimeoutReason = (reason) => {
+  if (!reason) return false;
+  return /timeout|timed out/i.test(reason);
+};
+
+const isLiveKitConfigError = (errorCode) => {
+  return ['ENV_NOT_CONFIGURED', 'INSECURE_LIVEKIT_URL'].includes(errorCode);
+};
 
 const CheckItem = ({ label, status, message, detail }) => {
   const icons = {
@@ -58,7 +74,14 @@ export default function CommsPreflightPanel({ user }) {
     channels_seeded: { status: 'idle', message: '', detail: '' }
   });
   const [overallResult, setOverallResult] = useState(null);
-  const { effectiveMode, fallbackReason } = useCommsReadiness();
+  const { effectiveMode, fallbackReason, retryLive } = useCommsReadiness();
+  const [fallbackDetail, setFallbackDetail] = useState(null);
+
+  React.useEffect(() => {
+    if (isTimeoutReason(fallbackReason)) {
+      setFallbackDetail(fallbackReason);
+    }
+  }, [fallbackReason]);
 
   const updateCheck = (key, status, message, detail) => {
     setChecks(prev => ({
@@ -70,6 +93,7 @@ export default function CommsPreflightPanel({ user }) {
   const runPreflightCheck = async () => {
     setIsRunning(true);
     setOverallResult(null);
+    setFallbackDetail(null);
     const startTime = performance.now();
     const results = {};
     let hasFailure = false;
@@ -98,13 +122,25 @@ export default function CommsPreflightPanel({ user }) {
         });
 
         if (!tokenResponse.data?.ok || !tokenResponse.data?.data?.token) {
-          throw new Error(tokenResponse.data?.message || 'No token returned');
+          const errorCode = tokenResponse.data?.errorCode;
+          const errorMessage = tokenResponse.data?.message || 'No token returned';
+          if (isLiveKitConfigError(errorCode)) {
+            setFallbackDetail(errorMessage);
+            setOverallResult('FAIL');
+            return;
+          }
+          throw new Error(errorMessage);
         }
 
         const tokenPreview = tokenResponse.data.data.token.substring(0, 20) + '...';
         updateCheck('token_mint', 'pass', 'Minted', tokenPreview);
         results.token_mint = { status: 'pass', detail: tokenPreview };
       } catch (err) {
+        if (shouldTriggerFallbackFromError(err)) {
+          setFallbackDetail(err?.message || 'Network error while reaching comms service');
+          setOverallResult('FAIL');
+          return;
+        }
         updateCheck('token_mint', 'fail', 'Failed', err.message);
         results.token_mint = { status: 'fail', detail: err.message };
         hasFailure = true;
@@ -144,7 +180,14 @@ export default function CommsPreflightPanel({ user }) {
         });
 
         if (!tokenRes.data?.ok || !tokenRes.data?.data?.token) {
-          throw new Error('Failed to get token for connection test');
+          const errorCode = tokenRes.data?.errorCode;
+          const errorMessage = tokenRes.data?.message || 'Failed to get token for connection test';
+          if (isLiveKitConfigError(errorCode)) {
+            setFallbackDetail(errorMessage);
+            setOverallResult('FAIL');
+            return;
+          }
+          throw new Error(errorMessage);
         }
 
         const token = tokenRes.data.data.token;
@@ -172,6 +215,11 @@ export default function CommsPreflightPanel({ user }) {
         updateCheck('join_test', 'pass', 'Connected', `${connectDuration}ms`);
         results.join_test = { status: 'pass', detail: `${connectDuration}ms round-trip` };
       } catch (err) {
+        if (shouldTriggerFallbackFromError(err)) {
+          setFallbackDetail(err?.message || 'Network error while reaching comms service');
+          setOverallResult('FAIL');
+          return;
+        }
         updateCheck('join_test', 'fail', 'Failed', err.message);
         results.join_test = { status: 'fail', detail: err.message };
         hasFailure = true;
@@ -220,6 +268,26 @@ export default function CommsPreflightPanel({ user }) {
       setIsRunning(false);
     }
   };
+
+  if (fallbackDetail) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="space-y-3 p-3 border border-zinc-800 bg-zinc-950/50"
+      >
+        <CommsFallbackPanel
+          detail={fallbackDetail}
+          onRetry={() => {
+            setFallbackDetail(null);
+            setOverallResult(null);
+            retryLive();
+          }}
+        />
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
