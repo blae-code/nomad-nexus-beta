@@ -37,6 +37,15 @@ export default function HubPage() {
   const user = useCurrentUser();
   const { data, isLoading } = useDashboardData(user);
   const isTabVisible = useVisibilityPause();
+
+  // Check if user wants to see onboarding
+  useEffect(() => {
+    if (searchParams.get('showOnboarding') === 'true') {
+      setShowOnboarding(true);
+      // Clean up URL
+      window.history.replaceState({}, '', createPageUrl('Hub'));
+    }
+  }, [searchParams]);
   
   // Memoize navigation handlers
   const handleNavigateToEvents = useCallback(() => navigate(createPageUrl('Events')), [navigate]);
