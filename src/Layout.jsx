@@ -174,20 +174,20 @@ export default function Layout({ children, currentPageName }) {
       <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
         {/* AppShellV3: No left rail, palette-driven nav */}
         <div className="flex-1 flex flex-col overflow-hidden">
-        {currentPage === 'access-gate' ? (
-           // Access gate: full-screen, no chrome
-           <div className="h-full w-full">
-             {children}
-           </div>
-         ) : (
-           <AppShellV3 currentPage={currentPage} user={user}>
-             <div className="pt-14 pb-2">
-               {children}
-             </div>
-           </AppShellV3>
-         )}
-        {/* Comms Dock - hide on access gate */}
-        {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
+          {currentPage === 'access-gate' ? (
+            // Access gate: full-screen, no chrome
+            <div className="h-full w-full">
+              {children}
+            </div>
+          ) : (
+            <AppShellV3 currentPage={currentPage} user={user}>
+              <div className="pt-14 pb-2">
+                {children}
+              </div>
+            </AppShellV3>
+          )}
+          {/* Comms Dock - hide on access gate */}
+          {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
         </div>
 
         {/* User Feedback System */}
@@ -195,7 +195,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
         <LayoutDebugMode />
-        </div>
-        </ErrorBoundary>
-        );
-        }
+      </div>
+    </ErrorBoundary>
+  );
+  }
