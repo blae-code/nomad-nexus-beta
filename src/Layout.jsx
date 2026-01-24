@@ -7,7 +7,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
-      import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
+import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
+import { ROUTES } from "@/lib/routes";
 
 const pageMap = {
         '/': 'hub',
@@ -42,7 +43,7 @@ export default function Layout({ children, currentPageName }) {
         setUser(u);
 
         // Allow access-gate to render without profile check
-        if (location.pathname === '/access-gate') {
+        if (location.pathname === ROUTES.ACCESS_GATE) {
           setLoading(false);
           return;
         }
@@ -54,7 +55,7 @@ export default function Layout({ children, currentPageName }) {
 
           if (!profile || !profile.onboarding_completed) {
             // Redirect to access gate
-            window.location.href = '/access-gate';
+            window.location.href = ROUTES.ACCESS_GATE;
             return;
           }
           setMemberProfile(profile);

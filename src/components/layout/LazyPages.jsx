@@ -12,6 +12,7 @@ export const LazyChannels = lazy(() => import('@/pages/Channels'));
 export const LazyUniverseMap = lazy(() => import('@/pages/UniverseMap'));
 export const LazyProfile = lazy(() => import('@/pages/Profile'));
 export const LazyRescue = lazy(() => import('@/pages/Rescue'));
+export const LazyAccessGate = lazy(() => import('@/pages/AccessGate'));
 
 // Deprecated: Use LazyAdminCockpit instead
 export const LazyAdminConsole = LazyAdminCockpit;
