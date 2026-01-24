@@ -23,9 +23,12 @@ const STAFF_ROLES = [
 ];
 
 export default function EventCommandStaff({ event, canEdit }) {
+   if (!event) return null;
+   
    const [staff, setStaff] = React.useState(event.command_staff || {});
 
-   const staffUserIds = Object.values(event.command_staff || {}).filter(Boolean);
+   const commandStaff = event?.command_staff ?? {};
+   const staffUserIds = Object.values(commandStaff).filter(Boolean);
    const { users, userById } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
 
   const handleAssignRole = async (roleKey, userId) => {
