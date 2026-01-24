@@ -124,6 +124,11 @@ export default function HubPage() {
 
     return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
+      {/* Onboarding Overlay */}
+      {showOnboarding && (
+        <HubOnboardingOverlay onComplete={() => setShowOnboarding(false)} />
+      )}
+
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
           {/* Live Operational Pulse - Compact */}
