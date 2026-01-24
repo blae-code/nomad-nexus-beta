@@ -563,6 +563,9 @@ export default function CommandPaletteV3() {
     }
   };
 
+  // Memoize icon map
+  const memoizedIconMap = useMemo(() => iconMap, []);
+
   // Get icon component
   const getIcon = (iconName) => {
     return memoizedIconMap[iconName] || Command;
@@ -587,9 +590,6 @@ export default function CommandPaletteV3() {
     };
     return breadcrumbs[path] || 'OPERATIONS';
   };
-
-  // Memoize icon map
-  const memoizedIconMap = useMemo(() => iconMap, []);
 
   return (
     <>

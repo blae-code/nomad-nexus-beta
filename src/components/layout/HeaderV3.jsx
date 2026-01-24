@@ -15,7 +15,6 @@ import RitualBonfireWidget from '@/components/dashboard/RitualBonfireWidget';
 import SystemHealthIndicator from '@/components/layout/SystemHealthIndicator';
 import ObservabilityDiagnostics from '@/components/admin/ObservabilityDiagnostics';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect as useReactEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { HEADER_BASE_CLASS, HEADER_SURFACE_STYLE } from '@/components/layout/headerStyles';
