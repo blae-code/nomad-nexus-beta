@@ -187,7 +187,7 @@ export default function Layout({ children, currentPageName }) {
            </AppShellV3>
          )}
         {/* Comms Dock - hide on access gate */}
-          {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
+        {user && currentPage !== 'access-gate' && <CommsDockShell user={user} />}
         </div>
 
         {/* User Feedback System */}
