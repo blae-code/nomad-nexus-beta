@@ -25,6 +25,7 @@ const pageMap = {
         '/channels': 'channels',
         '/profile': 'profile',
         '/settings': 'settings',
+        '/access-gate': 'access-gate',
       };
 
 export default function Layout({ children, currentPageName }) {
