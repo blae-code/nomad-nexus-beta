@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 
 /**
  * PageShell: Enforced no-scroll layout wrapper
@@ -22,15 +23,7 @@ export default function PageShell({
     <div className={cn('h-full overflow-hidden flex flex-col min-h-0', className)}>
       {/* Header */}
       {(title || subtitle || actions) && (
-        <div className="shrink-0 bg-zinc-950 border-b border-[var(--divider-color)] px-[var(--gutter)] py-[var(--gutter)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              {title && <h1 className="text-2xl font-black uppercase tracking-tighter text-white">{title}</h1>}
-              {subtitle && <p className="text-zinc-500 font-mono text-xs mt-1">{subtitle}</p>}
-            </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
-          </div>
-        </div>
+        <PageHeader title={title} subtitle={subtitle} actions={actions} />
       )}
 
       {/* Content: min-h-0 prevents flex overflow, children must use explicit scroll regions */}

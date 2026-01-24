@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect as useReactEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { HEADER_BASE_CLASS, HEADER_SURFACE_STYLE } from '@/components/layout/headerStyles';
 
 /**
  * HeaderV3: "Living intranet" command surface
@@ -477,11 +478,12 @@ export default function HeaderV3() {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <header className="h-16 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0"
-      style={{
-        backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)',
-        backgroundSize: '100% 2px',
-      }}
+    <header
+      className={cn(
+        HEADER_BASE_CLASS,
+        'flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0'
+      )}
+      style={HEADER_SURFACE_STYLE}
     >
       {/* LEFT: Brand + Callsign + Presence */}
       <div className="flex items-center gap-2.5 min-w-0 shrink-0">
