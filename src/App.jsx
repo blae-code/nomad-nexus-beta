@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { createPageUrl } from '@/utils';
 import AccessGate from './pages/AccessGate';
+import CommsDevTest from './pages/CommsDevTest';
 
 const resolvedPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? {} : pagesConfig ?? {});
 const Layout = pagesConfig?.Layout;
@@ -87,6 +88,16 @@ const AuthenticatedApp = () => {
           />
         ));
       })}
+      {import.meta.env.DEV && (
+        <Route
+          path="/__dev/comms-test"
+          element={
+            <LayoutWrapper currentPageName="__dev-comms-test">
+              <CommsDevTest />
+            </LayoutWrapper>
+          }
+        />
+      )}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
