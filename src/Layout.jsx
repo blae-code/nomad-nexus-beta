@@ -180,96 +180,61 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
 
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
-  useEffect(() => {
-    const timeoutPromise = (ms) => new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), ms)
-    );
+        useEffect(() => {
+          const initApp = async () => {
+            try {
+              initializeAccessToken();
 
-    const initApp = async () => {
-      try {
-        initializeAccessToken();
+              const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
 
-        const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
+              // Allow access-gate to render without auth checks (it's a public gate page)
+              if (isAccessGatePath) {
+                setLoading(false);
+                return;
+              }
 
-        // Allow access-gate to render without auth checks (it's a public gate page)
-        if (isAccessGatePath) {
-          setLoading(false);
-          return;
-        }
+              // Check auth first - single call
+              const isAuthenticated = await base44.auth.isAuthenticated();
+              if (!isAuthenticated) {
+                console.log('[LAYOUT] Not authenticated, redirecting to AccessGate');
+                setLoading(false);
+                navigate(accessGatePath, { replace: true });
+                return;
+              }
 
-        // Fetch user with 8s timeout
-        let u;
-        try {
-          const isAuthenticated = await base44.auth.isAuthenticated();
-          if (!isAuthenticated) {
-            // Not authenticated - redirect to AccessGate, never call redirectToLogin
-            console.log('[LAYOUT] User not authenticated, redirecting to AccessGate');
-            setLoading(false);
-            navigate(accessGatePath, { replace: true });
-            return;
-          }
-          u = await Promise.race([
-            base44.auth.me(),
-            timeoutPromise(8000)
-          ]);
-          setUser(u);
-        } catch (authError) {
-          console.error('[LAYOUT] Auth failed or timed out:', authError);
-          setLoading(false);
-          navigate(accessGatePath, { replace: true });
-          return;
-        }
+              // Fetch user once
+              const u = await base44.auth.me();
+              setUser(u);
 
-        // Admin bypass: system admins skip profile/onboarding checks
-        if (u.role === 'admin') {
-          console.log('[LAYOUT] Admin bypass - skipping profile check');
-          setLoading(false);
-          return;
-        }
+              // Admin bypass: skip profile checks
+              if (u.role === 'admin') {
+                console.log('[LAYOUT] Admin detected, skipping profile check');
+                setLoading(false);
+                return;
+              }
 
-        // Check for member profile with 8s timeout - only for non-admin users
-        try {
-          const profiles = await Promise.race([
-            base44.entities.MemberProfile.filter({ user_id: u.id }),
-            timeoutPromise(8000)
-          ]);
-          const profile = profiles?.[0];
+              // Check profile for non-admin users
+              const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+              const profile = profiles?.[0];
 
-          if (!profile || !profile.onboarding_completed) {
-            // Set loading to false first to prevent flicker
-            setLoading(false);
-            // Navigate using react-router to prevent full page reload
-            navigate(accessGatePath, { replace: true });
-            return;
-          }
-          setMemberProfile(profile);
-        } catch (err) {
-          console.error('[LAYOUT] Profile check failed or timed out:', err);
-          // Fail-open: allow through to prevent lockout
-          setMemberProfile(null);
-        }
-      } catch (error) {
-        console.error('[LAYOUT] Init error:', error);
-        setLoading(false);
-        navigate(accessGatePath, { replace: true });
-      } finally {
-        setLoading(false);
-      }
-    };
+              if (!profile || !profile.onboarding_completed) {
+                console.log('[LAYOUT] Onboarding incomplete, redirecting to AccessGate');
+                setLoading(false);
+                navigate(accessGatePath, { replace: true });
+                return;
+              }
 
-    // Watchdog: force recovery after 12s if still loading
-    const watchdog = setTimeout(() => {
-      console.error('[LAYOUT] Init watchdog triggered - forcing recovery');
-      setLoading(false);
-      if (!accessGateAliases.has(location.pathname.toLowerCase())) {
-        navigate(accessGatePath, { replace: true });
-      }
-    }, 12000);
+              setMemberProfile(profile);
+              setLoading(false);
+            } catch (error) {
+              console.error('[LAYOUT] Init error:', error);
+              setLoading(false);
+              navigate(accessGatePath, { replace: true });
+            }
+          };
 
-    initApp();
-
-    return () => clearTimeout(watchdog);
-  }, [location.pathname, navigate]);
+          initApp();
+        }, [location.pathname, navigate]);
 
   // DEMO: disable service worker to prevent stale hashed asset 404s
   useEffect(() => {
