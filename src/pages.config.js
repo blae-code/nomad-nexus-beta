@@ -8,13 +8,14 @@ function pageNameFromPath(path) {
   return m?.[1] ?? null;
 }
 
-function routeFromName(name) {
-  if (!name) return '/';
-  if (name.toLowerCase() === 'hub') return '/hub';
-  return `/${name.toLowerCase()}`;
-}
+// ✅ MUST exist as named exports (various components import these)
+export const PAGE_ROUTE_OVERRIDES = {
+  Hub: '/hub',
+  AccessGate: '/accessgate',
+  AdminCockpit: '/admin',
+  PageNotFound: '/404',
+};
 
-// ✅ MUST exist as a named export (AdminCockpit/AccessGate/PageNotFound depend on it)
 export const PAGE_ROUTE_ALIASES = {
   '/': '/hub',
   '/home': '/hub',
@@ -23,6 +24,12 @@ export const PAGE_ROUTE_ALIASES = {
   '/access-gate': '/accessgate',
   '/accessGate': '/accessgate',
 };
+
+function routeFromName(name) {
+  if (!name) return '/';
+  if (PAGE_ROUTE_OVERRIDES[name]) return PAGE_ROUTE_OVERRIDES[name];
+  return `/${name.toLowerCase()}`;
+}
 
 export const pagesConfig = Object.entries(pagesGlob)
   .map(([path, mod]) => {
