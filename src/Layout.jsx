@@ -38,34 +38,54 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
 
   // Show loading state while initializing to prevent flicker
-  if (loading && location.pathname !== '/access-gate') {
+  if (loading && location.pathname.toLowerCase() !== '/access-gate') {
     return (
       <div className="h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm font-mono text-zinc-500">INITIALIZING...</p>
+          <p className="text-[8px] font-mono text-zinc-700 mt-4">LAYOUT INIT</p>
         </div>
       </div>
     );
   }
 
   useEffect(() => {
+    const timeoutPromise = (ms) => new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    );
+
     const initApp = async () => {
       try {
         initializeAccessToken();
         
         // Allow access-gate to render without auth checks (it's a public gate page)
-        if (location.pathname === '/access-gate') {
+        if (location.pathname.toLowerCase() === '/access-gate') {
           setLoading(false);
           return;
         }
 
-        const u = await base44.auth.me();
-        setUser(u);
-
-        // Check for member profile - only for other pages
+        // Fetch user with 8s timeout
+        let u;
         try {
-          const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+          u = await Promise.race([
+            base44.auth.me(),
+            timeoutPromise(8000)
+          ]);
+          setUser(u);
+        } catch (authError) {
+          console.error('[LAYOUT] Auth failed or timed out:', authError);
+          setLoading(false);
+          navigate('/access-gate', { replace: true });
+          return;
+        }
+
+        // Check for member profile with 8s timeout - only for other pages
+        try {
+          const profiles = await Promise.race([
+            base44.entities.MemberProfile.filter({ user_id: u.id }),
+            timeoutPromise(8000)
+          ]);
           const profile = profiles?.[0];
 
           if (!profile || !profile.onboarding_completed) {
@@ -77,15 +97,27 @@ export default function Layout({ children, currentPageName }) {
           }
           setMemberProfile(profile);
         } catch (err) {
-          console.error('[LAYOUT] Profile check failed:', err);
-          // Allow through if profile check fails to prevent lockout
+          console.error('[LAYOUT] Profile check failed or timed out:', err);
+          // Fail-open: allow through to prevent lockout
+          setMemberProfile(null);
         }
       } catch (error) {
-        console.error('Init error:', error);
+        console.error('[LAYOUT] Init error:', error);
+        setLoading(false);
+        navigate('/access-gate', { replace: true });
       } finally {
         setLoading(false);
       }
     };
+
+    // Watchdog: force recovery after 12s if still loading
+    const watchdog = setTimeout(() => {
+      console.error('[LAYOUT] Init watchdog triggered - forcing recovery');
+      setLoading(false);
+      if (location.pathname.toLowerCase() !== '/access-gate') {
+        navigate('/access-gate', { replace: true });
+      }
+    }, 12000);
 
     initApp();
     
@@ -93,7 +125,9 @@ export default function Layout({ children, currentPageName }) {
     if (location.pathname === '/' || location.pathname === '') {
       window.history.replaceState({}, '', '/hub');
     }
-  }, [location.pathname]);
+
+    return () => clearTimeout(watchdog);
+  }, [location.pathname, navigate]);
 
   // Register service worker for PWA support
   useEffect(() => {
