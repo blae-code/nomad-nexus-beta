@@ -1,79 +1,103 @@
-# Base44 App
+# Nomad Nexus
 
-## Environment setup
+Nomad Nexus is a real-time communication and coordination platform with a dark sci-fi aesthetic. It is designed for communities to organize events, communicate via voice and text, and manage user roles and permissions.
 
-Copy the example env file and fill in the placeholders with real values.
+## Core Features
 
-```bash
-cp .env.example .env
-```
+- **Role-Based Access Control:** Differentiated permissions for Guests, Members, Officers, and Admins.
+- **Event Management:** Create, view, and manage public and private events.
+- **Real-Time Comms Console:** Integrated LiveKit for push-to-talk voice channels and direct messaging.
+- **AI-Powered Summaries:** On-demand AI analysis to summarize communication transcripts.
+- **Admin Dashboard:** Tools for user and event management.
+- **Responsive Design:** A consistent user experience across desktop, tablet, and mobile devices.
 
-### Required variables
+## Technology Stack
 
-| Variable | Description |
-| --- | --- |
-| `LIVEKIT_URL` | LiveKit server URL (include `http://` or `https://`). |
-| `LIVEKIT_API_KEY` | LiveKit API key used to mint tokens. |
-| `LIVEKIT_API_SECRET` | LiveKit API secret used to mint tokens. |
-| `VITE_BASE44_APP_ID` | Base44 application ID for client auth. |
-| `VITE_BASE44_BACKEND_URL` | Base44 API base URL (e.g. your Base44 instance). |
+- **Frontend:** React, Vite, React Router
+- **Real-Time Communication:** LiveKit
+- **Backend & Data Platform:** Base44 (AI-powered low-code platform)
+- **Styling:** Tailwind CSS with Radix UI for accessible base components.
+- **State Management:** TanStack React Query
+- **Testing:** Vitest
 
-> **Security note:** never commit real LiveKit secrets to git. Use secure values in production.
+---
 
-## Run locally
+## Getting Started
 
-Install dependencies and start the Vite dev server:
+### Prerequisites
+
+- Node.js (LTS version recommended)
+- npm (comes with Node.js)
+
+### Environment Setup
+
+1.  **Copy the Environment File:**
+    This project uses environment variables to connect to backend services. Create a `.env` file from the example:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  **Fill in Environment Variables:**
+    Open the `.env` file and add the required values for the LiveKit and Base44 services.
+
+    | Variable | Description |
+    | --- | --- |
+    | `LIVEKIT_URL` | The URL for your LiveKit server instance. |
+    | `LIVEKIT_API_KEY` | LiveKit API key. |
+    | `LIVEKIT_API_SECRET` | LiveKit API secret. |
+    | `VITE_BASE44_APP_ID` | Your Base44 application ID. |
+    | `VITE_BASE44_BACKEND_URL`| The API endpoint for your Base44 backend. |
+
+    > **Security Note:** Never commit secret keys to your Git repository. The `.gitignore` file is configured to ignore the `.env` file.
+
+### Installation
+
+Install the project dependencies using npm:
 
 ```bash
 npm install
+```
+
+### Running the Development Server
+
+Start the local Vite development server:
+
+```bash
 npm run dev
 ```
 
-### LiveKit options for local development
+The application will be available at `http://localhost:5173` (or the next available port).
 
-Pick **one** of the following options so LIVE comms can connect:
+---
 
-1. **Local LiveKit server**
-   - Install the LiveKit server (via Homebrew or download):
-     - <https://docs.livekit.io/realtime/self-hosting/>
-   - Run it locally (example using Docker):
+## Available Scripts
 
-     ```bash
-     docker run --rm \
-       -p 7880:7880 -p 7881:7881 -p 7882:7882 \
-       -e LIVEKIT_KEYS="devkey:secret" \
-       livekit/livekit-server --dev
-     ```
+The `package.json` file includes several scripts for common development tasks:
 
-   - Then set your env vars to match:
+- `npm run dev`: Starts the Vite development server with hot-reloading.
+- `npm run build`: Compiles and bundles the application for production.
+- `npm run preview`: Serves the production build locally for testing.
+- `npm run lint`: Lints the codebase for style and syntax errors using ESLint.
+- `npm run lint:fix`: Automatically fixes linting issues where possible.
+- `npm run typecheck`: Runs the TypeScript compiler to check for type errors.
+- `npm run test:comms`: Executes the test suite for the communications features using Vitest.
 
-     ```env
-     LIVEKIT_URL=http://localhost:7880
-     LIVEKIT_API_KEY=devkey
-     LIVEKIT_API_SECRET=secret
-     ```
+---
 
-2. **Test/hosted LiveKit server**
-   - Use LiveKit Cloud or any hosted test server.
-   - Set `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET` to the provided values.
+## Project Structure
 
-> If LIVEKIT values are missing while running on `localhost`, the app will treat it as a development setup but will still warn you that LIVE comms are disabled.
+- **`src/`**: Contains the main React frontend application code.
+  - **`src/components/`**: Shared and reusable React components.
+  - **`src/pages/`**: Top-level page components that correspond to application routes.
+  - **`src/lib/`**: Core utilities, contexts, and application-wide helpers.
+  - **`src/api/`**: Modules for interacting with external APIs, including the Base44 SDK.
+- **`functions/`**: Contains backend serverless functions deployed on the Base44 platform. These handle logic like token generation, data validation, and API integrations.
+- **`tests/`**: Contains automated tests for the application.
+- **`docs/`**: Project documentation, including the detailed test plan.
 
-## Production
+---
 
-1. Build the client:
+## Backend Functions
 
-   ```bash
-   npm run build
-   ```
-
-2. Serve the production build (example):
-
-   ```bash
-   npm run preview
-   ```
-
-3. Configure your production environment variables:
-   - Set the same variables from `.env.example` on your hosting platform.
-   - Point `LIVEKIT_URL` to your production LiveKit deployment.
-   - Use secure LiveKit API credentials (do not use the dev key/secret).
+The directory `functions/` contains TypeScript files that are deployed as serverless functions on the Base44 backend. These functions are not run locally but are invoked by the frontend application via the Base44 SDK. They are responsible for secure operations that require privileged access, such as minting LiveKit tokens or performing admin-level actions.
