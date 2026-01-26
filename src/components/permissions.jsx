@@ -81,9 +81,7 @@ export function canCreateEvent(user) {
 
 export function canApproveEvent(user) {
   // Pioneer, Founder, and Admin have oversight to approve events
-  if (!user) return false;
-  if (user.role === 'admin' || user.rank === 'Pioneer') return true;
-  return hasMinRank(user, 'Pioneer');
+  return hasMinRank(user, 'Founder');
 }
 
 export function canEditEvent(user, event) {

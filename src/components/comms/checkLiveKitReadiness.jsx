@@ -5,21 +5,20 @@
 export async function checkLiveKitReadiness() {
   try {
     // Check 1: Environment variables configured
-    const hasURL = process.env.REACT_APP_LIVEKIT_URL || process.env.LIVEKIT_URL;
-    const hasAPIKey = process.env.REACT_APP_LIVEKIT_API_KEY || process.env.LIVEKIT_API_KEY;
-    const hasAPISecret = process.env.REACT_APP_LIVEKIT_API_SECRET || process.env.LIVEKIT_API_SECRET;
+    const hasURL = import.meta.env.VITE_LIVEKIT_URL;
 
     if (!hasURL) return { isReady: false, reason: 'LiveKit URL not configured' };
-    if (!hasAPIKey) return { isReady: false, reason: 'LiveKit API key not configured' };
-    if (!hasAPISecret) return { isReady: false, reason: 'LiveKit API secret not configured' };
 
     // Check 2: Token generation works (test call to backend)
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const response = await fetch('/api/functions/generateLiveKitToken', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomName: '__test__', participantName: '__test__' })
-      });
+        body: JSON.stringify({ roomName: '__test__', participantName: '__test__' }),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
 
       if (!response.ok) {
         return { isReady: false, reason: 'Token generation failed' };

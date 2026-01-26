@@ -312,8 +312,10 @@ const buildDemoClient = () => {
             return {
               data: {
                 ok: true,
-                mode: 'simulated',
-                message: 'Demo mode comms readiness simulated.',
+                isReady: false,
+                envStatus: 'development',
+                warning: 'Demo mode active. LIVE comms are disabled.',
+                reason: 'Demo mode comms readiness simulated.',
               },
             };
           case 'getLiveKitRoomStatus':
@@ -347,10 +349,57 @@ const buildDemoClient = () => {
                 users: demoData.User,
               },
             };
+          case 'validateRankChangePermission':
+            return {
+              data: {
+                permitted: true,
+                error: null,
+              },
+            };
+          case 'validatePioneerUniqueness':
+            return {
+              data: {
+                valid: true,
+                error: null,
+              },
+            };
+          case 'validateVoyagerNumber':
+            return {
+              data: {
+                valid: true,
+                error: null,
+              },
+            };
+          case 'issueAccessKey':
+            return {
+              data: {
+                code: `DEMO-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+                grants_rank: payload?.grants_rank || 'VAGRANT',
+                grants_roles: payload?.grants_roles || [],
+                note: payload?.note || '',
+                status: 'ACTIVE',
+              },
+            };
+          case 'sendWhisper':
+            return {
+              data: {
+                ok: true,
+                recipients_count: payload?.targetIds?.length || 0,
+              },
+            };
+          case 'handleRescueRequest':
+            return {
+              data: {
+                ok: true,
+                roomName: 'RESCUE-NET',
+                message: 'Demo rescue request accepted.',
+              },
+            };
           default:
             return {
               data: {
                 ok: true,
+                data: {},
                 message: `Demo mode stub for ${name}`,
               },
             };
@@ -380,7 +429,10 @@ const buildDemoClient = () => {
 
 const shouldUseDemo = () => {
   if (isDemoMode()) return true;
-  if (!appId || !serverUrl) return true;
+  if (!appId || !serverUrl) {
+    console.error('[base44] Missing app_id or server_url; falling back to demo client.');
+    return true;
+  }
   return false;
 };
 

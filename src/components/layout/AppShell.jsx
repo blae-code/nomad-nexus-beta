@@ -73,7 +73,7 @@ export default function AppShell({
       </div>
 
       {/* Dev-only NoScroll Guard */}
-      {process.env.NODE_ENV === 'development' && <NoScrollGuard currentPage={currentPage} />}
+      {import.meta.env.DEV && <NoScrollGuard currentPage={currentPage} />}
     </div>
   );
 }
