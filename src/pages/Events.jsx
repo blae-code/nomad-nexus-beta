@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft, ChevronDown } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
@@ -317,6 +317,7 @@ function EventDetail({ id }) {
 }
 
 export default function EventsPage() {
+  const { search } = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardData, setWizardData] = useState(null);
@@ -324,7 +325,7 @@ export default function EventsPage() {
   const [newEventId, setNewEventId] = useState(null);
 
   // Check for Detail View
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(search);
   const id = params.get('id');
 
   useEffect(() => {

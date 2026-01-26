@@ -387,12 +387,286 @@ const buildDemoClient = () => {
                 recipients_count: payload?.targetIds?.length || 0,
               },
             };
+          case 'updateUserPresence':
+            return {
+              data: {
+                ok: true,
+                presence: {
+                  id: `presence-${demoUser.id}`,
+                  user_id: demoUser.id,
+                  status: payload?.status || 'online',
+                  net_id: payload?.netId || null,
+                  event_id: payload?.eventId || null,
+                  is_transmitting: Boolean(payload?.isTransmitting),
+                  last_activity: nowIso(),
+                },
+              },
+            };
           case 'handleRescueRequest':
             return {
               data: {
                 ok: true,
                 roomName: 'RESCUE-NET',
                 message: 'Demo rescue request accepted.',
+              },
+            };
+          case 'analyzeMessage':
+            return {
+              data: {
+                priority: 'low',
+                category: 'general',
+                summary: 'Demo analysis placeholder.',
+                action_items: [],
+                escalate: false,
+              },
+            };
+          case 'analyzeStatusUpdate':
+            return {
+              data: {
+                ok: true,
+                analysis: 'Demo status analysis complete.',
+              },
+            };
+          case 'channelAIAssistant': {
+            if (payload?.action === 'suggestChannels') {
+              return {
+                data: {
+                  result: {
+                    suggestions: [
+                      {
+                        channelName: 'operations',
+                        relevance: 0.82,
+                        reason: 'Demo suggestion based on message context.',
+                      },
+                    ],
+                  },
+                },
+              };
+            }
+            if (payload?.action === 'summarizeActivity') {
+              return {
+                data: {
+                  result: {
+                    summary: 'Demo activity summary.',
+                    sentiment: 'neutral',
+                    messageCount: 0,
+                    keyTopics: [],
+                  },
+                },
+              };
+            }
+            return { data: { result: {} } };
+          }
+          case 'commsAssistant': {
+            if (payload?.action === 'summarize_logs') {
+              return {
+                data: {
+                  summary: 'Demo comms summary.',
+                  key_points: [],
+                },
+              };
+            }
+            if (payload?.action === 'suggest_nets') {
+              return {
+                data: {
+                  recommended_net_code: 'COMMAND',
+                  reason: 'Demo recommendation for routing priority traffic.',
+                },
+              };
+            }
+            if (payload?.action === 'ask_comms') {
+              return {
+                data: {
+                  answer: 'Demo response: review operational logs for updates.',
+                },
+              };
+            }
+            return { data: {} };
+          }
+          case 'commsMonitor': {
+            if (payload?.action === 'analyze_threats') {
+              return {
+                data: {
+                  threat_level: 'normal',
+                  critical_alerts: [],
+                  keywords_detected: [],
+                },
+              };
+            }
+            if (payload?.action === 'summarize_traffic') {
+              return {
+                data: {
+                  summary: 'Demo traffic summary.',
+                  activity_level: 'LOW',
+                  nets_active: [],
+                  key_events: [],
+                  concerns: [],
+                },
+              };
+            }
+            return { data: {} };
+          }
+          case 'detectCommsAnomalies':
+            return {
+              data: {
+                analysis: {
+                  overall_status: 'NOMINAL',
+                  summary: 'No anomalies detected in demo mode.',
+                  anomalies: [],
+                },
+                context: {
+                  logsAnalyzed: 0,
+                },
+              },
+            };
+          case 'generateCommsSummary':
+            return {
+              data: {
+                summary: {
+                  executive_summary: 'Demo communications summary.',
+                  timeline: [],
+                  critical_information: [],
+                  action_items: [],
+                  recommendations: [],
+                  effectiveness_score: 8,
+                  effectiveness_notes: 'Comms flow is stable in demo mode.',
+                },
+                messages_analyzed: 0,
+              },
+            };
+          case 'generateEventAAR':
+            return {
+              data: {
+                success: true,
+              },
+            };
+          case 'generateEventReport':
+            return {
+              data: {
+                content: 'Demo report content.',
+                reportType: payload?.reportType || 'summary',
+              },
+            };
+          case 'generateFeedbackAISummary':
+            return {
+              data: {
+                ok: true,
+              },
+            };
+          case 'generateMultiChannelSummary':
+            return {
+              data: {
+                sitrep: {
+                  posture: 'NOMINAL',
+                  operational_status: 'Demo sitrep generated.',
+                  key_developments: [],
+                  threats_concerns: [],
+                  command_priorities: [],
+                },
+                context: {
+                  eventsAnalyzed: 0,
+                  channelsMonitored: 0,
+                },
+              },
+            };
+          case 'getCommsRoomStatus':
+            return {
+              data: {
+                roomName: payload?.roomName || null,
+                participantCount: 0,
+              },
+            };
+          case 'inferTacticalStatus':
+            return {
+              data: {
+                color: 'Green',
+                location: 'Unknown',
+                status: 'Nominal',
+                summary: 'Demo tactical status inference.',
+              },
+            };
+          case 'initializeEventComms':
+            return {
+              data: {
+                ok: true,
+                netsCreated: [],
+              },
+            };
+          case 'netAssistant': {
+            if (payload?.action === 'suggest_config') {
+              return {
+                data: {
+                  nets: [
+                    {
+                      code: 'COMMAND',
+                      label: 'Command Net',
+                      type: 'command',
+                      priority: 1,
+                      reasoning: 'Demo net suggestion.',
+                    },
+                  ],
+                },
+              };
+            }
+            if (payload?.action === 'detect_conflicts') {
+              return {
+                data: {
+                  conflicts: [],
+                },
+              };
+            }
+            if (payload?.action === 'status_report') {
+              return {
+                data: {
+                  summary: 'Demo network status report.',
+                  metrics: {
+                    net_health: 'optimal',
+                    total_nets: 0,
+                    active_participants: 0,
+                    critical_alerts: 0,
+                  },
+                  recommendations: [],
+                },
+              };
+            }
+            return { data: {} };
+          }
+          case 'provisionCommsFromFormation':
+            return {
+              data: {
+                ok: true,
+                netsCreated: [],
+              },
+            };
+          case 'riggsyChat':
+            return {
+              data: {
+                content: 'Demo response from Riggsy.',
+                timestamp: nowIso(),
+              },
+            };
+          case 'sendTacticalCommand':
+            return {
+              data: {
+                ok: true,
+              },
+            };
+          case 'setupDemoScenario':
+            return {
+              data: {
+                scenario: {
+                  id: 'demo-scenario',
+                  eventId: demoData.Event[0]?.id,
+                  message: 'Demo scenario ready.',
+                },
+              },
+            };
+          case 'transcribeVoiceNet':
+            return {
+              data: {
+                ok: true,
+                transcript: '',
+                segments: [],
               },
             };
           default:
