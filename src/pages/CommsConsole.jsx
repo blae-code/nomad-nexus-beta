@@ -332,6 +332,7 @@ function CommsConsolePage() {
   };
 
   const hasCommsAccess = Boolean(currentUser && (currentUser.role === 'admin' || currentUser.rank));
+  const hasCommsAccess = Boolean(currentUser && (currentUser.role === 'admin' || currentUser.rank || currentUser.rank === 'Vagrant'));
 
   // Show loading state while authenticating
   if (isLoadingAuth) {
