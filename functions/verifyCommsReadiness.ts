@@ -45,10 +45,13 @@ Deno.serve(async (req) => {
     // Check 2: Basic LiveKit connectivity (ping health endpoint)
     try {
       const healthUrl = new URL('/health', liveKitUrl).toString();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const healthResponse = await fetch(healthUrl, {
         method: 'GET',
-        timeout: 5000
+        signal: controller.signal,
       }).catch(() => null);
+      clearTimeout(timeoutId);
 
       if (!healthResponse?.ok) {
         return Response.json({
