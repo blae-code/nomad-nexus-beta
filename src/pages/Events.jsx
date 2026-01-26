@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft, ChevronDown } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
 import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
@@ -64,7 +64,7 @@ function EventDetail({ id }) {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  const { data: event, isLoading } = useQuery({
+  const { data: event, isLoading, error } = useQuery({
     queryKey: ['event-detail', id],
     queryFn: async () => {
       if (!id) return null;
@@ -85,6 +85,25 @@ function EventDetail({ id }) {
           <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Loading Operation...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center bg-zinc-950">
+        <EmptyState
+          title="Operation Load Failed"
+          description="Unable to load this operation. Retry or return to the board."
+          action={
+            <button
+              onClick={() => window.location.reload()}
+              className="text-[10px] font-mono uppercase tracking-wider border border-zinc-700 px-3 py-1.5 text-zinc-300 hover:border-[#ea580c]/50"
+            >
+              Retry
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -298,6 +317,7 @@ function EventDetail({ id }) {
 }
 
 export default function EventsPage() {
+  const { search } = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardData, setWizardData] = useState(null);
@@ -305,7 +325,7 @@ export default function EventsPage() {
   const [newEventId, setNewEventId] = useState(null);
 
   // Check for Detail View
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(search);
   const id = params.get('id');
 
   useEffect(() => {

@@ -5,11 +5,13 @@ import pagesConfig, { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.c
 import { createPageUrl } from '@/utils';
 
 const normalize = (value = '') => value.toLowerCase().replace(/[\s-_]/g, '');
+const aliases = PAGE_ROUTE_ALIASES ?? {};
+const overrides = PAGE_ROUTE_OVERRIDES ?? {};
 
 const buildAccessGatePaths = () => {
-    const canonical = PAGE_ROUTE_OVERRIDES?.AccessGate ?? createPageUrl('AccessGate');
-    const aliases = PAGE_ROUTE_ALIASES?.AccessGate ?? [];
-    return [canonical, ...aliases];
+    const canonical = overrides.AccessGate ?? createPageUrl('AccessGate');
+    const accessGateAliases = aliases.AccessGate ?? [];
+    return [canonical, ...accessGateAliases];
 };
 
 const levenshtein = (left = '', right = '') => {
@@ -150,14 +152,22 @@ export default function PageNotFound() {
                     <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                         {hasAccessGate && (
                             <button
-                                onClick={() => (window.location.href = accessGatePaths[0])}
+                                onClick={() => {
+                                    if (typeof window !== 'undefined') {
+                                        window.location.href = accessGatePaths[0];
+                                    }
+                                }}
                                 className="inline-flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#ea580c] hover:bg-[#ea580c]/90 transition-colors duration-200"
                             >
                                 Go to Access Gate
                             </button>
                         )}
                         <button
-                            onClick={() => (window.location.href = '/')}
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.location.href = '/';
+                                }
+                            }}
                             className="inline-flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-300 border border-zinc-800 hover:border-[#ea580c]/50 hover:text-white transition-colors duration-200"
                         >
                             Return to Command Hub

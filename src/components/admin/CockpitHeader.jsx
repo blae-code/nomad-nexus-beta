@@ -8,7 +8,7 @@ import CommsModeToggle from './CommsModeToggle';
 export default function CockpitHeader({ readinessScore, auditLogs, effectiveCommsMode = 'SIM', modeFallbackReason = null }) {
 
   // Check LiveKit environment
-  const hasLiveKit = !!process.env.LIVEKIT_URL; // Check if env is configured
+  const hasLiveKit = !!import.meta.env.VITE_LIVEKIT_URL; // Check if env is configured
   const commsReady = effectiveCommsMode === 'LIVE'; // True if LIVE and stable
 
   // Get last run time
