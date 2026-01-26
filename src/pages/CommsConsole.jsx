@@ -55,6 +55,7 @@ import CommsFailoverBanner from "@/components/comms/CommsFailoverBanner";
 
 function CommsConsolePage() {
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
+    if (typeof window === 'undefined') return null;
     const params = new URLSearchParams(window.location.search);
     const eventId = params.get('eventId');
     return eventId && eventId !== 'undefined' && eventId !== 'null' ? eventId : null;
@@ -79,9 +80,11 @@ function CommsConsolePage() {
   const [incidentFormOpen, setIncidentFormOpen] = React.useState(false);
   const [selectedIncident, setSelectedIncident] = React.useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = React.useState(true);
+  const [authError, setAuthError] = React.useState(null);
   const [userPreferences, setUserPreferences] = React.useState({});
   const [showAdvancedDrawer, setShowAdvancedDrawer] = React.useState(false);
   const [showSimulation, setShowSimulation] = React.useState(false);
+  const [provisionAttempts, setProvisionAttempts] = React.useState(0);
   
   // Compute effective comms mode (desired vs. actual readiness)
   const { effectiveMode, fallbackReason, retryLive, markFailover } = useCommsReadiness();
@@ -103,7 +106,10 @@ function CommsConsolePage() {
       try {
         const isAuth = await base44.auth.isAuthenticated();
         if (!isAuth) {
-          base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+          const returnUrl = typeof window !== 'undefined'
+            ? window.location.pathname + window.location.search
+            : '/';
+          base44.auth.redirectToLogin(returnUrl);
           return;
         }
         const user = await base44.auth.me();
@@ -111,7 +117,7 @@ function CommsConsolePage() {
         setUserPreferences(user?.commsPreferences || {});
       } catch (error) {
         console.error('Auth error:', error);
-        base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+        setAuthError(error);
       } finally {
         setIsLoadingAuth(false);
       }
@@ -121,6 +127,7 @@ function CommsConsolePage() {
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   React.useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -249,34 +256,49 @@ function CommsConsolePage() {
 
   // Auto-trigger provisioning when event selected with no nets
   React.useEffect(() => {
-     if (selectedEventId && voiceNets.length === 0 && !isLoading && !isProvisioningNets) {
-        setIsProvisioningNets(true);
-        // Longer delay to avoid rate limiting
-        const timeout = setTimeout(() => {
-           refetchNets().then(() => {
-              setIsProvisioningNets(false);
-           }).catch(() => {
-              // On error, keep provisioning flag to retry
-              setIsProvisioningNets(false);
-           });
-        }, 5000);
-        return () => clearTimeout(timeout);
-     }
-  }, [selectedEventId, voiceNets.length, isLoading, isProvisioningNets, refetchNets]);
+    if (!selectedEventId) return;
+    if (voiceNets.length > 0) {
+      setProvisionAttempts(0);
+      return;
+    }
+    if (isLoading || isProvisioningNets) return;
+    if (provisionAttempts >= 3) return;
+
+    setIsProvisioningNets(true);
+    setProvisionAttempts((prev) => prev + 1);
+    // Longer delay to avoid rate limiting
+    const timeout = setTimeout(() => {
+      refetchNets()
+        .catch(() => {})
+        .finally(() => {
+          setIsProvisioningNets(false);
+        });
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [
+    selectedEventId,
+    voiceNets.length,
+    isLoading,
+    isProvisioningNets,
+    refetchNets,
+    provisionAttempts,
+  ]);
 
   // Reset state when event changes
-   React.useEffect(() => {
-      setSelectedNetId(null);
-      setConnectedNetId(null);
-      setConnectionState('disconnected');
-      setConnectionError(null);
-      setMonitoredNetIds([]);
-   }, [selectedEventId]);
+  React.useEffect(() => {
+    setSelectedNetId(null);
+    setConnectedNetId(null);
+    setConnectionState('disconnected');
+    setConnectionError(null);
+    setMonitoredNetIds([]);
+    setProvisionAttempts(0);
+  }, [selectedEventId]);
 
   // Memoize nets to prevent unnecessary rerenders
-  const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
-  
-  const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
+  const selectedNet = React.useMemo(
+    () => voiceNets.find(n => n.id === selectedNetId) || null,
+    [selectedNetId, voiceNets]
+  );
 
   // Handlers for connection state changes from ActiveNetPanel
   const handleConnectSuccess = React.useCallback((netId) => {
@@ -309,13 +331,73 @@ function CommsConsolePage() {
      }
   };
 
+  const hasCommsAccess = Boolean(currentUser && (currentUser.role === 'admin' || currentUser.rank || currentUser.rank === 'Vagrant'));
+
   // Show loading state while authenticating
-  if (isLoadingAuth || !currentUser) {
+  if (isLoadingAuth) {
     return (
       <div className="h-full bg-black text-zinc-200 flex items-center justify-center">
         <div className="text-center">
           <Radio className="w-12 h-12 text-[#ea580c] animate-pulse mx-auto mb-4" />
           <p className="text-sm font-mono text-zinc-500">AUTHENTICATING...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="h-full bg-black text-zinc-200 flex items-center justify-center p-6">
+        <div className="border border-zinc-800 bg-zinc-950/80 p-6 text-center space-y-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Auth Failed</div>
+          <p className="text-xs text-zinc-500">Unable to verify your session. Please re-authenticate.</p>
+          <Button
+            size="sm"
+            className="text-[10px] h-7 bg-[#ea580c] hover:bg-[#ea580c]/90"
+            onClick={() => {
+              const returnUrl = typeof window !== 'undefined'
+                ? window.location.pathname + window.location.search
+                : '/';
+              base44.auth.redirectToLogin(returnUrl);
+            }}
+          >
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="h-full bg-black text-zinc-200 flex items-center justify-center">
+        <div className="text-center">
+          <Radio className="w-12 h-12 text-[#ea580c] animate-pulse mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-500">AUTHENTICATING...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasCommsAccess) {
+    return (
+      <div className="h-full bg-black text-zinc-200 flex items-center justify-center p-6">
+        <div className="border border-zinc-800 bg-zinc-950/80 p-6 text-center space-y-3">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Access Required</div>
+          <p className="text-xs text-zinc-500">
+            Your profile is still provisioning. Complete onboarding to access comms.
+          </p>
+          <Button
+            size="sm"
+            className="text-[10px] h-7 bg-[#ea580c] hover:bg-[#ea580c]/90"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/access-gate';
+              }
+            }}
+          >
+            Go to Access Gate
+          </Button>
         </div>
       </div>
     );

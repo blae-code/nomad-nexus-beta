@@ -1,25 +1,19 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPageUrl } from "@/utils";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
 import { useVisibilityPause } from '@/components/hooks/useVisibilityPause';
 import HubOnboardingOverlay from '@/components/onboarding/HubOnboardingOverlay';
-import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash, BookOpen, Lightbulb, Video, HelpCircle } from "lucide-react";
+import { Radio, AlertCircle, Target, Clock, Activity, ChevronRight, Flame, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
-import { getRankColorClass } from '@/components/utils/rankUtils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import HubMetricsPanel from "@/components/dashboard/HubMetricsPanel";
 import PersonalStatusPanel from "@/components/dashboard/PersonalStatusPanel";
-import HubPersonalStats from "@/components/dashboard/HubPersonalStats";
 import HubTabContent from "@/components/dashboard/HubTabContent";
 import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
-import IncidentHeatmap from "@/components/incidents/IncidentHeatmap";
-import ReportExporter from "@/components/dashboard/ReportExporter";
 import AnnouncementsTicker from "@/components/dashboard/AnnouncementsTicker";
 import { isDemoMode } from '@/lib/demo-mode';
 
@@ -32,6 +26,7 @@ export default function HubPage() {
   const [pulseCollapsed, setPulseCollapsed] = useState(false);
   const [trainingCollapsed, setTrainingCollapsed] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [watchdogTriggered, setWatchdogTriggered] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -44,13 +39,11 @@ export default function HubPage() {
     if (searchParams.get('showOnboarding') === 'true') {
       setShowOnboarding(true);
       // Clean up URL
-      window.history.replaceState({}, '', createPageUrl('Hub'));
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', createPageUrl('Hub'));
+      }
     }
   }, [searchParams]);
-  
-  // Memoize navigation handlers
-  const handleNavigateToEvents = useCallback(() => navigate(createPageUrl('Events')), [navigate]);
-  const handleTabChange = useCallback((tab) => setActiveTab(tab), []);
   
   useRealtimeSubscriptions({
     enabled: !!user && isTabVisible,
@@ -76,11 +69,8 @@ export default function HubPage() {
   const recentLogs = data?.recentLogs || [];
 
   // Determine which features to show based on rank
-  const showAdminFeatures = user?.role === 'admin';
-  const canCreateEvents = userRankIndex >= rankHierarchy.indexOf('Voyager');
   const canManageFleet = userRankIndex >= rankHierarchy.indexOf('Scout');
   const canAccessTreasury = userRankIndex >= rankHierarchy.indexOf('Scout');
-  const canAccessIntelligence = userRankIndex >= rankHierarchy.indexOf('Scout');
 
   // Calculate org engagement metrics
   const orgMetrics = useMemo(() => {
@@ -101,17 +91,57 @@ export default function HubPage() {
 
   // Watchdog: force recovery after data stall (always at top level)
   useEffect(() => {
-    if (!isLoading || isDemoMode()) return;
+    if (!user || !isLoading || isDemoMode()) {
+      setWatchdogTriggered(false);
+      return;
+    }
 
     const watchdog = setTimeout(() => {
-      console.error('[HUB] Loading watchdog triggered - data fetch stalled');
-      window.location.href = '/access-gate';
+      console.warn('[HUB] Loading watchdog triggered - data fetch stalled');
+      setWatchdogTriggered(true);
     }, 10000);
     return () => clearTimeout(watchdog);
-  }, [isLoading]);
+  }, [isLoading, user]);
 
   // Loading state
   if (isLoading) {
+    if (watchdogTriggered) {
+      return (
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="text-center space-y-3 max-w-sm">
+            <div className="text-sm font-mono text-zinc-300 uppercase tracking-wider">Data Stall Detected</div>
+            <p className="text-xs text-zinc-500">
+              Operational data is taking longer than expected. Retry the load or return to the access gate.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setWatchdogTriggered(false);
+                  if (typeof window !== 'undefined') {
+                    window.location.reload();
+                  }
+                }}
+                className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-white bg-[#ea580c] hover:bg-[#ea580c]/90"
+              >
+                Retry Load
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.href = '/access-gate';
+                  }
+                }}
+                className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-300 border border-zinc-700 hover:border-[#ea580c]/50"
+              >
+                Access Gate
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center space-y-2">

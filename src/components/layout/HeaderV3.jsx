@@ -437,7 +437,7 @@ export default function HeaderV3() {
 
   // Dev-only: check header height constraint
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       const headerEl = document.querySelector('header');
       if (headerEl && headerEl.offsetHeight !== 56) {
         console.error(`[HEADER] HEIGHT VIOLATION: expected 56px, got ${headerEl.offsetHeight}px`);

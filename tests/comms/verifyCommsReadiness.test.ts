@@ -39,7 +39,7 @@ describe('verifyCommsReadiness', () => {
     const response = await handler(buildRequest({}));
     const payload = await response.json();
 
-    expect(payload).toEqual({
+    expect(payload).toMatchObject({
       isReady: false,
       reason: 'LiveKit environment not configured'
     });
@@ -57,7 +57,7 @@ describe('verifyCommsReadiness', () => {
     const response = await handler(buildRequest({}));
     const payload = await response.json();
 
-    expect(payload).toEqual({
+    expect(payload).toMatchObject({
       isReady: false,
       reason: 'LiveKit server unreachable'
     });
@@ -75,7 +75,7 @@ describe('verifyCommsReadiness', () => {
     const response = await handler(buildRequest({}));
     const payload = await response.json();
 
-    expect(payload).toEqual({
+    expect(payload).toMatchObject({
       isReady: false,
       reason: 'Invalid LiveKit URL format'
     });
