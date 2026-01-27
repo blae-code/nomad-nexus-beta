@@ -2,7 +2,6 @@
  * Comms Debug Panel
  * Renders diagnostic info when admin
  */
-import React from 'react';
 
 export default function CommsDockDebugPanel({ debug, user }) {
   if (!user || user.role !== 'admin' || !debug) {

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 
 /**
  * Simple virtual list implementation for large datasets

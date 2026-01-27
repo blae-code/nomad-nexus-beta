@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Activity, MessageSquare, Database, Users, Server, Lock, Key
 } from 'lucide-react';
@@ -7,7 +6,6 @@ import {
 import DemoPreflight from '@/components/admin/steps/DemoPreflight';
 import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import WipeDataStep from '@/components/admin/steps/WipeDataStep';
-import SeedDataStep from '@/components/admin/steps/SeedDataStep';
 import GovernanceSection from '@/components/admin/sections/GovernanceSection';
 import SystemStatusSection from '@/components/admin/sections/SystemStatusSection';
 import PioneerOverridesSection from '@/components/admin/sections/PioneerOverridesSection';

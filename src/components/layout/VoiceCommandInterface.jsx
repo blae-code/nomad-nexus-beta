@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Activity } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Mic, MicOff } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";

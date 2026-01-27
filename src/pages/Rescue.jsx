@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import RescueForm from "@/components/rescue/RescueForm";
@@ -7,9 +7,6 @@ import { Shield, CheckCircle2, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVisibilityPause } from "@/components/hooks/useVisibilityPause";
-import { SkeletonLoader } from "@/components/feedback/SkeletonLoader";
-import { EmptyStateCard, EmptyStateMessages } from "@/components/feedback/EmptyStateCard";
-import { ErrorStateCard } from "@/components/feedback/ErrorStateCard";
 import PageHeader from "@/components/layout/PageHeader";
 
 export default function RescuePage() {

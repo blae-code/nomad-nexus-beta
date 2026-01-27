@@ -1,4 +1,3 @@
-import React from 'react';
 import { Compass, Users, Clock, Target, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

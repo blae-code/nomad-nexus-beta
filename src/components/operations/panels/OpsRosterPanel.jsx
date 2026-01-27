@@ -1,6 +1,3 @@
-import React from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function OpsRosterPanel({
   session,

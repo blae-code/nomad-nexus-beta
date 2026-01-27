@@ -56,15 +56,15 @@ export const CONTENT_TEMPLATES = {
   distress_ticket: [
     {
       title: 'MAYDAY: Freelancer Down — Daymar',
-      template: `**DISTRESS TICKET**
-**CALLER:** Pilot "Hawk-7" (IFF: 🟢 Org member)
-**AO:** Daymar surface — 22km NW of Tumbleweed
-**GRID:** [325.4, 156.8, -180]
-**THREAT:** None immediate; atmospheric electrical storm rolling in
-**INJURIES:** Pilot leg fracture (suspected), gunner minor burns
-**COMMS:** On Org-distress-dispatch, radio distorted
-**ETA TO RESCUE:** ~15 min (Rescue squad inbound from Levski)
-**ASSIGNED:** Rescue-net dispatching 2x medics + transport`
+template: '**DISTRESS TICKET**\n' +
+        '**CALLER:** Pilot "Hawk-7" (IFF: (Green) Org member)\n' +
+        '**AO:** Daymar surface — 22km NW of Tumbleweed\n' +
+        '**GRID:** [325.4, 156.8, -180]\n' +
+        '**THREAT:** None immediate; atmospheric electrical storm rolling in\n' +
+        '**INJURIES:** Pilot leg fracture (suspected), gunner minor burns\n' +
+        '**COMMS:** On Org-distress-dispatch, radio distorted\n' +
+        '**ETA TO RESCUE:** ~15 min (Rescue squad inbound from Levski)\n' +
+        '**ASSIGNED:** Rescue-net dispatching 2x medics + transport'
     }
   ],
 

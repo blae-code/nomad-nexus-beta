@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +25,13 @@ export default function AccessGate() {
 
     const checkAdminBypass = async () => {
       try {
-        const user = await base44.auth.me();
-        if (user?.role === 'admin') {
-          navigate('/', { replace: true });
-          return;
+        const isAuthenticated = await base44.auth.isAuthenticated?.();
+        if (isAuthenticated) {
+          const user = await base44.auth.me();
+          if (user?.role === 'admin') {
+            navigate('/', { replace: true });
+            return;
+          }
         }
       } catch (error) {
         // Not authenticated, continue with access gate
@@ -69,7 +72,9 @@ export default function AccessGate() {
   };
 
   const handleLogin = () => {
-    const currentUrl = window.location.pathname + window.location.search;
+    const currentUrl = typeof window !== 'undefined'
+      ? window.location.pathname + window.location.search
+      : '/';
     base44.auth.redirectToLogin(currentUrl);
   };
 

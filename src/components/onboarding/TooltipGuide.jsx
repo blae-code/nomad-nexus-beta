@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function TooltipGuide({ title, description, icon }) {
   const [showTip, setShowTip] = useState(true);

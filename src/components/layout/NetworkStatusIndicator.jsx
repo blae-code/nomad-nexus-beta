@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Wifi, Activity, Lock, Signal } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Activity, Lock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export default function NetworkStatusIndicator() {

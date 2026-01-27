@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPageUrl } from "@/utils";
 import { 
   Search, 
@@ -8,8 +8,7 @@ import {
   Shield, 
   Activity, 
   Terminal, 
-  Zap, 
-  LogOut,
+  Zap,
   Users,
   LayoutGrid,
   Radio,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
 
 export default function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
@@ -138,11 +136,11 @@ export default function CommandPalette() {
            isOpen ? "border-[#ea580c] shadow-[0_0_30px_rgba(234,88,12,0.15)]" : "border-zinc-800 hover:border-zinc-600"
          )}>
             {/* Search Icon / Spinner */}
-            <div className="pl-4 pr-3 text-zinc-500 group-hover:text-[#ea580c] transition-colors">
+            <div className="pl-4 pr-3 text-zinc-400 group-hover:text-[#ea580c] transition-colors">
               {isOpen ? (
-                <Terminal className="w-4 h-4 animate-pulse text-[#ea580c]" />
+                <Terminal className="w-4 h-4 animate-pulse text-[#ea580c]" aria-label="Command active icon" role="img" />
               ) : (
-                <Search className="w-4 h-4" />
+                <Search className="w-4 h-4" aria-label="Search icon" role="img" />
               )}
             </div>
 
@@ -156,15 +154,16 @@ export default function CommandPalette() {
                  setSelectedIndex(0);
                }}
                onFocus={() => setIsOpen(true)}
-               className="flex-1 h-full bg-transparent border-none text-xs font-mono text-[#ea580c] placeholder:text-zinc-600 focus:ring-0 focus:outline-none uppercase tracking-widest selection:bg-[#ea580c]/30"
+               aria-label="Command palette search"
+               className="flex-1 h-full bg-transparent border-none text-xs font-mono text-[#ea580c] placeholder:text-zinc-400 focus:ring-0 focus:outline-none uppercase tracking-widest selection:bg-[#ea580c]/30 focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                placeholder={placeholders[placeholderIndex]}
             />
 
             {/* Keyboard Badge */}
             <div className="pr-3 flex items-center gap-2">
                {!isOpen && (
-                 <div className="hidden md:flex items-center gap-1 px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[9px] text-zinc-500 font-mono">
-                   <Command className="w-3 h-3" />
+                 <div className="hidden md:flex items-center gap-1 px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[9px] text-zinc-400 font-mono">
+                   <Command className="w-3 h-3" aria-label="Command key" role="img" />
                    <span>K</span>
                  </div>
                )}
@@ -199,14 +198,14 @@ export default function CommandPalette() {
 
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-2 relative z-20">
                {flatItems.length === 0 ? (
-                 <div className="p-8 text-center text-zinc-600 font-mono text-xs">
+                 <div className="p-8 text-center text-zinc-400 font-mono text-xs">
                    <div className="mb-2">NO MATCHING PROTOCOLS FOUND</div>
                    <div className="text-[10px] opacity-50">TRY A DIFFERENT QUERY</div>
                  </div>
                ) : (
                  filteredCommands.map((group, gIdx) => (
                    <div key={gIdx} className="mb-2 last:mb-0">
-                     <div className="px-2 py-1.5 text-[9px] font-bold text-zinc-600 uppercase tracking-[0.2em] font-mono">
+                     <div className="px-2 py-1.5 text-[9px] font-bold text-zinc-400 uppercase tracking-[0.2em] font-mono">
                        {group.category}
                      </div>
                      <div className="space-y-0.5">
@@ -216,6 +215,7 @@ export default function CommandPalette() {
                          
                          return (
                            <button
+                             type="button"
                              key={idx}
                              onClick={() => {
                                item.action();
@@ -223,10 +223,10 @@ export default function CommandPalette() {
                              }}
                              onMouseEnter={() => setSelectedIndex(globalIndex)}
                              className={cn(
-                               "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all duration-100 relative group",
+                               "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all duration-100 relative group focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
                                isSelected 
                                  ? "bg-[#ea580c]/10 text-[#ea580c]" 
-                                 : "text-zinc-400 hover:bg-zinc-900/50"
+                                 : "text-zinc-300 hover:bg-zinc-900/50"
                              )}
                            >
                              {isSelected && (
@@ -235,8 +235,8 @@ export default function CommandPalette() {
                              
                              <item.icon className={cn(
                                "w-4 h-4",
-                               isSelected ? "text-[#ea580c]" : "text-zinc-600"
-                             )} />
+                               isSelected ? "text-[#ea580c]" : "text-zinc-400"
+                             )} aria-label={`${item.label} icon`} role="img" />
                              
                              <div className="flex-1">
                                <div className={cn(
@@ -245,7 +245,7 @@ export default function CommandPalette() {
                                )}>
                                  {item.label}
                                  {item.sub && (
-                                   <span className="text-[9px] px-1.5 py-0.5 bg-zinc-900 rounded text-zinc-500 border border-zinc-800">
+                                   <span className="text-[9px] px-1.5 py-0.5 bg-zinc-900 rounded text-zinc-400 border border-zinc-800">
                                      {item.sub}
                                    </span>
                                  )}
@@ -253,11 +253,11 @@ export default function CommandPalette() {
                              </div>
 
                              {isSelected && (
-                               <ArrowRight className="w-3 h-3 text-[#ea580c] animate-pulse mr-2" />
+                               <ArrowRight className="w-3 h-3 text-[#ea580c] animate-pulse mr-2" aria-label="Selected command indicator" role="img" />
                              )}
                              
                              {item.shortcut && !isSelected && (
-                               <span className="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-1.5 py-0.5 rounded bg-zinc-900/50">
+                               <span className="text-[9px] font-mono text-zinc-400 border border-zinc-800 px-1.5 py-0.5 rounded bg-zinc-900/50">
                                  {item.shortcut}
                                </span>
                              )}
@@ -271,7 +271,7 @@ export default function CommandPalette() {
             </div>
 
             {/* Footer */}
-            <div className="px-3 py-2 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between text-[9px] text-zinc-600 font-mono uppercase">
+            <div className="px-3 py-2 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between text-[9px] text-zinc-400 font-mono uppercase">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1"><span className="w-3 h-3 bg-zinc-800 rounded flex items-center justify-center text-[8px]">↵</span> SELECT</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 bg-zinc-800 rounded flex items-center justify-center text-[8px]">↑↓</span> NAVIGATE</span>

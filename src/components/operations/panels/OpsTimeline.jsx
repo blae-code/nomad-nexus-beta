@@ -1,4 +1,3 @@
-import React from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Radio, Users, Zap } from 'lucide-react';

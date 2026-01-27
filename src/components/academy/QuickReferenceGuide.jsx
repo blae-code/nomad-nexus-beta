@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Zap, Radio, BookOpen, Users } from 'lucide-react';
+import { Zap, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function QuickReferenceGuide() {

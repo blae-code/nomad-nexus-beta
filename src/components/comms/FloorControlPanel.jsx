@@ -1,10 +1,7 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Radio, Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
 
 /**
  * Floor Control Panel

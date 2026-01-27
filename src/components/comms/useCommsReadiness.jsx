@@ -33,6 +33,7 @@ export function useCommsReadiness() {
   });
 
   React.useEffect(() => {
+    if (typeof window === 'undefined') return;
     const obs = window.__observability;
     if (!obs?.setLiveKitEnv) return;
     if (!readinessData || Object.keys(readinessData).length === 0) return;

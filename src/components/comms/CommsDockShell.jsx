@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageSquare, Send, Zap, Inbox, X, ChevronUp } from 'lucide-react';
+import { MessageSquare, Send, Zap, Inbox, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommsDockCommsTab from './tabs/CommsDockCommsTab';
 import CommsDockPollsTab from './tabs/CommsDockPollsTab';
 import CommsDockRiggsyTab from './tabs/CommsDockRiggsyTab';
 import CommsDockInboxTab from './tabs/CommsDockInboxTab';
-import CommsDockDebugPanel from './CommsDockDebugPanel';
 // DEPRECATED: useVoiceRoom disabled in dock (2026-01-23)
 // Voice joining is now canonical via CommsConsole + ActiveNetPanel only
-// import { useVoiceRoom } from './useVoiceRoom';
+import { useVoiceRoom } from './useVoiceRoom';
 
 const TABS = [
   { id: 'comms', label: 'COMMS', icon: MessageSquare },
@@ -25,7 +24,7 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
   const [unreadCounts, setUnreadCounts] = useState({});
   const queryClient = useQueryClient();
   // DEPRECATED: voiceRoom disabled (2026-01-23) — use CommsConsole instead
-  // const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
+  const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
 
   // Fetch unread counts
   const { data: readStates = [] } = useQuery({

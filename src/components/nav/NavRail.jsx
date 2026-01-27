@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Settings, ChevronLeft, ChevronRight, Radio } from 'lucide-react';

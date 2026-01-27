@@ -8,7 +8,7 @@
  * - SIM/LIVE mode transparency
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useCommsJoin } from './useCommsJoin';
 import { useCommsMode } from './useCommsMode';
 import { base44 } from '@/api/base44Client';

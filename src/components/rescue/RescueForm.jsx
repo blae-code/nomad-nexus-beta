@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Radio, Loader2, MapPin, ShieldAlert } from "lucide-react";
-import { motion } from "framer-motion";
 import VoiceRoomJoinDialog from '@/components/comms/VoiceRoomJoinDialog';
 import RoomDebugPanel from '@/components/comms/RoomDebugPanel';
 

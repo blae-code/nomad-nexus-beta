@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';
 import AppShellV3 from "@/components/layout/AppShellV3";
@@ -178,14 +178,24 @@ export default function Layout({ children, currentPageName }) {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const isVisualTest = import.meta.env.VITE_VISUAL_TEST === 'true';
+
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
+  useEffect(() => {
+    if (isVisualTest) {
+      setLoading(false);
+      return undefined;
+    }
+    const timeoutPromise = (ms) => new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    );
+  const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
 
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
         useEffect(() => {
           const initApp = async () => {
             try {
               initializeAccessToken();
-
-              const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
 
               // Allow access-gate to render without auth checks (it's a public gate page)
               if (isAccessGatePath) {
@@ -214,13 +224,22 @@ export default function Layout({ children, currentPageName }) {
               }
 
               // Check profile for non-admin users
-              const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
-              const profile = profiles?.[0];
+              let profile = null;
+              try {
+                const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+                profile = profiles?.[0] ?? null;
+              } catch (profileError) {
+                console.warn('[LAYOUT] MemberProfile lookup failed, continuing:', profileError);
+                setLoading(false);
+                return;
+              }
 
               if (!profile || !profile.onboarding_completed) {
                 console.log('[LAYOUT] Onboarding incomplete, redirecting to AccessGate');
                 setLoading(false);
-                navigate(accessGatePath, { replace: true });
+                if (!isAccessGatePath) {
+                  navigate(accessGatePath, { replace: true });
+                }
                 return;
               }
 
@@ -229,15 +248,20 @@ export default function Layout({ children, currentPageName }) {
             } catch (error) {
               console.error('[LAYOUT] Init error:', error);
               setLoading(false);
-              navigate(accessGatePath, { replace: true });
+              if (!isAccessGatePath) {
+                navigate(accessGatePath, { replace: true });
+              }
             }
           };
 
+    return () => clearTimeout(watchdog);
+  }, [isVisualTest, location.pathname, navigate]);
           initApp();
         }, [location.pathname, navigate]);
 
   // DEMO: disable service worker to prevent stale hashed asset 404s
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations?.().then((rs) => rs.forEach((r) => r.unregister()));
       caches?.keys?.().then((keys) => keys.forEach((k) => caches.delete(k)));
@@ -246,10 +270,10 @@ export default function Layout({ children, currentPageName }) {
 
   // Redirect root to /hub using react-router
   useEffect(() => {
-    if (location.pathname === '/' || location.pathname === '') {
+    if (!isAccessGatePath && (location.pathname === '/' || location.pathname === '')) {
       navigate('/hub', { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, isAccessGatePath]);
 
   // Ensure root path always maps to hub
   const currentPage = location.pathname === '/' || location.pathname === '' ? 'hub' : pageMap[location.pathname.toLowerCase()] || 'hub';
@@ -321,6 +345,11 @@ export default function Layout({ children, currentPageName }) {
         {isFn(SafeRadialFeedbackMenu) ? <SafeRadialFeedbackMenu /> : null}
 
         {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
+        <LayoutDebugMode />
+        </div>
+        </ErrorBoundary>
+        );
+        }
         {isFn(SafeLayoutDebugMode) ? <SafeLayoutDebugMode /> : null}
       </div>
     </ErrorBoundary>

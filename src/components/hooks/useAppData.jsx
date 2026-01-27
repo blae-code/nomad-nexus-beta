@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useState, useEffect } from 'react';
-import { staticQueryConfig } from '@/components/utils/queryConfig';
 
 /**
  * Centralized user data hook - single source of truth
@@ -10,6 +9,7 @@ export function useCurrentUser() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Auth timeout')), 5000)
     );
@@ -18,11 +18,20 @@ export function useCurrentUser() {
       base44.auth.me(),
       timeoutPromise
     ])
-      .then(setUser)
+      .then((resolvedUser) => {
+        if (isMounted) {
+          setUser(resolvedUser);
+        }
+      })
       .catch((err) => {
         console.error('[useCurrentUser] Auth failed or timed out:', err);
-        setUser(null);
+        if (isMounted) {
+          setUser(null);
+        }
       });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return user;

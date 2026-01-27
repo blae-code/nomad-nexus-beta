@@ -1,8 +1,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, ShieldCheck, AlertCircle, Award, DollarSign, ArrowRight, Briefcase } from "lucide-react";
+import { Calendar, ShieldCheck, Award, DollarSign, ArrowRight, Briefcase } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";

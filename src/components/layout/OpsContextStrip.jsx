@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
-import { Clock, Radio, AlertCircle } from 'lucide-react';
 
 /**
  * OpsContextStrip: Route-aware operational context display

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Loader2 } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ChannelAISuggestions({ messageContent, onSelectChannel }) {

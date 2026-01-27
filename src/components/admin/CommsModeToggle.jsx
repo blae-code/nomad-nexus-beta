@@ -1,11 +1,9 @@
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Radio, CheckCircle2, Loader2, Lock } from 'lucide-react';
+import { Radio, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { hasRank } from '@/components/admin/cockpitSectionConfig';
 
 export default function CommsModeToggle({ user }) {

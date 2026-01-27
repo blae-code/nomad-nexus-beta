@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Hash, Mic, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function ChannelSearch({ channels, onResultsChange }) {
   const [searchQuery, setSearchQuery] = useState("");
