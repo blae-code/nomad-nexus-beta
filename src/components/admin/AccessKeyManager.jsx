@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Copy, Plus, Trash2, CheckCircle2, Clock, AlertCircle, X } from 'lucide-react';
+import { Copy, Plus, Trash2, CheckCircle2, Clock, AlertCircle, X, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AccessKeyManager() {
@@ -11,6 +11,8 @@ export default function AccessKeyManager() {
   const [grantRank, setGrantRank] = useState('VAGRANT');
   const [note, setNote] = useState('');
   const [generatedKey, setGeneratedKey] = useState(null);
+  const [discordInvite, setDiscordInvite] = useState(null);
+  const [showDiscordPreview, setShowDiscordPreview] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch all access keys
@@ -42,6 +44,23 @@ export default function AccessKeyManager() {
     }
   });
 
+  // Generate Discord invitation mutation
+  const generateDiscordMutation = useMutation({
+    mutationFn: async (keyCode) => {
+      const result = await base44.functions.invoke('generateDiscordInvitation', {
+        accessKeyCode: keyCode,
+        accessKeyRank: grantRank
+      });
+      return result.data;
+    },
+    onSuccess: (data) => {
+      setDiscordInvite(data);
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to generate invitation');
+    }
+  });
+
   // Revoke key mutation
   const revokeMutation = useMutation({
     mutationFn: (keyId) => base44.entities.AccessKey.update(keyId, { status: 'REVOKED' }),
@@ -59,12 +78,77 @@ export default function AccessKeyManager() {
     toast.success('Copied to clipboard');
   };
 
+  const handleCopyDiscordMessage = (message) => {
+    navigator.clipboard.writeText(message);
+    toast.success('Discord message copied!');
+  };
+
   const activeKeys = keys.filter(k => k.status === 'ACTIVE');
   const usedKeys = keys.filter(k => k.status === 'REDEEMED');
   const revokedKeys = keys.filter(k => k.status === 'REVOKED' || k.status === 'EXPIRED');
 
   return (
     <div className="space-y-6">
+      {/* Discord Invitation Preview Modal */}
+      {showDiscordPreview && discordInvite && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-orange-500/50 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Discord Invitation Message
+              </h3>
+              <button
+                onClick={() => setShowDiscordPreview(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Preview */}
+              <div className="bg-zinc-800 border border-zinc-700 rounded p-4 space-y-3">
+                <div className="text-xs text-zinc-400">📋 Preview (Markdown Format):</div>
+                <div className="bg-zinc-900 rounded p-3 text-xs whitespace-pre-wrap font-mono text-zinc-300 max-h-48 overflow-y-auto">
+                  {discordInvite.discord.markdown}
+                </div>
+              </div>
+
+              {/* Copy Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleCopyDiscordMessage(discordInvite.discord.markdown)}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy Markdown
+                </Button>
+                <Button
+                  onClick={() => handleCopyDiscordMessage(discordInvite.discord.plainText)}
+                  variant="outline"
+                  className="flex-1 border-zinc-700"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy Plain Text
+                </Button>
+              </div>
+
+              <p className="text-[9px] text-zinc-500">
+                ✓ Paste the markdown version into Discord for a rich formatted message.
+              </p>
+
+              <Button
+                onClick={() => setShowDiscordPreview(false)}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white"
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Generated Key Modal */}
       {generatedKey && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -102,6 +186,17 @@ export default function AccessKeyManager() {
                   <strong>Note:</strong> {generatedKey.note}
                 </div>
               )}
+
+              <Button
+                onClick={() => {
+                  generateDiscordMutation.mutate(generatedKey.code);
+                  setShowDiscordPreview(true);
+                }}
+                className="w-full bg-[#5865f2] hover:bg-[#5865f2]/90 text-white gap-1.5"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Generate Discord Message
+              </Button>
 
               <Button
                 onClick={() => setGeneratedKey(null)}
