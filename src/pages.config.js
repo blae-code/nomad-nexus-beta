@@ -32,6 +32,10 @@ import Hub from './pages/Hub';
 import SmokeCheck from './pages/SmokeCheck';
 import __Layout from './Layout.jsx';
 
+// Global fallback for legacy Base44 platform hooks (runs at module load)
+if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
+  window.persistDemoFromUrl = () => false;
+}
 
 export const PAGES = {
     "AdminCockpit": AdminCockpit,
