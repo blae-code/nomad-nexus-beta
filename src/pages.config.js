@@ -1,4 +1,3 @@
-import AccessGate from './pages/AccessGate';
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
@@ -9,7 +8,6 @@ import Diagnostics from './pages/Diagnostics';
 import EventReporting from './pages/EventReporting';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
-import Hub from './pages/Hub';
 import Intelligence from './pages/Intelligence';
 import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
@@ -22,7 +20,6 @@ import Ranks from './pages/Ranks';
 import Rescue from './pages/Rescue';
 import RoleManager from './pages/RoleManager';
 import Settings from './pages/Settings';
-import SmokeCheck from './pages/SmokeCheck';
 import SquadDetail from './pages/SquadDetail';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
@@ -30,11 +27,15 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
+import AccessGate from './pages/AccessGate';
+import Event from './pages/Event';
+import Hub from './pages/Hub';
+import OpsDashboard from './pages/OpsDashboard';
+import SmokeCheck from './pages/SmokeCheck';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AccessGate": AccessGate,
     "AdminCockpit": AdminCockpit,
     "Channels": Channels,
     "CommandCenter": CommandCenter,
@@ -45,7 +46,6 @@ export const PAGES = {
     "EventReporting": EventReporting,
     "Events": Events,
     "FleetManager": FleetManager,
-    "Hub": Hub,
     "Intelligence": Intelligence,
     "MissionControl": MissionControl,
     "NomadOpsDashboard": NomadOpsDashboard,
@@ -58,7 +58,6 @@ export const PAGES = {
     "Rescue": Rescue,
     "RoleManager": RoleManager,
     "Settings": Settings,
-    "SmokeCheck": SmokeCheck,
     "SquadDetail": SquadDetail,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
@@ -66,6 +65,11 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
+    "AccessGate": AccessGate,
+    "Event": Event,
+    "Hub": Hub,
+    "OpsDashboard": OpsDashboard,
+    "SmokeCheck": SmokeCheck,
 }
 
 export const pagesConfig = {

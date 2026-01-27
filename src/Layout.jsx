@@ -238,9 +238,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="flex-1 flex flex-col overflow-hidden pb-12">
           {currentPage === 'access-gate' ? (
             // Access gate: full-screen, no chrome
-            <div className="h-full w-full">
-              {children}
-            </div>
+            children
           ) : (
             <SafeAppShellV3 currentPage={currentPage} user={user}>
               <div className="pt-14 pb-2">
