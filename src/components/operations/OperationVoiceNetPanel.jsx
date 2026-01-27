@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { Radio, Volume2, Users, Zap, ChevronDown, Settings, Plus, Mic, MicOff, Radio as RadioIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

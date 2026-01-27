@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldAlert, Settings2, Mic2, Ear, Users, Radio, Volume2 } from "lucide-react";
+import { Settings2, Mic2, Ear, Radio } from "lucide-react";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import TacticalStatusReporter from "@/components/comms/TacticalStatusReporter";
 import DeviceSelector from "@/components/comms/DeviceSelector";
@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 
 export default function CommsToolbox({ user, eventId }) {
   const [whisperMode, setWhisperMode] = React.useState(false);

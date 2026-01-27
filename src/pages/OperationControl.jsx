@@ -1,14 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Radio, Users, Target, Clock, AlertCircle, Settings, Maximize2, Volume2 } from 'lucide-react';
+import { Radio, Users, Target, Clock, AlertCircle, Settings, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { getRankColorClass } from '@/components/utils/rankUtils';
 import OperationHeader from '@/components/operations/OperationHeader';
 import OperationVoiceNetPanel from '@/components/operations/OperationVoiceNetPanel';
 import OperationObjectives from '@/components/operations/OperationObjectives';

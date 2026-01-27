@@ -1,5 +1,4 @@
-import React from 'react';
-import { Mic, Phone, Circle, Clock, Radio } from 'lucide-react';
+import { Phone, Circle, Clock, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 

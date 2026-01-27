@@ -5,7 +5,7 @@
 
 import {
   Calendar, AlertCircle, Activity, Users, Radio, Shield,
-  Rocket, Heart, BookOpen, Coins, Database, Map, Clock,
+  Rocket, Heart, BookOpen, Coins, Database, Map,
   Backpack, Settings, Bell
 } from 'lucide-react';
 

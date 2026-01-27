@@ -1,11 +1,9 @@
-import React from "react";
 import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { 
   LayoutGrid, 
   Radio, 
-  Calendar, 
   ShieldAlert, 
   Coins, 
   Users,
@@ -13,7 +11,6 @@ import {
   Rocket,
   Target,
   MessageSquare,
-  Medal,
   UserCircle
 } from "lucide-react";
 import {

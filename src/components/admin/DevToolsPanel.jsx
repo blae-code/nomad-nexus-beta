@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AlertTriangle, Zap, Database, RefreshCw, Trash2, Plus, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Zap, RefreshCw, Trash2, Plus, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';

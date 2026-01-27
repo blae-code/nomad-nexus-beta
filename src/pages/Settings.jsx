@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { AlertTriangle, CheckCircle2, ToggleRight, Trash2, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const [user, setUser] = useState(null);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Users, Filter, Activity, MapPin, Clock, Circle, Mic, Radio } from 'lucide-react';
+import { Users, Activity, MapPin, Clock, Circle, Mic, Radio } from 'lucide-react';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import { getRankColorClass } from '@/components/utils/rankUtils';
 import EmptyState from '@/components/feedback/EmptyState';

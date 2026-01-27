@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Hash, Lock, Users } from "lucide-react";
+import { Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessChannel } from "@/components/permissions";
 

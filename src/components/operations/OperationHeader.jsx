@@ -1,8 +1,7 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, Shield, Clock, MapPin, Users, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Users, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**

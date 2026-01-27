@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
 import { Radio, Plus, AlertTriangle, Phone, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
-import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import RescueAlertPanel from "@/components/dashboard/RescueAlertPanel";
 import StatusAlertsWidget from "@/components/dashboard/StatusAlertsWidget";

@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Calendar, Users, Radio, Target, CheckCircle2, ArrowRight, X,
-  Lightbulb, Trophy, Zap, TrendingUp, Loader2
+  Calendar, Users, Radio, Target, ArrowRight, X, Zap, TrendingUp, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ProgressIndicator from '@/components/onboarding/ProgressIndicator';

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { TYPOGRAPHY } from "@/components/utils/typographySystem";
 import PageLayout, { ScrollArea, Panel } from "@/components/layout/PageLayout";
 import Divider from "@/components/layout/Divider";
 import CommsEventSelector from "@/components/comms/CommsEventSelector";
@@ -12,9 +11,8 @@ import ReadyRoomList from "@/components/comms/ReadyRoomList";
 import ChatInterface from "@/components/comms/ChatInterface";
 import FleetHierarchy from "@/components/ops/FleetHierarchy";
 import FleetStatusSummary from "@/components/ops/FleetStatusSummary";
-import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
-import { Radio, ListTree, Bot, Hash, Search, Activity, AlertTriangle } from "lucide-react";
+import { Radio, Bot, Hash, Search, Activity, AlertTriangle } from "lucide-react";
 import CommsAIAssistant from "@/components/ai/CommsAIAssistant";
 import CurrentStatusHeader from "@/components/dashboard/CurrentStatusHeader";
 import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
@@ -46,14 +44,33 @@ import PTTHud from "@/components/comms/PTTHud";
 import NetSwitchOverlay from "@/components/comms/NetSwitchOverlay";
 import { MessageCircle } from "lucide-react";
 import { useCommsReadiness } from "@/components/comms/useCommsReadiness";
-import { motion, AnimatePresence } from "framer-motion";
-import CommsStepIndicator from "@/components/comms/CommsStepIndicator";
-      import JoinNetButton from "@/components/comms/JoinNetButton";
-      import CommsArrayPanel from "@/components/comms/CommsArrayPanel";
+import CommsArrayPanel from "@/components/comms/CommsArrayPanel";
       import CommsStateChip from "@/components/comms/CommsStateChip";
 import CommsFailoverBanner from "@/components/comms/CommsFailoverBanner";
 
 function CommsConsolePage() {
+  // Guard for missing LiveKit ENV variables
+  const isLiveKitConfigured = import.meta.env.VITE_LIVEKIT_URL;
+
+  if (!isLiveKitConfigured) {
+    return (
+      <PageLayout title="Comms Array">
+        <div className="flex h-full items-center justify-center p-6">
+          <div className="text-center border border-zinc-800 bg-zinc-950/80 p-6 space-y-3">
+            <AlertTriangle className="mx-auto h-10 w-10 text-yellow-500/80" />
+            <h2 className="text-base font-semibold text-white">Comms Offline</h2>
+            <p className="text-sm text-zinc-400">
+              This application is not fully configured for live communications.
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              An administrator needs to set the required `VITE_LIVEKIT_URL` environment variable.
+            </p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+  
   const [selectedEventId, setSelectedEventId] = React.useState(() => {
     if (typeof window === 'undefined') return null;
     const params = new URLSearchParams(window.location.search);
@@ -300,6 +317,8 @@ function CommsConsolePage() {
     [selectedNetId, voiceNets]
   );
 
+  const memoizedNets = React.useMemo(() => voiceNets, [voiceNets]);
+
   // Handlers for connection state changes from ActiveNetPanel
   const handleConnectSuccess = React.useCallback((netId) => {
     setConnectedNetId(netId);
@@ -331,7 +350,6 @@ function CommsConsolePage() {
      }
   };
 
-  const hasCommsAccess = Boolean(currentUser && (currentUser.role === 'admin' || currentUser.rank));
   const hasCommsAccess = Boolean(currentUser && (currentUser.role === 'admin' || currentUser.rank || currentUser.rank === 'Vagrant'));
 
   // Show loading state while authenticating

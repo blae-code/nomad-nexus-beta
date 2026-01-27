@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, Volume2, Settings, Radio, Zap, Activity, AlertCircle, Wifi, VolumeX, Headphones, MicOff, UserCheck, MessageSquare, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mic, Volume2, Settings, Radio, Zap, AlertCircle, VolumeX, Headphones, MicOff, MessageSquare, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { createPageUrl } from '@/utils';
-import { TYPOGRAPHY } from '@/components/utils/typographySystem';
 import { useVoiceAudio } from '@/components/hooks/useVoiceAudio';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';

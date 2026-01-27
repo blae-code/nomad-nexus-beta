@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import VoiceControlToolkit from '@/components/voice/VoiceControlToolkit';
 import EnhancedUserContactBook from '@/components/directory/EnhancedUserContactBook';
 import ActiveNetMonitor from '@/components/voice/ActiveNetMonitor';
 import AISettingsPanel from '@/components/layout/AISettingsPanel';
 import VoiceChannelNavigator from '@/components/comms/VoiceChannelNavigator';
 import { Radio, Users, Brain, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ContextPanel({ currentPage, user }) {

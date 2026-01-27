@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Radio, AlertTriangle, CheckCircle2, RefreshCw, 
-  Download, Activity, Clock, Zap, MessageSquare, Gamepad2,
-  Server, Users, Zap as ZapIcon, Shield, TrendingUp, AlertCircle
+import { Clock, MessageSquare, Gamepad2,
+  Server, Users, TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CockpitHeader from '@/components/admin/CockpitHeader';
 import TelemetryPanel from '@/components/admin/TelemetryPanel';
-import AdminCockpitAccordion from '@/components/admin/AdminCockpitAccordion';
-import { COCKPIT_SECTIONS, hasRank } from '@/components/admin/cockpitSectionConfig';
+import { COCKPIT_SECTIONS } from '@/components/admin/cockpitSectionConfig';
 
 // Utility to filter accessible sections by user rank
 const getAccessibleSections = (user) => {

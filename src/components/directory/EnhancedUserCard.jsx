@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Clock, MapPin, Radio, Send, X, Zap, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Radio, Send, X, Zap, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { PresenceDot } from '@/components/collaboration/LivePresenceIndicator';

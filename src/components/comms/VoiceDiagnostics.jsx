@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Volume2, Radio, CheckCircle2, XCircle, AlertTriangle, Copy, Play, Square, Loader2, ChevronRight } from "lucide-react";
+import { Mic, Volume2, Radio, CheckCircle2, XCircle, AlertTriangle, Copy, Play, Loader2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 

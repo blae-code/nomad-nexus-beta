@@ -1,9 +1,6 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
-import { Shield, Crosshair, Zap, AlertCircle } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function EventProjectionPanel({ user, compact = false }) {

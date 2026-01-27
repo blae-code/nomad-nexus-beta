@@ -1,6 +1,4 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Radio, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDutyLens } from '@/components/hooks/useDutyLens';
 

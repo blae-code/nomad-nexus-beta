@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Loader2, BarChart } from 'lucide-react';
 import { toast } from 'sonner';
 

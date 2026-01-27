@@ -2,7 +2,6 @@
  * Voice Presence Panel
  * Shows who's in room, speaking status, and mute state
  */
-import React from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Volume2, Mic } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';

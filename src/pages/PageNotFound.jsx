@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { createPageUrl } from '@/utils';
 import { ChevronRight, Home } from 'lucide-react';
 

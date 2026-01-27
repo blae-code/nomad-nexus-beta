@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 import { HEADER_BASE_CLASS, HEADER_SURFACE_STYLE } from '@/components/layout/headerStyles';
 

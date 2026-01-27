@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
-import { Download, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
+import { Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 

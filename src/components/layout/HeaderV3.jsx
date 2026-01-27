@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog, Coins, Shield } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { User as UserIcon, LogOut, Settings, Wifi, Cog, Coins, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
 import { formatAUEC } from '@/components/utils/formatCurrency';
