@@ -1,4 +1,3 @@
-import React from 'react';
 import TacticalMap from '@/components/ops/TacticalMap';
 import EventProjectionPanel from '@/components/dashboard/EventProjectionPanel';
 import StatusAlertsWidget from '@/components/dashboard/StatusAlertsWidget';

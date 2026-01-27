@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Search, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import CommsDockChannelView from '../CommsDockChannelView';
 import CommsDockChannelList from '../CommsDockChannelList';
 

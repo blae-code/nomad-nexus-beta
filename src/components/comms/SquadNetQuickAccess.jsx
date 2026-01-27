@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Phone, PhoneOff, Users, Radio, ShieldAlert, AlertCircle, Headphones, Lock } from 'lucide-react';
+import { Phone, PhoneOff, Users, Radio, ShieldAlert, AlertCircle, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**

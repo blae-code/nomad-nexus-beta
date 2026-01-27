@@ -2,12 +2,10 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Shield, Users, GripVertical, UserPlus, AlertCircle, Star } from "lucide-react";
-import { hasMinRank, canEditEvent } from "@/components/permissions";
+import { Shield, GripVertical, AlertCircle, Star } from "lucide-react";
+import { canEditEvent } from "@/components/permissions";
 import { cn } from "@/lib/utils";
 import DutyAssignmentPanel from "@/components/events/DutyAssignmentPanel";
 

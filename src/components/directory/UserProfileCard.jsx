@@ -1,7 +1,6 @@
-import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Phone, UserPlus, UserMinus, MoreHorizontal, Shield, Clock, Users } from 'lucide-react';
+import { MessageSquare, Phone, MoreHorizontal, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';

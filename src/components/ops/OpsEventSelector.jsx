@@ -1,10 +1,9 @@
-import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, Calendar, ChevronRight } from "lucide-react";
+import { Activity, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function OpsEventSelector({ selectedEventId, onSelect }) {

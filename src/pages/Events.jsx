@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, ArrowRight, Users, Clock, ArrowLeft, ChevronDown } from "lucide-react";
+import { Calendar, ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { canCreateEvent, canEditEvent } from "@/components/permissions";
-import { getEventSeverity, getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
-import { TYPOGRAPHY } from "@/components/utils/typographySystem";
+import { getSeverityBadge, getPrioritySeverity } from "@/components/utils/severitySystem";
 import { cn } from "@/lib/utils";
 import EventForm from "@/components/events/EventForm";
 import EventCard from "@/components/events/EventCard";
 import EventActionBar from "@/components/events/EventActionBar";
-import LoadingState from "@/components/feedback/LoadingState";
 import EmptyState from "@/components/feedback/EmptyState";
-import EventCommunicationLogs from "@/components/events/EventCommunicationLogs";
-import EventPostAnalysis from "@/components/events/EventPostAnalysis";
 import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 import EventDeleteDialog from "@/components/events/EventDeleteDialog";
 import CommsPanel from "@/components/events/CommsPanel";
@@ -38,14 +33,11 @@ import EventPhaseGates from "@/components/events/EventPhaseGates";
 import EventCommandStaff from "@/components/events/EventCommandStaff";
 import EventReadinessChecklist from "@/components/events/EventReadinessChecklist";
 import AITacticalAdvisor from "@/components/ai/AITacticalAdvisor";
-import AIAfterActionReportGenerator from "@/components/ai/AIAfterActionReportGenerator";
 import EventRolesManager from "@/components/events/EventRolesManager";
 import EventMilestoneTracker from "@/components/events/EventMilestoneTracker";
-import { Rocket } from "lucide-react";
 import { SkeletonLoader } from "@/components/feedback/SkeletonLoader";
 import { EmptyStateCard, EmptyStateMessages } from "@/components/feedback/EmptyStateCard";
 import { ErrorStateCard } from "@/components/feedback/ErrorStateCard";
-import { PanelHeader } from "@/components/layout/PanelHeader";
 
 function EventDetail({ id }) {
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -64,7 +56,7 @@ function EventDetail({ id }) {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  const { data: event, isLoading } = useQuery({
+  const { data: event, isLoading, error } = useQuery({
     queryKey: ['event-detail', id],
     queryFn: async () => {
       if (!id) return null;
@@ -85,6 +77,25 @@ function EventDetail({ id }) {
           <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Loading Operation...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center bg-zinc-950">
+        <EmptyState
+          title="Operation Load Failed"
+          description="Unable to load this operation. Retry or return to the board."
+          action={
+            <button
+              onClick={() => window.location.reload()}
+              className="text-[10px] font-mono uppercase tracking-wider border border-zinc-700 px-3 py-1.5 text-zinc-300 hover:border-[#ea580c]/50"
+            >
+              Retry
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -298,6 +309,7 @@ function EventDetail({ id }) {
 }
 
 export default function EventsPage() {
+  const { search } = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardData, setWizardData] = useState(null);
@@ -305,7 +317,7 @@ export default function EventsPage() {
   const [newEventId, setNewEventId] = useState(null);
 
   // Check for Detail View
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(search);
   const id = params.get('id');
 
   useEffect(() => {

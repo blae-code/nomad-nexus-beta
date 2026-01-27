@@ -4,8 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle2, XCircle, Clock, Play, AlertTriangle, Shield, Radio, Users, Lock, RefreshCw, Wrench } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Play, Shield, Radio, Users, Lock, RefreshCw, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 

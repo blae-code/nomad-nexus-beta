@@ -1,9 +1,6 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { User, X } from 'lucide-react';
 import {
   Select,
@@ -12,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
@@ -23,9 +19,12 @@ const STAFF_ROLES = [
 ];
 
 export default function EventCommandStaff({ event, canEdit }) {
+   if (!event) return null;
+   
    const [staff, setStaff] = React.useState(event.command_staff || {});
 
-   const staffUserIds = Object.values(event.command_staff || {}).filter(Boolean);
+   const commandStaff = event?.command_staff ?? {};
+   const staffUserIds = Object.values(commandStaff).filter(Boolean);
    const { users, userById } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
 
   const handleAssignRole = async (roleKey, userId) => {

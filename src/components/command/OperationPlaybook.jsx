@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, CheckSquare, AlertTriangle, Users, Radio, Shield, Zap, FileText } from 'lucide-react';
+import { Search, CheckSquare, AlertTriangle, Users, Radio, Shield, Zap, FileText } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const PLAYBOOK_PROCEDURES = {

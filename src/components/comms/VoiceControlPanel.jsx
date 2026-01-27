@@ -2,8 +2,8 @@
  * Voice Control Panel
  * Mic selection, test, and floor control (PTT vs open-mic)
  */
-import React, { useState, useRef } from 'react';
-import { Mic, Settings, Volume2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function VoiceControlPanel({ discipline = 'casual', isMuted = false, onMuteToggle, currentEvent = null }) {

@@ -2,12 +2,11 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Radio, Mic, Users, Lock, Volume2, ShieldAlert, Phone, PhoneOff, Headphones } from "lucide-react";
+import { Users, Lock, ShieldAlert, Phone, PhoneOff, Headphones } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { SignalStrength, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 import VoiceCallIndicator from "./VoiceCallIndicator";
-import JoinNetButton from "./JoinNetButton";
 
 export default function NetList({ nets, selectedNetId, onSelect, userSquadId, viewMode, activityMap = {}, eventId, monitoredNetIds = [], onToggleMonitor, effectiveMode = 'SIM' }) {
   const [connectingNetId, setConnectingNetId] = React.useState(null);

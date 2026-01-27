@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Activity, Users, Radio, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
+import { Users, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function LiveSystemMetrics() {

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Radio, Mic, Volume2, Users, Wifi, Activity, Signal, MicOff, VolumeX, ChevronDown, ChevronUp, UserCircle, Volume1, Headphones, Phone, AlertTriangle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Radio, Volume2, Users, Signal, VolumeX, ChevronDown, ChevronUp, UserCircle, Volume1, Phone, AlertTriangle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 

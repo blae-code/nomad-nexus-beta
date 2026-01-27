@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { Copy, Edit2, CheckCircle2, AlertCircle, Lightbulb, ExternalLink } from 'lucide-react';
+import { AlertCircle, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TicketDetailModal from './TicketDetailModal';
 

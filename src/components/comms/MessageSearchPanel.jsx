@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search, X, MessageCircle, Hash, Calendar } from 'lucide-react';
+import { Search, X, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 

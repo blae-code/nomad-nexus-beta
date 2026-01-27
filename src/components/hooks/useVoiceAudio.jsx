@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 
+/**
+ * useVoiceAudio Hook
+ * Rationale: surface microphone permission blocks so UI can guide users to enable access.
+ */
 export function useVoiceAudio() {
   const [micEnabled, setMicEnabled] = useState(false);
   const [micVolume, setMicVolume] = useState(75);
@@ -11,15 +15,20 @@ export function useVoiceAudio() {
   const [noiseGate, setNoiseGate] = useState(true);
   const [echoCancellation, setEchoCancellation] = useState(true);
   const [autoGain, setAutoGain] = useState(true);
+  const [micPermissionBlocked, setMicPermissionBlocked] = useState(false);
+  const [micPermissionState, setMicPermissionState] = useState('prompt');
 
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const audioContextRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const sourceRef = useRef(null);
+  const permissionStatusRef = useRef(null);
 
   // Initialize audio context and analyser
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     audioContextRef.current = audioContext;
 
@@ -29,7 +38,46 @@ export function useVoiceAudio() {
     dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
 
     return () => {
-      audioContext.close();
+      if (audioContext.state !== 'closed') {
+        audioContext.close();
+      }
+    };
+  }, []);
+
+  // Track mic permission state
+  useEffect(() => {
+    let isMounted = true;
+
+    const updateFromPermission = (status) => {
+      if (!isMounted) return;
+      setMicPermissionState(status.state);
+      setMicPermissionBlocked(status.state === 'denied');
+    };
+
+    if (navigator.permissions?.query) {
+      const handlePermissionChange = () => {
+        if (permissionStatusRef.current) {
+          updateFromPermission(permissionStatusRef.current);
+        }
+      };
+      navigator.permissions.query({ name: 'microphone' }).then((status) => {
+        permissionStatusRef.current = status;
+        updateFromPermission(status);
+        status.addEventListener('change', handlePermissionChange);
+        permissionStatusRef.current.__handler = handlePermissionChange;
+      }).catch(() => {
+        // No-op: permissions API not available or blocked.
+      });
+    }
+
+    return () => {
+      isMounted = false;
+      if (permissionStatusRef.current) {
+        if (permissionStatusRef.current.__handler) {
+          permissionStatusRef.current.removeEventListener('change', permissionStatusRef.current.__handler);
+        }
+        permissionStatusRef.current = null;
+      }
     };
   }, []);
 
@@ -51,7 +99,15 @@ export function useVoiceAudio() {
       mediaStreamRef.current = stream;
       const source = audioContextRef.current.createMediaStreamSource(stream);
       source.connect(analyserRef.current);
-    }).catch(err => console.error('Mic access denied:', err));
+      setMicPermissionBlocked(false);
+      setMicPermissionState('granted');
+    }).catch(err => {
+      console.error('Mic access denied:', err);
+      if (['NotAllowedError', 'SecurityError', 'PermissionDeniedError'].includes(err?.name)) {
+        setMicPermissionBlocked(true);
+        setMicPermissionState('denied');
+      }
+    });
   }, [micEnabled, echoCancellation, noiseGate, autoGain]);
 
   // Monitor input levels
@@ -100,5 +156,7 @@ export function useVoiceAudio() {
     setEchoCancellation,
     autoGain,
     setAutoGain,
+    micPermissionBlocked,
+    micPermissionState,
   };
 }

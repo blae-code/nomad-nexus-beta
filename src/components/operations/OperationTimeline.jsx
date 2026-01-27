@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Radio, AlertCircle, Activity, Target } from 'lucide-react';

@@ -5,7 +5,7 @@ import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, Shield, Radio } from 'lucide-react';
+import { AlertCircle, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 

@@ -1,12 +1,11 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Calendar, Radio, Zap, Users, TrendingUp } from 'lucide-react';
-import { format, differenceInDays, startOfMonth } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Activity, Calendar, Radio, Users, TrendingUp } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const ActivityMetrics = ({ events = [], voiceNets = [], squadData = [], createdDate }) => {
   const now = new Date();

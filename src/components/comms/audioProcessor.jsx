@@ -31,6 +31,10 @@ export class AudioProcessor {
    */
   async init(mediaStream) {
     try {
+      if (typeof window === 'undefined') {
+        console.warn('[AUDIO_PROCESSOR] Cannot init in non-browser environment.');
+        return false;
+      }
       if (!this.audioContext) {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       }

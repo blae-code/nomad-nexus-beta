@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Server, CheckCircle2, AlertCircle, Cable } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, AlertCircle, Cable } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 

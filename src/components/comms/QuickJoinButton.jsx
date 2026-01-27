@@ -1,7 +1,5 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Phone, PhoneOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function QuickJoinButton({ net, isConnected, onJoin, onLeave, disabled }) {
   if (isConnected) {

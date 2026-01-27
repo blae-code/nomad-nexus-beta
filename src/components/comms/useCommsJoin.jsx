@@ -29,8 +29,7 @@ import {
   clearCommsPresence,
   validateNetAccess,
   getRecommendedNet,
-  createJoinContext,
-  NET_TYPES
+  createJoinContext
 } from './CommsJoinService';
 
 export function useCommsJoin() {

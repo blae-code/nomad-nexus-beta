@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Mic, MicOff, Radio, Activity, Zap, Headphones, Volume2, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mic, MicOff, Radio, Activity, Headphones, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";

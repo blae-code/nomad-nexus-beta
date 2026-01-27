@@ -1,8 +1,6 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Radio } from "lucide-react";
 
 export default function CommsEventSelector({ selectedEventId, onSelect }) {
   const { data: events } = useQuery({

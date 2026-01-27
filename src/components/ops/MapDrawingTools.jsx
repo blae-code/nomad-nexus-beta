@@ -1,6 +1,5 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Circle, Pen, Trash2, Copy } from 'lucide-react';
+import { Circle, Pen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function MapDrawingTools({

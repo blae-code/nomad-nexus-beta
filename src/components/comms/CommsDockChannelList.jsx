@@ -1,5 +1,3 @@
-import React from 'react';
-import { Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sortChannels, getChannelIcon } from './channelTaxonomy';
 import { canUser } from './commsPermissionEngine';

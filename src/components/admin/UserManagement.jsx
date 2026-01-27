@@ -8,11 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Users, Edit, Shield, Tag, Lock } from "lucide-react";
+import { Search, Users, Edit, Lock } from "lucide-react";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useUserDirectory } from "@/components/hooks/useUserDirectory";
 
 function UserEditDialog({ user, trigger, isAdmin, existingPioneer }) {
   const [open, setOpen] = useState(false);

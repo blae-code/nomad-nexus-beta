@@ -3,33 +3,8 @@
  * Each command includes type (NAV/ACTION), label, keywords, icon name, and clearance gating
  */
 
-import {
-  LayoutGrid,
-  Calendar,
-  Radio,
-  Shield,
-  Bot,
-  Zap,
-  Users,
-  Coins,
-  RotateCcw,
-  AlertCircle,
-  Plus,
-  LogOut,
-  User,
-  Settings,
-  MapPin,
-  CheckCircle2,
-  AlertTriangle,
-  MessageSquare,
-  Send,
-  Inbox,
-  Bell,
-  FileText,
-  Eye,
-  TrendingUp,
-  BookOpen,
-} from 'lucide-react';
+
+
 
 export const COMMAND_SECTIONS = {
   MISSION_CONTROL: 'Mission Control',
