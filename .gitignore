@@ -31,3 +31,6 @@ test-results
 *.sw?
 
 .env
+
+.demo-purge-backups/
+

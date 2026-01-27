@@ -1,6 +1,5 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '@/lib/app-params';
-import { isDemoMode, persistDemoFromUrl } from '@/lib/demo-mode';
 
 persistDemoFromUrl();
 
@@ -702,7 +701,7 @@ const buildDemoClient = () => {
 };
 
 const shouldUseDemo = () => {
-  if (isDemoMode()) return true;
+  if (false) return true;
   if (!appId || !serverUrl) {
     console.error('[base44] Missing app_id or server_url; falling back to demo client.');
     return true;
@@ -719,3 +718,4 @@ export const base44 = shouldUseDemo()
       functionsVersion,
       requiresAuth: false,
     });
+

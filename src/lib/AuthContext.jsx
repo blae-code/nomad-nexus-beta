@@ -2,7 +2,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
-import { isDemoMode } from '@/lib/demo-mode';
 
 const AuthContext = createContext();
 const AUTH_REDIRECT_KEY = 'nn_auth_redirected_at';
@@ -40,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
 
-      if (isDemoMode() || !appParams.serverUrl || !appParams.appId) {
+      if (false || !appParams.serverUrl || !appParams.appId) {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         setIsAuthenticated(true);
@@ -197,3 +196,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

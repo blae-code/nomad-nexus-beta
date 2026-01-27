@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { setDemoMode, isDemoMode } from '@/lib/demo-mode';
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import AdminDevTools from '@/components/admin/AdminDevTools';
 import DemoPreflight from '@/components/admin/steps/DemoPreflight';
@@ -18,7 +18,7 @@ const noopAudit = async () => {};
 export default function SmokeCheck() {
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showPreflight, setShowPreflight] = useState(false);
-  const demoEnabled = isDemoMode();
+  const demoEnabled = false;
   const demoBadge = useMemo(() => (demoEnabled ? 'ENABLED' : 'DISABLED'), [demoEnabled]);
 
   if (!import.meta.env.DEV) {
@@ -147,3 +147,4 @@ export default function SmokeCheck() {
     </div>
   );
 }
+

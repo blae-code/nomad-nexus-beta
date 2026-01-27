@@ -15,6 +15,7 @@ import HubTabContent from "@/components/dashboard/HubTabContent";
 import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
 import AnnouncementsTicker from "@/components/dashboard/AnnouncementsTicker";
+
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
 
 export default function HubPage() {
@@ -88,6 +89,7 @@ export default function HubPage() {
 
   // Watchdog: force recovery after data stall (always at top level)
   useEffect(() => {
+    if (!user || !isLoading || false) {
     if (!user || !isLoading) {
       setWatchdogTriggered(false);
       return;
@@ -436,4 +438,7 @@ export default function HubPage() {
       </div>
     </>
   );
+}
+
+
 }
