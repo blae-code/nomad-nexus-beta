@@ -1,3 +1,11 @@
+// CRITICAL: Global fallback MUST be set before any SDK initialization
+if (typeof globalThis !== 'undefined') {
+  globalThis.persistDemoFromUrl = globalThis.persistDemoFromUrl || (() => false);
+}
+if (typeof window !== 'undefined') {
+  window.persistDemoFromUrl = window.persistDemoFromUrl || (() => false);
+}
+
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
