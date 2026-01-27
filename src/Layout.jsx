@@ -1,17 +1,4 @@
-// CRITICAL: Set fallback unconditionally before any imports
-(function() {
-  const fallback = () => false;
-  if (typeof globalThis !== 'undefined') {
-    globalThis.persistDemoFromUrl = fallback;
-  }
-  if (typeof window !== 'undefined') {
-    window.persistDemoFromUrl = fallback;
-  }
-  if (typeof self !== 'undefined') {
-    self.persistDemoFromUrl = fallback;
-  }
-})();
-
+import '@/components/platform-init';
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';

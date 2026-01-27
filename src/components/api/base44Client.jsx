@@ -13,6 +13,7 @@
   }
 })();
 
+import '@/components/platform-init';
 import { createClient } from '@base44/sdk';
 
 // Use same-origin API endpoints for custom domain support
