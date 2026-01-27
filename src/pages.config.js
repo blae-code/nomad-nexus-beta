@@ -29,7 +29,6 @@ import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import AccessGate from './pages/AccessGate';
 import Hub from './pages/Hub';
-import OpsDashboard from './pages/OpsDashboard';
 import SmokeCheck from './pages/SmokeCheck';
 import __Layout from './Layout.jsx';
 
@@ -66,7 +65,6 @@ export const PAGES = {
     "VoiceNetManager": VoiceNetManager,
     "AccessGate": AccessGate,
     "Hub": Hub,
-    "OpsDashboard": OpsDashboard,
     "SmokeCheck": SmokeCheck,
 }
 
