@@ -88,13 +88,15 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
         }
 
         setCurrentStep(4);
-      } catch (error) {
-        console.error('[ONBOARDING] Profile creation error:', error);
-        toast.error(error?.message || 'Failed to complete onboarding');
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
+        // Force auth refresh so Layout sees the new profile
+        await base44.auth.refreshMe?.();
+        } catch (error) {
+         console.error('[ONBOARDING] Profile creation error:', error);
+         toast.error(error?.message || 'Failed to complete onboarding');
+        } finally {
+         setIsSubmitting(false);
+        }
+        return;
     }
 
     setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
