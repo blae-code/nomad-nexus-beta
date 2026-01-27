@@ -152,6 +152,7 @@ export default function VoiceDiagnostics({ user, eventId }) {
         return;
       }
       
+      const token = res.data.tokens?.test || Object.values(res.data.tokens ?? {})[0];
       const tokens = res?.data?.tokens ?? {};
       const token = tokens?.test || Object.values(tokens)[0];
       const url = res.data.livekitUrl;
