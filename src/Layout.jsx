@@ -11,9 +11,6 @@ import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
 
-// DEMO: stub Base44 platform endpoints that are currently 500'ing.
-// IMPORTANT: must run at module load (not inside useEffect) to catch early requests.
-const __DEMO_STUB_B44__ = typeof window !== "undefined" && false;
 // Platform endpoint stubs removed - using live services only
 
 
