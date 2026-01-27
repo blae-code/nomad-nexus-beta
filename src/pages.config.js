@@ -33,9 +33,6 @@ import VoiceNetManager from './pages/VoiceNetManager';
 import __Layout from './Layout.jsx';
 
 
-export const PAGE_ROUTE_ALIASES = {};
-export const PAGE_ROUTE_OVERRIDES = {};
-
 export const PAGES = {
     "AccessGate": AccessGate,
     "AdminCockpit": AdminCockpit,
@@ -76,5 +73,3 @@ export const pagesConfig = {
     Pages: PAGES,
     Layout: __Layout,
 };
-
-export default pagesConfig;

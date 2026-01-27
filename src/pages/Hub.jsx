@@ -161,7 +161,7 @@ export default function HubPage() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
           {/* Live Operational Pulse - Compact */}
-          <div className="border border-accent/30 bg-zinc-950/80">
+          <div className="border border-orange-600/20 bg-gradient-to-br from-zinc-950 via-orange-950/5 to-zinc-950 shadow-sm shadow-orange-600/10">
               <div 
                 onClick={() => setPulseCollapsed(!pulseCollapsed)}
                 className="flex items-center justify-between p-1.5 cursor-pointer hover:bg-zinc-900/30 transition-colors"
@@ -248,7 +248,7 @@ export default function HubPage() {
                   <AnnouncementsTicker announcements={[]} />
 
                   {/* Immersive Org Identity Header - Collapsible */}
-          <div className="border border-zinc-800 bg-gradient-to-br from-zinc-950 via-accent/10 to-zinc-950 relative overflow-hidden">
+          <div className="border border-zinc-800/50 bg-gradient-to-br from-slate-950 via-orange-950/3 to-slate-950 relative overflow-hidden shadow-md shadow-black/30">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
             <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-3xl" />
@@ -315,7 +315,7 @@ export default function HubPage() {
          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
            <div className="space-y-0 flex flex-col min-h-0 flex-1 p-2">
              {/* Training & Tutorials Widget - Collapsible */}
-             <div className="border border-zinc-800 bg-zinc-950/50 mb-2 shrink-0">
+             <div className="border border-zinc-800/50 bg-gradient-to-r from-zinc-950 to-slate-950 mb-2 shrink-0 shadow-sm shadow-black/20">
                <div 
                  onClick={() => setTrainingCollapsed(!trainingCollapsed)}
                  className="flex items-center justify-between p-2 cursor-pointer hover:bg-zinc-900/30 transition-colors"
@@ -361,10 +361,10 @@ export default function HubPage() {
 
              {/* Primary Tabbed Interface */}
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="border border-zinc-800 bg-zinc-950 flex-1 min-h-0 flex flex-col overflow-hidden flex-shrink-0"
+             initial={{ opacity: 0, y: 8 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.1 }}
+             className="border border-zinc-800/50 bg-gradient-to-b from-slate-950 to-zinc-950 flex-1 min-h-0 flex flex-col overflow-hidden flex-shrink-0 shadow-lg shadow-black/40"
             >
               <div className="flex gap-0 border-b border-zinc-800 overflow-x-auto shrink-0 bg-zinc-900/30">
                 {[

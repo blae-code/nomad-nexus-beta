@@ -48,7 +48,7 @@ export default function CockpitHeader({ readinessScore, auditLogs, effectiveComm
   };
 
   return (
-    <div className="border border-zinc-800 bg-zinc-950/80 p-3 space-y-2">
+    <div className="border border-zinc-800/60 bg-gradient-to-r from-slate-950 via-zinc-950 to-slate-950 p-4 space-y-2 shadow-lg shadow-black/20">
       {/* First row: Score & badges */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
