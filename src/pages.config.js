@@ -1,9 +1,5 @@
-// Global fallback for legacy Base44 platform hooks - IIFE to ensure immediate execution
-(function() {
-  if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
-    window.persistDemoFromUrl = () => false;
-  }
-})();
+// MUST be first import to initialize platform hooks
+import './components/platform-init.js';
 
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
