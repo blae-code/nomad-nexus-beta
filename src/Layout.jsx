@@ -11,7 +11,10 @@ import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
 
-// Platform endpoint stubs removed - using live services only
+// Global fallback for legacy Base44 platform hooks
+if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
+  window.persistDemoFromUrl = () => false;
+}
 
 
 
