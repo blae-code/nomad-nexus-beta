@@ -1,7 +1,8 @@
-// Global polyfill - must run before SDK initialization
-if (typeof globalThis !== 'undefined') {
-  globalThis.persistDemoFromUrl = globalThis.persistDemoFromUrl || (() => false);
+// Global polyfill - must run before ANY imports
+if (typeof globalThis === 'undefined') {
+  var globalThis = typeof window !== 'undefined' ? window : global;
 }
+globalThis.persistDemoFromUrl = (() => false);
 
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
