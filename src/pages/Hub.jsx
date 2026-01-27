@@ -15,7 +15,15 @@ import HubTabContent from "@/components/dashboard/HubTabContent";
 import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
 import AnnouncementsTicker from "@/components/dashboard/AnnouncementsTicker";
-import { isDemoMode } from '@/components/lib/demo-mode';
+// Demo mode check inline
+const isDemoMode = () => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname.includes('127.0.0.1') ||
+    window.location.search.includes('demo=true')
+  );
+};
 
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];

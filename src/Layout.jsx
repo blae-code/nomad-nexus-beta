@@ -10,7 +10,15 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
-import { isDemoMode } from "@/components/lib/demo-mode";
+// Demo mode check inline
+const isDemoMode = () => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname.includes('127.0.0.1') ||
+    window.location.search.includes('demo=true')
+  );
+};
 
 // DEMO: stub Base44 platform endpoints that are currently 500'ing.
 // IMPORTANT: must run at module load (not inside useEffect) to catch early requests.
