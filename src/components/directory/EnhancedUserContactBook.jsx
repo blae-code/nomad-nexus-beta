@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
-  Search, Star, Plus, X, Settings, Grid, List, ArrowUpDown, Filter,
-  MessageSquare, Phone, MoreHorizontal, User, Volume2, VolumeX,
-  Clock, Activity, Users as UsersIcon, ChevronDown, CheckCircle
+  Search, Star, Plus, X, Grid, List, ArrowUpDown, Filter,
+  MessageSquare, Phone, User, Volume2, VolumeX, ChevronDown, CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import * as Popover from '@radix-ui/react-popover';
-import UserProfileCard from './UserProfileCard';
 import EnhancedUserCard from './EnhancedUserCard';
 import { AnimatePresence } from 'framer-motion';
 

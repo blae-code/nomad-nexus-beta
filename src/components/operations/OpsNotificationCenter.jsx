@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { AlertTriangle, CheckCircle2, Info, Zap, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

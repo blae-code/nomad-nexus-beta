@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { AlertCircle, AlertTriangle, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';

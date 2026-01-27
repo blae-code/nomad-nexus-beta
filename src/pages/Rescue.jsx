@@ -1,16 +1,13 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import RescueForm from "@/components/rescue/RescueForm";
 import ActiveRescueList from "@/components/rescue/ActiveRescueList";
-import { Shield, AlertCircle, CheckCircle2, Headphones } from "lucide-react";
+import { Shield, CheckCircle2, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVisibilityPause } from "@/components/hooks/useVisibilityPause";
-import { SkeletonLoader } from "@/components/feedback/SkeletonLoader";
-import { EmptyStateCard, EmptyStateMessages } from "@/components/feedback/EmptyStateCard";
-import { ErrorStateCard } from "@/components/feedback/ErrorStateCard";
-import { PanelHeader } from "@/components/layout/PanelHeader";
+import PageHeader from "@/components/layout/PageHeader";
 
 export default function RescuePage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -44,27 +41,24 @@ export default function RescuePage() {
                  }} 
             />
 
-            <header className="p-6 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur z-10 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <div className="bg-red-600/20 p-2 rounded border border-red-900/50">
-                        <Shield className="w-6 h-6 text-red-500" />
+            <PageHeader
+                title="Rescue Operations"
+                subtitle="EMERGENCY RESPONSE & DISPATCH"
+                icon={<Shield className="w-5 h-5 text-red-500" />}
+                iconContainerClassName="bg-red-600/20 border-red-900/50"
+                rightSlot={(
+                    <div className="text-right">
+                        <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">System Status</div>
+                        <div className="text-emerald-500 font-bold text-[10px] flex items-center justify-end gap-2">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            ONLINE
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-black uppercase tracking-widest text-white">Rescue Operations</h1>
-                        <p className="text-xs font-mono text-zinc-500">EMERGENCY RESPONSE & DISPATCH</p>
-                    </div>
-                </div>
-                <div className="text-right">
-                    <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">System Status</div>
-                    <div className="text-emerald-500 font-bold text-xs flex items-center justify-end gap-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        ONLINE
-                    </div>
-                </div>
-            </header>
+                )}
+            />
 
             <main className="flex-1 overflow-auto p-6 relative z-10">
                 <div className="max-w-4xl mx-auto space-y-8">

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import EventReportingDashboard from '@/components/events/EventReportingDashboard';
 import EventCalendarView from '@/components/dashboard/EventCalendarView';
-import { Calendar, BarChart3, FileText } from 'lucide-react';
+import { Calendar, BarChart3 } from 'lucide-react';
 
 export default function EventReportingPage() {
   const [currentUser, setCurrentUser] = React.useState(null);

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { canEditEvent } from '@/components/permissions';
 import { Trash2 } from 'lucide-react';

@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Mic, Users, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Mic, Clock } from 'lucide-react';
 
 export default function NetActivityMonitor({ netId }) {
   const { data: netStatus } = useQuery({

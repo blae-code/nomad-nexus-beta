@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Radio, Settings, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { pagesConfig as PAGES_CONFIG } from '@/pages.config';
-import { base44 } from '@/api/base44Client';
+import pagesConfig from '@/pages.config';
+import NavItem from '@/components/layout/NavItem';
+import { SURFACE_BG_CLASS, SURFACE_BORDER_CLASS } from '@/components/layout/headerStyles';
 
 /**
  * ⚠️ DEPRECATED: LeftNavRail (Legacy)
@@ -27,9 +28,9 @@ export default function LeftNavRail({ currentPage, user }) {
     }
 
     // Update navigation items when rank/admin status changes
-    if (PAGES_CONFIG?.getNavItemsForUser) {
-      setNavSections(PAGES_CONFIG.getNavItemsForUser(userRank, isAdmin));
-      setMoreItems(PAGES_CONFIG.getMoreItemsForUser(userRank, isAdmin));
+    if (pagesConfig?.getNavItemsForUser) {
+      setNavSections(pagesConfig.getNavItemsForUser(userRank, isAdmin));
+      setMoreItems(pagesConfig.getMoreItemsForUser(userRank, isAdmin));
     }
   }, [user, userRank, isAdmin]);
 
@@ -37,7 +38,13 @@ export default function LeftNavRail({ currentPage, user }) {
   const allNavItems = navSections.flatMap(section => section.items || []);
 
   return (
-    <nav className="w-[72px] bg-zinc-950 border-r border-zinc-800 flex flex-col items-center shrink-0 relative h-screen">
+    <nav
+      className={cn(
+        'w-[72px] flex flex-col items-center shrink-0 relative h-screen border-r',
+        SURFACE_BG_CLASS,
+        SURFACE_BORDER_CLASS
+      )}
+    >
       {/* Logo / Top Icon */}
       <div className="w-12 h-12 bg-[#ea580c] flex items-center justify-center my-3 border border-[#ea580c]">
         <Radio className="w-6 h-6 text-white" />
@@ -49,19 +56,14 @@ export default function LeftNavRail({ currentPage, user }) {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
           return (
-            <Link
+            <NavItem
               key={item.id}
               to={createPageUrl(item.page)}
               title={item.label}
-              className={cn(
-                'w-12 h-12 flex items-center justify-center border border-2 transition-all',
-                isActive
-                  ? 'bg-[#ea580c]/20 border-[#ea580c] text-[#ea580c]'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
-              )}
-            >
-              <Icon className="w-5 h-5" />
-            </Link>
+              icon={Icon}
+              isActive={isActive}
+              size="lg"
+            />
           );
         })}
       </div>
@@ -74,13 +76,14 @@ export default function LeftNavRail({ currentPage, user }) {
         {/* More Dropdown (if overflow items exist) */}
         {moreItems.length > 0 && (
           <div className="relative group">
-            <button
+            <NavItem
+              as="button"
+              type="button"
               onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
               title="More Options"
-              className="w-12 h-12 flex items-center justify-center border border-2 border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300 transition-all"
-            >
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
+              icon={MoreHorizontal}
+              size="lg"
+            />
 
             {/* Dropdown Menu */}
             {moreDropdownOpen && (
@@ -93,7 +96,7 @@ export default function LeftNavRail({ currentPage, user }) {
                         key={item.id}
                         to={createPageUrl(item.page)}
                         onClick={() => setMoreDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800/70 hover:text-white transition-colors"
                         title={item.description || item.label}
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
@@ -108,13 +111,12 @@ export default function LeftNavRail({ currentPage, user }) {
         )}
 
         {/* Settings */}
-        <Link
+        <NavItem
           to={createPageUrl('Profile')}
           title="Settings & Profile"
-          className="w-12 h-12 flex items-center justify-center border border-2 border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300 transition-all"
-        >
-          <Settings className="w-5 h-5" />
-        </Link>
+          icon={Settings}
+          size="lg"
+        />
       </div>
     </nav>
   );

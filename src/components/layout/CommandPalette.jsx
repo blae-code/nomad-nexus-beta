@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPageUrl } from "@/utils";
 import { 
   Search, 
@@ -8,8 +8,7 @@ import {
   Shield, 
   Activity, 
   Terminal, 
-  Zap, 
-  LogOut,
+  Zap,
   Users,
   LayoutGrid,
   Radio,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
 
 export default function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);

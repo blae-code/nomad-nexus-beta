@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Command,
   Search,
-  ArrowRight,
   ChevronRight,
   ChevronLeft,
   LayoutGrid,
@@ -27,7 +26,6 @@ import {
   Rocket,
   MessageSquare,
   Star,
-  Clock,
   HelpCircle,
   AtSign,
   Gamepad2,
@@ -35,7 +33,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
-  commands,
   COMMAND_SECTIONS,
   filterCommandsByUser,
   searchCommands,
@@ -81,6 +78,7 @@ export default function CommandPaletteV3() {
   const [helpMode, setHelpMode] = useState(false);
   const [peopleMode, setPeopleMode] = useState(false);
   const [selectedCommand, setSelectedCommand] = useState(null);
+  const [contextParams, setContextParams] = useState({ eventId: null, userId: null, channelId: null });
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const location = useLocation();
@@ -92,13 +90,15 @@ export default function CommandPaletteV3() {
   }, []);
 
   // Extract context from URL
-  const contextParams = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      eventId: params.get('id') || params.get('eventId'),
-      userId: params.get('userId'),
-      channelId: params.get('channelId'),
-    };
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setContextParams({
+        eventId: params.get('id') || params.get('eventId'),
+        userId: params.get('userId'),
+        channelId: params.get('channelId'),
+      });
+    }
   }, [location.search]);
 
   // Fetch most recent event for comms join
@@ -132,21 +132,23 @@ export default function CommandPaletteV3() {
 
   // Load recents and pinned from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('recentCommands');
-    if (stored) {
-      try {
-        setRecentCommands(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to load recent commands:', e);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('recentCommands');
+      if (stored) {
+        try {
+          setRecentCommands(JSON.parse(stored));
+        } catch (e) {
+          console.error('Failed to load recent commands:', e);
+        }
       }
-    }
 
-    const pinned = localStorage.getItem('pinnedCommands');
-    if (pinned) {
-      try {
-        setPinnedCommands(JSON.parse(pinned));
-      } catch (e) {
-        console.error('Failed to load pinned commands:', e);
+      const pinned = localStorage.getItem('pinnedCommands');
+      if (pinned) {
+        try {
+          setPinnedCommands(JSON.parse(pinned));
+        } catch (e) {
+          console.error('Failed to load pinned commands:', e);
+        }
       }
     }
   }, []);
@@ -162,7 +164,9 @@ export default function CommandPaletteV3() {
       ? pinnedCommands.filter((id) => id !== cmdId)
       : [...pinnedCommands, cmdId].slice(0, 5);
     setPinnedCommands(newPinned);
-    localStorage.setItem('pinnedCommands', JSON.stringify(newPinned));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pinnedCommands', JSON.stringify(newPinned));
+    }
   };
 
   // Parse command grammar
@@ -410,8 +414,14 @@ export default function CommandPaletteV3() {
         setConfirmingDistress(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('mousedown', handleClickOutside);
+      }
+    };
   }, []);
 
   // Execute command
@@ -421,7 +431,9 @@ export default function CommandPaletteV3() {
       ...recentCommands.filter((id) => id !== cmd.id),
     ].slice(0, 10);
     setRecentCommands(newRecents);
-    localStorage.setItem('recentCommands', JSON.stringify(newRecents));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recentCommands', JSON.stringify(newRecents));
+    }
 
     if (cmd.id === 'action-distress') {
       if (!confirmingDistress) {
@@ -469,7 +481,9 @@ export default function CommandPaletteV3() {
       case 'createEvent':
         navigate(createPageUrl('Events'));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openCreateEventForm'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openCreateEventForm'));
+          }
         }, 100);
         break;
       
@@ -482,18 +496,24 @@ export default function CommandPaletteV3() {
         break;
 
       case 'toggleDemoMode':
-        window.dispatchEvent(new CustomEvent('toggleDemoMode'));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('toggleDemoMode'));
+        }
         break;
 
       case 'seedData':
         if (confirm('Populate demo data? This will seed 7 days of sample events.')) {
-          window.dispatchEvent(new CustomEvent('seedDemoData'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('seedDemoData'));
+          }
         }
         break;
 
       case 'wipeData':
         if (confirm('WARNING: This will permanently delete ALL operational data. Continue?')) {
-          window.dispatchEvent(new CustomEvent('wipeAllData'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('wipeAllData'));
+          }
         }
         break;
 
@@ -501,14 +521,18 @@ export default function CommandPaletteV3() {
       case 'editEventDetails':
         navigate(createPageUrl(`Events?id=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openEditEventForm', { detail: { eventId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openEditEventForm', { detail: { eventId: contextId } }));
+          }
         }, 100);
         break;
 
       case 'inviteAttendees':
         navigate(createPageUrl(`Events?id=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openInviteAttendees', { detail: { eventId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openInviteAttendees', { detail: { eventId: contextId } }));
+          }
         }, 100);
         break;
 
@@ -519,7 +543,9 @@ export default function CommandPaletteV3() {
       case 'viewMap':
         navigate(createPageUrl(`Events?id=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('focusTab', { detail: { tab: 'map' } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('focusTab', { detail: { tab: 'map' } }));
+          }
         }, 100);
         break;
 
@@ -531,14 +557,18 @@ export default function CommandPaletteV3() {
       case 'sendDM':
         navigate(createPageUrl(`Channels?userId=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: contextId } }));
+          }
         }, 100);
         break;
 
       case 'inviteToEvent':
         navigate(createPageUrl('Events'));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openCreateEventForm', { detail: { inviteUserId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openCreateEventForm', { detail: { inviteUserId: contextId } }));
+          }
         }, 100);
         break;
       
@@ -562,6 +592,9 @@ export default function CommandPaletteV3() {
       console.error('Failed to update presence:', error);
     }
   };
+
+  // Memoize icon map
+  const memoizedIconMap = useMemo(() => iconMap, []);
 
   // Get icon component
   const getIcon = (iconName) => {
@@ -588,9 +621,6 @@ export default function CommandPaletteV3() {
     return breadcrumbs[path] || 'OPERATIONS';
   };
 
-  // Memoize icon map
-  const memoizedIconMap = useMemo(() => iconMap, []);
-
   return (
     <>
       <div ref={containerRef} className="relative max-w-2xl flex-1">
@@ -599,7 +629,7 @@ export default function CommandPaletteV3() {
         {/* Pulsing outer glow when not open - draws attention */}
         <motion.div
           className={cn(
-            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/30 to-[#ea580c]/0 blur-2xl rounded',
+            'absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/30 to-accent/0 blur-2xl rounded',
             isOpen ? 'hidden' : 'block'
           )}
           animate={{
@@ -615,22 +645,22 @@ export default function CommandPaletteV3() {
         {/* Bright glow when open */}
         <div
           className={cn(
-            'absolute inset-0 bg-gradient-to-r from-[#ea580c]/0 via-[#ea580c]/40 to-[#ea580c]/0 blur-xl transition-opacity duration-300',
+            'absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/40 to-accent/0 blur-xl transition-opacity duration-300',
             isOpen ? 'opacity-100' : 'opacity-0'
           )}
         />
 
-        <div className="absolute -top-[1px] -left-[1px] w-3 h-3 border-t border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
-        <div className="absolute -top-[1px] -right-[1px] w-3 h-3 border-t border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
-        <div className="absolute -bottom-[1px] -left-[1px] w-3 h-3 border-b border-l border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
-        <div className="absolute -bottom-[1px] -right-[1px] w-3 h-3 border-b border-r border-zinc-700 group-hover:border-[#ea580c] transition-colors" />
+        <div className="absolute -top-[1px] -left-[1px] w-3 h-3 border-t border-l border-zinc-700 group-hover:border-accent transition-colors" />
+        <div className="absolute -top-[1px] -right-[1px] w-3 h-3 border-t border-r border-zinc-700 group-hover:border-accent transition-colors" />
+        <div className="absolute -bottom-[1px] -left-[1px] w-3 h-3 border-b border-l border-zinc-700 group-hover:border-accent transition-colors" />
+        <div className="absolute -bottom-[1px] -right-[1px] w-3 h-3 border-b border-r border-zinc-700 group-hover:border-accent transition-colors" />
 
         <div
           className={cn(
-            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-visible focus-within:border-[#ea580c] focus-within:shadow-[0_0_25px_rgba(234,88,12,0.4)]',
+            'relative flex items-center h-8 bg-zinc-900 border-2 transition-all duration-200 overflow-visible focus-within:border-accent focus-within:shadow-[0_0_25px_hsl(var(--accent)/0.4)]',
             isOpen 
-              ? 'border-[#ea580c] shadow-[0_0_25px_rgba(234,88,12,0.4)]' 
-              : 'border-zinc-800 hover:border-[#ea580c]/50 group-hover:shadow-[0_0_15px_rgba(234,88,12,0.2)]'
+              ? 'border-accent shadow-[0_0_25px_hsl(var(--accent)/0.4)]' 
+              : 'border-zinc-800 hover:border-accent/50 group-hover:shadow-[0_0_15px_hsl(var(--accent)/0.2)]'
           )}
         >
           {/* Pulsing chevrons - left side (pointing inward) */}
@@ -639,9 +669,9 @@ export default function CommandPaletteV3() {
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/40" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/60" />
-            <ChevronRight className="w-4 h-4 text-[#ea580c]/80" />
+            <ChevronRight className="w-4 h-4 text-accent/40" />
+            <ChevronRight className="w-4 h-4 text-accent/60" />
+            <ChevronRight className="w-4 h-4 text-accent/80" />
           </motion.div>
           {/* Pulsing chevrons - right side (pointing inward) */}
           <motion.div
@@ -649,9 +679,9 @@ export default function CommandPaletteV3() {
             animate={{ x: [0, 6, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/80" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/60" />
-            <ChevronLeft className="w-4 h-4 text-[#ea580c]/40" />
+            <ChevronLeft className="w-4 h-4 text-accent/80" />
+            <ChevronLeft className="w-4 h-4 text-accent/60" />
+            <ChevronLeft className="w-4 h-4 text-accent/40" />
           </motion.div>
           <Search className="w-3 h-3 ml-2 mr-2 text-zinc-400 pointer-events-none" aria-label="Search icon" role="img" />
 
@@ -674,6 +704,8 @@ export default function CommandPaletteV3() {
            isOpen 
              ? 'text-[#ea580c]' 
              : 'text-zinc-400 group-hover:text-[#ea580c]'
+             ? 'text-accent' 
+             : 'text-zinc-500 group-hover:text-accent'
           )}>
             <span className="text-[8px] font-bold">Ctrl</span>
             <span>+K</span>
@@ -746,8 +778,16 @@ export default function CommandPaletteV3() {
                              )}
                            >
                              <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-[#ea580c]')} aria-label={`${cmd.label} icon`} role="img" />
+                               'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 group relative focus:outline-none focus:bg-zinc-900 focus:text-accent focus:border-l-2 focus:border-accent',
+                               isContext && 'bg-accent/5 border-l-2 border-accent/30',
+                               isSelected
+                                 ? cn('bg-zinc-900 text-accent border-l-2 border-accent', isContext && 'bg-accent/20')
+                                 : cn('text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-accent/10')
+                             )}
+                           >
+                             <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-accent')} />
                              <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
-                             {isContext && <span className="text-[7px] text-[#ea580c] uppercase font-bold">CTX</span>}
+                             {isContext && <span className="text-[7px] text-accent uppercase font-bold">CTX</span>}
                              <button
                                type="button"
                                onClick={(e) => {
@@ -757,11 +797,14 @@ export default function CommandPaletteV3() {
                                className={cn(
                                  'shrink-0 p-1 rounded transition-opacity focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
                                  isPinned ? 'text-[#ea580c]' : 'text-zinc-400 group-hover:text-zinc-300'
+                                 'shrink-0 p-1 rounded transition-opacity',
+                                 isPinned ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-500'
                                )}
                                title={isPinned ? 'Unpin' : 'Pin'}
                                aria-label={isPinned ? `Unpin ${cmd.label}` : `Pin ${cmd.label}`}
                              >
                                <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} aria-label="Pin command" role="img" />
+                               <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-accent')} />
                              </button>
                            </button>
                          );
@@ -788,6 +831,7 @@ export default function CommandPaletteV3() {
                       {(() => {
                         const Icon = getIcon(selectedCommand.icon);
                         return <Icon className="w-4 h-4 text-[#ea580c]" aria-label={`${selectedCommand.label} icon`} role="img" />;
+                        return <Icon className="w-4 h-4 text-accent" />;
                       })()}
                       <span className="text-xs font-bold text-white">{selectedCommand.label}</span>
                     </div>

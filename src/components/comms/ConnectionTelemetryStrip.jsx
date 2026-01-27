@@ -3,7 +3,6 @@
  * Shows mode (SIM/LIVE), state, participant count, mic, and PTT key
  */
 
-import React from 'react';
 import { Mic, MicOff, Radio, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

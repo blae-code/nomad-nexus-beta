@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, Volume2, Settings, TestTube } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, TestTube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 

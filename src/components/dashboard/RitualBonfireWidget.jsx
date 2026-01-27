@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Flame, Clock, Users, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Flame, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';

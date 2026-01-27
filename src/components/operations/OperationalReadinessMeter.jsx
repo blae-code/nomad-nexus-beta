@@ -11,7 +11,7 @@
  * CASUAL ops: relaxed requirements
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { CheckCircle2, AlertCircle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

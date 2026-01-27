@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
   Zap, Database, RefreshCw, Trash2, AlertTriangle, CheckCircle2, Clock, 
-  BarChart3, Search, Plus, Copy, Pause, Play, Eye, Settings, Terminal,
-  TrendingUp, AlertCircle, Lock, Unlock, Server, Code, RotateCcw
+  BarChart3, Search, Copy, Eye, Terminal,
+  TrendingUp, AlertCircle, Server, RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

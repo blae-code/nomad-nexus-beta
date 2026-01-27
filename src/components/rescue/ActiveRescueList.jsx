@@ -1,10 +1,9 @@
-import React from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Activity, Crosshair, Headphones, Clock, ShieldCheck } from "lucide-react";
+import { MapPin, Activity, Crosshair, Headphones } from "lucide-react";
 import { hasRole } from "@/components/permissions";
 
 export default function ActiveRescueList({ user }) {

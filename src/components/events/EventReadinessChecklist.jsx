@@ -1,7 +1,6 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
-import { Button } from '@/components/ui/button';
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

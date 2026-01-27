@@ -1,16 +1,15 @@
-import React from 'react';
 import {
-  Activity, MessageSquare, Database, Users, Server, Lock
+  Activity, MessageSquare, Database, Users, Server, Lock, Key
 } from 'lucide-react';
 
 // Section components
 import DemoPreflight from '@/components/admin/steps/DemoPreflight';
 import CommsTestStep from '@/components/admin/steps/CommsTestStep';
 import WipeDataStep from '@/components/admin/steps/WipeDataStep';
-import SeedDataStep from '@/components/admin/steps/SeedDataStep';
 import GovernanceSection from '@/components/admin/sections/GovernanceSection';
 import SystemStatusSection from '@/components/admin/sections/SystemStatusSection';
 import PioneerOverridesSection from '@/components/admin/sections/PioneerOverridesSection';
+import AccessKeyManager from '@/components/admin/AccessKeyManager';
 
 export const COCKPIT_SECTIONS = [
   {
@@ -48,6 +47,15 @@ export const COCKPIT_SECTIONS = [
     visible: true,
     description: 'User ranks, roles, access keys',
     component: GovernanceSection,
+  },
+  {
+    id: 'access-keys',
+    label: 'Invite Keys',
+    icon: Key,
+    minRank: 'founder',
+    visible: true,
+    description: 'Generate and manage access keys for registration',
+    component: AccessKeyManager,
   },
   {
     id: 'system',

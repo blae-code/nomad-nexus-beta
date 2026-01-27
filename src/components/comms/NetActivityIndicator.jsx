@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Radio, Signal, LogIn, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Users, Radio, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';

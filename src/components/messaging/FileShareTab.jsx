@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { FileUp, Download, Trash2, Clock } from 'lucide-react';
+import { FileUp, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function FileShareTab({ user }) {

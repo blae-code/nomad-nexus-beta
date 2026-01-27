@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Clock, Bell, User as UserIcon, LogOut, Settings, Command, Radio } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Clock, User as UserIcon, LogOut, Settings, Command, Radio } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { Link } from 'react-router-dom';
+import { HEADER_BASE_CLASS, HEADER_SURFACE_STYLE } from '@/components/layout/headerStyles';
 
 /**
  * ⚠️ DEPRECATED: Header (Legacy)
@@ -57,15 +58,16 @@ export default function Header({ isRailExpanded, showRightPanel }) {
 
   return (
     <header
-      className="h-14 shrink-0 bg-zinc-950 z-40 border-b border-[var(--divider-color)]"
+      className={cn(HEADER_BASE_CLASS, 'z-40')}
       style={{
+        ...HEADER_SURFACE_STYLE,
         display: 'grid',
         gridTemplateColumns: `${railWidth} 1fr ${rightWidth}`,
         gap: '0',
       }}
     >
       {/* Col A: Rail column (logo) */}
-      <div className="flex items-center justify-center shrink-0 border-r border-[var(--divider-color)]">
+      <div className="flex items-center justify-center shrink-0 border-r border-zinc-800/70">
         <div className="flex items-center justify-center gap-1">
           <Radio className="w-5 h-5 text-[#ea580c]" />
           <span className="text-[10px] font-black uppercase text-zinc-400 hidden sm:inline">R</span>
@@ -110,7 +112,7 @@ export default function Header({ isRailExpanded, showRightPanel }) {
 
       {/* Col C: Right column (status + time + notifications + user) */}
       {showRightPanel && (
-        <div className="flex items-center justify-end gap-3 px-[var(--gutter)] border-l border-[var(--divider-color)]">
+        <div className="flex items-center justify-end gap-3 px-[var(--gutter)] border-l border-zinc-800/70">
           {/* Connection Status */}
           <div className="flex items-center gap-1 h-8 px-2 bg-zinc-900 border border-zinc-800">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

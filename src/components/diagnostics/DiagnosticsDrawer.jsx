@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Activity, X, Check, AlertCircle, RefreshCw, Server, Radio } from 'lucide-react';
+import { Activity, X, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';

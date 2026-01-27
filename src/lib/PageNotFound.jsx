@@ -1,15 +1,17 @@
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { pagesConfig, PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.config';
+import pagesConfig, { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from '@/pages.config';
 import { createPageUrl } from '@/utils';
 
 const normalize = (value = '') => value.toLowerCase().replace(/[\s-_]/g, '');
+const aliases = PAGE_ROUTE_ALIASES ?? {};
+const overrides = PAGE_ROUTE_OVERRIDES ?? {};
 
 const buildAccessGatePaths = () => {
-    const canonical = PAGE_ROUTE_OVERRIDES?.AccessGate ?? createPageUrl('AccessGate');
-    const aliases = PAGE_ROUTE_ALIASES?.AccessGate ?? [];
-    return [canonical, ...aliases];
+    const canonical = overrides.AccessGate ?? createPageUrl('AccessGate');
+    const accessGateAliases = aliases.AccessGate ?? [];
+    return [canonical, ...accessGateAliases];
 };
 
 const levenshtein = (left = '', right = '') => {
@@ -51,14 +53,31 @@ const rankClosestMatches = (requestedKey, pageKeys) => {
         .slice(0, 3);
 };
 
+const getConfiguredPageKeys = () => {
+    const dynamicPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? null : pagesConfig ?? {});
+    const dynamicKeys = dynamicPages && typeof dynamicPages === 'object' ? Object.keys(dynamicPages) : [];
+    if (dynamicKeys.length > 0) {
+        return dynamicKeys;
+    }
+
+    if (Array.isArray(pagesConfig)) {
+        return pagesConfig
+            .map((page) => page.name)
+            .filter(Boolean);
+    }
+
+    return [];
+};
+
 export default function PageNotFound() {
     const location = useLocation();
     const requestedPath = location.pathname || '/';
     const requestedKey = requestedPath.replace('/', '');
-    const pageKeys = Object.keys(pagesConfig.Pages ?? {});
+    const dynamicPages = pagesConfig?.Pages ?? (Array.isArray(pagesConfig) ? null : pagesConfig ?? {});
+    const pageKeys = getConfiguredPageKeys();
     const closestMatches = rankClosestMatches(requestedKey, pageKeys);
     const accessGatePaths = buildAccessGatePaths();
-    const hasAccessGate = Boolean(pagesConfig.Pages?.AccessGate);
+    const hasAccessGate = Boolean(dynamicPages?.AccessGate);
     const isAccessGateRequest = normalize(requestedKey) === 'accessgate';
 
     const { data: authData, isFetched } = useQuery({
@@ -133,14 +152,22 @@ export default function PageNotFound() {
                     <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                         {hasAccessGate && (
                             <button
-                                onClick={() => (window.location.href = accessGatePaths[0])}
+                                onClick={() => {
+                                    if (typeof window !== 'undefined') {
+                                        window.location.href = accessGatePaths[0];
+                                    }
+                                }}
                                 className="inline-flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#ea580c] hover:bg-[#ea580c]/90 transition-colors duration-200"
                             >
                                 Go to Access Gate
                             </button>
                         )}
                         <button
-                            onClick={() => (window.location.href = '/')}
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.location.href = '/';
+                                }
+                            }}
                             className="inline-flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-300 border border-zinc-800 hover:border-[#ea580c]/50 hover:text-white transition-colors duration-200"
                         >
                             Return to Command Hub

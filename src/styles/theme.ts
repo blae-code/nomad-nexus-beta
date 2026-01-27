@@ -1,0 +1,45 @@
+export const theme = {
+  colors: {
+    background: '#09090b',
+    surface: '#18181b',
+    surfaceStrong: '#3f3f46',
+    surfaceMuted: '#27272a',
+    foreground: '#e4e4e7',
+    accent: '#ea580c',
+    accentStrong: '#c2410c',
+    success: '#10b981',
+    warning: '#f59e0b',
+    danger: '#ef4444',
+  },
+  typography: {
+    sans: "'Rajdhani', sans-serif",
+    mono: "'JetBrains Mono', monospace",
+    sizes: {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      md: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+    },
+    weights: {
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '24px',
+    '2xl': '32px',
+  },
+  radii: {
+    none: '0px',
+    sm: '2px',
+    md: '4px',
+    lg: '8px',
+  },
+};

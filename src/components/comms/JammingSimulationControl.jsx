@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Zap, AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 export default function JammingSimulationControl({ netStatus, onClose }) {
   const [duration, setDuration] = useState('30');
