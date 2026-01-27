@@ -67,8 +67,8 @@ export const PAGES = {
     "SmokeCheck": SmokeCheck,
 }
 
-const PAGE_ROUTE_ALIASES = {};
-const PAGE_ROUTE_OVERRIDES = {};
+export const PAGE_ROUTE_ALIASES = {};
+export const PAGE_ROUTE_OVERRIDES = {};
 
 export const pagesConfig = {
     mainPage: "Hub",
@@ -77,8 +77,5 @@ export const pagesConfig = {
     PAGE_ROUTE_ALIASES,
     PAGE_ROUTE_OVERRIDES,
 };
-
-// Re-export for compatibility with hidden lib/PageNotFound.jsx
-export { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES } from './pages.config.js';
 
 export default pagesConfig;
