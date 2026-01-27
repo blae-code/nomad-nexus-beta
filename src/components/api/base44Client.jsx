@@ -1,3 +1,9 @@
+
+// Polyfill: Base44 SDK calls this during module initialization
+if (typeof globalThis !== 'undefined') {
+  globalThis.persistDemoFromUrl = globalThis.persistDemoFromUrl || (() => false);
+}
+
 import { createClient } from '@base44/sdk';
 
 // Use same-origin API endpoints for custom domain support
