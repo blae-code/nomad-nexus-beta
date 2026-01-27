@@ -16,7 +16,7 @@ import HubTabContent from "@/components/dashboard/HubTabContent";
 import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
 import AnnouncementsTicker from "@/components/dashboard/AnnouncementsTicker";
-import { isDemoMode } from '@/lib/demo-mode';
+import { isDemoMode } from '@/components/lib/demo-mode';
 
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
@@ -441,4 +441,3 @@ export default function HubPage() {
     </>
   );
 }
-

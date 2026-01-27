@@ -10,7 +10,7 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
-import { isDemoMode } from "@/lib/demo-mode";
+import { isDemoMode } from "@/components/lib/demo-mode";
 
 // DEMO: stub Base44 platform endpoints that are currently 500'ing.
 // IMPORTANT: must run at module load (not inside useEffect) to catch early requests.
