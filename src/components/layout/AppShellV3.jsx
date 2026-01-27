@@ -14,7 +14,7 @@ import { SURFACE_BG_CLASS, SURFACE_BORDER_CLASS } from '@/components/layout/head
 export default function AppShellV3({ children, currentPage, user, showRightPanel = true }) {
   console.log('[AppShellV3] Rendering, currentPage:', currentPage);
   return (
-    <div className="h-screen w-screen overflow-hidden bg-zinc-950 flex flex-col">
+    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-slate-950 via-[#05070b] to-slate-900 flex flex-col">
       {/* Boot Splash Overlay */}
       <BootSplashOverlay />
 
@@ -28,9 +28,9 @@ export default function AppShellV3({ children, currentPage, user, showRightPanel
 
         {/* Optional right context panel */}
         {showRightPanel && (
-          <div className="hidden lg:flex lg:w-80 h-full overflow-hidden border-l border-zinc-800 bg-zinc-950 flex-col shrink-0">
+          <div className="hidden lg:flex lg:w-80 h-full overflow-hidden border-l border-zinc-800/60 bg-gradient-to-b from-slate-900 to-slate-950 flex-col shrink-0">
             <div
-              className={`w-80 h-full overflow-hidden border-l flex flex-col shrink-0 ${SURFACE_BG_CLASS} ${SURFACE_BORDER_CLASS}`}
+              className={`w-80 h-full overflow-hidden border-l border-zinc-800/50 flex flex-col shrink-0 ${SURFACE_BG_CLASS} ${SURFACE_BORDER_CLASS}`}
             >
               <ContextPanel currentPage={currentPage} user={user} />
             </div>
