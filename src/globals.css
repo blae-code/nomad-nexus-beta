@@ -142,6 +142,58 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
+  background-color: #05070b;
+  color: #e8f0ff;
+}
+
+/* ============================================================
+   Global Visual Polish & Effects
+   ============================================================ */
+
+/* Selection styling */
+::selection {
+  background-color: rgba(255, 107, 53, 0.2);
+  color: #ff8a5b;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(107, 122, 136, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(107, 122, 136, 0.2);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 122, 136, 0.4);
+}
+
+/* Enhanced focus states for accessibility */
+*:focus-visible {
+  outline: 2px solid #ff6b35;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for interactive elements */
+button, input, select, textarea, a {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Layout Debug Mode (dev only) */
