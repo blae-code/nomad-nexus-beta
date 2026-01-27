@@ -79,6 +79,3 @@ export const pagesConfig = {
 };
 
 export default pagesConfig;
-
-// Explicit named exports for lib/PageNotFound.jsx compatibility
-export { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
