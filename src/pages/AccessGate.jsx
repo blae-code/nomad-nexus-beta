@@ -55,10 +55,11 @@ export default function AccessGate() {
       });
 
       if (result.data?.success) {
-        toast.success('Access key redeemed!');
-        setGrantedRank(result.data.grants_rank);
-        setGrantedRoles(result.data.grants_roles || []);
-        setShowOnboarding(true);
+        toast.success('Access key redeemed! Redirecting to login...');
+        // Redirect to login so user can authenticate, then continue onboarding
+        setTimeout(() => {
+          base44.auth.redirectToLogin('/access-gate');
+        }, 1500);
       } else {
         toast.error(result.data?.error || 'Invalid access key');
       }
