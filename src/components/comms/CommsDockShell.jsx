@@ -18,6 +18,13 @@ const TABS = [
   { id: 'inbox', label: 'INBOX', icon: Inbox }
 ];
 
+const SafeComponent = ({ component: Comp, fallback = null }) => {
+  if (!Comp) return fallback;
+  if (typeof Comp === 'function') return <Comp />;
+  if (Comp.default && typeof Comp.default === 'function') return <Comp.default />;
+  return fallback;
+};
+
 export default function CommsDockShell({ user, defaultTab = 'comms' }) {
   const [isMinimized, setIsMinimized] = useState(true);
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -141,10 +148,15 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
 
           {/* Content Area */}
           <div className="h-64 overflow-hidden bg-zinc-950/40">
-            {activeTab === 'comms' && <CommsDockCommsTab user={user} />}
-            {activeTab === 'polls' && <CommsDockPollsTab user={user} />}
-            {activeTab === 'riggsy' && <CommsDockRiggsyTab user={user} />}
-            {activeTab === 'inbox' && <CommsDockInboxTab user={user} />}
+            {activeTab === 'comms' && CommsDockCommsTab && <CommsDockCommsTab user={user} />}
+            {activeTab === 'polls' && CommsDockPollsTab && <CommsDockPollsTab user={user} />}
+            {activeTab === 'riggsy' && CommsDockRiggsyTab && <CommsDockRiggsyTab user={user} />}
+            {activeTab === 'inbox' && CommsDockInboxTab && <CommsDockInboxTab user={user} />}
+            {!CommsDockCommsTab && !CommsDockPollsTab && !CommsDockRiggsyTab && !CommsDockInboxTab && (
+              <div className="h-full flex items-center justify-center text-xs text-zinc-600">
+                Loading...
+              </div>
+            )}
           </div>
 
           {/* Debug Panel (Admin Only) — DEPRECATED, voice deps removed */}

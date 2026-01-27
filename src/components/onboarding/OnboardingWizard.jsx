@@ -56,16 +56,25 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
       try {
         const user = await base44.auth.me();
         
+        if (!user) {
+          toast.error('Authentication required');
+          return;
+        }
+        
         // Create member profile
-        await base44.entities.MemberProfile.create({
+        const profileData = {
           user_id: user.id,
           callsign: callsign.trim(),
-          rank: grantedRank,
+          rank: grantedRank || 'VAGRANT',
           roles: Array.isArray(grantedRoles) ? grantedRoles : [],
+          bio: bio.trim() || '',
           onboarding_completed: true,
           accepted_codes_at: codesAccepted ? new Date().toISOString() : null,
-          ai_consent: aiConsent
-        });
+          ai_consent: aiConsent,
+          ai_use_history: useHistory
+        };
+        
+        await base44.entities.MemberProfile.create(profileData);
 
         // Create AI consent record if enabled
         if (aiConsent) {
@@ -81,7 +90,7 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
         setCurrentStep(4);
       } catch (error) {
         console.error('[ONBOARDING] Profile creation error:', error);
-        toast.error('Failed to complete onboarding');
+        toast.error(error?.message || 'Failed to complete onboarding');
       } finally {
         setIsSubmitting(false);
       }
