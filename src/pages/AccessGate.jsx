@@ -77,21 +77,6 @@ export default function AccessGate() {
     base44.auth.redirectToLogin(currentUrl);
   };
 
-  const handleDemoAccess = async () => {
-    setIsRedeeming(true);
-    try {
-      const result = await base44.functions.invoke('redeemAccessKey', { code: 'DEMO-ACCESS' });
-      setGrantedRank(result.data?.grants_rank || 'PIONEER');
-      setGrantedRoles(result.data?.grants_roles || ['admin']);
-      setShowOnboarding(true);
-    } catch (error) {
-      console.error('[ACCESS GATE] Demo access error:', error);
-      toast.error('Failed to activate demo access');
-    } finally {
-      setIsRedeeming(false);
-    }
-  };
-
   const handleReturnHome = () => {
     navigate('/', { replace: true });
   };
@@ -150,13 +135,8 @@ export default function AccessGate() {
             Access Gate
           </h1>
           <p className="text-xs text-zinc-500 text-center mb-8 font-mono uppercase tracking-wider">
-            Authorization Required
+           Authorization Required
           </p>
-          {false && (
-            <div className="mb-6 border border-amber-700/50 bg-amber-950/40 p-3 text-[10px] text-amber-200 font-mono uppercase tracking-widest">
-              Demo Mode Active • Use quick access below
-            </div>
-          )}
 
           {/* Info Box */}
           <div className="bg-zinc-900/50 border border-zinc-800 p-4 mb-6">
@@ -213,17 +193,6 @@ export default function AccessGate() {
               <LogIn className="w-4 h-4" />
               Go to Login
             </Button>
-            {false && (
-              <Button
-                onClick={handleDemoAccess}
-                className="w-full gap-2 bg-amber-500/90 hover:bg-amber-500 text-black"
-                disabled={isRedeeming}
-              >
-                <Key className="w-4 h-4" />
-                Demo Quick Access
-              </Button>
-            )}
-
             <Button
               onClick={handleReturnHome}
               variant="ghost"
@@ -245,4 +214,3 @@ export default function AccessGate() {
     </div>
   );
 }
-

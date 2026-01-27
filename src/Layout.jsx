@@ -1,8 +1,3 @@
-// CRITICAL: persistDemoFromUrl fallback must be defined before any code runs
-if (typeof globalThis !== 'undefined' && typeof globalThis.persistDemoFromUrl !== 'function') {
-  globalThis.persistDemoFromUrl = () => false;
-}
-
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';

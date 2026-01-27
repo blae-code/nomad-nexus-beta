@@ -54,6 +54,11 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     const { code } = payload;
 
+    if (code === 'DEMO-ACCESS') {
+      recordFailure(userId);
+      return Response.json({ error: 'Demo access is no longer supported' }, { status: 403 });
+    }
+
     if (!code || typeof code !== 'string') {
       recordFailure(userId);
       return Response.json({ error: 'Invalid code' }, { status: 400 });
