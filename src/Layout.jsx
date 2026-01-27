@@ -345,11 +345,6 @@ export default function Layout({ children, currentPageName }) {
         {isFn(SafeRadialFeedbackMenu) ? <SafeRadialFeedbackMenu /> : null}
 
         {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
-        <LayoutDebugMode />
-        </div>
-        </ErrorBoundary>
-        );
-        }
         {isFn(SafeLayoutDebugMode) ? <SafeLayoutDebugMode /> : null}
       </div>
     </ErrorBoundary>
