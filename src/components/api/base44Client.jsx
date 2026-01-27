@@ -1,7 +1,10 @@
 
-// Global fallback MUST run before SDK import
-if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
-  window.persistDemoFromUrl = () => false;
+// CRITICAL: Global fallback before SDK import
+if (typeof globalThis !== 'undefined' && typeof globalThis.persistDemoFromUrl !== 'function') {
+  globalThis.persistDemoFromUrl = () => false;
+  if (typeof window !== 'undefined') {
+    window.persistDemoFromUrl = () => false;
+  }
 }
 
 import { createClient } from '@base44/sdk';

@@ -1,3 +1,11 @@
+// CRITICAL: Must be first - global fallback for Base44 platform hooks
+if (typeof globalThis !== 'undefined' && typeof globalThis.persistDemoFromUrl !== 'function') {
+  globalThis.persistDemoFromUrl = () => false;
+  if (typeof window !== 'undefined') {
+    window.persistDemoFromUrl = () => false;
+  }
+}
+
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';
@@ -10,11 +18,6 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
-
-// Global fallback for legacy Base44 platform hooks
-if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
-  window.persistDemoFromUrl = () => false;
-}
 
 
 
