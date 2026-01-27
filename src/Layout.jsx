@@ -1,8 +1,3 @@
-// CRITICAL: Must execute BEFORE any SDK imports
-if (typeof globalThis !== 'undefined') globalThis.persistDemoFromUrl = () => false;
-if (typeof window !== 'undefined') window.persistDemoFromUrl = () => false;
-if (typeof self !== 'undefined') self.persistDemoFromUrl = () => false;
-
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';
@@ -223,11 +218,6 @@ export default function Layout({ children, currentPageName }) {
   return (
     <ErrorBoundary>
       <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
-        {false && (
-          <div className="w-full bg-amber-900/60 text-amber-100 text-[10px] font-mono uppercase tracking-widest px-3 py-1 border-b border-amber-700/50">
-            Demo Mode • Local data + simulated services
-          </div>
-        )}
         {/* AppShellV3: No left rail, palette-driven nav */}
         <div className="flex-1 flex flex-col overflow-hidden pb-12">
           {currentPage === 'access-gate' ? (
