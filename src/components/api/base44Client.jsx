@@ -4,6 +4,11 @@ if (typeof globalThis !== 'undefined') {
   globalThis.persistDemoFromUrl = globalThis.persistDemoFromUrl || (() => false);
 }
 
+// Polyfill must be set before SDK import
+if (typeof globalThis !== 'undefined') {
+  globalThis.persistDemoFromUrl = globalThis.persistDemoFromUrl || (() => false);
+}
+
 import { createClient } from '@base44/sdk';
 
 // Use same-origin API endpoints for custom domain support
