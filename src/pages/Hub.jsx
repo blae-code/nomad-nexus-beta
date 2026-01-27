@@ -5,7 +5,7 @@ import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData'
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
 import { useVisibilityPause } from '@/components/hooks/useVisibilityPause';
 import HubOnboardingOverlay from '@/components/onboarding/HubOnboardingOverlay';
-import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash, BookOpen, Lightbulb, Video, HelpCircle } from "lucide-react";
+import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash, BookOpen, Lightbulb, Video, HelpCircle } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 import { getRankColorClass } from '@/components/utils/rankUtils';

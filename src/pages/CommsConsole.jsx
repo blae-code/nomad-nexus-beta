@@ -274,9 +274,9 @@ function CommsConsolePage() {
    }, [selectedEventId]);
 
   // Memoize nets to prevent unnecessary rerenders
-  const memoizedNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
+  const voiceNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
   
-  const selectedNet = React.useMemo(() => memoizedNets.find(n => n.id === selectedNetId) || null, [selectedNetId, memoizedNets]);
+  const selectedNet = React.useMemo(() => voiceNets.find(n => n.id === selectedNetId) || null, [selectedNetId, voiceNets]);
 
   // Handlers for connection state changes from ActiveNetPanel
   const handleConnectSuccess = React.useCallback((netId) => {
@@ -439,7 +439,7 @@ function CommsConsolePage() {
                            <FleetHierarchy eventId={selectedEventId} />
                         ) : (
                            <NetList 
-                              nets={memoizedNets} 
+                              nets={voiceNets} 
                               selectedNetId={selectedNetId}
                               onSelect={(net) => setSelectedNetId(net?.id || null)}
                               userSquadId={userSquadId}
@@ -710,7 +710,7 @@ function CommsConsolePage() {
 
          {/* Net Switch Overlay */}
          <NetSwitchOverlay 
-           nets={memoizedNets} 
+           nets={voiceNets} 
            selectedNet={selectedNet} 
            onSelectNet={setSelectedNet}
          />
