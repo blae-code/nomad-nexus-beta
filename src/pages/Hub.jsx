@@ -5,7 +5,7 @@ import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData'
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
 import { useVisibilityPause } from '@/components/hooks/useVisibilityPause';
 import HubOnboardingOverlay from '@/components/onboarding/HubOnboardingOverlay';
-import { Radio, AlertCircle, Target, Clock, Activity, ChevronRight, Flame, BookOpen } from "lucide-react";
+import { Activity, AlertCircle, BookOpen, Calendar, ChevronRight, Clock, Flame, Lightbulb, Radio, Target, TrendingUp, Users } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -440,3 +440,4 @@ export default function HubPage() {
     </>
   );
 }
+
