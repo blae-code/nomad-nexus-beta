@@ -8,8 +8,8 @@ import { createCommsResult, createTokenResult } from './_shared/commsResult.ts';
 Deno.serve(async (req) => {
   try {
     const { roomName, userIdentity } = await req.json();
-    const envMode = (Deno.env.get('NODE_ENV') ?? Deno.env.get('DENO_ENV') ?? '').toLowerCase();
-    const isDev = envMode === 'development';
+    const envMode = (Deno.env.get('NODE_ENV') || Deno.env.get('DENO_ENV') || '')?.toLowerCase();
+    const isDev = !envMode || envMode === 'development';
 
     if (!roomName || !userIdentity) {
       return Response.json(
@@ -47,30 +47,21 @@ Deno.serve(async (req) => {
     }
 
     let normalizedUrl = livekitUrl.trim();
+    if (!isDev && (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('ws://'))) {
+      return Response.json(
+        createCommsResult({
+          ok: false,
+          errorCode: 'INSECURE_LIVEKIT_URL',
+          message: 'Insecure LiveKit URL blocked'
+        })
+      );
+    }
+
     if (normalizedUrl.startsWith('https://')) {
       normalizedUrl = `wss://${normalizedUrl.slice(8)}`;
     } else if (normalizedUrl.startsWith('http://')) {
-      if (!isDev) {
-        return Response.json(
-          createCommsResult({
-            ok: false,
-            errorCode: 'INSECURE_LIVEKIT_URL',
-            message: 'Insecure LiveKit URL blocked'
-          })
-        );
-      }
       normalizedUrl = `ws://${normalizedUrl.slice(7)}`;
-    } else if (normalizedUrl.startsWith('ws://')) {
-      if (!isDev) {
-        return Response.json(
-          createCommsResult({
-            ok: false,
-            errorCode: 'INSECURE_LIVEKIT_URL',
-            message: 'Insecure LiveKit URL blocked'
-          })
-        );
-      }
-    } else if (!normalizedUrl.startsWith('wss://')) {
+    } else if (!normalizedUrl.startsWith('wss://') && !normalizedUrl.startsWith('ws://')) {
       normalizedUrl = `${isDev ? 'ws' : 'wss'}://${normalizedUrl}`;
     }
 

@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Flag, Copy, Trash2, MapPin, AlertTriangle } from 'lucide-react';
+import { Flag, Copy, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RallyPointManager({ eventId, currentNetId }) {

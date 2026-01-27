@@ -1,10 +1,7 @@
 import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Wallet, Coins, Shield, TrendingUp, Plus } from "lucide-react";
+import { Wallet, Coins, Shield } from "lucide-react";
 import TransactionForm from "@/components/economy/TransactionForm";
 import TransactionHistory from "@/components/economy/TransactionHistory";
 import { cn } from "@/lib/utils";

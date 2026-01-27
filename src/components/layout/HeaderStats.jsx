@@ -1,7 +1,6 @@
-import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Coins, Wallet, Users, ShieldAlert } from "lucide-react";
+import { Coins, Wallet, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function HeaderStats() {

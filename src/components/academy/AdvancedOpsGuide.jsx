@@ -1,4 +1,3 @@
-import React from 'react';
 import { Map, BarChart3, AlertCircle, CheckSquare, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

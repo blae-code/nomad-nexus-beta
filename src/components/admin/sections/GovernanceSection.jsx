@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Shield } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { UserPlus, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function GovernanceSection({ user }) {

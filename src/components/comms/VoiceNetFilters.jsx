@@ -59,7 +59,8 @@ export default function VoiceNetFilters({
     setSearchQuery('');
   };
 
-  const hasActiveFilters = Object.values(filters).some(v =>
+  const safeFilters = filters ?? {};
+  const hasActiveFilters = Object.values(safeFilters).some(v =>
     Array.isArray(v) ? v.length > 0 : !!v
   );
 
@@ -87,7 +88,7 @@ export default function VoiceNetFilters({
         <span>Advanced Filters</span>
         {hasActiveFilters && (
           <Badge className="bg-[#ea580c] text-white text-xs">
-            {Object.values(filters).flat().filter(v => !!v).length}
+            {Object.values(safeFilters).flat().filter(v => !!v).length}
           </Badge>
         )}
       </button>

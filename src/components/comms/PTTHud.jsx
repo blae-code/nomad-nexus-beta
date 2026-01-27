@@ -1,8 +1,7 @@
-import React from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function PTTHud({ isTransmitting, pttKey, isMuted }) {
+export default function PTTHud({ isTransmitting, pttKey, pttWarning, isMuted }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 pointer-events-none",
@@ -39,6 +38,12 @@ export default function PTTHud({ isTransmitting, pttKey, isMuted }) {
           </>
         )}
       </div>
+      {pttWarning && (
+        <div className="mt-2 flex items-center gap-2 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 shadow-lg shadow-amber-500/10">
+          <AlertTriangle className="h-4 w-4" />
+          <span>{pttWarning}</span>
+        </div>
+      )}
     </div>
   );
 }

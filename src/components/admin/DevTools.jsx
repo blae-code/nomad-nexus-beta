@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Trash2, Database } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';

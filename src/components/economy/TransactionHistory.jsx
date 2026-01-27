@@ -1,8 +1,5 @@
-import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowUpRight, ArrowDownLeft, Calendar } from "lucide-react";
 
 export default function TransactionHistory({ cofferId, eventId, limit = 20 }) {

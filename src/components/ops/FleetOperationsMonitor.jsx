@@ -1,10 +1,8 @@
-import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Rocket } from 'lucide-react';
 
 export default function FleetOperationsMonitor() {
   const { data: assets } = useQuery({

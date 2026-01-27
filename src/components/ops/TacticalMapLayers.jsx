@@ -1,7 +1,6 @@
 import React from 'react';
 import { Circle, Polyline, Tooltip } from 'react-leaflet';
 import { JUMP_POINTS, HAZARD_ZONES } from '@/components/utils/starCitizenLocations';
-import { motion } from 'framer-motion';
 
 /**
  * Jump Points Layer - Shows safe passage between systems

@@ -1,0 +1,30 @@
+name: Visual Regression Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  visual-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run visual tests
+        run: npm run test:visual
+        env:
+          VITE_VISUAL_TEST: 'true'

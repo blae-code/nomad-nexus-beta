@@ -1,5 +1,4 @@
-import React from 'react';
-import { AlertTriangle, Radio } from 'lucide-react';
+import { Radio } from 'lucide-react';
 
 export default function OpsCommsPanel({ session, user, isCommandRole }) {
   const primaryNet = session?.brief_artifact?.comms_plan?.primary_net;

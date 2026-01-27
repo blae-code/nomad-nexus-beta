@@ -32,6 +32,20 @@ export function useCommsReadiness() {
     enabled: desiredLive
   });
 
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const obs = window.__observability;
+    if (!obs?.setLiveKitEnv) return;
+    if (!readinessData || Object.keys(readinessData).length === 0) return;
+
+    obs.setLiveKitEnv({
+      status: readinessData.envStatus || (readinessData.isReady ? 'configured' : 'unknown'),
+      missingVars: readinessData.missingVars || [],
+      warning: readinessData.warning,
+      reason: readinessData.reason
+    });
+  }, [readinessData]);
+
   // Determine effective mode
   let effectiveMode = 'SIM';
   let fallbackReason = null;

@@ -1,13 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, User, Hash, Lock, Clock, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { getRankColorClass } from "@/components/utils/rankUtils";
+import { Send, Hash, Users } from "lucide-react";
 import MessageBubble from "@/components/comms/MessageBubble";
 import WhisperDisplay from "@/components/comms/WhisperDisplay";
 import FileUploadButton from "@/components/comms/FileUploadButton";

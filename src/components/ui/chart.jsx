@@ -56,23 +56,41 @@ const ChartStyle = ({
     return null
   }
 
-  return (
-    (<style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+  const safeChartId = CSS.escape(id)
+  const sanitizeColor = (value) => {
+    if (!value || typeof value !== "string") {
+      return null
+    }
+
+    const safePattern =
+      /^(#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgb[a]?\\([\\d\\s.,%]+\\)|hsl[a]?\\([\\d\\s.,%]+\\)|var\\(--[a-zA-Z0-9-_]+\\))$/
+
+    return safePattern.test(value.trim()) ? value.trim() : null
+  }
+
+  const rawCss = Object.entries(THEMES)
+    .map(([theme, prefix]) => `
+${prefix} [data-chart="${safeChartId}"] {
 ${colorConfig
 .map(([key, itemConfig]) => {
+const safeKey = key.replace(/[^a-zA-Z0-9-_]/g, "")
 const color =
   itemConfig.theme?.[theme] ||
   itemConfig.color
-return color ? `  --color-${key}: ${color};` : null
+const safeColor = sanitizeColor(color)
+return safeColor ? `  --color-${safeKey}: ${safeColor};` : null
 })
 .join("\n")}
 }
 `)
-          .join("\n"),
+    .join("\n")
+
+  // Chart config is expected to be defined in code (not user input); we still guard against unsafe values.
+
+  return (
+    (<style
+      dangerouslySetInnerHTML={{
+        __html: rawCss,
       }} />)
   );
 }

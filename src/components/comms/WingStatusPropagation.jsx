@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight, AlertTriangle, Users, Shield } from 'lucide-react';
+import { ChevronDown, ChevronRight, Users, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function WingStatusPropagation({ eventId }) {

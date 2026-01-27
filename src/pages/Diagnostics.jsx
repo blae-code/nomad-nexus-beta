@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import DiagnosticsDrawer from '@/components/diagnostics/DiagnosticsDrawer';
 
@@ -36,11 +35,11 @@ export default function DiagnosticsPage() {
   if (user?.role !== 'admin') {
     return (
       <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col">
-        <div className="shrink-0 border-b border-zinc-800 px-6 py-4 flex items-center gap-4">
+        <div className="shrink-0 border-b border-zinc-800 px-[var(--gutter)] py-[var(--gutter)] flex items-center gap-3">
           <a href={createPageUrl('Hub')} className="hover:text-[#ea580c] transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </a>
-          <h1 className="text-2xl font-bold text-white">System Diagnostics</h1>
+          <h1 className="text-sm font-black uppercase tracking-[0.24em] text-white leading-none">System Diagnostics</h1>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
@@ -55,19 +54,19 @@ export default function DiagnosticsPage() {
 
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 border-b border-zinc-800 px-[var(--gutter)] py-[var(--gutter)] flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <a href={createPageUrl('Hub')} className="hover:text-[#ea580c] transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </a>
           <div>
-            <h1 className="text-2xl font-bold text-white">System Diagnostics</h1>
-            <p className="text-sm text-zinc-400 font-mono">Lightweight health checks</p>
+            <h1 className="text-sm font-black uppercase tracking-[0.24em] text-white leading-none">System Diagnostics</h1>
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-[0.3em]">Lightweight health checks</p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-[var(--gutter)]">
         <Card className="bg-zinc-900 border-zinc-800 max-w-2xl">
           <CardHeader>
             <CardTitle className="text-lg text-white">Diagnostics</CardTitle>

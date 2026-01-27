@@ -149,7 +149,7 @@ export const CANONICAL_CHANNELS = {
 };
 
 // Permission validation (now sourced from commsPolicyConfig)
-import { checkPermission, checkModeration, getChannelPolicy } from './commsPolicyConfig';
+import { checkPermission, checkModeration } from './commsPolicyConfig';
 
 export const canPost = (user, channel) => {
   if (channel.is_locked) return false;

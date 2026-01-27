@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Flag, Plus, Trash2, User, Rocket, ChevronDown, ChevronRight, CornerDownRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Flag, Plus, Trash2, User, Rocket, CornerDownRight } from 'lucide-react';
 
 function AssignmentSelector({ selected = [], onSelect, users = [], assets = [] }) {
   // selected is array of { id, type }

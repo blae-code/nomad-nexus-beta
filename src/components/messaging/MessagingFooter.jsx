@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
-  ChevronUp, Hash, Settings, Users, Shield, Bell, Lock, Trash2, UserX, Volume2, 
-  MessageSquare, Pin, AlertCircle, Eye, EyeOff, Search, Plus, MoreVertical
+  ChevronUp, Hash, Settings, Users, Shield, Lock, Trash2, UserX, Plus, MoreVertical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
-import { Activity, CheckCircle2, AlertCircle, Download, Play, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Download, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -37,7 +37,7 @@ export default function DemoPreflight({ user, onAudit }) {
 
       // Check 2: LiveKit Environment
       try {
-        const hasLiveKit = !!process.env.REACT_APP_LIVEKIT_URL;
+        const hasLiveKit = !!import.meta.env.VITE_LIVEKIT_URL;
         checks.push({
           name: 'LiveKit Config',
           status: hasLiveKit ? 'pass' : 'warn',

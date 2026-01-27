@@ -1,4 +1,3 @@
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Activity, Skull, Plane, Radio, Zap, Home, AlertTriangle } from "lucide-react";
