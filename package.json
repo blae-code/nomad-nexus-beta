@@ -11,9 +11,7 @@
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview",
     "test:visual": "playwright test",
-    "test:visual:update": "playwright test --update-snapshots"
-    "typecheck": "tsc --noEmit",
-    "preview": "vite preview",
+    "test:visual:update": "playwright test --update-snapshots",
     "test:comms": "vitest run tests/comms"
   },
   "dependencies": {
@@ -107,3 +105,4 @@
     "vitest": "^2.1.9"
   }
 }
+
