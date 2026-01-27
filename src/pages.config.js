@@ -1,7 +1,9 @@
-// Global fallback for legacy Base44 platform hooks - MUST run before any imports
-if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
-  window.persistDemoFromUrl = () => false;
-}
+// Global fallback for legacy Base44 platform hooks - IIFE to ensure immediate execution
+(function() {
+  if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
+    window.persistDemoFromUrl = () => false;
+  }
+})();
 
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
