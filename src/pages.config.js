@@ -67,8 +67,8 @@ export const PAGES = {
     "SmokeCheck": SmokeCheck,
 }
 
-export const PAGE_ROUTE_ALIASES = {};
-export const PAGE_ROUTE_OVERRIDES = {};
+const PAGE_ROUTE_ALIASES = {};
+const PAGE_ROUTE_OVERRIDES = {};
 
 export const pagesConfig = {
     mainPage: "Hub",
