@@ -1,4 +1,3 @@
-
 // CRITICAL: persistDemoFromUrl fallback MUST execute before SDK initialization
 // This function may be called by Base44 platform code during module loading
 (function() {
