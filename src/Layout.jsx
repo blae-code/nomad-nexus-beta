@@ -9,9 +9,15 @@ import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
-import { theme } from "@/components/theme";
 
-
+// Safely initialize theme - may not be available during early module load
+let theme = null;
+try {
+  const themeModule = require("@/components/theme");
+  theme = themeModule.theme;
+} catch {
+  theme = { colors: { accent: "#ea580c", background: "#09090b" } };
+}
 
 // ============================================================
 // Component Resolver: Handle ESM module objects gracefully
