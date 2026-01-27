@@ -69,7 +69,6 @@ export const PAGES = {
 
 export const PAGE_ROUTE_ALIASES = {};
 export const PAGE_ROUTE_OVERRIDES = {};
-export { PAGE_ROUTE_ALIASES, PAGE_ROUTE_OVERRIDES };
 
 export const pagesConfig = {
     mainPage: "Hub",
