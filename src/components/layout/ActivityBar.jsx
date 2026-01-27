@@ -80,7 +80,12 @@ export default function ActivityBar() {
   });
 
   const ActivityNavItem = ({ icon: Icon, label, page, alertColor, isAlertActive, path, pulseFast }) => {
-    const isActive = window.location.pathname.includes(page);
+    const [isActive, setIsActive] = React.useState(false);
+    React.useEffect(() => {
+      if (typeof window !== 'undefined') {
+        setIsActive(window.location.pathname.includes(page));
+      }
+    }, [page]);
     
     return (
       <TooltipProvider delayDuration={0}>

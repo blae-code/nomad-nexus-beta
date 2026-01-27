@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { ChevronRight, Home } from 'lucide-react';
 
@@ -47,6 +47,9 @@ function rankClosestMatches(attemptedPath, candidates, limit = 5) {
 }
 
 export default function PageNotFound() {
+  const [attemptedPath, setAttemptedPath] = useState('');
+  const [closestMatches, setClosestMatches] = useState([]);
+
   const candidatePaths = useMemo(() => {
     const paths = new Set();
 
@@ -79,8 +82,13 @@ export default function PageNotFound() {
     return Array.from(paths);
   }, []);
 
-  const attemptedPath = window.location.pathname;
-  const closestMatches = rankClosestMatches(attemptedPath, candidatePaths);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      setAttemptedPath(currentPath);
+      setClosestMatches(rankClosestMatches(currentPath, candidatePaths));
+    }
+  }, [candidatePaths]);
 
   return (
     <div className="h-screen w-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4 overflow-hidden">

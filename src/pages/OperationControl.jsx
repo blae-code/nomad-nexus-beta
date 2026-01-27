@@ -23,8 +23,14 @@ import LoadingState from '@/components/feedback/LoadingState';
  */
 export default function OperationControlPage() {
   const navigate = useNavigate();
-  const params = new URLSearchParams(window.location.search);
-  const eventId = params.get('id');
+  const [eventId, setEventId] = React.useState(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setEventId(params.get('id'));
+    }
+  }, []);
 
   const [activePanel, setActivePanel] = useState('hierarchy'); // hierarchy, network, hailing, objectives, participants, timeline
   const [expandedNet, setExpandedNet] = useState(null);

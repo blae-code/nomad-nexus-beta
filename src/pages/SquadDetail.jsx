@@ -15,8 +15,14 @@ import { Link } from "react-router-dom";
 
 export default function SquadDetailPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const urlParams = new URLSearchParams(window.location.search);
-  const squadId = urlParams.get('id');
+  const [squadId, setSquadId] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      setSquadId(urlParams.get('id'));
+    }
+  }, []);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});

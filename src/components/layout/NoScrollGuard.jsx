@@ -10,6 +10,10 @@ export default function NoScrollGuard({ currentPage }) {
   const [violation, setViolation] = useState(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
     const checkScroll = () => {
       const docHeight = document.documentElement.scrollHeight;
       const viewportHeight = window.innerHeight;
