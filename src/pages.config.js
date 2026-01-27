@@ -1,5 +1,7 @@
-// MUST be first import to initialize platform hooks
-import './components/platform-init.js';
+// Global fallback - must execute before SDK import
+if (typeof window !== "undefined" && !window.persistDemoFromUrl) {
+  window.persistDemoFromUrl = () => false;
+}
 
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
