@@ -312,6 +312,9 @@ function CommsConsolePage() {
   }, [selectedEventId]);
 
   // Memoize nets to prevent unnecessary rerenders
+  const voiceNets = React.useMemo(() => voiceNets, [voiceNets.length, selectedEventId]);
+  
+  const selectedNet = React.useMemo(() => voiceNets.find(n => n.id === selectedNetId) || null, [selectedNetId, voiceNets]);
   const selectedNet = React.useMemo(
     () => voiceNets.find(n => n.id === selectedNetId) || null,
     [selectedNetId, voiceNets]
