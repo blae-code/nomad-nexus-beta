@@ -77,3 +77,5 @@ export const pagesConfig = {
     Pages: PAGES,
     Layout: __Layout,
 };
+
+export default pagesConfig;
