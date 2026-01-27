@@ -56,12 +56,14 @@ export default function AccessGate() {
 
       if (result.data?.success) {
         toast.success('Access key redeemed! Redirecting to login...');
+        setAccessKey('');
         // Redirect to login so user can authenticate, then continue onboarding
         setTimeout(() => {
           base44.auth.redirectToLogin('/access-gate');
         }, 1500);
       } else {
-        toast.error(result.data?.error || 'Invalid access key');
+        const errorMsg = result.data?.error || 'Invalid access key';
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('[ACCESS GATE] Redeem error:', error);
