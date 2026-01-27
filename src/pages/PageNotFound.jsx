@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { ChevronRight, Home } from 'lucide-react';
-// PAGE_ROUTE_ALIASES and PAGE_ROUTE_OVERRIDES removed - not needed
 
 /**
  * Levenshtein distance for fuzzy matching
