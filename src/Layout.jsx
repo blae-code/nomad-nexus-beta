@@ -10,14 +10,16 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 
-// Safely initialize theme - may not be available during early module load
-let theme = null;
-try {
-  const themeModule = require("@/components/theme");
-  theme = themeModule.theme;
-} catch {
-  theme = { colors: { accent: "#ea580c", background: "#09090b" } };
-}
+// Default theme config (fallback if import fails)
+const defaultTheme = { colors: { accent: "#ea580c", background: "#09090b" } };
+let theme = defaultTheme;
+
+// Lazy import theme to avoid circular dependencies
+import("@/components/theme").then(m => {
+  if (m?.theme) theme = m.theme;
+}).catch(() => {
+  // Fallback already set
+});
 
 // ============================================================
 // Component Resolver: Handle ESM module objects gracefully
