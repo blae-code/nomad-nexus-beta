@@ -14,88 +14,9 @@ import { theme } from "@/components/theme";
 // DEMO: stub Base44 platform endpoints that are currently 500'ing.
 // IMPORTANT: must run at module load (not inside useEffect) to catch early requests.
 const __DEMO_STUB_B44__ = typeof window !== "undefined" && false;
+// Platform endpoint stubs removed - using live services only
 
-function __safeDefine(obj, key, value) {
-  try {
-    Object.defineProperty(obj, key, { value, configurable: true });
-  } catch (_) {
-    try { obj[key] = value; } catch (_) {}
-  }
-}
 
-function __mockJsonResponse(xhr, bodyObj) {
-  const body = JSON.stringify(bodyObj);
-
-  __safeDefine(xhr, "status", 200);
-  __safeDefine(xhr, "statusText", "OK");
-  __safeDefine(xhr, "readyState", 4);
-  __safeDefine(xhr, "responseURL", xhr.__demo_url || "");
-  __safeDefine(xhr, "responseType", "");
-  __safeDefine(xhr, "response", body);
-  __safeDefine(xhr, "responseText", body);
-  xhr.getAllResponseHeaders = () => "content-type: application/json\r\n";
-
-  // Fire callbacks/events
-  try { xhr.onreadystatechange && xhr.onreadystatechange(); } catch (_) {}
-  try { xhr.onload && xhr.onload(); } catch (_) {}
-  try { xhr.onloadend && xhr.onloadend(); } catch (_) {}
-}
-
-if (__DEMO_STUB_B44__) {
-  // 1) fetch stub (covers relative fetches if any)
-  const __origFetch = window.fetch?.bind(window);
-  if (__origFetch) {
-    window.fetch = async (input, init) => {
-      const url = typeof input === "string" ? input : input?.url || "";
-
-      if (url.includes("/api/prompt-suggestions")) {
-        return new Response(
-          JSON.stringify({ suggestions: ["Start group voice test", "Invite a user", "Open Comms Console"] }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      if (url.includes("/api/apps/") && url.includes("/chat/message")) {
-        return new Response(
-          JSON.stringify({ message: "Demo mode: chat endpoint stubbed (platform 500)." }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      return __origFetch(input, init);
-    };
-  }
-
-  // 2) XHR stub (THIS is what your stack trace shows: xhr @ vendors...js)
-  const __origOpen = XMLHttpRequest.prototype.open;
-  const __origSend = XMLHttpRequest.prototype.send;
-
-  XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-    this.__demo_method = method;
-    this.__demo_url = String(url || "");
-    return __origOpen.call(this, method, url, ...rest);
-  };
-
-  XMLHttpRequest.prototype.send = function (body) {
-    const url = this.__demo_url || "";
-
-    if (url.includes("/api/prompt-suggestions")) {
-      __mockJsonResponse(this, {
-        suggestions: ["Start group voice test", "Invite a user", "Open Comms Console"],
-      });
-      return;
-    }
-
-    if (url.includes("/api/apps/") && url.includes("/chat/message")) {
-      __mockJsonResponse(this, {
-        message: "Demo mode: chat endpoint stubbed (platform 500).",
-      });
-      return;
-    }
-
-    return __origSend.call(this, body);
-  };
-}
 
 // ============================================================
 // Component Resolver: Handle ESM module objects gracefully
@@ -258,14 +179,7 @@ export default function Layout({ children, currentPageName }) {
           initApp();
         }, [location.pathname, navigate]);
 
-  // DEMO: disable service worker to prevent stale hashed asset 404s
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations?.().then((rs) => rs.forEach((r) => r.unregister()));
-      caches?.keys?.().then((keys) => keys.forEach((k) => caches.delete(k)));
-    }
-  }, []);
+
 
   // Redirect root to /hub using react-router
   useEffect(() => {
@@ -314,7 +228,6 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <ErrorBoundary>
-      {/* TODO: Move meta/link/style tags to index.html or head manager after demo */}
       <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
         {false && (
           <div className="w-full bg-amber-900/60 text-amber-100 text-[10px] font-mono uppercase tracking-widest px-3 py-1 border-b border-amber-700/50">
@@ -344,14 +257,10 @@ export default function Layout({ children, currentPageName }) {
         {isFn(SafeRadialFeedbackMenu) ? <SafeRadialFeedbackMenu /> : null}
 
         {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
-        <LayoutDebugMode />
-        </div>
-        </ErrorBoundary>
-        );
-        }
         {isFn(SafeLayoutDebugMode) ? <SafeLayoutDebugMode /> : null}
       </div>
     </ErrorBoundary>
   );
 }
 
+}

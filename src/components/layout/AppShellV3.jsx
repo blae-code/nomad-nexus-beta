@@ -27,14 +27,15 @@ export default function AppShellV3({ children, currentPage, user, showRightPanel
         <div className="flex-1 h-full overflow-y-auto overflow-x-hidden flex flex-col">{children}</div>
 
         {/* Optional right context panel */}
-          {showRightPanel && (
-            <div className="hidden lg:flex lg:w-80 h-full overflow-hidden border-l border-zinc-800 bg-zinc-950 flex-col shrink-0">
+        {showRightPanel && (
+          <div className="hidden lg:flex lg:w-80 h-full overflow-hidden border-l border-zinc-800 bg-zinc-950 flex-col shrink-0">
             <div
               className={`w-80 h-full overflow-hidden border-l flex flex-col shrink-0 ${SURFACE_BG_CLASS} ${SURFACE_BORDER_CLASS}`}
             >
               <ContextPanel currentPage={currentPage} user={user} />
             </div>
-          )}
+          </div>
+        )}
       </div>
 
       {/* Dev-only NoScroll Guard */}

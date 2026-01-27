@@ -704,8 +704,6 @@ export default function CommandPaletteV3() {
            isOpen 
              ? 'text-[#ea580c]' 
              : 'text-zinc-400 group-hover:text-[#ea580c]'
-             ? 'text-accent' 
-             : 'text-zinc-500 group-hover:text-accent'
           )}>
             <span className="text-[8px] font-bold">Ctrl</span>
             <span>+K</span>
@@ -776,18 +774,10 @@ export default function CommandPaletteV3() {
                                  ? cn('bg-zinc-900 text-[#ea580c] border-l-2 border-[#ea580c]', isContext && 'bg-[#ea580c]/20')
                                  : cn('text-zinc-300 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-[#ea580c]/10')
                              )}
-                           >
+                             >
                              <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-[#ea580c]')} aria-label={`${cmd.label} icon`} role="img" />
-                               'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 group relative focus:outline-none focus:bg-zinc-900 focus:text-accent focus:border-l-2 focus:border-accent',
-                               isContext && 'bg-accent/5 border-l-2 border-accent/30',
-                               isSelected
-                                 ? cn('bg-zinc-900 text-accent border-l-2 border-accent', isContext && 'bg-accent/20')
-                                 : cn('text-zinc-400 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-accent/10')
-                             )}
-                           >
-                             <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-accent')} />
                              <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
-                             {isContext && <span className="text-[7px] text-accent uppercase font-bold">CTX</span>}
+                             {isContext && <span className="text-[7px] text-[#ea580c] uppercase font-bold">CTX</span>}
                              <button
                                type="button"
                                onClick={(e) => {
@@ -797,14 +787,11 @@ export default function CommandPaletteV3() {
                                className={cn(
                                  'shrink-0 p-1 rounded transition-opacity focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
                                  isPinned ? 'text-[#ea580c]' : 'text-zinc-400 group-hover:text-zinc-300'
-                                 'shrink-0 p-1 rounded transition-opacity',
-                                 isPinned ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-500'
                                )}
                                title={isPinned ? 'Unpin' : 'Pin'}
                                aria-label={isPinned ? `Unpin ${cmd.label}` : `Pin ${cmd.label}`}
-                             >
+                               >
                                <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} aria-label="Pin command" role="img" />
-                               <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-accent')} />
                              </button>
                            </button>
                          );
@@ -831,7 +818,6 @@ export default function CommandPaletteV3() {
                       {(() => {
                         const Icon = getIcon(selectedCommand.icon);
                         return <Icon className="w-4 h-4 text-[#ea580c]" aria-label={`${selectedCommand.label} icon`} role="img" />;
-                        return <Icon className="w-4 h-4 text-accent" />;
                       })()}
                       <span className="text-xs font-bold text-white">{selectedCommand.label}</span>
                     </div>

@@ -31,7 +31,6 @@ export default function PageShell({
             {actions && <div className="flex items-center gap-2">{actions}</div>}
           </div>
         </div>
-        <PageHeader title={title} subtitle={subtitle} actions={actions} />
       )}
 
       {/* Content: min-h-0 prevents flex overflow, children must use explicit scroll regions */}

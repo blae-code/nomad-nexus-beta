@@ -38,14 +38,6 @@ export default function PageLayout({
             </div>
           )}
         </div>
-        <PageHeader
-          title={title}
-          subtitle={subtitle}
-          actions={actions}
-          style={headerHeight !== 'auto' ? { height: headerHeight } : undefined}
-        >
-          {header}
-        </PageHeader>
       )}
 
       {/* Content: Must be min-h-0 to enable flex flex-col scroll region */}
