@@ -66,10 +66,16 @@ export const PAGES = {
     "UserManager": UserManager,
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
-}
+};
+
+export const PAGE_ROUTE_ALIASES = {};
+
+export const PAGE_ROUTE_OVERRIDES = {};
 
 export const pagesConfig = {
     mainPage: "Hub",
     Pages: PAGES,
     Layout: __Layout,
 };
+
+export default pagesConfig;
