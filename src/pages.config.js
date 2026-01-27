@@ -1,3 +1,8 @@
+// CRITICAL: Must be FIRST - before ANY imports
+if (typeof globalThis !== 'undefined') globalThis.persistDemoFromUrl = () => false;
+if (typeof window !== 'undefined') window.persistDemoFromUrl = () => false;
+if (typeof self !== 'undefined') self.persistDemoFromUrl = () => false;
+
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
@@ -31,14 +36,6 @@ import AccessGate from './pages/AccessGate';
 import Hub from './pages/Hub';
 import SmokeCheck from './pages/SmokeCheck';
 import __Layout from './Layout.jsx';
-
-// CRITICAL: Set fallback for Base44 platform hooks
-if (typeof globalThis !== 'undefined') {
-  globalThis.persistDemoFromUrl = () => false;
-}
-if (typeof window !== 'undefined') {
-  window.persistDemoFromUrl = () => false;
-}
 
 export const PAGES = {
     "AdminCockpit": AdminCockpit,
