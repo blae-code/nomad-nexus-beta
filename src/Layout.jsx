@@ -1,3 +1,11 @@
+// CRITICAL: Setup global functions before any other imports
+if (typeof window !== 'undefined' && !window.persistDemoFromUrl) {
+  window.persistDemoFromUrl = () => false;
+}
+if (typeof globalThis !== 'undefined' && !globalThis.persistDemoFromUrl) {
+  globalThis.persistDemoFromUrl = () => false;
+}
+
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';
