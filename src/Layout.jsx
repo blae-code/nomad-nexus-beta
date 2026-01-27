@@ -1,9 +1,9 @@
-// CRITICAL: Setup global functions before any other imports
-if (typeof window !== 'undefined' && !window.persistDemoFromUrl) {
-  window.persistDemoFromUrl = () => false;
+// CRITICAL: Setup global functions before any other code
+if (typeof globalThis !== 'undefined') {
+  globalThis.persistDemoFromUrl = globalThis.persistDemoFromUrl || (() => false);
 }
-if (typeof globalThis !== 'undefined' && !globalThis.persistDemoFromUrl) {
-  globalThis.persistDemoFromUrl = () => false;
+if (typeof window !== 'undefined') {
+  window.persistDemoFromUrl = window.persistDemoFromUrl || (() => false);
 }
 
 import { useState, useEffect } from 'react';
