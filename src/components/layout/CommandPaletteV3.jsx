@@ -683,7 +683,7 @@ export default function CommandPaletteV3() {
             <ChevronLeft className="w-4 h-4 text-accent/60" />
             <ChevronLeft className="w-4 h-4 text-accent/40" />
           </motion.div>
-          <Search className="w-3 h-3 ml-2 mr-2 text-zinc-600 pointer-events-none" />
+          <Search className="w-3 h-3 ml-2 mr-2 text-zinc-400 pointer-events-none" aria-label="Search icon" role="img" />
 
           <input
           ref={inputRef}
@@ -694,13 +694,16 @@ export default function CommandPaletteV3() {
             setSelectedCommand(null);
           }}
           onFocus={() => setIsOpen(true)}
+          aria-label="Command palette search"
           placeholder="Search / > commands / ? help / @ people"
-          className="flex-1 h-full bg-transparent border-none text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+          className="flex-1 h-full bg-transparent border-none text-xs text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
           />
 
           <div className={cn(
            'mr-2 flex items-center gap-1 text-[9px] font-bold pointer-events-none transition-all',
            isOpen 
+             ? 'text-[#ea580c]' 
+             : 'text-zinc-400 group-hover:text-[#ea580c]'
              ? 'text-accent' 
              : 'text-zinc-500 group-hover:text-accent'
           )}>
@@ -728,21 +731,21 @@ export default function CommandPaletteV3() {
             {/* LEFT: Command List */}
             <div className="flex-1 border-r border-zinc-800 flex flex-col">
               {/* Context Line */}
-               <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-500 flex items-center gap-2 shrink-0">
-                <span className="text-[7px] text-zinc-700">[</span>
-                <span className="text-zinc-400">{getCurrentBreadcrumb()}</span>
-                <span className="text-[7px] text-zinc-700">]</span>
+               <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/30 text-[9px] font-mono text-zinc-400 flex items-center gap-2 shrink-0">
+                <span className="text-[7px] text-zinc-500">[</span>
+                <span className="text-zinc-300">{getCurrentBreadcrumb()}</span>
+                <span className="text-[7px] text-zinc-500">]</span>
               </div>
 
               <div className="flex-1 overflow-y-auto min-w-0">
               {flatCommands.length === 0 ? (
-                <div className="p-8 text-center text-zinc-600 text-xs">
+                <div className="p-8 text-center text-zinc-400 text-xs">
                   <p>No commands found</p>
                 </div>
               ) : (
                 Object.entries(displayCommands).map(([section, cmds]) => (
                   <div key={section}>
-                     <div className="px-3 py-1.5 text-[9px] font-bold text-zinc-600 uppercase tracking-wider border-t border-zinc-800/50">
+                     <div className="px-3 py-1.5 text-[9px] font-bold text-zinc-400 uppercase tracking-wider border-t border-zinc-800/50">
                        {section}
                      </div>
                      <div className="space-y-0">
@@ -755,6 +758,7 @@ export default function CommandPaletteV3() {
 
                          return (
                            <button
+                             type="button"
                              key={cmd.id}
                              onClick={() => {
                                setSelectedIndex(globalIdx);
@@ -766,6 +770,14 @@ export default function CommandPaletteV3() {
                                setSelectedCommand(cmd);
                              }}
                              className={cn(
+                               'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 group relative focus:outline-none focus:bg-zinc-900 focus:text-[#ea580c] focus:border-l-2 focus:border-[#ea580c] focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
+                               isContext && 'bg-[#ea580c]/5 border-l-2 border-[#ea580c]/30',
+                               isSelected
+                                 ? cn('bg-zinc-900 text-[#ea580c] border-l-2 border-[#ea580c]', isContext && 'bg-[#ea580c]/20')
+                                 : cn('text-zinc-300 hover:bg-zinc-900/50 border-l-2 border-transparent', isContext && 'hover:bg-[#ea580c]/10')
+                             )}
+                           >
+                             <Icon className={cn('w-3 h-3 shrink-0', isContext && 'text-[#ea580c]')} aria-label={`${cmd.label} icon`} role="img" />
                                'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 group relative focus:outline-none focus:bg-zinc-900 focus:text-accent focus:border-l-2 focus:border-accent',
                                isContext && 'bg-accent/5 border-l-2 border-accent/30',
                                isSelected
@@ -777,16 +789,21 @@ export default function CommandPaletteV3() {
                              <span className="text-xs flex-1 font-mono truncate">{cmd.label}</span>
                              {isContext && <span className="text-[7px] text-accent uppercase font-bold">CTX</span>}
                              <button
+                               type="button"
                                onClick={(e) => {
                                  e.stopPropagation();
                                  togglePin(cmd.id);
                                }}
                                className={cn(
+                                 'shrink-0 p-1 rounded transition-opacity focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
+                                 isPinned ? 'text-[#ea580c]' : 'text-zinc-400 group-hover:text-zinc-300'
                                  'shrink-0 p-1 rounded transition-opacity',
                                  isPinned ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-500'
                                )}
                                title={isPinned ? 'Unpin' : 'Pin'}
+                               aria-label={isPinned ? `Unpin ${cmd.label}` : `Pin ${cmd.label}`}
                              >
+                               <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-[#ea580c]')} aria-label="Pin command" role="img" />
                                <Star className={cn('w-2.5 h-2.5', isPinned && 'fill-accent')} />
                              </button>
                            </button>
@@ -799,7 +816,7 @@ export default function CommandPaletteV3() {
               </div>
 
               {/* Footer */}
-               <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[9px] text-zinc-600 font-mono flex items-center justify-between shrink-0">
+               <div className="border-t border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-[9px] text-zinc-400 font-mono flex items-center justify-between shrink-0">
                 <span>↑↓ nav • Enter select • Esc close</span>
                 <span>READY</span>
               </div>
@@ -813,44 +830,45 @@ export default function CommandPaletteV3() {
                     <div className="flex items-center gap-2 mb-2">
                       {(() => {
                         const Icon = getIcon(selectedCommand.icon);
+                        return <Icon className="w-4 h-4 text-[#ea580c]" aria-label={`${selectedCommand.label} icon`} role="img" />;
                         return <Icon className="w-4 h-4 text-accent" />;
                       })()}
                       <span className="text-xs font-bold text-white">{selectedCommand.label}</span>
                     </div>
-                    <p className="text-[9px] text-zinc-400 leading-relaxed">
+                    <p className="text-[9px] text-zinc-300 leading-relaxed">
                       {selectedCommand.description || 'Execute this command (↵)'}
                     </p>
                   </div>
 
                   {selectedCommand.shortcut && (
                     <div className="px-4 py-1.5 border-b border-zinc-800/50">
-                      <span className="text-[8px] text-zinc-600 uppercase">Shortcut</span>
-                      <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.shortcut}</div>
+                      <span className="text-[8px] text-zinc-500 uppercase">Shortcut</span>
+                      <div className="text-[9px] font-mono text-zinc-200">{selectedCommand.shortcut}</div>
                     </div>
                   )}
 
                   <div className="px-4 py-1.5 border-b border-zinc-800/50">
-                    <span className="text-[8px] text-zinc-600 uppercase">Type</span>
-                    <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.type}</div>
+                    <span className="text-[8px] text-zinc-500 uppercase">Type</span>
+                    <div className="text-[9px] font-mono text-zinc-200">{selectedCommand.type}</div>
                   </div>
 
                   {selectedCommand.minRank && (
                     <div className="px-4 py-1.5 border-b border-zinc-800/50">
-                      <span className="text-[8px] text-zinc-600 uppercase">Min Rank</span>
-                      <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.minRank}</div>
+                      <span className="text-[8px] text-zinc-500 uppercase">Min Rank</span>
+                      <div className="text-[9px] font-mono text-zinc-200">{selectedCommand.minRank}</div>
                     </div>
                   )}
 
                   {selectedCommand.route && (
                     <div className="px-4 py-1.5">
-                      <span className="text-[8px] text-zinc-600 uppercase">Route</span>
-                      <div className="text-[9px] font-mono text-zinc-300">{selectedCommand.route}</div>
+                      <span className="text-[8px] text-zinc-500 uppercase">Route</span>
+                      <div className="text-[9px] font-mono text-zinc-200">{selectedCommand.route}</div>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center px-4 text-center">
-                  <div className="text-[9px] text-zinc-600">Select a command to see details</div>
+                  <div className="text-[9px] text-zinc-400">Select a command to see details</div>
                 </div>
               )}
             </div>
@@ -858,12 +876,13 @@ export default function CommandPaletteV3() {
             {/* Status menu */}
              {statusMenu && (
                <div className="border-t border-zinc-800 bg-zinc-900/50 p-2 space-y-0">
-                <p className="text-[9px] text-zinc-500 uppercase font-bold mb-2">SET STATUS</p>
+                <p className="text-[9px] text-zinc-400 uppercase font-bold mb-2">SET STATUS</p>
                 {['online', 'idle', 'in-call', 'away', 'offline'].map((status) => (
                   <button
                     key={status}
+                    type="button"
                     onClick={() => handleStatusChange(status)}
-                    className="w-full px-2 py-1 text-xs text-left text-zinc-300 hover:bg-zinc-800 border border-transparent hover:border-zinc-700 transition-colors duration-150 focus:outline-none focus:bg-zinc-800 focus:border-zinc-700"
+                    className="w-full px-2 py-1 text-xs text-left text-zinc-200 hover:bg-zinc-800 border border-transparent hover:border-zinc-700 transition-colors duration-150 focus:outline-none focus:bg-zinc-800 focus:border-zinc-700 focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                   >
                     <span className={cn(
                       'inline-block w-2 h-2 rounded-full mr-2',
@@ -885,18 +904,20 @@ export default function CommandPaletteV3() {
                 <p className="text-xs text-red-400 mb-2 font-bold">CONFIRM DISTRESS SIGNAL?</p>
                 <div className="flex gap-2 justify-center">
                   <button
+                    type="button"
                     onClick={() => setConfirmingDistress(false)}
-                    className="px-2 py-1 text-xs border border-zinc-700 text-zinc-300 hover:bg-zinc-900 focus:outline-none focus:border-zinc-600 transition-colors duration-150"
+                    className="px-2 py-1 text-xs border border-zinc-700 text-zinc-200 hover:bg-zinc-900 focus:outline-none focus:border-zinc-600 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#ea580c]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                   >
                     Cancel
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       handleAction('sendDistress');
                       setIsOpen(false);
                       setConfirmingDistress(false);
                     }}
-                    className="px-2 py-1 text-xs bg-red-900 text-red-100 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 transition-colors duration-150"
+                    className="px-2 py-1 text-xs bg-red-900 text-red-100 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 transition-colors duration-150 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                   >
                     Confirm Send
                   </button>
