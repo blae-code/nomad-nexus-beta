@@ -1,10 +1,16 @@
-// CRITICAL: Must be first - global fallback for Base44 platform hooks
-if (typeof globalThis !== 'undefined' && typeof globalThis.persistDemoFromUrl !== 'function') {
-  globalThis.persistDemoFromUrl = () => false;
-  if (typeof window !== 'undefined') {
-    window.persistDemoFromUrl = () => false;
+// CRITICAL: Set fallback unconditionally before any imports
+(function() {
+  const fallback = () => false;
+  if (typeof globalThis !== 'undefined') {
+    globalThis.persistDemoFromUrl = fallback;
   }
-}
+  if (typeof window !== 'undefined') {
+    window.persistDemoFromUrl = fallback;
+  }
+  if (typeof self !== 'undefined') {
+    self.persistDemoFromUrl = fallback;
+  }
+})();
 
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
