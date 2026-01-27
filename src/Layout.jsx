@@ -9,6 +9,8 @@ import { initializeAccessToken } from "@/components/hooks/useAccessToken";
 import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
+// Debug: Force reimport of pages.config
+import { PAGES, pagesConfig } from "./pages.config.js";
 
 // Default theme config (fallback if import fails)
 const defaultTheme = { colors: { accent: "#ea580c", background: "#09090b" } };
