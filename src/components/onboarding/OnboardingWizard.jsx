@@ -106,15 +106,22 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (!hasSeenGuide) {
       setShowGuide(true);
       setHasSeenGuide(true);
     } else {
       toast.success('Welcome to Nomad Nexus!');
-      setTimeout(() => {
-        onComplete?.();
-        window.location.href = '/hub';
+      setTimeout(async () => {
+        // Check if user is authenticated
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) {
+          // Redirect to login if not authenticated
+          base44.auth.redirectToLogin('/hub');
+        } else {
+          onComplete?.();
+          window.location.href = '/hub';
+        }
       }, 1000);
     }
   };
