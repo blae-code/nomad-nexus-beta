@@ -28,7 +28,6 @@ import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
 import AccessGate from './pages/AccessGate';
-import Event from './pages/Event';
 import Hub from './pages/Hub';
 import OpsDashboard from './pages/OpsDashboard';
 import SmokeCheck from './pages/SmokeCheck';
@@ -66,7 +65,6 @@ export const PAGES = {
     "UserSettings": UserSettings,
     "VoiceNetManager": VoiceNetManager,
     "AccessGate": AccessGate,
-    "Event": Event,
     "Hub": Hub,
     "OpsDashboard": OpsDashboard,
     "SmokeCheck": SmokeCheck,
