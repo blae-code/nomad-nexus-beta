@@ -88,8 +88,6 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
         }
 
         setCurrentStep(4);
-        // Force auth refresh so Layout sees the new profile
-        await base44.auth.refreshMe?.();
         } catch (error) {
          console.error('[ONBOARDING] Profile creation error:', error);
          toast.error(error?.message || 'Failed to complete onboarding');
@@ -106,22 +104,15 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  const handleFinish = async () => {
+  const handleFinish = () => {
     if (!hasSeenGuide) {
       setShowGuide(true);
       setHasSeenGuide(true);
     } else {
       toast.success('Welcome to Nomad Nexus!');
-      setTimeout(async () => {
-        // Check if user is authenticated
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          // Redirect to login if not authenticated
-          base44.auth.redirectToLogin('/hub');
-        } else {
-          onComplete?.();
-          window.location.href = '/hub';
-        }
+      setTimeout(() => {
+        onComplete?.();
+        window.location.href = '/hub';
       }, 1000);
     }
   };
