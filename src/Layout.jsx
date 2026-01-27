@@ -100,84 +100,78 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const isVisualTest = import.meta.env.VITE_VISUAL_TEST === 'true';
 
+  const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
+
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
   useEffect(() => {
     if (isVisualTest) {
       setLoading(false);
       return undefined;
     }
-    const timeoutPromise = (ms) => new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout')), ms)
-    );
-  const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
 
-  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
-        useEffect(() => {
-          const initApp = async () => {
-            try {
-              initializeAccessToken();
+    const initApp = async () => {
+      try {
+        initializeAccessToken();
 
-              // Allow access-gate to render without auth checks (it's a public gate page)
-              if (isAccessGatePath) {
-                setLoading(false);
-                return;
-              }
+        // Allow access-gate to render without auth checks (it's a public gate page)
+        if (isAccessGatePath) {
+          setLoading(false);
+          return;
+        }
 
-              // Check auth first - single call
-              const isAuthenticated = await base44.auth.isAuthenticated();
-              if (!isAuthenticated) {
-                console.log('[LAYOUT] Not authenticated, redirecting to AccessGate');
-                setLoading(false);
-                navigate(accessGatePath, { replace: true });
-                return;
-              }
+        // Check auth first - single call
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (!isAuthenticated) {
+          console.log('[LAYOUT] Not authenticated, redirecting to AccessGate');
+          setLoading(false);
+          navigate(accessGatePath, { replace: true });
+          return;
+        }
 
-              // Fetch user once
-              const u = await base44.auth.me();
-              setUser(u);
+        // Fetch user once
+        const u = await base44.auth.me();
+        setUser(u);
 
-              // Admin bypass: skip profile checks
-              if (u.role === 'admin') {
-                console.log('[LAYOUT] Admin detected, skipping profile check');
-                setLoading(false);
-                return;
-              }
+        // Admin bypass: skip profile checks
+        if (u.role === 'admin') {
+          console.log('[LAYOUT] Admin detected, skipping profile check');
+          setLoading(false);
+          return;
+        }
 
-              // Check profile for non-admin users
-              let profile = null;
-              try {
-                const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
-                profile = profiles?.[0] ?? null;
-              } catch (profileError) {
-                console.warn('[LAYOUT] MemberProfile lookup failed, continuing:', profileError);
-                setLoading(false);
-                return;
-              }
+        // Check profile for non-admin users
+        let profile = null;
+        try {
+          const profiles = await base44.entities.MemberProfile.filter({ user_id: u.id });
+          profile = profiles?.[0] ?? null;
+        } catch (profileError) {
+          console.warn('[LAYOUT] MemberProfile lookup failed, continuing:', profileError);
+          setLoading(false);
+          return;
+        }
 
-              if (!profile || !profile.onboarding_completed) {
-                console.log('[LAYOUT] Onboarding incomplete, redirecting to AccessGate');
-                setLoading(false);
-                if (!isAccessGatePath) {
-                  navigate(accessGatePath, { replace: true });
-                }
-                return;
-              }
+        if (!profile || !profile.onboarding_completed) {
+          console.log('[LAYOUT] Onboarding incomplete, redirecting to AccessGate');
+          setLoading(false);
+          if (!isAccessGatePath) {
+            navigate(accessGatePath, { replace: true });
+          }
+          return;
+        }
 
-              setMemberProfile(profile);
-              setLoading(false);
-            } catch (error) {
-              console.error('[LAYOUT] Init error:', error);
-              setLoading(false);
-              if (!isAccessGatePath) {
-                navigate(accessGatePath, { replace: true });
-              }
-            }
-          };
+        setMemberProfile(profile);
+        setLoading(false);
+      } catch (error) {
+        console.error('[LAYOUT] Init error:', error);
+        setLoading(false);
+        if (!isAccessGatePath) {
+          navigate(accessGatePath, { replace: true });
+        }
+      }
+    };
 
-    return () => clearTimeout(watchdog);
-  }, [isVisualTest, location.pathname, navigate]);
-          initApp();
-        }, [location.pathname, navigate]);
+    initApp();
+  }, [isVisualTest, location.pathname, navigate, isAccessGatePath]);
 
 
 
@@ -259,6 +253,4 @@ export default function Layout({ children, currentPageName }) {
       </div>
     </ErrorBoundary>
   );
-}
-
 }
