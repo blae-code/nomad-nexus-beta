@@ -178,6 +178,17 @@ export default function Layout({ children, currentPageName }) {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const isVisualTest = import.meta.env.VITE_VISUAL_TEST === 'true';
+
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
+  useEffect(() => {
+    if (isVisualTest) {
+      setLoading(false);
+      return undefined;
+    }
+    const timeoutPromise = (ms) => new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    );
   const isAccessGatePath = accessGateAliases.has(location.pathname.toLowerCase());
 
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY
@@ -243,6 +254,8 @@ export default function Layout({ children, currentPageName }) {
             }
           };
 
+    return () => clearTimeout(watchdog);
+  }, [isVisualTest, location.pathname, navigate]);
           initApp();
         }, [location.pathname, navigate]);
 
@@ -332,6 +345,11 @@ export default function Layout({ children, currentPageName }) {
         {isFn(SafeRadialFeedbackMenu) ? <SafeRadialFeedbackMenu /> : null}
 
         {/* Layout Debug Mode (Ctrl+Shift+G to toggle) */}
+        <LayoutDebugMode />
+        </div>
+        </ErrorBoundary>
+        );
+        }
         {isFn(SafeLayoutDebugMode) ? <SafeLayoutDebugMode /> : null}
       </div>
     </ErrorBoundary>
