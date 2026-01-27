@@ -33,6 +33,10 @@ import VoiceNetManager from './pages/VoiceNetManager';
 import __Layout from './Layout.jsx';
 
 
+// Platform routing exports (required by Base44 build system)
+export const PAGE_ROUTE_ALIASES = {};
+export const PAGE_ROUTE_OVERRIDES = {};
+
 export const PAGES = {
     "AccessGate": AccessGate,
     "AdminCockpit": AdminCockpit,
