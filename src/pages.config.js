@@ -79,3 +79,7 @@ export const pagesConfig = {
 };
 
 export default pagesConfig;
+
+// Ensure exports are available for lib/PageNotFound
+export const pageRouteAliases = PAGE_ROUTE_ALIASES;
+export const pageRouteOverrides = PAGE_ROUTE_OVERRIDES;
