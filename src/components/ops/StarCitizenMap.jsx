@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Circle, Marker, Popup, useMap } from 'react-le
 import L from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Navigation } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 /**
  * Star Citizen Universe Map - Stanton System

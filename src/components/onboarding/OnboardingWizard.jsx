@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Shield, 
-  Zap, 
-  Radio, 
   CheckCircle2, 
   ArrowRight, 
   Sparkles,

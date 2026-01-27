@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageSquare, Send, Zap, Inbox, X, ChevronUp } from 'lucide-react';
+import { MessageSquare, Send, Zap, Inbox, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommsDockCommsTab from './tabs/CommsDockCommsTab';
 import CommsDockPollsTab from './tabs/CommsDockPollsTab';
 import CommsDockRiggsyTab from './tabs/CommsDockRiggsyTab';
 import CommsDockInboxTab from './tabs/CommsDockInboxTab';
-import CommsDockDebugPanel from './CommsDockDebugPanel';
 // DEPRECATED: useVoiceRoom disabled in dock (2026-01-23)
 // Voice joining is now canonical via CommsConsole + ActiveNetPanel only
 // import { useVoiceRoom } from './useVoiceRoom';

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { setDemoMode, isDemoMode } from '@/lib/demo-mode';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import AdminDevTools from '@/components/admin/AdminDevTools';

@@ -1,7 +1,6 @@
-import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { OpsPanel } from '@/components/ui/OpsPanel';
-import { MapPin, Users, Calendar, Clock } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSeverityBadge, getPrioritySeverity, getEventSeverity } from '@/components/utils/severitySystem';
 import { typographyClasses } from '@/components/utils/typography';

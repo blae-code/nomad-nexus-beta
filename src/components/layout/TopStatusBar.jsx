@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, AlertCircle, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function TopStatusBar() {

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Download, FileText, BarChart3, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Download, BarChart3, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 

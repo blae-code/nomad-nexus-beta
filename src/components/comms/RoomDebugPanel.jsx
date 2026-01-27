@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useVoiceRoomJoin } from './useVoiceRoomJoin';
 import { AlertCircle, Wifi, WifiOff, Clock, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

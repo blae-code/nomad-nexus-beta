@@ -1,7 +1,5 @@
-import React from "react";
 import { MessageSquare, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default function PioneerUplink() {
   return (

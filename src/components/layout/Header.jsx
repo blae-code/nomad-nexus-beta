@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Clock, Bell, User as UserIcon, LogOut, Settings, Command, Radio } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Clock, User as UserIcon, LogOut, Settings, Command, Radio } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';

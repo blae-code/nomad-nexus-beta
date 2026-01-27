@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, X, CheckCircle2, ChevronRight } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { Play, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 /**
  * Demo Scenario Controller: 5-step guided walkthrough

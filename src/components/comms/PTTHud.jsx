@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

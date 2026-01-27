@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import LeftNavRail from './LeftNavRail';
 import TopStatusBar from './TopStatusBar';
 import ContextPanel from './ContextPanel';
 import { base44 } from '@/api/base44Client';
-import { cn } from '@/lib/utils';
 
 const pageMap = {
   '/hub': 'hub',

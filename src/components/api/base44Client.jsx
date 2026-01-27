@@ -3,5 +3,5 @@ import { createClient } from '@base44/sdk';
 // Use same-origin API endpoints for custom domain support
 // This ensures credentials flow correctly on nomadnexus.space
 export const base44 = createClient({
-  baseURL: window.location.origin
+  baseURL: typeof window !== 'undefined' ? window.location.origin : ''
 });

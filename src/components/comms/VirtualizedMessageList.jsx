@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';

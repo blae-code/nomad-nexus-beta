@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Users, UserX } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Users, UserX } from 'lucide-react';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 import { getRankColorClass } from '@/components/utils/rankUtils';
 import { cn } from '@/lib/utils';

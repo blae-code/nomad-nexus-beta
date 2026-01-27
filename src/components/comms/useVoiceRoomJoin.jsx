@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCommsMode } from './useCommsMode';
-import { generateSimulatedParticipants, getSimulatedRoomStatus } from './commsModeSimulator';
+import { generateSimulatedParticipants } from './commsModeSimulator';
 
 export function useVoiceRoomJoin() {
   const { isLive, isSim, simConfig } = useCommsMode();

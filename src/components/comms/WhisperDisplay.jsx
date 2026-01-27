@@ -1,4 +1,3 @@
-import React from 'react';
 import { MessageSquare, Eye, EyeOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';

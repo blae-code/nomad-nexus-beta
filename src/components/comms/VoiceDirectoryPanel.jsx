@@ -2,8 +2,8 @@
  * Voice Directory Panel
  * Smart, context-aware voice room suggestions with one-click join
  */
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Radio, Star, Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';

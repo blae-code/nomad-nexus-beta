@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Badge } from '@/components/ui/badge';
-import { Mic, Volume2, Clock } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NetDisciplineQueue({ netId }) {

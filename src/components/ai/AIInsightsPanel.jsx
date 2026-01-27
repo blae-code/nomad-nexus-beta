@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, RefreshCw, Radio, Activity, Sparkles, AlertTriangle, Info, Lightbulb } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { refreshAgent } from "@/components/ai/aiOrchestrator";
@@ -11,7 +10,7 @@ import AgentRuleManager from "@/components/ai/AgentRuleManager";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 import { getSeverityColor, SEVERITY_LEVELS } from "@/components/utils/severitySystem";
-import { motionAlertEntrance, motionHighlight } from "@/components/utils/motionSystem";
+import { motionAlertEntrance } from "@/components/utils/motionSystem";
 
 export default function AIInsightsPanel({ eventId, compact = false }) {
   const queryClient = useQueryClient();

@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useState, useEffect } from 'react';
-import { staticQueryConfig } from '@/components/utils/queryConfig';
 
 /**
  * Centralized user data hook - single source of truth

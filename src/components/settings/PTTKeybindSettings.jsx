@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useKeybinds } from '@/components/hooks/useKeybinds';
 import { RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';

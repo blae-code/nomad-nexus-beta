@@ -1,4 +1,3 @@
-import React from 'react';
 import { Radio, Share2, AlertTriangle, Zap, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

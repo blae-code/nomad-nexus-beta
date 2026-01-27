@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Command,
   Search,
-  ArrowRight,
   ChevronRight,
   ChevronLeft,
   LayoutGrid,
@@ -27,7 +26,6 @@ import {
   Rocket,
   MessageSquare,
   Star,
-  Clock,
   HelpCircle,
   AtSign,
   Gamepad2,
@@ -35,7 +33,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
-  commands,
   COMMAND_SECTIONS,
   filterCommandsByUser,
   searchCommands,
@@ -81,6 +78,7 @@ export default function CommandPaletteV3() {
   const [helpMode, setHelpMode] = useState(false);
   const [peopleMode, setPeopleMode] = useState(false);
   const [selectedCommand, setSelectedCommand] = useState(null);
+  const [contextParams, setContextParams] = useState({ eventId: null, userId: null, channelId: null });
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const location = useLocation();
@@ -92,13 +90,15 @@ export default function CommandPaletteV3() {
   }, []);
 
   // Extract context from URL
-  const contextParams = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      eventId: params.get('id') || params.get('eventId'),
-      userId: params.get('userId'),
-      channelId: params.get('channelId'),
-    };
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setContextParams({
+        eventId: params.get('id') || params.get('eventId'),
+        userId: params.get('userId'),
+        channelId: params.get('channelId'),
+      });
+    }
   }, [location.search]);
 
   // Fetch most recent event for comms join
@@ -132,21 +132,23 @@ export default function CommandPaletteV3() {
 
   // Load recents and pinned from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('recentCommands');
-    if (stored) {
-      try {
-        setRecentCommands(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to load recent commands:', e);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('recentCommands');
+      if (stored) {
+        try {
+          setRecentCommands(JSON.parse(stored));
+        } catch (e) {
+          console.error('Failed to load recent commands:', e);
+        }
       }
-    }
 
-    const pinned = localStorage.getItem('pinnedCommands');
-    if (pinned) {
-      try {
-        setPinnedCommands(JSON.parse(pinned));
-      } catch (e) {
-        console.error('Failed to load pinned commands:', e);
+      const pinned = localStorage.getItem('pinnedCommands');
+      if (pinned) {
+        try {
+          setPinnedCommands(JSON.parse(pinned));
+        } catch (e) {
+          console.error('Failed to load pinned commands:', e);
+        }
       }
     }
   }, []);
@@ -162,7 +164,9 @@ export default function CommandPaletteV3() {
       ? pinnedCommands.filter((id) => id !== cmdId)
       : [...pinnedCommands, cmdId].slice(0, 5);
     setPinnedCommands(newPinned);
-    localStorage.setItem('pinnedCommands', JSON.stringify(newPinned));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pinnedCommands', JSON.stringify(newPinned));
+    }
   };
 
   // Parse command grammar
@@ -410,8 +414,14 @@ export default function CommandPaletteV3() {
         setConfirmingDistress(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('mousedown', handleClickOutside);
+      }
+    };
   }, []);
 
   // Execute command
@@ -421,7 +431,9 @@ export default function CommandPaletteV3() {
       ...recentCommands.filter((id) => id !== cmd.id),
     ].slice(0, 10);
     setRecentCommands(newRecents);
-    localStorage.setItem('recentCommands', JSON.stringify(newRecents));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recentCommands', JSON.stringify(newRecents));
+    }
 
     if (cmd.id === 'action-distress') {
       if (!confirmingDistress) {
@@ -469,7 +481,9 @@ export default function CommandPaletteV3() {
       case 'createEvent':
         navigate(createPageUrl('Events'));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openCreateEventForm'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openCreateEventForm'));
+          }
         }, 100);
         break;
       
@@ -482,18 +496,24 @@ export default function CommandPaletteV3() {
         break;
 
       case 'toggleDemoMode':
-        window.dispatchEvent(new CustomEvent('toggleDemoMode'));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('toggleDemoMode'));
+        }
         break;
 
       case 'seedData':
         if (confirm('Populate demo data? This will seed 7 days of sample events.')) {
-          window.dispatchEvent(new CustomEvent('seedDemoData'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('seedDemoData'));
+          }
         }
         break;
 
       case 'wipeData':
         if (confirm('WARNING: This will permanently delete ALL operational data. Continue?')) {
-          window.dispatchEvent(new CustomEvent('wipeAllData'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('wipeAllData'));
+          }
         }
         break;
 
@@ -501,14 +521,18 @@ export default function CommandPaletteV3() {
       case 'editEventDetails':
         navigate(createPageUrl(`Events?id=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openEditEventForm', { detail: { eventId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openEditEventForm', { detail: { eventId: contextId } }));
+          }
         }, 100);
         break;
 
       case 'inviteAttendees':
         navigate(createPageUrl(`Events?id=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openInviteAttendees', { detail: { eventId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openInviteAttendees', { detail: { eventId: contextId } }));
+          }
         }, 100);
         break;
 
@@ -519,7 +543,9 @@ export default function CommandPaletteV3() {
       case 'viewMap':
         navigate(createPageUrl(`Events?id=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('focusTab', { detail: { tab: 'map' } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('focusTab', { detail: { tab: 'map' } }));
+          }
         }, 100);
         break;
 
@@ -531,14 +557,18 @@ export default function CommandPaletteV3() {
       case 'sendDM':
         navigate(createPageUrl(`Channels?userId=${contextId}`));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: contextId } }));
+          }
         }, 100);
         break;
 
       case 'inviteToEvent':
         navigate(createPageUrl('Events'));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('openCreateEventForm', { detail: { inviteUserId: contextId } }));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('openCreateEventForm', { detail: { inviteUserId: contextId } }));
+          }
         }, 100);
         break;
       

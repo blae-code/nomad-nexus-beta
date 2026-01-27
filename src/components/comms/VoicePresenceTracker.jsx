@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { Mic, MicOff, Volume2, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mic, MicOff, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
@@ -6,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Copy, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 export default function MissionTemplate({ templateId, canEdit }) {
   const { data: template, isLoading } = useQuery({

@@ -1,11 +1,9 @@
-import React from "react";
 import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { 
   LayoutGrid, 
   Radio, 
-  Calendar, 
   ShieldAlert, 
   Coins, 
   Users,
@@ -13,7 +11,6 @@ import {
   Rocket,
   Target,
   MessageSquare,
-  Medal,
   UserCircle
 } from "lucide-react";
 import {
@@ -83,7 +80,12 @@ export default function ActivityBar() {
   });
 
   const ActivityNavItem = ({ icon: Icon, label, page, alertColor, isAlertActive, path, pulseFast }) => {
-    const isActive = window.location.pathname.includes(page);
+    const [isActive, setIsActive] = React.useState(false);
+    React.useEffect(() => {
+      if (typeof window !== 'undefined') {
+        setIsActive(window.location.pathname.includes(page));
+      }
+    }, [page]);
     
     return (
       <TooltipProvider delayDuration={0}>

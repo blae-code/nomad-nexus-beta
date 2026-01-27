@@ -1,10 +1,9 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileText, Download } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';

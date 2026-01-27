@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 import NavRail from '@/components/nav/NavRail';
 import ContextPanel from '@/components/layout/ContextPanel';
 import Header from '@/components/layout/Header';

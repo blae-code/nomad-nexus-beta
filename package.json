@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc -p ./jsconfig.json",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test:comms": "vitest run tests/comms"
   },

@@ -1,4 +1,3 @@
-import React from 'react';
 import StarCitizenMap from '@/components/ops/StarCitizenMap';
 
 export default function UniverseMapPage() {

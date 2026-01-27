@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
-import { Activity, CheckCircle2, AlertCircle, Download, Play, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Download, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 

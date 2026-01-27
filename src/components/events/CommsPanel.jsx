@@ -1,16 +1,15 @@
 import React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from "@/components/ui/OpsPanel";
+import { OpsPanel, OpsPanelHeader, OpsPanelTitle } from "@/components/ui/OpsPanel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Radio, Mic, ExternalLink, Volume2, VolumeX, Lock } from "lucide-react";
+import { Radio, Mic, ExternalLink, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { hasMinRank } from "@/components/permissions";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOTION } from "@/components/utils/motionConstants";
-import { SignalStrength, PermissionBadge, TerminalCard, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
+import { SignalStrength, PermissionBadge, NetTypeIcon } from "@/components/comms/SharedCommsComponents";
 // DEPRECATED: CommsJoinModal disabled (2026-01-23)
 // import CommsJoinModal from "@/components/comms/CommsJoinModal";
 

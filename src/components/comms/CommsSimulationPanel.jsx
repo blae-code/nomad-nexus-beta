@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Pause, Send, MessageSquare, Volume2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Play, Square, Send, MessageSquare } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';

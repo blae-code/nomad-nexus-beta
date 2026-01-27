@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, RefreshCw, Clock, AlertCircle, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 /**
  * Observability Diagnostics Drawer: Admin-only real-time health monitoring
