@@ -1,3 +1,8 @@
+// Global fallback for legacy Base44 platform hooks - MUST run before any imports
+if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
+  window.persistDemoFromUrl = () => false;
+}
+
 import AdminCockpit from './pages/AdminCockpit';
 import Channels from './pages/Channels';
 import CommandCenter from './pages/CommandCenter';
@@ -31,11 +36,6 @@ import AccessGate from './pages/AccessGate';
 import Hub from './pages/Hub';
 import SmokeCheck from './pages/SmokeCheck';
 import __Layout from './Layout.jsx';
-
-// Global fallback for legacy Base44 platform hooks (runs at module load)
-if (typeof window !== "undefined" && typeof window.persistDemoFromUrl !== "function") {
-  window.persistDemoFromUrl = () => false;
-}
 
 export const PAGES = {
     "AdminCockpit": AdminCockpit,
