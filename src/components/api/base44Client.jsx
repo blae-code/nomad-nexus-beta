@@ -1,10 +1,14 @@
 
-// Polyfill: Base44 SDK calls this during module initialization - MUST run before SDK import
+// Polyfill: MUST define BEFORE SDK import, on ALL global objects
 if (typeof globalThis !== 'undefined') {
-  globalThis.persistDemoFromUrl = () => false;
+  if (!globalThis.persistDemoFromUrl) {
+    globalThis.persistDemoFromUrl = () => false;
+  }
 }
 if (typeof window !== 'undefined') {
-  window.persistDemoFromUrl = () => false;
+  if (!window.persistDemoFromUrl) {
+    window.persistDemoFromUrl = () => false;
+  }
 }
 
 import { createClient } from '@base44/sdk';
