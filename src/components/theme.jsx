@@ -1,19 +1,38 @@
+
 /**
  * Application Theme Configuration
- * Core color palette and design tokens
+ * Nomad Nexus - Sci-Fi Tactical Operations UI
+ * Premium color palette with enhanced visual hierarchy
  */
 
 export const theme = {
   colors: {
-    background: "#09090b",
-    surface: "#0f1620",
-    panel: "#121b26",
-    text: "#e7f0ff",
-    muted: "#9fb3c8",
-    accent: "#ea580c",
-    danger: "#ff4d6d",
-    ok: "#38d996",
-    warn: "#ffcc66",
+    // Core canvas
+    background: "#05070b",
+    surface: "#0d1117",
+    panel: "#101319",
+    overlay: "#000000",
+    
+    // Text hierarchy
+    text: "#e8f0ff",
+    textSecondary: "#a3b3c8",
+    textMuted: "#6b7a88",
+    
+    // Accent & feedback
+    accent: "#ff6b35",
+    accentDim: "#d64a2a",
+    accentBright: "#ff8a5b",
+    
+    // Semantic
+    danger: "#ff4757",
+    success: "#2ed573",
+    warning: "#ffa502",
+    info: "#0066ff",
+    
+    // Special
+    cyan: "#00d4ff",
+    purple: "#a78bfa",
+    lime: "#84cc16",
   },
 };
 
