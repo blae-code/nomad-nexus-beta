@@ -1,4 +1,8 @@
-import '@/components/platform-init';
+// CRITICAL: Must execute BEFORE any SDK imports
+if (typeof globalThis !== 'undefined') globalThis.persistDemoFromUrl = () => false;
+if (typeof window !== 'undefined') window.persistDemoFromUrl = () => false;
+if (typeof self !== 'undefined') self.persistDemoFromUrl = () => false;
+
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '@/globals.css';

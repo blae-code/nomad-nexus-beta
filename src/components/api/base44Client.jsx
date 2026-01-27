@@ -13,7 +13,11 @@
   }
 })();
 
-import '@/components/platform-init';
+// CRITICAL: Must execute BEFORE SDK import
+if (typeof globalThis !== 'undefined') globalThis.persistDemoFromUrl = () => false;
+if (typeof window !== 'undefined') window.persistDemoFromUrl = () => false;
+if (typeof self !== 'undefined') self.persistDemoFromUrl = () => false;
+
 import { createClient } from '@base44/sdk';
 
 // Use same-origin API endpoints for custom domain support
