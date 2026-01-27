@@ -19,28 +19,20 @@ const STAFF_ROLES = [
 ];
 
 export default function EventCommandStaff({ event, canEdit }) {
-  const safeEvent = event ?? {};
-  const [staff, setStaff] = React.useState(safeEvent.command_staff || {});
+  if (!event) return null;
+  
+  const [staff, setStaff] = React.useState(event.command_staff || {});
 
-  const { users } = useUserDirectory(null);
-
-  if (!safeEvent.id) {
-    return null;
-  }
-   if (!event) return null;
-   
-   const [staff, setStaff] = React.useState(event.command_staff || {});
-
-   const commandStaff = event?.command_staff ?? {};
-   const staffUserIds = Object.values(commandStaff).filter(Boolean);
-   const { users, userById } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
+  const commandStaff = event?.command_staff ?? {};
+  const staffUserIds = Object.values(commandStaff).filter(Boolean);
+  const { users } = useUserDirectory(staffUserIds.length > 0 ? staffUserIds : null);
 
   const handleAssignRole = async (roleKey, userId) => {
     if (!canEdit) return;
 
     try {
       const updated = { ...staff, [roleKey]: userId };
-      await base44.entities.Event.update(safeEvent.id, { command_staff: updated });
+      await base44.entities.Event.update(event.id, { command_staff: updated });
       setStaff(updated);
       toast.success('STAFF ASSIGNMENT UPDATED');
     } catch (err) {
@@ -53,7 +45,7 @@ export default function EventCommandStaff({ event, canEdit }) {
 
     try {
       const updated = { ...staff, [roleKey]: null };
-      await base44.entities.Event.update(safeEvent.id, { command_staff: updated });
+      await base44.entities.Event.update(event.id, { command_staff: updated });
       setStaff(updated);
       toast.success('STAFF ASSIGNMENT REMOVED');
     } catch (err) {
