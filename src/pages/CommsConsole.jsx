@@ -317,7 +317,7 @@ function CommsConsolePage() {
     [selectedNetId, voiceNets]
   );
 
-  const memoizedNets = React.useMemo(() => voiceNets, [voiceNets]);
+  
 
   // Handlers for connection state changes from ActiveNetPanel
   const handleConnectSuccess = React.useCallback((netId) => {
@@ -350,7 +350,6 @@ function CommsConsolePage() {
      }
   };
 
-  const hasCommsAccess = Boolean(currentUser && (currentUser.role === 'admin' || currentUser.rank || currentUser.rank === 'Vagrant'));
   const hasCommsAccess = Boolean(
     currentUser && (currentUser.role === 'admin' || currentUser.rank || currentUser.rank === 'Vagrant')
   );
@@ -543,7 +542,7 @@ function CommsConsolePage() {
                            <FleetHierarchy eventId={selectedEventId} />
                         ) : (
                            <NetList 
-                              nets={memoizedNets} 
+                              nets={voiceNets} 
                               selectedNetId={selectedNetId}
                               onSelect={(net) => setSelectedNetId(net?.id || null)}
                               userSquadId={userSquadId}
@@ -814,7 +813,7 @@ function CommsConsolePage() {
 
          {/* Net Switch Overlay */}
          <NetSwitchOverlay 
-           nets={memoizedNets} 
+           nets={voiceNets} 
            selectedNet={selectedNet} 
            onSelectNet={setSelectedNet}
          />

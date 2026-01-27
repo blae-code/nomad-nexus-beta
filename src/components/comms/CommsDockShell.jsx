@@ -9,7 +9,7 @@ import CommsDockRiggsyTab from './tabs/CommsDockRiggsyTab';
 import CommsDockInboxTab from './tabs/CommsDockInboxTab';
 // DEPRECATED: useVoiceRoom disabled in dock (2026-01-23)
 // Voice joining is now canonical via CommsConsole + ActiveNetPanel only
-// import { useVoiceRoom } from './useVoiceRoom';
+import { useVoiceRoom } from './useVoiceRoom';
 
 const TABS = [
   { id: 'comms', label: 'COMMS', icon: MessageSquare },
@@ -24,7 +24,7 @@ export default function CommsDockShell({ user, defaultTab = 'comms' }) {
   const [unreadCounts, setUnreadCounts] = useState({});
   const queryClient = useQueryClient();
   // DEPRECATED: voiceRoom disabled (2026-01-23) — use CommsConsole instead
-  // const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
+  const voiceRoom = useVoiceRoom('org-command', user?.id || 'guest');
 
   // Fetch unread counts
   const { data: readStates = [] } = useQuery({
