@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, AlertCircle, Info, X, Bell, BellOff } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, X, BellOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { getSeverityColor, SEVERITY_LEVELS, getAlertSeverity } from "@/components/utils/severitySystem";
+import { getSeverityColor, SEVERITY_LEVELS } from "@/components/utils/severitySystem";
 import { motionAlertEntrance } from "@/components/utils/motionSystem";
 
 export default function AICriticalAlertsMonitor({ eventId, onAlertAction }) {

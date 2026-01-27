@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crosshair, Navigation, Map as MapIcon, Users, Radio, ShieldAlert, Rocket } from 'lucide-react';
+import { Map as MapIcon, ShieldAlert } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 

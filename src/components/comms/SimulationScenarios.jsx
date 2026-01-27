@@ -1,4 +1,3 @@
-import React from 'react';
 import { Activity, AlertTriangle, Zap, Radio, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

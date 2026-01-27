@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Phone, Radio, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Radio, AlertCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,

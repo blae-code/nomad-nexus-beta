@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  FileText, Download, TrendingUp, Users, Target, Clock, 
+  FileText, Download, TrendingUp, Users, Target, 
   AlertTriangle, CheckCircle, BarChart3, Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';

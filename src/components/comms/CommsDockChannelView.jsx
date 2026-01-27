@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Send, Pin, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { canUser, hasModerationType, getPermissionExplanation } from './commsPermissionEngine';
+import { canUser, hasModerationType } from './commsPermissionEngine';
 
 export default function CommsDockChannelView({ channel, user, onBack }) {
   const [newPostContent, setNewPostContent] = useState('');

@@ -1,5 +1,5 @@
-import React, { memo, useState } from 'react';
-import { Users, Target, Swords, TrendingUp, AlertCircle, Coins, ChevronRight, Clock, Activity, Shield, ChevronDown } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Users, Target, Swords, TrendingUp, AlertCircle, Coins, ChevronRight, Shield, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';

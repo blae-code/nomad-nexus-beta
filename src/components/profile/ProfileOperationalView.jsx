@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Zap, Target, Radio, Users, Swords, Heart, Edit2, Save, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Zap, Radio, Swords, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProfileOperationalView({ user, onUpdate }) {

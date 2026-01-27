@@ -1,5 +1,5 @@
-import React, { memo, useState } from 'react';
-import { User, Award, Radio, Target, Clock, TrendingUp, AlertCircle, Heart, ChevronDown } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Award, Radio, Target, Clock, TrendingUp, AlertCircle, Heart, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';

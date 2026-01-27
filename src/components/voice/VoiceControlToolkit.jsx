@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, Volume2, Settings, Radio, Zap, Activity, AlertCircle, Wifi, VolumeX, Headphones, MicOff, UserCheck, MessageSquare, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mic, Volume2, Settings, Radio, Zap, AlertCircle, VolumeX, Headphones, MicOff, MessageSquare, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { createPageUrl } from '@/utils';
-import { TYPOGRAPHY } from '@/components/utils/typographySystem';
 import { useVoiceAudio } from '@/components/hooks/useVoiceAudio';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -30,6 +27,7 @@ export default function VoiceControlToolkit() {
     setEchoCancellation,
     autoGain,
     setAutoGain,
+    micPermissionBlocked,
   } = useVoiceAudio();
 
   const [voiceActive, setVoiceActive] = useState(false);
@@ -171,6 +169,26 @@ export default function VoiceControlToolkit() {
                 )}
                 style={{ width: `${Math.min(inputLevel, 255) / 255 * 100}%` }}
               />
+            </div>
+          )}
+
+          {micPermissionBlocked && (
+            <div className="mt-2 flex items-start gap-2 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[9px] text-amber-200">
+              <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-semibold uppercase tracking-wide">Enable microphone access</p>
+                <p className="text-[9px] text-amber-100/80">
+                  Microphone permissions are blocked. Allow access in your browser settings to transmit.
+                  <a
+                    href="chrome://settings/content/microphone"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-1 text-amber-300 underline underline-offset-2"
+                  >
+                    Open browser settings
+                  </a>
+                </p>
+              </div>
             </div>
           )}
 

@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 import { Loader2, Radar, MapPin, Activity, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export default function TacticalStatusReporter({ user, eventId }) {
   const [report, setReport] = useState("");

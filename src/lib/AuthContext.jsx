@@ -2,8 +2,26 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { isDemoMode } from '@/lib/demo-mode';
 
 const AuthContext = createContext();
+const AUTH_REDIRECT_KEY = 'nn_auth_redirected_at';
+const AUTH_REDIRECT_COOLDOWN_MS = 5000;
+
+const shouldRedirect = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const lastRedirect = Number(window.sessionStorage.getItem(AUTH_REDIRECT_KEY) || 0);
+    const now = Date.now();
+    if (now - lastRedirect < AUTH_REDIRECT_COOLDOWN_MS) {
+      return false;
+    }
+    window.sessionStorage.setItem(AUTH_REDIRECT_KEY, String(now));
+    return true;
+  } catch (error) {
+    return true;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -21,6 +39,15 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
+
+      if (isDemoMode() || !appParams.serverUrl || !appParams.appId) {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        setIsAuthenticated(true);
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        return;
+      }
       
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
@@ -110,13 +137,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = (shouldRedirect = true) => {
+  const logout = (redirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
     
-    if (shouldRedirect) {
+    if (redirect) {
       // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      if (typeof window === 'undefined') {
+        base44.auth.logout();
+        return;
+      }
+      if (!shouldRedirect()) {
+        base44.auth.logout();
+        return;
+      }
+      const returnUrl = window.location.href;
+      base44.auth.logout(returnUrl);
     } else {
       // Just remove the token without redirect
       base44.auth.logout();
@@ -125,7 +161,16 @@ export const AuthProvider = ({ children }) => {
 
   const navigateToLogin = () => {
     // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('/access-gate') || path.includes('/login')) {
+      return;
+    }
+    if (!shouldRedirect()) {
+      return;
+    }
+    const returnUrl = window.location.href;
+    base44.auth.redirectToLogin(returnUrl);
   };
 
   return (

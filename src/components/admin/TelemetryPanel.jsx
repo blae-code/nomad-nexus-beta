@@ -1,5 +1,4 @@
-import React from 'react';
-import { Activity, Clock } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function TelemetryPanel({ logs, auditLogs }) {

@@ -1,4 +1,3 @@
-import React from "react";
 import { cn } from "@/lib/utils";
 import { getRankColorClass } from "@/components/utils/rankUtils";
 import { CheckCheck, Check, Image as ImageIcon } from "lucide-react";

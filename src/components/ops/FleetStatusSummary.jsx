@@ -1,7 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { STATUS_CONFIG } from "@/components/status/StatusChip";
 
 export default function FleetStatusSummary({ eventId }) {
   const { data: statuses } = useQuery({

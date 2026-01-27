@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Key, ArrowLeft, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
+import { isDemoMode } from '@/lib/demo-mode';
 
 export default function AccessGate() {
   const [accessKey, setAccessKey] = useState('');
@@ -12,6 +14,34 @@ export default function AccessGate() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [grantedRank, setGrantedRank] = useState('VAGRANT');
   const [grantedRoles, setGrantedRoles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const initDoneRef = useRef(false);
+
+  // Admin bypass: check if user is admin and skip access gate (run once)
+  useEffect(() => {
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
+
+    const checkAdminBypass = async () => {
+      try {
+        const isAuthenticated = await base44.auth.isAuthenticated?.();
+        if (isAuthenticated) {
+          const user = await base44.auth.me();
+          if (user?.role === 'admin') {
+            navigate('/', { replace: true });
+            return;
+          }
+        }
+      } catch (error) {
+        // Not authenticated, continue with access gate
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminBypass();
+  }, [navigate]);
 
   const handleRedeemKey = async () => {
     if (!accessKey.trim()) {
@@ -42,12 +72,29 @@ export default function AccessGate() {
   };
 
   const handleLogin = () => {
-    const currentUrl = window.location.pathname + window.location.search;
+    const currentUrl = typeof window !== 'undefined'
+      ? window.location.pathname + window.location.search
+      : '/';
     base44.auth.redirectToLogin(currentUrl);
   };
 
+  const handleDemoAccess = async () => {
+    setIsRedeeming(true);
+    try {
+      const result = await base44.functions.invoke('redeemAccessKey', { code: 'DEMO-ACCESS' });
+      setGrantedRank(result.data?.grants_rank || 'PIONEER');
+      setGrantedRoles(result.data?.grants_roles || ['admin']);
+      setShowOnboarding(true);
+    } catch (error) {
+      console.error('[ACCESS GATE] Demo access error:', error);
+      toast.error('Failed to activate demo access');
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
+
   const handleReturnHome = () => {
-    window.location.href = '/';
+    navigate('/', { replace: true });
   };
 
   // Show onboarding wizard after successful key redemption
@@ -58,6 +105,19 @@ export default function AccessGate() {
         grantedRoles={grantedRoles}
         onComplete={() => setShowOnboarding(false)}
       />
+    );
+  }
+
+  // Show loading state while checking admin bypass
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:40px_40px] opacity-30" />
+        <div className="text-center">
+          <div className="w-16 h-16 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider">Checking Authorization...</p>
+        </div>
+      </div>
     );
   }
 
@@ -93,6 +153,11 @@ export default function AccessGate() {
           <p className="text-xs text-zinc-500 text-center mb-8 font-mono uppercase tracking-wider">
             Authorization Required
           </p>
+          {isDemoMode() && (
+            <div className="mb-6 border border-amber-700/50 bg-amber-950/40 p-3 text-[10px] text-amber-200 font-mono uppercase tracking-widest">
+              Demo Mode Active • Use quick access below
+            </div>
+          )}
 
           {/* Info Box */}
           <div className="bg-zinc-900/50 border border-zinc-800 p-4 mb-6">
@@ -149,6 +214,16 @@ export default function AccessGate() {
               <LogIn className="w-4 h-4" />
               Go to Login
             </Button>
+            {isDemoMode() && (
+              <Button
+                onClick={handleDemoAccess}
+                className="w-full gap-2 bg-amber-500/90 hover:bg-amber-500 text-black"
+                disabled={isRedeeming}
+              >
+                <Key className="w-4 h-4" />
+                Demo Quick Access
+              </Button>
+            )}
 
             <Button
               onClick={handleReturnHome}

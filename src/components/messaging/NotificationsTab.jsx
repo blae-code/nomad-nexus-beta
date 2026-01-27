@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Bell, AlertCircle, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { MessageCircle, Bell } from 'lucide-react';
 import { useUserDirectory } from '@/components/hooks/useUserDirectory';
 
 export default function NotificationsTab({ user }) {

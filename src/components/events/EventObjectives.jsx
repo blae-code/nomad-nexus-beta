@@ -1,7 +1,5 @@
-import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Flag, CheckSquare, User, Rocket, CornerDownRight } from "lucide-react";
+import { CheckSquare, User, Rocket } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";

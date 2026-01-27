@@ -1,8 +1,8 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { cn } from "@/lib/utils";
-import { Wallet, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export default function AUECWarningPanel() {
   const { data: coffers = [] } = useQuery({
@@ -33,7 +33,7 @@ export default function AUECWarningPanel() {
   if (isLow) {
     return (
       <div className="border-2 border-amber-500/50 bg-amber-950/20 p-4 flex items-center justify-between animate-pulse">
-        <div className="flex items-center gap-3">
+       <div className="flex items-center gap-3">
            <AlertTriangle className="w-6 h-6 text-amber-500" />
            <div>
               <div className="text-amber-500 font-black uppercase tracking-widest text-sm">
@@ -42,6 +42,11 @@ export default function AUECWarningPanel() {
               <div className="text-amber-400/70 text-xs font-mono">
                  RECOMMEND CONTRIBUTION
               </div>
+              {isDemoMode() && (
+                <div className="mt-1 text-[9px] text-amber-300/70 font-mono uppercase">
+                  Demo Placeholder Value
+                </div>
+              )}
            </div>
         </div>
         <div className="font-mono text-xl text-amber-500 font-bold">

@@ -1,8 +1,6 @@
-import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Sword, Calendar, Youtube, ExternalLink, ArrowRight } from "lucide-react";
+import { Sword, Calendar, Youtube, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";

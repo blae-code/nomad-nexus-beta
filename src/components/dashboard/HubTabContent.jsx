@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Target, AlertCircle, Users, Rocket, Hash, ChevronRight, Radio, Clock, Activity, Shield, TrendingUp, Star, Swords, Award, Calendar, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -6,9 +6,7 @@ import { getRankColorClass } from '@/components/utils/rankUtils';
 import RescueAlertPanel from './RescueAlertPanel';
 import LiveIncidentCenter from '../incidents/LiveIncidentCenter';
 import LiveOperationsFeed from './LiveOperationsFeed';
-import EventCalendarView from './EventCalendarView';
 import PersonalLogPanel from './PersonalLogPanel';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 

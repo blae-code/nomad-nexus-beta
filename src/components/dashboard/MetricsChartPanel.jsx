@@ -1,10 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Activity, TrendingUp, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Download, Activity, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { ActiveUsersTooltip, AUECTooltip, UsersTooltip, FleetTooltip } from '@/components/dashboard/MetricsTooltip';
 
 export default function MetricsChartPanel({ userEvents, allUsers, recentLogs, treasuryBalance = 0, fleetAssets = [] }) {

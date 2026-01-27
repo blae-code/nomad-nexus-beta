@@ -1,9 +1,8 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Radio, Activity, Users, AlertTriangle } from 'lucide-react';
-import CommsEventSelector from '@/components/comms/CommsEventSelector'; // Reuse
-import ActiveNetPanel from '@/components/comms/ActiveNetPanel'; // Reuse if possible, or make a simpler version
+import { Radio, Users, AlertTriangle } from 'lucide-react';
+// Reuse
+// Reuse if possible, or make a simpler version
 import StatusChip from '@/components/status/StatusChip';
 
 export default function OperatorDashboard({ user }) {

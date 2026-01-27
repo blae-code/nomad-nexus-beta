@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { buildRoomName, createCommsDebugInfo, generateSimParticipants } from './commsContract';
+import { createCommsDebugInfo, generateSimParticipants } from './commsContract';
 
 /**
  * Hook that manages voice room connection for both SIM and LIVE modes

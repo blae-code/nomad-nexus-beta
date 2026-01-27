@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, User as UserIcon, LogOut, Settings, Radio, Wifi, AlertCircle, CheckCircle2, Cog, Coins, Shield } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { User as UserIcon, LogOut, Settings, Wifi, Cog, Coins, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
 import { formatAUEC } from '@/components/utils/formatCurrency';
@@ -15,9 +15,9 @@ import RitualBonfireWidget from '@/components/dashboard/RitualBonfireWidget';
 import SystemHealthIndicator from '@/components/layout/SystemHealthIndicator';
 import ObservabilityDiagnostics from '@/components/admin/ObservabilityDiagnostics';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect as useReactEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { HEADER_BASE_CLASS, HEADER_SURFACE_STYLE } from '@/components/layout/headerStyles';
 
 /**
  * HeaderV3: "Living intranet" command surface
@@ -46,7 +46,7 @@ const PAGE_BREADCRUMBS = {
 export default function HeaderV3() {
   const [time, setTime] = useState(new Date());
   const [user, setUser] = useState(null);
-  const [userPresence, setUserPresence] = useState(null);
+  const [userPresence, setUserPresence] = useState({});
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState('OPTIMAL');
@@ -183,6 +183,9 @@ export default function HeaderV3() {
     }
   };
 
+  // Safe global defaults for telemetry
+  const headerTotalUsersValue = Number(window?.headerTotalUsers) || 0;
+  
   // Expose for manual triggering from voice events
   useEffect(() => {
     window.headerFetchPresence = fetchPresence;
@@ -434,7 +437,7 @@ export default function HeaderV3() {
 
   // Dev-only: check header height constraint
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       const headerEl = document.querySelector('header');
       if (headerEl && headerEl.offsetHeight !== 56) {
         console.error(`[HEADER] HEIGHT VIOLATION: expected 56px, got ${headerEl.offsetHeight}px`);
@@ -471,17 +474,18 @@ export default function HeaderV3() {
     } catch (e) {
       console.error('Failed to update status:', e);
       // Revert optimistic update on error
-      fetchPresence();
+      setUserPresence({});
     }
   };
 
   return (
     <TooltipProvider delayDuration={200}>
-    <header className="h-16 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-[var(--gutter)] z-40 gap-3 fixed top-0 left-0 right-0"
-      style={{
-        backgroundImage: 'linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)',
-        backgroundSize: '100% 2px',
-      }}
+    <header
+      className={cn(
+        HEADER_BASE_CLASS,
+        'flex items-center justify-between px-[var(--gutter)] z-50 gap-3 fixed top-0 left-0 right-0'
+      )}
+      style={HEADER_SURFACE_STYLE}
     >
       {/* LEFT: Brand + Callsign + Presence */}
       <div className="flex items-center gap-2.5 min-w-0 shrink-0">
@@ -698,7 +702,7 @@ export default function HeaderV3() {
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 px-2.5 py-2 border border-zinc-800/50 bg-zinc-900/40 text-[9px] font-mono hidden md:flex transition-colors hover:border-zinc-700/50 text-zinc-500">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-              <span className="font-bold uppercase tracking-wider">{onlineCount}/{window.headerTotalUsers || onlineCount}</span>
+              <span className="font-bold uppercase tracking-wider">{onlineCount}/{headerTotalUsersValue || onlineCount}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent>

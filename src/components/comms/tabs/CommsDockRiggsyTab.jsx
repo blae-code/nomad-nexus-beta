@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Send, Lock, CheckCircle2 } from 'lucide-react';
+import { Send, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function CommsDockRiggsyTab({ user }) {

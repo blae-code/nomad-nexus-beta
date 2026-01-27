@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { OpsPanel, OpsPanelContent } from '@/components/ui/OpsPanel';
 import { Button } from '@/components/ui/button';

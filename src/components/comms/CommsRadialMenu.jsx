@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { MessageSquare, Radio, Crown, X, ChevronRight } from 'lucide-react';
+import { MessageSquare, Radio, Crown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**

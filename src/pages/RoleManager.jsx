@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import AdminCockpitPage from "./AdminCockpit";
 import { useSearchParams } from "react-router-dom";
 
