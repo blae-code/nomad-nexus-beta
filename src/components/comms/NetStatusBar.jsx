@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Radio, AlertCircle, Zap } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Radio, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NetStatusBar({ 

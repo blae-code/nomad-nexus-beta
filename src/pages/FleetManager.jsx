@@ -1,9 +1,7 @@
-import React from 'react';
 import AssetList, { AssetFormDialog } from '@/components/assets/AssetList';
 import TacticalMap from '@/components/ops/TacticalMap';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Rocket, MapPin, Activity, Shield, Edit, Trash2, Wrench } from 'lucide-react';
+import { Rocket, Activity, Shield, Edit, Trash2, Wrench } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -26,6 +25,19 @@ export default function PageLayout({
     <div className={cn('h-full overflow-hidden flex flex-col min-h-0', className)}>
       {/* Header (optional) */}
       {(header || title || actions) && (
+        <div className={cn('shrink-0 bg-zinc-950 border-b border-[var(--divider-color)]', 
+          headerHeight === 'auto' ? 'px-[var(--gutter)] py-[var(--gutter)]' : ''
+        )} style={headerHeight !== 'auto' ? { height: headerHeight } : {}}>
+          {header || (
+            <div className="flex items-start justify-between gap-[var(--gutter)]">
+              <div className="space-y-1">
+                {title && <h1 className="text-sm font-black uppercase tracking-[0.24em] text-white leading-none">{title}</h1>}
+                {subtitle && <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-[0.3em]">{subtitle}</p>}
+              </div>
+              {actions && <div className="flex items-center gap-2">{actions}</div>}
+            </div>
+          )}
+        </div>
         <PageHeader
           title={title}
           subtitle={subtitle}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -12,6 +12,10 @@ export default function BootSplashOverlay() {
   const timerRef = useRef(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
     // Check for prefers-reduced-motion
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(motionQuery.matches);
@@ -78,7 +82,9 @@ export default function BootSplashOverlay() {
 
   const handleDismiss = () => {
     setShouldShow(false);
-    localStorage.setItem('hasSeenBootVideo', 'true');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hasSeenBootVideo', 'true');
+    }
   };
 
   const handleVideoEnded = () => {

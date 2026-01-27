@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,8 +15,14 @@ import { Link } from "react-router-dom";
 
 export default function SquadDetailPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const urlParams = new URLSearchParams(window.location.search);
-  const squadId = urlParams.get('id');
+  const [squadId, setSquadId] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      setSquadId(urlParams.get('id'));
+    }
+  }, []);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});

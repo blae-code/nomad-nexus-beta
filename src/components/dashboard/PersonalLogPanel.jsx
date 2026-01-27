@@ -1,5 +1,4 @@
 import React from "react";
-import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Award, ShieldCheck, DollarSign, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

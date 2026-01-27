@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Brain, AlertCircle, Zap, ChevronRight, Lock, Database } from 'lucide-react';
+import { useState } from 'react';
+import { AlertCircle, ChevronRight, Lock, Database } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';

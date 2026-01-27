@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useVisibilityPause } from './useVisibilityPause';
 

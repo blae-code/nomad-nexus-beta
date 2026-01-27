@@ -8,11 +8,11 @@
  * - Invite functionality
  */
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Search, UserPlus, Mail, Filter, CheckCircle2, AlertCircle, Star, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Mail, Filter, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRankColorClass } from '@/components/utils/rankUtils';
 import { motion, AnimatePresence } from 'framer-motion';

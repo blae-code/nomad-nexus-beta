@@ -3,7 +3,6 @@
  * Shows why joining is disabled and readable error states
  */
 
-import React from 'react';
 import { Play, AlertCircle, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

@@ -1,10 +1,8 @@
-import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { OpsPanel, OpsPanelHeader, OpsPanelTitle, OpsPanelContent } from '@/components/ui/OpsPanel';
-import { Users, Radio, AlertTriangle, Clock } from 'lucide-react';
+import { Radio, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 export default function ContextPanelIntelligence({ currentPage, eventId, netId }) {
   // Fetch context-specific data based on page

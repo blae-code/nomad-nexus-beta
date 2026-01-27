@@ -27,6 +27,8 @@ export function useVoiceAudio() {
 
   // Initialize audio context and analyser
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     audioContextRef.current = audioContext;
 
@@ -36,7 +38,9 @@ export function useVoiceAudio() {
     dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
 
     return () => {
-      audioContext.close();
+      if (audioContext.state !== 'closed') {
+        audioContext.close();
+      }
     };
   }, []);
 

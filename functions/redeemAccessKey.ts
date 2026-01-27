@@ -38,13 +38,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+    
+    // Allow unauthenticated users to redeem; they'll create profile in onboarding
+    const userId = user?.id || 'anonymous';
 
     // Rate limit check
-    const limit = checkRateLimit(user.id);
+    const limit = checkRateLimit(userId);
     if (!limit.allowed) {
       return Response.json({
         error: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
@@ -56,7 +55,7 @@ Deno.serve(async (req) => {
     const { code } = payload;
 
     if (!code || typeof code !== 'string') {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'Invalid code' }, { status: 400 });
     }
 
@@ -64,7 +63,7 @@ Deno.serve(async (req) => {
     const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
     
     if (!keys || keys.length === 0) {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'Invalid access code' }, { status: 404 });
     }
 
@@ -72,7 +71,7 @@ Deno.serve(async (req) => {
 
     // Validation checks
     if (key.status === 'REVOKED') {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'This access code has been revoked' }, { status: 403 });
     }
 
@@ -81,23 +80,23 @@ Deno.serve(async (req) => {
       if (key.status !== 'EXPIRED') {
         await base44.asServiceRole.entities.AccessKey.update(key.id, { status: 'EXPIRED' });
       }
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'This access code has expired' }, { status: 403 });
     }
 
     if (key.uses_count >= key.max_uses) {
-      recordFailure(user.id);
+      recordFailure(userId);
       return Response.json({ error: 'This access code has reached its usage limit' }, { status: 403 });
     }
 
-    // Check if user already redeemed this key
-    if (key.redeemed_by_user_ids && key.redeemed_by_user_ids.includes(user.id)) {
-      recordFailure(user.id);
+    // Check if user already redeemed this key (only if authenticated)
+    if (user && key.redeemed_by_user_ids && key.redeemed_by_user_ids.includes(user.id)) {
+      recordFailure(userId);
       return Response.json({ error: 'You have already redeemed this code' }, { status: 403 });
     }
 
     // Redeem atomically
-    const newRedeemed = [...(key.redeemed_by_user_ids || []), user.id];
+    const newRedeemed = user ? [...(key.redeemed_by_user_ids || []), user.id] : (key.redeemed_by_user_ids || []);
     const newUseCount = key.uses_count + 1;
     const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
 
@@ -107,34 +106,34 @@ Deno.serve(async (req) => {
       status: newStatus
     });
 
-    // Get or create member profile
-    let profile = null;
-    const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
-    if (profiles && profiles.length > 0) {
-      profile = profiles[0];
+    // Only update member profile if user exists
+    if (user) {
+      let profile = null;
+      const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
+      if (profiles && profiles.length > 0) {
+        profile = profiles[0];
+      }
+
+      if (profile) {
+        await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
+          rank: key.grants_rank || 'VAGRANT',
+          roles: [...(profile.roles || []), ...(key.grants_roles || [])]
+        });
+      }
+
+      // Log successful redemption
+      await base44.asServiceRole.entities.AdminAuditLog.create({
+        actor_user_id: user.id,
+        action: 'redeem_access_key',
+        payload: { code, rank: key.grants_rank, roles: key.grants_roles },
+        executed_by: user.id,
+        executed_at: new Date().toISOString(),
+        step_name: 'access_control',
+        status: 'success'
+      }).catch(err => console.error('Audit log error:', err));
     }
 
-    // If profile doesn't exist yet, return success and let client create it in next step
-    // If it exists, update rank/roles
-    if (profile) {
-      await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
-        rank: key.grants_rank || 'VAGRANT',
-        roles: [...(profile.roles || []), ...(key.grants_roles || [])]
-      });
-    }
-
-    clearFailures(user.id);
-
-    // Log successful redemption
-    await base44.asServiceRole.entities.AdminAuditLog.create({
-      actor_user_id: user.id,
-      action: 'redeem_access_key',
-      payload: { code, rank: key.grants_rank, roles: key.grants_roles },
-      executed_by: user.id,
-      executed_at: new Date().toISOString(),
-      step_name: 'access_control',
-      status: 'success'
-    }).catch(err => console.error('Audit log error:', err));
+    clearFailures(userId);
 
     return Response.json({
       success: true,

@@ -16,21 +16,19 @@
  * 8. Review & Launch
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import OperationalReadinessMeter from './OperationalReadinessMeter';
 import {
   getCommsDefaults,
   getObjectiveTemplate,
   getCommandStaffTemplate,
-  getMapMarkerTemplate,
-  getSquadDefaults
+  getMapMarkerTemplate
 } from './operationPlanDefaults';
 
 const STEPS = [

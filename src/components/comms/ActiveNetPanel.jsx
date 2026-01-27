@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, Radio, Shield, Activity, Users, RadioReceiver, ScrollText, Lock, Ear, AlertTriangle, Phone, MicOff, Volume2 } from "lucide-react";
+import { Mic, Radio, Shield, Users, ScrollText, Ear, MicOff, Volume2 } from "lucide-react";
 import NetStatusBar from "@/components/comms/NetStatusBar";
 import { motion, AnimatePresence } from "framer-motion";
 import ConnectionTelemetryStrip from "./ConnectionTelemetryStrip";

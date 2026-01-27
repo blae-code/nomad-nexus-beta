@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BriefBasicsStep from '@/components/operations/briefSteps/BriefBasicsStep';
 import BriefObjectivesStep from '@/components/operations/briefSteps/BriefObjectivesStep';

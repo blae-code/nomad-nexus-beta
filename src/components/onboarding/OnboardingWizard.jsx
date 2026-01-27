@@ -7,8 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
   Shield, 
-  Zap, 
-  Radio, 
   CheckCircle2, 
   ArrowRight, 
   Sparkles,
@@ -18,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import PostOnboardingGuide from '@/components/onboarding/PostOnboardingGuide';
 
 const steps = [
   { id: 'welcome', title: 'Welcome', icon: Shield },
@@ -35,6 +34,8 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
   const [aiConsent, setAiConsent] = useState(false);
   const [useHistory, setUseHistory] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [hasSeenGuide, setHasSeenGuide] = useState(false);
 
   const step = steps[currentStep];
 
@@ -95,12 +96,28 @@ export default function OnboardingWizard({ grantedRank = 'VAGRANT', grantedRoles
   };
 
   const handleFinish = () => {
-    toast.success('Welcome to Nomad Nexus!');
-    setTimeout(() => {
-      onComplete?.();
-      window.location.href = '/hub';
-    }, 1000);
+    if (!hasSeenGuide) {
+      setShowGuide(true);
+      setHasSeenGuide(true);
+    } else {
+      toast.success('Welcome to Nomad Nexus!');
+      setTimeout(() => {
+        onComplete?.();
+        window.location.href = '/hub';
+      }, 1000);
+    }
   };
+
+  // Show guide when user finishes wizard
+  if (showGuide) {
+    return <PostOnboardingGuide onClose={() => {
+      toast.success('Welcome to Nomad Nexus!');
+      setTimeout(() => {
+        onComplete?.();
+        window.location.href = '/hub';
+      }, 800);
+    }} />;
+  }
 
   return (
     <div className="h-screen w-screen bg-[#09090b] text-zinc-200 flex items-center justify-center overflow-hidden relative">

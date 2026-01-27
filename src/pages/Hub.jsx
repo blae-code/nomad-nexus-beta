@@ -1,25 +1,21 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPageUrl } from "@/utils";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDashboardData, useCurrentUser } from '@/components/hooks/useAppData';
 import { useRealtimeSubscriptions } from '@/components/hooks/useRealtimeSubscriptions';
 import { useVisibilityPause } from '@/components/hooks/useVisibilityPause';
-import { Radio, Calendar, Shield, Coins, AlertCircle, Zap, Users, Target, TrendingUp, Star, Clock, Activity, Rocket, Award, Swords, ChevronRight, Flame, CircleDot, Hash, BookOpen, Lightbulb, Video, HelpCircle } from "lucide-react";
+import HubOnboardingOverlay from '@/components/onboarding/HubOnboardingOverlay';
+import { Radio, AlertCircle, Target, Clock, Activity, ChevronRight, Flame, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
-import { getRankColorClass } from '@/components/utils/rankUtils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import PersonalLogPanel from "@/components/dashboard/PersonalLogPanel";
 import HubMetricsPanel from "@/components/dashboard/HubMetricsPanel";
 import PersonalStatusPanel from "@/components/dashboard/PersonalStatusPanel";
-import HubPersonalStats from "@/components/dashboard/HubPersonalStats";
 import HubTabContent from "@/components/dashboard/HubTabContent";
 import HubAnalyticsPanel from "@/components/dashboard/HubAnalyticsPanel";
 import MetricsChartPanel from "@/components/dashboard/MetricsChartPanel";
-import IncidentHeatmap from "@/components/incidents/IncidentHeatmap";
-import ReportExporter from "@/components/dashboard/ReportExporter";
 import AnnouncementsTicker from "@/components/dashboard/AnnouncementsTicker";
+import { isDemoMode } from '@/lib/demo-mode';
 
 
 const rankHierarchy = ['Vagrant', 'Scout', 'Voyager', 'Founder', 'Pioneer'];
@@ -29,15 +25,25 @@ export default function HubPage() {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [pulseCollapsed, setPulseCollapsed] = useState(false);
   const [trainingCollapsed, setTrainingCollapsed] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [watchdogTriggered, setWatchdogTriggered] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const user = useCurrentUser();
   const { data, isLoading } = useDashboardData(user);
   const isTabVisible = useVisibilityPause();
-  
-  // Memoize navigation handlers
-  const handleNavigateToEvents = useCallback(() => navigate(createPageUrl('Events')), [navigate]);
-  const handleTabChange = useCallback((tab) => setActiveTab(tab), []);
+
+  // Check if user wants to see onboarding
+  useEffect(() => {
+    if (searchParams.get('showOnboarding') === 'true') {
+      setShowOnboarding(true);
+      // Clean up URL
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', createPageUrl('Hub'));
+      }
+    }
+  }, [searchParams]);
   
   useRealtimeSubscriptions({
     enabled: !!user && isTabVisible,
@@ -63,11 +69,8 @@ export default function HubPage() {
   const recentLogs = data?.recentLogs || [];
 
   // Determine which features to show based on rank
-  const showAdminFeatures = user?.role === 'admin';
-  const canCreateEvents = userRankIndex >= rankHierarchy.indexOf('Voyager');
   const canManageFleet = userRankIndex >= rankHierarchy.indexOf('Scout');
   const canAccessTreasury = userRankIndex >= rankHierarchy.indexOf('Scout');
-  const canAccessIntelligence = userRankIndex >= rankHierarchy.indexOf('Scout');
 
   // Calculate org engagement metrics
   const orgMetrics = useMemo(() => {
@@ -88,17 +91,57 @@ export default function HubPage() {
 
   // Watchdog: force recovery after data stall (always at top level)
   useEffect(() => {
-    if (!isLoading) return;
+    if (!user || !isLoading || isDemoMode()) {
+      setWatchdogTriggered(false);
+      return;
+    }
 
     const watchdog = setTimeout(() => {
-      console.error('[HUB] Loading watchdog triggered - data fetch stalled');
-      window.location.href = '/access-gate';
+      console.warn('[HUB] Loading watchdog triggered - data fetch stalled');
+      setWatchdogTriggered(true);
     }, 10000);
     return () => clearTimeout(watchdog);
-  }, [isLoading]);
+  }, [isLoading, user]);
 
   // Loading state
   if (isLoading) {
+    if (watchdogTriggered) {
+      return (
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="text-center space-y-3 max-w-sm">
+            <div className="text-sm font-mono text-zinc-300 uppercase tracking-wider">Data Stall Detected</div>
+            <p className="text-xs text-zinc-500">
+              Operational data is taking longer than expected. Retry the load or return to the access gate.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setWatchdogTriggered(false);
+                  if (typeof window !== 'undefined') {
+                    window.location.reload();
+                  }
+                }}
+                className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-white bg-[#ea580c] hover:bg-[#ea580c]/90"
+              >
+                Retry Load
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.href = '/access-gate';
+                  }
+                }}
+                className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-300 border border-zinc-700 hover:border-[#ea580c]/50"
+              >
+                Access Gate
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center space-y-2">
@@ -111,7 +154,12 @@ export default function HubPage() {
   }
 
     return (
-    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
+    <>
+      {/* Onboarding Overlay */}
+      {showOnboarding && (
+        <HubOnboardingOverlay onComplete={() => setShowOnboarding(false)} />
+      )}
+
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="p-2.5 space-y-2 flex-shrink-0 overflow-y-auto max-h-fit">
           {/* Live Operational Pulse - Compact */}
@@ -291,14 +339,14 @@ export default function HubPage() {
                >
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border-t border-zinc-800/50">
                    {[
-                     { icon: Lightbulb, label: 'Getting Started', desc: 'Core concepts & setup' },
-                     { icon: Radio, label: 'Voice Comms', desc: 'Net & channel guide' },
-                     { icon: Calendar, label: 'Events & Ops', desc: 'Planning & execution' },
-                     { icon: Users, label: 'Squad Management', desc: 'Teams & roles' }
+                     { icon: Lightbulb, label: 'Getting Started', desc: 'Core concepts & setup', route: 'Academy' },
+                     { icon: Radio, label: 'Voice Comms', desc: 'Net & channel guide', route: 'Academy' },
+                     { icon: Calendar, label: 'Events & Ops', desc: 'Planning & execution', route: 'Academy' },
+                     { icon: Users, label: 'Squad Management', desc: 'Teams & roles', route: 'Academy' }
                    ].map((item, i) => {
                      const ItemIcon = item.icon;
                      return (
-                       <div key={i} className="bg-zinc-900/50 border border-zinc-800 p-2.5 hover:border-blue-500/30 hover:bg-zinc-900 transition-all cursor-pointer group">
+                       <button key={i} onClick={() => navigate(createPageUrl(item.route))} className="bg-zinc-900/50 border border-zinc-800 p-2.5 hover:border-blue-500/30 hover:bg-zinc-900 transition-all cursor-pointer group text-left">
                          <div className="flex items-start gap-2">
                            <ItemIcon className="w-4 h-4 text-blue-500 shrink-0 mt-0.5 group-hover:text-blue-400 transition-colors" />
                            <div className="min-w-0 flex-1">
@@ -306,7 +354,7 @@ export default function HubPage() {
                              <div className="text-[7px] text-zinc-500 mt-0.5">{item.desc}</div>
                            </div>
                          </div>
-                       </div>
+                       </button>
                      );
                    })}
                  </div>
@@ -389,6 +437,6 @@ export default function HubPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

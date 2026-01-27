@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { User, Calendar, Crosshair, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { cn } from "@/lib/utils";
 import { createPageUrl } from "@/utils";
 
 export default function PersonalActivityWidget() {

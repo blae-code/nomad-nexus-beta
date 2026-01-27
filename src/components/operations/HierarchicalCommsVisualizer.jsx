@@ -1,12 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Users, MessageSquare, Radio, Zap, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { MessageSquare, Radio } from 'lucide-react';
 
 /**
  * Hierarchical Comms Visualizer

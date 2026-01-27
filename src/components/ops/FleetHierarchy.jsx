@@ -4,8 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import StatusChip, { STATUS_CONFIG } from "@/components/status/StatusChip";
-import { Users, AlertTriangle, Shield, ChevronRight, Star } from "lucide-react";
+import StatusChip from "@/components/status/StatusChip";
+import { AlertTriangle, Shield, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function FleetHierarchy({ eventId }) {

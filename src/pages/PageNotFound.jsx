@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import { ChevronRight, Home } from 'lucide-react';
 
@@ -47,19 +47,13 @@ function rankClosestMatches(attemptedPath, candidates, limit = 5) {
 }
 
 export default function PageNotFound() {
-  const routeAliases = {};
-  const routeOverrides = {};
+  const [attemptedPath, setAttemptedPath] = useState('');
+  const [closestMatches, setClosestMatches] = useState([]);
 
   const candidatePaths = useMemo(() => {
     const paths = new Set();
 
-    // Add alias paths
-    Object.values(routeAliases).forEach((path) => paths.add(path));
-
-    // Add override paths
-    Object.values(routeOverrides).forEach((path) => paths.add(path));
-
-    // Add common page paths via createPageUrl
+    // Add real navigable pages only
     const commonPages = [
       'hub',
       'events',
@@ -81,15 +75,20 @@ export default function PageNotFound() {
       }
     });
 
-    // Always include /login
+    // Always include /login (alias for access-gate)
     paths.add('/login');
     paths.add('/');
 
     return Array.from(paths);
-  }, [routeAliases, routeOverrides]);
+  }, []);
 
-  const attemptedPath = window.location.pathname;
-  const closestMatches = rankClosestMatches(attemptedPath, candidatePaths);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      setAttemptedPath(currentPath);
+      setClosestMatches(rankClosestMatches(currentPath, candidatePaths));
+    }
+  }, [candidatePaths]);
 
   return (
     <div className="h-screen w-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4 overflow-hidden">

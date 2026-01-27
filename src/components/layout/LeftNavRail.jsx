@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Radio, Settings, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import pagesConfig from '@/pages.config';
-import { base44 } from '@/api/base44Client';
 import NavItem from '@/components/layout/NavItem';
 import { SURFACE_BG_CLASS, SURFACE_BORDER_CLASS } from '@/components/layout/headerStyles';
 
