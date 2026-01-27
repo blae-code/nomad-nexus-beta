@@ -1,12 +1,11 @@
 import { useState, useCallback } from 'react';
-import { isDemoMode } from '@/lib/demo-mode';
 
 const useVoiceRoom = (roomName, userIdentity) => {
   const [status, setStatus] = useState('disconnected');
   const [error, setError] = useState(null);
 
   const isLiveKitConfigured = import.meta.env.VITE_LIVEKIT_URL && import.meta.env.VITE_LIVEKIT_API_KEY;
-  const canConnect = isLiveKitConfigured && !isDemoMode();
+  const canConnect = isLiveKitConfigured && !false;
 
   const connect = useCallback(async () => {
     if (!canConnect) {
@@ -34,3 +33,4 @@ const useVoiceRoom = (roomName, userIdentity) => {
 };
 
 export { useVoiceRoom };
+

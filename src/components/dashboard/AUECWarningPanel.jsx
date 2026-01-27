@@ -2,7 +2,6 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { AlertTriangle } from "lucide-react";
-import { isDemoMode } from "@/lib/demo-mode";
 
 export default function AUECWarningPanel() {
   const { data: coffers = [] } = useQuery({
@@ -42,7 +41,7 @@ export default function AUECWarningPanel() {
               <div className="text-amber-400/70 text-xs font-mono">
                  RECOMMEND CONTRIBUTION
               </div>
-              {isDemoMode() && (
+              {false && (
                 <div className="mt-1 text-[9px] text-amber-300/70 font-mono uppercase">
                   Demo Placeholder Value
                 </div>
@@ -58,3 +57,4 @@ export default function AUECWarningPanel() {
 
   return null;
 }
+

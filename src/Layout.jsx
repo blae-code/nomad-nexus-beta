@@ -10,11 +10,10 @@ import CommsDockShell from "@/components/comms/CommsDockShell";
 import RadialFeedbackMenu from "@/components/feedback/RadialFeedbackMenu";
 import { createPageUrl } from "@/utils";
 import { theme } from "@/components/theme";
-import { isDemoMode } from "@/lib/demo-mode";
 
 // DEMO: stub Base44 platform endpoints that are currently 500'ing.
 // IMPORTANT: must run at module load (not inside useEffect) to catch early requests.
-const __DEMO_STUB_B44__ = typeof window !== "undefined" && isDemoMode();
+const __DEMO_STUB_B44__ = typeof window !== "undefined" && false;
 
 function __safeDefine(obj, key, value) {
   try {
@@ -317,7 +316,7 @@ export default function Layout({ children, currentPageName }) {
     <ErrorBoundary>
       {/* TODO: Move meta/link/style tags to index.html or head manager after demo */}
       <div className="h-screen bg-background text-foreground font-sans selection:bg-accent/30 flex flex-col overflow-hidden">
-        {isDemoMode() && (
+        {false && (
           <div className="w-full bg-amber-900/60 text-amber-100 text-[10px] font-mono uppercase tracking-widest px-3 py-1 border-b border-amber-700/50">
             Demo Mode • Local data + simulated services
           </div>
@@ -355,3 +354,4 @@ export default function Layout({ children, currentPageName }) {
     </ErrorBoundary>
   );
 }
+
