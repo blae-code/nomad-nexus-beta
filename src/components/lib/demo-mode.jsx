@@ -2,7 +2,7 @@
  * Demo Mode Detection
  * Returns true if running in local dev or demo mode
  */
-export function isDemoMode() {
+const isDemoMode = () => {
   if (typeof window === 'undefined') return false;
   
   return (
@@ -10,4 +10,6 @@ export function isDemoMode() {
     window.location.hostname.includes('127.0.0.1') ||
     window.location.search.includes('demo=true')
   );
-}
+};
+
+export { isDemoMode };
