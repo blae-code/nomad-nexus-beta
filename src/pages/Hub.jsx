@@ -89,7 +89,6 @@ export default function HubPage() {
 
   // Watchdog: force recovery after data stall (always at top level)
   useEffect(() => {
-    if (!user || !isLoading || false) {
     if (!user || !isLoading) {
       setWatchdogTriggered(false);
       return;
@@ -438,7 +437,4 @@ export default function HubPage() {
       </div>
     </>
   );
-}
-
-
 }
