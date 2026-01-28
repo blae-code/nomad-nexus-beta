@@ -132,7 +132,7 @@ const createActionRegistry = (user, callbacks) => {
 /**
  * CommandPaletteProvider — Wraps app, provides context
  */
-export function CommandPaletteProvider({ children, onNavigate, onToggleDock, onOpenAccessRequest, onTriggerTestAlert }) {
+export function CommandPaletteProvider({ children, onNavigate, onToggleSidePanel, onToggleContextPanel, onOpenAccessRequest, onTriggerTestAlert }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const { user } = useCurrentUser();
@@ -143,8 +143,12 @@ export function CommandPaletteProvider({ children, onNavigate, onToggleDock, onO
         onNavigate?.(page);
         setIsOpen(false);
       },
-      toggleCommsDock: () => {
-        onToggleDock?.();
+      toggleSidePanel: () => {
+        onToggleSidePanel?.();
+        setIsOpen(false);
+      },
+      toggleContextPanel: () => {
+        onToggleContextPanel?.();
         setIsOpen(false);
       },
       openAccessRequest: () => {
@@ -156,7 +160,7 @@ export function CommandPaletteProvider({ children, onNavigate, onToggleDock, onO
         setIsOpen(false);
       },
     }),
-    [onNavigate, onToggleDock, onOpenAccessRequest, onTriggerTestAlert]
+    [onNavigate, onToggleSidePanel, onToggleContextPanel, onOpenAccessRequest, onTriggerTestAlert]
   );
 
   // Build & filter action registry
