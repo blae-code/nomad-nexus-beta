@@ -18,7 +18,9 @@ export default function Treasury() {
     init();
   }, []);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return <div className="p-8 text-center text-orange-500">LOADING...</div>;
+  }
 
   const calculateBalance = (cofferId) => {
     return transactions
