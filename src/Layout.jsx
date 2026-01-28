@@ -27,16 +27,6 @@ const cn = (...classes) => {
 };
 
 export default function Layout({ children, currentPageName }) {
-  const { loaded, prefs, toggleSidePanel, toggleCommsDock } = useLayoutPreferences();
-  const [dockOpen, setDockOpen] = useState(false);
-
-  // Sync localStorage state with UI state
-  useEffect(() => {
-    if (loaded) {
-      setDockOpen(prefs.commsDockOpen);
-    }
-  }, [loaded, prefs.commsDockOpen]);
-
   if (!children) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -45,23 +35,11 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  const handleNavigate = (page) => {
-    window.location.href = createPageUrl(page);
-  };
-
-  const handleToggleDock = () => {
-    const newState = !dockOpen;
-    setDockOpen(newState);
-    toggleCommsDock();
-  };
-
-  const handleOpenAccessRequest = () => {
-    // TODO: wire to SidePanel modal or dedicated page
-  };
-
   return (
     <NotificationProvider>
-      <LayoutContent currentPageName={currentPageName} children={children} />
+      <ShellUIProvider>
+        <LayoutContent currentPageName={currentPageName} children={children} />
+      </ShellUIProvider>
     </NotificationProvider>
   );
 }
