@@ -12,7 +12,14 @@ import { X } from 'lucide-react';
  * Handles: Ctrl/⌘+K to open, Esc to close, arrow keys, Enter
  */
 export default function CommandPaletteUI() {
-  const { isOpen, closePalette, search, setSearch, groupedActions } = useCommandPalette();
+  const context = useCommandPalette();
+  
+  // Fallback if hook not in provider scope
+  if (!context) {
+    return null;
+  }
+
+  const { isOpen, closePalette, search, setSearch, groupedActions } = context;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
