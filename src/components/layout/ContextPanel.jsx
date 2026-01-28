@@ -3,6 +3,7 @@ import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
 import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import { useAudioDevices } from '@/components/voice/hooks/useAudioDevices';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
 import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock } from 'lucide-react';
