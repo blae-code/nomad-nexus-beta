@@ -61,9 +61,9 @@ export default function Treasury() {
                 </div>
               );
             })}
-          </div>
+            </div>
 
-          <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
+            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
             <h2 className="text-xl font-bold text-white uppercase mb-4">Recent Transactions</h2>
             
             <div className="space-y-2">
