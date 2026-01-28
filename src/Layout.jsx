@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import Header from '@/components/layout/Header';
+import SidePanel from '@/components/layout/SidePanel';
 import CommsDock from '@/components/layout/CommsDock';
 import PermissionGuard from '@/components/PermissionGuard';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
- * Provides: Header, SidePanel (future), Main content area, CommsDock
+ * Provides: Header, SidePanel (left nav with gating), Main content area, CommsDock (right)
  * No horizontal scrolling, responsive, stable under resize.
  */
 const cn = (...classes) => {
@@ -32,8 +33,11 @@ export default function Layout({ children, currentPageName }) {
       {/* Header — top navigation */}
       <Header onToggleDock={() => setDockOpen(!dockOpen)} />
       
-      {/* Main layout grid: sidebar (future) + content + dock */}
+      {/* Main layout grid: sidebar + content + dock */}
       <div className="flex flex-1 overflow-hidden">
+        {/* SidePanel — left navigation with gating */}
+        <SidePanel currentPageName={currentPageName} />
+
         {/* Main content area — route outlet */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <PermissionGuard>
