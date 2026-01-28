@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { useCommandPalette } from '@/components/providers/CommandPaletteContext';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
@@ -12,6 +12,18 @@ import { Radio, Search } from 'lucide-react';
 export default function Header() {
   const { user, loading } = useCurrentUser();
   const { openPalette } = useCommandPalette();
+
+  // Ctrl/⌘+K global handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        openPalette();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openPalette]);
 
   if (loading || !user) {
     return (

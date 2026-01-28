@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import SidePanel from '@/components/layout/SidePanel';
 import CommsDock from '@/components/layout/CommsDock';
+import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
+import { CommandPaletteProvider } from '@/components/providers/CommandPaletteContext';
 import PermissionGuard from '@/components/PermissionGuard';
 
 /**
@@ -28,27 +31,46 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
-      {/* Header — top navigation */}
-      <Header onToggleDock={() => setDockOpen(!dockOpen)} />
-      
-      {/* Main layout grid: sidebar + content + dock */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* SidePanel — left navigation with gating */}
-        <SidePanel currentPageName={currentPageName} />
+  const handleNavigate = (page) => {
+    window.location.href = createPageUrl(page);
+  };
 
-        {/* Main content area — route outlet */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <PermissionGuard>
-            {children}
-          </PermissionGuard>
-        </main>
-        
-        {/* CommsDock — right panel, collapsible */}
-        <CommsDock isOpen={dockOpen} onClose={() => setDockOpen(false)} />
+  const handleToggleDock = () => {
+    setDockOpen(!dockOpen);
+  };
+
+  const handleOpenAccessRequest = () => {
+    // TODO: wire to SidePanel modal or dedicated page
+  };
+
+  return (
+    <CommandPaletteProvider
+      onNavigate={handleNavigate}
+      onToggleDock={handleToggleDock}
+      onOpenAccessRequest={handleOpenAccessRequest}
+    >
+      <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
+        {/* Header — top navigation */}
+        <Header />
+
+        {/* Main layout grid: sidebar + content + dock */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* SidePanel — left navigation with gating */}
+          <SidePanel currentPageName={currentPageName} />
+
+          {/* Main content area — route outlet */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <PermissionGuard>{children}</PermissionGuard>
+          </main>
+
+          {/* CommsDock — right panel, collapsible */}
+          <CommsDock isOpen={dockOpen} onClose={() => setDockOpen(false)} />
+        </div>
+
+        {/* Command Palette Modal */}
+        <CommandPaletteUI />
       </div>
-    </div>
+    </CommandPaletteProvider>
   );
 }
 
