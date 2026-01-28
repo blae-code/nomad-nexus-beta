@@ -1,14 +1,80 @@
-export default {
-  routes: [
-    { path: '/', component: () => import('./pages/Hub.jsx') },
-    { path: '/access-gate', component: () => import('./pages/AccessGate.jsx') },
-    { path: '/events', component: () => import('./pages/Events.jsx') },
-    { path: '/comms-console', component: () => import('./pages/CommsConsole.jsx') },
-    { path: '/user-directory', component: () => import('./pages/UserDirectory.jsx') },
-    { path: '/universe-map', component: () => import('./pages/UniverseMap.jsx') },
-    { path: '/fleet-manager', component: () => import('./pages/FleetManager.jsx') },
-    { path: '/treasury', component: () => import('./pages/Treasury.jsx') },
-    { path: '/settings', component: () => import('./pages/Settings.jsx') },
-  ],
-  notFound: () => import('./pages/PageNotFound.jsx')
+/**
+ * pages.config.js - Page routing configuration
+ * 
+ * This file is AUTO-GENERATED. Do not add imports or modify PAGES manually.
+ * Pages are auto-registered when you create files in the ./pages/ folder.
+ * 
+ * THE ONLY EDITABLE VALUE: mainPage
+ * This controls which page is the landing page (shown when users visit the app).
+ * 
+ * Example file structure:
+ * 
+ *   import HomePage from './pages/HomePage';
+ *   import Dashboard from './pages/Dashboard';
+ *   import Settings from './pages/Settings';
+ *   
+ *   export const PAGES = {
+ *       "HomePage": HomePage,
+ *       "Dashboard": Dashboard,
+ *       "Settings": Settings,
+ *   }
+ *   
+ *   export const pagesConfig = {
+ *       mainPage: "HomePage",
+ *       Pages: PAGES,
+ *   };
+ * 
+ * Example with Layout (wraps all pages):
+ *
+ *   import Home from './pages/Home';
+ *   import Settings from './pages/Settings';
+ *   import __Layout from './Layout.jsx';
+ *
+ *   export const PAGES = {
+ *       "Home": Home,
+ *       "Settings": Settings,
+ *   }
+ *
+ *   export const pagesConfig = {
+ *       mainPage: "Home",
+ *       Pages: PAGES,
+ *       Layout: __Layout,
+ *   };
+ *
+ * To change the main page from HomePage to Dashboard, use find_replace:
+ *   Old: mainPage: "HomePage",
+ *   New: mainPage: "Dashboard",
+ *
+ * The mainPage value must match a key in the PAGES object exactly.
+ */
+import AccessGate from './pages/AccessGate';
+import CommsConsole from './pages/CommsConsole';
+import Events from './pages/Events';
+import FleetManager from './pages/FleetManager';
+import Hub from './pages/Hub';
+import Settings from './pages/Settings';
+import Treasury from './pages/Treasury';
+import UniverseMap from './pages/UniverseMap';
+import UserDirectory from './pages/UserDirectory';
+import PageNotFound from './pages/PageNotFound';
+import __Layout from './Layout.jsx';
+
+
+export const PAGES = {
+    "AccessGate": AccessGate,
+    "CommsConsole": CommsConsole,
+    "Events": Events,
+    "FleetManager": FleetManager,
+    "Hub": Hub,
+    "Settings": Settings,
+    "Treasury": Treasury,
+    "UniverseMap": UniverseMap,
+    "UserDirectory": UserDirectory,
+    "PageNotFound": PageNotFound,
+}
+
+export const pagesConfig = {
+    mainPage: "AccessGate",
+    Pages: PAGES,
+    Layout: __Layout,
 };
