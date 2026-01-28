@@ -30,7 +30,7 @@ export default function Header() {
   }
 
   const { openPalette } = paletteContext;
-  const { toggleSidePanel, toggleContextPanel } = shellUI;
+  const { toggleSidePanel, toggleContextPanel, toggleCommsDock } = shellUI;
 
   // Ctrl/⌘+K global handler
   useEffect(() => {
@@ -48,6 +48,7 @@ export default function Header() {
   const readiness = useReadiness();
   const latency = useLatency();
   const { onlineCount } = usePresenceRoster();
+  const { unreadByTab } = useUnreadCounts(user?.id);
 
   if (loading || !user) {
     return (
