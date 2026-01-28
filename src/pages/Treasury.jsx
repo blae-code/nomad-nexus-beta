@@ -98,9 +98,10 @@ export default function Treasury() {
                   </div>
                 );
               })}
-              </div>
-              </div>
-              </div>
-              </AuthGuard>
-              );
-              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </AuthGuard>
+  );
+}
