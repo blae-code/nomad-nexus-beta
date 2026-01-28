@@ -46,6 +46,9 @@ export default function Layout({ children, currentPageName }) {
 }
 
 function LayoutContent({ currentPageName, children }) {
+  // Start presence heartbeat (non-blocking background task)
+  usePresenceHeartbeat();
+
   const { isSidePanelOpen, isContextPanelOpen, toggleSidePanel, toggleContextPanel } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
 
