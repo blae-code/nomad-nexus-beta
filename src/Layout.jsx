@@ -47,9 +47,7 @@ export default function Layout({ children, currentPageName }) {
   const handleToggleDock = () => {
     const newState = !dockOpen;
     setDockOpen(newState);
-    // Update localStorage
-    updatePrefs = require('@/components/hooks/useLayoutPreferences').useLayoutPreferences;
-    // Actually, let's use the hook result directly
+    toggleCommsDock();
   };
 
   const handleOpenAccessRequest = () => {
