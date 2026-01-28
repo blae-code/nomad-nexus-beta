@@ -109,8 +109,8 @@ export default function CommsConsole() {
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>
-            </div>
+                </div>
+                </div>
       </div>
     </div>
   );
