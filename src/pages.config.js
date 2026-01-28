@@ -53,11 +53,11 @@ import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
 import PageNotFound from './pages/PageNotFound';
+import Recon from './pages/Recon';
 import Settings from './pages/Settings';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import Recon from './pages/Recon';
 import __Layout from './Layout.jsx';
 
 
@@ -68,11 +68,11 @@ export const PAGES = {
     "FleetManager": FleetManager,
     "Hub": Hub,
     "PageNotFound": PageNotFound,
+    "Recon": Recon,
     "Settings": Settings,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "Recon": Recon,
 }
 
 export const pagesConfig = {
