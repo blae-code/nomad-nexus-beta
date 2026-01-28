@@ -43,7 +43,7 @@ export default function FleetManager() {
         </Button>
       </div>
 
-          <div className="grid gap-4">
+      <div className="grid gap-4">
             {assets.length === 0 ? (
               <EmptyState 
                 icon={Box}
