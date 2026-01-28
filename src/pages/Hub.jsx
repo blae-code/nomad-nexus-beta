@@ -29,6 +29,7 @@ export default function Hub() {
       </div>
     );
   }
+
   const navItems = [
     { name: 'Access Gate', path: 'AccessGate', icon: Shield, description: 'Member verification and onboarding' },
     { name: 'Events', path: 'Events', icon: Calendar, description: 'Mission planning and operations' },
