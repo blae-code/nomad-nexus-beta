@@ -1,4 +1,3 @@
-
 export default {
   routes: [
     { path: '/', component: () => import('./pages/Hub.jsx') },
