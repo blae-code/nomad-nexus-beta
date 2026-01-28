@@ -10,6 +10,22 @@ export default function AccessGate() {
   const [callsign, setCallsign] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (isAuth) {
+          window.location.href = createPageUrl('Hub');
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+        setError(err.message);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const handleRedeem = async () => {
     if (!accessCode.trim() || !callsign.trim()) {
