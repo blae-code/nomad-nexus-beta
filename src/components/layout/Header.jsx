@@ -103,17 +103,17 @@ export default function Header() {
 
         {/* Right: Telemetry + Controls + Command Palette */}
         <div className="flex items-center gap-3 ml-auto">
-          {/* Telemetry Strip (placeholder) */}
+          {/* Telemetry Strip (live data) */}
           <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r border-zinc-700 pr-4">
             <div className="flex items-center gap-1">
-              <Radio className="w-3 h-3 text-green-500" />
-              <span>Comms OK</span>
+              <Radio className={`w-3 h-3 ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`} />
+              <span>Comms: {commsStatus}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span>Ops: 2</span>
+              <span>Online: {onlineCount}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span>Latency: 24ms</span>
+            <div className="flex items-center gap-1" title={latency.lastMeasuredAt ? `Last: ${new Date(latency.lastMeasuredAt).toLocaleTimeString()}` : 'Measuring...'}>
+              <span>Latency: {latency.latencyMs}ms</span>
             </div>
           </div>
 
