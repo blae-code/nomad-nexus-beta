@@ -26,6 +26,22 @@ const CommandPaletteContext = createContext(null);
  */
 const createActionRegistry = (user, callbacks) => {
   return [
+    // Toggle: SidePanel
+    {
+      id: 'toggle:sidepanel',
+      label: 'Toggle Sidebar',
+      category: 'Toggle',
+      description: 'Show/hide left navigation panel',
+      onExecute: () => callbacks.toggleSidePanel?.(),
+    },
+    // Toggle: ContextPanel
+    {
+      id: 'toggle:contextpanel',
+      label: 'Toggle Systems Panel',
+      category: 'Toggle',
+      description: 'Show/hide right systems panel',
+      onExecute: () => callbacks.toggleContextPanel?.(),
+    },
     // Navigate: Dashboard
     {
       id: 'nav:hub',
