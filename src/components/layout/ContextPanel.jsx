@@ -19,6 +19,11 @@ export default function ContextPanel({ isOpen, onClose }) {
     diagnostics: true,
   });
 
+  // Live telemetry data
+  const { onlineUsers, onlineCount, loading } = usePresenceRoster();
+  const readiness = useReadiness();
+  const latency = useLatency();
+
   const toggleSection = (key) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
