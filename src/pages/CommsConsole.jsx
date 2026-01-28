@@ -48,15 +48,11 @@ export default function CommsConsole() {
   }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%)] bg-[length:40px_40px] opacity-30" />
-        
-        <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-          <PageHeader 
-            title="Comms Console" 
-            description="Communication channels"
-          />
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-black uppercase tracking-wider text-white">Comms Console</h1>
+        <p className="text-zinc-400 text-sm">Communication channels</p>
+      </div>
 
           <div className="grid grid-cols-4 gap-4 h-[calc(100vh-200px)]">
             <div className="col-span-1 bg-zinc-900/50 border-2 border-zinc-800 p-4 overflow-y-auto">
