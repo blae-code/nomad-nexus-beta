@@ -93,8 +93,7 @@ export default function Treasury() {
                   </div>
                 );
               })}
-            </div>
-      </div>
-    </div>
+              </div>
+              </div>
   );
 }
