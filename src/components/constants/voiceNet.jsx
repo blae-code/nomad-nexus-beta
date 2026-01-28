@@ -1,8 +1,12 @@
+
 /**
  * Voice Net Constants & Defaults
  */
 
 import { VOICE_NET_TYPE, createVoiceNet } from '@/components/models/voiceNet';
+
+// Re-export constants from models
+export { VOICE_NET_TYPE } from '@/components/models/voiceNet';
 
 // Default voice nets (seeded on app init)
 export const DEFAULT_VOICE_NETS = [
