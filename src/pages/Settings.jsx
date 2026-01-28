@@ -53,56 +53,57 @@ export default function Settings() {
       </div>
 
       <div className="space-y-6">
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Profile
-              </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-zinc-400 uppercase mb-2 block">Email</label>
-                  <Input value={user?.email || ''} disabled />
-                </div>
-                
-                {profile && (
-                  <>
-                    <div>
-                      <label className="text-sm text-zinc-400 uppercase mb-2 block">Callsign</label>
-                      <Input value={profile.callsign || ''} disabled />
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm text-zinc-400 uppercase mb-2 block">Rank</label>
-                      <Input value={profile.rank || ''} disabled />
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm text-zinc-400 uppercase mb-2 block">Bio</label>
-                      <textarea
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        className="w-full h-24 rounded-lg border-2 border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-                        placeholder="Tell us about yourself..."
-                      />
-                    </div>
-                    
-                    <Button onClick={handleSave} disabled={saving}>
-                      <Save className="w-4 h-4 mr-2" />
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </>
-                )}
-              </div>
+        <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
+          <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Profile
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-zinc-400 uppercase mb-2 block">Email</label>
+              <Input value={user?.email || ''} disabled />
             </div>
 
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4">Account Actions</h2>
-              <Button variant="destructive" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-            </div>
-            );
-            }
+            {profile && (
+              <>
+                <div>
+                  <label className="text-sm text-zinc-400 uppercase mb-2 block">Callsign</label>
+                  <Input value={profile.callsign || ''} disabled />
+                </div>
+
+                <div>
+                  <label className="text-sm text-zinc-400 uppercase mb-2 block">Rank</label>
+                  <Input value={profile.rank || ''} disabled />
+                </div>
+
+                <div>
+                  <label className="text-sm text-zinc-400 uppercase mb-2 block">Bio</label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="w-full h-24 rounded-lg border-2 border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                    placeholder="Tell us about yourself..."
+                  />
+                </div>
+
+                <Button onClick={handleSave} disabled={saving}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
+          <h2 className="text-xl font-bold text-white uppercase mb-4">Account Actions</h2>
+          <Button variant="destructive" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+      </div>
+      </div>
+      );
+      }
