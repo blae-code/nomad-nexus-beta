@@ -7,27 +7,31 @@ import { createPageUrl } from '@/utils';
 
 export default function AccessGate() {
   const [accessCode, setAccessCode] = useState('');
+  const [callsign, setCallsign] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const handleRedeem = async () => {
-    if (!accessCode.trim()) return;
+    if (!accessCode.trim() || !callsign.trim()) {
+      setMessage('Please enter both access code and callsign');
+      return;
+    }
     
     setLoading(true);
     setMessage('');
     
     try {
-      const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode });
+      const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
       if (response.data.success) {
         setMessage('Access granted! Redirecting...');
         setTimeout(() => {
           window.location.href = createPageUrl('Hub');
         }, 1500);
       } else {
-        setMessage(response.data.message || 'Invalid access code');
+        setMessage(response.data.message || 'Invalid credentials');
       }
     } catch (error) {
-      setMessage('Error validating access code');
+      setMessage('Error validating credentials');
     } finally {
       setLoading(false);
     }
@@ -46,7 +50,7 @@ export default function AccessGate() {
           <h1 className="text-3xl font-black uppercase tracking-wider text-center text-white mb-2">
             Access Gate
           </h1>
-          <p className="text-center text-zinc-400 mb-8">Enter your access code</p>
+          <p className="text-center text-zinc-400 mb-8">Enter your credentials</p>
           
           <div className="space-y-4">
             <Input
@@ -55,12 +59,20 @@ export default function AccessGate() {
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
               className="text-center font-mono uppercase tracking-wider"
+            />
+            
+            <Input
+              type="text"
+              placeholder="CALLSIGN"
+              value={callsign}
+              onChange={(e) => setCallsign(e.target.value)}
+              className="text-center font-mono uppercase tracking-wider"
               onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
             />
             
             <Button
               onClick={handleRedeem}
-              disabled={loading || !accessCode.trim()}
+              disabled={loading || !accessCode.trim() || !callsign.trim()}
               className="w-full"
             >
               {loading ? 'VERIFYING...' : 'VERIFY ACCESS'}
