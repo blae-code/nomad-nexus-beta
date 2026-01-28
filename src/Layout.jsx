@@ -5,6 +5,8 @@ import SidePanel from '@/components/layout/SidePanel';
 import CommsDock from '@/components/layout/CommsDock';
 import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
 import { CommandPaletteProvider } from '@/components/providers/CommandPaletteContext';
+import { NotificationProvider } from '@/components/providers/NotificationContext';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { useLayoutPreferences } from '@/components/hooks/useLayoutPreferences';
 import PermissionGuard from '@/components/PermissionGuard';
 
@@ -55,14 +57,18 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <CommandPaletteProvider
-      onNavigate={handleNavigate}
-      onToggleDock={handleToggleDock}
-      onOpenAccessRequest={handleOpenAccessRequest}
-    >
-      <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
-        {/* Header — top navigation */}
-        <Header />
+    <NotificationProvider>
+      <CommandPaletteProvider
+        onNavigate={handleNavigate}
+        onToggleDock={handleToggleDock}
+        onOpenAccessRequest={handleOpenAccessRequest}
+      >
+        <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
+          {/* Notification Center */}
+          <NotificationCenter />
+
+          {/* Header — top navigation */}
+          <Header />
 
         {/* Main layout grid: sidebar + content + dock */}
         <div className="flex flex-1 overflow-hidden">
@@ -81,10 +87,11 @@ export default function Layout({ children, currentPageName }) {
           }} />}
         </div>
 
-        {/* Command Palette Modal */}
-        <CommandPaletteUI />
-      </div>
-    </CommandPaletteProvider>
+          {/* Command Palette Modal */}
+          <CommandPaletteUI />
+        </div>
+      </CommandPaletteProvider>
+    </NotificationProvider>
   );
 }
 
