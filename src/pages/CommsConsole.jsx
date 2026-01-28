@@ -111,9 +111,7 @@ export default function CommsConsole() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
       </div>
-    </AuthGuard>
+    </div>
   );
 }
