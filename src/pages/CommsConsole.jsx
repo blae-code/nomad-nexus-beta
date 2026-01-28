@@ -54,7 +54,7 @@ export default function CommsConsole() {
         <p className="text-zinc-400 text-sm">Communication channels</p>
       </div>
 
-          <div className="grid grid-cols-4 gap-4 h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-4 gap-4 h-[calc(100vh-200px)]">
             <div className="col-span-1 bg-zinc-900/50 border-2 border-zinc-800 p-4 overflow-y-auto">
               <h3 className="text-sm font-bold text-zinc-400 uppercase mb-4">Channels</h3>
               {channels.map((channel) => (
