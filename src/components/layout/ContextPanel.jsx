@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
 import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
+import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
-import { ChevronDown, X, Radio, Users, Zap, BarChart3 } from 'lucide-react';
+import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
+import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls
@@ -23,6 +27,8 @@ export default function ContextPanel({ isOpen, onClose }) {
   const { onlineUsers, onlineCount, loading } = usePresenceRoster();
   const readiness = useReadiness();
   const latency = useLatency();
+  const voiceNet = useVoiceNet();
+  const { user } = useCurrentUser();
 
   const toggleSection = (key) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -52,20 +58,57 @@ export default function ContextPanel({ isOpen, onClose }) {
         {/* Active Nets Section */}
         <SectionHeader
           icon={<Radio className="w-4 h-4" />}
-          label="Active Nets"
+          label={`Voice Nets (${voiceNet.participants.length})`}
           sectionKey="nets"
           expanded={expandedSections.nets}
           onToggle={toggleSection}
         />
         {expandedSections.nets && (
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
-            <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
-              <div className="font-mono text-zinc-300">COMMAND</div>
-              <div className="text-xs text-zinc-500 mt-1">Primary net</div>
-            </div>
-            <Button size="sm" variant="outline" className="w-full text-xs" disabled>
-              Join Net
-            </Button>
+            {voiceNet.activeNetId ? (
+              <>
+                <div className="p-2 bg-green-900/20 rounded border border-green-700/50">
+                  <div className="font-mono text-green-400">
+                    {voiceNet.voiceNets.find((n) => n.id === voiceNet.activeNetId)?.name || 'Unknown'}
+                  </div>
+                  <div className="text-xs text-green-500 mt-1">
+                    {voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'Connected' : 'Connecting...'}
+                    ({voiceNet.participants.length} participants)
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="w-full text-xs"
+                  onClick={() => voiceNet.leaveNet()}
+                >
+                  Leave Net
+                </Button>
+              </>
+            ) : (
+              voiceNet.voiceNets.map((net) => {
+                const canJoin = canJoinVoiceNet(user, net);
+                return (
+                  <div key={net.id} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
+                    <div className="flex items-center gap-2">
+                      <div className="font-mono text-zinc-300 flex-1">{net.name}</div>
+                      {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
+                    </div>
+                    <div className="text-xs text-zinc-500 mt-1">{net.description}</div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs mt-2"
+                      disabled={!canJoin}
+                      onClick={() => canJoin && voiceNet.joinNet(net.id, user)}
+                      title={!canJoin ? 'Insufficient membership' : ''}
+                    >
+                      {canJoin ? 'Join' : 'Locked'}
+                    </Button>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
 
@@ -80,20 +123,34 @@ export default function ContextPanel({ isOpen, onClose }) {
         {expandedSections.voice && (
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
             <div className="space-y-1">
-              <label className="block text-zinc-400 text-xs font-medium">Input</label>
-              <div className="bg-zinc-800/40 px-2 py-1 rounded border border-zinc-700/50 text-zinc-300 text-xs">
-                No input selected
-              </div>
+              <label className="block text-zinc-400 text-xs font-medium">Microphone</label>
+              <Button
+                size="sm"
+                variant={voiceNet.micEnabled ? 'outline' : 'destructive'}
+                className="w-full text-xs"
+                onClick={() => voiceNet.setMicEnabled(!voiceNet.micEnabled)}
+                disabled={!voiceNet.activeNetId}
+              >
+                {voiceNet.micEnabled ? 'Mic: On' : 'Mic: Off'}
+              </Button>
             </div>
             <div className="space-y-1">
-              <label className="block text-zinc-400 text-xs font-medium">Output</label>
-              <div className="bg-zinc-800/40 px-2 py-1 rounded border border-zinc-700/50 text-zinc-300 text-xs">
-                No output selected
-              </div>
+              <label className="block text-zinc-400 text-xs font-medium">PTT</label>
+              <Button
+                size="sm"
+                variant={voiceNet.pttActive ? 'default' : 'outline'}
+                className="w-full text-xs"
+                onClick={() => voiceNet.togglePTT()}
+                disabled={!voiceNet.activeNetId}
+              >
+                {voiceNet.pttActive ? 'PTT: Active' : 'PTT: Ready'}
+              </Button>
             </div>
-            <Button size="sm" variant="outline" className="w-full text-xs" disabled>
-              PTT (Ready)
-            </Button>
+            {voiceNet.error && (
+              <div className="p-2 bg-red-900/20 rounded text-red-400 text-xs">
+                {voiceNet.error}
+              </div>
+            )}
           </div>
         )}
 
@@ -174,7 +231,7 @@ export default function ContextPanel({ isOpen, onClose }) {
             </div>
             <div className="space-y-1">
               <div className="text-zinc-500">Build</div>
-              <div className="font-mono text-zinc-300 text-xs">Phase 2A</div>
+              <div className="font-mono text-zinc-300 text-xs">Phase 3A</div>
             </div>
           </div>
         )}
