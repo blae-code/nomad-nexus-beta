@@ -3,9 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Radio } from 'lucide-react';
-import AuthGuard from '@/components/common/AuthGuard';
-import PageHeader from '@/components/common/PageHeader';
-import LoadingScreen from '@/components/common/LoadingScreen';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -46,7 +43,9 @@ export default function CommsConsole() {
     loadMessages(selectedChannel.id);
   };
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return <div className="p-8 text-center text-orange-500">LOADING...</div>;
+  }
 
   return (
     <AuthGuard>
