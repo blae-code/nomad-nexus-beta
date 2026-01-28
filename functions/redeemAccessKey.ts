@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
-    const { code } = payload;
+    const { code, callsign } = payload;
 
     if (code === 'DEMO-ACCESS') {
       recordFailure(userId);
@@ -62,6 +62,11 @@ Deno.serve(async (req) => {
     if (!code || typeof code !== 'string') {
       recordFailure(userId);
       return Response.json({ error: 'Invalid code' }, { status: 400 });
+    }
+
+    if (!callsign || typeof callsign !== 'string' || callsign.trim().length === 0) {
+      recordFailure(userId);
+      return Response.json({ error: 'Callsign is required' }, { status: 400 });
     }
 
     // Find key (atomically)
@@ -121,8 +126,17 @@ Deno.serve(async (req) => {
 
       if (profile) {
         await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
+          callsign: callsign.trim(),
           rank: key.grants_rank || 'VAGRANT',
           roles: [...(profile.roles || []), ...(key.grants_roles || [])]
+        });
+      } else {
+        // Create profile if it doesn't exist
+        await base44.asServiceRole.entities.MemberProfile.create({
+          user_id: user.id,
+          callsign: callsign.trim(),
+          rank: key.grants_rank || 'VAGRANT',
+          roles: key.grants_roles || []
         });
       }
 
@@ -130,7 +144,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.AdminAuditLog.create({
         actor_user_id: user.id,
         action: 'redeem_access_key',
-        payload: { code, rank: key.grants_rank, roles: key.grants_roles },
+        payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles },
         executed_by: user.id,
         executed_at: new Date().toISOString(),
         step_name: 'access_control',
