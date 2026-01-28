@@ -30,6 +30,7 @@ export default function ContextPanel({ isOpen, onClose }) {
   const latency = useLatency();
   const voiceNet = useVoiceNet();
   const { user } = useCurrentUser();
+  const { inputDevices, selectedDeviceId, selectDevice } = useAudioDevices();
 
   const toggleSection = (key) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -123,6 +124,23 @@ export default function ContextPanel({ isOpen, onClose }) {
         />
         {expandedSections.voice && (
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+            {inputDevices.length > 0 && (
+              <div className="space-y-1">
+                <label className="block text-zinc-400 text-xs font-medium">Device</label>
+                <select
+                  value={selectedDeviceId || ''}
+                  onChange={(e) => selectDevice(e.target.value)}
+                  disabled={!voiceNet.activeNetId}
+                  className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 disabled:opacity-50"
+                >
+                  {inputDevices.map((device) => (
+                    <option key={device.deviceId} value={device.deviceId}>
+                      {device.label || `Mic ${inputDevices.indexOf(device) + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-1">
               <label className="block text-zinc-400 text-xs font-medium">Microphone</label>
               <Button
@@ -232,7 +250,7 @@ export default function ContextPanel({ isOpen, onClose }) {
             </div>
             <div className="space-y-1">
               <div className="text-zinc-500">Build</div>
-              <div className="font-mono text-zinc-300 text-xs">Phase 3A</div>
+              <div className="font-mono text-zinc-300 text-xs">Phase 3B</div>
             </div>
           </div>
         )}
