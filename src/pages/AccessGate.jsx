@@ -22,15 +22,16 @@ export default function AccessGate() {
     
     try {
       const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
-      if (response.data.success) {
+      if (response?.data?.success) {
         setMessage('Access granted! Redirecting...');
         setTimeout(() => {
           window.location.href = createPageUrl('Hub');
         }, 1500);
       } else {
-        setMessage(response.data.message || 'Invalid credentials');
+        setMessage(response?.data?.message || 'Invalid credentials');
       }
     } catch (error) {
+      console.error('Redeem error:', error);
       setMessage('Error validating credentials');
     } finally {
       setLoading(false);
