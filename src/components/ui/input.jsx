@@ -1,6 +1,5 @@
 import * as React from "react"
-
-const cn = (...classes) => classes.filter(Boolean).join(' ');
+import { cn } from "@/Layout";
 
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
   return (
