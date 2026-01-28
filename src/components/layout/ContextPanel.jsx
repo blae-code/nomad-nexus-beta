@@ -100,14 +100,29 @@ export default function ContextPanel({ isOpen, onClose }) {
         {/* Contacts / Roster Section */}
         <SectionHeader
           icon={<Users className="w-4 h-4" />}
-          label="Roster"
+          label={`Roster (${onlineCount})`}
           sectionKey="contacts"
           expanded={expandedSections.contacts}
           onToggle={toggleSection}
         />
         {expandedSections.contacts && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-1">
-            <div className="text-zinc-500">No contacts online</div>
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+            {loading ? (
+              <div className="text-zinc-500">Loading...</div>
+            ) : onlineUsers.length === 0 ? (
+              <div className="text-zinc-500">No users online</div>
+            ) : (
+              onlineUsers.map((user) => (
+                <div key={user.userId} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
+                  <div className="font-mono text-zinc-300 text-xs">{user.callsign}</div>
+                  <div className="flex gap-2 text-xs text-zinc-500 mt-1">
+                    <span>{getRankLabel(user.rank)}</span>
+                    <span>{getMembershipLabel(user.membership)}</span>
+                    <span className="ml-auto text-green-500">● Online</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 
