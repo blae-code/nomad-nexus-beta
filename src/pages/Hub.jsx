@@ -1,8 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
 import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings } from 'lucide-react';
 
 export default function Hub() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) {
+          window.location.href = createPageUrl('AccessGate');
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        window.location.href = createPageUrl('AccessGate');
+      }
+    };
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center">
+        <div className="text-orange-500 text-xl">LOADING...</div>
+      </div>
+    );
+  }
   const navItems = [
     { name: 'Access Gate', path: 'AccessGate', icon: Shield, description: 'Member verification and onboarding' },
     { name: 'Events', path: 'Events', icon: Calendar, description: 'Mission planning and operations' },
