@@ -18,7 +18,9 @@ export default function UserDirectory() {
     init();
   }, []);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return <div className="p-8 text-center text-orange-500">LOADING...</div>;
+  }
 
   const filteredProfiles = profiles.filter(p => 
     p.callsign?.toLowerCase().includes(searchTerm.toLowerCase())
