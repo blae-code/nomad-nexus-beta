@@ -82,12 +82,12 @@ const createActionRegistry = (user, callbacks) => {
       description: 'View archived operations',
       onExecute: () => callbacks.navigate('Recon'),
     },
-    // Toggle: CommsDock (if exists, safe stub)
+    // Toggle: CommsDock
     {
       id: 'toggle:comms-dock',
       label: 'Toggle Comms Dock',
       category: 'Toggle',
-      description: 'Show/hide right comms panel',
+      description: 'Show/hide bottom comms panel',
       onExecute: () => callbacks.toggleCommsDock?.(),
     },
     // Open: Request Access
