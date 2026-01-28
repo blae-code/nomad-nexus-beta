@@ -33,7 +33,7 @@ export default function UserDirectory() {
         <p className="text-zinc-400 text-sm">Member roster</p>
       </div>
 
-          <div className="mb-6">
+      <div className="mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
               <Input
