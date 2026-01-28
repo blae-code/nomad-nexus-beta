@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Radio, AlertCircle } from 'lucide-react';
+import { Send, Radio, AlertCircle, Lock, Unlock } from 'lucide-react';
 import PermissionGuard from '@/components/PermissionGuard';
-import { COMMS_CHANNEL_TYPES, FOCUSED_MIN_RANK } from '@/components/constants/channelTypes';
+import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 import { useCurrentUser } from '@/components/useCurrentUser';
+import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils/commsAccessPolicy';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,7 @@ export default function CommsConsole() {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [showTempFocused, setShowTempFocused] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -64,24 +66,51 @@ export default function CommsConsole() {
         )}
       </div>
 
-      {/* Focused Comms Gate Demo */}
-      <div className="mb-6 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <h3 className="text-sm font-bold text-white mb-2">Focused Comms (Scout+)</h3>
-            <PermissionGuard
-              minRank={FOCUSED_MIN_RANK}
-              fallback={
-                <p className="text-xs text-zinc-500">
-                  You must be Scout or higher to access Focused comms. Current rank: {currentUser?.rank}
+      {/* Focused Comms Gate Demo — Canon Policy */}
+      <div className="mb-6 space-y-2">
+        {/* Standard Focused */}
+        <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              {canAccessFocusedComms(currentUser, { type: COMMS_CHANNEL_TYPES.FOCUSED, isTemporary: false }) ? (
+                <Unlock className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              ) : (
+                <Lock className="w-5 h-5 text-zinc-600 mt-0.5 flex-shrink-0" />
+              )}
+              <div>
+                <h3 className="text-sm font-bold text-white mb-1">Focused Comms</h3>
+                {canAccessFocusedComms(currentUser, { type: COMMS_CHANNEL_TYPES.FOCUSED, isTemporary: false }) ? (
+                  <p className="text-xs text-green-400">✓ Authorized ({currentUser?.membership})</p>
+                ) : (
+                  <p className="text-xs text-zinc-500">{getAccessDenialReason({ isTemporary: false })}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Temporary Focused Toggle Demo */}
+        <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              <Unlock className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-bold text-white mb-1">Temporary Focused Demo</h3>
+                <p className="text-xs text-zinc-400 mb-2">
+                  {showTempFocused 
+                    ? '✓ Open to all (demo mode)' 
+                    : 'Click to simulate temporary Focused access'}
                 </p>
-              }
-            >
-              <p className="text-xs text-zinc-300">
-                ✓ You have access to Focused channels. Operational security protocols in effect.
-              </p>
-            </PermissionGuard>
+                <Button 
+                  size="sm" 
+                  variant={showTempFocused ? 'default' : 'outline'}
+                  onClick={() => setShowTempFocused(!showTempFocused)}
+                  className="text-xs"
+                >
+                  {showTempFocused ? 'Disable Demo' : 'Enable Demo'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
