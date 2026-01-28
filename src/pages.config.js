@@ -1,31 +1,14 @@
-import AccessGate from './pages/AccessGate';
-import CommsConsole from './pages/CommsConsole';
-import Events from './pages/Events';
-import FleetManager from './pages/FleetManager';
-import Hub from './pages/Hub';
-import Settings from './pages/Settings';
-import Treasury from './pages/Treasury';
-import UniverseMap from './pages/UniverseMap';
-import UserDirectory from './pages/UserDirectory';
-import PageNotFound from './pages/PageNotFound';
-import __Layout from './Layout.jsx';
-
-
-export const PAGES = {
-    "AccessGate": AccessGate,
-    "CommsConsole": CommsConsole,
-    "Events": Events,
-    "FleetManager": FleetManager,
-    "Hub": Hub,
-    "Settings": Settings,
-    "Treasury": Treasury,
-    "UniverseMap": UniverseMap,
-    "UserDirectory": UserDirectory,
-    "PageNotFound": PageNotFound,
-}
-
-export const pagesConfig = {
-    mainPage: "AccessGate",
-    Pages: PAGES,
-    Layout: __Layout,
+export default {
+  routes: [
+    { path: '/', component: () => import('./pages/Hub.jsx') },
+    { path: '/access-gate', component: () => import('./pages/AccessGate.jsx') },
+    { path: '/events', component: () => import('./pages/Events.jsx') },
+    { path: '/comms-console', component: () => import('./pages/CommsConsole.jsx') },
+    { path: '/user-directory', component: () => import('./pages/UserDirectory.jsx') },
+    { path: '/universe-map', component: () => import('./pages/UniverseMap.jsx') },
+    { path: '/fleet-manager', component: () => import('./pages/FleetManager.jsx') },
+    { path: '/treasury', component: () => import('./pages/Treasury.jsx') },
+    { path: '/settings', component: () => import('./pages/Settings.jsx') },
+  ],
+  notFound: () => import('./pages/PageNotFound.jsx')
 };
