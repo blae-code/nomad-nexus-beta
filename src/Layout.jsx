@@ -100,9 +100,12 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
-      </div>
-    </CommandPaletteProvider>
-  );
-}
+
+        {/* Comms Dock */}
+        <CommsDockShell isOpen={isCommsDockOpen} onClose={toggleCommsDock} />
+        </div>
+        </CommandPaletteProvider>
+        );
+        }
 
 export { cn };
