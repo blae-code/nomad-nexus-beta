@@ -14,17 +14,19 @@ import { Button } from '@/components/ui/button';
 export default function Header() {
   const { user, loading } = useCurrentUser();
   const paletteContext = useCommandPalette();
+  const shellUI = useShellUI();
   
-  // Fallback if hook not in provider scope
-  if (!paletteContext) {
+  // Fallback if hooks not in provider scope
+  if (!paletteContext || !shellUI) {
     return (
       <header className="h-16 bg-zinc-900/80 border-b border-zinc-800 flex items-center px-4">
-        <div className="text-sm text-zinc-400">Header (palette unavailable)</div>
+        <div className="text-sm text-zinc-400">Header (providers unavailable)</div>
       </header>
     );
   }
 
   const { openPalette } = paletteContext;
+  const { toggleSidePanel, toggleContextPanel } = shellUI;
 
   // Ctrl/⌘+K global handler
   useEffect(() => {
