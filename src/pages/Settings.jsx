@@ -52,7 +52,7 @@ export default function Settings() {
         <p className="text-zinc-400 text-sm">App configuration</p>
       </div>
 
-          <div className="space-y-6">
+      <div className="space-y-6">
             <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
               <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
                 <User className="w-5 h-5" />
