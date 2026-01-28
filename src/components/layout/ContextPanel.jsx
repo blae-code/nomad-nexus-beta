@@ -157,12 +157,24 @@ export default function ContextPanel({ isOpen, onClose }) {
               <div className="font-mono text-zinc-300 text-xs">{getCurrentRoute()}</div>
             </div>
             <div className="space-y-1">
+              <div className="text-zinc-500">Readiness</div>
+              <div className={`font-mono text-xs ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`}>
+                {readiness.state}
+              </div>
+            </div>
+            <div className="space-y-1">
               <div className="text-zinc-500">Latency</div>
-              <div className="font-mono text-orange-400 text-xs">~45ms</div>
+              <div className={`font-mono text-xs ${latency.isHealthy ? 'text-green-500' : 'text-yellow-500'}`}>
+                {latency.latencyMs}ms
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-zinc-500">Online Users</div>
+              <div className="font-mono text-zinc-300 text-xs">{onlineCount}</div>
             </div>
             <div className="space-y-1">
               <div className="text-zinc-500">Build</div>
-              <div className="font-mono text-zinc-300 text-xs">Phase 1D</div>
+              <div className="font-mono text-zinc-300 text-xs">Phase 2A</div>
             </div>
           </div>
         )}
