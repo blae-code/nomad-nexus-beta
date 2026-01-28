@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, LogOut, Save } from 'lucide-react';
+import { User, LogOut, Save, Layout } from 'lucide-react';
+import LayoutSettings from '@/components/layout/LayoutSettings';
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,14 @@ export default function Settings() {
               </>
             )}
           </div>
+        </div>
+
+        <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
+          <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
+            <Layout className="w-5 h-5" />
+            Workspace
+          </h2>
+          <LayoutSettings />
         </div>
 
         <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
