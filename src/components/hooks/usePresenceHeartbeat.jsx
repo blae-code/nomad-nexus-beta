@@ -39,6 +39,7 @@ export function usePresenceHeartbeat(config = {}) {
       try {
         const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
           route: window.location.pathname,
+          // activeNetId will be injected by VoiceNetProvider when connected
         });
         await presenceService.writePresence(presenceRecord);
         lastWriteRef.current = {
@@ -62,6 +63,7 @@ export function usePresenceHeartbeat(config = {}) {
         try {
           const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
             route: window.location.pathname,
+            // activeNetId will be injected by VoiceNetProvider when connected
           });
           await presenceService.writePresence(presenceRecord);
           lastWriteRef.current = {
@@ -110,6 +112,7 @@ export function usePresenceHeartbeat(config = {}) {
       try {
         const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
           route: window.location.pathname,
+          // activeNetId will be injected by VoiceNetProvider when connected
         });
         // Send beacon if available (async, non-blocking)
         if (navigator.sendBeacon) {
