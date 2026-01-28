@@ -83,13 +83,40 @@ const createActionRegistry = (user, callbacks) => {
       onExecute: () => callbacks.openAccessRequest?.(),
       isVisible: (u) => !canAccessFocusedComms(u, { type: COMMS_CHANNEL_TYPES.FOCUSED, isTemporary: false }),
     },
+    // Alerts: Acknowledge pending alerts
+    {
+      id: 'alert:view',
+      label: 'View Alerts',
+      category: 'Alerts',
+      description: 'Check pending system notifications',
+      onExecute: () => {
+        // Alerts are visible in notification center; this is a shortcut
+        // to focus the notification area (scroll to top-right)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+    },
+    // Alerts: Test notifications (dev helper)
+    {
+      id: 'alert:test-event',
+      label: 'Test Event Alert',
+      category: 'Alerts',
+      description: '[DEV] Trigger sample event notification',
+      onExecute: () => callbacks.triggerTestAlert?.('event'),
+    },
+    {
+      id: 'alert:test-system',
+      label: 'Test System Alert',
+      category: 'Alerts',
+      description: '[DEV] Trigger sample system notification',
+      onExecute: () => callbacks.triggerTestAlert?.('system'),
+    },
   ];
 };
 
 /**
  * CommandPaletteProvider — Wraps app, provides context
  */
-export function CommandPaletteProvider({ children, onNavigate, onToggleDock, onOpenAccessRequest }) {
+export function CommandPaletteProvider({ children, onNavigate, onToggleDock, onOpenAccessRequest, onTriggerTestAlert }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const { user } = useCurrentUser();
@@ -108,8 +135,12 @@ export function CommandPaletteProvider({ children, onNavigate, onToggleDock, onO
         onOpenAccessRequest?.();
         setIsOpen(false);
       },
+      triggerTestAlert: (type) => {
+        onTriggerTestAlert?.(type);
+        setIsOpen(false);
+      },
     }),
-    [onNavigate, onToggleDock, onOpenAccessRequest]
+    [onNavigate, onToggleDock, onOpenAccessRequest, onTriggerTestAlert]
   );
 
   // Build & filter action registry
