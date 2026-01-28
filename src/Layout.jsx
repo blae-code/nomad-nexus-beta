@@ -13,6 +13,7 @@ import { useLayoutPreferences } from '@/components/hooks/useLayoutPreferences';
 import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
+import CommsDockShell from '@/components/layout/CommsDockShell';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
