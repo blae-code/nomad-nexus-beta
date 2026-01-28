@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Box, AlertCircle, CheckCircle, Wrench } from 'lucide-react';
-import AuthGuard from '@/components/common/AuthGuard';
-import PageHeader from '@/components/common/PageHeader';
-import LoadingScreen from '@/components/common/LoadingScreen';
 import EmptyState from '@/components/common/EmptyState';
 
 export default function FleetManager() {
