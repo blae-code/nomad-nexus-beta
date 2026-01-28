@@ -8,11 +8,14 @@ import ChannelList from './ChannelList';
 import MessageView from './MessageView';
 import MessageComposer from './MessageComposer';
 import { getMessages, sendMessage } from '@/components/services/commsService';
+import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 export default function CommsTab({ user, unreadCounts, onMarkChannelRead, channels }) {
   const [selectedChannelId, setSelectedChannelId] = useState('general');
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const voiceNet = useVoiceNet();
 
   // Load messages for selected channel
   useEffect(() => {
@@ -55,9 +58,16 @@ export default function CommsTab({ user, unreadCounts, onMarkChannelRead, channe
 
       {/* Main message area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Channel header */}
-        <div className="border-b border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs font-semibold text-zinc-400">
-          {channels.find((ch) => ch.id === selectedChannelId)?.name || 'Unknown'}
+        {/* Channel header + Voice status */}
+        <div className="border-b border-zinc-800 bg-zinc-900/60 px-3 py-2 flex items-center justify-between">
+          <div className="text-xs font-semibold text-zinc-400">
+            {channels.find((ch) => ch.id === selectedChannelId)?.name || 'Unknown'}
+          </div>
+          {voiceNet.activeNetId && (
+            <div className="text-xs text-orange-400">
+              Voice: {voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'Connected' : 'Joining...'}
+            </div>
+          )}
         </div>
 
         {/* Messages */}
