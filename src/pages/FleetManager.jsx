@@ -88,10 +88,10 @@ export default function FleetManager() {
                         </div>
                       )}
                       </div>
-                </div>
-              ))
-            )}
-      </div>
-    </div>
-  );
-}
+                      </div>
+                      ))
+                      )}
+                      </div>
+                      </div>
+                      );
+                      }

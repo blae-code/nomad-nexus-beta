@@ -108,10 +108,10 @@ export default function CommsConsole() {
                   <Button onClick={sendMessage} disabled={!newMessage.trim()}>
                     <Send className="w-4 h-4" />
                   </Button>
-                </div>
-                </div>
-                </div>
-      </div>
-    </div>
-  );
-}
+                  </div>
+                  </div>
+                  </div>
+                  </div>
+                  </div>
+                  );
+                  }
