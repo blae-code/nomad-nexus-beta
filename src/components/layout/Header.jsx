@@ -124,6 +124,20 @@ export default function Header() {
             <Button
               size="icon"
               variant="ghost"
+              onClick={toggleCommsDock}
+              title="Toggle comms dock"
+              className="h-9 w-9 text-zinc-400 hover:text-orange-400 relative"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {unreadByTab.comms > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+                  {unreadByTab.comms}
+                </span>
+              )}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
               onClick={toggleSidePanel}
               title="Toggle sidebar (Cmd+Shift+L)"
               className="h-9 w-9 text-zinc-400 hover:text-orange-400"
