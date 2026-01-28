@@ -1,5 +1,13 @@
 import React from 'react';
 
+const cn = (...classes) => {
+  return classes
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export default function Layout({ children, currentPageName }) {
   if (!children) {
     return (
@@ -15,3 +23,5 @@ export default function Layout({ children, currentPageName }) {
     </div>
   );
 }
+
+export { cn };
