@@ -50,7 +50,7 @@ function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
-  const { isSidePanelOpen, isContextPanelOpen, toggleSidePanel, toggleContextPanel } = useShellUI();
+  const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, toggleSidePanel, toggleContextPanel, toggleCommsDock } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
 
   const handleNavigate = (page) => {
