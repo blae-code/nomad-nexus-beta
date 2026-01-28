@@ -1,4 +1,5 @@
-export default {
+
+const pagesConfig = {
   routes: [
     { path: '/', component: () => import('./pages/Hub.jsx') },
     { path: '/access-gate', component: () => import('./pages/AccessGate.jsx') },
@@ -11,3 +12,6 @@ export default {
     { path: '/settings', component: () => import('./pages/Settings.jsx') },
   ]
 };
+
+export { pagesConfig };
+export default pagesConfig;
