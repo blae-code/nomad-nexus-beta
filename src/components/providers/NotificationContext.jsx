@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { v4 as uuidv4 } from 'crypto';
 
 /**
  * NotificationContext — Global notification state and actions
@@ -7,11 +6,14 @@ import { v4 as uuidv4 } from 'crypto';
  */
 const NotificationContext = createContext();
 
+// Generate simple unique ID (no external deps)
+const generateId = () => `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
 
   const addNotification = useCallback((notification) => {
-    const id = uuidv4 ? uuidv4() : `notif-${Date.now()}-${Math.random()}`;
+    const id = generateId();
     const notif = {
       id,
       type: 'info', // info | success | warning | error | alert
