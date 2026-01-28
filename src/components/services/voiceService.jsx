@@ -33,7 +33,7 @@ export async function getNetSessions(netId) {
  * @param {string} clientId
  * @returns {Promise<Object>}
  */
-export async function createVoiceSession(netId, userId, callsign, clientId) {
+export async function addVoiceSession(netId, userId, callsign, clientId) {
   const session = createVoiceSession({
     netId,
     userId,
@@ -104,7 +104,7 @@ export async function clearAllSessions() {
 export default {
   listVoiceNets,
   getNetSessions,
-  createVoiceSession,
+  addVoiceSession,
   updateSessionSpeaking,
   updateSessionHeartbeat,
   removeVoiceSession,

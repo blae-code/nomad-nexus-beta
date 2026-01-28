@@ -105,7 +105,7 @@ export function VoiceNetProvider({ children }) {
       setActiveNetId(netId);
 
       // Create voice session
-      const session = await voiceService.createVoiceSession(
+      const session = await voiceService.addVoiceSession(
         netId,
         user.id,
         user.callsign || 'Unknown',
