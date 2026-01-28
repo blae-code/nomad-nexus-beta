@@ -43,6 +43,11 @@ export default function Header() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [openPalette]);
 
+  // Telemetry hooks (non-blocking)
+  const readiness = useReadiness();
+  const latency = useLatency();
+  const { onlineCount } = usePresenceRoster();
+
   if (loading || !user) {
     return (
       <header className="h-16 bg-zinc-900/80 border-b border-zinc-800 flex items-center px-4">
@@ -54,6 +59,9 @@ export default function Header() {
   const rankLabel = getRankLabel(user.rank);
   const membershipLabel = getMembershipLabel(user.membership);
   const roleLabels = (user.roles || []).map(getRoleLabel);
+
+  // Derive comms status from readiness
+  const commsStatus = readiness.state === 'READY' ? 'Online' : 'Offline';
 
   return (
     <header className="h-16 bg-zinc-900/80 border-b border-zinc-800 backdrop-blur-sm">
