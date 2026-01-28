@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
-import AuthGuard from '@/components/common/AuthGuard';
-import PageHeader from '@/components/common/PageHeader';
-import LoadingScreen from '@/components/common/LoadingScreen';
 
 export default function Treasury() {
   const [loading, setLoading] = useState(true);
