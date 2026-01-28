@@ -5,8 +5,10 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { base44 } from '@/api/base44Client';
 import { DEFAULT_VOICE_NETS, VOICE_CONNECTION_STATE, VOICE_SESSION_HEARTBEAT_MS, VOICE_SPEAKING_DEBOUNCE_MS } from '@/components/constants/voiceNet';
 import MockVoiceTransport from './transport/MockVoiceTransport';
+import { LiveKitTransport } from './transport/LiveKitTransport';
 import * as voiceService from '@/components/services/voiceService';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 
@@ -24,6 +26,8 @@ export function VoiceNetProvider({ children }) {
   const heartbeatIntervalRef = useRef(null);
   const sessionIdRef = useRef(null);
   const speakingTimeoutRef = useRef(null);
+  const liveKitTokenRef = useRef(null);
+  const [useRealTransport, setUseRealTransport] = useState(false);
 
   // Initialize transport
   useEffect(() => {
@@ -94,14 +98,45 @@ export function VoiceNetProvider({ children }) {
     setError(null);
 
     try {
-      // Connect transport
-      await transportRef.current.connect({
-        token: 'mock-token', // MockVoiceTransport doesn't use this
-        url: 'mock://url',
-        netId,
-        user,
-      });
+      // Try to mint LiveKit token; fallback to mock if unavailable
+      try {
+        const tokenResp = await base44.functions.invoke('mintVoiceToken', {
+          netId,
+          userId: user.id,
+          callsign: user.callsign || 'Unknown',
+          clientId: `client-${user.id}-${Date.now()}`,
+        });
 
+        if (tokenResp.data.error === 'VOICE_NOT_CONFIGURED') {
+          // Use mock transport
+          setUseRealTransport(false);
+        } else if (tokenResp.data.token && tokenResp.data.url) {
+          // Use LiveKit
+          liveKitTokenRef.current = tokenResp.data;
+          transportRef.current = new LiveKitTransport();
+          setUseRealTransport(true);
+        }
+      } catch (tokenErr) {
+        console.warn('Token mint failed; using mock:', tokenErr);
+        setUseRealTransport(false);
+      }
+
+      // Connect transport
+      const connectOptions = useRealTransport && liveKitTokenRef.current
+        ? {
+            token: liveKitTokenRef.current.token,
+            url: liveKitTokenRef.current.url,
+            netId,
+            user,
+          }
+        : {
+            token: 'mock-token',
+            url: 'mock://url',
+            netId,
+            user,
+          };
+
+      await transportRef.current.connect(connectOptions);
       setActiveNetId(netId);
 
       // Create voice session
