@@ -14,14 +14,15 @@ import {
   Settings, 
   Archive, 
   Lock,
-  HelpCircle 
+  HelpCircle,
+  ChevronLeft
 } from 'lucide-react';
 
 /**
  * SidePanel — Left navigation with permission gating
  * Shows locked state for restricted items with hints
  */
-export default function SidePanel({ currentPageName }) {
+export default function SidePanel({ currentPageName, onToggleCollapse }) {
   const { user } = useCurrentUser();
   const [showAccessModal, setShowAccessModal] = useState(false);
 
@@ -46,9 +47,16 @@ export default function SidePanel({ currentPageName }) {
   return (
     <>
       <aside className="w-64 bg-zinc-900/50 border-r border-zinc-800 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="p-4 border-b border-zinc-800">
+        {/* Header with Collapse Button */}
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
           <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Navigation</h2>
+          <button
+            onClick={onToggleCollapse}
+            className="text-zinc-600 hover:text-zinc-300 transition-colors"
+            title="Collapse navigation"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Main Navigation */}
