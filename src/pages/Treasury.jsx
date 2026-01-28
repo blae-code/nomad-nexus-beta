@@ -35,7 +35,7 @@ export default function Treasury() {
         <p className="text-zinc-400 text-sm">Financial tracking</p>
       </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {coffers.map((coffer) => {
               const balance = calculateBalance(coffer.id);
               return (
