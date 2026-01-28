@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Clock, Users, MapPin } from 'lucide-react';
-import AuthGuard from '@/components/common/AuthGuard';
-import PageHeader from '@/components/common/PageHeader';
-import LoadingScreen from '@/components/common/LoadingScreen';
 import EmptyState from '@/components/common/EmptyState';
 
 export default function Events() {
@@ -19,8 +16,6 @@ export default function Events() {
     };
     init();
   }, []);
-
-  if (loading) return <LoadingScreen />;
 
   const getStatusColor = (status) => {
     const colors = {
