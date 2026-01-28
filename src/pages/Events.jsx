@@ -44,55 +44,55 @@ export default function Events() {
         </Button>
       </div>
 
-          <div className="grid gap-4">
-            {events.length === 0 ? (
-              <EmptyState 
-                icon={Calendar}
-                title="No events scheduled"
-                description="Create your first operation to get started"
-              />
-            ) : (
-              events.map((event) => (
-                <div
-                  key={event.id}
-                  className="bg-zinc-900/50 border-2 border-zinc-800 hover:border-orange-500/50 p-6 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-xl font-bold text-white uppercase">{event.title}</h3>
-                        <span className={`px-3 py-1 text-xs font-bold uppercase border ${getStatusColor(event.status)}`}>
-                          {event.status}
-                        </span>
-                      </div>
-                      
-                      {event.description && (
-                        <p className="text-zinc-400 mb-4">{event.description}</p>
-                      )}
-                      
-                      <div className="flex flex-wrap gap-4 text-sm text-zinc-500">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          {new Date(event.start_time).toLocaleString()}
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            {event.location}
-                          </div>
-                        )}
-                        {event.assigned_user_ids?.length > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            {event.assigned_user_ids.length} assigned
-                          </div>
-                        )}
-                      </div>
+      <div className="grid gap-4">
+        {events.length === 0 ? (
+          <EmptyState 
+            icon={Calendar}
+            title="No events scheduled"
+            description="Create your first operation to get started"
+          />
+        ) : (
+          events.map((event) => (
+            <div
+              key={event.id}
+              className="bg-zinc-900/50 border-2 border-zinc-800 hover:border-orange-500/50 p-6 transition-all"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-xl font-bold text-white uppercase">{event.title}</h3>
+                    <span className={`px-3 py-1 text-xs font-bold uppercase border ${getStatusColor(event.status)}`}>
+                      {event.status}
+                    </span>
+                  </div>
+
+                  {event.description && (
+                    <p className="text-zinc-400 mb-4">{event.description}</p>
+                  )}
+
+                  <div className="flex flex-wrap gap-4 text-sm text-zinc-500">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      {new Date(event.start_time).toLocaleString()}
                     </div>
+                    {event.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        {event.location}
+                      </div>
+                    )}
+                    {event.assigned_user_ids?.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        {event.assigned_user_ids.length} assigned
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
