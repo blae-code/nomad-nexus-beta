@@ -87,11 +87,11 @@ The `package.json` file includes several scripts for common development tasks:
 
 ## Project Structure
 
-- **`src/`**: Contains the main React frontend application code.
-  - **`src/components/`**: Shared and reusable React components.
-  - **`src/pages/`**: Top-level page components that correspond to application routes.
-  - **`src/lib/`**: Core utilities, contexts, and application-wide helpers.
-  - **`src/api/`**: Modules for interacting with external APIs, including the Base44 SDK.
+- **Root-level app directories**: Base44 keeps the app at the repository root.
+  - **`components/`**: Shared and reusable React components.
+  - **`pages/`**: Top-level page components that correspond to application routes.
+  - **`lib/`**: Core utilities, contexts, and application-wide helpers.
+  - **`api/`**: Modules for interacting with external APIs, including the Base44 SDK.
 - **`functions/`**: Contains backend serverless functions deployed on the Base44 platform. These handle logic like token generation, data validation, and API integrations.
 - **`tests/`**: Contains automated tests for the application.
 - **`docs/`**: Project documentation, including the detailed test plan.

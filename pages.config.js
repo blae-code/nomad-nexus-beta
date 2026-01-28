@@ -30,7 +30,7 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
-import __Layout from './Layout.jsx';
+import __Layout from './Layout.js';
 
 
 export const PAGES = {
