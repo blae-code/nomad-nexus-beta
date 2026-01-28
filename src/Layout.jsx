@@ -8,6 +8,7 @@ import { CommandPaletteProvider } from '@/components/providers/CommandPaletteCon
 import { NotificationProvider } from '@/components/providers/NotificationContext';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { useLayoutPreferences } from '@/components/hooks/useLayoutPreferences';
+import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 
 /**
@@ -58,11 +59,42 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <NotificationProvider>
-      <CommandPaletteProvider
-        onNavigate={handleNavigate}
-        onToggleDock={handleToggleDock}
-        onOpenAccessRequest={handleOpenAccessRequest}
-      >
+      <LayoutContent currentPageName={currentPageName} children={children} />
+    </NotificationProvider>
+  );
+}
+
+function LayoutContent({ currentPageName, children }) {
+  const { loaded, prefs, toggleSidePanel, toggleCommsDock } = useLayoutPreferences();
+  const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
+
+  const handleNavigate = (page) => {
+    window.location.href = createPageUrl(page);
+  };
+
+  const handleToggleDock = () => {
+    toggleCommsDock();
+  };
+
+  const handleOpenAccessRequest = () => {
+    // TODO: wire to SidePanel modal or dedicated page
+  };
+
+  const handleTriggerTestAlert = (type) => {
+    if (type === 'event') {
+      triggerEventAlert();
+    } else if (type === 'system') {
+      triggerSystemAlert();
+    }
+  };
+
+  return (
+    <CommandPaletteProvider
+      onNavigate={handleNavigate}
+      onToggleDock={handleToggleDock}
+      onOpenAccessRequest={handleOpenAccessRequest}
+      onTriggerTestAlert={handleTriggerTestAlert}
+    >
         <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
           {/* Notification Center */}
           <NotificationCenter />
@@ -91,7 +123,6 @@ export default function Layout({ children, currentPageName }) {
           <CommandPaletteUI />
         </div>
       </CommandPaletteProvider>
-    </NotificationProvider>
   );
 }
 
