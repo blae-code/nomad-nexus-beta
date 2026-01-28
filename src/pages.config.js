@@ -1,13 +1,13 @@
-import PageNotFound from './pages/PageNotFound';
-import Hub from './pages/Hub';
-import AccessGate from './pages/AccessGate';
-import Events from './pages/Events';
-import CommsConsole from './pages/CommsConsole';
-import UserDirectory from './pages/UserDirectory';
-import UniverseMap from './pages/UniverseMap';
-import FleetManager from './pages/FleetManager';
-import Treasury from './pages/Treasury';
-import Settings from './pages/Settings';
+import PageNotFound from './pages/PageNotFound.jsx';
+import Hub from './pages/Hub.js';
+import AccessGate from './pages/AccessGate.jsx';
+import Events from './pages/Events.jsx';
+import CommsConsole from './pages/CommsConsole.jsx';
+import UserDirectory from './pages/UserDirectory.jsx';
+import UniverseMap from './pages/UniverseMap.jsx';
+import FleetManager from './pages/FleetManager.jsx';
+import Treasury from './pages/Treasury.jsx';
+import Settings from './pages/Settings.jsx';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
