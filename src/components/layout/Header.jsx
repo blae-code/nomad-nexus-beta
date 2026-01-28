@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { useCommandPalette } from '@/components/providers/CommandPaletteContext';
+import { useShellUI } from '@/components/providers/ShellUIContext';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
-import { Radio, Search } from 'lucide-react';
+import { Radio, Search, PanelLeft, PanelRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Header — Control plane v1
