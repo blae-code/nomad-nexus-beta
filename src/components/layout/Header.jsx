@@ -11,7 +11,18 @@ import { Radio, Search } from 'lucide-react';
  */
 export default function Header() {
   const { user, loading } = useCurrentUser();
-  const { openPalette } = useCommandPalette();
+  const paletteContext = useCommandPalette();
+  
+  // Fallback if hook not in provider scope
+  if (!paletteContext) {
+    return (
+      <header className="h-16 bg-zinc-900/80 border-b border-zinc-800 flex items-center px-4">
+        <div className="text-sm text-zinc-400">Header (palette unavailable)</div>
+      </header>
+    );
+  }
+
+  const { openPalette } = paletteContext;
 
   // Ctrl/⌘+K global handler
   useEffect(() => {
