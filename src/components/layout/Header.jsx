@@ -90,8 +90,8 @@ export default function Header() {
           )}
         </div>
 
-        {/* Right: Telemetry + Command Palette */}
-        <div className="flex items-center gap-4 ml-auto">
+        {/* Right: Telemetry + Controls + Command Palette */}
+        <div className="flex items-center gap-3 ml-auto">
           {/* Telemetry Strip (placeholder) */}
           <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r border-zinc-700 pr-4">
             <div className="flex items-center gap-1">
@@ -104,6 +104,28 @@ export default function Header() {
             <div className="flex items-center gap-1">
               <span>Latency: 24ms</span>
             </div>
+          </div>
+
+          {/* Panel Toggles */}
+          <div className="hidden sm:flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleSidePanel}
+              title="Toggle sidebar (Cmd+Shift+L)"
+              className="h-9 w-9 text-zinc-400 hover:text-orange-400"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleContextPanel}
+              title="Toggle systems panel (Cmd+Shift+R)"
+              className="h-9 w-9 text-zinc-400 hover:text-orange-400"
+            >
+              <PanelRight className="w-4 h-4" />
+            </Button>
           </div>
 
           {/* Command Palette Trigger */}
