@@ -11,7 +11,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Hub",
+    mainPage: "AccessGate",
     Pages: PAGES,
     Layout: __Layout,
 };
