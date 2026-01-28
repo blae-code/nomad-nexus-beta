@@ -3,9 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { User, LogOut, Save } from 'lucide-react';
-import AuthGuard from '@/components/common/AuthGuard';
-import PageHeader from '@/components/common/PageHeader';
-import LoadingScreen from '@/components/common/LoadingScreen';
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
