@@ -6,9 +6,11 @@ import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
 import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
+import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
-import { Radio, Search, PanelLeft, PanelRight, MessageSquare } from 'lucide-react';
+import { Radio, Search, PanelLeft, PanelRight, MessageSquare, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 /**
  * Header — Control plane v1
@@ -49,6 +51,7 @@ export default function Header() {
   const latency = useLatency();
   const { onlineCount } = usePresenceRoster();
   const { unreadByTab } = useUnreadCounts(user?.id);
+  const voiceNet = useVoiceNet();
 
   if (loading || !user) {
     return (
@@ -106,18 +109,24 @@ export default function Header() {
         {/* Right: Telemetry + Controls + Command Palette */}
         <div className="flex items-center gap-3 ml-auto">
           {/* Telemetry Strip (live data) */}
-          <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r border-zinc-700 pr-4">
-            <div className="flex items-center gap-1">
-              <Radio className={`w-3 h-3 ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`} />
-              <span>Comms: {commsStatus}</span>
+            <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r border-zinc-700 pr-4">
+              <div className="flex items-center gap-1">
+                <Radio className={`w-3 h-3 ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`} />
+                <span>Comms: {commsStatus}</span>
+              </div>
+              {voiceNet.activeNetId && (
+                <div className="flex items-center gap-1">
+                  <Mic className={`w-3 h-3 ${voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'text-orange-500' : 'text-yellow-500'}`} />
+                  <span>Voice: {voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'Connected' : 'Joining...'}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1">
+                <span>Online: {onlineCount}</span>
+              </div>
+              <div className="flex items-center gap-1" title={latency.lastMeasuredAt ? `Last: ${new Date(latency.lastMeasuredAt).toLocaleTimeString()}` : 'Measuring...'}>
+                <span>Latency: {latency.latencyMs}ms</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span>Online: {onlineCount}</span>
-            </div>
-            <div className="flex items-center gap-1" title={latency.lastMeasuredAt ? `Last: ${new Date(latency.lastMeasuredAt).toLocaleTimeString()}` : 'Measuring...'}>
-              <span>Latency: {latency.latencyMs}ms</span>
-            </div>
-          </div>
 
           {/* Panel Toggles */}
           <div className="hidden sm:flex items-center gap-1">
