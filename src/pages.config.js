@@ -52,11 +52,11 @@ import CommsConsole from './pages/CommsConsole';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
+import PageNotFound from './pages/PageNotFound';
 import Settings from './pages/Settings';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import PageNotFound from './pages/PageNotFound';
 import __Layout from './Layout.jsx';
 
 
@@ -66,11 +66,11 @@ export const PAGES = {
     "Events": Events,
     "FleetManager": FleetManager,
     "Hub": Hub,
+    "PageNotFound": PageNotFound,
     "Settings": Settings,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "PageNotFound": PageNotFound,
 }
 
 export const pagesConfig = {
