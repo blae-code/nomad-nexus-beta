@@ -5,8 +5,9 @@ import { useShellUI } from '@/components/providers/ShellUIContext';
 import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
 import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
+import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
-import { Radio, Search, PanelLeft, PanelRight } from 'lucide-react';
+import { Radio, Search, PanelLeft, PanelRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /**
