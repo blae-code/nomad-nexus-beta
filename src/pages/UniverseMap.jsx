@@ -54,9 +54,9 @@ export default function UniverseMap() {
             <h3 className="text-xl font-bold text-white mb-2">Tactical Map System</h3>
             <p className="text-zinc-400">Interactive map visualization coming soon</p>
           </div>
-        </div>
-        </div>
-      </div>
-    </AuthGuard>
-  );
-}
+          </div>
+          </div>
+          </div>
+          </AuthGuard>
+          );
+          }
