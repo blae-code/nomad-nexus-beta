@@ -103,9 +103,7 @@ export default function Settings() {
                 Logout
               </Button>
             </div>
-          </div>
-        </div>
       </div>
-    </AuthGuard>
+    </div>
   );
 }
