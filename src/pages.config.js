@@ -57,6 +57,7 @@ import Settings from './pages/Settings';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
+import Recon from './pages/Recon';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +72,7 @@ export const PAGES = {
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
+    "Recon": Recon,
 }
 
 export const pagesConfig = {

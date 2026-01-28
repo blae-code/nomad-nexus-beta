@@ -39,6 +39,7 @@ export default function Hub() {
     { name: 'Fleet Manager', path: 'FleetManager', icon: Box, description: 'Asset management' },
     { name: 'Treasury', path: 'Treasury', icon: DollarSign, description: 'Financial tracking' },
     { name: 'Settings', path: 'Settings', icon: Settings, description: 'App configuration' },
+    { name: 'Recon', path: 'Recon', icon: Shield, description: 'Archive and historical operations' },
   ];
 
   return (
