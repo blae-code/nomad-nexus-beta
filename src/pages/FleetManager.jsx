@@ -92,9 +92,7 @@ export default function FleetManager() {
                 </div>
               ))
             )}
-          </div>
-        </div>
       </div>
-    </AuthGuard>
+    </div>
   );
 }
