@@ -87,8 +87,7 @@ export default function FleetManager() {
                           <span className="text-zinc-500">Notes:</span> {asset.maintenance_notes}
                         </div>
                       )}
-                    </div>
-                  </div>
+                      </div>
                 </div>
               ))
             )}
