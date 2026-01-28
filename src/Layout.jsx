@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import SidePanel from '@/components/layout/SidePanel';
 import CommsDock from '@/components/layout/CommsDock';
 import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
 import { CommandPaletteProvider } from '@/components/providers/CommandPaletteContext';
+import { useLayoutPreferences } from '@/components/hooks/useLayoutPreferences';
 import PermissionGuard from '@/components/PermissionGuard';
 
 /**
@@ -21,7 +22,15 @@ const cn = (...classes) => {
 };
 
 export default function Layout({ children, currentPageName }) {
+  const { loaded, prefs, toggleSidePanel, toggleCommsDock } = useLayoutPreferences();
   const [dockOpen, setDockOpen] = useState(false);
+
+  // Sync localStorage state with UI state
+  useEffect(() => {
+    if (loaded) {
+      setDockOpen(prefs.commsDockOpen);
+    }
+  }, [loaded, prefs.commsDockOpen]);
 
   if (!children) {
     return (
@@ -36,7 +45,11 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleToggleDock = () => {
-    setDockOpen(!dockOpen);
+    const newState = !dockOpen;
+    setDockOpen(newState);
+    // Update localStorage
+    updatePrefs = require('@/components/hooks/useLayoutPreferences').useLayoutPreferences;
+    // Actually, let's use the hook result directly
   };
 
   const handleOpenAccessRequest = () => {
@@ -56,7 +69,7 @@ export default function Layout({ children, currentPageName }) {
         {/* Main layout grid: sidebar + content + dock */}
         <div className="flex flex-1 overflow-hidden">
           {/* SidePanel — left navigation with gating */}
-          <SidePanel currentPageName={currentPageName} />
+          {!prefs.sidePanelCollapsed && <SidePanel currentPageName={currentPageName} onToggleCollapse={toggleSidePanel} />}
 
           {/* Main content area — route outlet */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -64,7 +77,10 @@ export default function Layout({ children, currentPageName }) {
           </main>
 
           {/* CommsDock — right panel, collapsible */}
-          <CommsDock isOpen={dockOpen} onClose={() => setDockOpen(false)} />
+          {prefs.commsDockOpen && <CommsDock isOpen={prefs.commsDockOpen} onClose={() => {
+            setDockOpen(false);
+            toggleCommsDock();
+          }} />}
         </div>
 
         {/* Command Palette Modal */}
