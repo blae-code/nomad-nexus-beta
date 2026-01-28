@@ -1,26 +1,27 @@
-import PageNotFound from './pages/PageNotFound.jsx';
-import Hub from './pages/Hub.js';
-import AccessGate from './pages/AccessGate.jsx';
-import Events from './pages/Events.jsx';
-import CommsConsole from './pages/CommsConsole.jsx';
-import UserDirectory from './pages/UserDirectory.jsx';
-import UniverseMap from './pages/UniverseMap.jsx';
-import FleetManager from './pages/FleetManager.jsx';
-import Treasury from './pages/Treasury.jsx';
-import Settings from './pages/Settings.jsx';
+import AccessGate from './pages/AccessGate';
+import CommsConsole from './pages/CommsConsole';
+import Events from './pages/Events';
+import FleetManager from './pages/FleetManager';
+import Hub from './pages/Hub';
+import Settings from './pages/Settings';
+import Treasury from './pages/Treasury';
+import UniverseMap from './pages/UniverseMap';
+import UserDirectory from './pages/UserDirectory';
+import PageNotFound from './pages/PageNotFound';
 import __Layout from './Layout.jsx';
 
+
 export const PAGES = {
-    "PageNotFound": PageNotFound,
-    "Hub": Hub,
     "AccessGate": AccessGate,
-    "Events": Events,
     "CommsConsole": CommsConsole,
-    "UserDirectory": UserDirectory,
-    "UniverseMap": UniverseMap,
+    "Events": Events,
     "FleetManager": FleetManager,
-    "Treasury": Treasury,
+    "Hub": Hub,
     "Settings": Settings,
+    "Treasury": Treasury,
+    "UniverseMap": UniverseMap,
+    "UserDirectory": UserDirectory,
+    "PageNotFound": PageNotFound,
 }
 
 export const pagesConfig = {

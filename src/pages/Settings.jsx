@@ -128,7 +128,8 @@ export default function Settings() {
             </Button>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

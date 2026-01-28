@@ -55,7 +55,8 @@ export default function UniverseMap() {
             <p className="text-zinc-400">Interactive map visualization coming soon</p>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

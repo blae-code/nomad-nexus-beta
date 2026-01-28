@@ -107,7 +107,8 @@ export default function UserDirectory() {
             ))
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
