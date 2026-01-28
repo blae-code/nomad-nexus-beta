@@ -6,6 +6,11 @@ import { X } from 'lucide-react';
  * CommandPaletteUI — Modal overlay with search, navigation, execution
  * Handles: Ctrl/⌘+K to open, Esc to close, arrow keys, Enter
  */
+
+/**
+ * CommandPaletteUI — Modal overlay with search, navigation, execution
+ * Handles: Ctrl/⌘+K to open, Esc to close, arrow keys, Enter
+ */
 export default function CommandPaletteUI() {
   const { isOpen, closePalette, search, setSearch, groupedActions } = useCommandPalette();
   const [selectedIndex, setSelectedIndex] = useState(0);
