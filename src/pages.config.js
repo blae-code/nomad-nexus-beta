@@ -1,4 +1,3 @@
-
 export default {
   routes: [
     { path: '/', component: () => import('./pages/Hub.jsx') },
@@ -10,6 +9,5 @@ export default {
     { path: '/fleet-manager', component: () => import('./pages/FleetManager.jsx') },
     { path: '/treasury', component: () => import('./pages/Treasury.jsx') },
     { path: '/settings', component: () => import('./pages/Settings.jsx') },
-  ],
-  notFound: () => import('./pages/PageNotFound.js')
+  ]
 };
