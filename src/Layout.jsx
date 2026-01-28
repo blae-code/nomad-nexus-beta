@@ -45,15 +45,11 @@ export default function Layout({ children, currentPageName }) {
 }
 
 function LayoutContent({ currentPageName, children }) {
-  const { loaded, prefs, toggleSidePanel, toggleCommsDock } = useLayoutPreferences();
+  const { isSidePanelOpen, isContextPanelOpen, toggleSidePanel, toggleContextPanel } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
 
   const handleNavigate = (page) => {
     window.location.href = createPageUrl(page);
-  };
-
-  const handleToggleDock = () => {
-    toggleCommsDock();
   };
 
   const handleOpenAccessRequest = () => {
@@ -71,38 +67,36 @@ function LayoutContent({ currentPageName, children }) {
   return (
     <CommandPaletteProvider
       onNavigate={handleNavigate}
-      onToggleDock={handleToggleDock}
+      onToggleSidePanel={toggleSidePanel}
+      onToggleContextPanel={toggleContextPanel}
       onOpenAccessRequest={handleOpenAccessRequest}
       onTriggerTestAlert={handleTriggerTestAlert}
     >
-        <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
-          {/* Notification Center */}
-          <NotificationCenter />
+      <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
+        {/* Notification Center */}
+        <NotificationCenter />
 
-          {/* Header — top navigation */}
-          <Header />
+        {/* Header — top navigation fixed */}
+        <Header />
 
-        {/* Main layout grid: sidebar + content + dock */}
+        {/* Main layout grid: sidepanel + content + contextpanel */}
         <div className="flex flex-1 overflow-hidden">
-          {/* SidePanel — left navigation with gating */}
-          {!prefs.sidePanelCollapsed && <SidePanel currentPageName={currentPageName} onToggleCollapse={toggleSidePanel} />}
+          {/* SidePanel — left navigation, collapsible */}
+          {isSidePanelOpen && <SidePanel currentPageName={currentPageName} onToggleCollapse={toggleSidePanel} />}
 
-          {/* Main content area — route outlet */}
+          {/* Main content area — route outlet, scrolls internally */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <PermissionGuard>{children}</PermissionGuard>
           </main>
 
-          {/* CommsDock — right panel, collapsible */}
-          {prefs.commsDockOpen && <CommsDock isOpen={prefs.commsDockOpen} onClose={() => {
-            setDockOpen(false);
-            toggleCommsDock();
-          }} />}
+          {/* ContextPanel — right sidebar, collapsible */}
+          <ContextPanel isOpen={isContextPanelOpen} onClose={toggleContextPanel} />
         </div>
 
-          {/* Command Palette Modal */}
-          <CommandPaletteUI />
-        </div>
-      </CommandPaletteProvider>
+        {/* Command Palette Modal */}
+        <CommandPaletteUI />
+      </div>
+    </CommandPaletteProvider>
   );
 }
 
