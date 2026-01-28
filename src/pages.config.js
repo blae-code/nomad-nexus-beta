@@ -9,7 +9,7 @@ import Diagnostics from './pages/Diagnostics';
 import EventReporting from './pages/EventReporting';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
-import Hub from './pages/Hub.js';
+import Hub from './pages/Hub';
 import Intelligence from './pages/Intelligence';
 import MissionControl from './pages/MissionControl';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
@@ -30,7 +30,7 @@ import UserDirectory from './pages/UserDirectory';
 import UserManager from './pages/UserManager';
 import UserSettings from './pages/UserSettings';
 import VoiceNetManager from './pages/VoiceNetManager';
-import __Layout from './Layout.js';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
