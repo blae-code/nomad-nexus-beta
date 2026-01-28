@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Radio } from 'lucide-react';
+import { Send, Radio, AlertCircle } from 'lucide-react';
+import PermissionGuard from '@/components/PermissionGuard';
+import { COMMS_CHANNEL_TYPES, FOCUSED_MIN_RANK } from '@/components/constants/channelTypes';
+import { useCurrentUser } from '@/components/useCurrentUser';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -43,6 +46,8 @@ export default function CommsConsole() {
     loadMessages(selectedChannel.id);
   };
 
+  const { user: currentUser } = useCurrentUser();
+
   if (loading) {
     return <div className="p-8 text-center text-orange-500">LOADING...</div>;
   }
@@ -52,6 +57,33 @@ export default function CommsConsole() {
       <div className="mb-8">
         <h1 className="text-3xl font-black uppercase tracking-wider text-white">Comms Console</h1>
         <p className="text-zinc-400 text-sm">Communication channels</p>
+        {currentUser && (
+          <p className="text-xs text-zinc-500 mt-2">
+            Logged in as: <span className="text-orange-400">{currentUser.callsign}</span> ({currentUser.rank})
+          </p>
+        )}
+      </div>
+
+      {/* Focused Comms Gate Demo */}
+      <div className="mb-6 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-white mb-2">Focused Comms (Scout+)</h3>
+            <PermissionGuard
+              minRank={FOCUSED_MIN_RANK}
+              fallback={
+                <p className="text-xs text-zinc-500">
+                  You must be Scout or higher to access Focused comms. Current rank: {currentUser?.rank}
+                </p>
+              }
+            >
+              <p className="text-xs text-zinc-300">
+                ✓ You have access to Focused channels. Operational security protocols in effect.
+              </p>
+            </PermissionGuard>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-4 h-[calc(100vh-200px)]">
