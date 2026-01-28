@@ -1,266 +1,110 @@
-# Nomad Nexus — Architecture Manifest
+# Phase 1C — Mission Control Spine (Header + Command Palette)
 
-## Phase Overview
+## Overview
+Restored the app's "command surface" control plane with a dense Header, global Command Palette system, and canonical label maps to prevent UI collisions (esp. Rank.VAGRANT vs Membership.VAGRANT).
 
-### Phase 1A — Canon Access Layer (Completed)
-- **Ranks**: Vagrant, Scout, Voyager, Founder, Pioneer (tier-based hierarchy)
-- **Roles**: Shamans, Rangers, Industry, Racing, Rescue (skill/dept tags)
-- **PermissionGuard**: Rank + role-based content gating
+## Components & Locations
 
-**Files**:
-- `components/constants/ranks.js` — rank enum & validation
-- `components/constants/roles.js` — role enum & validators
-- `components/PermissionGuard.js` — access control wrapper
+### 1. Canonical Label Maps
+- **File:** `components/constants/labels.js`
+- **Exports:**
+  - `RANK_LABELS` — maps rank enum → display string ("The Pioneer", "Founder", "Voyager", "Scout", "Vagrant")
+  - `MEMBERSHIP_LABELS` — maps membership enum → display string (guards VAGRANT → "Prospect" collision)
+  - `ROLE_LABELS` — maps role enum → display string
+  - `getRankLabel(rank)` — helper to get rank display label
+  - `getMembershipLabel(status)` — helper to get membership display label (collision-safe)
+  - `getRoleLabel(role)` — helper to get role display label
 
-### Phase 1B — Membership & Comms Policy (Completed)
-- **Membership Tiers**: Guest, Prospect (Vagrant alias), Member, Affiliate, Partner
-- **Canonical Comms Policy**: `canAccessFocusedComms(user, channel)` — single source of truth
-- **SidePanel Navigation**: Left sidebar with Focused comms gating + Request Access modal
-- **Collision Guard**: VAGRANT rank ≠ VAGRANT membership (both exist orthogonally)
+### 2. Membership Collision Guard
+- **File:** `components/constants/membership.js`
+- **Constants:**
+  - `MEMBERSHIP_STATUS.PROSPECT` — canonical tier (new)
+  - `MEMBERSHIP_STATUS.VAGRANT` — legacy alias, but UI renders as "Prospect" via labels helper
+  - `grantsFocusedAccess(membership)` — checks if membership unlocks Focused comms
+- **Design:** Preserves backward-compatibility while preventing VAGRANT ambiguity in UI.
 
-**Files**:
-- `components/constants/membership.js` — membership enum + access validator
-- `components/constants/channelTypes.js` — channel types (casual, focused)
-- `components/utils/commsAccessPolicy.js` — canonical comms access logic
-- `components/layout/SidePanel.js` — left nav with permission gates
-- `components/useCurrentUser.js` — user hook (mock variants for dev testing)
-- `Layout.js` — wraps app with Layout + SidePanel
+### 3. Header Component (v1)
+- **File:** `components/layout/Header.js`
+- **Features:**
+  - Single-row dense layout (no wrapping, no horizontal scroll)
+  - Displays: Callsign | Rank Badge | Membership Tag | Role Pills (2 max on md+)
+  - Telemetry strip: Comms OK | Active Ops (static placeholders)
+  - Command Palette trigger button with Ctrl+K hint
+  - Responsive: callsign always visible, role pills collapse on smaller screens
+  - Uses label helpers for collision-free display
 
-### Phase 1C — Header & Command Palette (Current)
-- **Label Maps**: Canonical UI text for ranks, roles, memberships (no collisions)
-- **Header v1**: Single-row control plane (callsign, badges, telemetry, cmd palette trigger)
-- **Command Palette**: Global action registry with access filtering + hotkeys
-- **Keyboard Shortcuts**: Ctrl/⌘+K to open, Esc to close, arrow keys + Enter
+### 4. Command Palette System
 
-**Files**:
-- `components/constants/labels.js` — canonical UI label maps (rank, role, membership)
-- `components/layout/Header.js` — control plane v1 (callsign, badges, cmd trigger)
-- `components/providers/CommandPaletteContext.js` — palette state + action registry
-- `components/providers/CommandPaletteUI.js` — modal UI + keyboard handling
-- `Layout.js` — updated to wrap with CommandPaletteProvider + wire hotkeys
+#### Provider
+- **File:** `components/providers/CommandPaletteContext.js`
+- **Exports:**
+  - `CommandPaletteProvider` — wraps app with context
+  - `useCommandPalette()` — hook to access palette state
+- **State:**
+  - `isOpen`, `closePalette()`, `openPalette()`
+  - `search` (filter text)
+  - `filteredActions` (search-filtered action list)
+  - `groupedActions` (actions grouped by category)
+- **Action Registry:**
+  - Actions are filtered by access predicates (`isVisible(user)`)
+  - Supports membership/rank/role gating
+  - Built-in actions: Navigate (Hub, Events, CommsConsole, Recon), Toggle (CommsDock), Open (Request Access), Alerts
 
----
+#### Modal UI
+- **File:** `components/providers/CommandPaletteUI.js`
+- **Features:**
+  - Overlay modal with search input
+  - Keyboard navigation (↑/↓, Enter, Esc)
+  - Global Ctrl/⌘+K listener (cleans up on unmount)
+  - Category-grouped action display
+  - Footer hints for keyboard shortcuts
+  - Click to execute action or dismiss
 
-## File Structure
+### 5. Integration into Layout Shell
+- **File:** `Layout.js` (updated)
+- **Structure:**
+  - `NotificationProvider` (outermost)
+  - `CommandPaletteProvider` (wraps content area)
+  - `Header` (always visible, top)
+  - `PermissionGuard` (around main content)
+  - `CommandPaletteUI` (modal overlay)
+- **No duplicates:** Single global shell path.
 
-```
-components/
-├── constants/
-│   ├── ranks.js                  # Rank enum (VAGRANT, SCOUT, VOYAGER, FOUNDER, PIONEER)
-│   ├── roles.js                  # Role enum + validators
-│   ├── membership.js             # Membership enum (GUEST, PROSPECT/VAGRANT, MEMBER, AFFILIATE, PARTNER)
-│   ├── channelTypes.js           # Channel types (CASUAL, FOCUSED)
-│   └── labels.js                 # ⭐ NEW: Canonical UI label maps + helpers
-│
-├── utils/
-│   ├── commsAccessPolicy.js      # Canonical comms access logic (Phase 1B)
-│   └── timeout.js
-│
-├── layout/
-│   ├── Header.js                 # ⭐ NEW: Control plane v1 (callsign, badges, cmd trigger)
-│   ├── SidePanel.js              # Left nav with gating (Phase 1B)
-│   ├── CommsDock.js              # Right panel (live ops data)
-│   └── headerStyles.js
-│
-├── providers/
-│   ├── CommandPaletteContext.js  # ⭐ NEW: Palette provider + action registry
-│   └── CommandPaletteUI.js       # ⭐ NEW: Modal UI + keyboard handling
-│
-├── useCurrentUser.js             # User hook (mock variants for testing)
-├── PermissionGuard.js            # Rank + role gating wrapper
-└── ... (other components)
+### 6. Access Filtering
+- **Location:** `CommandPaletteContext.js` (action registry)
+- **Rules:**
+  - Actions with `isVisible(user)` predicates are conditionally shown
+  - "Focused Comms" actions check via `canAccessFocusedComms(user, channel)`
+  - Import/reuse existing comms policy utilities (no duplication)
 
-pages/
-├── Hub.js                        # Dashboard
-├── Events.js                     # Operations
-├── CommsConsole.js               # Comms channels (Phase 1B demo)
-├── UserDirectory.js              # Member roster
-├── UniverseMap.js                # Tactical map
-├── FleetManager.js               # Asset management
-├── Treasury.js                   # Financial tracking
-├── Settings.js                   # User profile
-├── AccessGate.js                 # Auth entry
-├── Recon.js                      # Archive
-└── PageNotFound.js
+## File Summary
 
-Layout.js                         # ⭐ UPDATED: Top-level shell (Provider + Header + SidePanel)
+| File | Status | Change |
+|------|--------|--------|
+| `components/constants/labels.js` | ✅ | Created/Updated |
+| `components/constants/membership.js` | ✅ | Updated collision guard |
+| `components/layout/Header.js` | ✅ | Created/Implemented |
+| `components/providers/CommandPaletteContext.js` | ✅ | Created/Implemented |
+| `components/providers/CommandPaletteUI.js` | ✅ | Created/Implemented |
+| `Layout.js` | ✅ | Updated (integrated providers) |
+| `components/useCurrentUser.js` | ✅ | Mock variants preserved |
 
-entities/
-├── MemberProfile.json
-├── Channel.json
-├── Message.json
-├── Event.json
-└── ... (20+ entity schemas)
+## Acceptance Criteria
 
-functions/
-└── ... (backend functions for integrations)
+- [✅] App builds and runs
+- [✅] Ctrl/⌘ + K opens the palette from any route
+- [✅] Palette actions route correctly and respect access filtering
+- [✅] Header shows callsign + rank + membership with no VAGRANT ambiguity
+- [✅] No horizontal scrolling; header remains single-row
+- [✅] All imports resolve; no dangling references
 
-agents/
-└── ... (AI agents)
-```
+## Known Gaps / Deferred
 
----
+- Telemetry strip values are static placeholders (can be hooked to `TelemetryProvider` later)
+- CommsDock toggle is a safe stub (no-op) if CommsDock component doesn't exist
+- "Request Focused Access" modal is routed to SidePanel or placeholder page
+- LiveKit integration (VoiceNet) not yet wired to header status
 
-## Key Concepts
+## Next Safe Step
 
-### Access Control Axes (Orthogonal)
-1. **Rank** (tier 0–4): Operational hierarchy — determines seniority
-2. **Role** (tags): Skill/department — independent of rank
-3. **Membership** (tier): Org-level access — determines Focused comms
-
-### Label Collision Guard
-**Problem**: VAGRANT exists as both rank (tier 0) and membership (trial).
-**Solution**: 
-- `RANK_LABELS[VAGRANT]` → "Vagrant" (rank UI)
-- `MEMBERSHIP_LABELS[VAGRANT]` → "Prospect" (membership UI)
-- Both use label maps, never raw enum values in UI
-
-### Canonical Comms Policy
-```js
-canAccessFocusedComms(user, channel)
-├─ CASUAL channels: always accessible
-└─ FOCUSED channels:
-   ├─ isTemporary: true → open to all (demo/event mode)
-   └─ isTemporary: false → requires MEMBER/AFFILIATE/PARTNER
-```
-
-### Command Palette
-**Registry**: Action objects with id, label, category, description, onExecute, isVisible predicate
-**Filtering**: By membership/rank/role via isVisible callback
-**Keyboard**:
-- Ctrl/⌘+K: open
-- Esc: close
-- ↑↓: navigate
-- Enter: execute
-
-**Built-in Actions**:
-- Navigate: Hub, Events, Comms, Directory, Recon
-- Toggle: CommsDock
-- Open: Request Focused Access (appears only if unauthorized)
-
----
-
-## Dev Quick Start
-
-### Test Different User Tiers
-Edit `components/useCurrentUser.js` line ~27:
-```js
-const MOCK_USER_VARIANT = 'MEMBER';
-// Options: 'GUEST', 'VAGRANT', 'MEMBER', 'AFFILIATE', 'PARTNER'
-```
-
-Each variant has predefined rank, roles, membership to simulate different access scenarios.
-
-### Use Header + Palette
-1. Open app → Header displays user callsign + rank badge + membership tag
-2. Press Ctrl+K → Command palette opens
-3. Search "Comms" → routes to CommsConsole
-4. Try "Request Access" → only visible if membership doesn't grant Focused
-
-### Gate Content with Labels
-```jsx
-import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
-
-const rankDisplay = getRankLabel(user.rank);     // "Scout"
-const memberDisplay = getMembershipLabel(user.membership);  // "Prospect"
-```
-
-### Gate Content with Policy
-```jsx
-import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
-
-const allowed = canAccessFocusedComms(user, {
-  type: COMMS_CHANNEL_TYPES.FOCUSED,
-  isTemporary: false
-});
-```
-
----
-
-## Known Gaps & Deferred Work
-
-### Phase 1C
-- [ ] Palette action pinning (favorites)
-- [ ] Custom command registry extension (let features register actions)
-- [ ] Palette history/recent actions
-- [ ] Mobile collapse (always-visible SidePanel; mobile hamburger menu in Phase 1D)
-
-### Future Phases
-- Real auth integration (replace useCurrentUser mock fallback)
-- Access request workflow (modal → backend email/notification)
-- Voice net discipline gating (Focused vs Casual voice comms)
-- Role-based UI visibility (hide buttons/menus by role, not just content)
-- Persistent user settings (sidebar width, dock state, etc.)
-
----
-
-## Testing Checklist
-
-- [ ] App builds without errors
-- [ ] Ctrl/⌘+K opens palette from any route
-- [ ] Palette actions navigate correctly
-- [ ] Header shows non-colliding labels (rank "Vagrant" ≠ membership "Prospect")
-- [ ] "Request Access" action only appears for unauthorized users
-- [ ] No horizontal scrolling on Header
-- [ ] Arrow keys navigate palette correctly
-- [ ] Esc closes palette
-- [ ] Enter executes selected action
-
----
-
-## Recent Changes (Phase 1C)
-
-**Added:**
-1. `components/constants/labels.js` — RANK_LABELS, MEMBERSHIP_LABELS, ROLE_LABELS + helpers
-2. `components/layout/Header.js` — control plane v1 with badges & cmd trigger
-3. `components/providers/CommandPaletteContext.js` — provider + action registry
-4. `components/providers/CommandPaletteUI.js` — modal + keyboard handling
-5. `components/constants/membership.js` — updated with PROSPECT alias + collision guard note
-
-**Updated:**
-1. `Layout.js` — wrapped with CommandPaletteProvider, includes Header, wire handlers
-
-**No deletions or renames.**
-
----
-
-## Architecture Diagram (Phase 1C Complete)
-
-```
-Layout.js (Top-Level Shell)
-├── CommandPaletteProvider
-│   ├── Header
-│   │   ├── Callsign
-│   │   ├── Rank Badge (from RANK_LABELS)
-│   │   ├── Membership Tag (from MEMBERSHIP_LABELS)
-│   │   ├── Role Pills (from ROLE_LABELS)
-│   │   ├── Telemetry Strip
-│   │   └── Cmd Palette Trigger
-│   │
-│   ├── SidePanel (left nav with gates)
-│   │
-│   ├── Main Content
-│   │   └── Route outlet + PermissionGuard
-│   │
-│   ├── CommsDock (right panel)
-│   │
-│   └── CommandPaletteUI (modal overlay)
-│       ├── Search input
-│       ├── Action groups (Navigate, Toggle, Open)
-│       └── Keyboard: Ctrl+K, Esc, ↑↓, Enter
-│
-User (useCurrentUser)
-├── id, email, callsign
-├── rank (with RANK_LABELS)
-├── membership (with MEMBERSHIP_LABELS)
-└── roles (with ROLE_LABELS)
-
-Access Policy
-├── canAccessFocusedComms(user, channel)
-├── canAccessByRank(user, minRank)
-└── canAccessByRole(user, requiredRoles)
-```
-
----
-
-End of Manifest
+Wire Notification System → Command Palette integration: Add notification action cards to the palette (e.g., "Acknowledge Alert", "View Incident") and persist alert state via NotificationContext for quick access.
