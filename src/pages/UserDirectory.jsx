@@ -85,5 +85,6 @@ export default function UserDirectory() {
           ))
         )}
       </div>
-  );
-}
+      </div>
+      );
+      }
