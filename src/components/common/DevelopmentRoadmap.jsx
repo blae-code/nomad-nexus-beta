@@ -185,25 +185,42 @@ export default function DevelopmentRoadmap() {
                   </div>
                 </div>
 
-                {/* Compact Features List */}
-                <div className="flex flex-wrap gap-1 px-2 py-1.5">
-                  {milestone.features.map((feature) => (
-                    <div
-                      key={feature.name}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium transition-colors border ${
-                        feature.status === 'complete'
-                          ? 'bg-green-500/15 border-green-500/40 text-green-300'
-                          : feature.status === 'in-progress'
-                          ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
-                          : 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400'
-                      }`}
-                    >
-                      {getStatusIcon(feature.status)}
-                      <span className="whitespace-nowrap">{feature.name}</span>
+                      {/* Compact Features List */}
+                      <div className="flex flex-wrap gap-1 px-2 py-1.5">
+                        {milestone.features.map((feature) => (
+                          <TooltipProvider key={feature.name}>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium transition-colors border cursor-help ${
+                                    feature.status === 'complete'
+                                      ? 'bg-green-500/15 border-green-500/40 text-green-300'
+                                      : feature.status === 'in-progress'
+                                      ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
+                                      : 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400'
+                                  }`}
+                                >
+                                  {getStatusIcon(feature.status)}
+                                  <span className="whitespace-nowrap">{feature.name}</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="bg-zinc-950 border-orange-500/40 max-w-xs">
+                                <p className="text-xs text-zinc-200">{featureDescriptions[feature.name] || feature.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-zinc-950 border-orange-500/40 max-w-sm">
+                    <div className="space-y-1.5">
+                      <p className="font-semibold text-orange-400">{milestone.title}</p>
+                      <p className="text-xs text-zinc-200">{phaseDescriptions[milestone.phase]}</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             );
           })}
           <div className="bg-blue-500/10 border border-blue-500/30 rounded px-2.5 py-1.5 text-[9px]">
