@@ -116,8 +116,16 @@ export default function Header() {
               </div>
               {voiceNet.activeNetId && (
                 <div className="flex items-center gap-1">
-                  <Mic className={`w-3 h-3 ${voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'text-orange-500' : 'text-yellow-500'}`} />
-                  <span>Voice: {voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'Connected' : 'Joining...'}</span>
+                  <Mic className={`w-3 h-3 ${
+                    voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'text-green-500' : 
+                    voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'text-orange-500' : 
+                    voiceNet.connectionState === VOICE_CONNECTION_STATE.ERROR ? 'text-red-500' : 'text-yellow-500'
+                  }`} />
+                  <span>Voice: {
+                    voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'Connected' : 
+                    voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'Reconnecting' : 
+                    voiceNet.connectionState === VOICE_CONNECTION_STATE.ERROR ? 'Error' : 'Joining'
+                  }{voiceNet.participants.length > 0 ? ` (${voiceNet.participants.length})` : ''}</span>
                 </div>
               )}
               <div className="flex items-center gap-1">

@@ -1,299 +1,395 @@
-# Mission Control Spine — Component Manifest
+# Nexus Mission Console — Component Manifest
 
-**Last Updated:** 2026-01-28  
-**Phase:** 1D (AppShell Geometry + Right Context Panel + Dock Toggles)
-
----
-
-## Core Layout Shell
-
-### AppShell (Global Wrapper)
-- **File:** `Layout.js`
-- **Responsibility:** Single authoritative shell layout wrapping all routes
-- **Structure:**
-  - NotificationProvider (outer)
-  - ShellUIProvider (manages sidepanel/context panel/dock state)
-  - CommandPaletteProvider (command registry + execution)
-  - Header (fixed, h-16)
-  - Main body (flex row: sidepanel | main | contextpanel)
-  - CommandPaletteUI (modal overlay)
-- **State Management:**
-  - Uses `useShellUI()` for panel toggles
-  - Uses `useCommandPalette()` for command execution
-  - Uses `useNotification()` for system alerts
+**Last Updated:** Phase 3C (2026-01-29)  
+**Platform:** Base44 React App
 
 ---
 
-## Providers & Context
+## Architecture Overview
 
-### ShellUIProvider
-- **File:** `components/providers/ShellUIContext.js`
-- **Exports:** `ShellUIProvider`, `useShellUI()`
-- **State:**
-  ```
-  isSidePanelOpen: boolean
-  isContextPanelOpen: boolean
-  isCommsDockOpen: boolean
-  loaded: boolean
-  toggleSidePanel: function
-  toggleContextPanel: function
-  toggleCommsDock: function
-  ```
-- **Persistence:** localStorage (`nexus.shell.state`)
-- **Defaults:** SidePanel open, ContextPanel open, CommsDock closed
-
-### CommandPaletteProvider
-- **File:** `components/providers/CommandPaletteContext.js`
-- **Exports:** `CommandPaletteProvider`, `useCommandPalette()`
-- **Action Registry:** Includes navigation, toggles, alerts
-- **Callbacks Accepted:**
-  - `onNavigate(page)` → navigate to page
-  - `onToggleSidePanel()` → toggle left panel
-  - `onToggleContextPanel()` → toggle right panel
-  - `onOpenAccessRequest()` → open access gate modal
-  - `onTriggerTestAlert(type)` → trigger test notifications
-
-### NotificationProvider
-- **File:** `components/providers/NotificationContext.js`
-- **Exports:** `NotificationProvider`, `useNotification()`
-- **Manages:** Stack of notifications (alerts, success, error, info)
-- **Features:** Auto-dismiss, action buttons, customizable duration
+The Nexus Mission Console is a multi-phase React application providing organizational comms, event management, voice networking, and tactical systems for distributed operations. Built on Base44 platform with minimal external dependencies.
 
 ---
 
-## Header & Controls
+## Phase Progression
 
-### Header
-- **File:** `components/layout/Header.js`
-- **Fixed Height:** h-16 (64px)
-- **Layout:** Single row, no wrap
-- **Left Section:** Callsign + Rank badge + Membership tag + Role pills
-- **Right Section:** Telemetry (hidden on mobile) + Panel toggles + Command palette
-- **Controls:**
-  - PanelLeft button → Toggle SidePanel
-  - PanelRight button → Toggle ContextPanel
-  - Search button → Open Command Palette (Ctrl+K)
+### Phase 1A — Foundation (Shell + Navigation)
+- Core layout structure (Header, SidePanel, ContextPanel, CommsDock)
+- Command Palette system with keyboard shortcuts
+- Basic authentication guards and permission system
+- Responsive design foundations
 
----
+### Phase 1B — Access Control + Membership
+- Membership tiers (Casual, Member, Affiliate, Partner)
+- Rank system (Vagrant → Commander)
+- Permission-gated navigation and features
+- Access request workflows
 
-## Navigation & Panels
+### Phase 1C — Comms Console Foundation
+- Text-based communication channels
+- Channel types (Casual, Focused, Admin, Squad, Public)
+- Message composer with real-time updates
+- Channel list with unread indicators
 
-### SidePanel
-- **File:** `components/layout/SidePanel.js`
-- **Width:** w-64 (collapsible)
-- **Content:** Navigation links with icon + label
-- **Features:** Access gating for "Focused Comms" feature
-- **Visibility:** Controlled by `useShellUI().isSidePanelOpen`
+### Phase 1D — Roster + Presence
+- User directory with filtering and search
+- Real-time presence tracking (online/offline)
+- Heartbeat system with configurable intervals
+- Presence-aware roster displays
 
-### ContextPanel (NEW — Phase 1D)
-- **File:** `components/layout/ContextPanel.js`
-- **Width:** w-64 (collapsible)
-- **Sections:** 5 accordion sections (Active Nets, Voice Controls, Roster, Riggsy, Diagnostics)
-- **Scrolling:** Internal overflow-y-auto
-- **Visibility:** Controlled by `useShellUI().isContextPanelOpen`
-- **Close Button:** Toggles context panel off
+### Phase 2A — Comms Enhancements
+- Read state tracking per user per channel
+- Unread count aggregation by tab
+- Inline message actions (future: reactions, threads)
+- Improved message composer UX
 
-### CommsDock
-- **File:** `components/layout/CommsDock.js`
-- **Status:** Exists; toggle state ready (Phase 1D does not wire voice functionality)
-- **Visibility:** Controlled by `useShellUI().isCommsDockOpen`
+### Phase 2B — Telemetry + Readiness
+- Latency probe with health indicators
+- Readiness derivation (presence + latency)
+- Diagnostics panel in ContextPanel
+- Header telemetry strip (compact, single-row)
 
----
+### Phase 3A — Voice Nets (Mock Transport)
+- Voice net data model (Casual, Focused, Temporary)
+- Mock voice transport with simulated participants
+- VoiceNetProvider state machine
+- PTT controls and mic enablement
+- Session heartbeat and speaking indicators
 
-## Command Palette Actions
+### Phase 3B — LiveKit Integration (Real Voice)
+- Backend token minting (mintVoiceToken function)
+- LiveKitTransport implementation (livekit-client SDK)
+- Device selection hook (useAudioDevices)
+- Device persistence (localStorage)
+- Reconnect resilience (RoomEvent handlers)
+- Fallback to mock when LiveKit unconfigured
 
-### Action Registry (CommandPaletteContext.js)
-
-#### Navigation Actions
-- `nav:hub` → Hub page
-- `nav:events` → Events page
-- `nav:comms` → Comms Console
-- `nav:directory` → User Directory
-- `nav:recon` → Recon/Archive
-
-#### Toggle Actions (NEW — Phase 1D)
-- `toggle:sidepanel` → Toggle Sidebar (always visible)
-- `toggle:contextpanel` → Toggle Systems Panel (always visible)
-- `toggle:comms-dock` → Toggle Comms Dock (always visible)
-
-#### Alert Actions
-- `alert:view` → View Alerts (scroll to notification center)
-- `alert:test-event` → Trigger sample event notification (dev)
-- `alert:test-system` → Trigger sample system notification (dev)
-
-#### Access Actions
-- `open:request-access` → Apply for Focused Comms (conditional visibility)
+### Phase 3C — Active Net Monitor + Discipline (Current)
+- Server-side token policy enforcement (membership checks)
+- Voice health module (useVoiceHealth hook)
+- Rate-limited join/leave notifications
+- Active net monitor UI (enhanced ContextPanel)
+- Focused net confirmation sheet (one-time per session)
+- Header voice status chip with participant count
 
 ---
 
-## Supporting Utilities
-
-### Labels & Display Names
-- **File:** `components/constants/labels.js`
-- **Functions:**
-  - `getRankLabel(rank)` → Display label for rank
-  - `getMembershipLabel(membership)` → Display label with "Vagrant" → "Prospect" alias
-  - `getRoleLabel(role)` → Display label for role
-
-### Channel Types & Access
-- **File:** `components/constants/channelTypes.js`
-- **Exports:** `COMMS_CHANNEL_TYPES`, `requiresPermissionGating(type)`
-
-### Comms Access Policy
-- **File:** `components/utils/commsAccessPolicy.js`
-- **Functions:**
-  - `canAccessFocusedComms(user, channel)` → Boolean
-  - `getAccessDenialReason(user, channel)` → String explanation
-
-### Current User Hook
-- **File:** `components/useCurrentUser.js`
-- **Exports:** `useCurrentUser()` hook, `MOCK_USER_VARIANTS`
-- **Returns:** User object with callsign, rank, membership, roles
-
----
-
-## Notifications & Alerts
-
-### NotificationCenter
-- **File:** `components/notifications/NotificationCenter.js`
-- **Display:** Top-right corner, stacked
-- **Types:** info, success, warning, error, alert
-- **Features:** Icon, title, message, action buttons, auto-dismiss
-
-### Alert Simulator Hook (Dev)
-- **File:** `components/hooks/useAlertSimulator.js`
-- **Functions:**
-  - `triggerEventAlert()` → Sample event notification
-  - `triggerSystemAlert()` → Sample system notification
-  - `triggerSuccessNotification()` → Sample success
-  - `triggerErrorNotification()` → Sample error
-
----
-
-## Responsive Design
-
-### Breakpoints
-- **Mobile (< 640px):** Single column; panels hidden by default; toggleable via command palette
-- **Tablet (640px–1024px):** 3-column layout visible; header controls shown
-- **Desktop (1024px+):** Full layout + telemetry strip visible
-
-### No Horizontal Scroll
-- SidePanel w-64 (fixed)
-- ContextPanel w-64 (fixed)
-- Main flex-1 (fills remaining)
-- Body overflow-hidden; internal panels scroll
-
----
-
-## File Tree (Phase 1D)
+## Directory Structure
 
 ```
-Layout.js                                    (app shell)
-├── components/
-│   ├── providers/
-│   │   ├── ShellUIContext.js               (state management)
-│   │   ├── CommandPaletteContext.js        (command registry)
-│   │   ├── CommandPaletteUI.js             (modal)
-│   │   └── NotificationContext.js          (notifications)
-│   ├── layout/
-│   │   ├── Header.js                       (fixed, h-16)
-│   │   ├── SidePanel.js                    (left nav)
-│   │   ├── ContextPanel.js                 (right sidebar, NEW)
-│   │   └── CommsDock.js                    (right panel, toggle ready)
-│   ├── notifications/
-│   │   └── NotificationCenter.js           (toast stack)
-│   ├── constants/
-│   │   ├── labels.js                       (canonical labels)
-│   │   ├── channelTypes.js                 (access rules)
-│   │   └── membership.js                   (membership tiers)
-│   ├── utils/
-│   │   └── commsAccessPolicy.js            (permission logic)
+components/
+├── constants/
+│   ├── channelTypes.js          # Comms channel type constants
+│   ├── labels.js                # Rank, membership, role labels
+│   ├── membership.js            # Membership tier definitions
+│   ├── ranks.js                 # Rank hierarchy and permissions
+│   ├── roles.js                 # Role definitions
+│   └── voiceNet.js              # Voice net constants and defaults
+├── hooks/
+│   ├── useAlertSimulator.js     # Dev helper for notification testing
+│   ├── useLatency.js            # Network latency probe
+│   ├── useLayoutPreferences.js  # UI layout persistence
+│   ├── usePresenceHeartbeat.js  # Presence write automation
+│   ├── usePresenceRoster.js     # Online user polling
+│   ├── useReadiness.js          # Derived readiness state
+│   └── useUnreadCounts.js       # Unread message aggregation
+├── layout/
+│   ├── CommsDock.js             # Bottom comms panel (text messages)
+│   ├── CommsDockShell.js        # Comms dock container
+│   ├── ContextPanel.js          # Right sidebar (systems, voice, roster)
+│   ├── Header.js                # Top navigation bar with telemetry
+│   ├── LayoutSettings.js        # Layout customization UI
+│   └── SidePanel.js             # Left navigation menu
+├── models/
+│   ├── comms.js                 # Comms channel and message models
+│   ├── presence.js              # Presence data model
+│   └── voiceNet.js              # Voice net and session models
+├── providers/
+│   ├── CommandPaletteContext.js # Global command palette state
+│   ├── CommandPaletteUI.js      # Command palette modal
+│   ├── NotificationContext.js   # Global notification system
+│   └── ShellUIContext.js        # Shell UI state (panel visibility)
+├── services/
+│   ├── commsService.js          # Text comms operations
+│   ├── latencyProbe.js          # Network latency measurement
+│   ├── presenceService.js       # Presence read/write/cleanup
+│   └── voiceService.js          # Voice session management
+├── utils/
+│   ├── commsAccessPolicy.js     # Comms channel access logic
+│   ├── readiness.js             # Readiness derivation function
+│   └── voiceAccessPolicy.js     # Voice net access policy
+├── voice/
+│   ├── components/
+│   │   └── FocusedNetConfirmation.js  # Focused net discipline sheet
+│   ├── health/
+│   │   └── voiceHealth.js             # Voice connection health tracking
 │   ├── hooks/
-│   │   ├── useShellUI.js                   (exported from context)
-│   │   ├── useAlertSimulator.js            (dev alerts)
-│   │   └── useLayoutPreferences.js         (legacy, to deprecate)
-│   ├── useCurrentUser.js                   (user data)
-│   ├── PermissionGuard.js                  (access control wrapper)
-│   └── PHASE_1D_VERIFICATION.md            (this phase's report)
-└── pages/
-    ├── Hub.js
-    ├── Events.js
-    ├── CommsConsole.js
-    ├── Settings.js
-    ├── AccessGate.js
-    └── ...
+│   │   └── useAudioDevices.js         # Audio device enumeration + selection
+│   ├── notifications/
+│   │   └── voiceNotifications.js      # Rate-limited voice event notifications
+│   ├── transport/
+│   │   ├── VoiceTransport.js          # Transport adapter interface
+│   │   ├── MockVoiceTransport.js      # Simulated voice transport
+│   │   └── LiveKitTransport.js        # Real LiveKit transport
+│   ├── utils/
+│   │   └── devicePersistence.js       # localStorage for device prefs
+│   └── VoiceNetProvider.js            # Voice net state machine
+├── comms/
+│   ├── ChannelList.js           # Channel sidebar
+│   ├── CommsTab.js              # Main comms view (channels + messages)
+│   ├── MessageComposer.js       # Message input + send
+│   └── MessageView.js           # Message list with scrolling
+├── notifications/
+│   └── NotificationCenter.js    # Toast/alert display
+├── common/
+│   ├── AuthGuard.js             # Authentication wrapper
+│   ├── EmptyState.js            # Placeholder UI component
+│   ├── LoadingScreen.js         # Loading state UI
+│   └── PageHeader.js            # Reusable page header
+├── PermissionGuard.js           # Role/rank access control
+├── useCurrentUser.js            # Current user hook (with mock fallback)
+├── UserNotRegisteredError.js    # Onboarding error state
+└── MANIFEST.md                  # This file
 ```
 
 ---
 
-## Phase Timeline
+## Backend Functions
 
-### Phase 1A — Core Shell Wiring
-- Header layout
-- Basic navigation
+```
+functions/
+├── mintVoiceToken.js            # LiveKit token generation (Phase 3B)
+│                                # - Validates user authentication
+│                                # - Enforces membership policy (Phase 3C)
+│                                # - Generates JWT with 1-hour expiry
+│                                # - Returns {url, token, roomName} or error
+└── (other functions not in scope for current phases)
+```
 
-### Phase 1B — User Profiles & Access Control
-- Rank/membership system
-- Access gating for focused comms
+---
 
-### Phase 1C — Command Palette
-- Global command registry
-- Access-based filtering
-- Ctrl+K shortcut
+## Key Integrations
 
-### Phase 1D — AppShell Geometry + Context Panel (Current)
-- ShellUIProvider (centralized state)
-- ContextPanel (right sidebar)
-- 3-column flex layout
-- Header toggle controls
-- Persistence to localStorage
+### Base44 SDK
+- `base44.entities.*` — Database operations (CRUD)
+- `base44.auth.me()` — Current user authentication
+- `base44.functions.invoke()` — Backend function calls
+- Real-time subscriptions (future phases)
 
-### Phase 1E (Future) — Voice & Real-Time
-- LiveKit integration for voice nets
-- Real roster data
-- Riggsy AI agent chat
-- CommsDock voice controls
+### LiveKit (Phase 3B+)
+- `livekit-client` — WebRTC voice communication
+- Room-based voice nets with pub/sub
+- Automatic reconnection and recovery
+- Metadata for participant identification
+
+### localStorage
+- Device preferences (`nexus.audio.inputDeviceId`)
+- Layout preferences (panel visibility)
+- Session-level flags (focused net confirmation)
+
+---
+
+## State Management Patterns
+
+### Context Providers
+- **VoiceNetProvider** — Voice connection state machine
+- **CommandPaletteContext** — Global command palette
+- **NotificationContext** — Toast notifications
+- **ShellUIContext** — Panel visibility state
+
+### Custom Hooks
+- **useVoiceNet()** — Access voice net state and actions
+- **useVoiceHealth()** — Track connection health metrics
+- **useAudioDevices()** — Audio device enumeration and selection
+- **usePresenceRoster()** — Online user roster
+- **useReadiness()** — Derived system readiness
+- **useLatency()** — Network latency monitoring
+
+---
+
+## Access Control Layers
+
+### 1. Client-Side (UI Gating)
+- **PermissionGuard** — Component-level access control
+- **canJoinVoiceNet()** — Voice net membership checks
+- **canAccessFocusedComms()** — Comms tier gating
+
+### 2. Server-Side (Token Minting)
+- **mintVoiceToken** — Enforces membership for Focused nets
+- Returns 403 ACCESS_DENIED if unauthorized
+- Temporary Focused nets allow all users
+
+---
+
+## Voice Net Flow (Phase 3C)
+
+### Join Flow
+1. User clicks "Join" on voice net
+2. If Focused (non-temp): Show confirmation sheet (one-time)
+3. User confirms → Request token from backend
+4. Backend validates membership/rank
+5. If authorized: Mint LiveKit token
+6. If denied: Return ACCESS_DENIED error
+7. If env vars missing: Return VOICE_NOT_CONFIGURED
+8. Frontend: Connect transport (LiveKit or Mock)
+9. Create VoiceSession record
+10. Start heartbeat interval
+11. Load initial participants
+
+### Health Monitoring
+- **useVoiceHealth()** tracks:
+  - Connection state (IDLE/JOINING/CONNECTED/RECONNECTING/ERROR)
+  - Reconnect count (session-level)
+  - Last connected timestamp
+  - Last error message
+  - Latency (from existing probe)
+
+### Notifications
+- **useVoiceNotifications()** handles:
+  - Participant join/leave (rate-limited: 3 per 10s)
+  - Reconnecting/reconnected events
+  - Error notifications
+  - Uses existing NotificationContext
+
+---
+
+## UI Components Reference
+
+### Header (Telemetry Strip)
+- Comms readiness indicator
+- Voice status chip (state + participant count)
+- Online user count
+- Network latency
+- Command palette trigger
+
+### ContextPanel (Right Sidebar)
+- **Active Nets Section**
+  - List of available voice nets
+  - Join buttons with lock indicators
+  - Active net: state pill, participant count, reconnect count
+  - Leave button
+- **Voice Controls Section**
+  - Device selector dropdown
+  - Microphone enable/disable
+  - PTT toggle
+- **Roster Section**
+  - Voice participants (when connected) with speaking indicators
+  - Online users (when not connected)
+  - Sorted: speaking first, then alphabetical
+- **Riggsy AI** (placeholder)
+- **Diagnostics**
+  - Route, readiness, latency, online count, build version
+
+### SidePanel (Left Navigation)
+- Navigation links (Hub, Events, Comms, Directory, etc.)
+- Permission-gated visibility
+- Focused comms access gate
+
+### CommsDock (Bottom Panel)
+- Text message channels
+- Unread indicators
+- Message composer
+
+---
+
+## Configuration & Environment
+
+### Required Environment Variables (Voice)
+```
+LIVEKIT_URL              # WebSocket URL for LiveKit server
+LIVEKIT_API_KEY          # API key for token signing
+LIVEKIT_API_SECRET       # API secret for JWT signing
+```
+
+### Fallback Behavior
+- If env vars not set: `VOICE_NOT_CONFIGURED` error
+- Frontend falls back to MockVoiceTransport
+- App remains stable and testable
+
+---
+
+## Testing Checklist (Phase 3C)
+
+### Token Policy Enforcement
+- [ ] Casual user cannot mint token for Focused net
+- [ ] Member/Affiliate/Partner can mint token for Focused net
+- [ ] All users can mint token for Temporary Focused net
+- [ ] Server returns 403 ACCESS_DENIED with reason
+
+### Voice Health Tracking
+- [ ] Health hook tracks connection state changes
+- [ ] Reconnect count increments on network loss
+- [ ] Last error message displayed in ContextPanel
+- [ ] Latency integrated from existing probe
+
+### Active Net Monitor UI
+- [ ] Active net shows state pill (Connected/Reconnecting/Error)
+- [ ] Participant count accurate
+- [ ] Reconnect count displayed when > 0
+- [ ] Roster shows speaking indicators (pulsing mic icon)
+- [ ] Participants sorted: speaking first
+
+### Notifications
+- [ ] Join/leave notifications appear (max 3 per 10s)
+- [ ] Reconnecting notification persistent
+- [ ] Reconnected notification shown on recovery
+- [ ] Error notifications displayed
+
+### Focused Net Confirmation
+- [ ] Confirmation sheet shown first time joining Focused net
+- [ ] Not shown for Casual or Temporary Focused nets
+- [ ] Not shown again in same session
+- [ ] Cancel button works (does not join)
+- [ ] Confirm button proceeds with join
+
+### Header Telemetry
+- [ ] Voice status chip shows state
+- [ ] Participant count shown when > 0
+- [ ] Color-coded by state (green/yellow/orange/red)
+- [ ] No horizontal overflow
+
+---
+
+## Known Limitations
+
+### Phase 3C
+- Jitter and packet loss metrics not yet available (LiveKit API future)
+- No persistent "don't show again" for focused confirmation (session-only)
+- Notification rate limiting is client-side only (no server-side dedup)
+- Device hot-swap requires manual re-selection (auto-switch not implemented)
+
+---
+
+## Next Phase Preview (Phase 3D+)
+
+### Planned Features
+- Real-time roster updates (WebSocket/entity subscriptions)
+- Voice activity detection (VAD) for auto-PTT
+- Output device selection (speaker/headset)
+- Voice volume controls (input/output gain)
+- Network quality indicators (RTT, jitter, packet loss from LiveKit stats)
+- Cross-net bridges (patch source → destination)
+- Voice recording and playback (event debriefs)
 
 ---
 
 ## Maintenance Notes
 
-### Adding New Command Palette Actions
-1. Edit `components/providers/CommandPaletteContext.js`
-2. Add action object to `createActionRegistry()` array
-3. Implement callback in provider (if needed)
-4. Test visibility & execution
+### Updating Voice Net Defaults
+- Edit `components/constants/voiceNet.js`
+- Add/modify DEFAULT_VOICE_NETS array
+- Ensure id, name, type, description present
 
-### Adding New ContextPanel Sections
-1. Edit `components/layout/ContextPanel.js`
-2. Add section key to `expandedSections` state
-3. Add `SectionHeader` + content JSX
-4. Add toggle handler
+### Adding New Membership Tiers
+- Update `components/constants/membership.js`
+- Adjust `mintVoiceToken.js` allowedMemberships array
+- Update access policy in `voiceAccessPolicy.js`
 
-### Persisting New Panel States
-- Already supported by ShellUIContext
-- Add state key to `DEFAULT_STATE` and toggle function
-- localStorage auto-persists
-
-### Testing Across Breakpoints
-- Tailwind: sm (640px), md (768px), lg (1024px), xl (1280px)
-- Test on: iPhone (375px), iPad (768px), Desktop (1440px)
-- Verify no horizontal scroll at any breakpoint
+### Modifying Notification Behavior
+- Edit `components/voice/notifications/voiceNotifications.js`
+- Adjust RATE_LIMIT_WINDOW_MS or MAX_EVENTS_PER_WINDOW
+- Consider server-side deduplication for multi-tab scenarios
 
 ---
 
-## Known Issues & Workarounds
-
-### Issue: Hook called outside provider scope
-**Workaround:** Added null checks in components using `useShellUI()`, `useCommandPalette()`
-
-### Issue: localStorage unavailable in SSR
-**Workaround:** Checked for typeof window before accessing localStorage
-
-### Issue: State sync across tabs
-**Note:** Not implemented; each tab has independent state. Could use `storage` event listener in future.
-
----
-
-*Last verified: 2026-01-28*  
-*Maintained by: Mission Control Dev Team*
+**End of Manifest**
