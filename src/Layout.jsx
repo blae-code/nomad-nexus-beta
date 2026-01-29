@@ -73,9 +73,7 @@ function LayoutContent({ currentPageName, children }) {
     window.location.href = createPageUrl(page);
   };
 
-  const handleOpenAccessRequest = () => {
-    // TODO: wire to SidePanel modal or dedicated page
-  };
+
 
   const handleTriggerTestAlert = (type) => {
     if (type === 'event') {
