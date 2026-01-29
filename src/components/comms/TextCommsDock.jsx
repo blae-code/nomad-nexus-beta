@@ -179,18 +179,24 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
             <div className="flex-1 overflow-hidden flex">
               {/* Channel List */}
               <div className="w-40 border-r border-zinc-800 flex flex-col overflow-hidden">
-                <Input
-                  placeholder="Search..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="h-7 text-xs m-2 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600"
-                />
+               <Input
+                 placeholder="Find channel..."
+                 value={searchInput}
+                 onChange={(e) => setSearchInput(e.target.value)}
+                 className="h-7 text-xs m-2 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600"
+               />
 
-                <div className="flex-1 overflow-y-auto space-y-1 px-2">
-                  {/* Casual Group */}
-                  {groupedChannels.casual.length > 0 && (
-                    <div>
-                      <div className="text-[10px] font-semibold text-zinc-500 px-1 py-1">CASUAL</div>
+               <div className="flex-1 overflow-y-auto space-y-1 px-2">
+                 {groupedChannels.casual.length === 0 && groupedChannels.focused.length === 0 ? (
+                   <div className="text-center text-[10px] text-zinc-600 py-4">
+                     <div className="opacity-50">No channels available</div>
+                   </div>
+                 ) : (
+                   <>
+                     {/* Casual Group */}
+                     {groupedChannels.casual.length > 0 && (
+                       <div>
+                         <div className="text-[10px] font-semibold text-zinc-500 px-1 py-1 uppercase tracking-wider">Open</div>
                       {groupedChannels.casual.map((ch) => (
                         <button
                           key={ch.id}
@@ -214,7 +220,7 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
                   {/* Focused Group */}
                   {groupedChannels.focused.length > 0 && (
                     <div>
-                      <div className="text-[10px] font-semibold text-orange-600 px-1 py-1">FOCUSED</div>
+                      <div className="text-[10px] font-semibold text-orange-600 px-1 py-1 uppercase tracking-wider">Disciplined</div>
                       {groupedChannels.focused.map((ch) => {
                         const canAccess = canAccessChannel(ch);
                         return (
@@ -233,12 +239,14 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
                             {!canAccess ? <Lock className="w-3 h-3 flex-shrink-0" /> : <Hash className="w-3 h-3 flex-shrink-0" />}
                             <span className="truncate">{ch.name}</span>
                           </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
+                          );
+                          })}
+                          </div>
+                          )}
+                          </>
+                          )}
+                          </div>
+                          </div>
 
               {/* Message Area */}
               <div className="flex-1 flex flex-col overflow-hidden">
@@ -251,23 +259,39 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
                 )}
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
-                  {loadingMessages && <div className="text-zinc-500">Loading...</div>}
-                  {messages.length === 0 && !loadingMessages && (
-                    <div className="text-center text-zinc-500 text-[10px] py-4">No messages yet</div>
-                  )}
-                  {messages.map((msg) => (
-                    <div key={msg.id} className="group">
-                      <div className="text-[10px] text-zinc-600">
-                        <span className="font-semibold text-zinc-400">{msg.user_id || 'Unknown'}</span>
-                        <span className="mx-1">•</span>
-                        <span>{new Date(msg.created_date).toLocaleTimeString()}</span>
+                 <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs flex flex-col">
+                    {loadingMessages && (
+                      <div className="flex items-center justify-center h-full text-zinc-500">
+                        <div className="text-xs text-center">
+                          <div className="animate-pulse mb-2">⟳</div>
+                          <div>Loading messages...</div>
+                        </div>
                       </div>
-                      <p className="text-zinc-300 leading-snug">{msg.content}</p>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
+                    )}
+                    {messages.length === 0 && !loadingMessages && (
+                      <div className="flex items-center justify-center h-full text-zinc-600">
+                        <div className="text-center">
+                          <div className="text-[10px] opacity-50 mb-1">—</div>
+                          <div className="text-[10px]">No messages in this channel yet</div>
+                        </div>
+                      </div>
+                    )}
+                    {messages.length > 0 && (
+                      <>
+                        {messages.map((msg) => (
+                          <div key={msg.id} className="group">
+                            <div className="text-[10px] text-zinc-600">
+                              <span className="font-semibold text-zinc-400">{msg.user_id || 'Unknown'}</span>
+                              <span className="mx-1">•</span>
+                              <span>{new Date(msg.created_date).toLocaleTimeString()}</span>
+                            </div>
+                            <p className="text-zinc-300 leading-snug">{msg.content}</p>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </>
+                    )}
+                 </div>
 
                 {/* Composer */}
                 <div className="border-t border-zinc-800 p-2 bg-zinc-900/40 flex-shrink-0">
@@ -295,20 +319,29 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
           )}
 
           {activeTab === 'polls' && (
-            <div className="text-center py-4 text-zinc-500">
-              <p className="text-xs">Polls appear here</p>
+            <div className="flex items-center justify-center h-full text-zinc-600">
+              <div className="text-center">
+                <div className="text-[10px] opacity-50 mb-1">📊</div>
+                <div className="text-xs">Polls module (coming soon)</div>
+              </div>
             </div>
           )}
 
           {activeTab === 'riggsy' && (
-            <div className="text-center py-4 text-zinc-500">
-              <p className="text-xs">Riggsy AI assistant appears here</p>
+            <div className="flex items-center justify-center h-full text-zinc-600">
+              <div className="text-center">
+                <div className="text-[10px] opacity-50 mb-1">🤖</div>
+                <div className="text-xs">Riggsy AI Assistant (in development)</div>
+              </div>
             </div>
           )}
 
           {activeTab === 'inbox' && (
-            <div className="text-center py-4 text-zinc-500">
-              <p className="text-xs">Direct messages appear here</p>
+            <div className="flex items-center justify-center h-full text-zinc-600">
+              <div className="text-center">
+                <div className="text-[10px] opacity-50 mb-1">💬</div>
+                <div className="text-xs">Direct messages (in development)</div>
+              </div>
             </div>
           )}
         </div>
