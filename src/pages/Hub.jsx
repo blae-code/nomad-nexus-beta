@@ -178,8 +178,6 @@ export default function Hub() {
             );
         })}
       </div>
-
-    </div>
     </div>
   );
 }
