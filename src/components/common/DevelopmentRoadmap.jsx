@@ -101,13 +101,20 @@ export default function DevelopmentRoadmap() {
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-sm font-black uppercase tracking-widest text-orange-500">Path to Nomad Nexus 1.0</h2>
-        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5">Development Roadmap & Milestones</p>
-      </div>
+    <div className="space-y-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between p-2.5 bg-gradient-to-r from-orange-500/10 to-transparent border border-zinc-800/60 rounded hover:border-orange-500/40 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-black uppercase tracking-widest text-orange-500">Nomad Nexus 1.0</h2>
+          <div className="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-800/50 text-zinc-400 rounded">38%</div>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </button>
 
-      <div className="space-y-3">
+      {expanded && (
+      <div className="space-y-2">
         {milestones.map((milestone) => {
           const statusIcon = milestone.status === 'complete' ? <CheckCircle2 className="w-4 h-4 text-green-400" /> :
                             milestone.status === 'in-progress' ? <Zap className="w-4 h-4 text-orange-400" /> :
