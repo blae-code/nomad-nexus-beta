@@ -116,6 +116,9 @@ export default function Header() {
 
         {/* Right: System Status & Controls */}
         <div className="flex items-center gap-3 min-w-[260px] justify-end">
+          {/* Verse Clock */}
+          <VerseClock />
+
           {/* Status Indicators */}
           <div className="flex items-center gap-2">
             {voiceNet?.activeNetId && (
