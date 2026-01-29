@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 
 export default function AccessGate() {
   const [accessCode, setAccessCode] = useState('');
