@@ -47,13 +47,14 @@ export async function measureLatency() {
   const startTime = performance.now();
   
   try {
-    // Try lightweight HEAD request to app endpoint (cached, no body)
-    // Falls back to stub if no endpoint available
+    // Use a small image pixel request for latency measurement
+    // This avoids 405 errors from HEAD requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    const response = await fetch(window.location.href, {
-      method: 'HEAD',
+    // Create a tiny transparent pixel URL to measure latency
+    const response = await fetch('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', {
+      method: 'GET',
       signal: controller.signal,
       cache: 'no-store',
     });
