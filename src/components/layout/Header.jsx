@@ -162,10 +162,11 @@ export default function Header() {
             <Button
               size="icon"
               variant="ghost"
-              onClick={toggleContextPanel}
+              onClick={() => window.location.href = '/pages/Settings'}
               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded"
+              title="Settings"
             >
-              <PanelRight className="w-4 h-4" />
+              <Settings className="w-4 h-4" />
             </Button>
           </div>
         </div>
