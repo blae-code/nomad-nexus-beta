@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Clock, Users, MapPin } from 'lucide-react';
+import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus } from 'lucide-react';
 import EmptyState from '@/components/common/EmptyState';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
+import { useCurrentUser } from '@/components/useCurrentUser';
 
 export default function Events() {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
+  const activeOp = useActiveOp();
+  const { user } = useCurrentUser();
 
   useEffect(() => {
     const init = async () => {
@@ -88,6 +92,32 @@ export default function Events() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    variant={activeOp.activeEventId === event.id ? 'default' : 'outline'}
+                    onClick={() => {
+                      if (activeOp.activeEventId === event.id) {
+                        activeOp.clearActiveEvent();
+                      } else {
+                        activeOp.setActiveEvent(event.id);
+                      }
+                    }}
+                  >
+                    <Power className="w-3 h-3 mr-1" />
+                    {activeOp.activeEventId === event.id ? 'Active' : 'Set Active'}
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => activeOp.joinOp(event.id, user)}
+                  >
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Join Op
+                  </Button>
                 </div>
               </div>
             </div>
