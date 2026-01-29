@@ -3,7 +3,7 @@ import { CheckCircle2, AlertCircle, Clock, Target, Zap, ChevronDown } from 'luci
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function DevelopmentRoadmap() {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   
   const featureDescriptions = {
     'Infrastructure & Database': 'Core backend systems, database schema, and persistence layer for all Nexus data',
