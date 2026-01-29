@@ -128,19 +128,19 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
   if (!isOpen) return null;
 
   return (
-    <div className="bg-zinc-950 border-t border-orange-500/30 flex flex-col h-96 flex-shrink-0 shadow-2xl z-[700] relative">
-      {/* Header */}
-      <div className="border-b border-orange-500/20 px-4 py-2.5 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
+    <div className="bg-zinc-950 border-t border-orange-500/20 flex flex-col h-96 flex-shrink-0 shadow-2xl z-[700] relative">
+      {/* Header — Unified styling */}
+      <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-orange-500" />
-          <h3 className="text-xs font-bold uppercase text-orange-400 tracking-widest">Text Comms</h3>
+          <Hash className="w-4 h-4 text-orange-500/70" />
+          <h3 className="text-[11px] font-black uppercase text-zinc-300 tracking-widest">Text Comms</h3>
         </div>
         <div className="flex gap-1">
           <Button
             size="icon"
             variant="ghost"
             onClick={() => onMinimize?.(!isMinimized)}
-            className="h-7 w-7 text-zinc-500 hover:text-orange-400"
+            className="h-7 w-7 text-zinc-500 hover:text-orange-400 transition-colors"
           >
             <Minimize2 className="w-3.5 h-3.5" />
           </Button>
@@ -148,36 +148,32 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-7 w-7 text-zinc-500 hover:text-red-400"
+            className="h-7 w-7 text-zinc-500 hover:text-red-400 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — Comms active, others disabled with "coming soon" */}
       {!isMinimized && (
-        <div className="flex border-b border-zinc-800 bg-zinc-950/50 flex-shrink-0 overflow-x-auto">
+        <div className="flex border-b border-orange-500/10 bg-zinc-950/40 flex-shrink-0 overflow-x-auto">
           {['comms', 'polls', 'riggsy', 'inbox'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`whitespace-nowrap text-xs font-semibold uppercase px-3 py-2 transition-all border-b-2 ${
-                activeTab === tab
+              onClick={() => tab === 'comms' && setActiveTab(tab)}
+              disabled={tab !== 'comms'}
+              className={`whitespace-nowrap text-[11px] font-semibold uppercase px-3 py-2 transition-all border-b-2 ${
+                tab !== 'comms'
+                  ? 'text-zinc-600 border-transparent cursor-not-allowed opacity-50'
+                  : activeTab === tab
                   ? 'text-orange-400 border-orange-500'
-                  : 'text-zinc-500 hover:text-zinc-300 border-transparent'
+                  : 'text-zinc-500 hover:text-zinc-300 border-transparent hover:border-orange-500/30'
               }`}
+              title={tab !== 'comms' ? 'Coming soon' : ''}
             >
-              {tab === 'comms' && (
-                <>Comms {unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>
-              )}
-              {tab === 'polls' && (
-                <>Polls {unreadByTab?.polls > 0 && <span className="ml-1 text-orange-400">({unreadByTab.polls})</span>}</>
-              )}
-              {tab === 'riggsy' && (
-                <>Riggsy {unreadByTab?.riggsy > 0 && <span className="ml-1 text-orange-400">({unreadByTab.riggsy})</span>}</>
-              )}
-              {tab === 'inbox' && <>Inbox</>}
+              {tab === 'comms' && <>Comms {unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>}
+              {tab !== 'comms' && <>{tab} <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
             </button>
           ))}
         </div>
