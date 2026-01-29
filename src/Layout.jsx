@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header';
 import ConstructionTicker from '@/components/layout/ConstructionTicker';
 import SidePanel from '@/components/layout/SidePanel';
 import ContextPanel from '@/components/layout/ContextPanel';
-import CommsDock from '@/components/layout/CommsDock';
+
 import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
 import { CommandPaletteProvider } from '@/components/providers/CommandPaletteContext';
 import { NotificationProvider } from '@/components/providers/NotificationContext';
@@ -60,7 +60,7 @@ function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
-  const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, dockMode, dockMinimized, toggleSidePanel, toggleContextPanel, toggleCommsDock, setDockMinimized } = useShellUI();
+  const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, dockMode, dockMinimized, toggleSidePanel, toggleContextPanel, toggleCommsDock, setDockMode, setDockMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
