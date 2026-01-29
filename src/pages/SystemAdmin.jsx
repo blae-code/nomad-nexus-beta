@@ -22,6 +22,8 @@ import FactoryReset from '@/components/admin/FactoryReset';
 import ImmersiveSeed from '@/components/admin/ImmersiveSeed';
 import DataValidation from '@/components/admin/DataValidation';
 import DiagnosticsBundle from '@/components/admin/DiagnosticsBundle';
+import UserManagement from '@/components/admin/UserManagement';
+import AccessKeyManager from '@/components/admin/AccessKeyManager';
 
 // Dev-only admin override (DISABLED BY DEFAULT)
 const DEV_ADMIN_OVERRIDE_ENABLED = false;
