@@ -169,6 +169,70 @@ function OverviewTab({ user }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* User Management */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded cursor-help hover:border-orange-500/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-zinc-200 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-500" />
+                    User Management
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded font-mono">PROD</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Invite users, assign roles (user/admin), manage access.
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 bg-zinc-900 border border-zinc-700">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-blue-400">User Management</p>
+                <ul className="text-zinc-300 space-y-0.5">
+                  <li>• Invite new users via email</li>
+                  <li>• Assign roles (user or admin)</li>
+                  <li>• Edit user names and roles</li>
+                  <li>• Disable user accounts</li>
+                  <li>• Search and filter users</li>
+                  <li>• View user directory with email</li>
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Access Key Manager */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded cursor-help hover:border-orange-500/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-zinc-200 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-purple-500" />
+                    Access Key Manager
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded font-mono">PROD</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Generate rank-granting access codes. Track redemptions and expiry.
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 bg-zinc-900 border border-zinc-700">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-purple-400">Access Key Manager</p>
+                <ul className="text-zinc-300 space-y-0.5">
+                  <li>• Generate bulk access keys</li>
+                  <li>• Set rank grants (Vagrant → Founder)</li>
+                  <li>• Configure uses per key (1-100+)</li>
+                  <li>• Set expiration dates</li>
+                  <li>• Copy codes to clipboard</li>
+                  <li>• Revoke active keys</li>
+                  <li>• Track redemption status</li>
+                  <li>• Filter by code and rank</li>
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
           {/* Data Validation */}
           <Tooltip>
             <TooltipTrigger asChild>
