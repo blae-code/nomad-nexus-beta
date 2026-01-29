@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import ConstructionTicker from '@/components/layout/ConstructionTicker';
-import SidePanel from '@/components/layout/SidePanel';
+
 import ContextPanel from '@/components/layout/ContextPanel';
 
 import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
