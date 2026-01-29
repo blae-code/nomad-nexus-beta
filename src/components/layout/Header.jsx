@@ -10,7 +10,7 @@ import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
-import { Radio, Search, PanelRight, MessageSquare, Mic, Activity, Calendar, Users, Wifi, WifiOff, Zap, Settings } from 'lucide-react';
+import { Radio, Search, PanelRight, MessageSquare, Mic, Activity, Calendar, Users, Wifi, WifiOff, Zap, Settings, Command, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 import VerseClock from '@/components/header/VerseClock';
