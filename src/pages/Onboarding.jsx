@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Shield, Compass, Flame, ChevronRight, Check } from 'lucide-react';
+import { Shield, Compass, Flame, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
@@ -253,63 +253,104 @@ export default function Onboarding() {
           {/* Step 4: AI Consent */}
           {step === 4 && (
             <div className="border-2 border-orange-500/30 bg-zinc-950/95 p-8">
-              <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-6">
-                AI Features
-              </h2>
-
-              <div className="bg-zinc-900/50 border-l-4 border-blue-500 p-4 mb-6">
-                <p className="text-sm text-zinc-300 mb-2">
-                  Redscar Nomads uses AI to enhance your experience, including tactical analysis, 
-                  comms assistance, and operational intelligence.
-                </p>
+              <div className="flex items-center gap-3 mb-6">
+                <Brain className="w-8 h-8 text-orange-500" />
+                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
+                  AI Capabilities & Preferences
+                </h2>
               </div>
 
-              <div className="space-y-4 mb-6">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className={`mt-0.5 w-5 h-5 border-2 flex items-center justify-center transition-all ${
-                    formData.aiConsent 
-                      ? 'border-orange-500 bg-orange-500/20' 
-                      : 'border-zinc-700 group-hover:border-zinc-600'
-                  }`}>
-                    {formData.aiConsent && <Check className="w-3 h-3 text-orange-500" />}
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="checkbox"
-                      checked={formData.aiConsent}
-                      onChange={(e) => setFormData({ ...formData, aiConsent: e.target.checked })}
-                      className="sr-only"
-                    />
-                    <span className="text-sm text-zinc-300 font-bold">
-                      Enable AI Features
-                    </span>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Allow AI to assist with tactical operations and comms analysis
-                    </p>
-                  </div>
-                </label>
+              <div className="bg-zinc-900/50 border-l-4 border-orange-500 p-4 mb-6">
+                <p className="text-sm text-zinc-300 mb-2">
+                  Redscar Nomads optionally uses AI to enhance your experience with tactical analysis, 
+                  mission insights, and comms assistance. <span className="text-orange-400 font-bold">All AI features are optional.</span>
+                </p>
+                <p className="text-xs text-zinc-500 italic mt-2">💡 You can change these settings anytime in your preferences after onboarding.</p>
+              </div>
 
-                {formData.aiConsent && (
-                  <label className="flex items-start gap-3 ml-8 cursor-pointer group">
-                    <div className={`mt-0.5 w-5 h-5 border-2 flex items-center justify-center transition-all ${
-                      formData.aiUseHistory 
+              <div className="space-y-5 mb-6">
+                {/* Main AI Features Toggle */}
+                <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className={`mt-1 w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      formData.aiConsent 
                         ? 'border-orange-500 bg-orange-500/20' 
                         : 'border-zinc-700 group-hover:border-zinc-600'
                     }`}>
-                      {formData.aiUseHistory && <Check className="w-3 h-3 text-orange-500" />}
+                      {formData.aiConsent && <Check className="w-3 h-3 text-orange-500" />}
                     </div>
                     <div className="flex-1">
                       <input
                         type="checkbox"
-                        checked={formData.aiUseHistory}
-                        onChange={(e) => setFormData({ ...formData, aiUseHistory: e.target.checked })}
+                        checked={formData.aiConsent}
+                        onChange={(e) => setFormData({ ...formData, aiConsent: e.target.checked })}
                         className="sr-only"
                       />
-                      <span className="text-sm text-zinc-300">
-                        Store conversation history for improved context
-                      </span>
+                      <div>
+                        <span className="text-sm font-bold text-white block">Enable AI-Powered Features</span>
+                        <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                          Enables tactical analysis, mission intelligence, comms optimization, and AI-assisted decision-making across the Nexus.
+                        </p>
+                      </div>
                     </div>
                   </label>
+
+                  <div className="mt-4 ml-8 flex gap-2 text-xs">
+                    {formData.aiConsent ? (
+                      <div className="flex items-center gap-1.5 text-green-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>AI features <span className="font-bold">ENABLED</span></span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-zinc-500">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>AI features <span className="font-bold">DISABLED</span> — only manual tools available</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Conversation History Sub-option */}
+                {formData.aiConsent && (
+                  <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded ml-6">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <div className={`mt-1 w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        formData.aiUseHistory 
+                          ? 'border-orange-500 bg-orange-500/20' 
+                          : 'border-zinc-700 group-hover:border-zinc-600'
+                      }`}>
+                        {formData.aiUseHistory && <Check className="w-3 h-3 text-orange-500" />}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="checkbox"
+                          checked={formData.aiUseHistory}
+                          onChange={(e) => setFormData({ ...formData, aiUseHistory: e.target.checked })}
+                          className="sr-only"
+                        />
+                        <div>
+                          <span className="text-sm font-bold text-white block">Store Conversation History</span>
+                          <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                            AI remembers your past interactions to provide smarter recommendations and context-aware assistance.
+                          </p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <div className="mt-4 ml-8 flex gap-2 text-xs">
+                      {formData.aiUseHistory ? (
+                        <div className="flex items-center gap-1.5 text-green-400">
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>History <span className="font-bold">RETAINED</span> — better AI context</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-zinc-500">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>History <span className="font-bold">DISCARDED</span> — AI starts fresh each session</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
