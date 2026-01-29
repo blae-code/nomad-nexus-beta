@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus } from 'lucide-react';
-import EmptyState from '@/components/common/EmptyState';
+import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useCurrentUser } from '@/components/useCurrentUser';
 
@@ -32,7 +32,11 @@ export default function Events() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-orange-500">LOADING...</div>;
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <LoadingState label="Loading Events" />
+      </div>
+    );
   }
 
   return (
@@ -53,7 +57,7 @@ export default function Events() {
           <EmptyState 
             icon={Calendar}
             title="No events scheduled"
-            description="Create your first operation to get started"
+            message="Create your first operation to get started"
           />
         ) : (
           events.map((event) => (
