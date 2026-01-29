@@ -169,34 +169,10 @@ export default function DevelopmentRoadmap() {
         })}
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-zinc-800/30 border border-zinc-700/40 rounded p-2">
-          <div className="text-[10px] text-zinc-500 mb-1">Overall Progress</div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-lg font-bold text-orange-400">38%</span>
-            <span className="text-[10px] text-zinc-600">to 1.0</span>
-          </div>
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded px-2.5 py-1.5 text-[9px] space-y-0.5">
+          <div className="font-semibold text-blue-300">Focus: Core comms → Events → Analytics → 1.0</div>
         </div>
-        <div className="bg-zinc-800/30 border border-zinc-700/40 rounded p-2">
-          <div className="text-[10px] text-zinc-500 mb-1">Current Phase</div>
-          <div className="text-xs font-semibold text-orange-300">Phase 1 & 2</div>
-        </div>
-        <div className="bg-zinc-800/30 border border-zinc-700/40 rounded p-2">
-          <div className="text-[10px] text-zinc-500 mb-1">Next Milestone</div>
-          <div className="text-xs font-semibold text-zinc-300">v0.7.0</div>
-        </div>
-      </div>
-
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded p-2.5 text-[10px] space-y-1">
-        <div className="font-semibold text-blue-300">🎯 Focus Areas</div>
-        <ul className="text-blue-300/80 space-y-0.5 ml-2">
-          <li>• Stabilize core voice & text comms infrastructure</li>
-          <li>• Complete onboarding & user identity system</li>
-          <li>• Build tactical operations & event management</li>
-          <li>• Implement analytics & intelligence dashboards</li>
-        </ul>
-      </div>
+      )}
     </div>
   );
 }
