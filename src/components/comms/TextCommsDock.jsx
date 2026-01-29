@@ -14,7 +14,7 @@ import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 
-export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize }) {
+export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
   const [channels, setChannels] = useState([]);
   const [selectedChannelId, setSelectedChannelId] = useState(null);
