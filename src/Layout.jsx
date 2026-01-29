@@ -127,9 +127,9 @@ function LayoutContent({ currentPageName, children }) {
         {/* Construction Ticker */}
         <ConstructionTicker />
 
-        {/* Main layout grid: content + contextpanel + comms dock */}
+        {/* Main layout: content area (flex-1) + dock (flex-shrink-0) */}
         <div className="flex flex-1 overflow-hidden flex-col relative z-20">
-          {/* Main content area with panels — takes remaining space */}
+          {/* Main content + context panel — flex-1 to fill available space */}
           <div className="flex flex-1 overflow-hidden">
             {/* Main content */}
             <main className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -144,8 +144,12 @@ function LayoutContent({ currentPageName, children }) {
             )}
           </div>
 
-          {/* Comms Dock — always visible footer, flex-shrink-0 to maintain height */}
-          {isCommsDockOpen && <CommsDockShell isOpen={true} onClose={toggleCommsDock} />}
+          {/* Comms Dock Footer — flex-shrink-0, always takes fixed height */}
+          {isCommsDockOpen && (
+            <div className="flex-shrink-0">
+              <CommsDockShell isOpen={true} onClose={toggleCommsDock} />
+            </div>
+          )}
         </div>
 
         {/* Command Palette Modal */}
