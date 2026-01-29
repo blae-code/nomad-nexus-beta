@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { useCommandPalette } from '@/components/providers/CommandPaletteContext';
 import { useShellUI } from '@/components/providers/ShellUIContext';
+import { createPageUrl } from '@/utils';
 import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
 import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
@@ -162,11 +163,10 @@ export default function Header() {
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => window.location.href = '/pages/Settings'}
+              onClick={toggleContextPanel}
               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded"
-              title="Settings"
             >
-              <Settings className="w-4 h-4" />
+              <PanelRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
