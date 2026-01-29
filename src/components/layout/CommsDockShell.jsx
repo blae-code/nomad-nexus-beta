@@ -67,11 +67,13 @@ export default function CommsDockShell({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  const displayHeight = isMinimized ? 64 : dockHeight;
+
   return (
     <div 
-      className="bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group flex-shrink-0" 
+      className="bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group flex-shrink-0 transition-all duration-300" 
       style={{ 
-        height: `${dockHeight}px`
+        height: `${displayHeight}px`
       }}
     >
       {/* Resize handle */}
