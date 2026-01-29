@@ -120,7 +120,6 @@ export default function ContextPanel({ isOpen, onClose }) {
 
   const resetUILayout = () => {
     if (confirm('Reset UI layout? This will clear panel positions and reload the page.')) {
-      localStorage.removeItem('nexus.shell.sidePanelOpen');
       localStorage.removeItem('nexus.shell.contextPanelOpen');
       localStorage.removeItem('nexus.shell.commsDockOpen');
       window.location.reload();
