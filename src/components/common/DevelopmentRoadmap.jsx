@@ -107,7 +107,7 @@ export default function DevelopmentRoadmap() {
         className="w-full flex items-center justify-between p-2.5 bg-gradient-to-r from-orange-500/10 to-transparent border border-zinc-800/60 rounded hover:border-orange-500/40 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase tracking-widest text-orange-500">Nomad Nexus 1.0</h2>
+          <h2 className="text-xs font-black uppercase tracking-widest text-orange-500">Nomad Nexus 1.0 Roadmap</h2>
           <div className="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-800/50 text-zinc-400 rounded">38%</div>
         </div>
         <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${expanded ? 'rotate-180' : ''}`} />
