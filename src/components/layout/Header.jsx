@@ -82,15 +82,13 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-zinc-900 via-zinc-925 to-zinc-950 border-b border-orange-500/30 backdrop-blur-xl shadow-lg shadow-orange-500/5 overflow-hidden z-50">
       <div className="h-full px-6 flex items-center justify-between gap-4 overflow-hidden max-w-full">
-        {/* Left: Identity — Premium Presentation */}
-        <div className="flex items-center gap-3 min-w-[180px] flex-shrink-0">
-          <div className={`w-1.5 h-9 rounded-sm ${isAdmin ? 'bg-gradient-to-b from-red-500 to-red-600' : 'bg-gradient-to-b from-orange-500 to-orange-600'} shadow-lg`} />
-          <div className="flex flex-col justify-center gap-1">
-            <span className="text-sm font-black text-white tracking-wider uppercase leading-tight">{user.callsign || 'Nomad'}</span>
-            <div className="flex items-center gap-2">
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${isAdmin ? 'text-red-400' : 'text-orange-400'}`}>{rankLabel}</span>
-              {user.membership && <span className="text-[10px] font-mono text-zinc-500 uppercase">• {user.membership}</span>}
-            </div>
+        {/* Left: Identity — Compact Single-Row */}
+        <div className="flex items-center gap-2.5 flex-shrink-0 min-w-max">
+          <div className={`w-1.5 h-8 rounded-sm ${isAdmin ? 'bg-gradient-to-b from-red-500 to-red-600' : 'bg-gradient-to-b from-orange-500 to-orange-600'} shadow-lg`} />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black text-white tracking-wider uppercase leading-none">{user.callsign || 'Nomad'}</span>
+            <span className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${isAdmin ? 'text-red-300 border-red-500/40 bg-red-500/10' : 'text-orange-300 border-orange-500/40 bg-orange-500/10'}`}>{rankLabel}</span>
+            {user.membership && <span className="text-[10px] font-mono text-zinc-500 uppercase border border-zinc-700/50 px-1.5 py-0.5 rounded">{getMembershipLabel(user.membership)}</span>}
           </div>
         </div>
 
