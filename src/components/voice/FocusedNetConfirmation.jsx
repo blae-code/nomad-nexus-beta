@@ -1,40 +1,32 @@
 /**
- * FocusedNetConfirmation — One-time discipline notice for Focused nets
+ * FocusedNetConfirmation — Hook + Sheet for confirming focused net join
+ * Provides confirmation flow for joining focused voice nets
  */
 
 import React, { useState, useCallback } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-
-const CONFIRMATION_SESSION_KEY = 'nexus.voice.focusedConfirmSeen';
+import { AlertTriangle, Shield } from 'lucide-react';
 
 /**
- * Hook to manage focused net confirmation state
+ * Hook for managing focused net confirmation state
  */
 export function useFocusedConfirmation() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [pendingNetId, setPendingNetId] = useState(null);
 
   const checkNeedConfirmation = useCallback((net) => {
-    // Only require confirmation for Focused nets (non-temporary)
-    if (net.type !== 'FOCUSED') return false;
-    if (net.isTemporary) return false;
-
-    // Check if already confirmed this session
-    const hasConfirmed = sessionStorage.getItem(CONFIRMATION_SESSION_KEY) === 'true';
-    return !hasConfirmed;
+    // Only focused nets (non-temporary) need confirmation
+    return net.type === 'FOCUSED' && !net.isTemporary;
   }, []);
 
   const requestConfirmation = useCallback((netId) => {
-    setNeedsConfirmation(true);
     setPendingNetId(netId);
+    setNeedsConfirmation(true);
   }, []);
 
   const confirm = useCallback(() => {
-    sessionStorage.setItem(CONFIRMATION_SESSION_KEY, 'true');
-    setNeedsConfirmation(false);
     const netId = pendingNetId;
+    setNeedsConfirmation(false);
     setPendingNetId(null);
     return netId;
   }, [pendingNetId]);
@@ -46,6 +38,7 @@ export function useFocusedConfirmation() {
 
   return {
     needsConfirmation,
+    pendingNetId,
     checkNeedConfirmation,
     requestConfirmation,
     confirm,
@@ -58,27 +51,49 @@ export function useFocusedConfirmation() {
  */
 export function FocusedNetConfirmationSheet({ onConfirm, onCancel }) {
   return (
-    <Sheet open={true} onOpenChange={(open) => !open && onCancel()}>
-      <SheetContent side="bottom" className="bg-zinc-900 border-zinc-800">
-        <SheetHeader className="text-left">
-          <div className="flex items-center gap-3 mb-2">
-            <AlertCircle className="w-6 h-6 text-orange-500" />
-            <SheetTitle className="text-zinc-100">Focused Net — Operational Discipline</SheetTitle>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-zinc-900 border-2 border-orange-500/50 rounded-lg max-w-md w-full p-6 shadow-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-12 w-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
+            <Shield className="w-6 h-6 text-orange-500" />
           </div>
-          <SheetDescription className="text-zinc-400 text-sm leading-relaxed">
-            Focused nets are reserved for operational traffic. Keep chatter and off-topic conversation in Casual nets. 
-            Push-to-talk is recommended.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="flex gap-3 mt-6">
-          <Button variant="outline" onClick={onCancel} className="flex-1">
+          <div>
+            <h2 className="text-lg font-bold text-white">Join Focused Net?</h2>
+            <p className="text-xs text-zinc-400">Tactical comms protocol</p>
+          </div>
+        </div>
+
+        <div className="mb-6 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+          <div className="flex items-start gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-zinc-300">
+              Focused nets enforce tactical discipline and clear comms protocols.
+            </div>
+          </div>
+          <div className="text-xs text-zinc-400 space-y-1">
+            <div>• Push-to-talk required</div>
+            <div>• Minimize chatter</div>
+            <div>• Follow net commander</div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
-          <Button onClick={onConfirm} className="flex-1">
-            Understood
+          <Button
+            variant="default"
+            className="flex-1 bg-orange-600 hover:bg-orange-500"
+            onClick={onConfirm}
+          >
+            Join Net
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   );
 }
