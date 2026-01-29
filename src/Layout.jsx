@@ -15,6 +15,7 @@ import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
 import VoiceCommsDock from '@/components/voice/VoiceCommsDock';
+import TextCommsDock from '@/components/comms/TextCommsDock';
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
