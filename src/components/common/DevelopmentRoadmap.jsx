@@ -168,22 +168,22 @@ export default function DevelopmentRoadmap() {
                           <span className="text-xs font-bold text-white uppercase tracking-wider">{milestone.phase}</span>
                           <span className="text-[9px] font-mono px-1.5 py-0 bg-zinc-800/50 text-zinc-400 rounded">v{milestone.version}</span>
                         </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <div className="w-10 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${
-                          milestone.completion === 100 ? 'bg-green-500' :
-                          milestone.completion >= 60 ? 'bg-orange-500' :
-                          'bg-zinc-600'
-                        }`}
-                        style={{ width: `${milestone.completion}%` }}
-                      />
-                    </div>
-                    <span className={`text-[9px] font-mono font-bold w-6 text-right ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-orange-400' : 'text-zinc-500'}`}>
-                      {milestone.completion}%
-                    </span>
-                  </div>
-                </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <div className="w-10 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full transition-all ${
+                                milestone.completion === 100 ? 'bg-green-500' :
+                                milestone.completion >= 60 ? 'bg-orange-500' :
+                                'bg-zinc-600'
+                              }`}
+                              style={{ width: `${milestone.completion}%` }}
+                            />
+                          </div>
+                          <span className={`text-[9px] font-mono font-bold w-6 text-right ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-orange-400' : 'text-zinc-500'}`}>
+                            {milestone.completion}%
+                          </span>
+                        </div>
+                      </div>
 
                       {/* Compact Features List */}
                       <div className="flex flex-wrap gap-1 px-2 py-1.5">
