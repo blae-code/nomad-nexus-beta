@@ -106,7 +106,6 @@ function LayoutContent({ currentPageName, children }) {
   return (
     <CommandPaletteProvider
       onNavigate={handleNavigate}
-      onToggleSidePanel={toggleSidePanel}
       onToggleContextPanel={toggleContextPanel}
       onToggleCommsDock={toggleCommsDock}
       onOpenAccessRequest={handleOpenAccessRequest}
