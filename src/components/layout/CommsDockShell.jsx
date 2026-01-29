@@ -1,16 +1,10 @@
-/**
- * CommsDockShell — Bottom tabbed comms dock
- * Provides: Comms (real), Polls (stub), Riggsy (stub), Inbox (stub)
- */
-
-import React, { useEffect } from 'react';
-import { useCurrentUser } from '@/components/useCurrentUser';
-import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
-import { useShellUI } from '@/components/providers/ShellUIContext';
-import CommsTabEnhanced from '@/components/comms/CommsTabEnhanced';
-import { seedDemoMessages } from '@/components/services/commsService';
+import React, { useEffect, useState } from 'react';
 import { X, Minimize2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCurrentUser } from '@/components/useCurrentUser';
+import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
+import CommsTabEnhanced from '@/components/comms/CommsTabEnhanced';
+import { seedDemoMessages } from '@/components/services/commsService';
 
 const TAB_ITEMS = [
   { id: 'comms', label: 'Comms', icon: MessageSquare },
@@ -21,12 +15,11 @@ const TAB_ITEMS = [
 
 export default function CommsDockShell({ isOpen, onClose }) {
   const { user } = useCurrentUser();
-  const { isContextPanelOpen } = useShellUI();
-  const [activeTab, setActiveTab] = React.useState('comms');
-  const [isMinimized, setIsMinimized] = React.useState(false);
-  const [dockHeight, setDockHeight] = React.useState(384); // h-96 default
-  const [isDragging, setIsDragging] = React.useState(false);
-  const { channels, unreadByTab, unreadByChannel, markChannelRead, refreshUnreadCounts, loading } =
+  const [activeTab, setActiveTab] = useState('comms');
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [dockHeight, setDockHeight] = useState(384);
+  const [isDragging, setIsDragging] = useState(false);
+  const { channels, unreadByTab, unreadByChannel, markChannelRead, refreshUnreadCounts } =
     useUnreadCounts(user?.id);
 
   // Load saved height on mount
@@ -38,7 +31,7 @@ export default function CommsDockShell({ isOpen, onClose }) {
   // Handle resize drag
   useEffect(() => {
     if (!isDragging) return;
-    
+
     const handleMouseMove = (e) => {
       const newHeight = window.innerHeight - e.clientY;
       if (newHeight >= 200 && newHeight <= 600) {
@@ -59,7 +52,7 @@ export default function CommsDockShell({ isOpen, onClose }) {
     };
   }, [isDragging, dockHeight]);
 
-  // Seed demo messages on first load
+  // Seed demo messages and refresh on mount
   useEffect(() => {
     seedDemoMessages();
     refreshUnreadCounts();
@@ -70,42 +63,42 @@ export default function CommsDockShell({ isOpen, onClose }) {
   const displayHeight = isMinimized ? 64 : dockHeight;
 
   return (
-    <div 
-      className="bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group flex-shrink-0 transition-all duration-300" 
-      style={{ 
-        height: `${displayHeight}px`
-      }}
+    <div
+      className="bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group flex-shrink-0 transition-all duration-300"
+      style={{ height: `${displayHeight}px` }}
     >
       {/* Resize handle */}
       <div
         onMouseDown={() => setIsDragging(true)}
         className="h-1 bg-gradient-to-r from-transparent via-orange-500/30 to-transparent cursor-ns-resize hover:via-orange-500/60 transition-colors group-hover:h-1.5"
       />
+
       {/* Header */}
-      <div className="border-b border-orange-500/20 px-6 py-3 flex items-center justify-between bg-zinc-950/80">
+      <div className="border-b border-orange-500/20 px-6 py-3 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
         {/* Tab strip */}
         <div className="flex gap-1">
           {TAB_ITEMS.map((tab) => {
             const TabIcon = tab.icon;
+            const unreadCount = unreadByTab[tab.id] || 0;
             return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? 'bg-orange-500/15 text-orange-400 border border-orange-500/40'
-                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'
-              }`}
-            >
-              {TabIcon && <TabIcon className="w-3.5 h-3.5" />}
-              <span>{tab.label}</span>
-              {unreadByTab[tab.id] > 0 && (
-                <span className="ml-1 h-5 w-5 bg-orange-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-                  {unreadByTab[tab.id]}
-                </span>
-              )}
-            </button>
-          );
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-2 text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center gap-2 ${
+                  activeTab === tab.id
+                    ? 'bg-orange-500/15 text-orange-400 border border-orange-500/40'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'
+                }`}
+              >
+                {TabIcon && <TabIcon className="w-3.5 h-3.5" />}
+                <span>{tab.label}</span>
+                {unreadCount > 0 && (
+                  <span className="ml-1 h-5 w-5 bg-orange-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            );
           })}
         </div>
 
@@ -132,7 +125,7 @@ export default function CommsDockShell({ isOpen, onClose }) {
         </div>
       </div>
 
-      {/* Tab content - only show when expanded */}
+      {/* Tab content */}
       {!isMinimized && (
         <div className="flex-1 overflow-hidden">
           {activeTab === 'comms' && (
