@@ -146,30 +146,39 @@ export default function Header() {
           <div className="w-px h-6 bg-zinc-800" />
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={toggleCommsDock}
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 relative rounded"
-            >
-              <MessageSquare className="w-4 h-4" />
-              {unreadByTab?.comms > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none">
-                  {unreadByTab.comms > 9 ? '9+' : unreadByTab.comms}
-                </span>
-              )}
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => window.location.href = createPageUrl('Settings')}
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded"
-              title="User Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
+           <div className="flex items-center gap-1">
+             <Button
+               size="icon"
+               variant="ghost"
+               onClick={toggleContextPanel}
+               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded"
+               title="Voice Control Panel • Comms & Voice"
+             >
+               <PanelRight className="w-4 h-4" />
+             </Button>
+             <Button
+               size="icon"
+               variant="ghost"
+               onClick={toggleCommsDock}
+               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 relative rounded"
+             >
+               <MessageSquare className="w-4 h-4" />
+               {unreadByTab?.comms > 0 && (
+                 <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none">
+                   {unreadByTab.comms > 9 ? '9+' : unreadByTab.comms}
+                 </span>
+               )}
+             </Button>
+             <Button
+               size="icon"
+               variant="ghost"
+               onClick={() => window.location.href = createPageUrl('Settings')}
+               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded"
+               title="User Settings"
+             >
+               <Settings className="w-4 h-4" />
+             </Button>
+           </div>
         </div>
       </div>
     </header>
