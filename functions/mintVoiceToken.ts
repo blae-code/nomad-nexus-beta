@@ -15,10 +15,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { netId, userId, callsign, clientId } = await req.json();
+    const { netId, userId, callsign, clientId, netType } = await req.json();
 
     if (!netId || !userId) {
       return Response.json({ error: 'Missing netId or userId' }, { status: 400 });
+    }
+
+    // Enforce policy: Focused nets require Member/Affiliate/Partner membership
+    if (netType === 'FOCUSED' && !netId.includes('briefing-temp')) {
+      const membership = user.membership || 'CASUAL';
+      const allowedMemberships = ['MEMBER', 'AFFILIATE', 'PARTNER'];
+      
+      if (!allowedMemberships.includes(membership)) {
+        return Response.json(
+          {
+            code: 'ACCESS_DENIED',
+            reason: 'Focused nets require Member, Affiliate, or Partner membership.',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Check env vars
