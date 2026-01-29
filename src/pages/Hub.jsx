@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass, HelpCircle, Bug, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass, HelpCircle, Bug, CheckCircle2, Clock, AlertCircle, Zap, Users2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MODULE_STATUS, getStatusColor, getStatusBgColor } from '@/components/constants/moduleStatus';
-import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
+import { useShellUI } from '@/components/providers/ShellUIContext';
+import { useCurrentUser } from '@/components/useCurrentUser';
+import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
+  const { user } = useCurrentUser();
+  const { isContextPanelOpen, isCommsDockOpen } = useShellUI();
+  const voiceNet = useVoiceNet();
+  const activeOp = useActiveOp();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -18,10 +25,9 @@ export default function Hub() {
           return;
         }
         
-        // Check if onboarding completed (skip for admin users)
-        const user = await base44.auth.me();
-        if (user.role !== 'admin') {
-          const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+        const authUser = await base44.auth.me();
+        if (authUser.role !== 'admin') {
+          const profiles = await base44.entities.MemberProfile.filter({ user_id: authUser.id });
           if (profiles.length === 0 || !profiles[0].onboarding_completed) {
             window.location.href = createPageUrl('Onboarding');
             return;
@@ -38,8 +44,8 @@ export default function Hub() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center">
-        <div className="text-orange-500 text-xl">LOADING...</div>
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-orange-500 text-sm uppercase tracking-widest font-semibold">Initializing...</div>
       </div>
     );
   }
@@ -62,17 +68,36 @@ export default function Hub() {
   ];
 
   return (
-    <div className="w-full h-full flex flex-col px-4 py-6 overflow-y-auto space-y-8">
-      <div className="text-center">
-        <div className="inline-block mb-2 px-4 py-1 border-2 border-orange-500/30 bg-orange-500/5">
-          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-white">
-            REDSCAR <span className="text-orange-500">NOMADS</span>
-          </h1>
+    <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto space-y-6">
+      {/* Command Center Header */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-widest text-white">
+              Command <span className="text-orange-500">Center</span>
+            </h1>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Operations Hub</p>
+          </div>
+          {/* Status Indicators */}
+          <div className="flex items-center gap-4">
+            {activeOp?.activeEvent && (
+              <div className="text-right">
+                <div className="text-xs text-zinc-400">ACTIVE OP</div>
+                <div className="text-xs font-semibold text-orange-400 uppercase">{activeOp.activeEvent.title}</div>
+              </div>
+            )}
+            {voiceNet?.activeNetId && (
+              <div className="text-right">
+                <div className="text-xs text-zinc-400">VOICE NET</div>
+                <div className="text-xs font-semibold text-orange-400 uppercase">{voiceNet.activeNetId}</div>
+              </div>
+            )}
+          </div>
         </div>
-        <p className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Development Hub</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-min">
+      {/* Module Grid */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
         {navItems.map((item) => {
             const Icon = item.icon;
             const status = MODULE_STATUS[item.path];
@@ -84,31 +109,19 @@ export default function Hub() {
                   <TooltipTrigger asChild>
                     <a
                       href={createPageUrl(item.path)}
-                      className="group relative bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 hover:bg-zinc-900/50 p-4 transition-all duration-200 rounded overflow-hidden cursor-help"
+                      className="group relative bg-zinc-900/40 border border-zinc-800/60 hover:border-orange-500/60 hover:bg-zinc-800/50 p-3 transition-all duration-200 rounded overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                      <div className="relative flex flex-col items-center text-center gap-2">
-                        <div className="p-2.5 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
-                          <Icon className="w-6 h-6 text-orange-500" />
+                      <div className="relative flex flex-col items-center text-center gap-1.5">
+                        <div className="p-2 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
+                          <Icon className="w-5 h-5 text-orange-500" />
                         </div>
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider leading-tight">
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider leading-tight">
                           {item.name}
                         </h3>
-                        <p className="text-xs text-zinc-500 leading-tight opacity-75 group-hover:opacity-100 transition-opacity">
-                          {item.description}
-                        </p>
                         {status && (
-                          <div className="mt-2 pt-2 border-t border-zinc-700/50 w-full">
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all"
-                                  style={{ width: `${statusPercentage}%` }}
-                                />
-                              </div>
-                              <span className="text-xs font-mono font-bold text-orange-400 whitespace-nowrap">{statusPercentage}%</span>
-                            </div>
+                          <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full">
+                            <span className="text-[10px] font-mono font-bold text-orange-400">{statusPercentage}%</span>
                           </div>
                         )}
                       </div>
@@ -166,10 +179,7 @@ export default function Hub() {
         })}
       </div>
 
-      {/* Development Roadmap Section */}
-      <div className="px-2">
-        <DevelopmentRoadmap />
-      </div>
+    </div>
     </div>
   );
 }
