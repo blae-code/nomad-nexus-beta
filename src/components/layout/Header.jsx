@@ -83,7 +83,7 @@ export default function Header() {
     <header className="h-16 bg-gradient-to-b from-zinc-900 to-zinc-950 border-b border-orange-500/30 backdrop-blur-xl shadow-lg shadow-orange-500/5 overflow-hidden">
       <div className="h-full px-6 flex items-center justify-between gap-4 overflow-hidden">
         {/* Left: Identity */}
-        <div className="flex items-center gap-3 min-w-[180px]">
+        <div className="flex items-center gap-3 min-w-[160px] flex-shrink-0">
           <div className={`w-1 h-8 ${isAdmin ? 'bg-red-500' : 'bg-orange-500'}`} />
           <div className="flex flex-col justify-center gap-0.5">
             <span className="text-sm font-black text-white tracking-wider uppercase leading-none">{user.callsign || 'Nomad'}</span>
