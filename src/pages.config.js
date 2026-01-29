@@ -56,10 +56,10 @@ import Onboarding from './pages/Onboarding';
 import PageNotFound from './pages/PageNotFound';
 import Recon from './pages/Recon';
 import Settings from './pages/Settings';
+import SystemAdmin from './pages/SystemAdmin';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import SystemAdmin from './pages/SystemAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -73,10 +73,10 @@ export const PAGES = {
     "PageNotFound": PageNotFound,
     "Recon": Recon,
     "Settings": Settings,
+    "SystemAdmin": SystemAdmin,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "SystemAdmin": SystemAdmin,
 }
 
 export const pagesConfig = {
