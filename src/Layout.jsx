@@ -72,8 +72,6 @@ function LayoutContent({ currentPageName, children }) {
     window.location.href = createPageUrl(page);
   };
 
-
-
   const handleTriggerTestAlert = (type) => {
     if (type === 'event') {
       triggerEventAlert();
