@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass, HelpCircle, Bug, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MODULE_STATUS, getStatusColor, getStatusBgColor } from '@/components/constants/moduleStatus';
+import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
