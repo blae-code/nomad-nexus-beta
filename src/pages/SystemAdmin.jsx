@@ -3,8 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Shield, Users, Key, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AccessKeyManager from '@/components/admin/AccessKeyManager';
-import UserManagement from '@/components/admin/UserManagement';
+import AccessKeyManager from '@/components/admin/AccessKeyManager.jsx';
+import UserManagement from '@/components/admin/UserManagement.jsx';
 
 export default function SystemAdmin() {
   const [user, setUser] = useState(null);
