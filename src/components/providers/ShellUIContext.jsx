@@ -12,6 +12,8 @@ const DEFAULT_STATE = {
   isSidePanelOpen: true,
   isContextPanelOpen: true,
   isCommsDockOpen: true,
+  dockMode: 'voice', // 'voice' or 'text'
+  dockMinimized: false,
 };
 
 export function ShellUIProvider({ children }) {
@@ -61,12 +63,32 @@ export function ShellUIProvider({ children }) {
     setState((prev) => ({ ...prev, isCommsDockOpen: !prev.isCommsDockOpen }));
   }, []);
 
+  const setDockMode = useCallback((mode) => {
+    setState((prev) => ({ ...prev, dockMode: mode }));
+  }, []);
+
+  const setDockMinimized = useCallback((minimized) => {
+    setState((prev) => ({ ...prev, dockMinimized: minimized }));
+  }, []);
+
+  const openCommsDock = useCallback(() => {
+    setState((prev) => ({ ...prev, isCommsDockOpen: true }));
+  }, []);
+
+  const closeCommsDock = useCallback(() => {
+    setState((prev) => ({ ...prev, isCommsDockOpen: false }));
+  }, []);
+
   const value = {
     ...state,
     loaded,
     toggleSidePanel,
     toggleContextPanel,
     toggleCommsDock,
+    setDockMode,
+    setDockMinimized,
+    openCommsDock,
+    closeCommsDock,
   };
 
   return <ShellUIContext.Provider value={value}>{children}</ShellUIContext.Provider>;
