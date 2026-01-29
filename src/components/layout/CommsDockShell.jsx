@@ -6,6 +6,7 @@
 import React, { useEffect } from 'react';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
+import { useShellUI } from '@/components/providers/ShellUIContext';
 import CommsTabEnhanced from '@/components/comms/CommsTabEnhanced';
 import { seedDemoMessages } from '@/components/services/commsService';
 import { X, Minimize2, MessageSquare } from 'lucide-react';
