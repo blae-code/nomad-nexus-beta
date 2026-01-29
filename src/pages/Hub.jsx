@@ -98,6 +98,9 @@ export default function Hub() {
                         <h3 className="text-[10px] font-bold text-white uppercase tracking-wider leading-tight">
                           {item.name}
                         </h3>
+                        <p className="text-[7px] text-zinc-500 leading-tight opacity-75 group-hover:opacity-100 transition-opacity">
+                          {item.description}
+                        </p>
                       </div>
                     </a>
                   </TooltipTrigger>
