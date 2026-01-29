@@ -12,10 +12,10 @@ import { X, Minimize2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const TAB_ITEMS = [
-  { id: 'comms', label: 'Comms', icon: '💬' },
-  { id: 'polls', label: 'Polls', icon: '📊' },
-  { id: 'riggsy', label: 'Riggsy', icon: '🤖' },
-  { id: 'inbox', label: 'Inbox', icon: '📬' },
+  { id: 'comms', label: 'Comms', icon: MessageSquare },
+  { id: 'polls', label: 'Polls', icon: null },
+  { id: 'riggsy', label: 'Riggsy', icon: null },
+  { id: 'inbox', label: 'Inbox', icon: null },
 ];
 
 export default function CommsDockShell({ isOpen, onClose }) {
