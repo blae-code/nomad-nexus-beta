@@ -179,7 +179,7 @@ export default function DevelopmentRoadmap() {
                               style={{ width: `${milestone.completion}%` }}
                             />
                           </div>
-                          <span className={`text-[9px] font-mono font-bold w-6 text-right ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-orange-400' : 'text-zinc-500'}`}>
+                          <span className={`text-[9px] font-mono font-bold w-6 text-right ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
                             {milestone.completion}%
                           </span>
                         </div>
