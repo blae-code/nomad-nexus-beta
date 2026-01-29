@@ -14,6 +14,7 @@ const DEFAULT_STATE = {
   isCommsDockOpen: true,
   dockMode: 'voice', // 'voice' or 'text'
   dockMinimized: false,
+  contextPanelMinimized: false,
 };
 
 export function ShellUIProvider({ children }) {
@@ -71,6 +72,10 @@ export function ShellUIProvider({ children }) {
     setState((prev) => ({ ...prev, dockMinimized: minimized }));
   }, []);
 
+  const setContextPanelMinimized = useCallback((minimized) => {
+    setState((prev) => ({ ...prev, contextPanelMinimized: minimized }));
+  }, []);
+
   const openCommsDock = useCallback(() => {
     setState((prev) => ({ ...prev, isCommsDockOpen: true }));
   }, []);
@@ -87,6 +92,7 @@ export function ShellUIProvider({ children }) {
     toggleCommsDock,
     setDockMode,
     setDockMinimized,
+    setContextPanelMinimized,
     openCommsDock,
     closeCommsDock,
   };
