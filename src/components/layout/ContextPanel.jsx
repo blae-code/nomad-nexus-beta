@@ -20,6 +20,11 @@ import { useVoiceNotifications } from '@/components/voice/notifications/voiceNot
 import { FocusedNetConfirmationSheet } from '@/components/voice/FocusedNetConfirmation';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { createPageUrl } from '@/utils';
+import ActiveNets from '@/components/voice/VoiceControlPanel/ActiveNets';
+import NetHealth from '@/components/voice/VoiceControlPanel/NetHealth';
+import NetRoster from '@/components/voice/VoiceControlPanel/NetRoster';
+import VoiceControlsSection from '@/components/voice/VoiceControlPanel/VoiceControlsSection';
+import CommsDiscipline from '@/components/voice/VoiceControlPanel/CommsDiscipline';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls
