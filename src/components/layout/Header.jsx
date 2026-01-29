@@ -80,8 +80,8 @@ export default function Header() {
   const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank || 'VAGRANT');
 
   return (
-    <header className="h-16 bg-gradient-to-b from-zinc-900 via-zinc-925 to-zinc-950 border-b border-orange-500/30 backdrop-blur-xl shadow-lg shadow-orange-500/5 overflow-hidden">
-      <div className="h-full px-6 flex items-center justify-between gap-4 overflow-hidden">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-zinc-900 via-zinc-925 to-zinc-950 border-b border-orange-500/30 backdrop-blur-xl shadow-lg shadow-orange-500/5 overflow-hidden z-50">
+      <div className="h-full px-6 flex items-center justify-between gap-4 overflow-hidden max-w-full">
         {/* Left: Identity — Premium Presentation */}
         <div className="flex items-center gap-3 min-w-[180px] flex-shrink-0">
           <div className={`w-1.5 h-9 rounded-sm ${isAdmin ? 'bg-gradient-to-b from-red-500 to-red-600' : 'bg-gradient-to-b from-orange-500 to-orange-600'} shadow-lg`} />
