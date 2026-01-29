@@ -141,16 +141,9 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
             variant="ghost"
             onClick={() => onMinimize?.(!isMinimized)}
             className="h-7 w-7 text-zinc-500 hover:text-orange-400 transition-colors"
+            title={isMinimized ? 'Expand' : 'Minimize'}
           >
             <Minimize2 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onClose}
-            className="h-7 w-7 text-zinc-500 hover:text-red-400 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
