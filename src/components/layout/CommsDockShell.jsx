@@ -127,8 +127,8 @@ export default function CommsDockShell({ isOpen, onClose }) {
 
       {/* Tab content */}
       {!isMinimized && (
-        <div className="flex-1 overflow-hidden">
-          {activeTab === 'comms' && (
+        <div className="flex-1 overflow-hidden bg-zinc-900/50">
+          {activeTab === 'comms' && user && (
             <CommsTabEnhanced
               user={user}
               channels={channels}
