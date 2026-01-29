@@ -153,68 +153,157 @@ export default function SystemAdmin() {
 
 function OverviewTab({ user }) {
   return (
-    <div className="space-y-4">
-      <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded">
-        <h3 className="font-bold text-blue-400 mb-2">Welcome to System Admin</h3>
-        <p className="text-sm text-zinc-400">
-          This console provides operational maintenance tools for the Nexus system:
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded">
-          <h4 className="font-bold text-zinc-200 mb-2 flex items-center gap-2">
-            <Database className="w-4 h-4 text-orange-500" />
-            Data Validation
-          </h4>
-          <p className="text-xs text-zinc-400">
-            Inspect all domains, check for orphans, and repair consistency issues.
+    <TooltipProvider>
+      <div className="space-y-4">
+        <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded">
+          <h3 className="font-bold text-blue-400 mb-2">Welcome to System Admin</h3>
+          <p className="text-sm text-zinc-400">
+            Operational maintenance console for Nexus. Deploy data tools, system snapshots, and reset procedures.
           </p>
         </div>
 
-        <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded">
-          <h4 className="font-bold text-zinc-200 mb-2 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-cyan-500" />
-            Diagnostics Bundle
-          </h4>
-          <p className="text-xs text-zinc-400">
-            Export comprehensive system snapshots for debugging and troubleshooting.
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Data Validation */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded cursor-help hover:border-orange-500/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-zinc-200 flex items-center gap-2">
+                    <Database className="w-4 h-4 text-orange-500" />
+                    Data Validation
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded font-mono">PROD</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Inspect all 31+ domains, detect orphans, export validation reports.
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 bg-zinc-900 border border-zinc-700">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-orange-400">Data Validation Tool</p>
+                <ul className="text-zinc-300 space-y-0.5">
+                  <li>• Count records across 31+ data domains</li>
+                  <li>• Detect orphaned or invalid records</li>
+                  <li>• Export validation reports (JSON)</li>
+                  <li>• Dry-run mode for safe inspection</li>
+                  <li>• Domain health status indicators</li>
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Diagnostics Bundle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded cursor-help hover:border-orange-500/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-zinc-200 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-cyan-500" />
+                    Diagnostics Bundle
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded font-mono">PROD</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Capture complete system snapshot for debugging and export.
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 bg-zinc-900 border border-zinc-700">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-cyan-400">Diagnostics Bundle</p>
+                <ul className="text-zinc-300 space-y-0.5">
+                  <li>• Build info, version, phase snapshot</li>
+                  <li>• Current user & authentication state</li>
+                  <li>• Shell UI state (panels, dock, preferences)</li>
+                  <li>• Voice net status & participants</li>
+                  <li>• Active operation bindings</li>
+                  <li>• Domain record counts (31 domains)</li>
+                  <li>• Copy as text or JSON</li>
+                  <li>• Download JSON to file</li>
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Immersive Seed */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded cursor-help hover:border-orange-500/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-zinc-200 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-500" />
+                    Immersive Seed
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded font-mono">PROD</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Populate demo data (Light or Full mode). All seeded data wiped selectively.
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 bg-zinc-900 border border-zinc-700">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-blue-400">Immersive Seed Tool</p>
+                <ul className="text-zinc-300 space-y-0.5">
+                  <li>• Light Mode: 5 users, 4 nets, 4 channels</li>
+                  <li>• Full Mode: 5+ users, 6 nets, 7 channels, events</li>
+                  <li>• Thematic naming (Nomad Nexus mission tone)</li>
+                  <li>• Auto-tagged with meta.seeded + seedSetId</li>
+                  <li>• Non-seeded data untouched</li>
+                  <li>• Wipe seeded data without reset</li>
+                  <li>• Idempotent (re-seed replaces)</li>
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Factory Reset */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded cursor-help hover:border-orange-500/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-zinc-200 flex items-center gap-2">
+                    <RotateCcw className="w-4 h-4 text-red-500" />
+                    Factory Reset
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-red-500/20 text-red-300 rounded font-mono">⚠️ DESTRUCTIVE</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Complete app wipe (5-step safety gates). Returns to fresh state.
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 bg-zinc-900 border border-zinc-700">
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-red-400">⚠️ Factory Reset (Destructive)</p>
+                <ul className="text-zinc-300 space-y-0.5">
+                  <li>• Wipes all 31+ data domains</li>
+                  <li>• Clears 8 localStorage.nexus.* keys</li>
+                  <li>• Logs out user session</li>
+                  <li>• Optional: Preserve seeded data toggle</li>
+                  <li>• Step 1: Confirm action + preflight</li>
+                  <li>• Step 2: Type &quot;RESET ALL DATA&quot;</li>
+                  <li>• Step 3: Execute with progress</li>
+                  <li>• Step 4: Auto-reload to fresh app (/) after 3s</li>
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded">
-          <h4 className="font-bold text-zinc-200 mb-2 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-blue-500" />
-            Immersive Seed
-          </h4>
-          <p className="text-xs text-zinc-400">
-            Populate demo data for testing. All seeded records can be wiped selectively.
-          </p>
-        </div>
-
-        <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded">
-          <h4 className="font-bold text-zinc-200 mb-2 flex items-center gap-2">
-            <RotateCcw className="w-4 h-4 text-red-500" />
-            Factory Reset
-          </h4>
-          <p className="text-xs text-zinc-400">
-            Complete app wipe with multiple safety confirmations. Returns to fresh state.
-          </p>
-        </div>
-      </div>
-
-      <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-bold text-orange-400 mb-1">Important</h4>
-            <p className="text-xs text-zinc-400">
-              Use these tools carefully. Some operations are destructive and cannot be undone.
-              Always verify pre-flight summaries before executing critical operations.
-            </p>
+        <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-bold text-orange-400 mb-1">⚠️ Critical Operations</h4>
+              <p className="text-xs text-zinc-400">
+                Factory Reset is permanent and cannot be undone. Always export Diagnostics before destructive operations.
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
