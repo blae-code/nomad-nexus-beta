@@ -10,7 +10,6 @@ import { CommandPaletteProvider } from '@/components/providers/CommandPaletteCon
 import { NotificationProvider } from '@/components/providers/NotificationContext';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { ShellUIProvider, useShellUI } from '@/components/providers/ShellUIContext';
-import { useLayoutPreferences } from '@/components/hooks/useLayoutPreferences';
 import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
