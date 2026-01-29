@@ -149,172 +149,156 @@ export default function ContextPanel({ isOpen, onClose }) {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Active Op Section */}
-        <SectionHeader
-          icon={<Activity className="w-4 h-4" />}
-          label={activeOp.activeEvent ? `Active Op: ${activeOp.activeEvent.title}` : 'No Active Operation'}
-          sectionKey="activeOp"
-          expanded={expandedSections.activeOp}
-          onToggle={toggleSection}
-        />
-        {expandedSections.activeOp && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
-            {activeOp.activeEvent ? (
-              <>
-                <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
-                  <div className="font-mono text-zinc-300 text-sm mb-1">
-                    {activeOp.activeEvent.title}
-                  </div>
-                  <div className="flex gap-2 text-xs text-zinc-500">
-                    <span>{activeOp.activeEvent.event_type === 'focused' ? 'Focused' : 'Casual'}</span>
-                    <span>•</span>
-                    <span>{activeOp.participants.length} participant{activeOp.participants.length !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
+        {/* Active Operation Section */}
+         <SectionHeader
+           icon={<Activity className="w-4 h-4" />}
+           label="Active Operation"
+           sectionKey="activeOp"
+           expanded={expandedSections.activeOp}
+           onToggle={toggleSection}
+         />
+         {expandedSections.activeOp && (
+           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200 border-b border-orange-500/10">
+             {activeOp.activeEvent ? (
+               <>
+                 <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
+                   <div className="font-mono text-zinc-300 text-sm mb-1">
+                     {activeOp.activeEvent.title}
+                   </div>
+                   <div className="flex gap-2 text-xs text-zinc-500">
+                     <span>{activeOp.activeEvent.event_type === 'focused' ? 'Focused' : 'Casual'}</span>
+                     <span>•</span>
+                     <span>{activeOp.participants.length} participant{activeOp.participants.length !== 1 ? 's' : ''}</span>
+                   </div>
+                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-zinc-400 text-xs font-medium">Bound Voice Net</label>
-                  <select
-                    value={activeOp.binding?.voiceNetId || ''}
-                    onChange={(e) => activeOp.bindVoiceNet(e.target.value || null)}
-                    className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
-                  >
-                    <option value="">None</option>
-                    {voiceNet.voiceNets.map((net) => (
-                      <option key={net.id} value={net.id}>
-                        {net.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                 <div className="space-y-1">
+                   <label className="block text-zinc-400 text-xs font-medium">Bound Voice Net</label>
+                   <select
+                     value={activeOp.binding?.voiceNetId || ''}
+                     onChange={(e) => activeOp.bindVoiceNet(e.target.value || null)}
+                     className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
+                   >
+                     <option value="">None</option>
+                     {voiceNet.voiceNets.map((net) => (
+                       <option key={net.id} value={net.id}>
+                         {net.name}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-zinc-400 text-xs font-medium">Bound Comms Channel</label>
-                  <select
-                    value={activeOp.binding?.commsChannelId || ''}
-                    onChange={(e) => activeOp.bindCommsChannel(e.target.value || null)}
-                    className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
-                  >
-                    <option value="">None</option>
-                    {channels.map((ch) => (
-                      <option key={ch.id} value={ch.id}>
-                        {ch.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                 <div className="space-y-1">
+                   <label className="block text-zinc-400 text-xs font-medium">Bound Comms Channel</label>
+                   <select
+                     value={activeOp.binding?.commsChannelId || ''}
+                     onChange={(e) => activeOp.bindCommsChannel(e.target.value || null)}
+                     className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
+                   >
+                     <option value="">None</option>
+                     {channels.map((ch) => (
+                       <option key={ch.id} value={ch.id}>
+                         {ch.name}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
 
-                {activeOp.binding?.voiceNetId && voiceNet.activeNetId !== activeOp.binding.voiceNetId && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs"
-                    onClick={() => {
-                      const net = voiceNet.voiceNets.find((n) => n.id === activeOp.binding.voiceNetId);
-                      if (net) voiceNet.joinNet(net.id, user);
-                    }}
-                  >
-                    Join Bound Net
-                  </Button>
-                )}
+                 {activeOp.binding?.voiceNetId && voiceNet.activeNetId !== activeOp.binding.voiceNetId && (
+                   <Button
+                     size="sm"
+                     variant="outline"
+                     className="w-full text-xs"
+                     onClick={() => {
+                       const net = voiceNet.voiceNets.find((n) => n.id === activeOp.binding.voiceNetId);
+                       if (net) voiceNet.joinNet(net.id, user);
+                     }}
+                   >
+                     Join Bound Net
+                   </Button>
+                 )}
 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full text-xs"
-                  onClick={() => {
-                    window.location.href = createPageUrl('Events');
-                  }}
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  Go to Op
-                </Button>
-              </>
-            ) : (
-              <div className="text-zinc-600 text-xs py-3 text-center">
-                <div className="text-[10px] opacity-50 mb-1">—</div>
-                <p>No operation active.</p>
-                <p>Go to <span className="text-orange-400">Events</span> to launch one.</p>
-              </div>
-            )}
-          </div>
-        )}
+                 <Button
+                   size="sm"
+                   variant="outline"
+                   className="w-full text-xs"
+                   onClick={() => {
+                     window.location.href = createPageUrl('Events');
+                   }}
+                 >
+                   <ExternalLink className="w-3 h-3 mr-1" />
+                   Go to Op
+                 </Button>
+               </>
+             ) : (
+               <div className="text-zinc-600 text-xs py-3 text-center">
+                 <div className="text-[10px] opacity-50 mb-1">—</div>
+                 <p>No operation active.</p>
+                 <p>Go to <span className="text-orange-400">Events</span> to launch one.</p>
+               </div>
+             )}
+           </div>
+         )}
 
-        {/* Active Voice Nets Section */}
-        <SectionHeader
-          icon={<Radio className="w-4 h-4" />}
-          label={`Voice Nets (${voiceNet.participants.length})`}
-          sectionKey="nets"
-          expanded={expandedSections.nets}
-          onToggle={toggleSection}
-        />
-        {expandedSections.nets && <ActiveNets />}
+         {/* Active Nets Section */}
+         <SectionHeader
+           icon={<Radio className="w-4 h-4" />}
+           label={`Active Nets (${voiceNet.participants.length})`}
+           sectionKey="nets"
+           expanded={expandedSections.nets}
+           onToggle={toggleSection}
+         />
+         {expandedSections.nets && <div className="border-b border-orange-500/10"><ActiveNets /></div>}
 
-        {/* Voice Controls Section */}
-        <SectionHeader
-          icon={<Zap className="w-4 h-4" />}
-          label="Voice Controls"
-          sectionKey="voice"
-          expanded={expandedSections.voice}
-          onToggle={toggleSection}
-        />
-        {expandedSections.voice && (
-          <>
-            <VoiceControlsSection />
-            <CommsDiscipline />
-          </>
-        )}
+         {/* Roster Section */}
+         <SectionHeader
+           icon={<Users className="w-4 h-4" />}
+           label={`Roster (${voiceNet.participants.length})`}
+           sectionKey="contacts"
+           expanded={expandedSections.contacts}
+           onToggle={toggleSection}
+         />
+         {expandedSections.contacts && (
+           <div className="max-h-72 overflow-y-auto border-b border-orange-500/10">
+             <NetRoster />
+           </div>
+         )}
 
-        {/* Net Health Section */}
-        <SectionHeader
-          icon={<BarChart3 className="w-4 h-4" />}
-          label="Net Health"
-          sectionKey="health"
-          expanded={expandedSections.health || false}
-          onToggle={toggleSection}
-        />
-        {expandedSections.health && <NetHealth />}
+         {/* Voice Controls Section */}
+         <SectionHeader
+           icon={<Mic className="w-4 h-4" />}
+           label="Voice Controls"
+           sectionKey="voice"
+           expanded={expandedSections.voice}
+           onToggle={toggleSection}
+         />
+         {expandedSections.voice && (
+           <div className="border-b border-orange-500/10">
+             <VoiceControlsSection />
+             <CommsDiscipline />
+           </div>
+         )}
 
-        {/* Net Roster Section */}
-        <SectionHeader
-          icon={<Users className="w-4 h-4" />}
-          label={`Net Roster (${voiceNet.participants.length})`}
-          sectionKey="contacts"
-          expanded={expandedSections.contacts}
-          onToggle={toggleSection}
-        />
-        {expandedSections.contacts && (
-          <div className="max-h-72 overflow-y-auto">
-            <NetRoster />
-          </div>
-        )}
+         {/* Net Health Section */}
+         <SectionHeader
+           icon={<BarChart3 className="w-4 h-4" />}
+           label="Net Health"
+           sectionKey="health"
+           expanded={expandedSections.health || false}
+           onToggle={toggleSection}
+         />
+         {expandedSections.health && <div className="border-b border-orange-500/10"><NetHealth /></div>}
 
-        {/* Riggsy / AI Section */}
-        <SectionHeader
-          icon={<Radio className="w-4 h-4" />}
-          label="Riggsy AI"
-          sectionKey="riggsy"
-          expanded={expandedSections.riggsy}
-          onToggle={toggleSection}
-        />
-        {expandedSections.riggsy && (
-          <div className="px-4 py-3 text-xs text-zinc-500 animate-in fade-in duration-200 text-center">
-            <div className="text-[10px] opacity-50 mb-2">🤖</div>
-            <div className="text-xs">AI Assistant</div>
-            <div className="text-[10px] text-zinc-600 mt-1">(In development)</div>
-          </div>
-        )}
-
-        {/* Diagnostics Section */}
-        <SectionHeader
-          icon={<BarChart3 className="w-4 h-4" />}
-          label="Diagnostics"
-          sectionKey="diagnostics"
-          expanded={expandedSections.diagnostics}
-          onToggle={toggleSection}
-        />
-        {expandedSections.diagnostics && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 border-t border-zinc-800/50 animate-in fade-in duration-200">
+         {/* Diagnostics Section */}
+         <SectionHeader
+           icon={<BarChart3 className="w-4 h-4" />}
+           label="Diagnostics"
+           sectionKey="diagnostics"
+           expanded={expandedSections.diagnostics}
+           onToggle={toggleSection}
+         />
+         {expandedSections.diagnostics && (
+           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 border-b border-orange-500/10 animate-in fade-in duration-200">
             {/* Build Info */}
             <div className="space-y-1">
               <div className="text-zinc-500">Build</div>
