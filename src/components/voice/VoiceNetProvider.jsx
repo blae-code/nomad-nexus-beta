@@ -11,7 +11,7 @@ import MockVoiceTransport from './transport/MockVoiceTransport';
 import { LiveKitTransport } from './transport/LiveKitTransport';
 import * as voiceService from '@/components/services/voiceService';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
-import { useFocusedConfirmation } from './components/FocusedNetConfirmation';
+import { useFocusedConfirmation } from './components/FocusedNetConfirmation.js';
 
 const VoiceNetContext = createContext(null);
 
