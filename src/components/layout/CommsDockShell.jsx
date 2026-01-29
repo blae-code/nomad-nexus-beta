@@ -33,30 +33,33 @@ export default function CommsDockShell({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-64 bg-zinc-900/95 border-t border-orange-500/20 backdrop-blur-sm flex flex-col">
+    <div className="fixed bottom-0 left-0 right-0 h-96 bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col">
       {/* Header */}
-      <div className="border-b border-orange-500/20 px-4 py-2 flex items-center justify-between bg-gradient-to-r from-zinc-900/50 to-transparent">
+      <div className="border-b border-orange-500/20 px-6 py-3 flex items-center justify-between bg-zinc-950/80">
         {/* Tab strip */}
-        <div className="flex gap-2">
-          {TAB_ITEMS.map((tab) => (
+        <div className="flex gap-1">
+          {TAB_ITEMS.map((tab) => {
+            const TabIcon = tab.icon;
+            return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors flex items-center gap-1 ${
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center gap-2 ${
                 activeTab === tab.id
-                  ? 'bg-zinc-800 text-orange-400'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-orange-500/15 text-orange-400 border border-orange-500/40'
+                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'
               }`}
             >
-              <span>{tab.icon}</span>
+              {TabIcon && <TabIcon className="w-3.5 h-3.5" />}
               {tab.label}
               {unreadByTab[tab.id] > 0 && (
-                <span className="ml-1 h-5 w-5 bg-orange-600 text-white text-xs rounded-full flex items-center justify-center">
+                <span className="ml-1 h-5 w-5 bg-orange-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                   {unreadByTab[tab.id]}
                 </span>
               )}
             </button>
-          ))}
+          );
+          })}
         </div>
 
         {/* Controls */}
