@@ -75,12 +75,7 @@ export default function Header() {
 
   // Admin users have special display
   const isAdmin = user.role === 'admin';
-  const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank);
-  const membershipLabel = isAdmin ? 'Administrator' : getMembershipLabel(user.membership);
-  const roleLabels = isAdmin ? [] : (user.roles || []).map(getRoleLabel);
-
-  // Derive comms status from readiness
-  const commsStatus = readiness === 'OPERATIONAL' ? 'Online' : 'Offline';
+  const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank || 'VAGRANT');
 
   return (
     <header className="h-14 bg-zinc-950 border-b border-orange-500/20 backdrop-blur-lg">
