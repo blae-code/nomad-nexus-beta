@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus } from 'lucide-react';
+import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass } from 'lucide-react';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
@@ -60,8 +60,18 @@ export default function Hub() {
     { name: 'Availability', path: 'Availability', icon: ClipboardList, description: 'Duty roster and scheduling' },
     { name: 'Achievements', path: 'Achievements', icon: Award, description: 'Medals and commendations' },
     { name: 'Recruitment', path: 'Recruitment', icon: UserPlus, description: 'Public applications portal' },
+    { name: 'Mission Generator', path: 'MissionGenerator', icon: Sparkles, description: 'AI-powered mission creation' },
+    { name: 'Simulation Lab', path: 'SimulationLab', icon: Gamepad2, description: 'Virtual training scenarios' },
+    { name: 'Command Bridge', path: 'CommandBridge', icon: Monitor, description: 'Real-time ops war room' },
+    { name: 'Engineering Bay', path: 'EngineeringBay', icon: Wrench, description: 'Ship mods and R&D' },
+    { name: 'Medical Bay', path: 'MedicalBay', icon: Heart, description: 'Health tracking and medic ops' },
+    { name: 'Diplomatic Corps', path: 'DiplomaticCorps', icon: Handshake, description: 'Alliance and faction relations' },
+    { name: 'Signals Intelligence', path: 'SignalsIntelligence', icon: SignalIcon, description: 'Comms intercepts and analysis' },
+    { name: 'War Council', path: 'WarCouncil', icon: Gavel, description: 'Democratic voting and governance' },
+    { name: 'Bounty Board', path: 'BountyBoard', icon: Target, description: 'Target contracts and tracking' },
+    { name: 'Exploration Corps', path: 'ExplorationCorps', icon: Compass, description: 'Discovery and uncharted territories' },
     { name: 'Settings', path: 'Settings', icon: Settings, description: 'App configuration' },
-  ];
+    ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
