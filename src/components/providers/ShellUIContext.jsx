@@ -24,15 +24,16 @@ export function ShellUIProvider({ children }) {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}state`);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Ensure isCommsDockOpen defaults to true if not in localStorage
-        setState((prev) => ({
-          ...prev,
+        setState({
           ...parsed,
-          isCommsDockOpen: parsed.isCommsDockOpen !== undefined ? parsed.isCommsDockOpen : true,
-        }));
+          isCommsDockOpen: true, // Always force dock visible on load
+        });
+      } else {
+        setState(DEFAULT_STATE);
       }
     } catch (err) {
       console.warn('Failed to load shell UI state:', err);
+      setState(DEFAULT_STATE);
     }
     setLoaded(true);
   }, []);
