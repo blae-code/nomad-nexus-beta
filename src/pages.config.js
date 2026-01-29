@@ -59,6 +59,7 @@ import Settings from './pages/Settings';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
+import SystemAdmin from './pages/SystemAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +76,7 @@ export const PAGES = {
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
+    "SystemAdmin": SystemAdmin,
 }
 
 export const pagesConfig = {
