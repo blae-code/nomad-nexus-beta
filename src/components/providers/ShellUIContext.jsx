@@ -11,7 +11,7 @@ const STORAGE_PREFIX = 'nexus.shell.';
 const DEFAULT_STATE = {
   isSidePanelOpen: true,
   isContextPanelOpen: true,
-  isCommsDockOpen: false,
+  isCommsDockOpen: true,
 };
 
 export function ShellUIProvider({ children }) {
