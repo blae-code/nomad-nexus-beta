@@ -6,7 +6,7 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAudioDevices } from '@/components/voice/hooks/useAudioDevices';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
-import { ChevronDown, X, Radio, Users, Mic, BarChart3, Activity, ExternalLink, Copy, RotateCcw } from 'lucide-react';
+import { ChevronDown, X, Radio, Users, Mic, BarChart3, Activity, ExternalLink, Copy, RotateCcw, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { APP_VERSION, APP_BUILD_PHASE, APP_BUILD_DATE } from '@/components/constants/appVersion';
 import { useShellUI } from '@/components/providers/ShellUIContext';
@@ -29,7 +29,7 @@ import CommsDiscipline from '@/components/voice/VoiceControlPanel/CommsDisciplin
  * ContextPanel — Right sidebar with systems, contacts, voice controls
  * Supports: collapse/expand, internal scrolling, section toggles
  */
-export default function ContextPanel({ isOpen, onClose }) {
+export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize }) {
   const [expandedSections, setExpandedSections] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus.contextPanel.expanded');
@@ -130,25 +130,40 @@ export default function ContextPanel({ isOpen, onClose }) {
   }
 
   return (
-    <div className="w-80 bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden z-[900] relative">
+    <div className={`${isMinimized ? 'w-12' : 'w-80'} bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden z-[900] relative transition-all duration-200`}>
       {/* Header */}
-      <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
-        <div>
-          <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Control</h2>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Comms Panel</p>
-        </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={onClose}
-          className="h-6 w-6 text-zinc-400 hover:text-orange-500"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
+       <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
+         {!isMinimized && (
+           <div>
+             <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Control</h2>
+             <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Comms Panel</p>
+           </div>
+         )}
+         <div className="flex items-center gap-1 ml-auto">
+           <Button
+             size="icon"
+             variant="ghost"
+             onClick={() => onMinimize(!isMinimized)}
+             className="h-6 w-6 text-zinc-400 hover:text-orange-500"
+             title={isMinimized ? "Expand" : "Minimize"}
+           >
+             <ChevronLeft className={`w-4 h-4 transition-transform ${isMinimized ? 'rotate-180' : ''}`} />
+           </Button>
+           {!isMinimized && (
+             <Button
+               size="icon"
+               variant="ghost"
+               onClick={onClose}
+               className="h-6 w-6 text-zinc-400 hover:text-orange-500"
+             >
+               <X className="w-4 h-4" />
+             </Button>
+           )}
+         </div>
+       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+       <div className={`flex-1 overflow-y-auto ${isMinimized ? 'hidden' : ''}`}>
         {/* Active Operation Section */}
          <SectionHeader
            icon={<Activity className="w-4 h-4" />}
