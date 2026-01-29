@@ -21,8 +21,40 @@ const TAB_ITEMS = [
 export default function CommsDockShell({ isOpen, onClose }) {
   const { user } = useCurrentUser();
   const [activeTab, setActiveTab] = React.useState('comms');
+  const [dockHeight, setDockHeight] = React.useState(384); // h-96 default
+  const [isDragging, setIsDragging] = React.useState(false);
   const { channels, unreadByTab, unreadByChannel, markChannelRead, refreshUnreadCounts, loading } =
     useUnreadCounts(user?.id);
+
+  // Load saved height on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('nexus.dock.height');
+    if (saved) setDockHeight(parseInt(saved, 10));
+  }, []);
+
+  // Handle resize drag
+  useEffect(() => {
+    if (!isDragging) return;
+    
+    const handleMouseMove = (e) => {
+      const newHeight = window.innerHeight - e.clientY;
+      if (newHeight >= 200 && newHeight <= 600) {
+        setDockHeight(newHeight);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      localStorage.setItem('nexus.dock.height', dockHeight.toString());
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dockHeight]);
 
   // Seed demo messages on first load
   useEffect(() => {
