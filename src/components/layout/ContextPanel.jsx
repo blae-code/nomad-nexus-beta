@@ -358,25 +358,20 @@ export default function ContextPanel({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Contacts / Roster Section */}
+        {/* Voice Participants Section */}
         <SectionHeader
           icon={<Users className="w-4 h-4" />}
-          label={`Roster (${onlineCount})`}
+          label={`Net Roster (${voiceNet.participants.length})`}
           sectionKey="contacts"
           expanded={expandedSections.contacts}
           onToggle={toggleSection}
         />
         {expandedSections.contacts && (
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
-            {loading ? (
-              <LoadingState label="Loading Roster" />
-            ) : voiceNet.activeNetId && voiceNet.participants.length > 0 ? (
-              // Show voice participants when connected
+            {voiceNet.activeNetId && voiceNet.participants.length > 0 ? (
               voiceNet.participants
                 .sort((a, b) => {
-                  // Speaking first
                   if (a.isSpeaking !== b.isSpeaking) return a.isSpeaking ? -1 : 1;
-                  // Then alphabetical
                   return (a.callsign || '').localeCompare(b.callsign || '');
                 })
                 .map((participant) => (
@@ -389,20 +384,8 @@ export default function ContextPanel({ isOpen, onClose }) {
                     </div>
                   </div>
                 ))
-            ) : onlineUsers.length === 0 ? (
-              <div className="text-zinc-500">No users online</div>
             ) : (
-              // Show online roster when not connected to voice
-              onlineUsers.map((user) => (
-                <div key={user.userId} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
-                  <div className="font-mono text-zinc-300 text-xs">{user.callsign}</div>
-                  <div className="flex gap-2 text-xs text-zinc-500 mt-1">
-                    <span>{getRankLabel(user.rank)}</span>
-                    <span>{getMembershipLabel(user.membership)}</span>
-                    <span className="ml-auto text-green-500">● Online</span>
-                  </div>
-                </div>
-              ))
+              <div className="text-zinc-500 text-xs">Join a voice net to see participants</div>
             )}
           </div>
         )}
