@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, LogOut, Save, Layout, Shield, AlertCircle } from 'lucide-react';
-import LayoutSettings from '@/components/layout/LayoutSettings';
 import UserManagement from '@/components/admin/UserManagement';
 import AccessKeyManager from '@/components/admin/AccessKeyManager';
 import DataValidation from '@/components/admin/DataValidation';
@@ -83,9 +82,8 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="account" className="w-full">
-        <TabsList className={`grid w-full mb-6 ${isAdmin ? 'grid-cols-6' : 'grid-cols-3'}`}>
+        <TabsList className={`grid w-full mb-6 ${isAdmin ? 'grid-cols-5' : 'grid-cols-1'}`}>
           <TabsTrigger value="account">My Account</TabsTrigger>
-          <TabsTrigger value="workspace">Workspace</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
           {isAdmin && <TabsTrigger value="keys">Access Keys</TabsTrigger>}
           {isAdmin && <TabsTrigger value="data">Data Tools</TabsTrigger>}
@@ -146,16 +144,7 @@ export default function Settings() {
           </div>
         </TabsContent>
 
-        {/* Workspace Tab */}
-        <TabsContent value="workspace" className="space-y-6">
-          <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-            <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
-              <Layout className="w-5 h-5" />
-              Workspace
-            </h2>
-            <LayoutSettings />
-          </div>
-        </TabsContent>
+
 
         {/* Admin: Users Tab */}
         {isAdmin && (
