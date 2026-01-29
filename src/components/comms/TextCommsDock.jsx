@@ -178,7 +178,7 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
           {activeTab === 'comms' && (
             <div className="flex-1 overflow-hidden flex">
               {/* Channel List */}
-              <div className="w-96 border-r border-zinc-800 flex flex-col overflow-hidden">
+              <div className="w-48 lg:w-56 border-r border-zinc-800 flex flex-col overflow-hidden min-w-0">
                <Input
                   placeholder="Find channel..."
                   value={searchInput}
