@@ -115,31 +115,31 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Right: System Status & Controls */}
-        <div className="flex items-center gap-3 min-w-[240px] justify-end flex-shrink-0 overflow-hidden">
+        {/* Right: System Status & Controls — Telemetry Display */}
+        <div className="flex items-center gap-2 min-w-[250px] justify-end flex-shrink-0 overflow-hidden">
           {/* Verse Clock */}
           <VerseClock />
 
-          {/* Status Indicators */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Status Badges — Hierarchical Display */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {voiceNet?.activeNetId && (
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded h-7 ${
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/10 text-green-400' :
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md h-7 text-xs font-semibold border ${
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/15 text-green-300 border-green-500/30' :
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
               }`}>
-                <Mic className="w-3 h-3" />
-                <span className="text-xs font-mono">{voiceNet.participants?.length || 0}</span>
+                <Mic className="w-3.5 h-3.5" />
+                <span className="font-mono">{voiceNet.participants?.length || 0}</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 text-zinc-500 rounded h-7">
-              <Users className="w-3 h-3" />
-              <span className="text-xs font-mono">{onlineCount}</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800/50 text-zinc-400 rounded-md h-7 text-xs font-semibold border border-zinc-700/50">
+              <Users className="w-3.5 h-3.5" />
+              <span className="font-mono">{onlineCount}</span>
             </div>
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded h-7 ${
-              isHealthy ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md h-7 text-xs font-semibold border ${
+              isHealthy ? 'bg-green-500/15 text-green-300 border-green-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
             }`}>
-              {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span className="text-xs font-mono">{latencyMs}</span>
+              {isHealthy ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+              <span className="font-mono">{latencyMs}ms</span>
             </div>
           </div>
 
