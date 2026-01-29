@@ -75,7 +75,7 @@ export default function Hub() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 auto-rows-min">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-min">
           {navItems.map((item) => {
             const Icon = item.icon;
             const status = MODULE_STATUS[item.path];
@@ -87,18 +87,18 @@ export default function Hub() {
                   <TooltipTrigger asChild>
                     <a
                       href={createPageUrl(item.path)}
-                      className="group relative bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 hover:bg-zinc-900/50 p-2 transition-all duration-200 rounded overflow-hidden cursor-help"
+                      className="group relative bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 hover:bg-zinc-900/50 p-4 transition-all duration-200 rounded overflow-hidden cursor-help"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                      <div className="relative flex flex-col items-center text-center gap-1">
-                        <div className="p-1.5 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
-                          <Icon className="w-4 h-4 text-orange-500" />
+                      <div className="relative flex flex-col items-center text-center gap-2">
+                        <div className="p-2.5 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
+                          <Icon className="w-6 h-6 text-orange-500" />
                         </div>
-                        <h3 className="text-[10px] font-bold text-white uppercase tracking-wider leading-tight">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider leading-tight">
                           {item.name}
                         </h3>
-                        <p className="text-[7px] text-zinc-500 leading-tight opacity-75 group-hover:opacity-100 transition-opacity">
+                        <p className="text-xs text-zinc-500 leading-tight opacity-75 group-hover:opacity-100 transition-opacity">
                           {item.description}
                         </p>
                       </div>
