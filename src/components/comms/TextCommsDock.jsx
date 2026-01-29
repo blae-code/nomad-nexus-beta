@@ -94,12 +94,17 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
     }
   };
 
+  // Sync unread counts whenever channels change
+  React.useEffect(() => {
+    refreshUnreadCounts();
+  }, [channels, refreshUnreadCounts]);
+
   // Group channels by category
-  const groupedChannels = {
-    casual: channels.filter((ch) => ch.category === 'casual'),
-    focused: channels.filter((ch) => ch.category === 'focused'),
-    temporary: channels.filter((ch) => ch.category === 'temporary'),
-  };
+   const groupedChannels = {
+     casual: channels.filter((ch) => ch.category === 'casual'),
+     focused: channels.filter((ch) => ch.category === 'focused'),
+     temporary: channels.filter((ch) => ch.category === 'temporary'),
+   };
 
   const canAccessChannel = (channel) => {
     if (channel.category === 'focused') {
@@ -238,6 +243,9 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
                           >
                             {!canAccess ? <Lock className="w-3 h-3 flex-shrink-0" /> : <Hash className="w-3 h-3 flex-shrink-0" />}
                             <span className="truncate">{ch.name}</span>
+                            {unreadByTab?.[ch.id] > 0 && (
+                              <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                            )}
                           </button>
                           );
                           })}
