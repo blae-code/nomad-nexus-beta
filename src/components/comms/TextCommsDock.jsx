@@ -368,32 +368,7 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
               </div>
               )}
 
-          {activeTab === 'polls' && (
-            <div className="flex items-center justify-center h-full text-zinc-600">
-              <div className="text-center">
-                <div className="text-[10px] opacity-50 mb-1">📊</div>
-                <div className="text-xs">Polls module (coming soon)</div>
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'riggsy' && (
-            <div className="flex items-center justify-center h-full text-zinc-600">
-              <div className="text-center">
-                <div className="text-[10px] opacity-50 mb-1">🤖</div>
-                <div className="text-xs">Riggsy AI Assistant (in development)</div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'inbox' && (
-            <div className="flex items-center justify-center h-full text-zinc-600">
-              <div className="text-center">
-                <div className="text-[10px] opacity-50 mb-1">💬</div>
-                <div className="text-xs">Direct messages (in development)</div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
