@@ -110,8 +110,8 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Right: System Status & Controls — Telemetry Display */}
-        <div className="flex items-center gap-2 min-w-[250px] justify-end flex-shrink-0 overflow-hidden">
+        {/* Right: Telemetry + Controls — Live Status */}
+        <div className="flex items-center gap-2 justify-end flex-shrink-0 min-w-max">
           {/* Verse Clock */}
           <VerseClock />
 
