@@ -110,7 +110,7 @@ export default function Header() {
               <div className="flex items-center gap-1 text-xs font-mono text-zinc-700">
                 <span>{flatActions.length}</span>
               </div>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-500 border border-zinc-700 rounded">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-500 border border-zinc-700 rounded">Ctrl+K</kbd>
             </div>
           </button>
         </div>
