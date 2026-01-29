@@ -102,11 +102,11 @@ export default function Header() {
           )}
           <button
             onClick={openPalette}
-            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/50 via-zinc-900/40 to-zinc-950/50 border border-zinc-800/80 hover:border-orange-500/60 hover:bg-gradient-to-r hover:from-zinc-900/70 hover:via-zinc-900/60 hover:to-zinc-900/50 text-zinc-500 hover:text-zinc-200 transition-all duration-200 group rounded-md shadow-md hover:shadow-lg hover:shadow-orange-500/10 relative overflow-hidden"
+            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/50 via-zinc-900/40 to-zinc-950/50 border border-zinc-800/80 hover:border-transparent hover:bg-gradient-to-r hover:from-zinc-900/70 hover:via-zinc-900/60 hover:to-zinc-900/50 text-zinc-500 hover:text-zinc-200 transition-all duration-200 group rounded-md shadow-md hover:shadow-lg hover:shadow-orange-500/10 relative overflow-hidden before:absolute before:inset-0 before:rounded-md before:p-0.5 before:bg-gradient-to-r before:from-orange-500/0 before:via-orange-400/40 before:to-amber-500/0 before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-200 before:pointer-events-none"
             title="Universal Command Palette — Search, navigate, execute • Ctrl+K or Cmd+K"
           >
-            {/* Shimmer accent */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-30 bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-500" />
+            {/* Animated gradient border glow */}
+            <div className="absolute inset-0.5 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-orange-400/20 to-transparent transition-opacity duration-500 pointer-events-none rounded-sm" />
             
             <Command className="w-3.5 h-3.5 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0 relative z-10" />
             <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-100 min-w-0 truncate relative z-10 flex-1 text-left">Ctrl+K</span>
@@ -122,23 +122,23 @@ export default function Header() {
           {/* Telemetry Chips — Compact */}
           <div className="flex items-center gap-1 flex-shrink-0">
             {voiceNet?.activeNetId && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 shadow-sm ${
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-200 border-green-500/50' :
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-200 border-orange-500/50' : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-200 border-red-500/50'
+              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/15 text-green-300 border-green-500/30' :
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
               }`}>
                 <Mic className="w-3 h-3" />
-                <span className="font-mono text-[11px] font-semibold">{voiceNet.participants?.length || 0}</span>
+                <span className="font-mono text-[11px]">{voiceNet.participants?.length || 0}</span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-200 rounded text-xs font-semibold border border-cyan-500/40 h-7 shadow-sm shadow-cyan-500/10">
+            <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800/50 text-zinc-400 rounded text-xs font-semibold border border-zinc-700/50 h-7">
               <Users className="w-3 h-3" />
-              <span className="font-mono text-[11px] font-semibold">{onlineCount}</span>
+              <span className="font-mono text-[11px]">{onlineCount}</span>
             </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 shadow-sm ${
-              isHealthy ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-200 border-green-500/50' : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-200 border-red-500/50'
+            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
+              isHealthy ? 'bg-green-500/15 text-green-300 border-green-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
             }`}>
               {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span className="font-mono text-[11px] font-semibold">{latencyMs}ms</span>
+              <span className="font-mono text-[11px]">{latencyMs}ms</span>
             </div>
           </div>
 
