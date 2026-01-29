@@ -1,4 +1,4 @@
-import { connect, RoomEvent } from 'livekit-client';
+import { Room, RoomEvent } from 'livekit-client';
 
 /**
  * LiveKitTransport — Real voice transport via LiveKit
@@ -29,17 +29,17 @@ export class LiveKitTransport {
     try {
       this.state = 'JOINING';
 
-      // Connect to LiveKit (returns Room instance)
-      this.room = await connect(url, token, {
-        audio: true,
-        video: false,
+      // Create room instance
+      this.room = new Room({
         adaptiveStream: true,
         dynacast: true,
-        autoSubscribe: true,
       });
 
-      // Wire event handlers after connecting
+      // Wire event handlers before connecting
       this._wireRoomEvents();
+
+      // Connect to LiveKit
+      await this.room.connect(url, token);
 
       this.state = 'CONNECTED';
       this.reconnectAttempts = 0;
