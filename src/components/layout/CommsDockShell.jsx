@@ -63,24 +63,24 @@ export default function CommsDockShell({ isOpen, onClose }) {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Button
             size="icon"
             variant="ghost"
             onClick={() => {}}
-            className="h-8 w-8 text-zinc-400 hover:text-zinc-300"
-            title="Minimize (stub)"
+            className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10"
+            title="Minimize"
           >
-            <Minimize2 className="w-3.5 h-3.5" />
+            <Minimize2 className="w-4 h-4" />
           </Button>
           <Button
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-8 w-8 text-zinc-400 hover:text-red-400"
+            className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
             title="Close dock"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </Button>
         </div>
       </div>
