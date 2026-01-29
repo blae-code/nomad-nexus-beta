@@ -1,6 +1,25 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useCommandPalette } from '@/components/providers/CommandPaletteContext';
-import { X } from 'lucide-react';
+import {
+  X,
+  Home,
+  Calendar,
+  Radio,
+  Users,
+  Map,
+  Box,
+  DollarSign,
+  Settings,
+  FileSearch,
+  PanelRight,
+  MessageSquare,
+  Bell,
+  Zap,
+  AlertTriangle,
+  ClipboardCopy,
+  RotateCcw,
+  Lock,
+} from 'lucide-react';
 
 /**
  * CommandPaletteUI — Modal overlay with search, navigation, execution
@@ -19,7 +38,7 @@ export default function CommandPaletteUI() {
     return null;
   }
 
-  const { isOpen, closePalette, search, setSearch, groupedActions } = context;
+  const { isOpen, closePalette, search, setSearch, groupedActions, filteredActions } = context;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
@@ -114,20 +133,29 @@ export default function CommandPaletteUI() {
         </div>
 
         {/* Results */}
-        <div className="max-h-[500px] overflow-y-auto">
+        <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
           {flatActions.length === 0 ? (
-            <div className="px-5 py-12 text-center text-zinc-600 font-mono text-sm">
-              NO COMMANDS FOUND
+            <div className="px-5 py-12 text-center">
+              <div className="text-zinc-600 font-mono text-sm mb-2">NO COMMANDS FOUND</div>
+              <div className="text-zinc-700 text-xs">Try a different search term</div>
             </div>
           ) : (
             Object.entries(groupedActions).map(([category, actions]) => (
               <div key={category}>
-                <div className="px-5 py-2 text-xs font-black text-orange-500/70 uppercase tracking-widest bg-zinc-900/30 border-b border-zinc-800/50">
+                <div className="sticky top-0 px-5 py-2 text-xs font-black text-orange-500/70 uppercase tracking-widest bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50 flex items-center gap-2">
+                  <div className="w-0.5 h-3 bg-orange-500/50" />
                   {category}
+                  <div className="ml-auto text-zinc-700 font-mono">{actions.length}</div>
                 </div>
                 {actions.map((action, idx) => {
                   const globalIdx = flatActions.findIndex((a) => a.id === action.id);
                   const isSelected = globalIdx === selectedIndex;
+                  
+                  const iconMap = {
+                    Home, Calendar, Radio, Users, Map, Box, DollarSign, Settings, FileSearch,
+                    PanelRight, MessageSquare, Bell, Zap, AlertTriangle, ClipboardCopy, RotateCcw, Lock
+                  };
+                  const IconComponent = action.icon ? iconMap[action.icon] : null;
 
                   return (
                     <button
@@ -136,15 +164,27 @@ export default function CommandPaletteUI() {
                         action.onExecute();
                         closePalette();
                       }}
-                      className={`w-full text-left px-5 py-3 transition-all duration-150 border-l-4 ${
+                      className={`w-full text-left px-5 py-3 transition-all duration-150 border-l-4 flex items-center gap-3 ${
                         isSelected
                           ? 'bg-orange-500/20 border-orange-500 text-white'
                           : 'hover:bg-zinc-900/50 border-transparent text-zinc-300 hover:border-zinc-700'
                       }`}
                     >
-                      <div className="font-semibold tracking-wide">{action.label}</div>
-                      {action.description && (
-                        <div className="text-xs text-zinc-500 mt-1 font-mono">{action.description}</div>
+                      {IconComponent && (
+                        <div className={`w-5 h-5 flex-shrink-0 ${isSelected ? 'text-orange-400' : 'text-zinc-600'}`}>
+                          <IconComponent className="w-full h-full" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold tracking-wide truncate">{action.label}</div>
+                        {action.description && (
+                          <div className="text-xs text-zinc-500 mt-0.5 font-mono truncate">{action.description}</div>
+                        )}
+                      </div>
+                      {action.shortcut && (
+                        <div className="text-xs font-mono text-zinc-600 bg-zinc-800/50 px-2 py-1 rounded border border-zinc-700 flex-shrink-0">
+                          {action.shortcut}
+                        </div>
                       )}
                     </button>
                   );
@@ -153,6 +193,22 @@ export default function CommandPaletteUI() {
             ))
           )}
         </div>
+
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(24, 24, 27, 0.5);
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(234, 88, 12, 0.3);
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(234, 88, 12, 0.5);
+          }
+        `}</style>
 
         {/* Footer Hint */}
         <div className="px-5 py-3 border-t-2 border-zinc-800 bg-zinc-900/30 text-xs text-zinc-600 flex justify-between font-mono">

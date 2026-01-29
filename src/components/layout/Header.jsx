@@ -9,7 +9,7 @@ import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
-import { Radio, Search, PanelLeft, PanelRight, MessageSquare, Mic } from 'lucide-react';
+import { Radio, Search, PanelRight, MessageSquare, Mic, Activity, Calendar, Users, Wifi, WifiOff, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
@@ -32,8 +32,9 @@ export default function Header() {
     );
   }
 
-  const { openPalette } = paletteContext;
-  const { toggleSidePanel, toggleContextPanel, toggleCommsDock } = shellUI;
+  const { openPalette, filteredActions } = paletteContext;
+  const { toggleContextPanel, toggleCommsDock } = shellUI;
+  const flatActions = filteredActions || [];
 
   // Ctrl/⌘+K global handler
   useEffect(() => {
@@ -48,12 +49,12 @@ export default function Header() {
   }, [openPalette]);
 
   // Telemetry hooks (non-blocking)
-  const readiness = useReadiness();
-  const latency = useLatency();
+  const { readiness, reason } = useReadiness();
+  const { latencyMs, isHealthy } = useLatency();
   const { onlineCount } = usePresenceRoster();
   const { unreadByTab } = useUnreadCounts(user?.id);
   const voiceNet = useVoiceNet();
-  const activeOp = useActiveOp();
+  const { activeEvent } = useActiveOp();
 
   if (loading || !user) {
     return (
@@ -70,7 +71,7 @@ export default function Header() {
   const roleLabels = isAdmin ? [] : (user.roles || []).map(getRoleLabel);
 
   // Derive comms status from readiness
-  const commsStatus = readiness.state === 'READY' ? 'Online' : 'Offline';
+  const commsStatus = readiness === 'OPERATIONAL' ? 'Online' : 'Offline';
 
   return (
     <header className="h-16 bg-zinc-950/95 border-b-2 border-zinc-800 backdrop-blur-sm">
@@ -185,14 +186,14 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {/* Telemetry Strip (live data) */}
             <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r-2 border-zinc-700 pr-4 font-mono uppercase tracking-wide">
-              {activeOp.activeEvent && (
+              {activeEvent && (
                 <div className="flex items-center gap-1">
                   <span className="text-orange-500">Op:</span>
-                  <span className="max-w-[120px] truncate">{activeOp.activeEvent.title}</span>
+                  <span className="max-w-[120px] truncate">{activeEvent.title}</span>
                 </div>
               )}
               <div className="flex items-center gap-1">
-                <Radio className={`w-3 h-3 ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`} />
+                <Radio className={`w-3 h-3 ${readiness === 'OPERATIONAL' ? 'text-green-500' : readiness === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`} />
                 <span>Comms: {commsStatus}</span>
               </div>
               {voiceNet.activeNetId && (
@@ -212,8 +213,8 @@ export default function Header() {
               <div className="flex items-center gap-1">
                 <span>Online: {onlineCount}</span>
               </div>
-              <div className="flex items-center gap-1" title={latency.lastMeasuredAt ? `Last: ${new Date(latency.lastMeasuredAt).toLocaleTimeString()}` : 'Measuring...'}>
-                <span>Latency: {latency.latencyMs}ms</span>
+              <div className="flex items-center gap-1">
+                <span>Latency: {latencyMs}ms</span>
               </div>
             </div>
 
