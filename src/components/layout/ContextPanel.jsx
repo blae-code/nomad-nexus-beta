@@ -381,7 +381,6 @@ export default function ContextPanel({ isOpen, onClose }) {
             <div className="space-y-1">
               <div className="text-zinc-500">UI State</div>
               <div className="text-zinc-500 text-xs">
-                Side: {shellUI.isSidePanelOpen ? 'Open' : 'Closed'} • 
                 Ctx: {shellUI.isContextPanelOpen ? 'Open' : 'Closed'} • 
                 Dock: {shellUI.isCommsDockOpen ? 'Open' : 'Closed'}
               </div>
