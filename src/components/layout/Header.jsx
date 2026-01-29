@@ -48,13 +48,22 @@ export default function Header() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [openPalette]);
 
-  // Telemetry hooks (non-blocking)
-  const { readiness, reason } = useReadiness();
-  const { latencyMs, isHealthy } = useLatency();
-  const { onlineCount } = usePresenceRoster();
-  const { unreadByTab } = useUnreadCounts(user?.id);
+  // Telemetry hooks (non-blocking, with safe fallbacks)
+  const readinessData = useReadiness();
+  const latencyData = useLatency();
+  const presenceData = usePresenceRoster();
+  const unreadData = useUnreadCounts(user?.id);
   const voiceNet = useVoiceNet();
-  const { activeEvent } = useActiveOp();
+  const activeOpData = useActiveOp();
+
+  // Extract with safe defaults
+  const readiness = readinessData?.state || 'INITIALIZING';
+  const reason = readinessData?.reason || 'Starting up...';
+  const latencyMs = latencyData?.latencyMs || 0;
+  const isHealthy = latencyData?.isHealthy ?? true;
+  const onlineCount = presenceData?.onlineCount || 0;
+  const unreadByTab = unreadData?.unreadByTab || { comms: 0, polls: 0, riggsy: 0, inbox: 0 };
+  const activeEvent = activeOpData?.activeEvent || null;
 
   if (loading || !user) {
     return (
