@@ -139,14 +139,14 @@ export default function Hub() {
                         {status.features.map((feature, idx) => {
                           const featureColor = getStatusColor(feature.status);
                           const bgColor = getStatusBgColor(feature.status);
-                          const Icon = 
+                          const FeatureIcon = 
                             feature.status === 'complete' ? CheckCircle2 :
                             feature.status === 'in-progress' ? Clock :
                             AlertCircle;
 
                           return (
                             <div key={idx} className={`flex items-start gap-2 text-xs ${bgColor} p-2 rounded`}>
-                              <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${featureColor}`} />
+                              <FeatureIcon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${featureColor}`} />
                               <div>
                                 <div className={`font-semibold ${featureColor}`}>{feature.name}</div>
                                 <div className="text-zinc-500 text-[10px] capitalize mt-0.5">
@@ -165,12 +165,11 @@ export default function Hub() {
                       </div>
                     </TooltipContent>
                   )}
-                  </Tooltip>
-                  </TooltipProvider>
-                  );
-                  })}
-                  </div>
-            </div>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
+          </div>
           </div>
 
           {/* Development Roadmap Section */}
