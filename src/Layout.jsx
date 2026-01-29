@@ -58,7 +58,7 @@ function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
-  const { isContextPanelOpen, isCommsDockOpen, dockMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized } = useShellUI();
+  const { isContextPanelOpen, isCommsDockOpen, dockMinimized, contextPanelMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized, setContextPanelMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
@@ -129,8 +129,8 @@ function LayoutContent({ currentPageName, children }) {
 
             {/* ContextPanel — right sidebar, collapsible */}
             {isContextPanelOpen && (
-              <div className="border-l border-orange-500/20 flex-shrink-0 z-[900] relative">
-                <ContextPanel isOpen={true} onClose={toggleContextPanel} />
+              <div className={`${contextPanelMinimized ? 'w-12' : 'w-80'} border-l border-orange-500/20 flex-shrink-0 z-[900] relative transition-all duration-200`}>
+                <ContextPanel isOpen={true} onClose={toggleContextPanel} isMinimized={contextPanelMinimized} onMinimize={setContextPanelMinimized} />
               </div>
             )}
           </div>
@@ -138,7 +138,7 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Bottom Text Comms Dock (fixed, collapsible, respects context panel) */}
          {isCommsDockOpen && (
-           <div className={`fixed bottom-0 left-0 z-[600] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? 'right-80' : 'right-0'} transition-all duration-200`}>
+           <div className={`fixed bottom-0 left-0 z-[600] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? contextPanelMinimized ? 'right-12' : 'right-80' : 'right-0'} transition-all duration-200`}>
              <TextCommsDock isOpen={true} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
            </div>
          )}
