@@ -112,39 +112,42 @@ export default function Hub() {
 
       {/* Module Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
-        {navItems.map((item) => {
-            const Icon = item.icon;
-            const status = MODULE_STATUS[item.path];
-            const statusPercentage = status?.completed || 0;
+        {navItems.map((item, index) => {
+              const Icon = item.icon;
+              const status = MODULE_STATUS[item.path];
+              const statusPercentage = status?.completed || 0;
+              const itemsPerRow = 6;
+              const colPosition = index % itemsPerRow;
+              const tooltipSide = colPosition >= 4 ? 'left' : 'right';
 
-            return (
-              <TooltipProvider key={item.path}>
-                <Tooltip delayDuration={200}>
-                  <TooltipTrigger asChild>
-                    <a
-                      href={createPageUrl(item.path)}
-                      className="group relative bg-zinc-900/40 border border-zinc-800/60 hover:border-orange-500/60 hover:bg-zinc-800/50 p-3 transition-all duration-200 rounded overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <div className="relative flex flex-col items-center text-center gap-1.5">
-                        <div className="p-2 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
-                          <Icon className="w-5 h-5 text-orange-500" />
-                        </div>
-                        <h3 className="text-xs font-bold text-white uppercase tracking-wider leading-tight">
-                          {item.name}
-                        </h3>
-                        {status && (
-                          <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full flex items-center justify-center gap-1">
-                            <span className={`text-[10px] font-mono font-bold ${getStatusColor(statusPercentage)}`}>{statusPercentage}%</span>
-                            {statusPercentage === 100 && <Check className="w-3 h-3 text-green-400" />}
+              return (
+                <TooltipProvider key={item.path}>
+                  <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                      <a
+                        href={createPageUrl(item.path)}
+                        className="group relative bg-zinc-900/40 border border-zinc-800/60 hover:border-orange-500/60 hover:bg-zinc-800/50 p-3 transition-all duration-200 rounded overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative flex flex-col items-center text-center gap-1.5">
+                          <div className="p-2 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
+                            <Icon className="w-5 h-5 text-orange-500" />
                           </div>
-                        )}
-                      </div>
-                    </a>
-                  </TooltipTrigger>
+                          <h3 className="text-xs font-bold text-white uppercase tracking-wider leading-tight">
+                            {item.name}
+                          </h3>
+                          {status && (
+                            <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full flex items-center justify-center gap-1">
+                              <span className={`text-[10px] font-mono font-bold ${getStatusColor(statusPercentage)}`}>{statusPercentage}%</span>
+                              {statusPercentage === 100 && <Check className="w-3 h-3 text-green-400" />}
+                            </div>
+                          )}
+                        </div>
+                      </a>
+                    </TooltipTrigger>
 
-                  {status && (
-                    <TooltipContent side="right" align="center" className="w-72 bg-zinc-950 border-orange-500/40 p-0 overflow-hidden">
+                    {status && (
+                      <TooltipContent side={tooltipSide} align="center" className="w-72 bg-zinc-950 border-orange-500/40 p-0 overflow-hidden">
                       <div className="bg-zinc-900/80 border-b border-orange-500/20 p-4">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-sm font-black text-white uppercase tracking-wider">{status.name}</h4>
