@@ -147,5 +147,3 @@ function LayoutContent({ currentPageName, children }) {
       </CommandPaletteProvider>
         );
         }
-
-export { cn };
