@@ -16,7 +16,7 @@ export default function ConstructionTicker() {
               ⚙️ NEXUS CONSTRUCTION PROTOCOL ACTIVE
             </p>
             <p className="text-[11px] text-orange-300/80 font-semibold tracking-wide mt-0.5">
-              TEST MODE — Beta Release Scheduled <span className="text-orange-400 font-black">FEBRUARY 2950</span> | Star Citizen
+              TEST MODE — Beta Release Scheduled <span className="text-orange-400 font-black">FEBRUARY 2956</span> | Star Citizen
             </p>
           </div>
           
