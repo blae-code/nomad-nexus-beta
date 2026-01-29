@@ -115,37 +115,43 @@ function LayoutContent({ currentPageName, children }) {
     >
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
-      <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
         {/* Notification Center */}
         <NotificationCenter />
 
-        {/* Header — top navigation fixed */}
-        <Header />
+        {/* Header — top navigation (z-40) */}
+        <div className="relative z-40">
+          <Header />
+        </div>
 
         {/* Construction Ticker */}
         <ConstructionTicker />
 
         {/* Main layout grid: content + contextpanel + comms dock */}
-          <div className="flex flex-1 overflow-hidden flex-col">
-            {/* Main content area with panels */}
-                <div className="flex flex-1 overflow-hidden">
-                  {/* Main content */}
-                  <main className="flex-1 overflow-y-auto overflow-x-hidden">
-                    <PermissionGuard>{children}</PermissionGuard>
-                  </main>
+        <div className="flex flex-1 overflow-hidden flex-col relative z-20">
+          {/* Main content area with panels */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Main content */}
+            <main className="flex-1 overflow-y-auto overflow-x-hidden">
+              <PermissionGuard>{children}</PermissionGuard>
+            </main>
 
-                  {/* ContextPanel — right sidebar, collapsible */}
-                  {isContextPanelOpen && <ContextPanel isOpen={true} onClose={toggleContextPanel} />}
-                </div>
-
-                {/* Comms Dock — persistent at bottom, within layout flow */}
-                <CommsDockShell isOpen={isCommsDockOpen} onClose={toggleCommsDock} />
+            {/* ContextPanel — right sidebar, collapsible (z-30) */}
+            {isContextPanelOpen && (
+              <div className="relative z-30">
+                <ContextPanel isOpen={true} onClose={toggleContextPanel} />
+              </div>
+            )}
           </div>
 
-          {/* Command Palette Modal */}
-          <CommandPaletteUI />
+          {/* Comms Dock — persistent at bottom */}
+          <CommsDockShell isOpen={isCommsDockOpen} onClose={toggleCommsDock} />
         </div>
-        </CommandPaletteProvider>
+
+        {/* Command Palette Modal */}
+        <CommandPaletteUI />
+      </div>
+      </CommandPaletteProvider>
         );
         }
 
