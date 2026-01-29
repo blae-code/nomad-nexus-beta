@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings } from 'lucide-react';
+import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch } from 'lucide-react';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function Hub() {
     { name: 'Fleet Manager', path: 'FleetManager', icon: Box, description: 'Asset management' },
     { name: 'Treasury', path: 'Treasury', icon: DollarSign, description: 'Financial tracking' },
     { name: 'Settings', path: 'Settings', icon: Settings, description: 'App configuration' },
-    { name: 'Recon', path: 'Recon', icon: Shield, description: 'Archive and historical operations' },
+    { name: 'Recon', path: 'Recon', icon: FileSearch, description: 'Intelligence reports and reputation tracking' },
   ];
 
   return (
