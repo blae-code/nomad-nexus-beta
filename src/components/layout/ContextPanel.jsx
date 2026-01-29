@@ -107,15 +107,18 @@ export default function ContextPanel({ isOpen, onClose }) {
   }
 
   return (
-    <div className="w-64 bg-zinc-900/90 border-l border-zinc-800 flex flex-col overflow-hidden">
+    <div className="w-80 bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="h-16 border-b border-zinc-800 flex items-center justify-between px-4 flex-shrink-0">
-        <h2 className="text-sm font-bold uppercase text-zinc-300 tracking-wide">Systems</h2>
+      <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
+        <div>
+          <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Tactical Systems</h2>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Active Intelligence</p>
+        </div>
         <Button
           size="icon"
           variant="ghost"
           onClick={onClose}
-          className="h-6 w-6 text-zinc-400 hover:text-orange-400"
+          className="h-6 w-6 text-zinc-400 hover:text-orange-500"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -534,12 +537,12 @@ function SectionHeader({ icon, label, sectionKey, expanded, onToggle }) {
   return (
     <button
       onClick={() => onToggle(sectionKey)}
-      className="w-full px-4 py-3 flex items-center gap-2 border-t border-zinc-800/50 hover:bg-zinc-800/30 transition-colors text-left"
+      className="w-full px-5 py-3 flex items-center gap-3 border-t border-orange-500/10 hover:bg-orange-500/5 hover:border-orange-500/20 transition-all text-left group"
     >
-      {icon}
-      <span className="text-xs font-semibold uppercase text-zinc-300 flex-1">{label}</span>
+      <div className="text-orange-500/70 group-hover:text-orange-500 transition-colors">{icon}</div>
+      <span className="text-xs font-black uppercase text-zinc-300 group-hover:text-orange-300 flex-1 tracking-wide transition-colors">{label}</span>
       <ChevronDown
-        className={`w-3 h-3 text-zinc-500 transition-transform ${expanded ? 'rotate-180' : ''}`}
+        className={`w-3 h-3 text-orange-500/50 group-hover:text-orange-500 transition-all ${expanded ? 'rotate-180' : ''}`}
       />
     </button>
   );
