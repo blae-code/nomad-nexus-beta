@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass, HelpCircle, Bug, CheckCircle2, Clock, AlertCircle, Zap, Users2 } from 'lucide-react';
+import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass, HelpCircle, Bug, CheckCircle2, Clock, AlertCircle, Zap, Users2, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MODULE_STATUS, getStatusColor, getStatusBgColor } from '@/components/constants/moduleStatus';
 import { useShellUI } from '@/components/providers/ShellUIContext';
@@ -49,6 +49,12 @@ export default function Hub() {
       </div>
     );
   }
+
+  const getStatusColor = (percentage) => {
+    if (percentage >= 70) return 'text-green-400';
+    if (percentage >= 40) return 'text-yellow-400';
+    return 'text-red-400';
+  };
 
   const navItems = [
     { name: 'Mission Control', path: 'MissionControl', icon: Monitor, description: 'Operations planning, execution, and war room' },
@@ -120,8 +126,9 @@ export default function Hub() {
                           {item.name}
                         </h3>
                         {status && (
-                          <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full">
-                            <span className="text-[10px] font-mono font-bold text-orange-400">{statusPercentage}%</span>
+                          <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full flex items-center justify-center gap-1">
+                            <span className={`text-[10px] font-mono font-bold ${getStatusColor(statusPercentage)}`}>{statusPercentage}%</span>
+                            {statusPercentage === 100 && <Check className="w-3 h-3 text-green-400" />}
                           </div>
                         )}
                       </div>
