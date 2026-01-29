@@ -434,7 +434,7 @@ function SectionHeader({ icon, label, sectionKey, expanded, onToggle }) {
       className="w-full px-5 py-3 flex items-center gap-3 border-t border-orange-500/10 hover:bg-orange-500/5 hover:border-orange-500/20 transition-all text-left group"
     >
       <div className="text-orange-500/70 group-hover:text-orange-500 transition-colors">{icon}</div>
-      <span className="text-xs font-black uppercase text-zinc-300 group-hover:text-orange-300 flex-1 tracking-wide transition-colors">{label}</span>
+      <span className="text-[11px] font-black uppercase text-zinc-300 group-hover:text-orange-300 flex-1 tracking-widest transition-colors truncate">{label}</span>
       <ChevronDown
         className={`w-3 h-3 text-orange-500/50 group-hover:text-orange-500 transition-all ${expanded ? 'rotate-180' : ''}`}
       />
