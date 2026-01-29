@@ -179,84 +179,118 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
         </div>
       )}
 
-      {/* Content */}
+      {/* Content — Comms tab only */}
       {!isMinimized && (
         <div className="flex-1 overflow-hidden flex flex-col">
           {activeTab === 'comms' && (
             <div className="flex-1 overflow-hidden flex">
               {/* Channel List */}
-              <div className="w-48 lg:w-56 border-r border-zinc-800 flex flex-col overflow-hidden min-w-0">
+              <div className="w-48 lg:w-56 border-r border-orange-500/10 flex flex-col overflow-hidden min-w-0">
+               {/* Search Input */}
                <Input
                   placeholder="Find channel..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="h-7 text-xs mx-2 my-2 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600 flex-1"
+                  className="h-8 text-xs mx-2 my-2 bg-zinc-900/50 border-orange-500/10 placeholder:text-zinc-600 flex-shrink-0"
                 />
 
-               <div className="flex-1 overflow-y-auto space-y-1 px-2">
-                 {groupedChannels.casual.length === 0 && groupedChannels.focused.length === 0 ? (
+               {/* Channel Groups */}
+               <div className="flex-1 overflow-y-auto space-y-3 px-2 py-2">
+                 {groupedChannels.casual.length === 0 && groupedChannels.focused.length === 0 && groupedChannels.temporary.length === 0 ? (
                    <div className="text-center text-[10px] text-zinc-600 py-4">
-                     <div className="opacity-50">No channels available</div>
+                     <div className="opacity-50">—</div>
+                     <div className="mt-1">No channels available</div>
                    </div>
                  ) : (
                    <>
-                     {/* Casual Group */}
+                     {/* Casual Channels */}
                      {groupedChannels.casual.length > 0 && (
                        <div>
-                         <div className="text-[10px] font-semibold text-zinc-500 px-1 py-1 uppercase tracking-wider">Open</div>
-                      {groupedChannels.casual.map((ch) => (
-                        <button
-                          key={ch.id}
-                          onClick={() => setSelectedChannelId(ch.id)}
-                          className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
-                            selectedChannelId === ch.id
-                              ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                              : 'text-zinc-400 hover:bg-zinc-800/50'
-                          }`}
-                        >
-                          <Hash className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{ch.name}</span>
-                          {unreadByTab?.[ch.id] > 0 && (
-                            <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                         <div className="text-[10px] font-black uppercase text-zinc-500 px-2 py-1 tracking-widest">Casual</div>
+                         <div className="space-y-1 mt-1">
+                           {groupedChannels.casual.map((ch) => (
+                             <button
+                               key={ch.id}
+                               onClick={() => setSelectedChannelId(ch.id)}
+                               className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                                 selectedChannelId === ch.id
+                                   ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                   : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-300'
+                               }`}
+                             >
+                               <Hash className="w-3 h-3 flex-shrink-0 opacity-70" />
+                               <span className="truncate">{ch.name}</span>
+                               {unreadByTab?.[ch.id] > 0 && (
+                                 <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                               )}
+                             </button>
+                           ))}
+                         </div>
+                       </div>
+                     )}
 
-                  {/* Focused Group */}
-                  {groupedChannels.focused.length > 0 && (
-                    <div>
-                      <div className="text-[10px] font-semibold text-orange-600 px-1 py-1 uppercase tracking-wider">Disciplined</div>
-                      {groupedChannels.focused.map((ch) => {
-                        const canAccess = canAccessChannel(ch);
-                        return (
-                          <button
-                            key={ch.id}
-                            onClick={() => canAccess && setSelectedChannelId(ch.id)}
-                            disabled={!canAccess}
-                            className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
-                              !canAccess
-                                ? 'text-zinc-600 opacity-50 cursor-not-allowed'
-                                : selectedChannelId === ch.id
-                                ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                                : 'text-zinc-400 hover:bg-zinc-800/50'
-                            }`}
-                          >
-                            {!canAccess ? <Lock className="w-3 h-3 flex-shrink-0" /> : <Hash className="w-3 h-3 flex-shrink-0" />}
-                            <span className="truncate">{ch.name}</span>
-                            {unreadByTab?.[ch.id] > 0 && (
-                              <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
-                            )}
-                          </button>
-                          );
-                          })}
-                          </div>
-                          )}
-                          </>
-                          )}
-                          </div>
-                          </div>
+                     {/* Focused Channels */}
+                     {groupedChannels.focused.length > 0 && (
+                       <div className="pt-2 border-t border-orange-500/10">
+                         <div className="text-[10px] font-black uppercase text-orange-600 px-2 py-1 tracking-widest">Focused</div>
+                         <div className="space-y-1 mt-1">
+                           {groupedChannels.focused.map((ch) => {
+                             const canAccess = canAccessChannel(ch);
+                             return (
+                               <button
+                                 key={ch.id}
+                                 onClick={() => canAccess && setSelectedChannelId(ch.id)}
+                                 disabled={!canAccess}
+                                 className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                                   !canAccess
+                                     ? 'text-zinc-600 opacity-50 cursor-not-allowed'
+                                     : selectedChannelId === ch.id
+                                     ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                     : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-300'
+                                 }`}
+                                 title={!canAccess ? 'Insufficient permissions' : ''}
+                               >
+                                 {!canAccess ? <Lock className="w-3 h-3 flex-shrink-0 opacity-70" /> : <Hash className="w-3 h-3 flex-shrink-0 opacity-70" />}
+                                 <span className="truncate">{ch.name}</span>
+                                 {unreadByTab?.[ch.id] > 0 && (
+                                   <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                                 )}
+                               </button>
+                             );
+                           })}
+                         </div>
+                       </div>
+                     )}
+
+                     {/* Temporary Channels */}
+                     {groupedChannels.temporary.length > 0 && (
+                       <div className="pt-2 border-t border-orange-500/10">
+                         <div className="text-[10px] font-black uppercase text-zinc-500 px-2 py-1 tracking-widest">Temporary</div>
+                         <div className="space-y-1 mt-1">
+                           {groupedChannels.temporary.map((ch) => (
+                             <button
+                               key={ch.id}
+                               onClick={() => setSelectedChannelId(ch.id)}
+                               className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                                 selectedChannelId === ch.id
+                                   ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                   : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-300'
+                               }`}
+                             >
+                               <Hash className="w-3 h-3 flex-shrink-0 opacity-70" />
+                               <span className="truncate">{ch.name}</span>
+                               {unreadByTab?.[ch.id] > 0 && (
+                                 <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                               )}
+                             </button>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+                   </>
+                 )}
+               </div>
+              </div>
 
               {/* Message Area */}
               <div className="flex-1 flex flex-col overflow-hidden">
