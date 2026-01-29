@@ -32,6 +32,8 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Copy Diagnostics',
       category: 'Diagnostics',
       description: 'Copy system diagnostics to clipboard',
+      icon: 'ClipboardCopy',
+      shortcut: '⌘⇧D',
       onExecute: () => callbacks.copyDiagnostics?.(),
     },
     // Diagnostics: Reset UI layout
@@ -40,6 +42,8 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Reset UI Layout',
       category: 'Diagnostics',
       description: 'Reset panel positions and reload',
+      icon: 'RotateCcw',
+      shortcut: '⌘⇧R',
       onExecute: () => callbacks.resetUILayout?.(),
     },
     // Boot: Replay boot sequence
@@ -48,15 +52,9 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Replay Boot Sequence',
       category: 'System',
       description: 'Show startup animation',
+      icon: 'Zap',
+      shortcut: '⌘⇧B',
       onExecute: () => callbacks.replayBoot?.(),
-    },
-    // Toggle: SidePanel
-    {
-      id: 'toggle:sidepanel',
-      label: 'Toggle Sidebar',
-      category: 'Toggle',
-      description: 'Show/hide left navigation panel',
-      onExecute: () => callbacks.toggleSidePanel?.(),
     },
     // Toggle: ContextPanel
     {
@@ -64,6 +62,8 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Toggle Systems Panel',
       category: 'Toggle',
       description: 'Show/hide right systems panel',
+      icon: 'PanelRight',
+      shortcut: '⌘⇧S',
       onExecute: () => callbacks.toggleContextPanel?.(),
     },
     // Navigate: Dashboard
@@ -72,6 +72,8 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Hub',
       category: 'Navigate',
       description: 'Go to main dashboard',
+      icon: 'Home',
+      shortcut: '⌘H',
       onExecute: () => callbacks.navigate('Hub'),
     },
     // Navigate: Events
@@ -80,6 +82,8 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Events',
       category: 'Navigate',
       description: 'View operations and events',
+      icon: 'Calendar',
+      shortcut: '⌘E',
       onExecute: () => callbacks.navigate('Events'),
     },
     // Navigate: Comms Console
@@ -88,6 +92,8 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Comms Console',
       category: 'Navigate',
       description: 'Open communication channels',
+      icon: 'Radio',
+      shortcut: '⌘C',
       onExecute: () => callbacks.navigate('CommsConsole'),
     },
     // Navigate: User Directory
@@ -96,15 +102,59 @@ const createActionRegistry = (user, callbacks) => {
       label: 'User Directory',
       category: 'Navigate',
       description: 'Browse member roster',
+      icon: 'Users',
+      shortcut: '⌘U',
       onExecute: () => callbacks.navigate('UserDirectory'),
+    },
+    // Navigate: Universe Map
+    {
+      id: 'nav:map',
+      label: 'Universe Map',
+      category: 'Navigate',
+      description: 'Tactical overview and positioning',
+      icon: 'Map',
+      shortcut: '⌘M',
+      onExecute: () => callbacks.navigate('UniverseMap'),
+    },
+    // Navigate: Fleet Manager
+    {
+      id: 'nav:fleet',
+      label: 'Fleet Manager',
+      category: 'Navigate',
+      description: 'Asset management and logistics',
+      icon: 'Box',
+      shortcut: '⌘F',
+      onExecute: () => callbacks.navigate('FleetManager'),
+    },
+    // Navigate: Treasury
+    {
+      id: 'nav:treasury',
+      label: 'Treasury',
+      category: 'Navigate',
+      description: 'Financial tracking and coffers',
+      icon: 'DollarSign',
+      shortcut: '⌘T',
+      onExecute: () => callbacks.navigate('Treasury'),
     },
     // Navigate: Recon/Archive
     {
       id: 'nav:recon',
       label: 'Recon',
       category: 'Navigate',
-      description: 'View archived operations',
+      description: 'Intelligence reports and reputation tracking',
+      icon: 'FileSearch',
+      shortcut: '⌘R',
       onExecute: () => callbacks.navigate('Recon'),
+    },
+    // Navigate: Settings
+    {
+      id: 'nav:settings',
+      label: 'Settings',
+      category: 'Navigate',
+      description: 'App configuration and preferences',
+      icon: 'Settings',
+      shortcut: '⌘,',
+      onExecute: () => callbacks.navigate('Settings'),
     },
     // Toggle: CommsDock
     {
@@ -112,14 +162,17 @@ const createActionRegistry = (user, callbacks) => {
       label: 'Toggle Comms Dock',
       category: 'Toggle',
       description: 'Show/hide bottom comms panel',
+      icon: 'MessageSquare',
+      shortcut: '⌘⇧C',
       onExecute: () => callbacks.toggleCommsDock?.(),
     },
     // Open: Request Access
     {
       id: 'open:request-access',
       label: 'Request Focused Access',
-      category: 'Open',
+      category: 'Actions',
       description: 'Apply for Focused comms tier',
+      icon: 'Lock',
       onExecute: () => callbacks.openAccessRequest?.(),
       isVisible: (u) => !canAccessFocusedComms(u, { type: COMMS_CHANNEL_TYPES.FOCUSED, isTemporary: false }),
     },
@@ -129,9 +182,9 @@ const createActionRegistry = (user, callbacks) => {
       label: 'View Alerts',
       category: 'Alerts',
       description: 'Check pending system notifications',
+      icon: 'Bell',
+      shortcut: '⌘⇧A',
       onExecute: () => {
-        // Alerts are visible in notification center; this is a shortcut
-        // to focus the notification area (scroll to top-right)
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -139,15 +192,17 @@ const createActionRegistry = (user, callbacks) => {
     {
       id: 'alert:test-event',
       label: 'Test Event Alert',
-      category: 'Alerts',
+      category: 'Development',
       description: '[DEV] Trigger sample event notification',
+      icon: 'Zap',
       onExecute: () => callbacks.triggerTestAlert?.('event'),
     },
     {
       id: 'alert:test-system',
       label: 'Test System Alert',
-      category: 'Alerts',
+      category: 'Development',
       description: '[DEV] Trigger sample system notification',
+      icon: 'AlertTriangle',
       onExecute: () => callbacks.triggerTestAlert?.('system'),
     },
   ];

@@ -116,19 +116,69 @@ export default function Header() {
           )}
         </div>
 
-        {/* Center: Command Palette */}
-        <div className="flex-1 max-w-2xl mx-auto">
+        {/* Center: Command Palette with Status Bar */}
+        <div className="flex-1 max-w-3xl mx-auto flex flex-col gap-1">
           <button
             onClick={openPalette}
-            className="w-full flex items-center gap-3 px-4 py-2 bg-zinc-900/50 border-2 border-zinc-800 hover:border-orange-500/50 text-zinc-400 rounded-lg transition-all duration-200 group"
+            className="w-full flex items-center gap-3 px-4 py-2.5 bg-zinc-900/50 border-2 border-zinc-800 hover:border-orange-500/50 text-zinc-400 rounded-lg transition-all duration-200 group relative overflow-hidden"
             title="Open command palette (Ctrl+K)"
           >
-            <Search className="w-4 h-4 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            <span className="text-sm font-mono tracking-wide">Search commands, navigate, or type...</span>
-            <div className="ml-auto flex items-center gap-1 text-xs font-mono text-zinc-600 bg-zinc-800/50 px-2 py-1 rounded border border-zinc-700">
-              <span>⌘K</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/5 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Search className="w-4 h-4 text-zinc-500 group-hover:text-orange-500 transition-colors relative z-10" />
+            <span className="text-sm font-mono tracking-wide relative z-10">COMMAND INTERFACE</span>
+            <div className="ml-auto flex items-center gap-2 relative z-10">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-600">
+                <Activity className="w-3 h-3" />
+                <span className="font-mono">{flatActions?.length || 0} cmds</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-mono text-zinc-600 bg-zinc-800/50 px-2 py-1 rounded border border-zinc-700">
+                <span>⌘K</span>
+              </div>
             </div>
           </button>
+          
+          {/* Status Bar */}
+          <div className="hidden md:flex items-center justify-center gap-3 text-xs font-mono">
+            {/* Op Status */}
+            {activeEvent ? (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-500/10 border border-orange-500/30 rounded text-orange-400">
+                <Calendar className="w-3 h-3" />
+                <span className="truncate max-w-[120px]">{activeEvent.title}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 text-zinc-600">
+                <Calendar className="w-3 h-3" />
+                <span>NO ACTIVE OP</span>
+              </div>
+            )}
+
+            <div className="w-px h-3 bg-zinc-800" />
+
+            {/* Online Count */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 text-zinc-500">
+              <Users className="w-3 h-3" />
+              <span>{onlineCount} ONLINE</span>
+            </div>
+
+            <div className="w-px h-3 bg-zinc-800" />
+
+            {/* Latency */}
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 ${isHealthy ? 'text-green-500' : 'text-red-500'}`}>
+              {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              <span>{latencyMs}ms</span>
+            </div>
+
+            <div className="w-px h-3 bg-zinc-800" />
+
+            {/* Readiness */}
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 ${
+              readiness === 'OPERATIONAL' ? 'text-green-500' :
+              readiness === 'DEGRADED' ? 'text-yellow-500' : 'text-zinc-600'
+            }`} title={reason}>
+              <Zap className="w-3 h-3" />
+              <span>{readiness}</span>
+            </div>
+          </div>
         </div>
 
         {/* Right: Telemetry + Controls */}
