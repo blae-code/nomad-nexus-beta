@@ -26,13 +26,27 @@ import { createPageUrl } from '@/utils';
  * Supports: collapse/expand, internal scrolling, section toggles
  */
 export default function ContextPanel({ isOpen, onClose }) {
-  const [expandedSections, setExpandedSections] = useState({
-    activeOp: true,
-    nets: true,
-    voice: true,
-    contacts: true,
-    riggsy: true,
-    diagnostics: true,
+  const [expandedSections, setExpandedSections] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus.contextPanel.expanded');
+      return saved ? JSON.parse(saved) : {
+        activeOp: true,
+        nets: true,
+        voice: true,
+        contacts: true,
+        riggsy: true,
+        diagnostics: true,
+      };
+    } catch {
+      return {
+        activeOp: true,
+        nets: true,
+        voice: true,
+        contacts: true,
+        riggsy: true,
+        diagnostics: true,
+      };
+    }
   });
 
   // Live telemetry data
@@ -67,7 +81,11 @@ export default function ContextPanel({ isOpen, onClose }) {
   }, []);
 
   const toggleSection = (key) => {
-    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+    setExpandedSections((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('nexus.contextPanel.expanded', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const copyDiagnostics = () => {
@@ -135,7 +153,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.activeOp && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
             {activeOp.activeEvent ? (
               <>
                 <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
@@ -224,7 +242,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.nets && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
             {voiceNet.activeNetId ? (
               <>
                 <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
@@ -291,7 +309,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.voice && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
             {inputDevices.length > 0 && (
               <div className="space-y-1">
                 <label className="block text-zinc-400 text-xs font-medium">Device</label>
@@ -350,7 +368,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.contacts && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
             {loading ? (
               <LoadingState label="Loading Roster" />
             ) : voiceNet.activeNetId && voiceNet.participants.length > 0 ? (
@@ -399,7 +417,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.riggsy && (
-          <div className="px-4 py-3 text-xs text-zinc-400">
+          <div className="px-4 py-3 text-xs text-zinc-400 animate-in fade-in duration-200">
             <Button size="sm" variant="outline" className="w-full text-xs" disabled>
               Ask Riggsy
             </Button>
@@ -415,7 +433,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.diagnostics && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 border-t border-zinc-800/50">
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 border-t border-zinc-800/50 animate-in fade-in duration-200">
             {/* Build Info */}
             <div className="space-y-1">
               <div className="text-zinc-500">Build</div>
