@@ -129,7 +129,7 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Main layout grid: content + contextpanel + comms dock */}
         <div className="flex flex-1 overflow-hidden flex-col relative z-20">
-          {/* Main content area with panels */}
+          {/* Main content area with panels — takes remaining space */}
           <div className="flex flex-1 overflow-hidden">
             {/* Main content */}
             <main className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -138,14 +138,16 @@ function LayoutContent({ currentPageName, children }) {
 
             {/* ContextPanel — right sidebar, collapsible (z-30) */}
             {isContextPanelOpen && (
-              <div className="relative z-30">
+              <div className="relative z-30 border-l border-orange-500/20">
                 <ContextPanel isOpen={true} onClose={toggleContextPanel} />
               </div>
             )}
           </div>
 
-          {/* Comms Dock — persistent at bottom */}
-          <CommsDockShell isOpen={isCommsDockOpen} onClose={toggleCommsDock} />
+          {/* Comms Dock — fixed at bottom, flex-shrink-0 to prevent compression */}
+          {isCommsDockOpen && (
+            <CommsDockShell isOpen={true} onClose={toggleCommsDock} />
+          )}
         </div>
 
         {/* Command Palette Modal */}
