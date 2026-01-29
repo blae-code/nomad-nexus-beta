@@ -13,7 +13,6 @@ import { ShellUIProvider, useShellUI } from '@/components/providers/ShellUIConte
 import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
-import VoiceCommsDock from '@/components/voice/VoiceCommsDock';
 import TextCommsDock from '@/components/comms/TextCommsDock';
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
@@ -59,7 +58,7 @@ function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
-  const { isContextPanelOpen, isCommsDockOpen, dockMode, dockMinimized, toggleContextPanel, toggleCommsDock, setDockMode, setDockMinimized } = useShellUI();
+  const { isContextPanelOpen, isCommsDockOpen, dockMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
@@ -135,11 +134,10 @@ function LayoutContent({ currentPageName, children }) {
           </div>
         </div>
 
-        {/* Bottom Comms Dock — Toggle between Voice and Text (fixed, collapsible) */}
+        {/* Bottom Text Comms Dock (fixed, collapsible) */}
         {isCommsDockOpen && (
           <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-orange-500/20 bg-zinc-950">
-            {dockMode === 'voice' && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
-            {dockMode === 'text' && <TextCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
+            <TextCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
           </div>
         )}
 
