@@ -121,7 +121,7 @@ export default function Header() {
           <VerseClock />
 
           {/* Status Indicators */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {voiceNet?.activeNetId && (
               <div className={`flex items-center gap-1.5 px-2 py-1 rounded h-7 ${
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/10 text-green-400' :
