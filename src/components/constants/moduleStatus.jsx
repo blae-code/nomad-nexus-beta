@@ -127,13 +127,13 @@ export const MODULE_STATUS = {
   },
   AccessGate: {
     name: 'Access Gate',
-    completed: 80,
+    completed: 100,
     features: [
       { name: 'Access Code System', status: 'complete' },
       { name: 'Onboarding Flow', status: 'complete' },
       { name: 'Code Redemption', status: 'complete' },
       { name: 'Member Verification', status: 'complete' },
-      { name: 'Admin Provisioning', status: 'in-progress' },
+      { name: 'Admin Provisioning', status: 'complete' },
     ],
   },
   Settings: {
