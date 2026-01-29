@@ -161,11 +161,14 @@ function OverviewTab({ user }) {
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded">
-          <h3 className="font-bold text-blue-400 mb-2">Welcome to System Admin</h3>
-          <p className="text-sm text-zinc-400">
-            Operational maintenance console for Nexus. Deploy data tools, system snapshots, and reset procedures.
-          </p>
+        <div className="p-4 bg-green-900/20 border border-green-500/30 rounded flex items-start justify-between">
+          <div>
+            <h3 className="font-bold text-green-400 mb-2">✓ System Admin — Feature Complete</h3>
+            <p className="text-sm text-zinc-400">
+              Full operational console with user & access management, data validation, diagnostics, seeding, and factory reset.
+            </p>
+          </div>
+          <span className="text-xs px-3 py-1 bg-green-500/20 text-green-300 rounded font-bold flex-shrink-0">100%</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
