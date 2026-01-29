@@ -531,9 +531,10 @@ export default function ContextPanel({ isOpen, onClose }) {
             onCancel={() => voiceNet.focusedConfirmation.cancel()}
           />
         )}
-    </div>
-  );
-            }
+        </div>
+        </div>
+        );
+        }
 
 function SectionHeader({ icon, label, sectionKey, expanded, onToggle }) {
   return (
