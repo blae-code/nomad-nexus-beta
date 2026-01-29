@@ -1,93 +1,118 @@
 /**
- * Voice Health Module — Track connection state, stability, reconnects
- * Provides centralized health metrics for voice net connections.
+ * Voice Health Monitoring Module
+ * Tracks connection state, reconnects, errors, and latency
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 /**
- * useVoiceHealth — Monitor voice connection health
- * Tracks: connectionState, reconnectCount, lastError, latencyMs
- * 
- * @param {Object} voiceNet - Voice net context
- * @param {Object} latency - Latency hook data
- * @returns {Object} health metrics
+ * Hook to track voice connection health
  */
 export function useVoiceHealth(voiceNet, latency) {
-  const [health, setHealth] = useState({
-    connectionState: 'IDLE',
+  const [healthState, setHealthState] = useState({
+    connectionState: VOICE_CONNECTION_STATE.IDLE,
     lastConnectedAt: null,
     reconnectCount: 0,
     lastError: null,
     latencyMs: 0,
-    jitter: null, // Not available yet
-    packetLoss: null, // Not available yet
+    jitter: null,
+    packetLoss: null,
   });
 
   const reconnectCountRef = useRef(0);
-  const lastStateRef = useRef('IDLE');
+  const lastStateRef = useRef(VOICE_CONNECTION_STATE.IDLE);
 
   useEffect(() => {
     const currentState = voiceNet.connectionState;
+    const lastState = lastStateRef.current;
 
-    // Track reconnect events
-    if (lastStateRef.current === 'CONNECTED' && currentState === 'RECONNECTING') {
+    // Track successful connections
+    if (currentState === VOICE_CONNECTION_STATE.CONNECTED && lastState !== VOICE_CONNECTION_STATE.CONNECTED) {
+      setHealthState((prev) => ({
+        ...prev,
+        connectionState: currentState,
+        lastConnectedAt: new Date().toISOString(),
+        lastError: null,
+      }));
+    }
+    // Track reconnection attempts
+    else if (currentState === VOICE_CONNECTION_STATE.RECONNECTING && lastState === VOICE_CONNECTION_STATE.CONNECTED) {
       reconnectCountRef.current += 1;
+      setHealthState((prev) => ({
+        ...prev,
+        connectionState: currentState,
+        reconnectCount: reconnectCountRef.current,
+      }));
+    }
+    // Track other state changes
+    else if (currentState !== lastState) {
+      setHealthState((prev) => ({
+        ...prev,
+        connectionState: currentState,
+      }));
     }
 
-    // Update connection timestamp
-    let lastConnectedAt = health.lastConnectedAt;
-    if (currentState === 'CONNECTED' && lastStateRef.current !== 'CONNECTED') {
-      lastConnectedAt = new Date().toISOString();
+    // Reset reconnect count on manual disconnect
+    if (currentState === VOICE_CONNECTION_STATE.IDLE) {
+      reconnectCountRef.current = 0;
+      setHealthState((prev) => ({
+        ...prev,
+        reconnectCount: 0,
+        lastError: null,
+      }));
     }
-
-    setHealth({
-      connectionState: currentState,
-      lastConnectedAt,
-      reconnectCount: reconnectCountRef.current,
-      lastError: voiceNet.error || null,
-      latencyMs: latency?.latencyMs || 0,
-      jitter: null,
-      packetLoss: null,
-    });
 
     lastStateRef.current = currentState;
-  }, [voiceNet.connectionState, voiceNet.error, latency?.latencyMs]);
-
-  // Reset reconnect count on manual disconnect
-  useEffect(() => {
-    if (voiceNet.connectionState === 'IDLE') {
-      reconnectCountRef.current = 0;
-    }
   }, [voiceNet.connectionState]);
 
-  return health;
+  // Track errors
+  useEffect(() => {
+    if (voiceNet.error) {
+      setHealthState((prev) => ({
+        ...prev,
+        lastError: voiceNet.error,
+      }));
+    }
+  }, [voiceNet.error]);
+
+  // Integrate latency
+  useEffect(() => {
+    if (latency?.latencyMs) {
+      setHealthState((prev) => ({
+        ...prev,
+        latencyMs: latency.latencyMs,
+      }));
+    }
+  }, [latency?.latencyMs]);
+
+  return healthState;
 }
 
 /**
  * Format health state for display
  */
 export function formatHealthState(state) {
-  const stateLabels = {
-    IDLE: 'Offline',
-    JOINING: 'Connecting...',
-    CONNECTED: 'Connected',
-    RECONNECTING: 'Reconnecting...',
-    ERROR: 'Error',
+  const labels = {
+    [VOICE_CONNECTION_STATE.IDLE]: 'Idle',
+    [VOICE_CONNECTION_STATE.JOINING]: 'Joining',
+    [VOICE_CONNECTION_STATE.CONNECTED]: 'Connected',
+    [VOICE_CONNECTION_STATE.RECONNECTING]: 'Reconnecting',
+    [VOICE_CONNECTION_STATE.ERROR]: 'Error',
   };
-  return stateLabels[state] || state;
+  return labels[state] || 'Unknown';
 }
 
 /**
- * Get health color class for UI
+ * Get color class for health state
  */
 export function getHealthColor(state) {
-  const colorMap = {
-    IDLE: 'text-zinc-500',
-    JOINING: 'text-yellow-500',
-    CONNECTED: 'text-green-500',
-    RECONNECTING: 'text-orange-500',
-    ERROR: 'text-red-500',
+  const colors = {
+    [VOICE_CONNECTION_STATE.IDLE]: 'text-zinc-500',
+    [VOICE_CONNECTION_STATE.JOINING]: 'text-yellow-500',
+    [VOICE_CONNECTION_STATE.CONNECTED]: 'text-green-500',
+    [VOICE_CONNECTION_STATE.RECONNECTING]: 'text-orange-500',
+    [VOICE_CONNECTION_STATE.ERROR]: 'text-red-500',
   };
-  return colorMap[state] || 'text-zinc-500';
+  return colors[state] || 'text-zinc-500';
 }

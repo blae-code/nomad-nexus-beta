@@ -1,83 +1,107 @@
 /**
- * Voice Notifications — Rate-limited join/leave/error notifications
+ * Voice Notifications Module
+ * Rate-limited notifications for voice events
  */
 
 import { useEffect, useRef } from 'react';
 import { useNotification } from '@/components/providers/NotificationContext';
+import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 const RATE_LIMIT_WINDOW_MS = 10000; // 10 seconds
 const MAX_EVENTS_PER_WINDOW = 3;
 
 /**
- * useVoiceNotifications — Handle voice net events with rate limiting
+ * Hook to manage voice event notifications
  */
 export function useVoiceNotifications(voiceNet) {
   const { addNotification } = useNotification();
-  const eventQueueRef = useRef([]);
   const lastParticipantsRef = useRef([]);
+  const eventQueueRef = useRef([]);
+  const lastStateRef = useRef(VOICE_CONNECTION_STATE.IDLE);
+  const reconnectNotificationIdRef = useRef(null);
 
+  // Track participant changes (join/leave)
   useEffect(() => {
-    const now = Date.now();
     const currentParticipants = voiceNet.participants;
     const lastParticipants = lastParticipantsRef.current;
 
+    if (!voiceNet.activeNetId) {
+      lastParticipantsRef.current = [];
+      return;
+    }
+
     // Detect joins
     const joined = currentParticipants.filter(
-      (p) => !lastParticipants.some((lp) => lp.userId === p.userId)
+      (p) => !lastParticipants.find((lp) => lp.userId === p.userId)
     );
 
     // Detect leaves
     const left = lastParticipants.filter(
-      (lp) => !currentParticipants.some((p) => p.userId === lp.userId)
+      (lp) => !currentParticipants.find((p) => p.userId === lp.userId)
     );
 
-    // Rate limiting: prune old events
+    // Rate-limited notifications
+    const now = Date.now();
     eventQueueRef.current = eventQueueRef.current.filter(
       (ts) => now - ts < RATE_LIMIT_WINDOW_MS
     );
 
-    // Show notifications if under limit
-    if (eventQueueRef.current.length < MAX_EVENTS_PER_WINDOW) {
-      joined.forEach((p) => {
+    // Notify joins
+    joined.forEach((participant) => {
+      if (eventQueueRef.current.length < MAX_EVENTS_PER_WINDOW) {
         addNotification({
           type: 'info',
-          message: `${p.callsign} joined the net`,
+          message: `${participant.callsign} joined the net`,
           duration: 3000,
         });
         eventQueueRef.current.push(now);
-      });
+      }
+    });
 
-      left.forEach((p) => {
+    // Notify leaves
+    left.forEach((participant) => {
+      if (eventQueueRef.current.length < MAX_EVENTS_PER_WINDOW) {
         addNotification({
           type: 'info',
-          message: `${p.callsign} left the net`,
+          message: `${participant.callsign} left the net`,
           duration: 3000,
         });
         eventQueueRef.current.push(now);
-      });
-    }
+      }
+    });
 
     lastParticipantsRef.current = currentParticipants;
-  }, [voiceNet.participants, addNotification]);
+  }, [voiceNet.participants, voiceNet.activeNetId, addNotification]);
 
-  // Reconnecting notification
+  // Track connection state changes
   useEffect(() => {
-    if (voiceNet.connectionState === 'RECONNECTING') {
-      addNotification({
+    const currentState = voiceNet.connectionState;
+    const lastState = lastStateRef.current;
+
+    // Reconnecting
+    if (currentState === VOICE_CONNECTION_STATE.RECONNECTING && lastState === VOICE_CONNECTION_STATE.CONNECTED) {
+      const notifId = addNotification({
         type: 'warning',
         message: 'Voice connection lost. Reconnecting...',
-        duration: 0, // Persistent until resolved
+        duration: 0, // Persistent
       });
-    } else if (voiceNet.connectionState === 'CONNECTED') {
+      reconnectNotificationIdRef.current = notifId;
+    }
+
+    // Reconnected
+    if (currentState === VOICE_CONNECTION_STATE.CONNECTED && lastState === VOICE_CONNECTION_STATE.RECONNECTING) {
       addNotification({
         type: 'success',
         message: 'Voice connection restored',
         duration: 3000,
       });
+      reconnectNotificationIdRef.current = null;
     }
+
+    lastStateRef.current = currentState;
   }, [voiceNet.connectionState, addNotification]);
 
-  // Error notification
+  // Track errors
   useEffect(() => {
     if (voiceNet.error) {
       addNotification({

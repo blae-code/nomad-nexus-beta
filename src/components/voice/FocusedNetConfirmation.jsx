@@ -1,43 +1,48 @@
 /**
- * FocusedNetConfirmation — One-time-per-session discipline notice
+ * FocusedNetConfirmation — One-time discipline notice for Focused nets
  */
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
-const SESSION_KEY = 'nexus.voice.focusedConfirmSeen';
+const CONFIRMATION_SESSION_KEY = 'nexus.voice.focusedConfirmSeen';
 
+/**
+ * Hook to manage focused net confirmation state
+ */
 export function useFocusedConfirmation() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [pendingNetId, setPendingNetId] = useState(null);
 
-  const checkNeedConfirmation = (net) => {
-    // Check if this is a focused net (non-temporary)
-    if (net.type !== 'FOCUSED' || net.isTemporary) {
-      return false;
-    }
+  const checkNeedConfirmation = useCallback((net) => {
+    // Only require confirmation for Focused nets (non-temporary)
+    if (net.type !== 'FOCUSED') return false;
+    if (net.isTemporary) return false;
 
-    // Check session storage
-    const seen = sessionStorage.getItem(SESSION_KEY);
-    return !seen;
-  };
+    // Check if already confirmed this session
+    const hasConfirmed = sessionStorage.getItem(CONFIRMATION_SESSION_KEY) === 'true';
+    return !hasConfirmed;
+  }, []);
 
-  const requestConfirmation = (netId) => {
-    setPendingNetId(netId);
+  const requestConfirmation = useCallback((netId) => {
     setNeedsConfirmation(true);
-  };
+    setPendingNetId(netId);
+  }, []);
 
-  const confirm = () => {
-    sessionStorage.setItem(SESSION_KEY, 'true');
+  const confirm = useCallback(() => {
+    sessionStorage.setItem(CONFIRMATION_SESSION_KEY, 'true');
     setNeedsConfirmation(false);
-    return pendingNetId;
-  };
+    const netId = pendingNetId;
+    setPendingNetId(null);
+    return netId;
+  }, [pendingNetId]);
 
-  const cancel = () => {
+  const cancel = useCallback(() => {
     setNeedsConfirmation(false);
     setPendingNetId(null);
-  };
+  }, []);
 
   return {
     needsConfirmation,
@@ -48,29 +53,32 @@ export function useFocusedConfirmation() {
   };
 }
 
+/**
+ * Confirmation sheet component
+ */
 export function FocusedNetConfirmationSheet({ onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-md mx-4">
-        <div className="flex items-start gap-3 mb-4">
-          <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-lg font-bold text-white mb-2">Focused Net — Operational Discipline</h3>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Focused nets are reserved for operational traffic. Keep chatter and off-topic conversation
-              in Casual nets. Push-to-talk is recommended.
-            </p>
+    <Sheet open={true} onOpenChange={(open) => !open && onCancel()}>
+      <SheetContent side="bottom" className="bg-zinc-900 border-zinc-800">
+        <SheetHeader className="text-left">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertCircle className="w-6 h-6 text-orange-500" />
+            <SheetTitle className="text-zinc-100">Focused Net — Operational Discipline</SheetTitle>
           </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={onCancel}>
+          <SheetDescription className="text-zinc-400 text-sm leading-relaxed">
+            Focused nets are reserved for operational traffic. Keep chatter and off-topic conversation in Casual nets. 
+            Push-to-talk is recommended.
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex gap-3 mt-6">
+          <Button variant="outline" onClick={onCancel} className="flex-1">
             Cancel
           </Button>
-          <Button variant="default" size="sm" onClick={onConfirm}>
+          <Button onClick={onConfirm} className="flex-1">
             Understood
           </Button>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
