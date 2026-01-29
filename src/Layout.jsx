@@ -16,6 +16,7 @@ import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
 import CommsDockShell from '@/components/layout/CommsDockShell';
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
+import BootOverlay, { useBootOverlay } from '@/components/common/BootOverlay';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -58,6 +59,7 @@ function LayoutContent({ currentPageName, children }) {
 
   const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, toggleSidePanel, toggleContextPanel, toggleCommsDock } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
+  const bootOverlay = useBootOverlay();
 
   const handleNavigate = (page) => {
     window.location.href = createPageUrl(page);
@@ -82,8 +84,12 @@ function LayoutContent({ currentPageName, children }) {
       onToggleContextPanel={toggleContextPanel}
       onOpenAccessRequest={handleOpenAccessRequest}
       onTriggerTestAlert={handleTriggerTestAlert}
+      onReplayBootSequence={bootOverlay.replay}
     >
       <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
+        {/* Boot Overlay */}
+        <BootOverlay isOpen={bootOverlay.shouldShow} onDismiss={bootOverlay.dismiss} />
+
         {/* Notification Center */}
         <NotificationCenter />
 
