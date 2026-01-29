@@ -163,9 +163,8 @@ export default function Hub() {
                 </Tooltip>
               </TooltipProvider>
             );
-          })}
-          </div>
-          </div>
+        })}
+      </div>
 
       {/* Development Roadmap Section */}
       <div className="px-2">
