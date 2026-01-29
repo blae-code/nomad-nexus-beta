@@ -213,7 +213,7 @@ export default function DevelopmentRoadmap() {
                       </div>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="bg-zinc-950 border-orange-500/40 max-w-sm">
+                  <TooltipContent side="right" className="bg-zinc-950 border-yellow-500/40 max-w-sm">
                     <div className="space-y-1.5">
                       <p className="font-semibold text-orange-400">{milestone.title}</p>
                       <p className="text-xs text-zinc-200">{phaseDescriptions[milestone.phase]}</p>
