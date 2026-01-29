@@ -101,6 +101,19 @@ export default function Hub() {
                         <p className="text-xs text-zinc-500 leading-tight opacity-75 group-hover:opacity-100 transition-opacity">
                           {item.description}
                         </p>
+                        {status && (
+                          <div className="mt-2 pt-2 border-t border-zinc-700/50 w-full">
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all"
+                                  style={{ width: `${statusPercentage}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-mono font-bold text-orange-400 whitespace-nowrap">{statusPercentage}%</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </a>
                   </TooltipTrigger>
