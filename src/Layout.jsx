@@ -144,10 +144,8 @@ function LayoutContent({ currentPageName, children }) {
             )}
           </div>
 
-          {/* Comms Dock — fixed at bottom, flex-shrink-0 to prevent compression */}
-          {isCommsDockOpen && (
-            <CommsDockShell isOpen={true} onClose={toggleCommsDock} />
-          )}
+          {/* Comms Dock — fixed at bottom */}
+          <CommsDockShell isOpen={isCommsDockOpen} onClose={toggleCommsDock} />
         </div>
 
         {/* Command Palette Modal */}
