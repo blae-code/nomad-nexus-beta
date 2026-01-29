@@ -65,7 +65,7 @@ export default function Hub() {
     <div className="h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-hidden flex flex-col">
       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%)] bg-[length:40px_40px] opacity-30" />
       
-      <div className="relative z-10 flex-1 flex flex-col px-4 py-6">
+      <div className="relative z-10 flex-1 flex flex-col px-4 py-6 overflow-hidden">
         <div className="text-center mb-6">
           <div className="inline-block mb-2 px-4 py-1 border-2 border-orange-500/30 bg-orange-500/5">
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-white">
@@ -75,8 +75,9 @@ export default function Hub() {
           <p className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Command Hub</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-min">
+        <div className="flex-1 overflow-y-auto space-y-8">
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-min">
           {navItems.map((item) => {
             const Icon = item.icon;
             const status = MODULE_STATUS[item.path];
