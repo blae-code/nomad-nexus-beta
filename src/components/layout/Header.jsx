@@ -12,6 +12,7 @@ import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/con
 import { Radio, Search, PanelRight, MessageSquare, Mic, Activity, Calendar, Users, Wifi, WifiOff, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
+import VerseClock from '@/components/header/VerseClock';
 
 /**
  * Header — Control plane v1
