@@ -180,11 +180,11 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
               {/* Channel List */}
               <div className="w-96 border-r border-zinc-800 flex flex-col overflow-hidden">
                <Input
-                 placeholder="Find channel..."
-                 value={searchInput}
-                 onChange={(e) => setSearchInput(e.target.value)}
-                 className="h-7 text-xs m-2 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600"
-               />
+                  placeholder="Find channel..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="h-7 text-xs mx-2 my-2 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600 flex-1"
+                />
 
                <div className="flex-1 overflow-y-auto space-y-1 px-2">
                  {groupedChannels.casual.length === 0 && groupedChannels.focused.length === 0 ? (
