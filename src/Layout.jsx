@@ -128,7 +128,7 @@ function LayoutContent({ currentPageName, children }) {
         <ConstructionTicker />
 
         {/* Main content area */}
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 min-h-0 overflow-hidden flex">
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <PermissionGuard>{children}</PermissionGuard>
           </main>
@@ -141,10 +141,8 @@ function LayoutContent({ currentPageName, children }) {
           )}
         </div>
 
-        {/* Comms Dock Footer — fixed at bottom */}
-        {isCommsDockOpen && (
-          <CommsDockShell isOpen={true} onClose={toggleCommsDock} />
-        )}
+        {/* Comms Dock Footer */}
+        {isCommsDockOpen && <CommsDockShell isOpen={true} onClose={toggleCommsDock} />}
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
