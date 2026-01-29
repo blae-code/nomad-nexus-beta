@@ -138,7 +138,7 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Bottom Text Comms Dock (fixed, collapsible, respects context panel) */}
          {isCommsDockOpen && (
-           <div className={`fixed bottom-0 left-0 z-[700] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? 'right-80' : 'right-0'} transition-all duration-200`}>
+           <div className={`fixed bottom-0 left-0 z-[600] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? 'right-80' : 'right-0'} transition-all duration-200`}>
              <TextCommsDock isOpen={true} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
            </div>
          )}
