@@ -173,8 +173,8 @@ export default function DevelopmentRoadmap() {
                             <div
                               className={`h-full transition-all ${
                                 milestone.completion === 100 ? 'bg-green-500' :
-                                milestone.completion >= 60 ? 'bg-orange-500' :
-                                'bg-zinc-600'
+                                milestone.completion >= 60 ? 'bg-yellow-500' :
+                                'bg-red-600'
                               }`}
                               style={{ width: `${milestone.completion}%` }}
                             />
