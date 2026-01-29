@@ -15,8 +15,10 @@ import {
   Archive, 
   Lock,
   HelpCircle,
-  ChevronLeft
+  ChevronLeft,
+  Activity
 } from 'lucide-react';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 
 /**
  * SidePanel — Left navigation with permission gating
@@ -24,6 +26,7 @@ import {
  */
 export default function SidePanel({ currentPageName, onToggleCollapse }) {
   const { user } = useCurrentUser();
+  const activeOp = useActiveOp();
   const [showAccessModal, setShowAccessModal] = useState(false);
 
   const navItems = [
@@ -58,6 +61,30 @@ export default function SidePanel({ currentPageName, onToggleCollapse }) {
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Active Op Tile */}
+        {activeOp.activeEvent && (
+          <div className="p-2 border-b border-zinc-800">
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-4 h-4 text-orange-500" />
+                <span className="text-xs font-bold text-orange-400 uppercase tracking-wide">Active Op</span>
+              </div>
+              <div className="text-sm font-semibold text-white mb-1 truncate">
+                {activeOp.activeEvent.title}
+              </div>
+              <div className="text-xs text-zinc-400">
+                {activeOp.participants.length} participant{activeOp.participants.length !== 1 ? 's' : ''}
+              </div>
+              <a
+                href={createPageUrl('Events')}
+                className="mt-2 block text-xs text-orange-400 hover:text-orange-300 transition-colors"
+              >
+                Open Op →
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
