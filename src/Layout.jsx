@@ -141,8 +141,8 @@ function LayoutContent({ currentPageName, children }) {
           )}
         </div>
 
-        {/* Comms Dock Footer */}
-        {isCommsDockOpen && <CommsDockShell isOpen={true} onClose={toggleCommsDock} />}
+        {/* Voice Comms Dock Footer */}
+        {isCommsDockOpen && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} />}
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
