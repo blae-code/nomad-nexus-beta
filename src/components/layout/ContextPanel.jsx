@@ -532,22 +532,21 @@ export default function ContextPanel({ isOpen, onClose }) {
             </div>
           </div>
         )}
-        </div>
 
         {/* Focused Net Confirmation Modal */}
-            {voiceNet.focusedConfirmation?.needsConfirmation && (
-            <FocusedNetConfirmationSheet
+        {voiceNet.focusedConfirmation?.needsConfirmation && (
+          <FocusedNetConfirmationSheet
             onConfirm={() => {
-            const netId = voiceNet.focusedConfirmation.confirm();
-            if (netId) {
-              voiceNet.joinNet(netId, user);
-            }
+              const netId = voiceNet.focusedConfirmation.confirm();
+              if (netId) {
+                voiceNet.joinNet(netId, user);
+              }
             }}
             onCancel={() => voiceNet.focusedConfirmation.cancel()}
-            />
-            )}
-            </div>
-            );
+          />
+        )}
+    </div>
+  );
             }
 
 function SectionHeader({ icon, label, sectionKey, expanded, onToggle }) {
