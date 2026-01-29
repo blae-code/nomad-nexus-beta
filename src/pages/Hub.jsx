@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch } from 'lucide-react';
+import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus } from 'lucide-react';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
@@ -49,8 +49,18 @@ export default function Hub() {
     { name: 'Universe Map', path: 'UniverseMap', icon: Map, description: 'Tactical overview' },
     { name: 'Fleet Manager', path: 'FleetManager', icon: Box, description: 'Asset management' },
     { name: 'Treasury', path: 'Treasury', icon: DollarSign, description: 'Financial tracking' },
-    { name: 'Settings', path: 'Settings', icon: Settings, description: 'App configuration' },
     { name: 'Recon', path: 'Recon', icon: FileSearch, description: 'Intelligence reports and reputation tracking' },
+    { name: 'Training Center', path: 'TrainingCenter', icon: GraduationCap, description: 'Certifications and skill progression' },
+    { name: 'After Action Reports', path: 'AARs', icon: FileText, description: 'Mission debriefs and analytics' },
+    { name: 'Intel Database', path: 'IntelDatabase', icon: Database, description: 'Threat assessment and tracking' },
+    { name: 'Armory', path: 'Armory', icon: Package, description: 'Gear and inventory management' },
+    { name: 'Analytics', path: 'Analytics', icon: BarChart3, description: 'Performance metrics and KPIs' },
+    { name: 'Archive', path: 'Archive', icon: BookOpen, description: 'Guides, SOPs, and org knowledge' },
+    { name: 'Marketplace', path: 'Marketplace', icon: Store, description: 'Internal trading and procurement' },
+    { name: 'Availability', path: 'Availability', icon: ClipboardList, description: 'Duty roster and scheduling' },
+    { name: 'Achievements', path: 'Achievements', icon: Award, description: 'Medals and commendations' },
+    { name: 'Recruitment', path: 'Recruitment', icon: UserPlus, description: 'Public applications portal' },
+    { name: 'Settings', path: 'Settings', icon: Settings, description: 'App configuration' },
   ];
 
   return (
