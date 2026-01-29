@@ -156,6 +156,17 @@ const createActionRegistry = (user, callbacks) => {
       shortcut: '⌘,',
       onExecute: () => callbacks.navigate('Settings'),
     },
+    // Navigate: System Admin
+    {
+      id: 'nav:admin',
+      label: 'System Admin',
+      category: 'Navigate',
+      description: 'Administrator control panel',
+      icon: 'Shield',
+      shortcut: '⌘⇧A',
+      onExecute: () => callbacks.navigate('SystemAdmin'),
+      isVisible: (u) => u?.role === 'admin',
+    },
     // Toggle: CommsDock
     {
       id: 'toggle:comms-dock',
