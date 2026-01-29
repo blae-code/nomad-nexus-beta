@@ -71,9 +71,9 @@ export default function Hub() {
         </div>
         <p className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Development Hub</p>
       </div>
-          <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-min">
-          {navItems.map((item) => {
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-min">
+        {navItems.map((item) => {
             const Icon = item.icon;
             const status = MODULE_STATUS[item.path];
             const statusPercentage = status?.completed || 0;
