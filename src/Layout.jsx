@@ -58,7 +58,7 @@ export default function Layout({ children, currentPageName }) {
   );
 }
 
-function LayoutContent({ currentPageName, children }) {
+function LayoutContent({ currentPageName, children, dockMode, setDockMode }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
