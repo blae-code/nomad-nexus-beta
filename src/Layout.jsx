@@ -127,19 +127,19 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Main layout grid: content + contextpanel + comms dock */}
           <div className="flex flex-1 overflow-hidden flex-col">
-            {/* Main content area with context panel */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Route outlet */}
-              <main className="flex-1 overflow-y-auto overflow-x-hidden">
-                <PermissionGuard>{children}</PermissionGuard>
-              </main>
+            {/* Main content area with panels */}
+                <div className="flex flex-1 overflow-hidden">
+                  {/* Main content */}
+                  <main className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <PermissionGuard>{children}</PermissionGuard>
+                  </main>
 
-              {/* ContextPanel — right sidebar, collapsible */}
-              <ContextPanel isOpen={isContextPanelOpen} onClose={toggleContextPanel} />
-            </div>
+                  {/* ContextPanel — right sidebar, collapsible */}
+                  {isContextPanelOpen && <ContextPanel isOpen={true} onClose={toggleContextPanel} />}
+                </div>
 
-            {/* Comms Dock — persistent at bottom */}
-            <CommsDockShell isOpen={true} onClose={() => {}} />
+                {/* Comms Dock — persistent at bottom, within layout flow */}
+                <CommsDockShell isOpen={true} onClose={() => {}} />
           </div>
 
           {/* Command Palette Modal */}
