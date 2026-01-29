@@ -296,71 +296,77 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Channel Header */}
                 {selectedChannel && (
-                  <div className="border-b border-zinc-800 px-4 py-2 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
+                  <div className="border-b border-orange-500/10 px-4 py-2 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
                     {!canAccessChannel(selectedChannel) && <Lock className="w-3 h-3 text-zinc-600" />}
-                    <span className="text-xs font-semibold text-zinc-300">#{selectedChannel.name}</span>
+                    <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest">#{selectedChannel.name}</span>
                   </div>
                 )}
 
-                {/* Messages */}
-                 <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs flex flex-col">
-                    {loadingMessages && (
-                      <div className="flex items-center justify-center h-full text-zinc-500">
-                        <div className="text-xs text-center">
-                          <div className="animate-pulse mb-2">⟳</div>
-                          <div>Loading messages...</div>
-                        </div>
-                      </div>
-                    )}
-                    {messages.length === 0 && !loadingMessages && (
-                      <div className="flex items-center justify-center h-full text-zinc-600">
-                        <div className="text-center">
-                          <div className="text-[10px] opacity-50 mb-1">—</div>
-                          <div className="text-[10px]">No messages in this channel yet</div>
-                        </div>
-                      </div>
-                    )}
-                    {messages.length > 0 && (
-                      <>
-                        {messages.map((msg) => (
-                          <div key={msg.id} className="group">
-                            <div className="text-[10px] text-zinc-600">
-                              <span className="font-semibold text-zinc-400">{msg.user_id || 'Unknown'}</span>
-                              <span className="mx-1">•</span>
-                              <span>{new Date(msg.created_date).toLocaleTimeString()}</span>
-                            </div>
-                            <p className="text-zinc-300 leading-snug">{msg.content}</p>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </>
-                    )}
-                 </div>
+                {/* Messages — Improved styling with better hierarchy */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs flex flex-col">
+                   {loadingMessages && (
+                     <div className="flex items-center justify-center h-full text-zinc-500">
+                       <div className="text-xs text-center">
+                         <div className="animate-pulse mb-2">⟳</div>
+                         <div>Loading messages...</div>
+                       </div>
+                     </div>
+                   )}
+                   {messages.length === 0 && !loadingMessages && (
+                     <div className="flex items-center justify-center h-full text-zinc-600">
+                       <div className="text-center">
+                         <div className="text-[10px] opacity-50 mb-1">—</div>
+                         <div className="text-[10px]">No messages in this channel yet</div>
+                       </div>
+                     </div>
+                   )}
+                   {messages.length > 0 && (
+                     <>
+                       {messages.map((msg) => (
+                         <div key={msg.id} className="group">
+                           <div className="flex items-center gap-2 text-[10px]">
+                             <span className="font-semibold text-zinc-400">{msg.user_id || 'Unknown'}</span>
+                             <span className="text-zinc-600">•</span>
+                             <span className="text-zinc-600">{new Date(msg.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                           </div>
+                           <p className="text-zinc-300 leading-snug mt-0.5">{msg.content}</p>
+                         </div>
+                       ))}
+                       <div ref={messagesEndRef} />
+                     </>
+                   )}
+                </div>
 
-                {/* Composer */}
-                <div className="border-t border-zinc-800 p-2 bg-zinc-900/40 flex-shrink-0">
-                  <div className="flex gap-2">
-                    <Input
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Message..."
-                      disabled={!selectedChannel || !canAccessChannel(selectedChannel)}
-                      className="h-7 text-xs flex-1 bg-zinc-900 border-zinc-700"
-                    />
-                    <Button
-                      size="icon"
-                      onClick={handleSendMessage}
-                      disabled={!messageInput.trim() || !selectedChannel || !canAccessChannel(selectedChannel)}
-                      className="h-7 w-7"
-                    >
-                      <Send className="w-3 h-3" />
-                    </Button>
-                  </div>
+                {/* Composer — Expandable input with clear send button */}
+                <div className="border-t border-orange-500/10 p-2 bg-zinc-900/40 flex-shrink-0">
+                  {!selectedChannel || !canAccessChannel(selectedChannel) ? (
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-600 px-2 py-1.5">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                      <span>Cannot post to this channel</span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Type your message..."
+                        className="min-h-8 text-xs flex-1 bg-zinc-900 border-orange-500/10 placeholder:text-zinc-600"
+                      />
+                      <Button
+                        size="icon"
+                        onClick={handleSendMessage}
+                        disabled={!messageInput.trim()}
+                        className="h-8 w-8 flex-shrink-0"
+                      >
+                        <Send className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+              </div>
+              )}
 
           {activeTab === 'polls' && (
             <div className="flex items-center justify-center h-full text-zinc-600">
