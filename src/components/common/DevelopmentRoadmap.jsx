@@ -1,7 +1,8 @@
-import React from 'react';
-import { CheckCircle2, AlertCircle, Clock, Target, Zap, Users, Radio, Database, Shield, Compass } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle2, AlertCircle, Clock, Target, Zap, ChevronDown } from 'lucide-react';
 
 export default function DevelopmentRoadmap() {
+  const [expanded, setExpanded] = useState(false);
   const milestones = [
     {
       phase: 'Phase 1',
