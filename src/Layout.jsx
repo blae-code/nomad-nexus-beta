@@ -92,7 +92,6 @@ function LayoutContent({ currentPageName, children }) {
 
   const handleResetUILayout = () => {
     if (confirm('Reset UI layout? This will clear panel positions and reload the page.')) {
-      localStorage.removeItem('nexus.shell.sidePanelOpen');
       localStorage.removeItem('nexus.shell.contextPanelOpen');
       localStorage.removeItem('nexus.shell.commsDockOpen');
       window.location.reload();
