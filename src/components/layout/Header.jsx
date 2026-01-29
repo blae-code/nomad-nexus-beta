@@ -146,7 +146,7 @@ export default function Header() {
           <div className="w-px h-6 bg-zinc-800" />
 
           {/* Action Buttons */}
-           <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
              <Button
                size="icon"
                variant="ghost"
