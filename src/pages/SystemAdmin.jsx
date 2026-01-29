@@ -145,6 +145,8 @@ export default function SystemAdmin() {
         {/* Content */}
         <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-6">
           {activeTab === 'overview' && <OverviewTab user={user} />}
+          {activeTab === 'users' && <UserManagement />}
+          {activeTab === 'keys' && <AccessKeyManager />}
           {activeTab === 'validation' && <DataValidation />}
           {activeTab === 'diagnostics' && <DiagnosticsBundle />}
           {activeTab === 'seed' && <ImmersiveSeed />}
