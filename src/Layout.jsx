@@ -121,11 +121,8 @@ function LayoutContent({ currentPageName, children }) {
         {/* Header — top navigation fixed */}
         <Header />
 
-        {/* Main layout grid: sidepanel + content + contextpanel */}
+        {/* Main layout grid: content + contextpanel */}
         <div className="flex flex-1 overflow-hidden">
-          {/* SidePanel — left navigation, collapsible */}
-          {isSidePanelOpen && <SidePanel currentPageName={currentPageName} onToggleCollapse={toggleSidePanel} />}
-
           {/* Main content area — route outlet, scrolls internally */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <PermissionGuard>{children}</PermissionGuard>

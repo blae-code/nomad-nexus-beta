@@ -74,7 +74,7 @@ export default function Header() {
 
   return (
     <header className="h-16 bg-zinc-950/95 border-b-2 border-zinc-800 backdrop-blur-sm">
-      <div className="h-full px-4 flex items-center justify-between gap-4 overflow-hidden">
+      <div className="h-full px-4 flex items-center gap-4 overflow-hidden">
         {/* Left: Callsign + Badges */}
         <div className="flex items-center gap-3 min-w-0">
           {/* Callsign */}
@@ -116,8 +116,23 @@ export default function Header() {
           )}
         </div>
 
-        {/* Right: Telemetry + Controls + Command Palette */}
-        <div className="flex items-center gap-3 ml-auto">
+        {/* Center: Command Palette */}
+        <div className="flex-1 max-w-2xl mx-auto">
+          <button
+            onClick={openPalette}
+            className="w-full flex items-center gap-3 px-4 py-2 bg-zinc-900/50 border-2 border-zinc-800 hover:border-orange-500/50 text-zinc-400 rounded-lg transition-all duration-200 group"
+            title="Open command palette (Ctrl+K)"
+          >
+            <Search className="w-4 h-4 text-zinc-500 group-hover:text-orange-500 transition-colors" />
+            <span className="text-sm font-mono tracking-wide">Search commands, navigate, or type...</span>
+            <div className="ml-auto flex items-center gap-1 text-xs font-mono text-zinc-600 bg-zinc-800/50 px-2 py-1 rounded border border-zinc-700">
+              <span>⌘K</span>
+            </div>
+          </button>
+        </div>
+
+        {/* Right: Telemetry + Controls */}
+        <div className="flex items-center gap-3">
           {/* Telemetry Strip (live data) */}
             <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r-2 border-zinc-700 pr-4 font-mono uppercase tracking-wide">
               {activeOp.activeEvent && (
@@ -171,15 +186,6 @@ export default function Header() {
             <Button
               size="icon"
               variant="ghost"
-              onClick={toggleSidePanel}
-              title="Toggle sidebar (Cmd+Shift+L)"
-              className="h-9 w-9 text-zinc-400 hover:text-orange-400"
-            >
-              <PanelLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
               onClick={toggleContextPanel}
               title="Toggle systems panel (Cmd+Shift+R)"
               className="h-9 w-9 text-zinc-400 hover:text-orange-400"
@@ -187,16 +193,6 @@ export default function Header() {
               <PanelRight className="w-4 h-4" />
             </Button>
           </div>
-
-          {/* Command Palette Trigger */}
-          <button
-            onClick={openPalette}
-            className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg transition-colors"
-            title="Open command palette (Ctrl+K)"
-          >
-            <Search className="w-4 h-4" />
-            <span className="hidden sm:inline text-xs">Ctrl K</span>
-          </button>
         </div>
       </div>
     </header>
