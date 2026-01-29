@@ -189,6 +189,11 @@ export default function Hub() {
             );
         })}
       </div>
+
+      {/* Development Roadmap - Full Width Below Modules */}
+      <div className="border-t border-zinc-800/40 pt-6 mt-6">
+        <DevelopmentRoadmap />
+      </div>
     </div>
   );
 }
