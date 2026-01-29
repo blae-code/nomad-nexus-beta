@@ -283,7 +283,11 @@ export default function ContextPanel({ isOpen, onClose }) {
           expanded={expandedSections.contacts}
           onToggle={toggleSection}
         />
-        {expandedSections.contacts && <NetRoster />}
+        {expandedSections.contacts && (
+          <div className="max-h-72 overflow-y-auto">
+            <NetRoster />
+          </div>
+        )}
 
         {/* Riggsy / AI Section */}
         <SectionHeader
