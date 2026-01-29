@@ -92,7 +92,7 @@ export default function Header() {
         </div>
 
         {/* Center: Command Interface */}
-        <div className="flex-1 max-w-3xl">
+        <div className="flex-1 min-w-0">
           <button
             onClick={openPalette}
             className="w-full h-9 flex items-center gap-3 px-4 bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 text-zinc-500 hover:text-zinc-300 transition-all group rounded"
