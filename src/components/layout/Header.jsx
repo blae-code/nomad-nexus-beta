@@ -52,6 +52,7 @@ export default function Header() {
   const { onlineCount } = usePresenceRoster();
   const { unreadByTab } = useUnreadCounts(user?.id);
   const voiceNet = useVoiceNet();
+  const activeOp = useActiveOp();
 
   if (loading || !user) {
     return (
