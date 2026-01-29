@@ -6,10 +6,13 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAudioDevices } from '@/components/voice/hooks/useAudioDevices';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
-import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock } from 'lucide-react';
+import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
+import { useVoiceHealth, formatHealthState, getHealthColor } from '@/components/voice/health/voiceHealth';
+import { useVoiceNotifications } from '@/components/voice/notifications/voiceNotifications';
+import { FocusedNetConfirmationSheet } from '@/components/voice/components/FocusedNetConfirmation';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls
@@ -31,6 +34,10 @@ export default function ContextPanel({ isOpen, onClose }) {
   const voiceNet = useVoiceNet();
   const { user } = useCurrentUser();
   const { inputDevices, selectedDeviceId, selectDevice } = useAudioDevices();
+  const voiceHealth = useVoiceHealth(voiceNet, latency);
+  
+  // Wire notifications
+  useVoiceNotifications(voiceNet);
 
   const toggleSection = (key) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -69,14 +76,24 @@ export default function ContextPanel({ isOpen, onClose }) {
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
             {voiceNet.activeNetId ? (
               <>
-                <div className="p-2 bg-green-900/20 rounded border border-green-700/50">
-                  <div className="font-mono text-green-400">
-                    {voiceNet.voiceNets.find((n) => n.id === voiceNet.activeNetId)?.name || 'Unknown'}
+                <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-mono text-zinc-300">
+                      {voiceNet.voiceNets.find((n) => n.id === voiceNet.activeNetId)?.name || 'Unknown'}
+                    </div>
+                    <div className={`text-xs font-semibold ${getHealthColor(voiceHealth.connectionState)}`}>
+                      {formatHealthState(voiceHealth.connectionState)}
+                    </div>
                   </div>
-                  <div className="text-xs text-green-500 mt-1">
-                    {voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'Connected' : 'Connecting...'}
-                    ({voiceNet.participants.length} participants)
+                  <div className="text-xs text-zinc-500">
+                    {voiceNet.participants.length} participant{voiceNet.participants.length !== 1 ? 's' : ''}
+                    {voiceHealth.reconnectCount > 0 && ` • ${voiceHealth.reconnectCount} reconnect${voiceHealth.reconnectCount !== 1 ? 's' : ''}`}
                   </div>
+                  {voiceHealth.lastError && (
+                    <div className="mt-2 text-xs text-red-400">
+                      {voiceHealth.lastError}
+                    </div>
+                  )}
                 </div>
                 <Button
                   size="sm"
@@ -185,9 +202,29 @@ export default function ContextPanel({ isOpen, onClose }) {
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
             {loading ? (
               <div className="text-zinc-500">Loading...</div>
+            ) : voiceNet.activeNetId && voiceNet.participants.length > 0 ? (
+              // Show voice participants when connected
+              voiceNet.participants
+                .sort((a, b) => {
+                  // Speaking first
+                  if (a.isSpeaking !== b.isSpeaking) return a.isSpeaking ? -1 : 1;
+                  // Then alphabetical
+                  return (a.callsign || '').localeCompare(b.callsign || '');
+                })
+                .map((participant) => (
+                  <div key={participant.userId} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
+                    <div className="flex items-center gap-2">
+                      <div className="font-mono text-zinc-300 text-xs flex-1">{participant.callsign}</div>
+                      {participant.isSpeaking && (
+                        <Mic className="w-3 h-3 text-orange-500 animate-pulse" />
+                      )}
+                    </div>
+                  </div>
+                ))
             ) : onlineUsers.length === 0 ? (
               <div className="text-zinc-500">No users online</div>
             ) : (
+              // Show online roster when not connected to voice
               onlineUsers.map((user) => (
                 <div key={user.userId} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
                   <div className="font-mono text-zinc-300 text-xs">{user.callsign}</div>
@@ -250,14 +287,27 @@ export default function ContextPanel({ isOpen, onClose }) {
             </div>
             <div className="space-y-1">
               <div className="text-zinc-500">Build</div>
-              <div className="font-mono text-zinc-300 text-xs">Phase 3B</div>
+              <div className="font-mono text-zinc-300 text-xs">Phase 3C</div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+            </div>
+            )}
+            </div>
+
+            {/* Focused Net Confirmation Modal */}
+            {voiceNet.focusedConfirmation?.needsConfirmation && (
+            <FocusedNetConfirmationSheet
+            onConfirm={() => {
+            const netId = voiceNet.focusedConfirmation.confirm();
+            if (netId) {
+              voiceNet.joinNet(netId, user);
+            }
+            }}
+            onCancel={() => voiceNet.focusedConfirmation.cancel()}
+            />
+            )}
+            </div>
+            );
+            }
 
 function SectionHeader({ icon, label, sectionKey, expanded, onToggle }) {
   return (
