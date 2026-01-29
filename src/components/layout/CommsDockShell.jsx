@@ -21,6 +21,7 @@ const TAB_ITEMS = [
 
 export default function CommsDockShell({ isOpen, onClose }) {
   const { user } = useCurrentUser();
+  const { isContextPanelOpen } = useShellUI();
   const [activeTab, setActiveTab] = React.useState('comms');
   const [dockHeight, setDockHeight] = React.useState(384); // h-96 default
   const [isDragging, setIsDragging] = React.useState(false);
