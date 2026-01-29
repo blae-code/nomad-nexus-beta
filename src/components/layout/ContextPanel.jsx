@@ -240,7 +240,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Active Nets Section */}
+        {/* Active Voice Nets Section */}
         <SectionHeader
           icon={<Radio className="w-4 h-4" />}
           label={`Voice Nets (${voiceNet.participants.length})`}
@@ -248,64 +248,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           expanded={expandedSections.nets}
           onToggle={toggleSection}
         />
-        {expandedSections.nets && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
-            {voiceNet.activeNetId ? (
-              <>
-                <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="font-mono text-zinc-300">
-                      {voiceNet.voiceNets.find((n) => n.id === voiceNet.activeNetId)?.name || 'Unknown'}
-                    </div>
-                    <div className={`text-xs font-semibold ${getHealthColor(voiceHealth.connectionState)}`}>
-                      {formatHealthState(voiceHealth.connectionState)}
-                    </div>
-                  </div>
-                  <div className="text-xs text-zinc-500">
-                    {voiceNet.participants.length} participant{voiceNet.participants.length !== 1 ? 's' : ''}
-                    {voiceHealth.reconnectCount > 0 && ` • ${voiceHealth.reconnectCount} reconnect${voiceHealth.reconnectCount !== 1 ? 's' : ''}`}
-                  </div>
-                  {voiceHealth.lastError && (
-                    <div className="mt-2 text-xs text-red-400">
-                      {voiceHealth.lastError}
-                    </div>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="w-full text-xs"
-                  onClick={() => voiceNet.leaveNet()}
-                >
-                  Leave Net
-                </Button>
-              </>
-            ) : (
-              voiceNet.voiceNets.map((net) => {
-                const canJoin = canJoinVoiceNet(user, net);
-                return (
-                  <div key={net.id} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
-                    <div className="flex items-center gap-2">
-                      <div className="font-mono text-zinc-300 flex-1">{net.name}</div>
-                      {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
-                    </div>
-                    <div className="text-xs text-zinc-500 mt-1">{net.description}</div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs mt-2"
-                      disabled={!canJoin}
-                      onClick={() => canJoin && voiceNet.joinNet(net.id, user)}
-                      title={!canJoin ? 'Insufficient membership' : ''}
-                    >
-                      {canJoin ? 'Join' : 'Locked'}
-                    </Button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
+        {expandedSections.nets && <ActiveNets />}
 
         {/* Voice Controls Section */}
         <SectionHeader
