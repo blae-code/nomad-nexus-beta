@@ -115,9 +115,9 @@ export default function DevelopmentRoadmap() {
       case 'complete':
         return <CheckCircle2 className="w-3 h-3 text-green-400" />;
       case 'in-progress':
-        return <Clock className="w-3 h-3 text-orange-400" />;
+        return <Clock className="w-3 h-3 text-yellow-400" />;
       case 'planned':
-        return <AlertCircle className="w-3 h-3 text-zinc-500" />;
+        return <AlertCircle className="w-3 h-3 text-red-400" />;
       default:
         return null;
     }
