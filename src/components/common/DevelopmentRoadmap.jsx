@@ -232,7 +232,6 @@ export default function DevelopmentRoadmap() {
         </div>
       )}
       </div>
-      </div>
       </>
       );
       }
