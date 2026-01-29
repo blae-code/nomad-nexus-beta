@@ -42,36 +42,19 @@ export default function Hub() {
   }
 
   const navItems = [
+    { name: 'Mission Control', path: 'MissionControl', icon: Monitor, description: 'Operations planning, execution, and war room' },
+    { name: 'Intel Nexus', path: 'IntelNexus', icon: Database, description: 'Intelligence gathering and threat analysis' },
+    { name: 'War Academy', path: 'WarAcademy', icon: GraduationCap, description: 'Training, simulations, and combat readiness' },
+    { name: 'Fleet Command', path: 'FleetCommand', icon: Box, description: 'Asset management, engineering, and tactical map' },
+    { name: 'Nomad Registry', path: 'NomadRegistry', icon: Users, description: 'Personnel, availability, and achievements' },
+    { name: 'Trade Nexus', path: 'TradeNexus', icon: DollarSign, description: 'Treasury, marketplace, and commerce' },
+    { name: 'Comms Central', path: 'CommsConsole', icon: Radio, description: 'Communication channels and broadcasts' },
+    { name: 'High Command', path: 'HighCommand', icon: Gavel, description: 'Governance, diplomacy, and strategic council' },
+    { name: 'Frontier Ops', path: 'FrontierOps', icon: Compass, description: 'Exploration, bounties, and frontier missions' },
+    { name: 'Data Vault', path: 'DataVault', icon: BookOpen, description: 'Knowledge archive and analytics' },
     { name: 'Access Gate', path: 'AccessGate', icon: Shield, description: 'Member verification and onboarding' },
-    { name: 'Events', path: 'Events', icon: Calendar, description: 'Mission planning and operations' },
-    { name: 'Comms Console', path: 'CommsConsole', icon: Radio, description: 'Communication channels' },
-    { name: 'User Directory', path: 'UserDirectory', icon: Users, description: 'Member roster' },
-    { name: 'Universe Map', path: 'UniverseMap', icon: Map, description: 'Tactical overview' },
-    { name: 'Fleet Manager', path: 'FleetManager', icon: Box, description: 'Asset management' },
-    { name: 'Treasury', path: 'Treasury', icon: DollarSign, description: 'Financial tracking' },
-    { name: 'Recon', path: 'Recon', icon: FileSearch, description: 'Intelligence reports and reputation tracking' },
-    { name: 'Training Center', path: 'TrainingCenter', icon: GraduationCap, description: 'Certifications and skill progression' },
-    { name: 'After Action Reports', path: 'AARs', icon: FileText, description: 'Mission debriefs and analytics' },
-    { name: 'Intel Database', path: 'IntelDatabase', icon: Database, description: 'Threat assessment and tracking' },
-    { name: 'Armory', path: 'Armory', icon: Package, description: 'Gear and inventory management' },
-    { name: 'Analytics', path: 'Analytics', icon: BarChart3, description: 'Performance metrics and KPIs' },
-    { name: 'Archive', path: 'Archive', icon: BookOpen, description: 'Guides, SOPs, and org knowledge' },
-    { name: 'Marketplace', path: 'Marketplace', icon: Store, description: 'Internal trading and procurement' },
-    { name: 'Availability', path: 'Availability', icon: ClipboardList, description: 'Duty roster and scheduling' },
-    { name: 'Achievements', path: 'Achievements', icon: Award, description: 'Medals and commendations' },
-    { name: 'Recruitment', path: 'Recruitment', icon: UserPlus, description: 'Public applications portal' },
-    { name: 'Mission Generator', path: 'MissionGenerator', icon: Sparkles, description: 'AI-powered mission creation' },
-    { name: 'Simulation Lab', path: 'SimulationLab', icon: Gamepad2, description: 'Virtual training scenarios' },
-    { name: 'Command Bridge', path: 'CommandBridge', icon: Monitor, description: 'Real-time ops war room' },
-    { name: 'Engineering Bay', path: 'EngineeringBay', icon: Wrench, description: 'Ship mods and R&D' },
-    { name: 'Medical Bay', path: 'MedicalBay', icon: Heart, description: 'Health tracking and medic ops' },
-    { name: 'Diplomatic Corps', path: 'DiplomaticCorps', icon: Handshake, description: 'Alliance and faction relations' },
-    { name: 'Signals Intelligence', path: 'SignalsIntelligence', icon: SignalIcon, description: 'Comms intercepts and analysis' },
-    { name: 'War Council', path: 'WarCouncil', icon: Gavel, description: 'Democratic voting and governance' },
-    { name: 'Bounty Board', path: 'BountyBoard', icon: Target, description: 'Target contracts and tracking' },
-    { name: 'Exploration Corps', path: 'ExplorationCorps', icon: Compass, description: 'Discovery and uncharted territories' },
-    { name: 'Settings', path: 'Settings', icon: Settings, description: 'App configuration' },
-    ];
+    { name: 'System Admin', path: 'Settings', icon: Settings, description: 'Configuration and administration' },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
