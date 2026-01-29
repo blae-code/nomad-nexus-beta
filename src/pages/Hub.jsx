@@ -103,13 +103,6 @@ export default function Hub() {
         </div>
       </div>
 
-      {/* Development Roadmap */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <DevelopmentRoadmap />
-        </div>
-      </div>
-
       {/* Module Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
         {navItems.map((item, index) => {
