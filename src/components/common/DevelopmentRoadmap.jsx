@@ -116,44 +116,38 @@ export default function DevelopmentRoadmap() {
       {expanded && (
       <div className="space-y-2">
         {milestones.map((milestone) => {
-          const statusIcon = milestone.status === 'complete' ? <CheckCircle2 className="w-4 h-4 text-green-400" /> :
-                            milestone.status === 'in-progress' ? <Zap className="w-4 h-4 text-orange-400" /> :
-                            <Target className="w-4 h-4 text-zinc-500" />;
+          const statusIcon = milestone.status === 'complete' ? <CheckCircle2 className="w-3 h-3 text-green-400" /> :
+                            milestone.status === 'in-progress' ? <Zap className="w-3 h-3 text-orange-400" /> :
+                            <Target className="w-3 h-3 text-zinc-500" />;
 
           return (
-            <div key={milestone.phase} className="border border-zinc-800/60 rounded-lg bg-zinc-900/30 overflow-hidden">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-orange-500/10 to-transparent px-4 py-3 border-b border-zinc-800/40">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {statusIcon}
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">{milestone.phase}</span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 bg-zinc-800/50 text-zinc-400 rounded">v{milestone.version}</span>
-                    </div>
-                    <h3 className="text-xs text-zinc-300 font-semibold">{milestone.title}</h3>
+            <div key={milestone.phase} className="border border-zinc-800/60 rounded bg-zinc-900/30 overflow-hidden">
+              {/* Compact Header */}
+              <div className="px-3 py-2 border-b border-zinc-800/40 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {statusIcon}
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">{milestone.phase}</span>
+                  <span className="text-[9px] font-mono px-1.5 py-0 bg-zinc-800/50 text-zinc-400 rounded">v{milestone.version}</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="w-10 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${
+                        milestone.completion === 100 ? 'bg-green-500' :
+                        milestone.completion >= 60 ? 'bg-orange-500' :
+                        'bg-zinc-600'
+                      }`}
+                      style={{ width: `${milestone.completion}%` }}
+                    />
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-[10px] text-zinc-500 mb-1">Progress</div>
-                    <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${
-                          milestone.completion === 100 ? 'bg-green-500' :
-                          milestone.completion >= 60 ? 'bg-orange-500' :
-                          'bg-zinc-600'
-                        }`}
-                        style={{ width: `${milestone.completion}%` }}
-                      />
-                    </div>
-                    <span className={`text-[10px] font-mono font-bold ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-orange-400' : 'text-zinc-500'}`}>
-                      {milestone.completion}%
-                    </span>
-                  </div>
+                  <span className={`text-[9px] font-mono font-bold w-6 text-right ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-orange-400' : 'text-zinc-500'}`}>
+                    {milestone.completion}%
+                  </span>
                 </div>
               </div>
 
-              {/* Features Grid */}
-              <div className="grid grid-cols-2 gap-2 p-3">
+              {/* Compact Features List */}
+              <div className="flex flex-wrap gap-1.5 p-2">
                 {milestone.features.map((feature) => (
                   <div
                     key={feature.name}
