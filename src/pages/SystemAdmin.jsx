@@ -95,6 +95,8 @@ export default function SystemAdmin() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Users },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'keys', label: 'Keys', icon: Shield },
     { id: 'validation', label: 'Data', icon: Database },
     { id: 'diagnostics', label: 'Diagnostics', icon: Zap },
     { id: 'seed', label: 'Seed', icon: Sparkles },
