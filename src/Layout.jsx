@@ -43,14 +43,12 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  const [dockMode, setDockMode] = React.useState('voice'); // 'voice' or 'text'
-
   return (
     <NotificationProvider>
       <ShellUIProvider>
         <ActiveOpProvider>
           <VoiceNetProvider>
-            <LayoutContent currentPageName={currentPageName} children={children} dockMode={dockMode} setDockMode={setDockMode} />
+            <LayoutContent currentPageName={currentPageName} children={children} />
           </VoiceNetProvider>
         </ActiveOpProvider>
       </ShellUIProvider>
@@ -58,11 +56,11 @@ export default function Layout({ children, currentPageName }) {
   );
 }
 
-function LayoutContent({ currentPageName, children, dockMode, setDockMode }) {
+function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
-  const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, toggleSidePanel, toggleContextPanel, toggleCommsDock } = useShellUI();
+  const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, dockMode, dockMinimized, toggleSidePanel, toggleContextPanel, toggleCommsDock, setDockMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
@@ -130,9 +128,9 @@ function LayoutContent({ currentPageName, children, dockMode, setDockMode }) {
         {/* Construction Ticker */}
         <ConstructionTicker />
 
-        {/* Main content area */}
-        <div className="flex-1 min-h-0 overflow-hidden flex">
-          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        {/* Main content area with dock spacer */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <main className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : 'pb-0'} transition-all duration-200`}>
             <PermissionGuard>{children}</PermissionGuard>
           </main>
 
@@ -144,9 +142,13 @@ function LayoutContent({ currentPageName, children, dockMode, setDockMode }) {
           )}
         </div>
 
-        {/* Comms Dock Footer — Toggle between Voice and Text */}
-        {isCommsDockOpen && dockMode === 'voice' && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} />}
-        {isCommsDockOpen && dockMode === 'text' && <TextCommsDock isOpen={true} onClose={toggleCommsDock} />}
+        {/* Bottom Comms Dock — Toggle between Voice and Text (fixed, collapsible) */}
+        {isCommsDockOpen && (
+          <div className="fixed bottom-0 left-0 right-0 z-35 border-t border-orange-500/20 bg-zinc-950">
+            {dockMode === 'voice' && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
+            {dockMode === 'text' && <TextCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
+          </div>
+        )}
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
