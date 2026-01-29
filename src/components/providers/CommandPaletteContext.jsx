@@ -252,6 +252,10 @@ export function CommandPaletteProvider({
         onToggleContextPanel?.();
         setIsOpen(false);
       },
+      toggleCommsDock: () => {
+        onToggleCommsDock?.();
+        setIsOpen(false);
+      },
       openAccessRequest: () => {
         onOpenAccessRequest?.();
         setIsOpen(false);
@@ -273,7 +277,7 @@ export function CommandPaletteProvider({
         setIsOpen(false);
       },
     }),
-    [onNavigate, onToggleSidePanel, onToggleContextPanel, onOpenAccessRequest, onTriggerTestAlert, onCopyDiagnostics, onResetUILayout, onReplayBoot]
+    [onNavigate, onToggleSidePanel, onToggleContextPanel, onToggleCommsDock, onOpenAccessRequest, onTriggerTestAlert, onCopyDiagnostics, onResetUILayout, onReplayBoot]
   );
 
   // Build & filter action registry
