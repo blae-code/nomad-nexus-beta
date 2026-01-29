@@ -67,15 +67,18 @@ export default function AccessGate() {
       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%)] bg-[length:40px_40px] opacity-30" />
       
       <div className="relative z-10 max-w-md w-full">
-        <div className="border-2 border-zinc-800 bg-zinc-950/90 backdrop-blur-sm p-8">
+        <div className="border-2 border-orange-500/30 bg-zinc-950/95 backdrop-blur-sm p-8">
           <div className="flex items-center justify-center mb-6">
-            <Shield className="w-16 h-16 text-orange-500" />
+            <div className="relative">
+              <Shield className="w-16 h-16 text-orange-500" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full animate-pulse" />
+            </div>
           </div>
           
-          <h1 className="text-3xl font-black uppercase tracking-wider text-center text-white mb-2">
+          <h1 className="text-3xl font-black uppercase tracking-widest text-center text-white mb-2">
             Access Gate
           </h1>
-          <p className="text-center text-zinc-400 mb-8">Enter your credentials</p>
+          <p className="text-center text-zinc-500 text-xs uppercase tracking-wider font-semibold mb-8">Secure Entry Point / Authorization Required</p>
           
           <div className="space-y-4">
             <Input

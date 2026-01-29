@@ -71,25 +71,25 @@ export default function Header() {
   const commsStatus = readiness.state === 'READY' ? 'Online' : 'Offline';
 
   return (
-    <header className="h-16 bg-zinc-900/80 border-b border-zinc-800 backdrop-blur-sm">
+    <header className="h-16 bg-zinc-950/95 border-b-2 border-zinc-800 backdrop-blur-sm">
       <div className="h-full px-4 flex items-center justify-between gap-4 overflow-hidden">
         {/* Left: Callsign + Badges */}
         <div className="flex items-center gap-3 min-w-0">
           {/* Callsign */}
           <div className="truncate">
-            <h1 className="text-lg font-bold text-white tracking-wider">
+            <h1 className="text-base font-black text-white tracking-widest uppercase">
               {user.callsign || 'Nomad'}
             </h1>
           </div>
 
           {/* Rank Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-xs font-semibold text-orange-400 whitespace-nowrap">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border-2 border-orange-500/50 text-xs font-black text-orange-400 whitespace-nowrap uppercase tracking-wider">
             <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
             {rankLabel}
           </div>
 
           {/* Membership Tag */}
-          <div className="hidden sm:flex items-center px-2.5 py-1 bg-blue-500/15 border border-blue-500/30 rounded-full text-xs font-semibold text-blue-400 whitespace-nowrap">
+          <div className="hidden sm:flex items-center px-3 py-1.5 bg-blue-500/20 border-2 border-blue-500/50 text-xs font-black text-blue-400 whitespace-nowrap uppercase tracking-wider">
             {membershipLabel}
           </div>
 
@@ -111,7 +111,7 @@ export default function Header() {
         {/* Right: Telemetry + Controls + Command Palette */}
         <div className="flex items-center gap-3 ml-auto">
           {/* Telemetry Strip (live data) */}
-            <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r border-zinc-700 pr-4">
+            <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r-2 border-zinc-700 pr-4 font-mono uppercase tracking-wide">
               {activeOp.activeEvent && (
                 <div className="flex items-center gap-1">
                   <span className="text-orange-500">Op:</span>

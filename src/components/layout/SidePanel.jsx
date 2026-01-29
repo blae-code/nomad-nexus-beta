@@ -49,13 +49,13 @@ export default function SidePanel({ currentPageName, onToggleCollapse }) {
 
   return (
     <>
-      <aside className="w-64 bg-zinc-900/50 border-r border-zinc-800 flex flex-col overflow-hidden">
+      <aside className="w-64 bg-zinc-950/95 border-r-2 border-zinc-800 flex flex-col overflow-hidden">
         {/* Header with Collapse Button */}
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Navigation</h2>
+        <div className="p-4 border-b-2 border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Nav / Console</h2>
           <button
             onClick={onToggleCollapse}
-            className="text-zinc-600 hover:text-zinc-300 transition-colors"
+            className="text-zinc-600 hover:text-orange-500 transition-colors"
             title="Collapse navigation"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -64,23 +64,23 @@ export default function SidePanel({ currentPageName, onToggleCollapse }) {
 
         {/* Active Op Tile */}
         {activeOp.activeEvent && (
-          <div className="p-2 border-b border-zinc-800">
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+          <div className="p-2 border-b-2 border-zinc-800">
+            <div className="bg-orange-500/10 border-2 border-orange-500/50 p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-orange-500" />
-                <span className="text-xs font-bold text-orange-400 uppercase tracking-wide">Active Op</span>
+                <Activity className="w-4 h-4 text-orange-500 animate-pulse" />
+                <span className="text-xs font-black text-orange-400 uppercase tracking-widest">Active Mission</span>
               </div>
-              <div className="text-sm font-semibold text-white mb-1 truncate">
+              <div className="text-sm font-bold text-white mb-1 truncate uppercase">
                 {activeOp.activeEvent.title}
               </div>
-              <div className="text-xs text-zinc-400">
-                {activeOp.participants.length} participant{activeOp.participants.length !== 1 ? 's' : ''}
+              <div className="text-xs text-zinc-400 font-semibold">
+                {activeOp.participants.length} PAX
               </div>
               <a
                 href={createPageUrl('Events')}
-                className="mt-2 block text-xs text-orange-400 hover:text-orange-300 transition-colors"
+                className="mt-2 block text-xs text-orange-400 hover:text-orange-300 transition-colors uppercase tracking-wide font-bold"
               >
-                Open Op →
+                View Details →
               </a>
             </div>
           </div>
@@ -95,10 +95,10 @@ export default function SidePanel({ currentPageName, onToggleCollapse }) {
               <a
                 key={item.path}
                 href={createPageUrl(item.path)}
-                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wide transition-all ${
                   isActive
-                    ? 'bg-orange-500/20 text-orange-400 border-l-2 border-orange-500'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300'
+                    ? 'bg-orange-500/20 text-orange-400 border-l-4 border-orange-500'
+                    : 'text-zinc-500 hover:bg-zinc-900/80 hover:text-zinc-300 hover:border-l-4 hover:border-zinc-700'
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />

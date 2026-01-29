@@ -48,10 +48,13 @@ export default function Hub() {
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black uppercase tracking-wider text-white mb-4">
-            Nomad <span className="text-orange-500">Nexus</span>
-          </h1>
-          <p className="text-zinc-400 text-lg">Operational Command Hub</p>
+          <div className="inline-block mb-4 px-6 py-2 border-2 border-orange-500/30 bg-orange-500/5">
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-widest text-white">
+              REDSCAR <span className="text-orange-500">NOMADS</span>
+            </h1>
+          </div>
+          <p className="text-zinc-400 text-sm uppercase tracking-wider font-semibold">Operational Command Hub / Nomad Nexus</p>
+          <div className="mt-4 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -61,16 +64,17 @@ export default function Hub() {
               <a
                 key={item.path}
                 href={createPageUrl(item.path)}
-                className="group relative bg-zinc-900/50 border-2 border-zinc-800 hover:border-orange-500/50 p-6 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/10"
+                className="group relative bg-zinc-950/90 border-2 border-zinc-800 hover:border-orange-500 p-6 transition-all duration-200 hover:bg-zinc-900"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/5 blur-2xl group-hover:bg-orange-500/10 transition-all" />
+                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
+                <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                 
                 <div className="relative">
-                  <Icon className="w-12 h-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-wide">
+                  <Icon className="w-10 h-10 text-orange-500 mb-3 group-hover:scale-110 transition-transform" />
+                  <h3 className="text-lg font-black text-white mb-2 uppercase tracking-wider">
                     {item.name}
                   </h3>
-                  <p className="text-sm text-zinc-400">{item.description}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">{item.description}</p>
                 </div>
               </a>
             );
