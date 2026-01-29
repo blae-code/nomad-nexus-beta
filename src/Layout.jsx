@@ -145,14 +145,6 @@ function LayoutContent({ currentPageName, children }) {
           </div>
         </div>
 
-        {/* Bottom Comms Dock — Toggle between Voice and Text (fixed, collapsible) */}
-        {isCommsDockOpen && (
-          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-orange-500/20 bg-zinc-950">
-            {dockMode === 'voice' && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
-            {dockMode === 'text' && <TextCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
-          </div>
-        )}
-
         {/* Command Palette Modal */}
         <CommandPaletteUI />
       </div>
