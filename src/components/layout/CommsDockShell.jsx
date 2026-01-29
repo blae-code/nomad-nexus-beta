@@ -65,7 +65,12 @@ export default function CommsDockShell({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-96 bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col">
+    <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group" style={{ height: `${dockHeight}px` }}>
+      {/* Resize handle */}
+      <div
+        onMouseDown={() => setIsDragging(true)}
+        className="h-1 bg-gradient-to-r from-transparent via-orange-500/30 to-transparent cursor-ns-resize hover:via-orange-500/60 transition-colors group-hover:h-1.5"
+      />
       {/* Header */}
       <div className="border-b border-orange-500/20 px-6 py-3 flex items-center justify-between bg-zinc-950/80">
         {/* Tab strip */}
