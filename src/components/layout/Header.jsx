@@ -117,13 +117,13 @@ export default function Header() {
         <div className="flex items-center gap-3 min-w-[260px] justify-end">
           {/* Status Indicators */}
           <div className="flex items-center gap-2">
-            {voiceNet.activeNetId && (
+            {voiceNet?.activeNetId && (
               <div className={`flex items-center gap-1.5 px-2 py-1 rounded h-7 ${
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/10 text-green-400' :
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'
               }`}>
                 <Mic className="w-3 h-3" />
-                <span className="text-xs font-mono">{voiceNet.participants.length}</span>
+                <span className="text-xs font-mono">{voiceNet.participants?.length || 0}</span>
               </div>
             )}
             <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 text-zinc-500 rounded h-7">
