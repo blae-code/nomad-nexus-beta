@@ -115,8 +115,10 @@ function LayoutContent({ currentPageName, children }) {
         {/* Header — fixed at top (z-50) */}
         <Header />
 
-        {/* Construction Ticker */}
-        <ConstructionTicker />
+        {/* Construction Ticker — below fixed header */}
+        <div className="relative z-[750] pt-16">
+          <ConstructionTicker />
+        </div>
 
         {/* Main content area — offset for fixed header (pt-16) + dock spacer */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative pt-16">
