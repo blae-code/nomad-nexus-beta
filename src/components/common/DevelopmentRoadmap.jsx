@@ -147,24 +147,20 @@ export default function DevelopmentRoadmap() {
               </div>
 
               {/* Compact Features List */}
-              <div className="flex flex-wrap gap-1.5 p-2">
+              <div className="flex flex-wrap gap-1 px-2 py-1.5">
                 {milestone.features.map((feature) => (
                   <div
                     key={feature.name}
-                    className={`flex items-start gap-2 px-2.5 py-1.5 rounded border transition-colors ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium transition-colors border ${
                       feature.status === 'complete'
-                        ? 'bg-green-500/10 border-green-500/30'
+                        ? 'bg-green-500/15 border-green-500/40 text-green-300'
                         : feature.status === 'in-progress'
-                        ? 'bg-orange-500/10 border-orange-500/30'
-                        : 'bg-zinc-800/20 border-zinc-700/40'
+                        ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
+                        : 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400'
                     }`}
                   >
                     {getStatusIcon(feature.status)}
-                    <div className="flex-1 min-w-0">
-                      <div className={`text-[11px] font-semibold leading-tight ${getStatusColor(feature.status)}`}>
-                        {feature.name}
-                      </div>
-                    </div>
+                    <span className="whitespace-nowrap">{feature.name}</span>
                   </div>
                 ))}
               </div>
