@@ -16,7 +16,7 @@ import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 import { useVoiceHealth, formatHealthState, getHealthColor } from '@/components/voice/health/voiceHealth';
 import { useVoiceNotifications } from '@/components/voice/notifications/voiceNotifications';
-import { FocusedNetConfirmationSheet } from '@/components/voice/components/FocusedNetConfirmation.jsx';
+import { FocusedNetConfirmationSheet } from '@/components/voice/FocusedNetConfirmation';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { createPageUrl } from '@/utils';
 
