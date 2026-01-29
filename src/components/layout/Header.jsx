@@ -102,15 +102,23 @@ export default function Header() {
           )}
           <button
             onClick={openPalette}
-            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/50 via-zinc-900/40 to-zinc-950/50 border border-zinc-800/80 hover:border-transparent hover:bg-gradient-to-r hover:from-zinc-900/70 hover:via-zinc-900/60 hover:to-zinc-900/50 text-zinc-500 hover:text-zinc-200 transition-all duration-200 group rounded-md shadow-md hover:shadow-lg hover:shadow-orange-500/10 relative overflow-hidden before:absolute before:inset-0 before:rounded-md before:p-0.5 before:bg-gradient-to-r before:from-orange-500/0 before:via-orange-400/40 before:to-amber-500/0 before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-200 before:pointer-events-none"
+            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/50 via-zinc-900/40 to-zinc-950/50 border border-orange-500/20 hover:border-orange-500/60 text-zinc-500 hover:text-zinc-100 transition-all duration-300 group rounded-md relative overflow-hidden shadow-lg shadow-orange-500/0 hover:shadow-orange-500/20"
             title="Universal Command Palette — Search, navigate, execute • Ctrl+K or Cmd+K"
           >
-            {/* Animated gradient border glow */}
-            <div className="absolute inset-0.5 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-orange-400/20 to-transparent transition-opacity duration-500 pointer-events-none rounded-sm" />
+            {/* Animated shimmer effect */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-400/30 to-transparent animate-shimmer pointer-events-none" />
+            </div>
+
+            {/* Animated border glow */}
+            <div className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 rounded-md border border-orange-500/40 shadow-inset shadow-orange-400/20 blur-sm" />
+              <div className="absolute inset-0 rounded-md border-2 border-transparent bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 group-hover:animate-pulse" />
+            </div>
             
-            <Command className="w-3.5 h-3.5 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0 relative z-10" />
-            <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-100 min-w-0 truncate relative z-10 flex-1 text-left">Ctrl+K</span>
-            <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-orange-400 transition-all duration-200 flex-shrink-0 relative z-10 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5" />
+            <Command className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-all duration-300 flex-shrink-0 relative z-10 group-hover:scale-110" />
+            <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-100 min-w-0 truncate relative z-10 flex-1 text-left transition-colors duration-300">Ctrl+K</span>
+            <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-orange-400 transition-all duration-300 flex-shrink-0 relative z-10 opacity-0 group-hover:opacity-100 group-hover:translate-x-1" />
           </button>
         </div>
 
