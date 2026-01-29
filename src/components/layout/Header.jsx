@@ -95,8 +95,8 @@ export default function Header() {
         {/* Center: Active Op + Command Palette */}
         <div className="flex-1 min-w-0 flex items-center gap-3">
           {activeEvent && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 rounded border border-orange-500/20 text-xs font-semibold text-orange-300 flex-shrink-0 whitespace-nowrap">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500/15 to-amber-500/15 rounded border border-orange-500/40 text-xs font-semibold text-orange-200 flex-shrink-0 whitespace-nowrap shadow-sm shadow-orange-500/10">
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 animate-pulse" />
               <span className="max-w-[150px] truncate">{activeEvent.title}</span>
             </div>
           )}
