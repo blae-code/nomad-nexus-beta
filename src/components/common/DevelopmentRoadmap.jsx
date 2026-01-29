@@ -138,7 +138,9 @@ export default function DevelopmentRoadmap() {
   };
 
   return (
-    <div className="space-y-2">
+    <>
+      <RoadmapNotificationHandler roadmapMilestones={milestones} />
+      <div className="space-y-2">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between p-2.5 bg-gradient-to-r from-orange-500/10 to-transparent border border-zinc-800/60 rounded hover:border-orange-500/40 transition-colors"
