@@ -75,13 +75,13 @@ export default function Header() {
 
   return (
     <header className="h-14 bg-zinc-950 border-b border-orange-500/20 backdrop-blur-lg">
-      <div className="h-full px-4 flex items-center gap-4">
+      <div className="h-full px-6 flex items-center justify-between gap-6">
         {/* Left: Identity */}
-        <div className="flex items-center gap-2 min-w-[200px]">
-          <div className={`w-1.5 h-8 ${isAdmin ? 'bg-red-500' : 'bg-orange-500'}`} />
-          <div className="flex flex-col leading-none">
-            <span className="text-sm font-black text-white tracking-wider uppercase">{user.callsign || 'Nomad'}</span>
-            <span className={`text-xs font-mono ${isAdmin ? 'text-red-400' : 'text-orange-400'}`}>{rankLabel}</span>
+        <div className="flex items-center gap-3 min-w-[180px]">
+          <div className={`w-1 h-8 ${isAdmin ? 'bg-red-500' : 'bg-orange-500'}`} />
+          <div className="flex flex-col justify-center gap-0.5">
+            <span className="text-sm font-black text-white tracking-wider uppercase leading-none">{user.callsign || 'Nomad'}</span>
+            <span className={`text-[10px] font-mono uppercase ${isAdmin ? 'text-red-400' : 'text-orange-400'} leading-none`}>{rankLabel}</span>
           </div>
         </div>
 
@@ -89,19 +89,19 @@ export default function Header() {
         <div className="flex-1 max-w-3xl">
           <button
             onClick={openPalette}
-            className="w-full flex items-center gap-3 px-3 py-2 bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 text-zinc-500 hover:text-zinc-300 transition-all group"
+            className="w-full h-9 flex items-center gap-3 px-4 bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 text-zinc-500 hover:text-zinc-300 transition-all group rounded"
             title="Command palette • Ctrl+K"
           >
-            <Search className="w-4 h-4 text-zinc-600 group-hover:text-orange-500 transition-colors" />
-            <span className="text-xs font-mono tracking-wider">SEARCH COMMANDS • NAVIGATE • EXECUTE</span>
-            <div className="ml-auto flex items-center gap-3">
+            <Search className="w-4 h-4 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0" />
+            <span className="text-xs font-mono tracking-wider flex-1 text-left">SEARCH COMMANDS • NAVIGATE • EXECUTE</span>
+            <div className="flex items-center gap-3 flex-shrink-0">
               {activeEvent && (
-                <div className="flex items-center gap-1 text-xs font-mono text-orange-400">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-orange-400">
                   <div className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
-                  <span className="max-w-[120px] truncate">{activeEvent.title}</span>
+                  <span className="max-w-[100px] truncate">{activeEvent.title}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-700">
+              <div className="flex items-center gap-1 text-xs font-mono text-zinc-700">
                 <span>{flatActions.length}</span>
               </div>
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-500 border border-zinc-700 rounded">⌘K</kbd>
@@ -110,27 +110,27 @@ export default function Header() {
         </div>
 
         {/* Right: System Status & Controls */}
-        <div className="flex items-center gap-3 min-w-[280px] justify-end">
+        <div className="flex items-center gap-3 min-w-[260px] justify-end">
           {/* Status Indicators */}
-          <div className="flex items-center gap-2 text-xs font-mono">
+          <div className="flex items-center gap-2">
             {voiceNet.activeNetId && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded ${
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded h-7 ${
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/10 text-green-400' :
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'
               }`}>
                 <Mic className="w-3 h-3" />
-                <span>{voiceNet.participants.length}</span>
+                <span className="text-xs font-mono">{voiceNet.participants.length}</span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 text-zinc-500 rounded">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900/50 text-zinc-500 rounded h-7">
               <Users className="w-3 h-3" />
-              <span>{onlineCount}</span>
+              <span className="text-xs font-mono">{onlineCount}</span>
             </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded ${
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded h-7 ${
               isHealthy ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
             }`}>
               {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span>{latencyMs}</span>
+              <span className="text-xs font-mono">{latencyMs}</span>
             </div>
           </div>
 
@@ -142,11 +142,11 @@ export default function Header() {
               size="icon"
               variant="ghost"
               onClick={toggleCommsDock}
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 relative"
+              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 relative rounded"
             >
               <MessageSquare className="w-4 h-4" />
               {unreadByTab.comms > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none">
                   {unreadByTab.comms > 9 ? '9+' : unreadByTab.comms}
                 </span>
               )}
@@ -155,7 +155,7 @@ export default function Header() {
               size="icon"
               variant="ghost"
               onClick={toggleContextPanel}
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10"
+              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded"
             >
               <PanelRight className="w-4 h-4" />
             </Button>
