@@ -108,6 +108,7 @@ function LayoutContent({ currentPageName, children }) {
       onNavigate={handleNavigate}
       onToggleSidePanel={toggleSidePanel}
       onToggleContextPanel={toggleContextPanel}
+      onToggleCommsDock={toggleCommsDock}
       onOpenAccessRequest={handleOpenAccessRequest}
       onTriggerTestAlert={handleTriggerTestAlert}
       onCopyDiagnostics={handleCopyDiagnostics}
