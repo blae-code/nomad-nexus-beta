@@ -4,6 +4,41 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 export default function DevelopmentRoadmap() {
   const [expanded, setExpanded] = useState(false);
+  
+  const featureDescriptions = {
+    'Infrastructure & Database': 'Core backend systems, database schema, and persistence layer for all Nexus data',
+    'Authentication & Access Control': 'Secure login, access tokens, permission management, and role-based entry gates',
+    'Voice Net Architecture': 'LiveKit integration, voice session management, real-time audio streams, and network routing',
+    'Text Comms & Messaging': 'Channel system, message persistence, read states, and real-time comms updates',
+    'Performance Optimization': 'Latency reduction, caching strategies, and network efficiency improvements',
+    'Complete Onboarding Flow': 'Interactive onboarding sequence, tutorial walkthrough, and access code redemption',
+    'Member Profiles & Identity': 'Callsign customization, bio fields, avatar support, and personal identity settings',
+    'Role-based Access Control': 'Granular permission system, rank hierarchy, and feature access gating',
+    'Rank & Membership System': 'Rank progression, membership tiers, and privilege escalation mechanics',
+    'User Directory & Discovery': 'Member search, availability status, and social discovery features',
+    'Event Management & Planning': 'Create/schedule operations, briefing templates, and event lifecycle management',
+    'Tactical Operations Console': 'Real-time op monitoring, participant tracking, and mission control interface',
+    'Squad Formation & Assignment': 'Squad creation, roster management, and dynamic team assignment for ops',
+    'Objective Tracking': 'Mission objectives, sub-task management, and completion status tracking',
+    'Operation Reports & AAR': 'After-action reports, op summaries, and historical operation data',
+    'Voice Analytics & Metrics': 'Voice quality metrics, transmission statistics, and comms health indicators',
+    'Comms Intelligence Dashboard': 'Communication patterns, sentiment analysis, and activity intelligence',
+    'Performance Analysis Tools': 'Latency analysis, throughput metrics, and system performance visualization',
+    'Historical Data & Reporting': 'Long-term data storage, trend analysis, and detailed historical reports',
+    'Production Hardening': 'Security audits, load testing, and production-readiness optimization',
+    'Full Documentation': 'API docs, user guides, admin manuals, and comprehensive feature documentation',
+    'Public Release & Onboarding': 'Production deployment, public accessibility, and launch preparation',
+    'Community Support Launch': 'Support infrastructure, community resources, and user assistance programs',
+  };
+
+  const phaseDescriptions = {
+    'Phase 1': 'Building the foundation: database, auth, voice infrastructure, and core messaging systems',
+    'Phase 2': 'User experience refinement: onboarding, profiles, access control, and membership systems',
+    'Phase 3': 'Operational capabilities: event management, tactical console, squads, and mission tracking',
+    'Phase 4': 'Intelligence layer: analytics dashboards, performance metrics, and historical insights',
+    'Release': 'Final production release: hardening, documentation, and full launch sequence',
+  };
+
   const milestones = [
     {
       phase: 'Phase 1',
