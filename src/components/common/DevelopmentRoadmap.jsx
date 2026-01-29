@@ -153,8 +153,8 @@ export default function DevelopmentRoadmap() {
         <div className="space-y-2">
           {milestones.map((milestone) => {
             const statusIcon = milestone.status === 'complete' ? <CheckCircle2 className="w-3 h-3 text-green-400" /> :
-                              milestone.status === 'in-progress' ? <Zap className="w-3 h-3 text-orange-400" /> :
-                              <Target className="w-3 h-3 text-zinc-500" />;
+                               milestone.status === 'in-progress' ? <Zap className="w-3 h-3 text-yellow-400" /> :
+                               <Target className="w-3 h-3 text-red-400" />;
 
             return (
               <TooltipProvider key={milestone.phase}>
