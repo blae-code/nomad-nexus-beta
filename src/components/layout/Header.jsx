@@ -7,6 +7,7 @@ import { useLatency } from '@/components/hooks/useLatency';
 import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { getRankLabel, getMembershipLabel, getRoleLabel } from '@/components/constants/labels';
 import { Radio, Search, PanelLeft, PanelRight, MessageSquare, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
