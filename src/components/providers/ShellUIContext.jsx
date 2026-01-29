@@ -24,7 +24,12 @@ export function ShellUIProvider({ children }) {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}state`);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setState((prev) => ({ ...prev, ...parsed }));
+        // Ensure isCommsDockOpen defaults to true if not in localStorage
+        setState((prev) => ({
+          ...prev,
+          ...parsed,
+          isCommsDockOpen: parsed.isCommsDockOpen !== undefined ? parsed.isCommsDockOpen : true,
+        }));
       }
     } catch (err) {
       console.warn('Failed to load shell UI state:', err);
