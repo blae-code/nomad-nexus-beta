@@ -28,6 +28,12 @@ export default function Onboarding() {
           return;
         }
         
+        // Admin users skip onboarding
+        if (currentUser.role === 'admin') {
+          window.location.href = createPageUrl('Hub');
+          return;
+        }
+        
         // Check if already onboarded
         const profiles = await base44.entities.MemberProfile.filter({ user_id: currentUser.id });
         if (profiles.length > 0 && profiles[0].onboarding_completed) {

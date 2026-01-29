@@ -15,12 +15,14 @@ export default function Hub() {
           return;
         }
         
-        // Check if onboarding completed
+        // Check if onboarding completed (skip for admin users)
         const user = await base44.auth.me();
-        const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
-        if (profiles.length === 0 || !profiles[0].onboarding_completed) {
-          window.location.href = createPageUrl('Onboarding');
-          return;
+        if (user.role !== 'admin') {
+          const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+          if (profiles.length === 0 || !profiles[0].onboarding_completed) {
+            window.location.href = createPageUrl('Onboarding');
+            return;
+          }
         }
         
         setLoading(false);
