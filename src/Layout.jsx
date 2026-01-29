@@ -127,7 +127,7 @@ function LayoutContent({ currentPageName, children }) {
 
             {/* ContextPanel — right sidebar, collapsible */}
             {isContextPanelOpen && (
-              <div className="border-l border-orange-500/20 flex-shrink-0">
+              <div className="border-l border-orange-500/20 flex-shrink-0 z-[900] relative">
                 <ContextPanel isOpen={true} onClose={toggleContextPanel} />
               </div>
             )}
@@ -136,7 +136,7 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Bottom Text Comms Dock (fixed, collapsible) */}
         {isCommsDockOpen && (
-          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-orange-500/20 bg-zinc-950">
+          <div className="fixed bottom-0 left-0 right-0 z-[700] border-t border-orange-500/20 bg-zinc-950">
             <TextCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
           </div>
         )}

@@ -130,7 +130,7 @@ export default function ContextPanel({ isOpen, onClose }) {
   }
 
   return (
-    <div className="w-80 bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden">
+    <div className="w-80 bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden z-[900] relative">
       {/* Header */}
       <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
         <div>
