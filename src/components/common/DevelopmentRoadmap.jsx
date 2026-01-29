@@ -128,9 +128,9 @@ export default function DevelopmentRoadmap() {
       case 'complete':
         return 'text-green-300';
       case 'in-progress':
-        return 'text-orange-300';
+        return 'text-yellow-300';
       case 'planned':
-        return 'text-zinc-400';
+        return 'text-red-300';
       default:
         return 'text-zinc-500';
     }
