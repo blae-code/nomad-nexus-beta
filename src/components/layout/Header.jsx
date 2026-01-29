@@ -115,26 +115,26 @@ export default function Header() {
           {/* Verse Clock */}
           <VerseClock />
 
-          {/* Status Badges — Hierarchical Display */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Telemetry Chips — Compact */}
+          <div className="flex items-center gap-1 flex-shrink-0">
             {voiceNet?.activeNetId && (
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md h-7 text-xs font-semibold border ${
+              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/15 text-green-300 border-green-500/30' :
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
               }`}>
-                <Mic className="w-3.5 h-3.5" />
-                <span className="font-mono">{voiceNet.participants?.length || 0}</span>
+                <Mic className="w-3 h-3" />
+                <span className="font-mono text-[11px]">{voiceNet.participants?.length || 0}</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800/50 text-zinc-400 rounded-md h-7 text-xs font-semibold border border-zinc-700/50">
-              <Users className="w-3.5 h-3.5" />
-              <span className="font-mono">{onlineCount}</span>
+            <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800/50 text-zinc-400 rounded text-xs font-semibold border border-zinc-700/50 h-7">
+              <Users className="w-3 h-3" />
+              <span className="font-mono text-[11px]">{onlineCount}</span>
             </div>
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md h-7 text-xs font-semibold border ${
+            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
               isHealthy ? 'bg-green-500/15 text-green-300 border-green-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
             }`}>
-              {isHealthy ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-              <span className="font-mono">{latencyMs}ms</span>
+              {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              <span className="font-mono text-[11px]">{latencyMs}ms</span>
             </div>
           </div>
 
