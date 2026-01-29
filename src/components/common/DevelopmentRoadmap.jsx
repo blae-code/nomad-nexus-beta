@@ -196,8 +196,8 @@ export default function DevelopmentRoadmap() {
                                     feature.status === 'complete'
                                       ? 'bg-green-500/15 border-green-500/40 text-green-300'
                                       : feature.status === 'in-progress'
-                                      ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
-                                      : 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400'
+                                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
+                                      : 'bg-red-500/15 border-red-500/40 text-red-300'
                                   }`}
                                 >
                                   {getStatusIcon(feature.status)}
