@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Zap, Users, AlertCircle, X, Radio, MessageSquare } from 'lucide-react';
+import { Zap, Users, AlertCircle, X, Radio, MessageSquare, Activity } from 'lucide-react';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 
