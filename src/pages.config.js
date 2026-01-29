@@ -52,13 +52,13 @@ import CommsConsole from './pages/CommsConsole';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
+import Onboarding from './pages/Onboarding';
 import PageNotFound from './pages/PageNotFound';
 import Recon from './pages/Recon';
 import Settings from './pages/Settings';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import Onboarding from './pages/Onboarding';
 import __Layout from './Layout.jsx';
 
 
@@ -68,13 +68,13 @@ export const PAGES = {
     "Events": Events,
     "FleetManager": FleetManager,
     "Hub": Hub,
+    "Onboarding": Onboarding,
     "PageNotFound": PageNotFound,
     "Recon": Recon,
     "Settings": Settings,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "Onboarding": Onboarding,
 }
 
 export const pagesConfig = {

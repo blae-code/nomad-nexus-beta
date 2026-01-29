@@ -61,21 +61,21 @@ export default function Hub() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+    <div className="h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 overflow-hidden flex flex-col">
       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%)] bg-[length:40px_40px] opacity-30" />
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-12">
-        <div className="text-center mb-16">
-          <div className="inline-block mb-4 px-6 py-2 border-2 border-orange-500/30 bg-orange-500/5">
-            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-widest text-white">
+      <div className="relative z-10 flex-1 flex flex-col px-4 py-6">
+        <div className="text-center mb-6">
+          <div className="inline-block mb-2 px-4 py-1 border-2 border-orange-500/30 bg-orange-500/5">
+            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-white">
               REDSCAR <span className="text-orange-500">NOMADS</span>
             </h1>
           </div>
-          <p className="text-zinc-400 text-sm uppercase tracking-wider font-semibold">Operational Command Hub / Nomad Nexus</p>
-          <div className="mt-4 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+          <p className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Command Hub</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 auto-rows-min">
           {navItems.map((item) => {
             const Icon = item.icon;
             const status = MODULE_STATUS[item.path];
@@ -87,20 +87,17 @@ export default function Hub() {
                   <TooltipTrigger asChild>
                     <a
                       href={createPageUrl(item.path)}
-                      className="group relative bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 hover:bg-zinc-900/50 p-4 transition-all duration-200 rounded overflow-hidden cursor-help"
+                      className="group relative bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 hover:bg-zinc-900/50 p-2 transition-all duration-200 rounded overflow-hidden cursor-help"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                      <div className="relative flex flex-col items-center text-center gap-2">
-                        <div className="p-2 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
-                          <Icon className="w-5 h-5 text-orange-500" />
+                      <div className="relative flex flex-col items-center text-center gap-1">
+                        <div className="p-1.5 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
+                          <Icon className="w-4 h-4 text-orange-500" />
                         </div>
-                        <div>
-                          <h3 className="text-xs font-black text-white uppercase tracking-wider leading-tight mb-1">
-                            {item.name}
-                          </h3>
-                          <p className="text-[10px] text-zinc-600 uppercase tracking-wide font-medium leading-tight">{item.description}</p>
-                        </div>
+                        <h3 className="text-[10px] font-bold text-white uppercase tracking-wider leading-tight">
+                          {item.name}
+                        </h3>
                       </div>
                     </a>
                   </TooltipTrigger>
@@ -150,12 +147,13 @@ export default function Hub() {
                       </div>
                     </TooltipContent>
                   )}
-                </Tooltip>
-              </TooltipProvider>
-            );
-            })}
-        </div>
-      </div>
-    </div>
-  );
+                  </Tooltip>
+                  </TooltipProvider>
+                  );
+                  })}
+                  </div>
+                  </div>
+                  </div>
+                  </div>
+                  );
 }
