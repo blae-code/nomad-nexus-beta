@@ -122,23 +122,23 @@ export default function Header() {
           {/* Telemetry Chips — Compact */}
           <div className="flex items-center gap-1 flex-shrink-0">
             {voiceNet?.activeNetId && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/15 text-green-300 border-green-500/30' :
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
+              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 shadow-sm ${
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-200 border-green-500/50' :
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-200 border-orange-500/50' : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-200 border-red-500/50'
               }`}>
                 <Mic className="w-3 h-3" />
-                <span className="font-mono text-[11px]">{voiceNet.participants?.length || 0}</span>
+                <span className="font-mono text-[11px] font-semibold">{voiceNet.participants?.length || 0}</span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800/50 text-zinc-400 rounded text-xs font-semibold border border-zinc-700/50 h-7">
+            <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-200 rounded text-xs font-semibold border border-cyan-500/40 h-7 shadow-sm shadow-cyan-500/10">
               <Users className="w-3 h-3" />
-              <span className="font-mono text-[11px]">{onlineCount}</span>
+              <span className="font-mono text-[11px] font-semibold">{onlineCount}</span>
             </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
-              isHealthy ? 'bg-green-500/15 text-green-300 border-green-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
+            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 shadow-sm ${
+              isHealthy ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-200 border-green-500/50' : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-200 border-red-500/50'
             }`}>
               {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span className="font-mono text-[11px]">{latencyMs}ms</span>
+              <span className="font-mono text-[11px] font-semibold">{latencyMs}ms</span>
             </div>
           </div>
 
