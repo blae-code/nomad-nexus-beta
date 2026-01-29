@@ -83,7 +83,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="account" className="w-full">
-        <TabsList className="grid w-full mb-6" style={{ gridTemplateColumns: `repeat(${isAdmin ? 6 : 3}, minmax(0, 1fr))` }}>
+        <TabsList className={`grid w-full mb-6 ${isAdmin ? 'grid-cols-6' : 'grid-cols-3'}`}>
           <TabsTrigger value="account">My Account</TabsTrigger>
           <TabsTrigger value="workspace">Workspace</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
