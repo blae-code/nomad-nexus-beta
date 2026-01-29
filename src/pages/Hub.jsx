@@ -170,13 +170,15 @@ export default function Hub() {
                   );
                   })}
                   </div>
+            </div>
+          </div>
 
-                  {/* Development Roadmap Section */}
-                  <div className="mt-12 pt-8 border-t border-orange-500/20">
-                    <DevelopmentRoadmap />
-                  </div>
-                  </div>
-                  </div>
-                  </div>
-                  );
+          {/* Development Roadmap Section */}
+          <div className="px-2">
+            <DevelopmentRoadmap />
+          </div>
+          </div>
+        </div>
+      </div>
+    );
 }
