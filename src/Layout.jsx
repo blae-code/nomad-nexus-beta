@@ -16,8 +16,8 @@ import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
 import CommsDockShell from '@/components/layout/CommsDockShell';
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
-import BootOverlay, { useBootOverlay } from '@/components/common/BootOverlay';
-import { initScrollGuards } from '@/components/utils/scrollGuards';
+import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
+import { initScrollGuard } from '@/components/utils/scrollGuard';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -62,9 +62,9 @@ function LayoutContent({ currentPageName, children }) {
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
-  // Initialize scroll guards
+  // Initialize scroll guard
   React.useEffect(() => {
-    initScrollGuards();
+    initScrollGuard();
   }, []);
 
   const handleNavigate = (page) => {
@@ -84,10 +84,8 @@ function LayoutContent({ currentPageName, children }) {
   };
 
   const handleCopyDiagnostics = () => {
-    // Trigger copy diagnostics from ContextPanel
-    // This is a pass-through; actual implementation in ContextPanel
-    const event = new CustomEvent('copy-diagnostics');
-    window.dispatchEvent(event);
+    // Trigger copy from ContextPanel (via event or ref)
+    window.dispatchEvent(new CustomEvent('nexus:copy-diagnostics'));
   };
 
   const handleResetUILayout = () => {
@@ -99,6 +97,10 @@ function LayoutContent({ currentPageName, children }) {
     }
   };
 
+  const handleReplayBoot = () => {
+    bootOverlay.replay();
+  };
+
   return (
     <CommandPaletteProvider
       onNavigate={handleNavigate}
@@ -106,14 +108,13 @@ function LayoutContent({ currentPageName, children }) {
       onToggleContextPanel={toggleContextPanel}
       onOpenAccessRequest={handleOpenAccessRequest}
       onTriggerTestAlert={handleTriggerTestAlert}
-      onReplayBootSequence={bootOverlay.replay}
       onCopyDiagnostics={handleCopyDiagnostics}
       onResetUILayout={handleResetUILayout}
+      onReplayBoot={handleReplayBoot}
     >
+      {/* Boot Overlay */}
+      <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
       <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
-        {/* Boot Overlay */}
-        <BootOverlay isOpen={bootOverlay.shouldShow} onDismiss={bootOverlay.dismiss} />
-
         {/* Notification Center */}
         <NotificationCenter />
 

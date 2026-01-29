@@ -26,29 +26,29 @@ const CommandPaletteContext = createContext(null);
  */
 const createActionRegistry = (user, callbacks) => {
   return [
-    // Diagnostics: Copy
+    // Diagnostics: Copy diagnostics
     {
       id: 'diagnostics:copy',
       label: 'Copy Diagnostics',
       category: 'Diagnostics',
-      description: 'Copy system diagnostic data to clipboard',
+      description: 'Copy system diagnostics to clipboard',
       onExecute: () => callbacks.copyDiagnostics?.(),
     },
-    // Diagnostics: Reset UI Layout
+    // Diagnostics: Reset UI layout
     {
       id: 'diagnostics:reset-ui',
       label: 'Reset UI Layout',
       category: 'Diagnostics',
-      description: 'Clear panel positions and reload',
+      description: 'Reset panel positions and reload',
       onExecute: () => callbacks.resetUILayout?.(),
     },
-    // Boot: Replay sequence
+    // Boot: Replay boot sequence
     {
       id: 'boot:replay',
       label: 'Replay Boot Sequence',
       category: 'System',
-      description: 'Show boot ritual animation',
-      onExecute: () => callbacks.replayBootSequence?.(),
+      description: 'Show startup animation',
+      onExecute: () => callbacks.replayBoot?.(),
     },
     // Toggle: SidePanel
     {
@@ -163,9 +163,9 @@ export function CommandPaletteProvider({
   onToggleContextPanel, 
   onOpenAccessRequest, 
   onTriggerTestAlert,
-  onReplayBootSequence,
   onCopyDiagnostics,
-  onResetUILayout
+  onResetUILayout,
+  onReplayBoot,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -193,10 +193,6 @@ export function CommandPaletteProvider({
         onTriggerTestAlert?.(type);
         setIsOpen(false);
       },
-      replayBootSequence: () => {
-        onReplayBootSequence?.();
-        setIsOpen(false);
-      },
       copyDiagnostics: () => {
         onCopyDiagnostics?.();
         setIsOpen(false);
@@ -205,8 +201,12 @@ export function CommandPaletteProvider({
         onResetUILayout?.();
         setIsOpen(false);
       },
+      replayBoot: () => {
+        onReplayBoot?.();
+        setIsOpen(false);
+      },
     }),
-    [onNavigate, onToggleSidePanel, onToggleContextPanel, onOpenAccessRequest, onTriggerTestAlert, onReplayBootSequence, onCopyDiagnostics, onResetUILayout]
+    [onNavigate, onToggleSidePanel, onToggleContextPanel, onOpenAccessRequest, onTriggerTestAlert, onCopyDiagnostics, onResetUILayout, onReplayBoot]
   );
 
   // Build & filter action registry
