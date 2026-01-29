@@ -75,17 +75,26 @@ export default function Hub() {
 
   return (
     <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto space-y-6">
-      {/* Command Center Header */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black uppercase tracking-widest text-white">
-             Development <span className="text-orange-500">Hub</span>
-            </h1>
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Module Status & Navigation</p>
-          </div>
-          {/* Status Indicators */}
-          <div className="flex items-center gap-4">
+      {/* System Banner */}
+       <div className="px-4 py-3 rounded-lg bg-gradient-to-r from-orange-500/20 via-orange-500/10 to-transparent border border-orange-500/30 flex items-start gap-3">
+         <Zap className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+         <div className="flex-1 min-w-0">
+           <div className="text-sm font-semibold text-orange-300 uppercase tracking-wider">Development Platform Active</div>
+           <p className="text-xs text-orange-200/80 mt-0.5">Voice comms operational • Text channels live • Operations system ready</p>
+         </div>
+       </div>
+
+       {/* Command Center Header */}
+       <div className="space-y-4">
+         <div className="flex items-center justify-between">
+           <div>
+             <h1 className="text-2xl font-black uppercase tracking-widest text-white">
+              Development <span className="text-orange-500">Hub</span>
+             </h1>
+             <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Module Status & Navigation</p>
+           </div>
+           {/* Status Indicators */}
+           <div className="flex items-center gap-4">
             {activeOp?.activeEvent && (
               <div className="text-right">
                 <div className="text-xs text-zinc-400">ACTIVE OP</div>
