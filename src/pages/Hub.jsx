@@ -68,24 +68,27 @@ export default function Hub() {
           <div className="mt-4 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <a
                 key={item.path}
                 href={createPageUrl(item.path)}
-                className="group relative bg-zinc-950/90 border-2 border-zinc-800 hover:border-orange-500 p-6 transition-all duration-200 hover:bg-zinc-900"
+                className="group relative bg-zinc-900/30 border border-zinc-800/50 hover:border-orange-500/50 hover:bg-zinc-900/50 p-4 transition-all duration-200 rounded overflow-hidden"
               >
-                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 transform scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
-                <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 
-                <div className="relative">
-                  <Icon className="w-10 h-10 text-orange-500 mb-3 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-lg font-black text-white mb-2 uppercase tracking-wider">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">{item.description}</p>
+                <div className="relative flex flex-col items-center text-center gap-2">
+                  <div className="p-2 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
+                    <Icon className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-white uppercase tracking-wider leading-tight mb-1">
+                      {item.name}
+                    </h3>
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-wide font-medium leading-tight">{item.description}</p>
+                  </div>
                 </div>
               </a>
             );
