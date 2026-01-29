@@ -39,6 +39,10 @@ export default function SidePanel({ currentPageName, onToggleCollapse }) {
     { name: 'Treasury', path: 'Treasury', icon: DollarSign, requiresAuth: false },
     { name: 'Settings', path: 'Settings', icon: Settings, requiresAuth: false },
     { name: 'Recon', path: 'Recon', icon: Archive, requiresAuth: false },
+    // ADMIN ONLY
+    ...(user?.role === 'admin' ? [
+      { name: 'System Admin', path: 'SystemAdmin', icon: Settings, requiresAuth: true },
+    ] : []),
   ];
 
   // Focused Comms gate
