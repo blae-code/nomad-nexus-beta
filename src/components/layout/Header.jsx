@@ -116,7 +116,7 @@ export default function Header() {
         </div>
 
         {/* Right: System Status & Controls */}
-        <div className="flex items-center gap-3 min-w-[260px] justify-end">
+        <div className="flex items-center gap-3 min-w-[240px] justify-end flex-shrink-0 overflow-hidden">
           {/* Verse Clock */}
           <VerseClock />
 
