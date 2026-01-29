@@ -15,6 +15,7 @@ import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
 import CommsDockShell from '@/components/layout/CommsDockShell';
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
+import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -41,9 +42,11 @@ export default function Layout({ children, currentPageName }) {
   return (
     <NotificationProvider>
       <ShellUIProvider>
-        <VoiceNetProvider>
-          <LayoutContent currentPageName={currentPageName} children={children} />
-        </VoiceNetProvider>
+        <ActiveOpProvider>
+          <VoiceNetProvider>
+            <LayoutContent currentPageName={currentPageName} children={children} />
+          </VoiceNetProvider>
+        </ActiveOpProvider>
       </ShellUIProvider>
     </NotificationProvider>
   );
