@@ -63,9 +63,11 @@ export default function Header() {
     );
   }
 
-  const rankLabel = getRankLabel(user.rank);
-  const membershipLabel = getMembershipLabel(user.membership);
-  const roleLabels = (user.roles || []).map(getRoleLabel);
+  // Admin users have special display
+  const isAdmin = user.role === 'admin';
+  const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank);
+  const membershipLabel = isAdmin ? 'Administrator' : getMembershipLabel(user.membership);
+  const roleLabels = isAdmin ? [] : (user.roles || []).map(getRoleLabel);
 
   // Derive comms status from readiness
   const commsStatus = readiness.state === 'READY' ? 'Online' : 'Offline';
@@ -83,15 +85,21 @@ export default function Header() {
           </div>
 
           {/* Rank Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border-2 border-orange-500/50 text-xs font-black text-orange-400 whitespace-nowrap uppercase tracking-wider">
-            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+          <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 border-2 text-xs font-black whitespace-nowrap uppercase tracking-wider ${
+            isAdmin 
+              ? 'bg-red-500/20 border-red-500/50 text-red-400'
+              : 'bg-orange-500/20 border-orange-500/50 text-orange-400'
+          }`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${isAdmin ? 'bg-red-500' : 'bg-orange-500'}`} />
             {rankLabel}
           </div>
 
           {/* Membership Tag */}
-          <div className="hidden sm:flex items-center px-3 py-1.5 bg-blue-500/20 border-2 border-blue-500/50 text-xs font-black text-blue-400 whitespace-nowrap uppercase tracking-wider">
-            {membershipLabel}
-          </div>
+          {!isAdmin && (
+            <div className="hidden sm:flex items-center px-3 py-1.5 bg-blue-500/20 border-2 border-blue-500/50 text-xs font-black text-blue-400 whitespace-nowrap uppercase tracking-wider">
+              {membershipLabel}
+            </div>
+          )}
 
           {/* Role Pills */}
           {roleLabels.length > 0 && (
