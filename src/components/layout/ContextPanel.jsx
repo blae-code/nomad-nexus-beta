@@ -532,9 +532,9 @@ export default function ContextPanel({ isOpen, onClose }) {
             </div>
           </div>
         )}
-            </div>
+        </div>
 
-            {/* Focused Net Confirmation Modal */}
+        {/* Focused Net Confirmation Modal */}
             {voiceNet.focusedConfirmation?.needsConfirmation && (
             <FocusedNetConfirmationSheet
             onConfirm={() => {
