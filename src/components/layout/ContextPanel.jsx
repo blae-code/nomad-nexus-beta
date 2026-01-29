@@ -152,7 +152,7 @@ export default function ContextPanel({ isOpen, onClose }) {
         {/* Active Op Section */}
         <SectionHeader
           icon={<Activity className="w-4 h-4" />}
-          label={activeOp.activeEvent ? `Active Op` : 'No Active Op'}
+          label={activeOp.activeEvent ? `Active Op: ${activeOp.activeEvent.title}` : 'No Active Operation'}
           sectionKey="activeOp"
           expanded={expandedSections.activeOp}
           onToggle={toggleSection}
@@ -231,8 +231,10 @@ export default function ContextPanel({ isOpen, onClose }) {
                 </Button>
               </>
             ) : (
-              <div className="text-zinc-500 text-xs">
-                No active operation. Go to Events to activate one.
+              <div className="text-zinc-600 text-xs py-3 text-center">
+                <div className="text-[10px] opacity-50 mb-1">—</div>
+                <p>No operation active.</p>
+                <p>Go to <span className="text-orange-400">Events</span> to launch one.</p>
               </div>
             )}
           </div>
@@ -286,16 +288,16 @@ export default function ContextPanel({ isOpen, onClose }) {
         {/* Riggsy / AI Section */}
         <SectionHeader
           icon={<Radio className="w-4 h-4" />}
-          label="Riggsy"
+          label="Riggsy AI"
           sectionKey="riggsy"
           expanded={expandedSections.riggsy}
           onToggle={toggleSection}
         />
         {expandedSections.riggsy && (
-          <div className="px-4 py-3 text-xs text-zinc-400 animate-in fade-in duration-200">
-            <Button size="sm" variant="outline" className="w-full text-xs" disabled>
-              Ask Riggsy
-            </Button>
+          <div className="px-4 py-3 text-xs text-zinc-500 animate-in fade-in duration-200 text-center">
+            <div className="text-[10px] opacity-50 mb-2">🤖</div>
+            <div className="text-xs">AI Assistant</div>
+            <div className="text-[10px] text-zinc-600 mt-1">(In development)</div>
           </div>
         )}
 
