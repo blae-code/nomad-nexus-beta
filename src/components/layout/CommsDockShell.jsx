@@ -6,9 +6,9 @@
 import React, { useEffect } from 'react';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
-import CommsTab from '@/components/comms/CommsTab';
+import CommsTabEnhanced from '@/components/comms/CommsTabEnhanced';
 import { seedDemoMessages } from '@/components/services/commsService';
-import { X, Minimize2 } from 'lucide-react';
+import { X, Minimize2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const TAB_ITEMS = [
@@ -33,9 +33,9 @@ export default function CommsDockShell({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-64 bg-zinc-900/95 border-t border-zinc-800 backdrop-blur-sm flex flex-col">
+    <div className="fixed bottom-0 left-0 right-0 h-64 bg-zinc-900/95 border-t border-orange-500/20 backdrop-blur-sm flex flex-col">
       {/* Header */}
-      <div className="border-b border-zinc-800 px-4 py-2 flex items-center justify-between">
+      <div className="border-b border-orange-500/20 px-4 py-2 flex items-center justify-between bg-gradient-to-r from-zinc-900/50 to-transparent">
         {/* Tab strip */}
         <div className="flex gap-2">
           {TAB_ITEMS.map((tab) => (
@@ -85,7 +85,7 @@ export default function CommsDockShell({ isOpen, onClose }) {
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'comms' && (
-          <CommsTab
+          <CommsTabEnhanced
             user={user}
             channels={channels}
             unreadCounts={unreadByChannel}
