@@ -72,7 +72,7 @@ export default function Hub() {
               REDSCAR <span className="text-orange-500">NOMADS</span>
             </h1>
           </div>
-          <p className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Command Hub</p>
+          <p className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Development Hub</p>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-8">
