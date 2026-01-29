@@ -96,7 +96,7 @@ export default function CommsDockShell({ isOpen, onClose }) {
               }`}
             >
               {TabIcon && <TabIcon className="w-3.5 h-3.5" />}
-              {tab.label}
+              <span>{tab.label}</span>
               {unreadByTab[tab.id] > 0 && (
                 <span className="ml-1 h-5 w-5 bg-orange-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                   {unreadByTab[tab.id]}
