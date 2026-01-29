@@ -11,6 +11,7 @@ import MockVoiceTransport from './transport/MockVoiceTransport';
 import { LiveKitTransport } from './transport/LiveKitTransport';
 import * as voiceService from '@/components/services/voiceService';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
+import { useFocusedConfirmation } from './components/FocusedNetConfirmation';
 
 const VoiceNetContext = createContext(null);
 
@@ -28,6 +29,8 @@ export function VoiceNetProvider({ children }) {
   const speakingTimeoutRef = useRef(null);
   const liveKitTokenRef = useRef(null);
   const [useRealTransport, setUseRealTransport] = useState(false);
+  
+  const focusedConfirmation = useFocusedConfirmation();
 
   // Initialize transport
   useEffect(() => {
@@ -69,6 +72,15 @@ export function VoiceNetProvider({ children }) {
       setConnectionState(VOICE_CONNECTION_STATE.ERROR);
     });
 
+    transportRef.current.on('reconnecting', () => {
+      setConnectionState(VOICE_CONNECTION_STATE.RECONNECTING);
+    });
+
+    transportRef.current.on('reconnected', () => {
+      setConnectionState(VOICE_CONNECTION_STATE.CONNECTED);
+      setError(null);
+    });
+
     return () => {
       if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
       if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
@@ -81,6 +93,12 @@ export function VoiceNetProvider({ children }) {
     if (!net) {
       setError('Net not found');
       return;
+    }
+
+    // Check if focused confirmation needed
+    if (focusedConfirmation.checkNeedConfirmation(net)) {
+      focusedConfirmation.requestConfirmation(netId);
+      return; // Wait for confirmation
     }
 
     // Check access
@@ -105,6 +123,7 @@ export function VoiceNetProvider({ children }) {
           userId: user.id,
           callsign: user.callsign || 'Unknown',
           clientId: `client-${user.id}-${Date.now()}`,
+          netType: net.type,
         });
 
         if (tokenResp.data.error === 'VOICE_NOT_CONFIGURED') {
@@ -170,7 +189,7 @@ export function VoiceNetProvider({ children }) {
       setError(err.message);
       setConnectionState(VOICE_CONNECTION_STATE.ERROR);
     }
-  }, [activeNetId]);
+  }, [activeNetId, focusedConfirmation]);
 
   const leaveNet = useCallback(async () => {
     if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
@@ -220,6 +239,7 @@ export function VoiceNetProvider({ children }) {
     togglePTT,
     setMicEnabled: handleSetMicEnabled,
     voiceNets: DEFAULT_VOICE_NETS,
+    focusedConfirmation,
   };
 
   return (
