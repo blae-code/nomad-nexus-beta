@@ -43,12 +43,14 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  const [dockMode, setDockMode] = React.useState('voice'); // 'voice' or 'text'
+
   return (
     <NotificationProvider>
       <ShellUIProvider>
         <ActiveOpProvider>
           <VoiceNetProvider>
-            <LayoutContent currentPageName={currentPageName} children={children} />
+            <LayoutContent currentPageName={currentPageName} children={children} dockMode={dockMode} setDockMode={setDockMode} />
           </VoiceNetProvider>
         </ActiveOpProvider>
       </ShellUIProvider>
