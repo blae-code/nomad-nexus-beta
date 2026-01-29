@@ -12,7 +12,7 @@ const STORAGE_KEY = 'nexus.ops.activeEventId';
 
 export function ActiveOpProvider({ children }) {
   const [activeEventId, setActiveEventIdState] = useState(null);
-  const [activeEvent, setActiveEvent] = useState(null);
+  const [activeEvent, setActiveEventState] = useState(null);
   const [binding, setBinding] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ export function ActiveOpProvider({ children }) {
   // Load active event data when activeEventId changes
   useEffect(() => {
     if (!activeEventId) {
-      setActiveEvent(null);
+      setActiveEventState(null);
       setBinding(null);
       setParticipants([]);
       return;
@@ -44,7 +44,7 @@ export function ActiveOpProvider({ children }) {
         const eventData = event.find((e) => e.id === activeEventId);
         
         if (!mounted) return;
-        setActiveEvent(eventData || null);
+        setActiveEventState(eventData || null);
 
         if (!eventData) {
           // Event no longer exists
@@ -66,7 +66,7 @@ export function ActiveOpProvider({ children }) {
       } catch (error) {
         console.error('Failed to load active op:', error);
         if (mounted) {
-          setActiveEvent(null);
+          setActiveEventState(null);
           setBinding(null);
           setParticipants([]);
         }
@@ -93,7 +93,7 @@ export function ActiveOpProvider({ children }) {
   const clearActiveEvent = useCallback(() => {
     setActiveEventIdState(null);
     localStorage.removeItem(STORAGE_KEY);
-    setActiveEvent(null);
+    setActiveEventState(null);
     setBinding(null);
     setParticipants([]);
   }, []);
