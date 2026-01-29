@@ -114,11 +114,11 @@ export default function CommsDockShell({ isOpen, onClose }) {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => {}}
+            onClick={() => setIsMinimized(!isMinimized)}
             className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10"
-            title="Minimize"
+            title={isMinimized ? 'Expand' : 'Minimize'}
           >
-            <Minimize2 className="w-4 h-4" />
+            <Minimize2 className="w-4 h-4" style={{ transform: isMinimized ? 'scaleY(-1)' : 'none' }} />
           </Button>
           <Button
             size="icon"
