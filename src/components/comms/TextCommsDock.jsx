@@ -128,7 +128,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   if (!isOpen) return null;
 
   return (
-    <div className="bg-zinc-950 border-t border-orange-500/20 flex flex-col h-96 flex-shrink-0 shadow-2xl z-[700] relative">
+    <div className="bg-zinc-950 border-t border-orange-500/20 flex flex-col h-96 flex-shrink-0 shadow-2xl z-[600] relative">
       {/* Header — Unified styling */}
       <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
         <div className="flex items-center gap-2">
