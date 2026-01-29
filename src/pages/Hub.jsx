@@ -14,6 +14,15 @@ export default function Hub() {
           window.location.href = createPageUrl('AccessGate');
           return;
         }
+        
+        // Check if onboarding completed
+        const user = await base44.auth.me();
+        const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+        if (profiles.length === 0 || !profiles[0].onboarding_completed) {
+          window.location.href = createPageUrl('Onboarding');
+          return;
+        }
+        
         setLoading(false);
       } catch (error) {
         window.location.href = createPageUrl('AccessGate');

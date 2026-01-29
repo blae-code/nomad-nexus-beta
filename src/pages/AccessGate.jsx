@@ -41,7 +41,7 @@ export default function AccessGate() {
       if (response?.data?.success) {
         setMessage('Access granted! Redirecting...');
         setTimeout(() => {
-          window.location.href = createPageUrl('Hub');
+          window.location.href = createPageUrl('Onboarding');
         }, 1500);
       } else {
         setMessage(response?.data?.message || 'Invalid credentials');
