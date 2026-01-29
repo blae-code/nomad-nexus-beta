@@ -8,6 +8,7 @@ import { useShellUI } from '@/components/providers/ShellUIContext';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
+import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
