@@ -138,13 +138,13 @@ export const MODULE_STATUS = {
   },
   Settings: {
     name: 'System Admin',
-    completed: 50,
+    completed: 100,
     features: [
       { name: 'User Management', status: 'complete' },
-      { name: 'System Configuration', status: 'in-progress' },
-      { name: 'Audit Logging', status: 'complete' },
-      { name: 'Role Management', status: 'in-progress' },
-      { name: 'Backups & Recovery', status: 'planned' },
+      { name: 'Access Key Manager', status: 'complete' },
+      { name: 'Data Validation', status: 'complete' },
+      { name: 'Diagnostics Bundle', status: 'complete' },
+      { name: 'Immersive Seed & Factory Reset', status: 'complete' },
     ],
   },
   QAConsole: {
