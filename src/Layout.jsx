@@ -127,30 +127,24 @@ function LayoutContent({ currentPageName, children }) {
         {/* Construction Ticker */}
         <ConstructionTicker />
 
-        {/* Main layout: content area (flex-1) + dock (flex-shrink-0) */}
-        <div className="flex flex-1 overflow-hidden flex-col relative z-20">
-          {/* Main content + context panel — flex-1 to fill available space */}
-          <div className="flex flex-1 overflow-hidden">
-            {/* Main content */}
-            <main className="flex-1 overflow-y-auto overflow-x-hidden">
-              <PermissionGuard>{children}</PermissionGuard>
-            </main>
+        {/* Main content area */}
+        <div className="flex-1 overflow-hidden flex">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <PermissionGuard>{children}</PermissionGuard>
+          </main>
 
-            {/* ContextPanel — right sidebar, collapsible (z-30) */}
-            {isContextPanelOpen && (
-              <div className="relative z-30 border-l border-orange-500/20">
-                <ContextPanel isOpen={true} onClose={toggleContextPanel} />
-              </div>
-            )}
-          </div>
-
-          {/* Comms Dock Footer — flex-shrink-0, always takes fixed height */}
-          {isCommsDockOpen && (
-            <div className="flex-shrink-0">
-              <CommsDockShell isOpen={true} onClose={toggleCommsDock} />
+          {/* ContextPanel — right sidebar, collapsible */}
+          {isContextPanelOpen && (
+            <div className="border-l border-orange-500/20">
+              <ContextPanel isOpen={true} onClose={toggleContextPanel} />
             </div>
           )}
         </div>
+
+        {/* Comms Dock Footer — fixed at bottom */}
+        {isCommsDockOpen && (
+          <CommsDockShell isOpen={true} onClose={toggleCommsDock} />
+        )}
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
