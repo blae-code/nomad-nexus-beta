@@ -78,7 +78,7 @@ export default function CommandPaletteUI() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-start justify-center pt-16 z-50 p-4"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center pt-24 z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           closePalette();
@@ -87,25 +87,26 @@ export default function CommandPaletteUI() {
     >
       <div
         ref={modalRef}
-        className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden"
+        className="bg-zinc-950 border-2 border-orange-500/30 rounded-lg shadow-2xl shadow-orange-500/10 w-full max-w-3xl overflow-hidden"
       >
         {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center gap-3 px-5 py-4 border-b-2 border-zinc-800 bg-zinc-900/50">
+          <div className="w-1 h-6 bg-orange-500" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search commands..."
+            placeholder="Type a command or search..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-white text-lg outline-none placeholder:text-zinc-600"
+            className="flex-1 bg-transparent text-white text-base font-mono tracking-wide outline-none placeholder:text-zinc-600"
           />
           <button
             onClick={closePalette}
-            className="text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="text-zinc-600 hover:text-orange-400 transition-colors p-1"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
@@ -113,13 +114,15 @@ export default function CommandPaletteUI() {
         </div>
 
         {/* Results */}
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-[500px] overflow-y-auto">
           {flatActions.length === 0 ? (
-            <div className="px-4 py-8 text-center text-zinc-500">No commands found</div>
+            <div className="px-5 py-12 text-center text-zinc-600 font-mono text-sm">
+              NO COMMANDS FOUND
+            </div>
           ) : (
             Object.entries(groupedActions).map(([category, actions]) => (
               <div key={category}>
-                <div className="px-4 py-2 text-xs font-semibold text-zinc-600 uppercase tracking-wider bg-zinc-800/30">
+                <div className="px-5 py-2 text-xs font-black text-orange-500/70 uppercase tracking-widest bg-zinc-900/30 border-b border-zinc-800/50">
                   {category}
                 </div>
                 {actions.map((action, idx) => {
@@ -133,15 +136,15 @@ export default function CommandPaletteUI() {
                         action.onExecute();
                         closePalette();
                       }}
-                      className={`w-full text-left px-4 py-3 transition-colors ${
+                      className={`w-full text-left px-5 py-3 transition-all duration-150 border-l-4 ${
                         isSelected
-                          ? 'bg-orange-500/20 text-orange-400'
-                          : 'hover:bg-zinc-800/50 text-zinc-300'
+                          ? 'bg-orange-500/20 border-orange-500 text-white'
+                          : 'hover:bg-zinc-900/50 border-transparent text-zinc-300 hover:border-zinc-700'
                       }`}
                     >
-                      <div className="font-medium">{action.label}</div>
+                      <div className="font-semibold tracking-wide">{action.label}</div>
                       {action.description && (
-                        <div className="text-xs text-zinc-500 mt-1">{action.description}</div>
+                        <div className="text-xs text-zinc-500 mt-1 font-mono">{action.description}</div>
                       )}
                     </button>
                   );
@@ -152,9 +155,9 @@ export default function CommandPaletteUI() {
         </div>
 
         {/* Footer Hint */}
-        <div className="px-4 py-2 border-t border-zinc-800 bg-zinc-800/20 text-xs text-zinc-600 flex justify-between">
-          <span>↑↓ to navigate • ⏎ to execute • Esc to close</span>
-          <span className="hidden sm:inline">Ctrl+K to reopen</span>
+        <div className="px-5 py-3 border-t-2 border-zinc-800 bg-zinc-900/30 text-xs text-zinc-600 flex justify-between font-mono">
+          <span>↑↓ navigate • ⏎ execute • ESC close</span>
+          <span className="hidden sm:inline text-zinc-700">⌘K / CTRL+K</span>
         </div>
       </div>
     </div>
