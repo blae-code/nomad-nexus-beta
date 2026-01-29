@@ -60,7 +60,7 @@ function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
 
-  const { isSidePanelOpen, isContextPanelOpen, isCommsDockOpen, dockMode, dockMinimized, toggleSidePanel, toggleContextPanel, toggleCommsDock, setDockMode, setDockMinimized } = useShellUI();
+  const { isContextPanelOpen, isCommsDockOpen, dockMode, dockMinimized, toggleContextPanel, toggleCommsDock, setDockMode, setDockMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
