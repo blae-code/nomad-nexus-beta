@@ -8,6 +8,7 @@ import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
 import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock, Mic, Activity, ExternalLink, Copy, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/common/UIStates';
 import { APP_VERSION, APP_BUILD_PHASE, APP_BUILD_DATE } from '@/components/constants/appVersion';
 import { useShellUI } from '@/components/providers/ShellUIContext';
 import { useNotification } from '@/components/providers/NotificationContext';
