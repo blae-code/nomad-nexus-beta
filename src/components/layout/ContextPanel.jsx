@@ -259,54 +259,10 @@ export default function ContextPanel({ isOpen, onClose }) {
           onToggle={toggleSection}
         />
         {expandedSections.voice && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
-            {inputDevices.length > 0 && (
-              <div className="space-y-1">
-                <label className="block text-zinc-400 text-xs font-medium">Device</label>
-                <select
-                  value={selectedDeviceId || ''}
-                  onChange={(e) => selectDevice(e.target.value)}
-                  disabled={!voiceNet.activeNetId}
-                  className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 disabled:opacity-50"
-                >
-                  {inputDevices.map((device) => (
-                    <option key={device.deviceId} value={device.deviceId}>
-                      {device.label || `Mic ${inputDevices.indexOf(device) + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="space-y-1">
-              <label className="block text-zinc-400 text-xs font-medium">Microphone</label>
-              <Button
-                size="sm"
-                variant={voiceNet.micEnabled ? 'outline' : 'destructive'}
-                className="w-full text-xs"
-                onClick={() => voiceNet.setMicEnabled(!voiceNet.micEnabled)}
-                disabled={!voiceNet.activeNetId}
-              >
-                {voiceNet.micEnabled ? 'Mic: On' : 'Mic: Off'}
-              </Button>
-            </div>
-            <div className="space-y-1">
-              <label className="block text-zinc-400 text-xs font-medium">PTT</label>
-              <Button
-                size="sm"
-                variant={voiceNet.pttActive ? 'default' : 'outline'}
-                className="w-full text-xs"
-                onClick={() => voiceNet.togglePTT()}
-                disabled={!voiceNet.activeNetId}
-              >
-                {voiceNet.pttActive ? 'PTT: Active' : 'PTT: Ready'}
-              </Button>
-            </div>
-            {voiceNet.error && (
-              <div className="p-2 bg-red-900/20 rounded text-red-400 text-xs">
-                {voiceNet.error}
-              </div>
-            )}
-          </div>
+          <>
+            <VoiceControlsSection />
+            <CommsDiscipline />
+          </>
         )}
 
         {/* Voice Participants Section */}
