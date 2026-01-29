@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import FactoryReset from '@/components/admin/FactoryReset';
 import ImmersiveSeed from '@/components/admin/ImmersiveSeed';
 import DataValidation from '@/components/admin/DataValidation';
