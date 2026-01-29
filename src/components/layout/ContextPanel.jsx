@@ -142,8 +142,7 @@ export default function ContextPanel({ isOpen, onClose }) {
         </Button>
       </div>
 
-      {/* Scrollable sections */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Sections */}
         {/* Active Op Section */}
         <SectionHeader
           icon={<Activity className="w-4 h-4" />}
