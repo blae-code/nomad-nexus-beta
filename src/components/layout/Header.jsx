@@ -102,11 +102,15 @@ export default function Header() {
           )}
           <button
             onClick={openPalette}
-            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/40 to-zinc-950/40 border border-zinc-800/60 hover:border-orange-500/60 hover:from-zinc-900/60 hover:to-zinc-900/40 text-zinc-500 hover:text-zinc-300 transition-all group rounded-md shadow-sm"
-            title="Command palette • Ctrl+K"
+            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/50 via-zinc-900/40 to-zinc-950/50 border border-zinc-800/80 hover:border-orange-500/60 hover:bg-gradient-to-r hover:from-zinc-900/70 hover:via-zinc-900/60 hover:to-zinc-900/50 text-zinc-500 hover:text-zinc-200 transition-all duration-200 group rounded-md shadow-md hover:shadow-lg hover:shadow-orange-500/10 relative overflow-hidden"
+            title="Universal Command Palette — Search, navigate, execute • Ctrl+K or Cmd+K"
           >
-            <Search className="w-3.5 h-3.5 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0" />
-            <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-300 min-w-0 truncate">Cmd • Ctrl+K</span>
+            {/* Shimmer accent */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-30 bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-500" />
+            
+            <Command className="w-3.5 h-3.5 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0 relative z-10" />
+            <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-100 min-w-0 truncate relative z-10 flex-1 text-left">Ctrl+K</span>
+            <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-orange-400 transition-all duration-200 flex-shrink-0 relative z-10 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5" />
           </button>
         </div>
 
