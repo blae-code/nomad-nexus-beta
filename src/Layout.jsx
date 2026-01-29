@@ -129,22 +129,24 @@ function LayoutContent({ currentPageName, children }) {
         <ConstructionTicker />
 
         {/* Main content area with dock spacer */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <main className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : 'pb-0'} transition-all duration-200`}>
-            <PermissionGuard>{children}</PermissionGuard>
-          </main>
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+          <div className="flex-1 overflow-hidden flex gap-0">
+            <main className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : 'pb-0'} transition-all duration-200`}>
+              <PermissionGuard>{children}</PermissionGuard>
+            </main>
 
-          {/* ContextPanel — right sidebar, collapsible */}
-          {isContextPanelOpen && (
-            <div className="border-l border-orange-500/20">
-              <ContextPanel isOpen={true} onClose={toggleContextPanel} />
-            </div>
-          )}
+            {/* ContextPanel — right sidebar, collapsible */}
+            {isContextPanelOpen && (
+              <div className="border-l border-orange-500/20 flex-shrink-0">
+                <ContextPanel isOpen={true} onClose={toggleContextPanel} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom Comms Dock — Toggle between Voice and Text (fixed, collapsible) */}
         {isCommsDockOpen && (
-          <div className="fixed bottom-0 left-0 right-0 z-35 border-t border-orange-500/20 bg-zinc-950">
+          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-orange-500/20 bg-zinc-950">
             {dockMode === 'voice' && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
             {dockMode === 'text' && <TextCommsDock isOpen={true} onClose={toggleCommsDock} isMinimized={dockMinimized} onMinimize={setDockMinimized} />}
           </div>
