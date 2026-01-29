@@ -127,11 +127,11 @@ export default function ContextPanel({ isOpen, onClose }) {
   return (
     <div className="w-80 bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
-        <div>
-          <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Tactical Systems</h2>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Active Intelligence</p>
-        </div>
+       <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
+         <div>
+           <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Command</h2>
+           <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Comms Control</p>
+         </div>
         <Button
           size="icon"
           variant="ghost"
