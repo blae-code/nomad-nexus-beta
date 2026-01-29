@@ -23,7 +23,7 @@ import { initScrollGuard } from '@/components/utils/scrollGuard';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
- * Provides: Header, SidePanel (left nav with gating), Main content area, CommsDock (right)
+ * Provides: Header, Main content area, Voice/Comms Docks, Command Palette
  * No horizontal scrolling, responsive, stable under resize.
  */
 const cn = (...classes) => {
