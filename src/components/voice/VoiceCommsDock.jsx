@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
-export default function VoiceCommsDock({ isOpen, onClose }) {
-  const [isMinimized, setIsMinimized] = useState(false);
+export default function VoiceCommsDock({ isOpen, onClose, isMinimized, onMinimize }) {
   const voiceNet = useVoiceNet();
 
   if (!isOpen) return null;
@@ -30,12 +29,12 @@ export default function VoiceCommsDock({ isOpen, onClose }) {
         </div>
         <div className="flex gap-2">
           <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="h-8 w-8 text-zinc-500 hover:text-orange-400"
+           size="icon"
+           variant="ghost"
+           onClick={() => onMinimize?.(!isMinimized)}
+           className="h-8 w-8 text-zinc-500 hover:text-orange-400"
           >
-            <Minimize2 className="w-4 h-4" />
+           <Minimize2 className="w-4 h-4" />
           </Button>
           <Button
             size="icon"
