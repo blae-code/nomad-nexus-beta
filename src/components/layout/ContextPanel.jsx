@@ -36,18 +36,20 @@ export default function ContextPanel({ isOpen, onClose }) {
       const saved = localStorage.getItem('nexus.contextPanel.expanded');
       return saved ? JSON.parse(saved) : {
         activeOp: true,
-        nets: false,
+        nets: true,
         voice: true,
-        contacts: false,
+        health: false,
+        contacts: true,
         riggsy: false,
         diagnostics: false,
       };
     } catch {
       return {
         activeOp: true,
-        nets: false,
+        nets: true,
         voice: true,
-        contacts: false,
+        health: false,
+        contacts: true,
         riggsy: false,
         diagnostics: false,
       };
