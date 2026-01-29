@@ -71,20 +71,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
   // Wire notifications
   useVoiceNotifications(voiceNet);
 
-  // Fetch channels for binding dropdown
-  const [channels, setChannels] = React.useState([]);
-  React.useEffect(() => {
-    async function loadChannels() {
-      try {
-        const { base44 } = await import('@/api/base44Client');
-        const channelList = await base44.entities.Channel.list();
-        setChannels(channelList);
-      } catch (error) {
-        console.error('Failed to load channels:', error);
-      }
-    }
-    loadChannels();
-  }, []);
+
 
   const toggleSection = (key) => {
     setExpandedSections((prev) => {
@@ -108,7 +95,8 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
       unreadByTab,
     });
 
-    navigator.clipboard.writeText(diagnostics).then(() => {
+    navigator.clipboard.writeText(diagnostics);
+
       addNotification({
         type: 'success',
         title: 'Diagnostics copied',
@@ -198,22 +186,6 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
                      {voiceNet.voiceNets.map((net) => (
                        <option key={net.id} value={net.id}>
                          {net.name}
-                       </option>
-                     ))}
-                   </select>
-                 </div>
-
-                 <div className="space-y-1">
-                   <label className="block text-zinc-400 text-xs font-medium">Bound Comms Channel</label>
-                   <select
-                     value={activeOp.binding?.commsChannelId || ''}
-                     onChange={(e) => activeOp.bindCommsChannel(e.target.value || null)}
-                     className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
-                   >
-                     <option value="">None</option>
-                     {channels.map((ch) => (
-                       <option key={ch.id} value={ch.id}>
-                         {ch.name}
                        </option>
                      ))}
                    </select>
@@ -343,7 +315,6 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
                 <div className="font-mono text-zinc-300 text-xs truncate">{activeOp.activeEvent.title}</div>
                 <div className="text-zinc-500 text-xs">
                   {activeOp.binding?.voiceNetId && `Net: ${activeOp.binding.voiceNetId.slice(0, 8)}`}
-                  {activeOp.binding?.commsChannelId && ` • Ch: ${channels.find(c => c.id === activeOp.binding.commsChannelId)?.name || 'Unknown'}`}
                 </div>
               </div>
             )}
