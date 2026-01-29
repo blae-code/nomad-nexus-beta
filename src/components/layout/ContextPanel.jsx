@@ -395,10 +395,27 @@ export default function ContextPanel({ isOpen, onClose }) {
                 Reset UI Layout
               </Button>
             </div>
-          </div>
-        )}
+            </div>
+            )}
 
-        {/* Focused Net Confirmation Modal */}
+            {/* Riggsy AI Section - Collapsed by default */}
+            {expandedSections.riggsy && (
+            <>
+            <SectionHeader
+              icon={<Radio className="w-4 h-4" />}
+              label="Riggsy AI"
+              sectionKey="riggsy"
+              expanded={expandedSections.riggsy}
+              onToggle={toggleSection}
+            />
+            <div className="px-4 py-3 text-xs text-zinc-500 animate-in fade-in duration-200 text-center border-b border-orange-500/10">
+              <div className="text-[10px] opacity-50 mb-2">🤖</div>
+              <div className="text-xs">AI Assistant (coming soon)</div>
+            </div>
+            </>
+            )}
+
+            {/* Focused Net Confirmation Modal */}
         {voiceNet.focusedConfirmation?.needsConfirmation && (
           <FocusedNetConfirmationSheet
             onConfirm={() => {
