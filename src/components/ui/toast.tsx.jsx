@@ -82,7 +82,7 @@ ToastClose.displayName = "ToastClose";
 const ToastTitle = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm font-black uppercase tracking-wider text-orange-400", className)}
+    className={cn("text-sm font-bold uppercase tracking-wider group-[.destructive]:text-red-300 group-[.success]:text-green-300 group-[.info]:text-cyan-300", className)}
     {...props}
   />
 ));
