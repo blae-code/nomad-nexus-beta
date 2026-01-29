@@ -17,6 +17,7 @@ import CommsDockShell from '@/components/layout/CommsDockShell';
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 import BootOverlay, { useBootOverlay } from '@/components/common/BootOverlay';
+import { initScrollGuards } from '@/components/utils/scrollGuards';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -61,6 +62,11 @@ function LayoutContent({ currentPageName, children }) {
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
   const bootOverlay = useBootOverlay();
 
+  // Initialize scroll guards
+  React.useEffect(() => {
+    initScrollGuards();
+  }, []);
+
   const handleNavigate = (page) => {
     window.location.href = createPageUrl(page);
   };
@@ -77,6 +83,22 @@ function LayoutContent({ currentPageName, children }) {
     }
   };
 
+  const handleCopyDiagnostics = () => {
+    // Trigger copy diagnostics from ContextPanel
+    // This is a pass-through; actual implementation in ContextPanel
+    const event = new CustomEvent('copy-diagnostics');
+    window.dispatchEvent(event);
+  };
+
+  const handleResetUILayout = () => {
+    if (confirm('Reset UI layout? This will clear panel positions and reload the page.')) {
+      localStorage.removeItem('nexus.shell.sidePanelOpen');
+      localStorage.removeItem('nexus.shell.contextPanelOpen');
+      localStorage.removeItem('nexus.shell.commsDockOpen');
+      window.location.reload();
+    }
+  };
+
   return (
     <CommandPaletteProvider
       onNavigate={handleNavigate}
@@ -85,6 +107,8 @@ function LayoutContent({ currentPageName, children }) {
       onOpenAccessRequest={handleOpenAccessRequest}
       onTriggerTestAlert={handleTriggerTestAlert}
       onReplayBootSequence={bootOverlay.replay}
+      onCopyDiagnostics={handleCopyDiagnostics}
+      onResetUILayout={handleResetUILayout}
     >
       <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
         {/* Boot Overlay */}
