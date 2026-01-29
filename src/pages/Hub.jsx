@@ -80,9 +80,9 @@ export default function Hub() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black uppercase tracking-widest text-white">
-              Command <span className="text-orange-500">Center</span>
+             Development <span className="text-orange-500">Hub</span>
             </h1>
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Operations Hub</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Module Status & Navigation</p>
           </div>
           {/* Status Indicators */}
           <div className="flex items-center gap-4">
