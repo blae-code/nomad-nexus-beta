@@ -176,8 +176,8 @@ export default function Hub() {
           <div className="px-2">
             <DevelopmentRoadmap />
           </div>
-          </div>
         </div>
       </div>
-    );
+    </div>
+  );
 }
