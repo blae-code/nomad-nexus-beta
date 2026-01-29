@@ -1,5 +1,11 @@
+/**
+ * TextCommsDock — The sole implementation of text comms in the app.
+ * Provides channel browsing, message display, and composition.
+ * Legacy comms footer code has been fully replaced by this component.
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Minimize2, MessageSquare, Lock, Hash, Send } from 'lucide-react';
+import { X, Minimize2, Hash, Lock, Send, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
