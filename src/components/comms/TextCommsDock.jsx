@@ -1,64 +1,167 @@
-import React, { useState } from 'react';
-import { X, Minimize2, MessageSquare, Users, Hash, Bell, Send } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Minimize2, MessageSquare, Lock, Hash, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useCurrentUser } from '@/components/useCurrentUser';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
+import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 
 export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
+  const [channels, setChannels] = useState([]);
+  const [selectedChannelId, setSelectedChannelId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const messagesEndRef = useRef(null);
+
   const { user } = useCurrentUser();
-  const { unreadByTab } = useUnreadCounts(user?.id);
+  const { unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
+  const activeOp = useActiveOp();
+
+  // Load channels
+  useEffect(() => {
+    const loadChannels = async () => {
+      try {
+        const channelList = await base44.entities.Channel.list();
+        setChannels(channelList);
+
+        // Auto-select bound channel if active op has one
+        if (activeOp?.binding?.commsChannelId) {
+          setSelectedChannelId(activeOp.binding.commsChannelId);
+        } else if (!selectedChannelId && channelList.length > 0) {
+          setSelectedChannelId(channelList[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to load channels:', error);
+      }
+    };
+
+    loadChannels();
+  }, [activeOp?.binding?.commsChannelId, selectedChannelId]);
+
+  // Load messages for selected channel
+  useEffect(() => {
+    if (!selectedChannelId) return;
+
+    const loadMessages = async () => {
+      setLoadingMessages(true);
+      try {
+        const msgs = await base44.entities.Message.filter({ channel_id: selectedChannelId });
+        setMessages(msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
+        // Mark as read (debounced)
+        setTimeout(() => markChannelRead(selectedChannelId), 500);
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    loadMessages();
+  }, [selectedChannelId, markChannelRead]);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!messageInput.trim() || !selectedChannelId || !user?.id) return;
+
+    try {
+      const newMsg = await base44.entities.Message.create({
+        channel_id: selectedChannelId,
+        user_id: user.id,
+        content: messageInput,
+      });
+
+      setMessages((prev) => [...prev, newMsg]);
+      setMessageInput('');
+      refreshUnreadCounts();
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Group channels by category
+  const groupedChannels = {
+    casual: channels.filter((ch) => ch.category === 'casual'),
+    focused: channels.filter((ch) => ch.category === 'focused'),
+    temporary: channels.filter((ch) => ch.category === 'temporary'),
+  };
+
+  const canAccessChannel = (channel) => {
+    if (channel.category === 'focused') {
+      return canAccessFocusedComms(user);
+    }
+    return true;
+  };
+
+  const filteredChannels = Object.entries(groupedChannels)
+    .flatMap(([, chans]) => chans)
+    .filter((ch) => ch.name.toLowerCase().includes(searchInput.toLowerCase()));
+
+  const selectedChannel = channels.find((ch) => ch.id === selectedChannelId);
 
   if (!isOpen) return null;
 
   return (
-    <div className="bg-zinc-950 border-t border-orange-500/30 flex flex-col h-96 flex-shrink-0">
+    <div className="bg-zinc-950 border-t border-orange-500/30 flex flex-col h-96 flex-shrink-0 shadow-2xl">
       {/* Header */}
-      <div className="border-b border-orange-500/20 px-6 py-3 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
+      <div className="border-b border-orange-500/20 px-4 py-2.5 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-orange-500" />
           <h3 className="text-xs font-bold uppercase text-orange-400 tracking-widest">Text Comms</h3>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Button
-           size="icon"
-           variant="ghost"
-           onClick={() => onMinimize?.(!isMinimized)}
-           className="h-8 w-8 text-zinc-500 hover:text-orange-400"
+            size="icon"
+            variant="ghost"
+            onClick={() => onMinimize?.(!isMinimized)}
+            className="h-7 w-7 text-zinc-500 hover:text-orange-400"
           >
-           <Minimize2 className="w-4 h-4" />
+            <Minimize2 className="w-3.5 h-3.5" />
           </Button>
           <Button
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-8 w-8 text-zinc-500 hover:text-red-400"
+            className="h-7 w-7 text-zinc-500 hover:text-red-400"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
 
       {/* Tabs */}
       {!isMinimized && (
-        <div className="flex border-b border-zinc-800 bg-zinc-950/50 flex-shrink-0">
-          {['comms', 'events', 'riggsy', 'inbox'].map((tab) => (
+        <div className="flex border-b border-zinc-800 bg-zinc-950/50 flex-shrink-0 overflow-x-auto">
+          {['comms', 'polls', 'riggsy', 'inbox'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 text-xs font-semibold uppercase px-3 py-2 transition-all ${
+              className={`whitespace-nowrap text-xs font-semibold uppercase px-3 py-2 transition-all border-b-2 ${
                 activeTab === tab
-                  ? 'text-orange-400 border-b-2 border-orange-500'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'text-orange-400 border-orange-500'
+                  : 'text-zinc-500 hover:text-zinc-300 border-transparent'
               }`}
             >
               {tab === 'comms' && (
                 <>Comms {unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>
               )}
-              {tab === 'events' && (
-                <>Events {unreadByTab?.events > 0 && <span className="ml-1 text-orange-400">({unreadByTab.events})</span>}</>
+              {tab === 'polls' && (
+                <>Polls {unreadByTab?.polls > 0 && <span className="ml-1 text-orange-400">({unreadByTab.polls})</span>}</>
               )}
               {tab === 'riggsy' && (
                 <>Riggsy {unreadByTab?.riggsy > 0 && <span className="ml-1 text-orange-400">({unreadByTab.riggsy})</span>}</>
@@ -71,40 +174,141 @@ export default function TextCommsDock({ isOpen, onClose, isMinimized, onMinimize
 
       {/* Content */}
       {!isMinimized && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-hidden flex flex-col">
           {activeTab === 'comms' && (
-            <>
-              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Recent Channels</h4>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg max-h-40 overflow-y-auto">
-                <button className="w-full text-left flex items-center gap-2 px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800 transition-colors">
-                  <Hash className="w-3 h-3 text-zinc-500" />
-                  <span className="text-xs text-zinc-300">general</span>
-                  <span className="ml-auto text-[10px] text-orange-400">2</span>
-                </button>
-                <button className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-zinc-800 transition-colors">
-                  <Hash className="w-3 h-3 text-zinc-500" />
-                  <span className="text-xs text-zinc-300">announcements</span>
-                </button>
+            <div className="flex-1 overflow-hidden flex">
+              {/* Channel List */}
+              <div className="w-40 border-r border-zinc-800 flex flex-col overflow-hidden">
+                <Input
+                  placeholder="Search..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="h-7 text-xs m-2 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600"
+                />
+
+                <div className="flex-1 overflow-y-auto space-y-1 px-2">
+                  {/* Casual Group */}
+                  {groupedChannels.casual.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-zinc-500 px-1 py-1">CASUAL</div>
+                      {groupedChannels.casual.map((ch) => (
+                        <button
+                          key={ch.id}
+                          onClick={() => setSelectedChannelId(ch.id)}
+                          className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                            selectedChannelId === ch.id
+                              ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                              : 'text-zinc-400 hover:bg-zinc-800/50'
+                          }`}
+                        >
+                          <Hash className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{ch.name}</span>
+                          {unreadByTab?.[ch.id] > 0 && (
+                            <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Focused Group */}
+                  {groupedChannels.focused.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-orange-600 px-1 py-1">FOCUSED</div>
+                      {groupedChannels.focused.map((ch) => {
+                        const canAccess = canAccessChannel(ch);
+                        return (
+                          <button
+                            key={ch.id}
+                            onClick={() => canAccess && setSelectedChannelId(ch.id)}
+                            disabled={!canAccess}
+                            className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                              !canAccess
+                                ? 'text-zinc-600 opacity-50 cursor-not-allowed'
+                                : selectedChannelId === ch.id
+                                ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                : 'text-zinc-400 hover:bg-zinc-800/50'
+                            }`}
+                          >
+                            {!canAccess ? <Lock className="w-3 h-3 flex-shrink-0" /> : <Hash className="w-3 h-3 flex-shrink-0" />}
+                            <span className="truncate">{ch.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-              <Input
-                placeholder="Search channels..."
-                className="h-8 text-xs bg-zinc-900/50 border-zinc-800"
-              />
-            </>
-          )}
-          {activeTab === 'events' && (
-            <div className="text-center py-4 text-zinc-500">
-              <p className="text-xs">Event notifications appear here</p>
+
+              {/* Message Area */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Channel Header */}
+                {selectedChannel && (
+                  <div className="border-b border-zinc-800 px-4 py-2 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
+                    {!canAccessChannel(selectedChannel) && <Lock className="w-3 h-3 text-zinc-600" />}
+                    <span className="text-xs font-semibold text-zinc-300">#{selectedChannel.name}</span>
+                  </div>
+                )}
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
+                  {loadingMessages && <div className="text-zinc-500">Loading...</div>}
+                  {messages.length === 0 && !loadingMessages && (
+                    <div className="text-center text-zinc-500 text-[10px] py-4">No messages yet</div>
+                  )}
+                  {messages.map((msg) => (
+                    <div key={msg.id} className="group">
+                      <div className="text-[10px] text-zinc-600">
+                        <span className="font-semibold text-zinc-400">{msg.user_id || 'Unknown'}</span>
+                        <span className="mx-1">•</span>
+                        <span>{new Date(msg.created_date).toLocaleTimeString()}</span>
+                      </div>
+                      <p className="text-zinc-300 leading-snug">{msg.content}</p>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Composer */}
+                <div className="border-t border-zinc-800 p-2 bg-zinc-900/40 flex-shrink-0">
+                  <div className="flex gap-2">
+                    <Input
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Message..."
+                      disabled={!selectedChannel || !canAccessChannel(selectedChannel)}
+                      className="h-7 text-xs flex-1 bg-zinc-900 border-zinc-700"
+                    />
+                    <Button
+                      size="icon"
+                      onClick={handleSendMessage}
+                      disabled={!messageInput.trim() || !selectedChannel || !canAccessChannel(selectedChannel)}
+                      className="h-7 w-7"
+                    >
+                      <Send className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
+
+          {activeTab === 'polls' && (
+            <div className="text-center py-4 text-zinc-500">
+              <p className="text-xs">Polls appear here</p>
+            </div>
+          )}
+
           {activeTab === 'riggsy' && (
             <div className="text-center py-4 text-zinc-500">
-              <p className="text-xs">AI assistant messages appear here</p>
+              <p className="text-xs">Riggsy AI assistant appears here</p>
             </div>
           )}
+
           {activeTab === 'inbox' && (
             <div className="text-center py-4 text-zinc-500">
-              <p className="text-xs">Private messages appear here</p>
+              <p className="text-xs">Direct messages appear here</p>
             </div>
           )}
         </div>
