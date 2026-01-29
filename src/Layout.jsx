@@ -139,7 +139,7 @@ function LayoutContent({ currentPageName, children }) {
                 </div>
 
                 {/* Comms Dock — persistent at bottom, within layout flow */}
-                <CommsDockShell isOpen={true} onClose={() => {}} />
+                <CommsDockShell isOpen={isCommsDockOpen} onClose={toggleCommsDock} />
           </div>
 
           {/* Command Palette Modal */}
