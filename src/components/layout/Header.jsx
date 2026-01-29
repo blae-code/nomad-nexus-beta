@@ -110,6 +110,12 @@ export default function Header() {
         <div className="flex items-center gap-3 ml-auto">
           {/* Telemetry Strip (live data) */}
             <div className="hidden lg:flex items-center gap-3 text-xs text-zinc-500 border-r border-zinc-700 pr-4">
+              {activeOp.activeEvent && (
+                <div className="flex items-center gap-1">
+                  <span className="text-orange-500">Op:</span>
+                  <span className="max-w-[120px] truncate">{activeOp.activeEvent.title}</span>
+                </div>
+              )}
               <div className="flex items-center gap-1">
                 <Radio className={`w-3 h-3 ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`} />
                 <span>Comms: {commsStatus}</span>

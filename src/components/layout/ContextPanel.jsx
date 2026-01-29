@@ -6,13 +6,15 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAudioDevices } from '@/components/voice/hooks/useAudioDevices';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
-import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock, Mic } from 'lucide-react';
+import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock, Mic, Activity, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 import { useVoiceHealth, formatHealthState, getHealthColor } from '@/components/voice/health/voiceHealth';
 import { useVoiceNotifications } from '@/components/voice/notifications/voiceNotifications';
 import { FocusedNetConfirmationSheet } from '@/components/voice/components/FocusedNetConfirmation';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
+import { createPageUrl } from '@/utils';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls
@@ -20,6 +22,7 @@ import { FocusedNetConfirmationSheet } from '@/components/voice/components/Focus
  */
 export default function ContextPanel({ isOpen, onClose }) {
   const [expandedSections, setExpandedSections] = useState({
+    activeOp: true,
     nets: true,
     voice: true,
     contacts: true,
@@ -35,9 +38,25 @@ export default function ContextPanel({ isOpen, onClose }) {
   const { user } = useCurrentUser();
   const { inputDevices, selectedDeviceId, selectDevice } = useAudioDevices();
   const voiceHealth = useVoiceHealth(voiceNet, latency);
+  const activeOp = useActiveOp();
   
   // Wire notifications
   useVoiceNotifications(voiceNet);
+
+  // Fetch channels for binding dropdown
+  const [channels, setChannels] = React.useState([]);
+  React.useEffect(() => {
+    async function loadChannels() {
+      try {
+        const { base44 } = await import('@/api/base44Client');
+        const channelList = await base44.entities.Channel.list();
+        setChannels(channelList);
+      } catch (error) {
+        console.error('Failed to load channels:', error);
+      }
+    }
+    loadChannels();
+  }, []);
 
   const toggleSection = (key) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -64,6 +83,95 @@ export default function ContextPanel({ isOpen, onClose }) {
 
       {/* Scrollable sections */}
       <div className="flex-1 overflow-y-auto">
+        {/* Active Op Section */}
+        <SectionHeader
+          icon={<Activity className="w-4 h-4" />}
+          label={activeOp.activeEvent ? `Active Op` : 'No Active Op'}
+          sectionKey="activeOp"
+          expanded={expandedSections.activeOp}
+          onToggle={toggleSection}
+        />
+        {expandedSections.activeOp && (
+          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2">
+            {activeOp.activeEvent ? (
+              <>
+                <div className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
+                  <div className="font-mono text-zinc-300 text-sm mb-1">
+                    {activeOp.activeEvent.title}
+                  </div>
+                  <div className="flex gap-2 text-xs text-zinc-500">
+                    <span>{activeOp.activeEvent.event_type === 'focused' ? 'Focused' : 'Casual'}</span>
+                    <span>•</span>
+                    <span>{activeOp.participants.length} participant{activeOp.participants.length !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-zinc-400 text-xs font-medium">Bound Voice Net</label>
+                  <select
+                    value={activeOp.binding?.voiceNetId || ''}
+                    onChange={(e) => activeOp.bindVoiceNet(e.target.value || null)}
+                    className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
+                  >
+                    <option value="">None</option>
+                    {voiceNet.voiceNets.map((net) => (
+                      <option key={net.id} value={net.id}>
+                        {net.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-zinc-400 text-xs font-medium">Bound Comms Channel</label>
+                  <select
+                    value={activeOp.binding?.commsChannelId || ''}
+                    onChange={(e) => activeOp.bindCommsChannel(e.target.value || null)}
+                    className="w-full text-xs px-2 py-1.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
+                  >
+                    <option value="">None</option>
+                    {channels.map((ch) => (
+                      <option key={ch.id} value={ch.id}>
+                        {ch.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {activeOp.binding?.voiceNetId && voiceNet.activeNetId !== activeOp.binding.voiceNetId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      const net = voiceNet.voiceNets.find((n) => n.id === activeOp.binding.voiceNetId);
+                      if (net) voiceNet.joinNet(net.id, user);
+                    }}
+                  >
+                    Join Bound Net
+                  </Button>
+                )}
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    window.location.href = createPageUrl('Events');
+                  }}
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Go to Op
+                </Button>
+              </>
+            ) : (
+              <div className="text-zinc-500 text-xs">
+                No active operation. Go to Events to activate one.
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Active Nets Section */}
         <SectionHeader
           icon={<Radio className="w-4 h-4" />}
