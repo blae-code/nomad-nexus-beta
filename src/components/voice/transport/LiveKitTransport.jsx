@@ -1,4 +1,4 @@
-import { connect, RoomEvent } from 'npm:livekit-client@0.15.0';
+import { connect, RoomEvent } from 'livekit-client';
 
 /**
  * LiveKitTransport — Real voice transport via LiveKit
