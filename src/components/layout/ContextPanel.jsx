@@ -265,7 +265,17 @@ export default function ContextPanel({ isOpen, onClose }) {
           </>
         )}
 
-        {/* Voice Participants Section */}
+        {/* Net Health Section */}
+        <SectionHeader
+          icon={<BarChart3 className="w-4 h-4" />}
+          label="Net Health"
+          sectionKey="health"
+          expanded={expandedSections.health || false}
+          onToggle={toggleSection}
+        />
+        {expandedSections.health && <NetHealth />}
+
+        {/* Net Roster Section */}
         <SectionHeader
           icon={<Users className="w-4 h-4" />}
           label={`Net Roster (${voiceNet.participants.length})`}
@@ -273,29 +283,7 @@ export default function ContextPanel({ isOpen, onClose }) {
           expanded={expandedSections.contacts}
           onToggle={toggleSection}
         />
-        {expandedSections.contacts && (
-          <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 animate-in fade-in duration-200">
-            {voiceNet.activeNetId && voiceNet.participants.length > 0 ? (
-              voiceNet.participants
-                .sort((a, b) => {
-                  if (a.isSpeaking !== b.isSpeaking) return a.isSpeaking ? -1 : 1;
-                  return (a.callsign || '').localeCompare(b.callsign || '');
-                })
-                .map((participant) => (
-                  <div key={participant.userId} className="p-2 bg-zinc-800/40 rounded border border-zinc-700/50">
-                    <div className="flex items-center gap-2">
-                      <div className="font-mono text-zinc-300 text-xs flex-1">{participant.callsign}</div>
-                      {participant.isSpeaking && (
-                        <Mic className="w-3 h-3 text-orange-500 animate-pulse" />
-                      )}
-                    </div>
-                  </div>
-                ))
-            ) : (
-              <div className="text-zinc-500 text-xs">Join a voice net to see participants</div>
-            )}
-          </div>
-        )}
+        {expandedSections.contacts && <NetRoster />}
 
         {/* Riggsy / AI Section */}
         <SectionHeader
