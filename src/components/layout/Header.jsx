@@ -88,7 +88,7 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-black text-white tracking-wider uppercase leading-none">{user.callsign || 'Nomad'}</span>
             <span className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${isAdmin ? 'text-red-300 border-red-500/40 bg-red-500/10' : 'text-orange-300 border-orange-500/40 bg-orange-500/10'}`}>{rankLabel}</span>
-            {user.membership && <span className="text-[10px] font-mono text-zinc-500 uppercase border border-zinc-700/50 px-1.5 py-0.5 rounded">{getMembershipLabel(user.membership)}</span>}
+            {user.membership && <span className="text-[10px] font-mono font-semibold uppercase border rounded px-1.5 py-0.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/50">{getMembershipLabel(user.membership)}</span>}
           </div>
         </div>
 
