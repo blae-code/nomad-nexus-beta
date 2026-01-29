@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
+import ConstructionTicker from '@/components/layout/ConstructionTicker';
 import SidePanel from '@/components/layout/SidePanel';
 import ContextPanel from '@/components/layout/ContextPanel';
 import CommsDock from '@/components/layout/CommsDock';
@@ -120,6 +121,9 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Header — top navigation fixed */}
         <Header />
+
+        {/* Construction Ticker */}
+        <ConstructionTicker />
 
         {/* Main layout grid: content + contextpanel */}
         <div className="flex flex-1 overflow-hidden">
