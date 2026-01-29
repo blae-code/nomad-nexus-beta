@@ -92,24 +92,21 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Center: Command Palette — Professional Interface */}
-        <div className="flex-1 min-w-0">
+        {/* Center: Active Op + Command Palette */}
+        <div className="flex-1 min-w-0 flex items-center gap-3">
+          {activeEvent && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 rounded border border-orange-500/20 text-xs font-semibold text-orange-300 flex-shrink-0 whitespace-nowrap">
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              <span className="max-w-[150px] truncate">{activeEvent.title}</span>
+            </div>
+          )}
           <button
             onClick={openPalette}
-            className="w-full h-9 flex items-center gap-3 px-4 bg-gradient-to-r from-zinc-900/40 to-zinc-950/40 border border-zinc-800/60 hover:border-orange-500/60 hover:from-zinc-900/60 hover:to-zinc-900/40 text-zinc-500 hover:text-zinc-300 transition-all group rounded-md shadow-sm"
+            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/40 to-zinc-950/40 border border-zinc-800/60 hover:border-orange-500/60 hover:from-zinc-900/60 hover:to-zinc-900/40 text-zinc-500 hover:text-zinc-300 transition-all group rounded-md shadow-sm"
             title="Command palette • Ctrl+K"
           >
-            <Search className="w-4 h-4 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0" />
-            <span className="text-xs font-semibold tracking-tight uppercase flex-1 text-left text-zinc-400 group-hover:text-zinc-300">Search • Navigate • Execute</span>
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              {activeEvent && (
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-orange-500/10 rounded border border-orange-500/20 text-xs font-semibold text-orange-300">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                  <span className="max-w-[120px] truncate">{activeEvent.title}</span>
-                </div>
-              )}
-              <kbd className="px-2 py-0.5 text-[10px] font-mono bg-zinc-800/80 text-zinc-500 border border-zinc-700/50 rounded shadow-sm">Ctrl+K</kbd>
-            </div>
+            <Search className="w-3.5 h-3.5 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0" />
+            <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-300 min-w-0 truncate">Cmd • Ctrl+K</span>
           </button>
         </div>
 
