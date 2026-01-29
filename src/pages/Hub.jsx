@@ -167,11 +167,9 @@ export default function Hub() {
           </div>
           </div>
 
-          {/* Development Roadmap Section */}
-          <div className="px-2">
-            <DevelopmentRoadmap />
-          </div>
-        </div>
+      {/* Development Roadmap Section */}
+      <div className="px-2">
+        <DevelopmentRoadmap />
       </div>
     </div>
   );
