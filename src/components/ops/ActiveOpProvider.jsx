@@ -205,5 +205,3 @@ export function useActiveOp() {
   }
   return context;
 }
-
-export { useActiveOp as default };
