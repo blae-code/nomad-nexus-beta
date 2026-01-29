@@ -132,29 +132,31 @@ export default function CommsDockShell({ isOpen, onClose }) {
         </div>
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'comms' && (
-          <CommsTabEnhanced
-            user={user}
-            channels={channels}
-            unreadCounts={unreadByChannel}
-            onMarkChannelRead={markChannelRead}
-          />
-        )}
+      {/* Tab content - only show when expanded */}
+      {!isMinimized && (
+        <div className="flex-1 overflow-hidden">
+          {activeTab === 'comms' && (
+            <CommsTabEnhanced
+              user={user}
+              channels={channels}
+              unreadCounts={unreadByChannel}
+              onMarkChannelRead={markChannelRead}
+            />
+          )}
 
-        {activeTab === 'polls' && (
-          <div className="p-4 text-xs text-zinc-500">Polls — Coming in Phase 2C</div>
-        )}
+          {activeTab === 'polls' && (
+            <div className="p-4 text-xs text-zinc-500">Polls — Coming in Phase 2C</div>
+          )}
 
-        {activeTab === 'riggsy' && (
-          <div className="p-4 text-xs text-zinc-500">Riggsy AI — Coming in Phase 2C</div>
-        )}
+          {activeTab === 'riggsy' && (
+            <div className="p-4 text-xs text-zinc-500">Riggsy AI — Coming in Phase 2C</div>
+          )}
 
-        {activeTab === 'inbox' && (
-          <div className="p-4 text-xs text-zinc-500">Inbox — Coming in Phase 2C</div>
-        )}
-      </div>
+          {activeTab === 'inbox' && (
+            <div className="p-4 text-xs text-zinc-500">Inbox — Coming in Phase 2C</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
