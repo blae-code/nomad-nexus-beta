@@ -144,8 +144,9 @@ function LayoutContent({ currentPageName, children, dockMode, setDockMode }) {
           )}
         </div>
 
-        {/* Voice Comms Dock Footer */}
-        {isCommsDockOpen && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} />}
+        {/* Comms Dock Footer — Toggle between Voice and Text */}
+        {isCommsDockOpen && dockMode === 'voice' && <VoiceCommsDock isOpen={true} onClose={toggleCommsDock} />}
+        {isCommsDockOpen && dockMode === 'text' && <TextCommsDock isOpen={true} onClose={toggleCommsDock} />}
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
