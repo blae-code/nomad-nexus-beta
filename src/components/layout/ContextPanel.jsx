@@ -6,8 +6,12 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAudioDevices } from '@/components/voice/hooks/useAudioDevices';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
-import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock, Mic, Activity, ExternalLink } from 'lucide-react';
+import { ChevronDown, X, Radio, Users, Zap, BarChart3, Lock, Mic, Activity, ExternalLink, Copy, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { APP_VERSION, APP_BUILD_PHASE, APP_BUILD_DATE } from '@/components/constants/appVersion';
+import { useShellUI } from '@/components/providers/ShellUIContext';
+import { useNotification } from '@/components/providers/NotificationContext';
+import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 import { useVoiceHealth, formatHealthState, getHealthColor } from '@/components/voice/health/voiceHealth';
@@ -39,6 +43,9 @@ export default function ContextPanel({ isOpen, onClose }) {
   const { inputDevices, selectedDeviceId, selectDevice } = useAudioDevices();
   const voiceHealth = useVoiceHealth(voiceNet, latency);
   const activeOp = useActiveOp();
+  const shellUI = useShellUI();
+  const { addNotification } = useNotification();
+  const { unreadByTab } = useUnreadCounts(user?.id);
   
   // Wire notifications
   useVoiceNotifications(voiceNet);
@@ -60,6 +67,38 @@ export default function ContextPanel({ isOpen, onClose }) {
 
   const toggleSection = (key) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const copyDiagnostics = () => {
+    const diagnostics = generateDiagnosticsText({
+      user,
+      activeOp,
+      voiceNet,
+      voiceHealth,
+      latency,
+      readiness,
+      onlineCount,
+      shellUI,
+      channels,
+      unreadByTab,
+    });
+
+    navigator.clipboard.writeText(diagnostics).then(() => {
+      addNotification({
+        type: 'success',
+        title: 'Diagnostics copied',
+        message: 'Diagnostic data copied to clipboard',
+      });
+    });
+  };
+
+  const resetUILayout = () => {
+    if (confirm('Reset UI layout? This will clear panel positions and reload the page.')) {
+      localStorage.removeItem('nexus.shell.sidePanelOpen');
+      localStorage.removeItem('nexus.shell.contextPanelOpen');
+      localStorage.removeItem('nexus.shell.commsDockOpen');
+      window.location.reload();
+    }
   };
 
   if (!isOpen) {
@@ -373,32 +412,105 @@ export default function ContextPanel({ isOpen, onClose }) {
         />
         {expandedSections.diagnostics && (
           <div className="px-4 py-3 text-xs text-zinc-400 space-y-2 border-t border-zinc-800/50">
+            {/* Build Info */}
+            <div className="space-y-1">
+              <div className="text-zinc-500">Build</div>
+              <div className="font-mono text-zinc-300 text-xs">{APP_VERSION}</div>
+              <div className="font-mono text-zinc-500 text-xs">{APP_BUILD_DATE}</div>
+            </div>
+
+            {/* Current User */}
+            <div className="space-y-1">
+              <div className="text-zinc-500">User</div>
+              <div className="font-mono text-zinc-300 text-xs">{user?.callsign || 'Unknown'}</div>
+              <div className="text-zinc-500 text-xs">
+                {getRankLabel(user?.rank)} • {getMembershipLabel(user?.membership)}
+              </div>
+            </div>
+
+            {/* Route */}
             <div className="space-y-1">
               <div className="text-zinc-500">Route</div>
               <div className="font-mono text-zinc-300 text-xs">{getCurrentRoute()}</div>
             </div>
+
+            {/* Active Op */}
+            {activeOp.activeEvent && (
+              <div className="space-y-1">
+                <div className="text-zinc-500">Active Op</div>
+                <div className="font-mono text-zinc-300 text-xs truncate">{activeOp.activeEvent.title}</div>
+                <div className="text-zinc-500 text-xs">
+                  {activeOp.binding?.voiceNetId && `Net: ${activeOp.binding.voiceNetId.slice(0, 8)}`}
+                  {activeOp.binding?.commsChannelId && ` • Ch: ${channels.find(c => c.id === activeOp.binding.commsChannelId)?.name || 'Unknown'}`}
+                </div>
+              </div>
+            )}
+
+            {/* Voice Status */}
+            <div className="space-y-1">
+              <div className="text-zinc-500">Voice</div>
+              <div className={`font-mono text-xs ${getHealthColor(voiceHealth.connectionState)}`}>
+                {formatHealthState(voiceHealth.connectionState)}
+              </div>
+              {voiceHealth.reconnectCount > 0 && (
+                <div className="text-zinc-500 text-xs">Reconnects: {voiceHealth.reconnectCount}</div>
+              )}
+            </div>
+
+            {/* Presence */}
+            <div className="space-y-1">
+              <div className="text-zinc-500">Presence</div>
+              <div className="font-mono text-zinc-300 text-xs">{onlineCount} online</div>
+            </div>
+
+            {/* System Health */}
             <div className="space-y-1">
               <div className="text-zinc-500">Readiness</div>
               <div className={`font-mono text-xs ${readiness.state === 'READY' ? 'text-green-500' : readiness.state === 'DEGRADED' ? 'text-yellow-500' : 'text-red-500'}`}>
                 {readiness.state}
               </div>
             </div>
+
             <div className="space-y-1">
               <div className="text-zinc-500">Latency</div>
               <div className={`font-mono text-xs ${latency.isHealthy ? 'text-green-500' : 'text-yellow-500'}`}>
                 {latency.latencyMs}ms
               </div>
             </div>
+
+            {/* Shell UI State */}
             <div className="space-y-1">
-              <div className="text-zinc-500">Online Users</div>
-              <div className="font-mono text-zinc-300 text-xs">{onlineCount}</div>
+              <div className="text-zinc-500">UI State</div>
+              <div className="text-zinc-500 text-xs">
+                Side: {shellUI.isSidePanelOpen ? 'Open' : 'Closed'} • 
+                Ctx: {shellUI.isContextPanelOpen ? 'Open' : 'Closed'} • 
+                Dock: {shellUI.isCommsDockOpen ? 'Open' : 'Closed'}
+              </div>
             </div>
-            <div className="space-y-1">
-              <div className="text-zinc-500">Build</div>
-              <div className="font-mono text-zinc-300 text-xs">Phase 3C</div>
+
+            {/* Actions */}
+            <div className="space-y-1 pt-2 border-t border-zinc-800/50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-xs"
+                onClick={copyDiagnostics}
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                Copy Diagnostics
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-xs"
+                onClick={resetUILayout}
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Reset UI Layout
+              </Button>
             </div>
-            </div>
-            )}
+          </div>
+        )}
             </div>
 
             {/* Focused Net Confirmation Modal */}
@@ -440,4 +552,67 @@ function getCurrentRoute() {
   } catch {
     return 'Unknown';
   }
+}
+
+function generateDiagnosticsText({ user, activeOp, voiceNet, voiceHealth, latency, readiness, onlineCount, shellUI, channels, unreadByTab }) {
+  const timestamp = new Date().toISOString();
+  const route = getCurrentRoute();
+
+  return `NOMAD NEXUS DIAGNOSTICS
+Generated: ${timestamp}
+
+BUILD INFO
+Version: ${APP_VERSION}
+Phase: ${APP_BUILD_PHASE}
+Date: ${APP_BUILD_DATE}
+
+USER
+Callsign: ${user?.callsign || 'Unknown'}
+Rank: ${getRankLabel(user?.rank)}
+Membership: ${getMembershipLabel(user?.membership)}
+User ID: ${user?.id || 'N/A'}
+
+ROUTE
+Current: ${route}
+
+ACTIVE OPERATION
+${activeOp.activeEvent ? `
+ID: ${activeOp.activeEvent.id}
+Title: ${activeOp.activeEvent.title}
+Type: ${activeOp.activeEvent.event_type}
+Status: ${activeOp.activeEvent.status}
+Participants: ${activeOp.participants.length}
+Bindings:
+  Voice Net: ${activeOp.binding?.voiceNetId || 'None'}
+  Comms Channel: ${activeOp.binding?.commsChannelId ? channels.find(c => c.id === activeOp.binding.commsChannelId)?.name || activeOp.binding.commsChannelId : 'None'}
+` : 'No active operation'}
+
+VOICE STATUS
+Connection: ${formatHealthState(voiceHealth.connectionState)}
+Active Net: ${voiceNet.activeNetId || 'None'}
+Participants: ${voiceNet.participants.length}
+Reconnects: ${voiceHealth.reconnectCount}
+Mic Enabled: ${voiceNet.micEnabled}
+PTT Active: ${voiceNet.pttActive}
+${voiceHealth.lastError ? `Last Error: ${voiceHealth.lastError}` : ''}
+
+PRESENCE
+Online Users: ${onlineCount}
+
+SYSTEM HEALTH
+Readiness: ${readiness.state}
+Latency: ${latency.latencyMs}ms
+Latency Healthy: ${latency.isHealthy}
+
+SHELL UI STATE
+Side Panel: ${shellUI.isSidePanelOpen ? 'Open' : 'Closed'}
+Context Panel: ${shellUI.isContextPanelOpen ? 'Open' : 'Closed'}
+Comms Dock: ${shellUI.isCommsDockOpen ? 'Open' : 'Closed'}
+
+COMMS
+Unread (Voice): ${unreadByTab?.voice || 0}
+Unread (Comms): ${unreadByTab?.comms || 0}
+Unread (Events): ${unreadByTab?.events || 0}
+
+END DIAGNOSTICS`;
 }
