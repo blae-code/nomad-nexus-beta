@@ -67,7 +67,13 @@ export default function CommsDockShell({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group" style={{ height: `${dockHeight}px` }}>
+    <div 
+      className="fixed bottom-0 left-0 bg-zinc-950 border-t-2 border-orange-500/30 backdrop-blur-sm flex flex-col group" 
+      style={{ 
+        height: `${dockHeight}px`,
+        right: isContextPanelOpen ? '20rem' : '0'
+      }}
+    >
       {/* Resize handle */}
       <div
         onMouseDown={() => setIsDragging(true)}
