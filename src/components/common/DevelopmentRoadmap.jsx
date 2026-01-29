@@ -157,14 +157,17 @@ export default function DevelopmentRoadmap() {
                               <Target className="w-3 h-3 text-zinc-500" />;
 
             return (
-              <div key={milestone.phase} className="border border-zinc-800/60 rounded bg-zinc-900/30 overflow-hidden">
-                {/* Compact Header */}
-                <div className="px-3 py-2 border-b border-zinc-800/40 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {statusIcon}
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">{milestone.phase}</span>
-                    <span className="text-[9px] font-mono px-1.5 py-0 bg-zinc-800/50 text-zinc-400 rounded">v{milestone.version}</span>
-                  </div>
+              <TooltipProvider key={milestone.phase}>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <div className="border border-zinc-800/60 rounded bg-zinc-900/30 overflow-hidden cursor-help">
+                      {/* Compact Header */}
+                      <div className="px-3 py-2 border-b border-zinc-800/40 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {statusIcon}
+                          <span className="text-xs font-bold text-white uppercase tracking-wider">{milestone.phase}</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0 bg-zinc-800/50 text-zinc-400 rounded">v{milestone.version}</span>
+                        </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <div className="w-10 h-1 bg-zinc-800 rounded-full overflow-hidden">
                       <div
