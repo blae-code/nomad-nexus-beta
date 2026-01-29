@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
  */
 const ShellUIContext = createContext(null);
 
-const STORAGE_PREFIX = 'nexus.shell.';
+const STORAGE_PREFIX = 'nexus.shell.ui.';
 
 const DEFAULT_STATE = {
   isSidePanelOpen: true,
