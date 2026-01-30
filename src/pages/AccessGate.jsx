@@ -110,7 +110,7 @@ export default function AccessGate() {
       <div className="relative z-10 w-full max-w-md">
         <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-orange-500/20 glow-box">
           {/* Header Section */}
-          <div className="border-b border-orange-500/30 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent p-8 relative overflow-hidden">
+          <div className="border-b border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-transparent p-8 relative overflow-hidden">
             <div className="flex items-center justify-center mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-orange-500/35 rounded-lg blur-2xl animate-pulse" />
