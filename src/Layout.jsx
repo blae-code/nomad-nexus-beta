@@ -34,38 +34,39 @@ const cn = (...classes) => {
 };
 
 export default function Layout({ children, currentPageName }) {
-        if (!children) {
-          return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-              <div className="text-orange-500 text-xl">Loading...</div>
-            </div>
-          );
-        }
+  // Full-screen pages that hide shell UI
+  const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
+  const isFullScreen = fullScreenPages.includes(currentPageName);
 
-        // Full-screen pages that hide shell UI
-        const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
-        const isFullScreen = fullScreenPages.includes(currentPageName);
+  if (!children) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-orange-500 text-xl">Loading...</div>
+      </div>
+    );
+  }
 
-        return (
-          <AuthProvider>
-            <NotificationProvider>
-              <ShellUIProvider>
-                <ActiveOpProvider>
-                  <VoiceNetProvider>
-                    {isFullScreen ? (
-                      <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
-                        {children}
-                      </div>
-                    ) : (
-                      <LayoutContent currentPageName={currentPageName} children={children} />
-                    )}
-                  </VoiceNetProvider>
-                </ActiveOpProvider>
-              </ShellUIProvider>
-            </NotificationProvider>
-          </AuthProvider>
-        );
-      }
+  // Single AuthProvider at app root (wraps all pages)
+  return (
+    <AuthProvider>
+      <NotificationProvider>
+        <ShellUIProvider>
+          <ActiveOpProvider>
+            <VoiceNetProvider>
+              {isFullScreen ? (
+                <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
+                  {children}
+                </div>
+              ) : (
+                <LayoutContent currentPageName={currentPageName} children={children} />
+              )}
+            </VoiceNetProvider>
+          </ActiveOpProvider>
+        </ShellUIProvider>
+      </NotificationProvider>
+    </AuthProvider>
+  );
+}
 
 function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
