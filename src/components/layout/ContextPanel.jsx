@@ -24,6 +24,7 @@ import NetHealth from '@/components/voice/VoiceControlPanel/NetHealth';
 import NetRoster from '@/components/voice/VoiceControlPanel/NetRoster';
 import VoiceControlsSection from '@/components/voice/VoiceControlPanel/VoiceControlsSection';
 import CommsDiscipline from '@/components/voice/VoiceControlPanel/CommsDiscipline';
+import VoiceParticipantIndicator from '@/components/voice/VoiceParticipantIndicator';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls

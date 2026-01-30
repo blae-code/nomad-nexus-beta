@@ -13,6 +13,8 @@ import { useCurrentUser } from '@/components/useCurrentUser';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
+import { useTypingIndicator } from '@/components/hooks/useTypingIndicator';
+import TypingIndicator from '@/components/comms/TypingIndicator';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -27,6 +29,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const { user } = useCurrentUser();
   const { unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
+  const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);
 
   // Load channels
   useEffect(() => {
@@ -87,11 +90,12 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
 
       setMessages((prev) => [...prev, newMsg]);
       setMessageInput('');
+      clearTyping();
       refreshUnreadCounts();
     } catch (error) {
       console.error('Failed to send message:', error);
     }
-  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts]);
+  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts, clearTyping]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -330,6 +334,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                        <div ref={messagesEndRef} />
                      </>
                    )}
+                   {/* Typing Indicator */}
+                   {typingUsers.length > 0 && <TypingIndicator userIds={typingUsers} />}
                 </div>
 
                 {/* Composer — Expandable input with clear send button */}
@@ -343,7 +349,10 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                     <div className="flex gap-2 items-center">
                       <Input
                         value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
+                        onChange={(e) => {
+                          setMessageInput(e.target.value);
+                          if (e.target.value) signalTyping();
+                        }}
                         onKeyDown={handleKeyDown}
                         placeholder="Type your message..."
                         className="h-9 text-xs flex-1 bg-zinc-900 border-orange-500/20 placeholder:text-zinc-600 focus:border-orange-500/40 transition-colors min-w-0"
