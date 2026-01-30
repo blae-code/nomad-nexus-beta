@@ -121,8 +121,8 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
        <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
          {!isMinimized && (
            <div>
-             <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Control</h2>
-             <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Comms Panel</p>
+             <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Operations</h2>
+             <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Tactical Comms Control</p>
            </div>
          )}
          <div className="flex items-center gap-1 ml-auto">
