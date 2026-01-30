@@ -7,19 +7,19 @@ export default function DevelopmentRoadmap() {
   
   // Group modules by completion status
   const MODULE_STATUS = {
-    MissionControl: { name: 'Mission Control', completed: 75 },
-    CommsConsole: { name: 'Comms Array', completed: 80 },
-    Settings: { name: 'System Admin', completed: 85 },
+    MissionControl: { name: 'Mission Control', completed: 60 },
+    CommsConsole: { name: 'Comms Array', completed: 70 },
+    Settings: { name: 'System Admin', completed: 75 },
     AccessGate: { name: 'Access Gate', completed: 100 },
-    Hub: { name: 'Command Hub', completed: 75 },
-    NomadRegistry: { name: 'Nomad Registry', completed: 35 },
-    FleetCommand: { name: 'Fleet Command', completed: 30 },
+    Hub: { name: 'Command Hub', completed: 65 },
+    NomadRegistry: { name: 'Nomad Registry', completed: 30 },
+    FleetCommand: { name: 'Fleet Command', completed: 25 },
     DataVault: { name: 'Data Vault', completed: 25 },
     QAConsole: { name: 'QA Console', completed: 100 },
     FrontierOps: { name: 'Frontier Ops', completed: 25 },
-    WarAcademy: { name: 'War Academy', completed: 20 },
-    TradeNexus: { name: 'Trade Nexus', completed: 25 },
-    IntelNexus: { name: 'Intel Nexus', completed: 15 },
+    TradeNexus: { name: 'Trade Nexus', completed: 20 },
+    WarAcademy: { name: 'War Academy', completed: 18 },
+    IntelNexus: { name: 'Intel Nexus', completed: 12 },
     HighCommand: { name: 'High Command', completed: 10 },
     NexusTraining: { name: 'Nexus Training', completed: 10 },
   };
