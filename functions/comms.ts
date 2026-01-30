@@ -1,7 +1,9 @@
 /**
- * Placeholder backend functions for Redscar Comms
- * These will later be connected to LiveKit
+ * LiveKit Comms Backend Functions
+ * Handles voice token generation and net configuration
  */
+
+import { AccessToken } from 'npm:livekit@0.15.5';
 
 export async function configureEventNets(eventId) {
   // Stub: Would normally create VoiceNet entities for the event
@@ -14,15 +16,42 @@ export async function configureEventNets(eventId) {
 }
 
 export async function issueLiveKitToken(eventId, userId) {
-  // Stub: Would normally generate a LiveKit JWT
-  console.log(`[STUB] Issuing token for user ${userId} in event ${eventId}`);
-  return {
-    token: "placeholder_token_jwt",
-    serverUrl: "wss://placeholder.livekit.cloud",
-    identity: userId,
-    permissions: {
-      canPublish: false,
-      canSubscribe: false
+  try {
+    const apiKey = Deno.env.get('LIVEKIT_API_KEY');
+    const apiSecret = Deno.env.get('LIVEKIT_API_SECRET');
+    const liveKitUrl = Deno.env.get('LIVEKIT_URL');
+
+    if (!apiKey || !apiSecret || !liveKitUrl) {
+      throw new Error('LiveKit configuration missing');
     }
-  };
+
+    // Generate JWT token for voice net access
+    const at = new AccessToken(apiKey, apiSecret);
+    at.identity = userId;
+    at.name = userId;
+    at.addGrant({
+      room: eventId,
+      roomJoin: true,
+      canPublish: true,
+      canPublishData: true,
+      canSubscribe: true,
+    });
+
+    const token = at.toJwt();
+
+    return {
+      token,
+      serverUrl: liveKitUrl,
+      identity: userId,
+      room: eventId,
+      permissions: {
+        canPublish: true,
+        canSubscribe: true,
+        canPublishData: true,
+      }
+    };
+  } catch (error) {
+    console.error('Failed to issue LiveKit token:', error);
+    throw new Error(`LiveKit token generation failed: ${error.message}`);
+  }
 }
