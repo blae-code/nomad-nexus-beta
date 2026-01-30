@@ -40,7 +40,7 @@ export default function MissionControl() {
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showAITools, setShowAITools] = useState(null); // 'blueprints', 'scheduling', 'threats'
+  const [showPlanningTools, setShowPlanningTools] = useState(null);
 
   // Objective form
   const [objectiveForm, setObjectiveForm] = useState({
