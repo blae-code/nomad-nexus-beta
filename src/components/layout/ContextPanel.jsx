@@ -91,12 +91,10 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
       readiness,
       onlineCount,
       shellUI,
-      channels,
       unreadByTab,
     });
 
-    navigator.clipboard.writeText(diagnostics);
-
+    navigator.clipboard.writeText(diagnostics).then(() => {
       addNotification({
         type: 'success',
         title: 'Diagnostics copied',
@@ -443,7 +441,7 @@ function getCurrentRoute() {
   }
 }
 
-function generateDiagnosticsText({ user, activeOp, voiceNet, voiceHealth, latency, readiness, onlineCount, shellUI, channels, unreadByTab }) {
+function generateDiagnosticsText({ user, activeOp, voiceNet, voiceHealth, latency, readiness, onlineCount, shellUI, unreadByTab }) {
   const timestamp = new Date().toISOString();
   const route = getCurrentRoute();
 
@@ -473,7 +471,6 @@ Status: ${activeOp.activeEvent.status}
 Participants: ${activeOp.participants.length}
 Bindings:
   Voice Net: ${activeOp.binding?.voiceNetId || 'None'}
-  Comms Channel: ${activeOp.binding?.commsChannelId ? channels.find(c => c.id === activeOp.binding.commsChannelId)?.name || activeOp.binding.commsChannelId : 'None'}
 ` : 'No active operation'}
 
 VOICE STATUS
