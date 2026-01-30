@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Zap } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+import { isDevMode } from '@/components/utils/devMode';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 
 const scanlineStyle = `
