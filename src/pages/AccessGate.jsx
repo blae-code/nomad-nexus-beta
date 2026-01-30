@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Zap } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { isDevMode } from '@/components/utils/devMode';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 const scanlineStyle = `
   @keyframes scan {
@@ -31,6 +31,7 @@ export default function AccessGate() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
 
+  // AccessGate checks if user is already authenticated and redirects
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -39,7 +40,7 @@ export default function AccessGate() {
           window.location.href = createPageUrl('Disclaimers');
         }
       } catch (err) {
-        // Silently ignore auth errors - user is unauthenticated, which is expected
+        // Silently ignore - user is expected to be unauthenticated
       }
     };
     checkAuth();
@@ -86,7 +87,8 @@ export default function AccessGate() {
   }
 
   return (
-    <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
+    <RouteGuard requiredAuth="none">
+      <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
       <style>{scanlineStyle}</style>
       
       {/* Animated radial gradient background */}
@@ -220,5 +222,6 @@ export default function AccessGate() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }
