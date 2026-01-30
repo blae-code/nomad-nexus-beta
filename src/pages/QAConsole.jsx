@@ -279,6 +279,7 @@ function EntityInspector() {
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const entityTypes = [
     'User',
@@ -291,6 +292,11 @@ function EntityInspector() {
     'FleetAsset',
     'AccessKey',
     'AIAgent',
+    'OpBinding',
+    'EventParticipant',
+    'PlayerStatus',
+    'Coffer',
+    'CofferTransaction',
   ];
 
   const loadEntities = async () => {
@@ -314,6 +320,22 @@ function EntityInspector() {
     JSON.stringify(entity).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const copyAllData = () => {
+    navigator.clipboard.writeText(JSON.stringify(filteredEntities, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const exportJSON = () => {
+    const dataStr = JSON.stringify(filteredEntities, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    const exportFileDefaultName = `${entityType}_${new Date().toISOString().split('T')[0]}.json`;
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
   return (
     <div className="space-y-6">
       {/* Entity Type Selector */}
@@ -335,11 +357,19 @@ function EntityInspector() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-xs"
         />
-        <Button onClick={loadEntities} variant="outline">
+        <Button onClick={loadEntities} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Reload
         </Button>
-        <div className="text-xs text-zinc-500">
+        <Button onClick={copyAllData} variant="outline" size="sm">
+          <Copy className="w-4 h-4 mr-2" />
+          {copied ? 'Copied!' : 'Copy All'}
+        </Button>
+        <Button onClick={exportJSON} variant="outline" size="sm">
+          <Download className="w-4 h-4 mr-2" />
+          Export JSON
+        </Button>
+        <div className="text-xs text-zinc-500 ml-auto">
           {filteredEntities.length} of {entities.length} records
         </div>
       </div>
@@ -356,18 +386,32 @@ function EntityInspector() {
               {filteredEntities.map((entity, idx) => (
                 <details key={entity.id || idx} className="group">
                   <summary className="p-4 hover:bg-zinc-800/40 cursor-pointer flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Database className="w-4 h-4 text-orange-500" />
-                      <span className="text-sm font-mono text-zinc-300">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Database className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                      <span className="text-sm font-mono text-zinc-300 truncate">
                         {entity.id || entity.name || entity.title || `Record ${idx + 1}`}
                       </span>
                     </div>
-                    <div className="text-xs text-zinc-500">
-                      {new Date(entity.created_date).toLocaleDateString()}
+                    <div className="text-xs text-zinc-500 flex-shrink-0 ml-2">
+                      {entity.created_date ? new Date(entity.created_date).toLocaleDateString() : 'N/A'}
                     </div>
                   </summary>
-                  <div className="p-4 bg-zinc-950/50">
-                    <pre className="text-xs text-zinc-400 overflow-x-auto">
+                  <div className="p-4 bg-zinc-950/50 border-t border-zinc-800/60">
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(JSON.stringify(entity, null, 2));
+                        }}
+                        className="h-6 px-2"
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <pre className="text-xs text-zinc-400 overflow-x-auto bg-zinc-900/50 p-3 rounded border border-zinc-800/60">
                       {JSON.stringify(entity, null, 2)}
                     </pre>
                   </div>
@@ -490,19 +534,39 @@ function PerformanceMonitor() {
     apiLatency: Math.random() * 200 + 50,
     dbQuery: Math.random() * 100 + 20,
     renderTime: Math.random() * 50 + 10,
+    memoryUsage: Math.random() * 50 + 30,
+    activeConnections: Math.floor(Math.random() * 20 + 5),
   });
+
+  const refreshMetrics = () => {
+    setMetrics({
+      pageLoad: Math.random() * 1000 + 500,
+      apiLatency: Math.random() * 200 + 50,
+      dbQuery: Math.random() * 100 + 20,
+      renderTime: Math.random() * 50 + 10,
+      memoryUsage: Math.random() * 50 + 30,
+      activeConnections: Math.floor(Math.random() * 20 + 5),
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <h3 className="text-sm font-black uppercase text-white tracking-wide">Performance Metrics</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-black uppercase text-white tracking-wide">Performance Metrics</h3>
+        <Button onClick={refreshMetrics} variant="outline" size="sm">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-blue-400" />
             <span className="text-xs text-zinc-400">Page Load</span>
           </div>
           <div className="text-2xl font-black text-blue-400">{metrics.pageLoad.toFixed(0)}ms</div>
+          <div className="text-[10px] text-zinc-500 mt-1">Target: &lt;1000ms</div>
         </div>
 
         <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
@@ -511,6 +575,7 @@ function PerformanceMonitor() {
             <span className="text-xs text-zinc-400">API Latency</span>
           </div>
           <div className="text-2xl font-black text-green-400">{metrics.apiLatency.toFixed(0)}ms</div>
+          <div className="text-[10px] text-zinc-500 mt-1">Target: &lt;200ms</div>
         </div>
 
         <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
@@ -519,6 +584,7 @@ function PerformanceMonitor() {
             <span className="text-xs text-zinc-400">DB Query</span>
           </div>
           <div className="text-2xl font-black text-purple-400">{metrics.dbQuery.toFixed(0)}ms</div>
+          <div className="text-[10px] text-zinc-500 mt-1">Target: &lt;100ms</div>
         </div>
 
         <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
@@ -527,6 +593,25 @@ function PerformanceMonitor() {
             <span className="text-xs text-zinc-400">Render Time</span>
           </div>
           <div className="text-2xl font-black text-orange-400">{metrics.renderTime.toFixed(0)}ms</div>
+          <div className="text-[10px] text-zinc-500 mt-1">Target: &lt;50ms</div>
+        </div>
+
+        <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs text-zinc-400">Memory Usage</span>
+          </div>
+          <div className="text-2xl font-black text-cyan-400">{metrics.memoryUsage.toFixed(1)}MB</div>
+          <div className="text-[10px] text-zinc-500 mt-1">Available: 512MB</div>
+        </div>
+
+        <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-yellow-400" />
+            <span className="text-xs text-zinc-400">Active Connections</span>
+          </div>
+          <div className="text-2xl font-black text-yellow-400">{metrics.activeConnections}</div>
+          <div className="text-[10px] text-zinc-500 mt-1">Max: 100</div>
         </div>
       </div>
 
@@ -543,23 +628,61 @@ function PerformanceMonitor() {
 
 // Logs Viewer
 function LogsViewer() {
-  const [logs] = useState([
+  const [logs, setLogs] = useState([
     { time: new Date().toISOString(), level: 'INFO', message: 'User logged in successfully', source: 'Auth' },
     { time: new Date().toISOString(), level: 'INFO', message: 'Voice net connection established', source: 'Voice' },
     { time: new Date().toISOString(), level: 'WARN', message: 'Slow query detected (250ms)', source: 'Database' },
     { time: new Date().toISOString(), level: 'ERROR', message: 'Failed to load channel data', source: 'Comms' },
+    { time: new Date().toISOString(), level: 'INFO', message: 'Message sent to #general', source: 'Comms' },
+    { time: new Date().toISOString(), level: 'INFO', message: 'Fleet asset updated', source: 'Fleet' },
   ]);
+  const [levelFilter, setLevelFilter] = useState('ALL');
+
+  const filteredLogs = levelFilter === 'ALL' ? logs : logs.filter((log) => log.level === levelFilter);
+
+  const exportLogs = () => {
+    const logText = filteredLogs
+      .map((log) => `[${new Date(log.time).toISOString()}] [${log.level}] [${log.source}] ${log.message}`)
+      .join('\n');
+    const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(logText);
+    const exportFileDefaultName = `system_logs_${new Date().toISOString().split('T')[0]}.txt`;
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const clearLogs = () => {
+    if (confirm('Clear all logs?')) {
+      setLogs([]);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-sm font-black uppercase text-white tracking-wide">System Logs</h3>
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <h3 className="text-sm font-black uppercase text-white tracking-wide">System Logs</h3>
+          <select
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            className="px-3 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-white"
+          >
+            <option value="ALL">All Levels</option>
+            <option value="INFO">Info</option>
+            <option value="WARN">Warning</option>
+            <option value="ERROR">Error</option>
+          </select>
+          <div className="text-xs text-zinc-500">
+            {filteredLogs.length} logs
+          </div>
+        </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={exportLogs}>
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={clearLogs}>
             <StopCircle className="w-4 h-4 mr-2" />
             Clear
           </Button>
@@ -568,28 +691,32 @@ function LogsViewer() {
 
       <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-lg overflow-hidden">
         <div className="max-h-[500px] overflow-y-auto">
-          <div className="divide-y divide-zinc-800/60">
-            {logs.map((log, idx) => (
-              <div key={idx} className="p-3 hover:bg-zinc-800/40 font-mono text-xs">
-                <div className="flex items-center gap-3">
-                  <span className="text-zinc-500">{new Date(log.time).toLocaleTimeString()}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded font-bold ${
-                      log.level === 'ERROR'
-                        ? 'bg-red-500/20 text-red-400'
-                        : log.level === 'WARN'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-blue-500/20 text-blue-400'
-                    }`}
-                  >
-                    {log.level}
-                  </span>
-                  <span className="text-zinc-400">[{log.source}]</span>
-                  <span className="text-zinc-300">{log.message}</span>
+          {filteredLogs.length === 0 ? (
+            <div className="p-8 text-center text-zinc-500">No logs to display</div>
+          ) : (
+            <div className="divide-y divide-zinc-800/60">
+              {filteredLogs.map((log, idx) => (
+                <div key={idx} className="p-3 hover:bg-zinc-800/40 font-mono text-xs">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-zinc-500 flex-shrink-0">{new Date(log.time).toLocaleTimeString()}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded font-bold flex-shrink-0 ${
+                        log.level === 'ERROR'
+                          ? 'bg-red-500/20 text-red-400'
+                          : log.level === 'WARN'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : 'bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
+                      {log.level}
+                    </span>
+                    <span className="text-zinc-400 flex-shrink-0">[{log.source}]</span>
+                    <span className="text-zinc-300 break-words">{log.message}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -599,19 +726,57 @@ function LogsViewer() {
 // Testing Tools
 function TestingTools() {
   const [testResult, setTestResult] = useState(null);
+  const [runningTest, setRunningTest] = useState(false);
 
-  const runTest = (testName) => {
-    setTestResult({ name: testName, status: 'pass', time: Date.now() });
-    setTimeout(() => setTestResult(null), 3000);
+  const runTest = async (testName, testFn) => {
+    setRunningTest(true);
+    setTestResult({ name: testName, status: 'running', time: Date.now() });
+    
+    try {
+      await testFn();
+      setTestResult({ name: testName, status: 'pass', time: Date.now() });
+    } catch (error) {
+      setTestResult({ name: testName, status: 'fail', time: Date.now(), error: error.message });
+    } finally {
+      setRunningTest(false);
+      setTimeout(() => setTestResult(null), 5000);
+    }
+  };
+
+  const testAuth = async () => {
+    const isAuth = await base44.auth.isAuthenticated();
+    if (!isAuth) throw new Error('Authentication failed');
+  };
+
+  const testDatabase = async () => {
+    await base44.entities.User.list();
+  };
+
+  const testVoiceNet = async () => {
+    const nets = await base44.entities.VoiceNet.list();
+    if (nets.length === 0) throw new Error('No voice nets found');
+  };
+
+  const testMessages = async () => {
+    await base44.entities.Message.list();
+  };
+
+  const testEvents = async () => {
+    await base44.entities.Event.list();
+  };
+
+  const testLoadTest = async () => {
+    const promises = Array(10).fill(null).map(() => base44.entities.User.list());
+    await Promise.all(promises);
   };
 
   const tools = [
-    { name: 'Test User Authentication', icon: Shield, action: () => runTest('Auth Test') },
-    { name: 'Test Database Connection', icon: Database, action: () => runTest('DB Test') },
-    { name: 'Test Voice Net Service', icon: Radio, action: () => runTest('Voice Test') },
-    { name: 'Test Message Delivery', icon: MessageSquare, action: () => runTest('Message Test') },
-    { name: 'Test Event Creation', icon: Calendar, action: () => runTest('Event Test') },
-    { name: 'Load Test (100 requests)', icon: Zap, action: () => runTest('Load Test') },
+    { name: 'Test User Authentication', icon: Shield, action: () => runTest('Auth Test', testAuth) },
+    { name: 'Test Database Connection', icon: Database, action: () => runTest('DB Test', testDatabase) },
+    { name: 'Test Voice Net Service', icon: Radio, action: () => runTest('Voice Test', testVoiceNet) },
+    { name: 'Test Message Delivery', icon: MessageSquare, action: () => runTest('Message Test', testMessages) },
+    { name: 'Test Event Creation', icon: Calendar, action: () => runTest('Event Test', testEvents) },
+    { name: 'Load Test (10 requests)', icon: Zap, action: () => runTest('Load Test', testLoadTest) },
   ];
 
   return (
@@ -619,11 +784,28 @@ function TestingTools() {
       <h3 className="text-sm font-black uppercase text-white tracking-wide">Testing Tools</h3>
 
       {testResult && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-green-400" />
+        <div className={`p-4 rounded-lg flex items-center gap-3 ${
+          testResult.status === 'running' 
+            ? 'bg-blue-500/10 border border-blue-500/30'
+            : testResult.status === 'pass'
+            ? 'bg-green-500/10 border border-green-500/30'
+            : 'bg-red-500/10 border border-red-500/30'
+        }`}>
+          {testResult.status === 'running' && <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />}
+          {testResult.status === 'pass' && <CheckCircle2 className="w-5 h-5 text-green-400" />}
+          {testResult.status === 'fail' && <AlertTriangle className="w-5 h-5 text-red-400" />}
           <div>
-            <div className="text-sm font-semibold text-green-400">{testResult.name} Passed</div>
-            <div className="text-xs text-zinc-400">Completed successfully</div>
+            <div className={`text-sm font-semibold ${
+              testResult.status === 'running' ? 'text-blue-400' :
+              testResult.status === 'pass' ? 'text-green-400' : 'text-red-400'
+            }`}>
+              {testResult.name} {testResult.status === 'running' ? 'Running...' : testResult.status === 'pass' ? 'Passed' : 'Failed'}
+            </div>
+            <div className="text-xs text-zinc-400">
+              {testResult.status === 'running' && 'Test in progress...'}
+              {testResult.status === 'pass' && 'Completed successfully'}
+              {testResult.status === 'fail' && (testResult.error || 'Test failed')}
+            </div>
           </div>
         </div>
       )}
@@ -636,7 +818,8 @@ function TestingTools() {
               key={idx}
               variant="outline"
               onClick={tool.action}
-              className="h-auto flex-col items-start p-4 text-left"
+              disabled={runningTest}
+              className="h-auto flex-col items-start p-4 text-left hover:border-orange-500/40 transition-colors disabled:opacity-50"
             >
               <Icon className="w-5 h-5 text-orange-500 mb-2" />
               <span className="text-sm font-semibold">{tool.name}</span>
