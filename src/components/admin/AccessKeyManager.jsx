@@ -23,10 +23,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare, X } from 'lucide-react';
+import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare, X, ChevronDown } from 'lucide-react';
 import GrantsSelector from './GrantsSelector';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
+
+const RANK_GRANTS_CONFIG = {
+  'VAGRANT': ['read_only'],
+  'SCOUT': ['read_only', 'comms_access'],
+  'VOYAGER': ['read_only', 'comms_access', 'event_creation'],
+  'PIONEER': ['read_only', 'comms_access', 'event_creation', 'fleet_management', 'voice_net_control'],
+  'FOUNDER': ['admin_access'],
+};
 
 export default function AccessKeyManager() {
   const [loading, setLoading] = useState(true);
@@ -36,8 +45,9 @@ export default function AccessKeyManager() {
   const [showRevoked, setShowRevoked] = useState(false);
   const [formData, setFormData] = useState({
     grantsRank: 'VAGRANT',
-    grantsPermissions: [],
+    grantsPermissions: RANK_GRANTS_CONFIG['VAGRANT'],
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [recipientCallsign, setRecipientCallsign] = useState('');
   const [adminCallsign, setAdminCallsign] = useState('');
   const [generatedMessage, setGeneratedMessage] = useState(null);
@@ -107,8 +117,9 @@ export default function AccessKeyManager() {
       setGeneratedMessage(message);
 
       setSuccess('Access key generated - Message ready to copy');
-      setFormData({ grantsRank: 'VAGRANT', grantsPermissions: [] });
+      setFormData({ grantsRank: 'VAGRANT', grantsPermissions: RANK_GRANTS_CONFIG['VAGRANT'] });
       setRecipientCallsign('');
+      setShowAdvanced(false);
       setError(null);
       await loadKeys();
     } catch (err) {
@@ -233,50 +244,74 @@ export default function AccessKeyManager() {
 
       {/* Create Form */}
       {showCreateForm && (
-        <form onSubmit={handleCreateKeys} className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded space-y-4">
-          <h3 className="font-bold text-orange-400">Generate Access Keys</h3>
+        <form onSubmit={handleCreateKeys} className="p-5 bg-zinc-800/50 border border-orange-500/30 rounded-lg space-y-4">
+          <h3 className="text-lg font-bold text-orange-400">Generate Access Key</h3>
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-zinc-300 block mb-1">Recipient Callsign *</label>
+              <label className="text-sm font-bold text-orange-300 block mb-2">Recipient Callsign *</label>
               <Input
                 type="text"
-                placeholder="Enter recipient's callsign"
+                placeholder="Enter callsign..."
                 value={recipientCallsign}
                 onChange={(e) => setRecipientCallsign(e.target.value)}
-                className="bg-zinc-900 border-zinc-700"
+                className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-zinc-300 block mb-1">Grants Rank</label>
-              <Select value={formData.grantsRank} onValueChange={(rank) => setFormData({ ...formData, grantsRank: rank })}>
-                <SelectTrigger className="bg-zinc-900 border-zinc-700">
+              <label className="text-sm font-bold text-orange-300 block mb-2">Authorization Rank *</label>
+              <Select 
+                value={formData.grantsRank} 
+                onValueChange={(rank) => {
+                  setFormData({ 
+                    ...formData, 
+                    grantsRank: rank,
+                    grantsPermissions: RANK_GRANTS_CONFIG[rank]
+                  });
+                }}
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100 h-10">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
                   {RANK_OPTIONS.map((rank) => (
                     <SelectItem key={rank} value={rank}>
-                      {rank}
+                      <span className="text-zinc-100">{rank}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-zinc-400 mt-1">Pre-configured with standard permissions for this rank</p>
             </div>
 
-            <GrantsSelector 
-              selectedGrants={formData.grantsPermissions}
-              onChange={(perms) => setFormData({ ...formData, grantsPermissions: perms })}
-            />
-            </div>
+            {/* Advanced Settings Collapsible */}
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-300 mt-2"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                  Advanced Settings
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3 pt-3 border-t border-zinc-700 space-y-3">
+                <GrantsSelector 
+                  selectedGrants={formData.grantsPermissions}
+                  onChange={(perms) => setFormData({ ...formData, grantsPermissions: perms })}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
 
           <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-blue-300">
             <strong>Note:</strong> One key per user. Keys never expire and are permanently linked to identity.
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => { setShowCreateForm(false); setGeneratedMessage(null); }}>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button type="button" variant="outline" onClick={() => { setShowCreateForm(false); setGeneratedMessage(null); setShowAdvanced(false); }}>
               Cancel
             </Button>
             <Button type="submit" className="bg-orange-600 hover:bg-orange-500">
