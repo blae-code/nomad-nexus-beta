@@ -60,6 +60,7 @@ import SystemAdmin from './pages/SystemAdmin';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
+import QAConsole from './pages/QAConsole';
 import __Layout from './Layout.jsx';
 
 
@@ -77,6 +78,7 @@ export const PAGES = {
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
+    "QAConsole": QAConsole,
 }
 
 export const pagesConfig = {
