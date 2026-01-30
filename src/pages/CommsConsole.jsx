@@ -11,6 +11,7 @@ import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
 import VoiceNetBrowser from '@/components/voice/VoiceNetBrowser';
+import ChannelManager from '@/components/comms/ChannelManager';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -249,6 +250,10 @@ Provide a helpful, concise response with tactical awareness.`,
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Polls
                   </TabsTrigger>
+                  <TabsTrigger value="channels">
+                    <Radio className="w-4 h-4 mr-2" />
+                    Channels
+                  </TabsTrigger>
                   <TabsTrigger value="voice">
                     <Radio className="w-4 h-4 mr-2" />
                     Voice Nets
@@ -381,6 +386,12 @@ Provide a helpful, concise response with tactical awareness.`,
                         </div>
                       );
                     })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="channels" className="flex-1 flex flex-col">
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    <ChannelManager />
                   </div>
                 </TabsContent>
 

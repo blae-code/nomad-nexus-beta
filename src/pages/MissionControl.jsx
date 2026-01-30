@@ -4,11 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCircle, Circle, FileText, BarChart3, Edit, Trash2, Radio } from 'lucide-react';
+import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCircle, Circle, FileText, BarChart3, Edit, Trash2 } from 'lucide-react';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useCurrentUser } from '@/components/useCurrentUser';
-import VoiceNetManager from '@/components/voice/VoiceNetManager';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
@@ -302,10 +301,6 @@ export default function MissionControl() {
                     <Target className="w-4 h-4 mr-2" />
                     Objectives
                   </TabsTrigger>
-                  <TabsTrigger value="voice">
-                    <Radio className="w-4 h-4 mr-2" />
-                    Voice Nets
-                  </TabsTrigger>
                   <TabsTrigger value="reports">
                     <FileText className="w-4 h-4 mr-2" />
                     Reports
@@ -398,10 +393,6 @@ export default function MissionControl() {
                       ))}
                     </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="voice" className="mt-4">
-                  <VoiceNetManager eventId={selectedEvent.id} />
                 </TabsContent>
 
                 <TabsContent value="reports" className="space-y-4 mt-4">
