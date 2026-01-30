@@ -5,49 +5,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 export default function DevelopmentRoadmap() {
   const [expanded, setExpanded] = useState(true);
   
-  const featureDescriptions = {
-    'Infrastructure & Database': 'Core backend systems, database schema, and persistence layer for all Nexus data',
-    'Authentication & Access Control': 'Secure login, access tokens, permission management, and role-based entry gates',
-    'Voice Net Architecture': 'LiveKit integration, voice session management, real-time audio streams, and network routing',
-    'Text Comms & Messaging': 'Channel system, message persistence, read states, and real-time comms updates',
-    'Performance Optimization': 'Latency reduction, caching strategies, and network efficiency improvements',
-    'Complete Onboarding Flow': 'Interactive onboarding sequence, tutorial walkthrough, and access code redemption',
-    'Member Profiles & Identity': 'Callsign customization, bio fields, avatar support, and personal identity settings',
-    'Role-based Access Control': 'Granular permission system, rank hierarchy, and feature access gating',
-    'Rank & Membership System': 'Rank progression, membership tiers, and privilege escalation mechanics',
-    'User Directory & Discovery': 'Member search, availability status, and social discovery features',
-    'Event Management & Planning': 'Create/schedule operations, briefing templates, and event lifecycle management',
-    'Tactical Operations Console': 'Real-time op monitoring, participant tracking, and mission control interface',
-    'Squad Formation & Assignment': 'Squad creation, roster management, and dynamic team assignment for ops',
-    'Objective Tracking': 'Mission objectives, sub-task management, and completion status tracking',
-    'Operation Reports & AAR': 'After-action reports, op summaries, and historical operation data',
-    'Voice Analytics & Metrics': 'Voice quality metrics, transmission statistics, and comms health indicators',
-    'Comms Intelligence Dashboard': 'Communication patterns, sentiment analysis, and activity intelligence',
-    'Performance Analysis Tools': 'Latency analysis, throughput metrics, and system performance visualization',
-    'Historical Data & Reporting': 'Long-term data storage, trend analysis, and detailed historical reports',
-    'Production Hardening': 'Security audits, load testing, and production-readiness optimization',
-    'Full Documentation': 'API docs, user guides, admin manuals, and comprehensive feature documentation',
-    'Public Release & Onboarding': 'Production deployment, public accessibility, and launch preparation',
-    'Community Support Launch': 'Support infrastructure, community resources, and user assistance programs',
-  };
-
-  const phaseDescriptions = {
-    'Phase 1': 'Building the foundation: database, auth, voice infrastructure, and core messaging systems',
-    'Phase 2': 'User experience refinement: onboarding, profiles, access control, and membership systems',
-    'Phase 3': 'Operational capabilities: event management, tactical console, squads, and mission tracking',
-    'Phase 4': 'Intelligence layer: analytics dashboards, performance metrics, and historical insights',
-    'Release': 'Final production release: hardening, documentation, and full launch sequence',
-  };
-
   // Group modules by completion status
   const MODULE_STATUS = {
-    MissionControl: { name: 'Mission Control', completed: 100 },
-    CommsConsole: { name: 'Comms Array', completed: 100 },
-    Settings: { name: 'System Admin', completed: 100 },
+    MissionControl: { name: 'Mission Control', completed: 75 },
+    CommsConsole: { name: 'Comms Array', completed: 80 },
+    Settings: { name: 'System Admin', completed: 85 },
     AccessGate: { name: 'Access Gate', completed: 100 },
-    NomadRegistry: { name: 'Nomad Registry', completed: 40 },
-    FleetCommand: { name: 'Fleet Command', completed: 35 },
-    DataVault: { name: 'Data Vault', completed: 30 },
+    Hub: { name: 'Command Hub', completed: 75 },
+    NomadRegistry: { name: 'Nomad Registry', completed: 35 },
+    FleetCommand: { name: 'Fleet Command', completed: 30 },
+    DataVault: { name: 'Data Vault', completed: 25 },
     QAConsole: { name: 'QA Console', completed: 100 },
     FrontierOps: { name: 'Frontier Ops', completed: 25 },
     WarAcademy: { name: 'War Academy', completed: 20 },
@@ -75,32 +42,6 @@ export default function DevelopmentRoadmap() {
     Object.values(MODULE_STATUS).reduce((sum, mod) => sum + mod.completed, 0) /
       Object.keys(MODULE_STATUS).length
   );
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'complete':
-        return <CheckCircle2 className="w-3 h-3 text-green-400" />;
-      case 'in-progress':
-        return <Clock className="w-3 h-3 text-yellow-400" />;
-      case 'planned':
-        return <AlertCircle className="w-3 h-3 text-red-400" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'complete':
-        return 'text-green-300';
-      case 'in-progress':
-        return 'text-yellow-300';
-      case 'planned':
-        return 'text-red-300';
-      default:
-        return 'text-zinc-500';
-    }
-  };
 
   return (
     <>
@@ -199,7 +140,8 @@ export default function DevelopmentRoadmap() {
             )}
 
             <div className="bg-blue-500/10 border border-blue-500/30 rounded px-2.5 py-1.5 text-[9px]">
-            <div className="font-semibold text-blue-300">Priority: Comms Central → Mission Control → Operations Infrastructure</div>
+            <div className="font-semibold text-blue-300 mb-1">Phase 5: UX/Immersion Enhancement</div>
+            <div className="text-blue-400 text-[8px]">Adding utility features, audio feedback, progression systems, and tactical polish across all modules</div>
             </div>
         </div>
       )}
