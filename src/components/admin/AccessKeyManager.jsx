@@ -148,10 +148,12 @@ Redeem at Access Gate with your callsign.
     setTimeout(() => setSuccess(null), 2000);
   };
 
-  const filteredKeys = keys.filter((k) =>
-    k.code?.includes(searchTerm.toUpperCase()) ||
-    k.grantsRank?.includes(searchTerm.toUpperCase())
-  );
+  const filteredKeys = keys.filter((k) => {
+    const matchesSearch = k.code?.includes(searchTerm.toUpperCase()) || k.grantsRank?.includes(searchTerm.toUpperCase());
+    const isNotRevoked = k.status !== 'REVOKED';
+    const shouldShow = showRevoked || isNotRevoked;
+    return matchesSearch && shouldShow;
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
