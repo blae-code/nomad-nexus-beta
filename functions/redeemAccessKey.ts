@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest, createServiceClient } from 'npm:@base44/sdk@0.8.6';
 
 // In-memory rate limiter (5 min lockout after 10 failures)
 const failureMap = new Map();
