@@ -71,6 +71,12 @@ export default function PermissionGuard({
   }
 
   if (!hasPermission) {
+    // Admins should always have access - this shouldn't happen
+    if (user.role === 'admin') {
+      console.warn('Admin permission check failed:', { user, minRank, allowedRanks, requiredRoles });
+      return <>{children}</>;
+    }
+    
     return fallback || (
       <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 flex items-center gap-3 text-zinc-400 text-sm">
         <Lock className="w-4 h-4" />
