@@ -260,9 +260,6 @@ function ModuleCard({ item, index }) {
         )}
       </Tooltip>
     </TooltipProvider>
-  );
-}
-
       {/* Development Roadmap - Full Width Below Modules */}
       <div className="border-t border-zinc-800/40 pt-6 mt-6">
         <DevelopmentRoadmap />
