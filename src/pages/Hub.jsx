@@ -156,19 +156,23 @@ export default function Hub() {
 
                       <div className="p-4 space-y-2 max-h-56 overflow-y-auto">
                         {status.features.map((feature, idx) => {
-                          const featureColor = getStatusColor(feature.status);
                           const bgColor = getStatusBgColor(feature.status);
                           const FeatureIcon = 
                             feature.status === 'complete' ? CheckCircle2 :
                             feature.status === 'in-progress' ? Clock :
                             AlertCircle;
+                          
+                          const iconColor = 
+                            feature.status === 'complete' ? 'text-green-400' :
+                            feature.status === 'in-progress' ? 'text-orange-400' :
+                            'text-zinc-500';
 
                           return (
                             <div key={idx} className={`flex items-start gap-2 text-xs ${bgColor} p-2 rounded`}>
-                              <FeatureIcon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${featureColor}`} />
+                              <FeatureIcon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${iconColor}`} />
                               <div>
                                 <div className="font-semibold text-white">{feature.name}</div>
-                                <div className="text-zinc-500 text-[10px] capitalize mt-0.5">
+                                <div className="text-zinc-400 text-[10px] capitalize mt-0.5">
                                   {feature.status === 'complete' && 'Ready to use'}
                                   {feature.status === 'in-progress' && 'Currently in development'}
                                   {feature.status === 'planned' && 'Planned for future release'}
