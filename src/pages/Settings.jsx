@@ -1,217 +1,379 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * SystemAdmin — Admin console for operations & maintenance
+ * GATED: Admin users only (rank: Founder/Pioneer OR dev flag)
+ */
+
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { createPageUrl } from '@/utils';
+import { useCurrentUser } from '@/components/useCurrentUser';
+import { 
+  Shield,
+  AlertTriangle,
+  Users,
+  Database,
+  Zap,
+  RotateCcw,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  Target,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, LogOut, Save, Layout, Shield, AlertCircle } from 'lucide-react';
-import UserManagement from '@/components/admin/UserManagement';
-import AccessKeyManager from '@/components/admin/AccessKeyManager';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import FactoryReset from '@/components/admin/FactoryReset';
+import ImmersiveSeed from '@/components/admin/ImmersiveSeed';
 import DataValidation from '@/components/admin/DataValidation';
 import DiagnosticsBundle from '@/components/admin/DiagnosticsBundle';
-import ImmersiveSeed from '@/components/admin/ImmersiveSeed';
-import FactoryReset from '@/components/admin/FactoryReset';
+import UserManagement from '@/components/admin/UserManagement';
+import AccessKeyManager from '@/components/admin/AccessKeyManager';
+
+// Dev-only admin override (DISABLED BY DEFAULT)
+const DEV_ADMIN_OVERRIDE_ENABLED = false;
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [bio, setBio] = useState('');
-  const [error, setError] = useState(null);
+  const [authorized, setAuthorized] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const { user } = useCurrentUser();
 
   useEffect(() => {
-    const init = async () => {
+    const checkAuth = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        const userProfile = await base44.entities.MemberProfile.filter({ user_id: currentUser.id });
-        setUser(currentUser);
-        if (userProfile.length > 0) {
-          setProfile(userProfile[0]);
-          setBio(userProfile[0].bio || '');
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) {
+          window.location.href = createPageUrl('AccessGate');
+          return;
         }
-      } catch (err) {
-        setError('Failed to load user data');
+
+        // Check authorization
+        const me = await base44.auth.me();
+
+        // Admin check: user.role === 'admin' OR rank is FOUNDER/PIONEER with dev flag
+        const isAdmin =
+          me.role === 'admin' ||
+          (DEV_ADMIN_OVERRIDE_ENABLED && (me.rank === 'FOUNDER' || me.rank === 'PIONEER'));
+
+        if (!isAdmin) {
+          // Redirect unauthorized users
+          window.location.href = createPageUrl('Hub');
+          return;
+        }
+
+        setAuthorized(true);
+      } catch (error) {
+        window.location.href = createPageUrl('AccessGate');
       } finally {
         setLoading(false);
       }
     };
-    init();
+
+    checkAuth();
   }, []);
 
-  const handleSave = async () => {
-    if (!profile) return;
-    setSaving(true);
-    try {
-      await base44.entities.MemberProfile.update(profile.id, { bio });
-      alert('Profile updated successfully');
-    } catch (error) {
-      alert('Error updating profile');
-    }
-    setSaving(false);
-  };
-
-  const handleLogout = () => {
-    base44.auth.logout();
-  };
-
-  const isAdmin = user?.role === 'admin';
-
   if (loading) {
-    return <div className="p-8 text-center text-orange-500">LOADING...</div>;
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-orange-500 text-xl">LOADING...</div>
+      </div>
+    );
   }
 
-  if (error) {
+  if (!authorized) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded text-red-400">
-          {error}
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-red-400 mb-2">Access Denied</h1>
+          <p className="text-zinc-400 mb-4">
+            System Admin console requires elevated privileges.
+          </p>
+          <Button onClick={() => (window.location.href = createPageUrl('Hub'))}>
+            Return to Hub
+          </Button>
         </div>
       </div>
     );
   }
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Users },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'keys', label: 'Keys', icon: Shield },
+    { id: 'validation', label: 'Data', icon: Database },
+    { id: 'diagnostics', label: 'Diagnostics', icon: Zap },
+    { id: 'seed', label: 'Seed', icon: Sparkles },
+    { id: 'reset', label: 'Reset', icon: RotateCcw },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black uppercase tracking-wider text-white">
-          {isAdmin ? 'System Admin' : 'Settings'}
-        </h1>
-        <p className="text-zinc-400 text-sm">
-          {isAdmin ? 'Administration and configuration' : 'User settings and preferences'}
-        </p>
+    <div className="min-h-screen bg-zinc-950 px-6 py-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header - Hub style */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white uppercase tracking-widest">
+                System Admin
+              </h1>
+              <p className="text-[11px] text-zinc-500 uppercase tracking-wide font-semibold">
+                Operations & Maintenance Console
+              </p>
+            </div>
+          </div>
+          <p className="text-zinc-400 text-xs ml-13">
+            Authorized: <span className="font-mono text-orange-400">{user?.callsign}</span>
+          </p>
+        </div>
+
+        {activeTab === 'overview' ? (
+          <OverviewTab user={user} setActiveTab={setActiveTab} />
+        ) : (
+          <>
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6 border-b border-zinc-800/60 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wide border-b-2 text-zinc-500 border-transparent hover:text-zinc-300 transition-all whitespace-nowrap"
+              >
+                ← Overview
+              </button>
+              {tabs.slice(1).map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wide border-b-2 transition-all whitespace-nowrap ${
+                      isActive
+                        ? 'text-orange-400 border-orange-500'
+                        : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Content */}
+            <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-lg p-6">
+              {activeTab === 'users' && <UserManagement />}
+              {activeTab === 'keys' && <AccessKeyManager />}
+              {activeTab === 'validation' && <DataValidation />}
+              {activeTab === 'diagnostics' && <DiagnosticsBundle />}
+              {activeTab === 'seed' && <ImmersiveSeed />}
+              {activeTab === 'reset' && <FactoryReset />}
+            </div>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
 
-      <Tabs defaultValue="account" className="w-full">
-        <TabsList className={`grid w-full mb-6 ${isAdmin ? 'grid-cols-5' : 'grid-cols-1'}`}>
-          <TabsTrigger value="account">My Account</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="keys">Access Keys</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="data">Data Tools</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>}
-        </TabsList>
+function OverviewTab({ user, setActiveTab }) {
+  const modules = [
+    {
+      id: 'users',
+      icon: Users,
+      title: 'User Management',
+      description: 'Invite users, assign roles & permissions',
+      status: 'PROD',
+      color: 'blue',
+      features: [
+        'Invite new users via email',
+        'Assign roles (user or admin)',
+        'Edit user names and roles',
+        'Disable user accounts',
+        'Search and filter users',
+        'View user directory with email',
+      ],
+    },
+    {
+      id: 'keys',
+      icon: Shield,
+      title: 'Access Key Manager',
+      description: 'Generate & manage access codes',
+      status: 'PROD',
+      color: 'purple',
+      features: [
+        'Generate bulk access keys',
+        'Set rank grants (Vagrant → Founder)',
+        'Configure uses per key',
+        'Set expiration dates',
+        'Copy codes to clipboard',
+        'Revoke active keys',
+        'Track redemption status',
+      ],
+    },
+    {
+      id: 'validation',
+      icon: Database,
+      title: 'Data Validation',
+      description: 'Inspect domains & detect anomalies',
+      status: 'PROD',
+      color: 'orange',
+      features: [
+        'Count records across 31+ domains',
+        'Detect orphaned/invalid records',
+        'Export validation reports (JSON)',
+        'Dry-run mode for inspection',
+        'Domain health indicators',
+      ],
+    },
+    {
+      id: 'diagnostics',
+      icon: Zap,
+      title: 'Diagnostics Bundle',
+      description: 'System snapshot for debugging',
+      status: 'PROD',
+      color: 'cyan',
+      features: [
+        'Build info & version snapshot',
+        'User & authentication state',
+        'Shell UI state tracking',
+        'Voice net status',
+        'Active operation bindings',
+        'Domain record counts',
+        'Export as text or JSON',
+      ],
+    },
+    {
+      id: 'seed',
+      icon: Sparkles,
+      title: 'Immersive Seed',
+      description: 'Populate demo data (Light/Full)',
+      status: 'PROD',
+      color: 'blue',
+      features: [
+        'Light Mode: 5 users, 4 nets, 4 channels',
+        'Full Mode: events & extended data',
+        'Thematic naming aligned to lore',
+        'Auto-tagged with seedSetId',
+        'Wipe seeded data selectively',
+        'Idempotent re-seed',
+      ],
+    },
+    {
+      id: 'reset',
+      icon: RotateCcw,
+      title: 'Factory Reset',
+      description: 'Complete app wipe (5-step safety)',
+      status: '⚠️ DESTRUCTIVE',
+      color: 'red',
+      features: [
+        'Wipes all 31+ data domains',
+        'Clears localStorage keys',
+        'Logs out user session',
+        'Type "RESET ALL DATA" to confirm',
+        'Progress tracking',
+        'Auto-reload after completion',
+      ],
+    },
+  ];
 
-        {/* My Account Tab */}
-        <TabsContent value="account" className="space-y-6">
-          <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-            <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Profile
-            </h2>
+  const getColorClasses = (color) => {
+    const colors = {
+      blue: 'from-blue-500/10 to-blue-600/5 border-blue-500/30 hover:border-blue-500/50',
+      purple: 'from-purple-500/10 to-purple-600/5 border-purple-500/30 hover:border-purple-500/50',
+      orange: 'from-orange-500/10 to-orange-600/5 border-orange-500/30 hover:border-orange-500/50',
+      cyan: 'from-cyan-500/10 to-cyan-600/5 border-cyan-500/30 hover:border-cyan-500/50',
+      red: 'from-red-500/10 to-red-600/5 border-red-500/30 hover:border-red-500/50',
+    };
+    return colors[color] || colors.blue;
+  };
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-zinc-400 uppercase mb-2 block">Email</label>
-                <Input value={user?.email || ''} disabled />
-              </div>
+  const getIconColor = (color) => {
+    const colors = {
+      blue: 'text-blue-500',
+      purple: 'text-purple-500',
+      orange: 'text-orange-500',
+      cyan: 'text-cyan-500',
+      red: 'text-red-500',
+    };
+    return colors[color] || colors.blue;
+  };
 
-              {profile && (
-                <>
-                  <div>
-                    <label className="text-sm text-zinc-400 uppercase mb-2 block">Callsign</label>
-                    <Input value={profile.callsign || ''} disabled />
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-zinc-400 uppercase mb-2 block">Rank</label>
-                    <Input value={profile.rank || ''} disabled />
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-zinc-400 uppercase mb-2 block">Bio</label>
-                    <textarea
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      className="w-full h-24 rounded-lg border-2 border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-                      placeholder="Tell us about yourself..."
-                    />
-                  </div>
-
-                  <Button onClick={handleSave} disabled={saving}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </>
-              )}
-            </div>
+  return (
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Status Banner */}
+        <div className="p-4 bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/30 rounded-lg flex items-start justify-between">
+          <div>
+            <h3 className="font-bold text-green-400 mb-1 text-sm">✓ System Admin — Feature Complete</h3>
+            <p className="text-xs text-zinc-400">
+              Full operational console with user & access management, data validation, diagnostics, seeding, and factory reset.
+            </p>
           </div>
+          <span className="text-[10px] font-mono px-2 py-1 bg-green-500/20 text-green-300 rounded font-bold flex-shrink-0">100%</span>
+        </div>
 
-          <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-            <h2 className="text-xl font-bold text-white uppercase mb-4">Account Actions</h2>
-            <Button variant="destructive" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </TabsContent>
+        {/* Module Grid - Hub style */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {modules.map((module) => {
+            const Icon = module.icon;
+            return (
+              <Tooltip key={module.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setActiveTab(module.id)}
+                    className={`group p-5 bg-gradient-to-br ${getColorClasses(
+                      module.color
+                    )} border rounded-lg transition-all cursor-pointer hover:scale-[1.02] text-left w-full`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={`w-10 h-10 rounded-lg bg-zinc-900/50 border border-zinc-700/50 flex items-center justify-center ${getIconColor(module.color)}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className={`text-[9px] font-mono px-2 py-1 rounded font-bold ${
+                        module.color === 'red' ? 'bg-red-500/20 text-red-300' : 'bg-zinc-800/50 text-zinc-400'
+                      }`}>
+                        {module.status}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-black uppercase text-white mb-1 tracking-wide">
+                      {module.title}
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 leading-snug">
+                      {module.description}
+                    </p>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs bg-zinc-950 border-orange-500/40">
+                  <div className="text-xs space-y-2">
+                    <p className={`font-bold ${getIconColor(module.color)}`}>{module.title}</p>
+                    <ul className="text-zinc-300 space-y-1 text-[11px]">
+                      {module.features.map((feature, idx) => (
+                        <li key={idx}>• {feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
 
-
-
-        {/* Admin: Users Tab */}
-        {isAdmin && (
-          <TabsContent value="users" className="space-y-6">
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                User Management
-              </h2>
-              <UserManagement />
+        {/* Warning Banner */}
+        <div className="p-4 bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-bold text-orange-400 mb-1 text-sm">⚠️ Critical Operations</h4>
+              <p className="text-xs text-zinc-400">
+                Factory Reset is permanent and cannot be undone. Always export Diagnostics before destructive operations.
+              </p>
             </div>
-          </TabsContent>
-        )}
-
-        {/* Admin: Access Keys Tab */}
-        {isAdmin && (
-          <TabsContent value="keys" className="space-y-6">
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Access Key Manager
-              </h2>
-              <AccessKeyManager />
-            </div>
-          </TabsContent>
-        )}
-
-        {/* Admin: Data Tools Tab */}
-        {isAdmin && (
-          <TabsContent value="data" className="space-y-6">
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4">Data Validation</h2>
-              <DataValidation />
-            </div>
-
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4">Immersive Seed</h2>
-              <ImmersiveSeed />
-            </div>
-
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4">Factory Reset</h2>
-              <FactoryReset />
-            </div>
-          </TabsContent>
-        )}
-
-        {/* Admin: Diagnostics Tab */}
-        {isAdmin && (
-          <TabsContent value="diagnostics" className="space-y-6">
-            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
-              <h2 className="text-xl font-bold text-white uppercase mb-4">Diagnostics Bundle</h2>
-              <DiagnosticsBundle />
-            </div>
-          </TabsContent>
-        )}
-      </Tabs>
-
-      {!isAdmin && (
-        <div className="mt-8 p-4 bg-zinc-900/50 border border-zinc-700/50 rounded flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-zinc-400">
-            <p className="font-semibold text-zinc-300">Admin tools disabled</p>
-            <p>Only administrators can access user management, access keys, and system tools.</p>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
