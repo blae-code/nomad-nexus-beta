@@ -18,6 +18,7 @@ import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
 import { initScrollGuard } from '@/components/utils/scrollGuard';
+import { AuthProvider } from '@/components/providers/AuthProvider';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -42,35 +43,27 @@ export default function Layout({ children, currentPageName }) {
         }
 
         // Full-screen pages that hide shell UI
-        const fullScreenPages = ['AccessGate', 'Onboarding'];
+        const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
         const isFullScreen = fullScreenPages.includes(currentPageName);
 
-        if (isFullScreen) {
-          return (
+        return (
+          <AuthProvider>
             <NotificationProvider>
               <ShellUIProvider>
                 <ActiveOpProvider>
                   <VoiceNetProvider>
-                    <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
-                      {children}
-                    </div>
+                    {isFullScreen ? (
+                      <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
+                        {children}
+                      </div>
+                    ) : (
+                      <LayoutContent currentPageName={currentPageName} children={children} />
+                    )}
                   </VoiceNetProvider>
                 </ActiveOpProvider>
               </ShellUIProvider>
             </NotificationProvider>
-          );
-        }
-
-        return (
-          <NotificationProvider>
-            <ShellUIProvider>
-              <ActiveOpProvider>
-                <VoiceNetProvider>
-                  <LayoutContent currentPageName={currentPageName} children={children} />
-                </VoiceNetProvider>
-              </ActiveOpProvider>
-            </ShellUIProvider>
-          </NotificationProvider>
+          </AuthProvider>
         );
       }
 
