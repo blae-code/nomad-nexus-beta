@@ -15,18 +15,21 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const isAuth = await base44.auth.isAuthenticated();
-        
-        if (!isAuth) {
-          // Not authenticated
-          setUser(null);
-          setInitialized(true);
-          setLoading(false);
-          return;
+        let currentUser = null;
+
+        try {
+          currentUser = await base44.auth.me();
+        } catch (err) {
+          // 401 or any error means user is not authenticated
+          if (err?.response?.status === 401 || err?.status === 401) {
+            setUser(null);
+            setInitialized(true);
+            setLoading(false);
+            return;
+          }
+          throw err;
         }
 
-        // Fetch current user
-        const currentUser = await base44.auth.me();
         setUser(currentUser);
 
         // Skip checks for admins
@@ -54,6 +57,7 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error('Auth initialization error:', err);
         setError(err);
+        setUser(null);
         setInitialized(true);
         setLoading(false);
       }
