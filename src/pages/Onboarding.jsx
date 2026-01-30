@@ -107,9 +107,14 @@ export default function Onboarding() {
     <div className="min-h-screen bg-zinc-950 relative overflow-hidden">
       <style>{glowStyle}</style>
       
-      {/* Background layers */}
-      <div className="absolute inset-0 bg-radial-gradient from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
+      {/* Animated radial gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
+      
+      {/* Dynamic grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.02)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      
+      {/* Animated scanline effect */}
+      <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
       
       {/* Corner accents */}
       <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-orange-500/40 opacity-50" />
@@ -117,7 +122,7 @@ export default function Onboarding() {
       <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-orange-500/40 opacity-50" />
       <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-orange-500/40 opacity-50" />
       
-      {/* Subtle glow orbs */}
+      {/* Subtle background glow */}
       <div className="absolute top-1/3 -left-40 w-80 h-80 bg-orange-500/8 rounded-full blur-3xl opacity-20" />
       <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl opacity-20" />
       
