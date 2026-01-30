@@ -235,8 +235,8 @@ export default function Hub() {
               💡 Hover over features to see detailed development status
             </div>
           </TooltipContent>
-        )}
-      </Tooltip>
-      </TooltipProvider>
-      );
-      }
+          )}
+          </Tooltip>
+          </TooltipProvider>
+          );
+          }
