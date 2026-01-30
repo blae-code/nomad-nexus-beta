@@ -184,6 +184,26 @@ export default function CSSDebugOverlay() {
             {diagnostics.computedStyles.bgColor.expectedSlate950 ? ' ✓' : ' ✗'}
           </div>
         </div>
+
+        <div>
+          <span className="font-bold">Utility Test (border):</span>
+          <div className="ml-2 text-[10px] text-gray-400">
+            {diagnostics.computedStyles.border.borderWidth}
+            {diagnostics.computedStyles.border.hasBorder ? ' ✓' : ' ✗'}
+          </div>
+        </div>
+
+        <div>
+          <span className="font-bold">Utility Test (rounded):</span>
+          <div className="ml-2 text-[10px] text-gray-400">
+            {diagnostics.computedStyles.rounded.borderRadius}
+            {diagnostics.computedStyles.rounded.hasRounded ? ' ✓' : ' ✗'}
+          </div>
+        </div>
+
+        <div>
+          <span className="font-bold">Total Utilities Found: {diagnostics.utilitiesFound}/4</span>
+        </div>
       </div>
 
       <div className="mt-3 pt-2 border-t border-gray-600 text-[10px] text-gray-500">
