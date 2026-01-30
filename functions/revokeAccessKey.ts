@@ -5,26 +5,24 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    // Only admins can revoke keys
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Admin required' }, { status: 403 });
-    }
-
     const payload = await req.json();
-    const { code } = payload;
+    const { keyId } = payload;
 
-    if (!code) {
-      return Response.json({ error: 'Code required' }, { status: 400 });
+    if (!keyId) {
+      return Response.json({ error: 'Key ID required' }, { status: 400 });
     }
 
-    // Find and revoke key
-    const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+    // Find the key
+    const key = await base44.asServiceRole.entities.AccessKey.get(keyId);
     
-    if (!keys || keys.length === 0) {
+    if (!key) {
       return Response.json({ error: 'Key not found' }, { status: 404 });
     }
 
-    const key = keys[0];
+    // Only admins and the pioneer who created the key can revoke it
+    if (user?.role !== 'admin' && user?.id !== key.created_by_user_id) {
+      return Response.json({ error: 'You can only revoke keys you created' }, { status: 403 });
+    }
 
     // Revoke it
     await base44.asServiceRole.entities.AccessKey.update(key.id, {
@@ -35,7 +33,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.AdminAuditLog.create({
       actor_user_id: user.id,
       action: 'revoke_access_key',
-      payload: { code, original_status: key.status },
+      payload: { keyId, original_status: key.status },
       executed_by: user.id,
       executed_at: new Date().toISOString(),
       step_name: 'access_control',
@@ -44,7 +42,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      code,
+      keyId,
       message: 'Access key revoked'
     });
   } catch (error) {
