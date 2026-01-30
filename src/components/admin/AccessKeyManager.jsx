@@ -107,23 +107,21 @@ export default function AccessKeyManager() {
   };
 
   const generateDiscordMessage = (issuer, recipient, code, rank) => {
-    return `**⸻ CLASSIFIED TRANSMISSION ⸻**
-**FROM:** ${issuer} | Command Authority
-**TO:** ${recipient} | Nomad Designate
-**SUBJECT:** Authorization Protocol — Access Granted
+    return `⸻ CLASSIFIED TRANSMISSION ⸻
+FROM: ${issuer} | Command Authority
+TO: ${recipient} | Nomad Designate
+SUBJECT: Authorization Protocol — Access Granted
 
-**▸ AUTHORIZATION CODE:**
-\`\`\`
+▸ AUTHORIZATION CODE:
 ${code}
-\`\`\`
 
-**▸ CLEARANCE LEVEL:** ${rank}
-**▸ VALIDITY:** Permanent
-**▸ BINDING:** Forever linked to your identity
+▸ CLEARANCE LEVEL: ${rank}
+▸ VALIDITY: Permanent
+▸ BINDING: Forever linked to your identity
 
-You have been granted access to **Nomad Nexus Operations**. This code is your key to the network—redeem it at the Access Gate to establish your presence in our system.
+You have been granted access to Nomad Nexus Operations. This code is your key to the network—redeem it at the Access Gate to establish your presence in our system.
 
-**INSTRUCTIONS:**
+INSTRUCTIONS:
 1. Navigate to the Access Gate
 2. Enter your designated callsign
 3. Submit your authorization code
@@ -131,7 +129,7 @@ You have been granted access to **Nomad Nexus Operations**. This code is your ke
 
 This access key is non-transferable and eternally bound to you. Guard it accordingly.
 
-**⸻ END TRANSMISSION ⸻**`;
+⸻ END TRANSMISSION ⸻`;
   };
 
   const handleRevokeKey = async (keyId) => {

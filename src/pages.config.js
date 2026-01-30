@@ -51,21 +51,21 @@ import AccessGate from './pages/AccessGate';
 import CommsConsole from './pages/CommsConsole';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
+import FleetTracking from './pages/FleetTracking';
 import Hub from './pages/Hub';
+import MemberManagement from './pages/MemberManagement';
+import MemberProgression from './pages/MemberProgression';
 import MissionControl from './pages/MissionControl';
 import Onboarding from './pages/Onboarding';
 import PageNotFound from './pages/PageNotFound';
 import QAConsole from './pages/QAConsole';
 import Recon from './pages/Recon';
+import ReportBuilder from './pages/ReportBuilder';
 import Settings from './pages/Settings';
 import SystemAdmin from './pages/SystemAdmin';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import MemberManagement from './pages/MemberManagement';
-import MemberProgression from './pages/MemberProgression';
-import FleetTracking from './pages/FleetTracking';
-import ReportBuilder from './pages/ReportBuilder';
 import __Layout from './Layout.jsx';
 
 
@@ -74,21 +74,21 @@ export const PAGES = {
     "CommsConsole": CommsConsole,
     "Events": Events,
     "FleetManager": FleetManager,
+    "FleetTracking": FleetTracking,
     "Hub": Hub,
+    "MemberManagement": MemberManagement,
+    "MemberProgression": MemberProgression,
     "MissionControl": MissionControl,
     "Onboarding": Onboarding,
     "PageNotFound": PageNotFound,
     "QAConsole": QAConsole,
     "Recon": Recon,
+    "ReportBuilder": ReportBuilder,
     "Settings": Settings,
     "SystemAdmin": SystemAdmin,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "MemberManagement": MemberManagement,
-    "MemberProgression": MemberProgression,
-    "FleetTracking": FleetTracking,
-    "ReportBuilder": ReportBuilder,
 }
 
 export const pagesConfig = {
