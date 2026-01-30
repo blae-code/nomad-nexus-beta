@@ -34,6 +34,12 @@ export default function AccessGate() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Allow dev mode access to bypass gate
+        if (isDevMode()) {
+          window.location.href = createPageUrl('Hub');
+          return;
+        }
+        
         const isAuth = await base44.auth.isAuthenticated();
         if (isAuth) {
           window.location.href = createPageUrl('Hub');
