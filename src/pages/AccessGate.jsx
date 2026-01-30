@@ -75,46 +75,53 @@ export default function AccessGate() {
     setMessage('');
     
     try {
-      const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
-      
-      if (response?.data?.success) {
-        // Auth granted by backend, now verify it's established on client
-        setMessage('Access granted! Confirming authentication...');
-        setVerifyingAuth(true);
-        
-        try {
-          // Wait up to 10 seconds for auth confirmation
-          const confirmAuthPromise = confirmAuthEstablished();
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Auth confirmation timeout')), 10000)
-          );
-          
-          await Promise.race([confirmAuthPromise, timeoutPromise]);
-          
-          // Auth confirmed, redirect to Disclaimers
-          setMessage('Authorization confirmed. Redirecting...');
-          setTimeout(() => {
-            window.location.href = createPageUrl('Disclaimers');
-          }, 800);
-        } catch (authErr) {
-          setVerifyingAuth(false);
-          setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);
-          setLoading(false);
-        }
-      } else {
-        const errorMsg = response?.data?.message || 'Invalid credentials';
-        if (errorMsg.includes('REVOKED') || errorMsg.includes('revoked')) {
-          setMessage('⸻ Authorization Revoked ⸻\n\nThis access code has been deactivated. Contact your issuing officer for reissuance.\n\n⸻');
-        } else {
-          setMessage(errorMsg);
-        }
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Redeem error:', error);
-      setMessage('Error validating credentials');
-      setLoading(false);
-    }
+            const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
+
+            if (response?.data?.success) {
+              // Save login token if "Remember Me" is checked
+              if (rememberMe && response?.data?.loginToken) {
+                localStorage.setItem('nexus.login.token', response.data.loginToken);
+              } else {
+                localStorage.removeItem('nexus.login.token');
+              }
+
+              // Auth granted by backend, now verify it's established on client
+              setMessage('Access granted! Confirming authentication...');
+              setVerifyingAuth(true);
+
+              try {
+                // Wait up to 10 seconds for auth confirmation
+                const confirmAuthPromise = confirmAuthEstablished();
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Auth confirmation timeout')), 10000)
+                );
+
+                await Promise.race([confirmAuthPromise, timeoutPromise]);
+
+                // Auth confirmed, redirect to Disclaimers
+                setMessage('Authorization confirmed. Redirecting...');
+                setTimeout(() => {
+                  window.location.href = createPageUrl('Disclaimers');
+                }, 800);
+              } catch (authErr) {
+                setVerifyingAuth(false);
+                setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);
+                setLoading(false);
+              }
+            } else {
+              const errorMsg = response?.data?.message || 'Invalid credentials';
+              if (errorMsg.includes('REVOKED') || errorMsg.includes('revoked')) {
+                setMessage('⸻ Authorization Revoked ⸻\n\nThis access code has been deactivated. Contact your issuing officer for reissuance.\n\n⸻');
+              } else {
+                setMessage(errorMsg);
+              }
+              setLoading(false);
+            }
+          } catch (error) {
+            console.error('Redeem error:', error);
+            setMessage('Error validating credentials');
+            setLoading(false);
+          }
   };
 
   const confirmAuthEstablished = async () => {
