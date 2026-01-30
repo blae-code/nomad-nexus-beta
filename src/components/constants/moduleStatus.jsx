@@ -153,13 +153,13 @@ export const MODULE_STATUS = {
   },
   QAConsole: {
     name: 'QA Console',
-    completed: 25,
+    completed: 100,
     features: [
-      { name: 'Ticket Submission', status: 'complete' },
-      { name: 'AI Summary', status: 'complete' },
-      { name: 'Admin Tools', status: 'in-progress' },
-      { name: 'Test Triggers', status: 'planned' },
-      { name: 'System Monitoring', status: 'planned' },
+      { name: 'Entity Inspector', status: 'complete' },
+      { name: 'System Health Checks', status: 'complete' },
+      { name: 'Performance Monitor', status: 'complete' },
+      { name: 'Logs Viewer', status: 'complete' },
+      { name: 'Testing Tools Suite', status: 'complete' },
     ],
   },
 };
