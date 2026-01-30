@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdvancedTestTriggers from '@/components/qa/AdvancedTestTriggers';
 import PerformanceDashboard from '@/components/qa/PerformanceDashboard';
 import DataGenerator from '@/components/qa/DataGenerator';
+import VoiceDebugPanel from '@/components/qa/VoiceDebugPanel';
 
 const DEV_ADMIN_OVERRIDE_ENABLED = false;
 
