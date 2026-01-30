@@ -115,15 +115,15 @@ export default function AccessKeyManager() {
   const generateDiscordMessage = (issuer, recipient, code, rank) => {
     return `⸻ AUTHORIZATION GRANTED ⸻
 
-FROM: ${issuer}
-TO: ${recipient}
+  FROM: ${issuer}
+  TO: ${recipient}
 
-ACCESS CODE: ${code}
-RANK: ${rank}
+  ACCESS CODE: ${code}
+  RANK: ${rank}
 
-Redeem at Access Gate with your callsign.
+  Redeem at: ${window.location.origin}${createPageUrl('AccessGate')}
 
-⸻ END ⸻`;
+  ⸻ END ⸻`;
   };
 
   const handleRevokeKey = async (keyId) => {
