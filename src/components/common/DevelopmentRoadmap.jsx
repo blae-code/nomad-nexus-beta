@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { CheckCircle2, AlertCircle, Clock, Target, Zap, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import RoadmapNotificationHandler from '@/components/roadmap/RoadmapNotificationHandler';
 
 export default function DevelopmentRoadmap() {
   const [expanded, setExpanded] = useState(true);
-  const [groupBy, setGroupBy] = useState('status'); // 'status' or 'phase'
   
   const featureDescriptions = {
     'Infrastructure & Database': 'Core backend systems, database schema, and persistence layer for all Nexus data',
