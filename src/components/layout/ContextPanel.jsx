@@ -41,6 +41,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
         voice: true,
         health: false,
         contacts: true,
+        aiInsights: true,
         riggsy: false,
         diagnostics: false,
       };
@@ -51,6 +52,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
         voice: true,
         health: false,
         contacts: true,
+        aiInsights: true,
         riggsy: false,
         diagnostics: false,
       };
