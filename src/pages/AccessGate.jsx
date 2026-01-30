@@ -27,10 +27,12 @@ const scanlineStyle = `
 export default function AccessGate() {
   const [accessCode, setAccessCode] = useState('');
   const [callsign, setCallsign] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
   const [verifyingAuth, setVerifyingAuth] = useState(false);
+  const [hasSavedLogin, setHasSavedLogin] = useState(false);
 
   // AccessGate checks if user is already authenticated and redirects
   useEffect(() => {
