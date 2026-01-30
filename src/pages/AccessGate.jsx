@@ -236,6 +236,40 @@ export default function AccessGate() {
               </div>
             </div>
 
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center gap-3 pt-2 pb-1">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={setRememberMe}
+                className="border-2 border-cyan-500/40 bg-slate-900 data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-500"
+              />
+              <label htmlFor="rememberMe" className="text-xs text-cyan-300 cursor-pointer">
+                Remember me on this device
+              </label>
+            </div>
+
+            {/* Saved Login Info */}
+            {hasSavedLogin && (
+              <div className="flex items-center justify-between bg-cyan-950/30 border border-cyan-500/30 rounded px-3 py-2">
+                <span className="text-[10px] text-cyan-300">✓ Saved login detected</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem('nexus.login.token');
+                    setHasSavedLogin(false);
+                    setAccessCode('');
+                    setCallsign('');
+                  }}
+                  className="h-6 px-2 text-cyan-400 hover:text-red-400 hover:bg-red-950/30"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+
             {/* Verify Button */}
             <Button
               onClick={handleRedeem}
