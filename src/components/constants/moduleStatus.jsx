@@ -295,28 +295,40 @@ export function getModuleStatus(moduleKey) {
   return MODULE_STATUS[moduleKey] || null;
 }
 
+export function calculateCompletion(moduleKey) {
+  const module = MODULE_STATUS[moduleKey];
+  if (!module || !module.features) return 0;
+
+  const completeCount = module.features.filter(f => f.status === 'complete').length;
+  const inProgressCount = module.features.filter(f => f.status === 'in-progress').length;
+
+  // Complete features = 100%, In-progress = 50%
+  const totalWeight = completeCount + (inProgressCount * 0.5);
+  return Math.round((totalWeight / module.features.length) * 100);
+}
+
 export function getStatusColor(status) {
-  switch (status) {
-    case 'complete':
-      return 'text-green-400';
-    case 'in-progress':
-      return 'text-orange-400';
-    case 'planned':
-      return 'text-zinc-500';
-    default:
-      return 'text-zinc-600';
-  }
+   switch (status) {
+     case 'complete':
+       return 'text-green-400';
+     case 'in-progress':
+       return 'text-orange-400';
+     case 'planned':
+       return 'text-zinc-500';
+     default:
+       return 'text-zinc-600';
+   }
 }
 
 export function getStatusBgColor(status) {
-  switch (status) {
-    case 'complete':
-      return 'bg-green-500/10';
-    case 'in-progress':
-      return 'bg-orange-500/10';
-    case 'planned':
-      return 'bg-zinc-800/30';
-    default:
-      return 'bg-zinc-900';
-  }
+   switch (status) {
+     case 'complete':
+       return 'bg-green-500/10';
+     case 'in-progress':
+       return 'bg-orange-500/10';
+     case 'planned':
+       return 'bg-zinc-800/30';
+     default:
+       return 'bg-zinc-900';
+   }
 }
