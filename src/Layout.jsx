@@ -141,8 +141,11 @@ function LayoutContent({ currentPageName, children }) {
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
       <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
-        {/* Notification Center */}
-        <NotificationCenter />
+         {/* CSS Debug Overlay */}
+         <CSSDebugOverlay />
+
+         {/* Notification Center */}
+         <NotificationCenter />
 
         {/* Header — fixed at top (z-50) */}
         <Header />
