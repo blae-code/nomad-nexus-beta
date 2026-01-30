@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -14,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle } from 'lucide-react';
+import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare } from 'lucide-react';
 
 const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
 
@@ -23,6 +24,9 @@ export default function AccessKeyManager() {
   const [keys, setKeys] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [generatedMessage, setGeneratedMessage] = useState('');
+  const [showMessageModal, setShowMessageModal] = useState(false);
   const [formData, setFormData] = useState({
     count: 1,
     maxUses: 1,
@@ -32,9 +36,22 @@ export default function AccessKeyManager() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Load keys
+  // Load keys and current user
   useEffect(() => {
-    loadKeys();
+    const init = async () => {
+      await loadKeys();
+      try {
+        const user = await base44.auth.me();
+        const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+        setCurrentUser({
+          ...user,
+          callsign: profiles[0]?.callsign || user.full_name || 'Unknown',
+        });
+      } catch (err) {
+        console.error('Failed to load user:', err);
+      }
+    };
+    init();
   }, []);
 
   const loadKeys = async () => {
@@ -59,6 +76,42 @@ export default function AccessKeyManager() {
     return code;
   };
 
+  const generateDiscordMessage = (keyCode, rank, issuerCallsign) => {
+    const rankTitles = {
+      VAGRANT: 'Trial Member',
+      SCOUT: 'Scout',
+      VOYAGER: 'Voyager',
+      PIONEER: 'Pioneer',
+      FOUNDER: 'Founder',
+    };
+
+    return `╔═══════════════════════════════════════╗
+║   🛡️  REDSCAR NOMADS COLLECTIVE  🛡️   ║
+║        ACCESS AUTHORIZATION         ║
+╚═══════════════════════════════════════╝
+
+Greetings, Nomad.
+
+You have been granted access to the **Nomad Nexus** tactical operations platform by **${issuerCallsign}**.
+
+**┌─ CLEARANCE GRANTED ─┐**
+**RANK:** ${rankTitles[rank] || rank}
+**ACCESS CODE:** \`${keyCode}\`
+
+**┌─ ENTRY PROTOCOL ─┐**
+1. Navigate to the **Security Checkpoint**: [Access Gate]
+2. Enter your **ACCESS CODE** and choose a **CALLSIGN**
+3. Complete onboarding and join the collective
+
+**┌─ SECURITY NOTICE ─┐**
+⚠️ This code is bound to your identity and expires if unused.
+⚠️ Keep it secure. Do not share or expose publicly.
+
+**The frontier awaits. Welcome to the Nomads.**
+
+—— **${issuerCallsign}** | Redscar Nomads Operations`;
+  };
+
   const handleCreateKeys = async (e) => {
     e.preventDefault();
 
@@ -75,8 +128,20 @@ export default function AccessKeyManager() {
           usesCount: 0,
           grantsRank: formData.grantsRank,
           expiresAt: expiresAt.toISOString(),
+          created_by_user_id: currentUser?.id,
         });
         newKeys.push(key);
+      }
+
+      // Generate Discord message for the first key (if single key generation)
+      if (newKeys.length === 1 && currentUser) {
+        const message = generateDiscordMessage(
+          newKeys[0].code,
+          newKeys[0].grantsRank,
+          currentUser.callsign
+        );
+        setGeneratedMessage(message);
+        setShowMessageModal(true);
       }
 
       setSuccess(`Created ${newKeys.length} access key(s)`);
@@ -109,6 +174,19 @@ export default function AccessKeyManager() {
     navigator.clipboard.writeText(code);
     setSuccess(`Copied: ${code}`);
     setTimeout(() => setSuccess(null), 2000);
+  };
+
+  const handleCopyMessage = () => {
+    navigator.clipboard.writeText(generatedMessage);
+    setSuccess('Discord message copied to clipboard!');
+    setTimeout(() => setSuccess(null), 2000);
+  };
+
+  const handleGenerateMessageForKey = (key) => {
+    if (!currentUser) return;
+    const message = generateDiscordMessage(key.code, key.grantsRank, currentUser.callsign);
+    setGeneratedMessage(message);
+    setShowMessageModal(true);
   };
 
   const filteredKeys = keys.filter((k) =>
@@ -306,15 +384,26 @@ export default function AccessKeyManager() {
                     Copy
                   </Button>
                   {key.status !== 'REVOKED' && key.status !== 'REDEEMED' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRevokeKey(key.id)}
-                      className="text-zinc-400 hover:text-red-400"
-                    >
-                      <Lock className="w-4 h-4 mr-1" />
-                      Revoke
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleGenerateMessageForKey(key)}
+                        className="text-zinc-400 hover:text-blue-400"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        Discord
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRevokeKey(key.id)}
+                        className="text-zinc-400 hover:text-red-400"
+                      >
+                        <Lock className="w-4 h-4 mr-1" />
+                        Revoke
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -326,6 +415,56 @@ export default function AccessKeyManager() {
       <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-zinc-400">
         Total: {keys.length} key{keys.length !== 1 ? 's' : ''} ({keys.filter((k) => k.status === 'ACTIVE').length} active)
       </div>
+
+      {/* Discord Message Modal */}
+      {showMessageModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border-2 border-orange-500/30 rounded-lg max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-orange-400 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Discord Invitation Message
+              </h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowMessageModal(false)}
+                className="text-zinc-400 hover:text-white"
+              >
+                ✕
+              </Button>
+            </div>
+
+            <div className="mb-4">
+              <Textarea
+                value={generatedMessage}
+                readOnly
+                className="font-mono text-xs bg-zinc-950 border-zinc-700 text-zinc-300 min-h-[400px]"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowMessageModal(false)}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleCopyMessage}
+                className="bg-blue-600 hover:bg-blue-500"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy to Clipboard
+              </Button>
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-zinc-400">
+              💡 Copy this message and send it to the new member via Discord DM.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
