@@ -91,9 +91,22 @@ export default function MissionControl() {
       location: '',
       event_type: 'casual',
       priority: 'STANDARD',
+      recurrence: null,
+      notifications: [],
     });
+    setShowRecurrence(false);
+    setShowNotifications(false);
     setShowCreateEvent(false);
     loadEvents();
+  };
+
+  const handleTemplateSelect = (templateData) => {
+    setEventForm((prev) => ({
+      ...prev,
+      ...templateData,
+      start_time: prev.start_time || '',
+    }));
+    setShowTemplates(false);
   };
 
   const addObjective = async () => {
