@@ -115,7 +115,7 @@ export default function AccessGate() {
             </Button>
             
             {message && (
-              <div className={`text-center text-sm ${message.includes('granted') ? 'text-green-400' : 'text-red-400'}`}>
+              <div className={`text-center text-sm whitespace-pre-line ${message.includes('granted') ? 'text-green-400' : message.includes('Revoked') ? 'text-amber-400' : 'text-red-400'}`}>
                 {message}
               </div>
             )}
