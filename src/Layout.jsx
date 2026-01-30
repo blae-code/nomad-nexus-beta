@@ -62,8 +62,9 @@ export default function Layout({ children, currentPageName }) {
 function LayoutWithAuth({ children, currentPageName, isFullScreen }) {
   const { error: authError, initialized } = useAuth();
 
-  // If auth initialization failed/timed out, show fatal error screen
-  if (initialized && authError) {
+  // Never block rendering - let AccessGate handle unauth routing
+  // Only show fatal error if there's an actual initialization failure (not just "no user")
+  if (initialized && authError && authError.message && !authError.message.includes('401')) {
     return <FatalAuthError error={authError} />;
   }
 
