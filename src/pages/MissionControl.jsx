@@ -8,6 +8,10 @@ import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCir
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useCurrentUser } from '@/components/useCurrentUser';
+import EventCalendarView from '@/components/events/EventCalendarView';
+import EventTemplateManager from '@/components/events/EventTemplateManager';
+import EventRecurrenceManager from '@/components/events/EventRecurrenceManager';
+import EventNotificationManager from '@/components/events/EventNotificationManager';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
