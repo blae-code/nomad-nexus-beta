@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Radio, AlertCircle, Lock, Unlock, BarChart3, Bot, Plus, CheckCircle } from 'lucide-react';
+import { Send, Radio, AlertCircle, Lock, Unlock, BarChart3, Bot, Plus, CheckCircle, Volume2, Mic, Settings } from 'lucide-react';
 import PermissionGuard from '@/components/PermissionGuard';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 import { useCurrentUser } from '@/components/useCurrentUser';
@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
 import VoiceNetBrowser from '@/components/voice/VoiceNetBrowser';
 import ChannelManager from '@/components/comms/ChannelManager';
+import SpeechSettings from '@/components/comms/SpeechSettings';
+import { getSpeechEngine } from '@/components/comms/SpeechEngine';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,23 @@ export default function CommsConsole() {
 
   // Voice Net state
   const [showVoiceNetCreator, setShowVoiceNetCreator] = useState(false);
+
+  // Speech settings
+  const [speechSettings, setSpeechSettings] = useState(() => {
+    const saved = localStorage.getItem('nexus.speech.settings');
+    return saved ? JSON.parse(saved) : {
+      ttsEnabled: false,
+      sttEnabled: false,
+      ttsVoice: '',
+      ttsRate: 1.0,
+      ttsPitch: 1.0,
+      ttsVolume: 0.8,
+      language: 'en-US',
+      autoReadNew: false,
+    };
+  });
+  const [isListening, setIsListening] = useState(false);
+  const speechEngine = getSpeechEngine();
 
   useEffect(() => {
     const init = async () => {
@@ -143,6 +162,43 @@ Provide a helpful, concise response with tactical awareness.`,
   };
 
   const { user: currentUser } = useCurrentUser();
+
+  const updateSpeechSettings = (newSettings) => {
+    setSpeechSettings(newSettings);
+    localStorage.setItem('nexus.speech.settings', JSON.stringify(newSettings));
+  };
+
+  const speakMessage = (text) => {
+    if (!speechSettings.ttsEnabled) return;
+    speechEngine.speak(text, {
+      voice: speechSettings.ttsVoice,
+      rate: speechSettings.ttsRate,
+      pitch: speechSettings.ttsPitch,
+      volume: speechSettings.ttsVolume,
+      lang: speechSettings.language,
+    });
+  };
+
+  const startDictation = () => {
+    if (!speechSettings.sttEnabled) return;
+    
+    speechEngine.startListening(
+      (transcript) => {
+        setNewMessage(prev => prev ? `${prev} ${transcript}` : transcript);
+        setIsListening(false);
+      },
+      (error) => {
+        console.error('Speech recognition error:', error);
+        setIsListening(false);
+      }
+    );
+    setIsListening(true);
+  };
+
+  const stopDictation = () => {
+    speechEngine.stopListening();
+    setIsListening(false);
+  };
 
   if (loading) {
     return <div className="p-8 text-center text-orange-500">LOADING...</div>;
@@ -258,6 +314,10 @@ Provide a helpful, concise response with tactical awareness.`,
                     <Radio className="w-4 h-4 mr-2" />
                     Voice Nets
                   </TabsTrigger>
+                  <TabsTrigger value="speech">
+                    <Volume2 className="w-4 h-4 mr-2" />
+                    Speech
+                  </TabsTrigger>
                   <TabsTrigger value="riggsy">
                     <Bot className="w-4 h-4 mr-2" />
                     Riggsy AI
@@ -267,9 +327,19 @@ Provide a helpful, concise response with tactical awareness.`,
                 <TabsContent value="messages" className="flex-1 flex flex-col">
                   <div className="flex-1 p-4 overflow-y-auto">
                     {messages.map((msg) => (
-                      <div key={msg.id} className="mb-4">
-                        <div className="text-xs text-zinc-500 mb-1">
-                          {new Date(msg.created_date).toLocaleTimeString()}
+                      <div key={msg.id} className="mb-4 group">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-zinc-500 mb-1">
+                            {new Date(msg.created_date).toLocaleTimeString()}
+                          </div>
+                          {speechSettings.ttsEnabled && (
+                            <button
+                              onClick={() => speakMessage(msg.content)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-zinc-800 rounded"
+                            >
+                              <Volume2 className="w-3 h-3 text-blue-400" />
+                            </button>
+                          )}
                         </div>
                         <div className="text-zinc-300">{msg.content}</div>
                       </div>
@@ -278,11 +348,21 @@ Provide a helpful, concise response with tactical awareness.`,
 
                   <div className="p-4 border-t border-zinc-800">
                     <div className="flex gap-2">
+                      {speechSettings.sttEnabled && (
+                        <Button
+                          onClick={isListening ? stopDictation : startDictation}
+                          variant={isListening ? 'default' : 'outline'}
+                          size="icon"
+                          className={isListening ? 'animate-pulse' : ''}
+                        >
+                          <Mic className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                        placeholder="Type message..."
+                        placeholder={isListening ? 'Listening...' : 'Type message...'}
                         className="flex-1"
                       />
                       <Button onClick={sendMessage} disabled={!newMessage.trim()}>
@@ -409,6 +489,15 @@ Provide a helpful, concise response with tactical awareness.`,
                         onCreateNew={() => setShowVoiceNetCreator(true)}
                       />
                     )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="speech" className="flex-1 flex flex-col">
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    <SpeechSettings
+                      settings={speechSettings}
+                      onUpdate={updateSpeechSettings}
+                    />
                   </div>
                 </TabsContent>
 
