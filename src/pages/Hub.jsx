@@ -19,13 +19,13 @@ export default function Hub() {
   const activeOp = useActiveOp();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // Allow dev mode access (Base44 editor) - check first, no async needed
-      if (isDevMode()) {
-        setLoading(false);
-        return;
-      }
+    // Dev mode - skip all auth
+    if (isDevMode()) {
+      setLoading(false);
+      return;
+    }
 
+    const checkAuth = async () => {
       try {
         const isAuth = await base44.auth.isAuthenticated();
         if (!isAuth) {
