@@ -37,6 +37,7 @@ function clearFailures(userId) {
 Deno.serve(async (req) => {
    try {
      const base44 = createClientFromRequest(req);
+     const serviceBase44 = createServiceClient();
 
      // Try to get authenticated user, but allow unauthenticated access for key redemption
      let user = null;
@@ -76,8 +77,8 @@ Deno.serve(async (req) => {
        return Response.json({ success: false, message: 'Callsign is required' }, { status: 400 });
      }
 
-     // Find key (atomically) - ALWAYS use service role for unauthenticated access
-     const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+     // Find key (atomically) - use service client for unauthenticated access
+     const keys = await serviceBase44.entities.AccessKey.filter({ code });
 
     if (!keys || keys.length === 0) {
       recordFailure(userId);
