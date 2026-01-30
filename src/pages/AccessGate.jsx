@@ -2,9 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield } from 'lucide-react';
+import { Shield, Zap } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
+
+const scanlineStyle = `
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.95; }
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(234, 88, 12, 0.4), inset 0 0 20px rgba(234, 88, 12, 0.1); }
+    50% { box-shadow: 0 0 30px rgba(234, 88, 12, 0.6), inset 0 0 20px rgba(234, 88, 12, 0.2); }
+  }
+  @keyframes drift {
+    0%, 100% { transform: translateX(0px); }
+    50% { transform: translateX(20px); }
+  }
+  .scanline-overlay {
+    animation: scan 6s linear infinite;
+  }
+  .flicker-effect {
+    animation: flicker 150ms infinite;
+  }
+  .glow-box {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+  .drift-animate {
+    animation: drift 4s ease-in-out infinite;
+  }
+`;
 
 export default function AccessGate() {
   const [accessCode, setAccessCode] = useState('');
@@ -70,51 +101,58 @@ export default function AccessGate() {
 
   return (
     <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
+      <style>{scanlineStyle}</style>
+      
       {/* Animated radial gradient background */}
       <div className="absolute inset-0 bg-radial-gradient from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
       
-      {/* Animated scanning lines */}
-      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(234,88,12,0.03)_0px,transparent_1px,transparent_2px)] animate-pulse opacity-30" />
-      
-      {/* Grid background */}
+      {/* Dynamic grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.02)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      
+      {/* Animated scanline effect */}
+      <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
 
-      {/* Pulsing corner accents */}
-      <div className="absolute top-0 left-0 w-32 h-32 border-t-2 border-l-2 border-orange-500/40 opacity-60 animate-pulse" />
-      <div className="absolute top-0 right-0 w-32 h-32 border-t-2 border-r-2 border-orange-500/40 opacity-60 animate-pulse" style={{ animationDelay: '0.3s' }} />
-      <div className="absolute bottom-0 left-0 w-32 h-32 border-b-2 border-l-2 border-orange-500/40 opacity-60 animate-pulse" style={{ animationDelay: '0.6s' }} />
-      <div className="absolute bottom-0 right-0 w-32 h-32 border-b-2 border-r-2 border-orange-500/40 opacity-60 animate-pulse" style={{ animationDelay: '0.9s' }} />
+      {/* Corner surveillance beams */}
+      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-orange-500/40 opacity-60 animate-pulse" />
+      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-orange-500/40 opacity-60 animate-pulse" style={{ animationDelay: '0.3s' }} />
+      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-orange-500/40 opacity-60 animate-pulse" style={{ animationDelay: '0.6s' }} />
+      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-orange-500/40 opacity-60 animate-pulse" style={{ animationDelay: '0.9s' }} />
 
-      {/* Glow orbs */}
-      <div className="absolute top-1/4 -left-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl opacity-20 animate-pulse" />
-      <div className="absolute bottom-1/4 -right-40 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+      {/* Reactive glow orbs */}
+      <div className="absolute top-1/3 -left-48 w-96 h-96 bg-orange-500/8 rounded-full blur-3xl opacity-30 animate-pulse drift-animate" />
+      <div className="absolute bottom-1/3 -right-48 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1.5s' }} />
+      
+      {/* Signal interference streaks */}
+      <div className="absolute top-1/2 -left-96 w-96 h-1 bg-gradient-to-r from-transparent via-orange-500/20 to-transparent opacity-50 animate-pulse" style={{ animationDelay: '0.5s' }} />
+      <div className="absolute top-1/3 -right-96 w-96 h-1 bg-gradient-to-l from-transparent via-orange-500/15 to-transparent opacity-40 animate-pulse" style={{ animationDelay: '1s' }} />
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-orange-500/20">
+        <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-orange-500/20 glow-box flicker-effect">
           {/* Header Section */}
           <div className="border-b border-orange-500/30 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent p-8 relative overflow-hidden">
-            {/* Accent line */}
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+            {/* Animated accent line */}
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent animate-pulse" />
             
             <div className="flex items-center justify-center mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-orange-500/30 rounded-lg blur-2xl animate-pulse" />
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl animate-pulse" style={{ animationDelay: '0.2s' }} />
-                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                  <Shield className="w-10 h-10 text-orange-300" strokeWidth={1.5} />
+                <div className="absolute inset-0 bg-orange-500/40 rounded-lg blur-3xl animate-pulse" />
+                <div className="absolute inset-0 bg-orange-500/25 rounded-lg blur-xl animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <div className="absolute inset-0 border border-orange-500/30 rounded-lg animate-pulse" style={{ animationDelay: '0.4s' }} />
+                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center shadow-lg shadow-orange-500/40">
+                  <Shield className="w-10 h-10 text-orange-300 animate-pulse" strokeWidth={1.5} style={{ animationDelay: '0.1s' }} />
                 </div>
               </div>
             </div>
 
             <div className="text-center space-y-3">
-              <div>
-                <h1 className="text-4xl font-black uppercase tracking-[0.15em] text-white drop-shadow-lg">
-                  Nexus <span className="text-orange-400">Gate</span>
+              <div className="relative">
+                <h1 className="text-4xl font-black uppercase tracking-[0.15em] text-white drop-shadow-lg flicker-effect">
+                  Nexus <span className="text-orange-400 animate-pulse">Gate</span>
                 </h1>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
-              <p className="text-[11px] text-orange-300/70 uppercase tracking-[0.2em] font-bold">
-                Authorization Protocol Active
+              <div className="h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent animate-pulse" />
+              <p className="text-[11px] text-orange-300/70 uppercase tracking-[0.2em] font-bold flicker-effect" style={{ animationDelay: '0.2s' }}>
+                ▲ Authorization Protocol Active ▲
               </p>
             </div>
           </div>
@@ -160,15 +198,19 @@ export default function AccessGate() {
             <Button
               onClick={handleRedeem}
               disabled={loading || !accessCode.trim() || !callsign.trim()}
-              className="w-full h-12 mt-8 bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200"
+              className="w-full h-12 mt-8 bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-500 hover:via-orange-400 hover:to-orange-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200 relative overflow-hidden group"
             >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-full group-hover:-translate-x-full transition-transform duration-500" />
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
+                <span className="flex items-center justify-center gap-2 relative z-10">
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   VERIFYING...
                 </span>
               ) : (
-                '▶ VERIFY ACCESS'
+                <span className="flex items-center justify-center gap-2 relative z-10">
+                  <Zap className="w-4 h-4 animate-pulse" />
+                  VERIFY ACCESS
+                </span>
               )}
             </Button>
 
@@ -197,10 +239,16 @@ export default function AccessGate() {
         {/* Security indicator */}
         <div className="mt-6 text-center text-[10px] text-zinc-600 uppercase tracking-widest font-bold">
           <span className="inline-flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-green-500/60 rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-green-500/80 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
             ENCRYPTED PROTOCOL ACTIVE
-            <span className="w-1.5 h-1.5 bg-green-500/60 rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-green-500/80 rounded-full animate-pulse shadow-lg shadow-green-500/50" style={{ animationDelay: '0.5s' }} />
           </span>
+        </div>
+
+        {/* Tactical readout lines */}
+        <div className="mt-4 text-center space-y-1 text-[8px] text-orange-400/40 font-mono uppercase tracking-widest">
+          <div className="animate-pulse">[ NEXUS.GATE v1.0.0 ] [ AUTH.SYS ONLINE ]</div>
+          <div className="animate-pulse" style={{ animationDelay: '0.3s' }}>[ SCAN.COMPLETE ] [ READY ]</div>
         </div>
       </div>
     </div>
