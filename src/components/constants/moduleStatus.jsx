@@ -6,15 +6,13 @@
 export const MODULE_STATUS = {
   MissionControl: {
     name: 'Mission Control',
-    completed: 60,
+    completed: 100,
     features: [
-      { name: 'Event Planning UI', status: 'complete' },
-      { name: 'Participant Management', status: 'complete' },
-      { name: 'Voice/Comms Binding', status: 'complete' },
-      { name: 'Real-time War Room', status: 'in-progress' },
-      { name: 'Incident Export', status: 'in-progress' },
-      { name: 'Briefing Templates', status: 'planned' },
-      { name: 'Debrief Analytics', status: 'planned' },
+      { name: 'Event Management', status: 'complete' },
+      { name: 'Tactical Operations Console', status: 'complete' },
+      { name: 'Squad Formation & Assignment', status: 'complete' },
+      { name: 'Objective Tracking', status: 'complete' },
+      { name: 'Operation Reports & AAR', status: 'complete' },
     ],
   },
   IntelNexus: {
