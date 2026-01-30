@@ -142,6 +142,14 @@ export default function QAConsole() {
             <PerformanceMonitor />
           </TabsContent>
 
+          <TabsContent value="advanced">
+            <AdvancedTestTriggers />
+          </TabsContent>
+
+          <TabsContent value="generator">
+            <DataGenerator />
+          </TabsContent>
+
           <TabsContent value="logs">
             <LogsViewer />
           </TabsContent>
