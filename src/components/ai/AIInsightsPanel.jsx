@@ -15,11 +15,12 @@ export default function AIInsightsPanel() {
 
   const loadLogs = async () => {
     try {
-      const recentLogs = await base44.entities.AIAgentLog.list('-created_date', 20);
-      setLogs(recentLogs);
+      const recentLogs = await base44.entities.AIAgentLog.list();
+      setLogs(recentLogs || []);
       setLoading(false);
     } catch (error) {
       console.error('Failed to load AI logs:', error);
+      setLogs([]);
       setLoading(false);
     }
   };
