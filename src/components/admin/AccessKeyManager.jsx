@@ -14,7 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare, X } from 'lucide-react';
 
 const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
 
@@ -265,16 +272,26 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
         </form>
       )}
 
-      {/* Generated Discord Message */}
-      {generatedMessage && (
-        <div className="p-4 bg-zinc-900/50 border border-orange-500/30 rounded space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-orange-400 flex items-center gap-2">
+      {/* Discord Message Modal */}
+      <Dialog open={!!generatedMessage} onOpenChange={(open) => !open && setGeneratedMessage(null)}>
+        <DialogContent className="max-w-md bg-zinc-900 border-zinc-700">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-400">
               <MessageSquare className="w-4 h-4" />
               Discord Message Ready
-            </h3>
+            </DialogTitle>
+          </DialogHeader>
+          <pre className="text-xs text-zinc-300 bg-zinc-950 p-3 rounded border border-zinc-700 overflow-y-auto max-h-96 whitespace-pre-wrap font-mono">
+{generatedMessage}
+          </pre>
+          <DialogFooter className="flex gap-2">
             <Button
-              size="sm"
+              variant="outline"
+              onClick={() => setGeneratedMessage(null)}
+            >
+              Close
+            </Button>
+            <Button
               onClick={() => {
                 navigator.clipboard.writeText(generatedMessage);
                 setSuccess('Message copied to clipboard!');
@@ -285,20 +302,9 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
               <Copy className="w-4 h-4 mr-2" />
               Copy Message
             </Button>
-          </div>
-          <pre className="text-xs text-zinc-300 bg-zinc-950 p-3 rounded border border-zinc-700 overflow-x-auto whitespace-pre-wrap">
-{generatedMessage}
-          </pre>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setGeneratedMessage(null)}
-            className="w-full"
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Keys List */}
       <div className="space-y-2">
