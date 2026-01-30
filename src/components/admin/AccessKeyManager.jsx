@@ -63,7 +63,7 @@ export default function AccessKeyManager() {
   const loadKeys = async () => {
     try {
       setLoading(true);
-      const keyList = await base44.asServiceRole.entities.AccessKey.list();
+      const keyList = await base44.entities.AccessKey.list();
       setKeys(keyList || []);
       setError(null);
     } catch (err) {
