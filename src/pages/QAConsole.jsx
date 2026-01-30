@@ -116,16 +116,17 @@ export default function QAConsole() {
 
         {/* Main Tabs */}
          <Tabs defaultValue="overview" className="w-full">
-           <TabsList className="grid w-full grid-cols-8 mb-6">
-             <TabsTrigger value="overview">Overview</TabsTrigger>
-             <TabsTrigger value="entities">Entities</TabsTrigger>
-             <TabsTrigger value="system">System</TabsTrigger>
-             <TabsTrigger value="performance">Performance</TabsTrigger>
-             <TabsTrigger value="advanced">Advanced</TabsTrigger>
-             <TabsTrigger value="generator">Generator</TabsTrigger>
-             <TabsTrigger value="logs">Logs</TabsTrigger>
-             <TabsTrigger value="tools">Tools</TabsTrigger>
-           </TabsList>
+            <TabsList className="grid w-full grid-cols-9 mb-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="entities">Entities</TabsTrigger>
+              <TabsTrigger value="system">System</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              <TabsTrigger value="generator">Generator</TabsTrigger>
+              <TabsTrigger value="voice">Voice</TabsTrigger>
+              <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="tools">Tools</TabsTrigger>
+            </TabsList>
 
           <TabsContent value="overview">
             <OverviewPanel />
