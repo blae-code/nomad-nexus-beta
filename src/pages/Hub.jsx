@@ -9,49 +9,14 @@ import { useCurrentUser } from '@/components/useCurrentUser';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
-import { isDevMode } from '@/components/utils/devMode';
+import { useAuth } from '@/components/providers/AuthProvider';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function Hub() {
-  const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(false);
+  const { user, loading: authLoading } = useAuth();
   const { isContextPanelOpen, isCommsDockOpen } = useShellUI();
   const voiceNet = useVoiceNet();
   const activeOp = useActiveOp();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          window.location.href = createPageUrl('AccessGate');
-          return;
-        }
-        
-        const authUser = await base44.auth.me();
-        if (authUser.role !== 'admin') {
-          const profiles = await base44.entities.MemberProfile.filter({ user_id: authUser.id });
-          if (profiles.length === 0 || !profiles[0].onboarding_completed) {
-            window.location.href = createPageUrl('Disclaimers');
-            return;
-          }
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        setAuthError(true);
-        window.location.href = createPageUrl('AccessGate');
-      }
-    };
-    checkAuth();
-  }, []);
-
-  if (loading || authError) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-zinc-950">
-        <div className="text-orange-500 text-sm uppercase tracking-widest font-semibold">Initializing...</div>
-      </div>
-    );
-  }
 
   const getStatusColor = (percentage) => {
     if (percentage >= 70) return 'text-green-400';
@@ -90,7 +55,8 @@ export default function Hub() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto">
+    <RouteGuard requiredAuth="onboarded">
+      <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto">
       {/* Command Center Header */}
       <div className="space-y-4 mb-6">
         <div className="flex items-center justify-between">
