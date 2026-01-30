@@ -69,59 +69,107 @@ export default function AccessGate() {
   }
 
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4 overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%)] bg-[length:40px_40px] opacity-30" />
-      
-      <div className="relative z-10 max-w-md w-full">
-        <div className="border-2 border-orange-500/30 bg-zinc-950/95 backdrop-blur-sm p-8">
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center">
-                <Shield className="w-10 h-10 text-orange-500" />
+    <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
+      {/* Background grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.03)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.03)_1px,transparent_1px)] bg-[length:50px_50px] opacity-20" />
+
+      {/* Animated corner accents */}
+      <div className="absolute top-0 left-0 w-24 h-24 border-t-2 border-l-2 border-orange-500/30 opacity-50" />
+      <div className="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-orange-500/30 opacity-50" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 border-b-2 border-l-2 border-orange-500/30 opacity-50" />
+      <div className="absolute bottom-0 right-0 w-24 h-24 border-b-2 border-r-2 border-orange-500/30 opacity-50" />
+
+      <div className="relative z-10 w-full max-w-md">
+        <div className="border-2 border-orange-500/40 bg-zinc-950/80 backdrop-blur-lg p-0 overflow-hidden">
+          {/* Header Section */}
+          <div className="border-b border-orange-500/20 bg-gradient-to-r from-orange-500/5 to-transparent p-8">
+            <div className="flex items-center justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl animate-pulse" />
+                <div className="relative w-16 h-16 rounded-lg bg-gradient-to-br from-orange-500/30 to-orange-600/10 border-2 border-orange-500/50 flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-orange-400" strokeWidth={1.5} />
+                </div>
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full animate-pulse" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-black uppercase tracking-widest text-white">
+                Nexus Gate
+              </h1>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                Authorization Protocol
+              </p>
             </div>
           </div>
-          
-          <h1 className="text-2xl font-black uppercase tracking-widest text-center text-white mb-2">
-            Security Checkpoint
-          </h1>
-          <p className="text-center text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-8">Authorization Protocol / Credentials Required</p>
-          
-          <div className="space-y-4">
-            <Input
-              type="text"
-              placeholder="ACCESS CODE"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-              className="text-center font-mono uppercase tracking-wider"
-            />
-            
-            <Input
-              type="text"
-              placeholder="CALLSIGN"
-              value={callsign}
-              onChange={(e) => setCallsign(e.target.value)}
-              className="text-center font-mono uppercase tracking-wider"
-              onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
-            />
-            
+
+          {/* Form Section */}
+          <div className="p-8 space-y-5">
+            {/* Access Code Field */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-orange-400 uppercase tracking-wider block">
+                Access Code
+              </label>
+              <Input
+                type="text"
+                placeholder="XXXX-XXXX-XXXX"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                className="font-mono uppercase tracking-widest text-center h-11 bg-zinc-900/80 border-orange-500/20 focus:border-orange-500/50 text-orange-300"
+              />
+            </div>
+
+            {/* Callsign Field */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-orange-400 uppercase tracking-wider block">
+                Callsign
+              </label>
+              <Input
+                type="text"
+                placeholder="Enter callsign"
+                value={callsign}
+                onChange={(e) => setCallsign(e.target.value)}
+                className="uppercase tracking-wider text-center h-11 bg-zinc-900/80 border-orange-500/20 focus:border-orange-500/50 text-zinc-100"
+                onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
+              />
+            </div>
+
+            {/* Verify Button */}
             <Button
               onClick={handleRedeem}
               disabled={loading || !accessCode.trim() || !callsign.trim()}
-              className="w-full"
+              className="w-full h-11 mt-6 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 text-white font-bold uppercase tracking-wider disabled:opacity-50"
             >
-              {loading ? 'VERIFYING...' : 'VERIFY ACCESS'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying...
+                </span>
+              ) : (
+                'Verify Access'
+              )}
             </Button>
-            
+
+            {/* Status Messages */}
             {message && (
-              <div className={`text-center text-sm whitespace-pre-line ${message.includes('granted') ? 'text-green-400' : message.includes('Revoked') ? 'text-amber-400' : 'text-red-400'}`}>
+              <div className={`p-4 rounded border text-sm text-center whitespace-pre-line font-mono text-xs ${
+                message.includes('granted') 
+                  ? 'bg-green-950/30 border-green-500/30 text-green-400' 
+                  : message.includes('Revoked') 
+                  ? 'bg-amber-950/30 border-amber-500/30 text-amber-400' 
+                  : 'bg-red-950/30 border-red-500/30 text-red-400'
+              }`}>
                 {message}
               </div>
             )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-orange-500/20 bg-zinc-900/30 px-8 py-4">
+            <p className="text-xs text-zinc-500 text-center uppercase tracking-wider">
+              ⸻ Redscar Nomads Command ⸻
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
-}
