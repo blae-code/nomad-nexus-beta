@@ -173,3 +173,4 @@ export default function AccessGate() {
       </div>
     </div>
   );
+}
