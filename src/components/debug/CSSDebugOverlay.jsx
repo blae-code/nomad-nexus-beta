@@ -7,11 +7,14 @@ export default function CSSDebugOverlay() {
   useEffect(() => {
     // Check if debug_css=true is in URL
     const params = new URLSearchParams(window.location.search);
-    if (params.get('debug_css') !== 'true') {
+    const debugEnabled = params.get('debug_css') === 'true';
+    
+    if (!debugEnabled) {
       return;
     }
 
     setShowOverlay(true);
+    console.log('🔍 CSS Debug overlay enabled—checking Tailwind status...');
 
     // Run diagnostics
     const runDiagnostics = () => {
