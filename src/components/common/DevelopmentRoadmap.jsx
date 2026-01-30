@@ -23,23 +23,26 @@ export default function DevelopmentRoadmap() {
     }, {});
   }, []);
 
-  const moduleGroups = {
-    complete: Object.entries(MODULE_STATUS)
-      .filter(([_, data]) => data.completed === 100)
-      .map(([key, data]) => ({ key, ...data })),
-    active: Object.entries(MODULE_STATUS)
-      .filter(([_, data]) => data.completed >= 40 && data.completed < 100)
-      .sort((a, b) => b[1].completed - a[1].completed)
-      .map(([key, data]) => ({ key, ...data })),
-    planned: Object.entries(MODULE_STATUS)
-      .filter(([_, data]) => data.completed < 40)
-      .sort((a, b) => b[1].completed - a[1].completed)
-      .map(([key, data]) => ({ key, ...data })),
-  };
+  const moduleGroups = useMemo(() => ({
+    complete: Object.entries(calculateCompletion)
+      .filter(([_, data]) => data.calculated === 100)
+      .map(([key, data]) => ({ key, ...data, completed: data.calculated })),
+    active: Object.entries(calculateCompletion)
+      .filter(([_, data]) => data.calculated >= 40 && data.calculated < 100)
+      .sort((a, b) => b[1].calculated - a[1].calculated)
+      .map(([key, data]) => ({ key, ...data, completed: data.calculated })),
+    planned: Object.entries(calculateCompletion)
+      .filter(([_, data]) => data.calculated < 40)
+      .sort((a, b) => b[1].calculated - a[1].calculated)
+      .map(([key, data]) => ({ key, ...data, completed: data.calculated })),
+  }), [calculateCompletion]);
 
-  const overallCompletion = Math.round(
-    Object.values(MODULE_STATUS).reduce((sum, mod) => sum + mod.completed, 0) /
-      Object.keys(MODULE_STATUS).length
+  const overallCompletion = useMemo(() => 
+    Math.round(
+      Object.values(calculateCompletion).reduce((sum, mod) => sum + mod.calculated, 0) /
+        Object.keys(calculateCompletion).length
+    ),
+    [calculateCompletion]
   );
 
   return (
