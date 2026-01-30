@@ -71,15 +71,17 @@ export default function AccessGate() {
         <div className="border-2 border-orange-500/30 bg-zinc-950/95 backdrop-blur-sm p-8">
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
-              <Shield className="w-16 h-16 text-orange-500" />
+              <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center">
+                <Shield className="w-10 h-10 text-orange-500" />
+              </div>
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full animate-pulse" />
             </div>
           </div>
           
-          <h1 className="text-3xl font-black uppercase tracking-widest text-center text-white mb-2">
-            Access Gate
+          <h1 className="text-2xl font-black uppercase tracking-widest text-center text-white mb-2">
+            Security Checkpoint
           </h1>
-          <p className="text-center text-zinc-500 text-xs uppercase tracking-wider font-semibold mb-8">Secure Entry Point / Authorization Required</p>
+          <p className="text-center text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-8">Authorization Protocol / Credentials Required</p>
           
           <div className="space-y-4">
             <Input
