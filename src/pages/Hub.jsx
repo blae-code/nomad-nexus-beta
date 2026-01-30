@@ -78,6 +78,16 @@ export default function Hub() {
     { name: 'QA Console', path: 'QAConsole', icon: Bug, description: 'Development and QA testing tools for admins' },
   ];
 
+  // Organize modules by completion status
+  const organizedItems = {
+    complete: navItems.filter(item => (MODULE_STATUS[item.path]?.completed || 0) === 100).sort((a, b) => b.path.localeCompare(a.path)),
+    inProgress: navItems.filter(item => {
+      const completion = MODULE_STATUS[item.path]?.completed || 0;
+      return completion > 0 && completion < 100;
+    }).sort((a, b) => (MODULE_STATUS[b.path]?.completed || 0) - (MODULE_STATUS[a.path]?.completed || 0)),
+    planned: navItems.filter(item => (MODULE_STATUS[item.path]?.completed || 0) === 0).sort((a, b) => a.name.localeCompare(b.name)),
+  };
+
   return (
     <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto space-y-6">
       {/* Command Center Header */}
@@ -107,8 +117,155 @@ export default function Hub() {
         </div>
       </div>
 
-      {/* Module Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
+      {/* Complete Modules */}
+      {organizedItems.complete.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-400" />
+            <h2 className="text-xs font-black text-green-400 uppercase tracking-widest">Complete ({organizedItems.complete.length})</h2>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
+            {organizedItems.complete.map((item, index) => (
+              <ModuleCard key={item.path} item={item} index={index} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* In-Progress Modules */}
+      {organizedItems.inProgress.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-400" />
+            <h2 className="text-xs font-black text-orange-400 uppercase tracking-widest">In Development ({organizedItems.inProgress.length})</h2>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
+            {organizedItems.inProgress.map((item, index) => (
+              <ModuleCard key={item.path} item={item} index={index} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Planned Modules */}
+      {organizedItems.planned.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-zinc-500" />
+            <h2 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Planned ({organizedItems.planned.length})</h2>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
+            {organizedItems.planned.map((item, index) => (
+              <ModuleCard key={item.path} item={item} index={index} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ModuleCard({ item, index }) {
+  const Icon = item.icon;
+  const status = MODULE_STATUS[item.path];
+  const statusPercentage = status?.completed || 0;
+  const itemsPerRow = 6;
+  const colPosition = index % itemsPerRow;
+  const tooltipSide = colPosition >= 4 ? 'left' : 'right';
+
+  const getStatusColor = (percentage) => {
+    if (percentage >= 70) return 'text-green-400';
+    if (percentage >= 40) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip delayDuration={200}>
+        <TooltipTrigger asChild>
+          <a
+            href={createPageUrl(item.path)}
+            className="group relative bg-zinc-900/40 border border-zinc-800/60 hover:border-orange-500/60 hover:bg-zinc-800/50 p-3 transition-all duration-200 rounded overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex flex-col items-center text-center gap-1.5">
+              <div className="p-2 bg-orange-500/10 border border-orange-500/30 group-hover:border-orange-500/50 transition-colors rounded">
+                <Icon className="w-5 h-5 text-orange-500" />
+              </div>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider leading-tight">
+                {item.name}
+              </h3>
+              <p className="text-[10px] text-zinc-400 leading-tight line-clamp-2">
+                {item.description}
+              </p>
+              {status && (
+                <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full flex items-center justify-center gap-1">
+                  <span className={`text-[10px] font-mono font-bold ${getStatusColor(statusPercentage)}`}>{statusPercentage}%</span>
+                  {statusPercentage === 100 && <Check className="w-3 h-3 text-green-400" />}
+                </div>
+              )}
+            </div>
+          </a>
+        </TooltipTrigger>
+
+        {status && (
+          <TooltipContent side={tooltipSide} align="center" className="w-72 bg-zinc-950 border-orange-500/40 p-0 overflow-hidden">
+            <div className="bg-zinc-900/80 border-b border-orange-500/20 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-black text-white uppercase tracking-wider">{status.name}</h4>
+                <span className="text-xs font-mono text-orange-400 font-bold">{statusPercentage}%</span>
+              </div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-300"
+                  style={{ width: `${statusPercentage}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="p-4 space-y-2 max-h-56 overflow-y-auto">
+              {status.features.map((feature, idx) => {
+                const { getStatusBgColor } = require('@/components/constants/moduleStatus');
+                const bgColor = getStatusBgColor(feature.status);
+                const FeatureIcon = 
+                  feature.status === 'complete' ? CheckCircle2 :
+                  feature.status === 'in-progress' ? Clock :
+                  AlertCircle;
+                
+                const iconColor = 
+                  feature.status === 'complete' ? 'text-green-400' :
+                  feature.status === 'in-progress' ? 'text-orange-400' :
+                  'text-zinc-500';
+
+                return (
+                  <div key={idx} className={`flex items-start gap-2 text-xs ${bgColor} p-2 rounded`}>
+                    <FeatureIcon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${iconColor}`} />
+                    <div>
+                      <div className="font-semibold text-white">{feature.name}</div>
+                      <div className="text-zinc-400 text-[10px] capitalize mt-0.5">
+                        {feature.status === 'complete' && 'Ready to use'}
+                        {feature.status === 'in-progress' && 'Currently in development'}
+                        {feature.status === 'planned' && 'Planned for future release'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-zinc-900/50 border-t border-orange-500/20 p-3 text-xs text-zinc-400 italic">
+              💡 Hover over features to see detailed development status
+            </div>
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function Hub_Old() {
+  return (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
         {navItems.map((item, index) => {
               const Icon = item.icon;
               const status = MODULE_STATUS[item.path];
@@ -199,12 +356,12 @@ export default function Hub() {
               </TooltipProvider>
             );
         })}
-      </div>
+        </div>
 
-      {/* Development Roadmap - Full Width Below Modules */}
-      <div className="border-t border-zinc-800/40 pt-6 mt-6">
+        {/* Development Roadmap - Full Width Below Modules */}
+        <div className="border-t border-zinc-800/40 pt-6 mt-6">
         <DevelopmentRoadmap />
-      </div>
-    </div>
-  );
-}
+        </div>
+        </div>
+        );
+        }
