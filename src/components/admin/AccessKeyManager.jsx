@@ -24,6 +24,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare, X } from 'lucide-react';
+import GrantsSelector from './GrantsSelector';
 
 const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
 
@@ -35,6 +36,7 @@ export default function AccessKeyManager() {
   const [showRevoked, setShowRevoked] = useState(false);
   const [formData, setFormData] = useState({
     grantsRank: 'VAGRANT',
+    grantsPermissions: [],
   });
   const [recipientCallsign, setRecipientCallsign] = useState('');
   const [adminCallsign, setAdminCallsign] = useState('');
@@ -95,16 +97,17 @@ export default function AccessKeyManager() {
     try {
       const response = await base44.functions.invoke('createAccessKey', {
         grantsRank: formData.grantsRank,
+        grantsPermissions: formData.grantsPermissions,
       });
 
       const key = response.data.key;
 
       // Generate immersive Discord message
-      const message = generateDiscordMessage(adminCallsign, recipientCallsign, key.code, formData.grantsRank);
+      const message = generateDiscordMessage(adminCallsign, recipientCallsign, key.code, formData.grantsRank, formData.grantsPermissions);
       setGeneratedMessage(message);
-      
+
       setSuccess('Access key generated - Message ready to copy');
-      setFormData({ grantsRank: 'VAGRANT' });
+      setFormData({ grantsRank: 'VAGRANT', grantsPermissions: [] });
       setRecipientCallsign('');
       setError(null);
       await loadKeys();
@@ -113,14 +116,17 @@ export default function AccessKeyManager() {
     }
   };
 
-  const generateDiscordMessage = (issuer, recipient, code, rank) => {
+  const generateDiscordMessage = (issuer, recipient, code, rank, permissions) => {
+    const grantsText = permissions.length > 0 
+      ? `\nGRANTS: ${permissions.join(', ')}`
+      : '';
     return `⸻ AUTHORIZATION GRANTED ⸻
 
   FROM: ${issuer}
   TO: ${recipient}
 
   ACCESS CODE: ${code}
-  RANK: ${rank}
+  RANK: ${rank}${grantsText}
 
   Redeem at: ${window.location.origin}${createPageUrl('AccessGate')}
 
@@ -258,7 +264,12 @@ export default function AccessKeyManager() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+
+            <GrantsSelector 
+              selectedGrants={formData.grantsPermissions}
+              onChange={(perms) => setFormData({ ...formData, grantsPermissions: perms })}
+            />
+            </div>
 
           <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-blue-300">
             <strong>Note:</strong> One key per user. Keys never expire and are permanently linked to identity.
@@ -343,16 +354,29 @@ export default function AccessKeyManager() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 text-xs mb-3">
+                <div className="grid grid-cols-2 gap-3 text-xs mb-3">
                   <div>
                     <span className="text-zinc-500">Rank:</span>
-                    <p className="text-zinc-300 font-mono">{key.grantsRank}</p>
+                    <p className="text-zinc-300 font-mono">{key.grants_rank}</p>
                   </div>
                   <div>
                     <span className="text-zinc-500">Expiration:</span>
                     <p className="text-zinc-300">Never</p>
                   </div>
                 </div>
+
+                {key.grants_roles && key.grants_roles.length > 0 && (
+                  <div className="mb-3">
+                    <span className="text-zinc-500 text-xs block mb-1">Grants:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {key.grants_roles.map((role) => (
+                        <span key={role} className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-2 justify-end">
                   <Button
