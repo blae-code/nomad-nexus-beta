@@ -16,10 +16,10 @@ export default function AIInsightsPanel() {
   const loadLogs = async () => {
     try {
       const recentLogs = await base44.entities.AIAgentLog.list();
-      setLogs(recentLogs || []);
+      setLogs(Array.isArray(recentLogs) ? recentLogs : []);
       setLoading(false);
     } catch (error) {
-      console.error('Failed to load AI logs:', error);
+      // Entity may not exist yet or auth issue - silently handle
       setLogs([]);
       setLoading(false);
     }
