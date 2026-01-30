@@ -25,6 +25,7 @@ import NetRoster from '@/components/voice/VoiceControlPanel/NetRoster';
 import VoiceControlsSection from '@/components/voice/VoiceControlPanel/VoiceControlsSection';
 import CommsDiscipline from '@/components/voice/VoiceControlPanel/CommsDiscipline';
 import VoiceParticipantIndicator from '@/components/voice/VoiceParticipantIndicator';
+import AIInsightsPanel from '@/components/ai/AIInsightsPanel';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls
@@ -274,6 +275,20 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
            onToggle={toggleSection}
          />
          {expandedSections.health && <div className="border-b border-orange-500/10"><NetHealth /></div>}
+
+         {/* AI Insights Section */}
+         <SectionHeader
+           icon={<Activity className="w-4 h-4" />}
+           label="AI Insights"
+           sectionKey="aiInsights"
+           expanded={expandedSections.aiInsights}
+           onToggle={toggleSection}
+         />
+         {expandedSections.aiInsights && (
+           <div className="px-4 py-3 border-b border-orange-500/10 animate-in fade-in duration-200">
+             <AIInsightsPanel />
+           </div>
+         )}
 
          {/* Diagnostics Section */}
          <SectionHeader
