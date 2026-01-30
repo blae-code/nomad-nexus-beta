@@ -20,6 +20,7 @@ import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
 import { initScrollGuard } from '@/components/utils/scrollGuard';
 import { AuthProvider, useAuth } from '@/components/providers/AuthProvider';
 import FatalAuthError from '@/components/auth/FatalAuthError';
+import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
