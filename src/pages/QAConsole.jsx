@@ -848,18 +848,81 @@ function TestingTools() {
       </div>
 
       <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
-        <h4 className="text-xs font-black uppercase text-white mb-3 tracking-wide">Batch Operations</h4>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <PlayCircle className="w-4 h-4 mr-2" />
-            Run All Tests
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export Results
-          </Button>
-        </div>
+         <h4 className="text-xs font-black uppercase text-white mb-3 tracking-wide">Batch Operations</h4>
+         <div className="flex gap-2">
+           <Button variant="outline" size="sm">
+             <PlayCircle className="w-4 h-4 mr-2" />
+             Run All Tests
+           </Button>
+           <Button variant="outline" size="sm">
+             <Download className="w-4 h-4 mr-2" />
+             Export Results
+           </Button>
+         </div>
+       </div>
+
+       {/* CSS Cache-Busting & Styling QA */}
+       <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-lg">
+         <h4 className="text-xs font-black uppercase text-white mb-3 tracking-wide">CSS & Styling QA</h4>
+         <div className="space-y-3">
+           <div className="text-xs text-zinc-400 space-y-2">
+             <p><strong>Hard Refresh (Clear CSS Cache):</strong></p>
+             <ul className="list-disc list-inside ml-2 text-zinc-500">
+               <li>Desktop: <code className="bg-zinc-950 px-1 rounded">Ctrl+Shift+R</code> (Windows) or <code className="bg-zinc-950 px-1 rounded">Cmd+Shift+R</code> (Mac)</li>
+               <li>Mobile: Long-press refresh icon, select "Hard refresh" or clear site data in Settings</li>
+             </ul>
+
+             <p className="mt-2"><strong>Incognito/Private Mode Test:</strong></p>
+             <ul className="list-disc list-inside ml-2 text-zinc-500">
+               <li>Open the app in incognito/private browser tab (no cached assets)</li>
+               <li>New users should see correct styling immediately</li>
+               <li>If styling breaks in incognito, the CSS bundle is missing or misconfigured</li>
+             </ul>
+
+             <p className="mt-2"><strong>CSS Diagnostics:</strong></p>
+             <ul className="list-disc list-inside ml-2 text-zinc-500">
+               <li>Append <code className="bg-zinc-950 px-1 rounded">?debug_css=true</code> to any page URL</li>
+               <li>Shows: Tailwind status, stylesheets loaded, CDN detection, utility test results</li>
+               <li>Check console log for detailed CSS bundle info</li>
+             </ul>
+
+             <p className="mt-2"><strong>Cross-Device Testing:</strong></p>
+             <ul className="list-disc list-inside ml-2 text-zinc-500">
+               <li>Desktop (Chrome, Firefox, Safari)</li>
+               <li>Mobile (iOS Safari, Chrome Android)</li>
+               <li>All should have identical styling if CSS is correctly bundled</li>
+             </ul>
+           </div>
+
+           <div className="flex flex-col gap-2 mt-4">
+             <Button 
+               variant="outline" 
+               size="sm" 
+               onClick={() => window.location.href = window.location.href + (window.location.search ? '&' : '?') + 'debug_css=true'}
+               className="justify-start"
+             >
+               <Eye className="w-4 h-4 mr-2" />
+               Open CSS Diagnostics
+             </Button>
+             <Button 
+               variant="outline" 
+               size="sm" 
+               onClick={() => {
+                 if (navigator.serviceWorker?.controller) {
+                   navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+                   setTimeout(() => window.location.reload(), 500);
+                 } else {
+                   window.location.reload(true);
+                 }
+               }}
+               className="justify-start"
+             >
+               <RefreshCw className="w-4 h-4 mr-2" />
+               Force Hard Refresh
+             </Button>
+           </div>
+         </div>
+       </div>
       </div>
-    </div>
-  );
-}
+      );
+      }
