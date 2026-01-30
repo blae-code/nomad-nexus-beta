@@ -50,7 +50,7 @@ export default function CommsConsole() {
   };
 
   const loadPolls = async (channelId) => {
-    const pollsList = await base44.entities.Poll.filter({ channel_id: channelId }, '-created_date', 20);
+    const pollsList = await base44.entities.Poll.filter({ scope: 'CHANNEL', scope_id: channelId }, '-created_date', 20);
     const pollsWithVotes = await Promise.all(
       pollsList.map(async (poll) => {
         const votes = await base44.entities.PollVote.filter({ poll_id: poll.id });
@@ -80,12 +80,18 @@ export default function CommsConsole() {
     if (validOptions.length < 2) return;
 
     const user = await base44.auth.me();
+    const formattedOptions = validOptions.map((text, idx) => ({
+      id: `opt_${idx}`,
+      text: text
+    }));
+
     await base44.entities.Poll.create({
-      channel_id: selectedChannel.id,
+      scope: 'CHANNEL',
+      scope_id: selectedChannel.id,
       question: pollQuestion.trim(),
-      options: validOptions,
+      options: formattedOptions,
       created_by: user.id,
-      ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      closes_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
     });
 
     setPollQuestion('');
@@ -94,12 +100,12 @@ export default function CommsConsole() {
     loadPolls(selectedChannel.id);
   };
 
-  const votePoll = async (pollId, option) => {
+  const votePoll = async (pollId, optionId) => {
     const user = await base44.auth.me();
     await base44.entities.PollVote.create({
       poll_id: pollId,
       user_id: user.id,
-      option,
+      selected_option_ids: [optionId],
     });
     loadPolls(selectedChannel.id);
   };
@@ -314,8 +320,12 @@ Provide a helpful, concise response with tactical awareness.`,
                     {polls.map((poll) => {
                       const userVote = poll.votes.find(v => v.user_id === currentUser?.id);
                       const voteCounts = {};
-                      poll.options.forEach(opt => voteCounts[opt] = 0);
-                      poll.votes.forEach(v => voteCounts[v.option]++);
+                      poll.options.forEach(opt => voteCounts[opt.id] = 0);
+                      poll.votes.forEach(v => {
+                        v.selected_option_ids.forEach(optId => {
+                          voteCounts[optId] = (voteCounts[optId] || 0) + 1;
+                        });
+                      });
                       const totalVotes = poll.votes.length;
 
                       return (
@@ -323,14 +333,14 @@ Provide a helpful, concise response with tactical awareness.`,
                           <h3 className="text-white font-semibold mb-3">{poll.question}</h3>
                           <div className="space-y-2">
                             {poll.options.map((option) => {
-                              const count = voteCounts[option];
+                              const count = voteCounts[option.id] || 0;
                               const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-                              const hasVoted = userVote?.option === option;
+                              const hasVoted = userVote?.selected_option_ids?.includes(option.id);
 
                               return (
                                 <button
-                                  key={option}
-                                  onClick={() => !userVote && votePoll(poll.id, option)}
+                                  key={option.id}
+                                  onClick={() => !userVote && votePoll(poll.id, option.id)}
                                   disabled={!!userVote}
                                   className={`w-full p-3 rounded border transition-all text-left ${
                                     hasVoted
@@ -343,7 +353,7 @@ Provide a helpful, concise response with tactical awareness.`,
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       {hasVoted && <CheckCircle className="w-4 h-4 text-orange-400" />}
-                                      <span className="text-white text-sm">{option}</span>
+                                      <span className="text-white text-sm">{option.text}</span>
                                     </div>
                                     <span className="text-xs text-zinc-400">{count} ({percentage}%)</span>
                                   </div>
@@ -357,7 +367,7 @@ Provide a helpful, concise response with tactical awareness.`,
                             })}
                           </div>
                           <div className="mt-3 text-xs text-zinc-500">
-                            {totalVotes} vote{totalVotes !== 1 ? 's' : ''} • Ends {new Date(poll.ends_at).toLocaleDateString()}
+                            {totalVotes} vote{totalVotes !== 1 ? 's' : ''} • Ends {new Date(poll.closes_at).toLocaleDateString()}
                           </div>
                         </div>
                       );
