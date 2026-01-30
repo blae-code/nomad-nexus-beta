@@ -145,9 +145,9 @@ export default function Hub() {
     }
 
     function ModuleCard({ item, index }) {
-    const Icon = item.icon;
-  const status = MODULE_STATUS[item.path];
-  const statusPercentage = status?.completed || 0;
+            const Icon = item.icon;
+          const status = MODULE_STATUS[item.path];
+          const statusPercentage = calculateCompletion(item.path);
   const itemsPerRow = 6;
   const colPosition = index % itemsPerRow;
   const tooltipSide = colPosition >= 4 ? 'left' : 'right';
