@@ -32,6 +32,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdvancedTestTriggers from '@/components/qa/AdvancedTestTriggers';
+import PerformanceDashboard from '@/components/qa/PerformanceDashboard';
+import DataGenerator from '@/components/qa/DataGenerator';
 
 const DEV_ADMIN_OVERRIDE_ENABLED = false;
 
