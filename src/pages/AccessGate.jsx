@@ -30,6 +30,7 @@ export default function AccessGate() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
+  const [verifyingAuth, setVerifyingAuth] = useState(false);
 
   // AccessGate checks if user is already authenticated and redirects
   useEffect(() => {
