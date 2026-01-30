@@ -163,13 +163,15 @@ export default function Settings() {
             </div>
 
             {/* Content */}
-            <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-lg p-6">
-              {activeTab === 'users' && <UserManagement />}
-              {activeTab === 'keys' && <AccessKeyManager />}
-              {activeTab === 'validation' && <DataValidation />}
-              {activeTab === 'diagnostics' && <DiagnosticsBundle />}
-              {activeTab === 'seed' && <ImmersiveSeed />}
-              {activeTab === 'reset' && <FactoryReset />}
+            <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-lg p-6 overflow-hidden">
+              <div className="max-w-full overflow-x-auto">
+                {activeTab === 'users' && <UserManagement />}
+                {activeTab === 'keys' && <AccessKeyManager />}
+                {activeTab === 'validation' && <DataValidation />}
+                {activeTab === 'diagnostics' && <DiagnosticsBundle />}
+                {activeTab === 'seed' && <ImmersiveSeed />}
+                {activeTab === 'reset' && <FactoryReset />}
+              </div>
             </div>
           </>
         )}
