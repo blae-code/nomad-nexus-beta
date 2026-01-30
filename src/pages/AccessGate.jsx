@@ -326,6 +326,11 @@ export default function AccessGate() {
           </span>
         </div>
       </div>
+
+      {/* Debug marker - bottom left corner */}
+      <div className="fixed bottom-3 left-3 text-[9px] px-2 py-1 bg-green-900/40 border border-green-500/30 text-green-400 rounded opacity-60 hover:opacity-100 transition-opacity font-mono z-50">
+        ✓ CUSTOM ACCESSGATE LOADED
+      </div>
     </div>
     </RouteGuard>
   );
