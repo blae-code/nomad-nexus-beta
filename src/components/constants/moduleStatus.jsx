@@ -74,15 +74,15 @@ export const MODULE_STATUS = {
     ],
   },
   CommsConsole: {
-    name: 'Comms Central',
-    completed: 70,
+    name: 'Comms Array',
+    completed: 100,
     features: [
       { name: 'Channel Management', status: 'complete' },
       { name: 'Message System', status: 'complete' },
       { name: 'Voice Integration', status: 'complete' },
       { name: 'Unread Tracking', status: 'complete' },
-      { name: 'Poll System', status: 'planned' },
-      { name: 'AI Assistant (Riggsy)', status: 'planned' },
+      { name: 'Poll System', status: 'complete' },
+      { name: 'AI Assistant (Riggsy)', status: 'complete' },
     ],
   },
   HighCommand: {

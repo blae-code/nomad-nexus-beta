@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Radio, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, Radio, AlertCircle, Lock, Unlock, BarChart3, Bot, Plus, CheckCircle } from 'lucide-react';
 import PermissionGuard from '@/components/PermissionGuard';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils/commsAccessPolicy';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,18 @@ export default function CommsConsole() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [showTempFocused, setShowTempFocused] = useState(false);
+  const [activeTab, setActiveTab] = useState('messages');
+  
+  // Poll state
+  const [polls, setPolls] = useState([]);
+  const [showPollCreator, setShowPollCreator] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  
+  // AI Assistant state
+  const [riggsyPrompt, setRiggsyPrompt] = useState('');
+  const [riggsyResponse, setRiggsyResponse] = useState('');
+  const [riggsyLoading, setRiggsyLoading] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -23,6 +37,7 @@ export default function CommsConsole() {
       if (channelsList.length > 0) {
         setSelectedChannel(channelsList[0]);
         loadMessages(channelsList[0].id);
+        loadPolls(channelsList[0].id);
       }
       setLoading(false);
     };
@@ -32,6 +47,17 @@ export default function CommsConsole() {
   const loadMessages = async (channelId) => {
     const msgs = await base44.entities.Message.filter({ channel_id: channelId }, '-created_date', 50);
     setMessages(msgs.reverse());
+  };
+
+  const loadPolls = async (channelId) => {
+    const pollsList = await base44.entities.Poll.filter({ channel_id: channelId }, '-created_date', 20);
+    const pollsWithVotes = await Promise.all(
+      pollsList.map(async (poll) => {
+        const votes = await base44.entities.PollVote.filter({ poll_id: poll.id });
+        return { ...poll, votes };
+      })
+    );
+    setPolls(pollsWithVotes);
   };
 
   const sendMessage = async () => {
@@ -48,6 +74,62 @@ export default function CommsConsole() {
     loadMessages(selectedChannel.id);
   };
 
+  const createPoll = async () => {
+    if (!pollQuestion.trim() || !selectedChannel) return;
+    const validOptions = pollOptions.filter(opt => opt.trim());
+    if (validOptions.length < 2) return;
+
+    const user = await base44.auth.me();
+    await base44.entities.Poll.create({
+      channel_id: selectedChannel.id,
+      question: pollQuestion.trim(),
+      options: validOptions,
+      created_by: user.id,
+      ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+    });
+
+    setPollQuestion('');
+    setPollOptions(['', '']);
+    setShowPollCreator(false);
+    loadPolls(selectedChannel.id);
+  };
+
+  const votePoll = async (pollId, option) => {
+    const user = await base44.auth.me();
+    await base44.entities.PollVote.create({
+      poll_id: pollId,
+      user_id: user.id,
+      option,
+    });
+    loadPolls(selectedChannel.id);
+  };
+
+  const askRiggsy = async () => {
+    if (!riggsyPrompt.trim()) return;
+    setRiggsyLoading(true);
+    setRiggsyResponse('');
+
+    try {
+      const channelContext = messages.slice(-10).map(m => m.content).join('\n');
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are Riggsy, a tactical AI assistant for the Nomad Nexus communication system. 
+        
+Recent channel activity:
+${channelContext}
+
+User question: ${riggsyPrompt}
+
+Provide a helpful, concise response with tactical awareness.`,
+      });
+
+      setRiggsyResponse(result);
+    } catch (error) {
+      setRiggsyResponse('Error: Unable to reach Riggsy at this time.');
+    } finally {
+      setRiggsyLoading(false);
+    }
+  };
+
   const { user: currentUser } = useCurrentUser();
 
   if (loading) {
@@ -57,8 +139,8 @@ export default function CommsConsole() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-black uppercase tracking-wider text-white">Comms Console</h1>
-        <p className="text-zinc-400 text-sm">Communication channels</p>
+        <h1 className="text-3xl font-black uppercase tracking-wider text-white">Comms Array</h1>
+        <p className="text-zinc-400 text-sm">Communication channels and intelligence</p>
         {currentUser && (
           <p className="text-xs text-zinc-500 mt-2">
             Logged in as: <span className="text-orange-400">{currentUser.callsign}</span> ({currentUser.rank})
@@ -146,31 +228,178 @@ export default function CommsConsole() {
                 </h2>
               </div>
 
-              <div className="flex-1 p-4 overflow-y-auto">
-                {messages.map((msg) => (
-                  <div key={msg.id} className="mb-4">
-                    <div className="text-xs text-zinc-500 mb-1">
-                      {new Date(msg.created_date).toLocaleTimeString()}
-                    </div>
-                    <div className="text-zinc-300">{msg.content}</div>
-                  </div>
-                ))}
-              </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                <TabsList className="mx-4 mt-4">
+                  <TabsTrigger value="messages">
+                    <Send className="w-4 h-4 mr-2" />
+                    Messages
+                  </TabsTrigger>
+                  <TabsTrigger value="polls">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Polls
+                  </TabsTrigger>
+                  <TabsTrigger value="riggsy">
+                    <Bot className="w-4 h-4 mr-2" />
+                    Riggsy AI
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="p-4 border-t border-zinc-800">
-                <div className="flex gap-2">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type message..."
-                    className="flex-1"
-                  />
-                  <Button onClick={sendMessage} disabled={!newMessage.trim()}>
-                    <Send className="w-4 h-4" />
-                  </Button>
+                <TabsContent value="messages" className="flex-1 flex flex-col">
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    {messages.map((msg) => (
+                      <div key={msg.id} className="mb-4">
+                        <div className="text-xs text-zinc-500 mb-1">
+                          {new Date(msg.created_date).toLocaleTimeString()}
+                        </div>
+                        <div className="text-zinc-300">{msg.content}</div>
+                      </div>
+                    ))}
                   </div>
+
+                  <div className="p-4 border-t border-zinc-800">
+                    <div className="flex gap-2">
+                      <Input
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                        placeholder="Type message..."
+                        className="flex-1"
+                      />
+                      <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="polls" className="flex-1 flex flex-col">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                    {!showPollCreator && (
+                      <Button onClick={() => setShowPollCreator(true)} variant="outline" className="w-full">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Poll
+                      </Button>
+                    )}
+
+                    {showPollCreator && (
+                      <div className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700 space-y-3">
+                        <Input
+                          value={pollQuestion}
+                          onChange={(e) => setPollQuestion(e.target.value)}
+                          placeholder="Poll question..."
+                          className="mb-2"
+                        />
+                        {pollOptions.map((opt, idx) => (
+                          <Input
+                            key={idx}
+                            value={opt}
+                            onChange={(e) => {
+                              const newOpts = [...pollOptions];
+                              newOpts[idx] = e.target.value;
+                              setPollOptions(newOpts);
+                            }}
+                            placeholder={`Option ${idx + 1}`}
+                          />
+                        ))}
+                        <div className="flex gap-2">
+                          <Button onClick={() => setPollOptions([...pollOptions, ''])} variant="outline" size="sm">
+                            Add Option
+                          </Button>
+                          <Button onClick={createPoll} size="sm">Create</Button>
+                          <Button onClick={() => setShowPollCreator(false)} variant="outline" size="sm">Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {polls.map((poll) => {
+                      const userVote = poll.votes.find(v => v.user_id === currentUser?.id);
+                      const voteCounts = {};
+                      poll.options.forEach(opt => voteCounts[opt] = 0);
+                      poll.votes.forEach(v => voteCounts[v.option]++);
+                      const totalVotes = poll.votes.length;
+
+                      return (
+                        <div key={poll.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                          <h3 className="text-white font-semibold mb-3">{poll.question}</h3>
+                          <div className="space-y-2">
+                            {poll.options.map((option) => {
+                              const count = voteCounts[option];
+                              const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                              const hasVoted = userVote?.option === option;
+
+                              return (
+                                <button
+                                  key={option}
+                                  onClick={() => !userVote && votePoll(poll.id, option)}
+                                  disabled={!!userVote}
+                                  className={`w-full p-3 rounded border transition-all text-left ${
+                                    hasVoted
+                                      ? 'bg-orange-500/20 border-orange-500'
+                                      : userVote
+                                      ? 'bg-zinc-900/50 border-zinc-700 cursor-not-allowed'
+                                      : 'bg-zinc-900/50 border-zinc-700 hover:border-orange-500/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      {hasVoted && <CheckCircle className="w-4 h-4 text-orange-400" />}
+                                      <span className="text-white text-sm">{option}</span>
+                                    </div>
+                                    <span className="text-xs text-zinc-400">{count} ({percentage}%)</span>
+                                  </div>
+                                  {userVote && (
+                                    <div className="mt-2 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                      <div className="h-full bg-orange-500" style={{ width: `${percentage}%` }} />
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-3 text-xs text-zinc-500">
+                            {totalVotes} vote{totalVotes !== 1 ? 's' : ''} • Ends {new Date(poll.ends_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="riggsy" className="flex-1 flex flex-col">
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="w-5 h-5 text-blue-400" />
+                        <h3 className="text-sm font-bold text-blue-400">Riggsy - Tactical AI Assistant</h3>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        Ask Riggsy about channel activity, tactical advice, or operational guidance.
+                      </p>
+                    </div>
+
+                    {riggsyResponse && (
+                      <div className="mb-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                        <div className="text-xs text-blue-400 font-semibold mb-2">RIGGSY RESPONSE:</div>
+                        <div className="text-sm text-zinc-300 whitespace-pre-wrap">{riggsyResponse}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 border-t border-zinc-800">
+                    <div className="flex gap-2">
+                      <Textarea
+                        value={riggsyPrompt}
+                        onChange={(e) => setRiggsyPrompt(e.target.value)}
+                        placeholder="Ask Riggsy anything..."
+                        className="flex-1 min-h-[80px]"
+                      />
+                      <Button onClick={askRiggsy} disabled={!riggsyPrompt.trim() || riggsyLoading}>
+                        <Bot className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
                   </div>
                   </div>
                   </div>
