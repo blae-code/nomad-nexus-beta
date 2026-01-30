@@ -230,7 +230,6 @@ export default function Hub() {
 
             <div className="p-4 space-y-2 max-h-56 overflow-y-auto">
               {status.features.map((feature, idx) => {
-                const { getStatusBgColor } = require('@/components/constants/moduleStatus');
                 const bgColor = getStatusBgColor(feature.status);
                 const FeatureIcon = 
                   feature.status === 'complete' ? CheckCircle2 :
