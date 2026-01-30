@@ -65,6 +65,7 @@ import UserDirectory from './pages/UserDirectory';
 import MemberManagement from './pages/MemberManagement';
 import MemberProgression from './pages/MemberProgression';
 import FleetTracking from './pages/FleetTracking';
+import ReportBuilder from './pages/ReportBuilder';
 import __Layout from './Layout.jsx';
 
 
@@ -87,6 +88,7 @@ export const PAGES = {
     "MemberManagement": MemberManagement,
     "MemberProgression": MemberProgression,
     "FleetTracking": FleetTracking,
+    "ReportBuilder": ReportBuilder,
 }
 
 export const pagesConfig = {
