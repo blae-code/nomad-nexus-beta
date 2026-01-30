@@ -39,14 +39,19 @@ export default function AccessGate() {
     
     try {
       const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
-      if (response?.data?.success) {
-        setMessage('Access granted! Redirecting...');
-        setTimeout(() => {
-          window.location.href = createPageUrl('Onboarding');
-        }, 1500);
-      } else {
-        setMessage(response?.data?.message || 'Invalid credentials');
-      }
+            if (response?.data?.success) {
+              setMessage('Access granted! Redirecting...');
+              setTimeout(() => {
+                window.location.href = createPageUrl('Onboarding');
+              }, 1500);
+            } else {
+              const errorMsg = response?.data?.message || 'Invalid credentials';
+              if (errorMsg.includes('REVOKED') || errorMsg.includes('revoked')) {
+                setMessage('⸻ Authorization Revoked ⸻\n\nThis access code has been deactivated. Contact your issuing officer for reissuance.\n\n⸻');
+              } else {
+                setMessage(errorMsg);
+              }
+            }
     } catch (error) {
       console.error('Redeem error:', error);
       setMessage('Error validating credentials');
