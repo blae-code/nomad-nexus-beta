@@ -126,6 +126,10 @@ export default function TailwindError({ elapsed, error }) {
               ? '✓ Present'
               : '✗ Missing'}
           </div>
+          <div>
+            <strong>window.tailwind:</strong>{' '}
+            {typeof window.tailwind !== 'undefined' ? '✓ Loaded' : '✗ Undefined'}
+          </div>
         </div>
 
         {/* Action buttons */}
