@@ -34,19 +34,35 @@ export default function AccessGate() {
   const [verifyingAuth, setVerifyingAuth] = useState(false);
   const [hasSavedLogin, setHasSavedLogin] = useState(false);
 
-  // AccessGate checks if user is already authenticated and redirects
+  // Check for saved login and auto-redeem if present
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkSavedLogin = async () => {
       try {
         const isAuth = await base44.auth.isAuthenticated();
         if (isAuth) {
           window.location.href = createPageUrl('Disclaimers');
+          return;
+        }
+
+        // Check for saved login token
+        const savedToken = localStorage.getItem('nexus.login.token');
+        if (savedToken) {
+          setHasSavedLogin(true);
+          try {
+            const loginData = JSON.parse(atob(savedToken));
+            setAccessCode(loginData.code);
+            setCallsign(loginData.callsign);
+            setRememberMe(true);
+          } catch (e) {
+            // Invalid token, clear it
+            localStorage.removeItem('nexus.login.token');
+          }
         }
       } catch (err) {
-        // Silently ignore - user is expected to be unauthenticated
+        // Silently ignore
       }
     };
-    checkAuth();
+    checkSavedLogin();
   }, []);
 
   const handleRedeem = async () => {
