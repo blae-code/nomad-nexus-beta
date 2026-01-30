@@ -24,10 +24,7 @@ export default function AccessKeyManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
-    count: 1,
-    maxUses: 1,
     grantsRank: 'VAGRANT',
-    expiresIn: 30, // days
   });
   const [recipientCallsign, setRecipientCallsign] = useState('');
   const [adminCallsign, setAdminCallsign] = useState('');
@@ -86,30 +83,26 @@ export default function AccessKeyManager() {
     }
 
     try {
-      const newKeys = [];
-      for (let i = 0; i < formData.count; i++) {
-        const key = await base44.asServiceRole.entities.AccessKey.create({
-          code: generateRandomCode(),
-          status: 'ACTIVE',
-          max_uses: formData.maxUses,
-          uses_count: 0,
-          grants_rank: formData.grantsRank,
-          expires_at: null, // Never expires
-        });
-        newKeys.push(key);
-      }
+      const key = await base44.asServiceRole.entities.AccessKey.create({
+        code: generateRandomCode(),
+        status: 'ACTIVE',
+        max_uses: 1,
+        uses_count: 0,
+        grants_rank: formData.grantsRank,
+        expires_at: null,
+      });
 
       // Generate immersive Discord message
-      const message = generateDiscordMessage(adminCallsign, recipientCallsign, newKeys[0].code, formData.grantsRank);
+      const message = generateDiscordMessage(adminCallsign, recipientCallsign, key.code, formData.grantsRank);
       setGeneratedMessage(message);
       
-      setSuccess(`Generated ${newKeys.length} access key(s) - Message ready to copy`);
-      setFormData({ count: 1, maxUses: 1, grantsRank: 'VAGRANT', expiresIn: 30 });
+      setSuccess('Access key generated - Message ready to copy');
+      setFormData({ grantsRank: 'VAGRANT' });
       setRecipientCallsign('');
       setError(null);
       await loadKeys();
     } catch (err) {
-      setError(`Failed to create keys: ${err.message}`);
+      setError(`Failed to create key: ${err.message}`);
     }
   };
 
@@ -232,8 +225,8 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
         <form onSubmit={handleCreateKeys} className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded space-y-4">
           <h3 className="font-bold text-orange-400">Generate Access Keys</h3>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="space-y-4">
+            <div>
               <label className="text-xs font-bold text-zinc-300 block mb-1">Recipient Callsign *</label>
               <Input
                 type="text"
@@ -246,30 +239,6 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
             </div>
 
             <div>
-              <label className="text-xs font-bold text-zinc-300 block mb-1">Number of Keys</label>
-              <Input
-                type="number"
-                min="1"
-                max="50"
-                value={formData.count}
-                onChange={(e) => setFormData({ ...formData, count: parseInt(e.target.value) })}
-                className="bg-zinc-900 border-zinc-700"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-zinc-300 block mb-1">Max Uses Per Key</label>
-              <Input
-                type="number"
-                min="1"
-                max="100"
-                value={formData.maxUses}
-                onChange={(e) => setFormData({ ...formData, maxUses: parseInt(e.target.value) })}
-                className="bg-zinc-900 border-zinc-700"
-              />
-            </div>
-
-            <div className="col-span-2">
               <label className="text-xs font-bold text-zinc-300 block mb-1">Grants Rank</label>
               <Select value={formData.grantsRank} onValueChange={(rank) => setFormData({ ...formData, grantsRank: rank })}>
                 <SelectTrigger className="bg-zinc-900 border-zinc-700">
@@ -287,7 +256,7 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
           </div>
 
           <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-blue-300">
-            <strong>Note:</strong> Keys never expire and are permanently linked to the recipient's identity
+            <strong>Note:</strong> One key per user. Keys never expire and are permanently linked to identity.
           </div>
 
           <div className="flex gap-2 justify-end">
@@ -295,7 +264,7 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
               Cancel
             </Button>
             <Button type="submit" className="bg-orange-600 hover:bg-orange-500">
-              Generate {formData.count}
+              Generate Key
             </Button>
           </div>
         </form>
@@ -371,16 +340,8 @@ This access key is non-transferable and eternally bound to you. Guard it accordi
                     <p className="text-zinc-300 font-mono">{key.grantsRank}</p>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Uses:</span>
-                    <p className="text-zinc-300">
-                      {key.usesCount || 0} / {key.maxUses}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Status:</span>
-                    <p className="text-zinc-300">
-                      Permanent
-                    </p>
+                    <span className="text-zinc-500">Expiration:</span>
+                    <p className="text-zinc-300">Never</p>
                   </div>
                 </div>
 
