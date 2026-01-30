@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '@/globals.css';
 import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import ConstructionTicker from '@/components/layout/ConstructionTicker';
