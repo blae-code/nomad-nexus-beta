@@ -17,33 +17,37 @@ export function AuthProvider({ children }) {
       try {
         let currentUser = null;
 
-        // Wrap in timeout (10 seconds)
-        const authPromise = (async () => {
-          try {
-            currentUser = await base44.auth.me();
-          } catch (err) {
-            // 401 or any error means user is not authenticated
-            if (err?.response?.status === 401 || err?.status === 401) {
-              setUser(null);
-              setInitialized(true);
-              setLoading(false);
-              return 'unauthenticated';
-            }
-            throw err;
-          }
-
-          setUser(currentUser);
-
-          // Skip checks for admins
-          if (currentUser.role === 'admin') {
-            setOnboardingCompleted(true);
-            setDisclaimersCompleted(true);
+        try {
+          currentUser = await base44.auth.me();
+        } catch (err) {
+          // 401 or any auth error = user not authenticated (expected for public app)
+          if (err?.response?.status === 401 || err?.status === 401 || err?.message?.includes('Unauthorized')) {
+            setUser(null);
             setInitialized(true);
             setLoading(false);
-            return 'success';
+            return;
           }
+          // Network errors or other issues - still initialize as unauthenticated
+          console.warn('Auth check warning (non-fatal):', err?.message);
+          setUser(null);
+          setInitialized(true);
+          setLoading(false);
+          return;
+        }
 
-          // Check member profile for onboarding/disclaimers status
+        setUser(currentUser);
+
+        // Skip checks for admins
+        if (currentUser.role === 'admin') {
+          setOnboardingCompleted(true);
+          setDisclaimersCompleted(true);
+          setInitialized(true);
+          setLoading(false);
+          return;
+        }
+
+        // Check member profile for onboarding/disclaimers status
+        try {
           const profiles = await base44.entities.MemberProfile.filter({ 
             user_id: currentUser.id 
           });
@@ -53,20 +57,15 @@ export function AuthProvider({ children }) {
             setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
             setOnboardingCompleted(!!profile.onboarding_completed);
           }
+        } catch (profileErr) {
+          console.warn('Profile fetch warning:', profileErr?.message);
+        }
 
-          setInitialized(true);
-          setLoading(false);
-          return 'success';
-        })();
-
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Authentication initialization timeout (10s exceeded)')), 10000)
-        );
-
-        await Promise.race([authPromise, timeoutPromise]);
+        setInitialized(true);
+        setLoading(false);
       } catch (err) {
-        console.error('Auth initialization error:', err);
-        setError(err);
+        // Catch-all for any unexpected errors - treat as unauthenticated
+        console.error('Auth initialization error:', err?.message);
         setUser(null);
         setInitialized(true);
         setLoading(false);
