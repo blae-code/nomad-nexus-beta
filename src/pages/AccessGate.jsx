@@ -123,10 +123,10 @@ export default function AccessGate() {
 
             <div className="text-center space-y-2.5">
               <h1 className="text-4xl font-black uppercase tracking-[0.15em] text-white drop-shadow-lg">
-                Nexus <span className="text-orange-400">Gate</span>
+                Nexus <span className="text-purple-400">Gate</span>
               </h1>
-              <div className="h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-              <p className="text-[11px] text-orange-300/60 uppercase tracking-[0.2em] font-semibold">
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
+              <p className="text-[11px] text-purple-300/60 uppercase tracking-[0.2em] font-semibold">
                 Authorization Protocol
               </p>
             </div>
