@@ -15,6 +15,7 @@ import { base44 } from '@/api/base44Client';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 import { useTypingIndicator } from '@/components/hooks/useTypingIndicator';
 import TypingIndicator from '@/components/comms/TypingIndicator';
+import { useLastSeen } from '@/components/hooks/useLastSeen';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -30,6 +31,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const { unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
   const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);
+  const messageUserIds = [...new Set(messages.map(m => m.user_id))];
+  const { lastSeenMap } = useLastSeen(messageUserIds);
 
   // Load channels
   useEffect(() => {
@@ -321,16 +324,28 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                    )}
                    {messages.length > 0 && (
                      <>
-                       {messages.map((msg) => (
-                         <div key={msg.id} className="group">
-                           <div className="flex items-center gap-2 text-[10px] mb-1">
-                             <span className="font-semibold text-zinc-400 truncate">{msg.user_id || 'Unknown'}</span>
-                             <span className="text-zinc-600 flex-shrink-0">•</span>
-                             <span className="text-zinc-600 flex-shrink-0">{new Date(msg.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                       {messages.map((msg) => {
+                         const lastSeen = lastSeenMap[msg.user_id];
+                         return (
+                           <div key={msg.id} className="group">
+                             <div className="flex items-center gap-2 text-[10px] mb-1">
+                               {lastSeen?.isOnline && (
+                                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" title="Online now" />
+                               )}
+                               <span className="font-semibold text-zinc-400 truncate">{msg.user_id || 'Unknown'}</span>
+                               <span className="text-zinc-600 flex-shrink-0">•</span>
+                               <span className="text-zinc-600 flex-shrink-0">{new Date(msg.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                               {lastSeen && !lastSeen.isOnline && (
+                                 <>
+                                   <span className="text-zinc-600 flex-shrink-0">•</span>
+                                   <span className="text-zinc-600 flex-shrink-0" title={`Last active: ${lastSeen.timestamp}`}>{lastSeen.formatted}</span>
+                                 </>
+                               )}
+                             </div>
+                             <p className="text-zinc-300 leading-relaxed break-words">{msg.content}</p>
                            </div>
-                           <p className="text-zinc-300 leading-relaxed break-words">{msg.content}</p>
-                         </div>
-                       ))}
+                         );
+                       })}
                        <div ref={messagesEndRef} />
                      </>
                    )}
