@@ -161,11 +161,16 @@ export default function Hub() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-function ModuleCard({ item, index }) {
+      {/* Development Roadmap - Full Width Below Modules */}
+      <div className="border-t border-zinc-800/40 pt-6 mt-6">
+       <DevelopmentRoadmap />
+      </div>
+      </div>
+      );
+      }
+
+      function ModuleCard({ item, index }) {
   const Icon = item.icon;
   const status = MODULE_STATUS[item.path];
   const statusPercentage = status?.completed || 0;
