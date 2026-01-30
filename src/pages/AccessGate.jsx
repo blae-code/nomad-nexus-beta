@@ -162,10 +162,10 @@ export default function AccessGate() {
                   placeholder="Enter callsign"
                   value={callsign}
                   onChange={(e) => setCallsign(e.target.value)}
-                  className="uppercase tracking-wider text-center h-12 bg-zinc-900/60 border-2 border-orange-500/30 group-focus-within:border-orange-500/60 group-focus-within:bg-zinc-900 focus:border-orange-500/60 focus:bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 transition-all duration-200"
+                  className="uppercase tracking-wider text-center h-12 bg-zinc-900/60 border-2 border-emerald-500/30 group-focus-within:border-emerald-500/60 group-focus-within:bg-zinc-900 focus:border-emerald-500/60 focus:bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 transition-all duration-200"
                   onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
                 />
-                <div className="absolute -inset-1 border border-orange-500/0 group-focus-within:border-orange-500/20 rounded transition-all duration-200 pointer-events-none" />
+                <div className="absolute -inset-1 border border-emerald-500/0 group-focus-within:border-emerald-500/20 rounded transition-all duration-200 pointer-events-none" />
               </div>
             </div>
 
