@@ -414,9 +414,7 @@ export default function Onboarding() {
                  alt="Redscar Nomads"
                  className="w-16 h-16 drop-shadow-lg"
                />
-                 </div>
-               </div>
-              </div>
+             </div>
               
               <h2 className="text-3xl font-black uppercase tracking-widest text-center text-white mb-4">
                 Welcome to the Bonfire
