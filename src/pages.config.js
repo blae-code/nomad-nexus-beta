@@ -54,13 +54,14 @@ import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
 import Onboarding from './pages/Onboarding';
 import PageNotFound from './pages/PageNotFound';
+import QAConsole from './pages/QAConsole';
 import Recon from './pages/Recon';
 import Settings from './pages/Settings';
 import SystemAdmin from './pages/SystemAdmin';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import QAConsole from './pages/QAConsole';
+import MissionControl from './pages/MissionControl';
 import __Layout from './Layout.jsx';
 
 
@@ -72,13 +73,14 @@ export const PAGES = {
     "Hub": Hub,
     "Onboarding": Onboarding,
     "PageNotFound": PageNotFound,
+    "QAConsole": QAConsole,
     "Recon": Recon,
     "Settings": Settings,
     "SystemAdmin": SystemAdmin,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "QAConsole": QAConsole,
+    "MissionControl": MissionControl,
 }
 
 export const pagesConfig = {

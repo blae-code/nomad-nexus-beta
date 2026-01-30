@@ -1,0 +1,562 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCircle, Circle, FileText, BarChart3, Edit, Trash2 } from 'lucide-react';
+import { EmptyState, LoadingState } from '@/components/common/UIStates';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
+import { useCurrentUser } from '@/components/useCurrentUser';
+
+export default function MissionControl() {
+  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [showCreateObjective, setShowCreateObjective] = useState(false);
+  const [showAARCreator, setShowAARCreator] = useState(false);
+  
+  // Event form
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    start_time: '',
+    location: '',
+    event_type: 'casual',
+    priority: 'STANDARD',
+  });
+
+  // Objective form
+  const [objectiveForm, setObjectiveForm] = useState({
+    text: '',
+  });
+
+  // AAR form
+  const [aarForm, setAARForm] = useState({
+    summary: '',
+    successes: '',
+    challenges: '',
+    lessons_learned: '',
+  });
+
+  const activeOp = useActiveOp();
+  const { user } = useCurrentUser();
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    setLoading(true);
+    const eventsList = await base44.entities.Event.list('-start_time', 50);
+    setEvents(eventsList);
+    if (eventsList.length > 0 && !selectedEvent) {
+      setSelectedEvent(eventsList[0]);
+      loadEventDetails(eventsList[0].id);
+    }
+    setLoading(false);
+  };
+
+  const loadEventDetails = async (eventId) => {
+    const event = await base44.entities.Event.filter({ id: eventId });
+    if (event.length > 0) {
+      setSelectedEvent(event[0]);
+    }
+  };
+
+  const createEvent = async () => {
+    if (!eventForm.title || !eventForm.start_time) return;
+    await base44.entities.Event.create({
+      ...eventForm,
+      status: 'scheduled',
+      phase: 'PLANNING',
+      host_id: user.id,
+    });
+    setEventForm({
+      title: '',
+      description: '',
+      start_time: '',
+      location: '',
+      event_type: 'casual',
+      priority: 'STANDARD',
+    });
+    setShowCreateEvent(false);
+    loadEvents();
+  };
+
+  const addObjective = async () => {
+    if (!objectiveForm.text.trim() || !selectedEvent) return;
+    const objectives = selectedEvent.objectives || [];
+    const newObjective = {
+      id: `obj_${Date.now()}`,
+      text: objectiveForm.text.trim(),
+      is_completed: false,
+      assignments: [],
+      sub_tasks: [],
+    };
+    
+    await base44.entities.Event.update(selectedEvent.id, {
+      objectives: [...objectives, newObjective],
+    });
+
+    setObjectiveForm({ text: '' });
+    setShowCreateObjective(false);
+    loadEventDetails(selectedEvent.id);
+  };
+
+  const toggleObjective = async (objectiveId) => {
+    if (!selectedEvent) return;
+    const objectives = selectedEvent.objectives.map(obj =>
+      obj.id === objectiveId ? { ...obj, is_completed: !obj.is_completed } : obj
+    );
+    await base44.entities.Event.update(selectedEvent.id, { objectives });
+    loadEventDetails(selectedEvent.id);
+  };
+
+  const deleteObjective = async (objectiveId) => {
+    if (!selectedEvent) return;
+    const objectives = selectedEvent.objectives.filter(obj => obj.id !== objectiveId);
+    await base44.entities.Event.update(selectedEvent.id, { objectives });
+    loadEventDetails(selectedEvent.id);
+  };
+
+  const createAAR = async () => {
+    if (!aarForm.summary.trim() || !selectedEvent) return;
+    await base44.entities.EventReport.create({
+      event_id: selectedEvent.id,
+      report_type: 'AAR',
+      summary: aarForm.summary,
+      successes: aarForm.successes,
+      challenges: aarForm.challenges,
+      lessons_learned: aarForm.lessons_learned,
+      created_by: user.id,
+    });
+
+    setAARForm({
+      summary: '',
+      successes: '',
+      challenges: '',
+      lessons_learned: '',
+    });
+    setShowAARCreator(false);
+    setActiveTab('reports');
+  };
+
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      loadReports(selectedEvent.id);
+    }
+  }, [selectedEvent]);
+
+  const loadReports = async (eventId) => {
+    const reportsList = await base44.entities.EventReport.filter({ event_id: eventId }, '-created_date');
+    setReports(reportsList);
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      scheduled: 'text-blue-400 border-blue-500/50 bg-blue-500/10',
+      active: 'text-green-400 border-green-500/50 bg-green-500/10',
+      completed: 'text-zinc-500 border-zinc-600 bg-zinc-500/10',
+      cancelled: 'text-red-400 border-red-500/50 bg-red-500/10',
+    };
+    return colors[status] || 'text-zinc-400 border-zinc-600 bg-zinc-400/10';
+  };
+
+  const getPriorityColor = (priority) => {
+    const colors = {
+      CRITICAL: 'text-red-400',
+      HIGH: 'text-orange-400',
+      STANDARD: 'text-yellow-400',
+      LOW: 'text-green-400',
+    };
+    return colors[priority] || 'text-zinc-400';
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <LoadingState label="Loading Mission Control" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-black uppercase tracking-wider text-white">Mission Control</h1>
+          <p className="text-zinc-400 text-sm">Operations planning, execution, and reporting</p>
+        </div>
+        <Button onClick={() => setShowCreateEvent(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          New Operation
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {/* Events List */}
+        <div className="col-span-1 space-y-2">
+          <h2 className="text-sm font-bold text-zinc-400 uppercase mb-4">Operations</h2>
+          {events.length === 0 ? (
+            <EmptyState 
+              icon={Calendar}
+              title="No operations"
+              message="Create your first operation"
+            />
+          ) : (
+            events.map((event) => (
+              <button
+                key={event.id}
+                onClick={() => {
+                  setSelectedEvent(event);
+                  loadEventDetails(event.id);
+                }}
+                className={`w-full text-left p-4 border transition-all ${
+                  selectedEvent?.id === event.id
+                    ? 'bg-orange-500/20 border-orange-500'
+                    : 'bg-zinc-900/50 border-zinc-800 hover:border-orange-500/50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-white text-sm uppercase">{event.title}</h3>
+                  <span className={`text-[10px] font-bold uppercase ${getPriorityColor(event.priority)}`}>
+                    {event.priority}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <Clock className="w-3 h-3" />
+                  {new Date(event.start_time).toLocaleDateString()}
+                </div>
+                <div className={`mt-2 px-2 py-1 text-[10px] font-bold uppercase border inline-block ${getStatusColor(event.status)}`}>
+                  {event.status}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Event Details */}
+        <div className="col-span-2">
+          {!selectedEvent ? (
+            <EmptyState 
+              icon={Target}
+              title="Select an operation"
+              message="Choose an operation to view details"
+            />
+          ) : (
+            <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-black text-white uppercase mb-2">{selectedEvent.title}</h2>
+                  <p className="text-zinc-400 text-sm mb-4">{selectedEvent.description}</p>
+                  <div className="flex flex-wrap gap-4 text-sm text-zinc-500">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      {new Date(selectedEvent.start_time).toLocaleString()}
+                    </div>
+                    {selectedEvent.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        {selectedEvent.location}
+                      </div>
+                    )}
+                    {selectedEvent.assigned_user_ids?.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        {selectedEvent.assigned_user_ids.length} assigned
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={activeOp.activeEventId === selectedEvent.id ? 'default' : 'outline'}
+                    onClick={() => {
+                      if (activeOp.activeEventId === selectedEvent.id) {
+                        activeOp.clearActiveEvent();
+                      } else {
+                        activeOp.setActiveEvent(selectedEvent.id);
+                      }
+                    }}
+                  >
+                    <Power className="w-3 h-3 mr-1" />
+                    {activeOp.activeEventId === selectedEvent.id ? 'Active' : 'Activate'}
+                  </Button>
+                </div>
+              </div>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                  <TabsTrigger value="overview">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="objectives">
+                    <Target className="w-4 h-4 mr-2" />
+                    Objectives
+                  </TabsTrigger>
+                  <TabsTrigger value="reports">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Reports
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
+                      <div className="text-xs text-zinc-400 mb-1">Type</div>
+                      <div className="text-sm font-bold text-white uppercase">{selectedEvent.event_type}</div>
+                    </div>
+                    <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
+                      <div className="text-xs text-zinc-400 mb-1">Phase</div>
+                      <div className="text-sm font-bold text-white uppercase">{selectedEvent.phase}</div>
+                    </div>
+                    <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
+                      <div className="text-xs text-zinc-400 mb-1">Priority</div>
+                      <div className={`text-sm font-bold uppercase ${getPriorityColor(selectedEvent.priority)}`}>
+                        {selectedEvent.priority}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
+                      <div className="text-xs text-zinc-400 mb-1">Status</div>
+                      <div className="text-sm font-bold text-white uppercase">{selectedEvent.status}</div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="objectives" className="space-y-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-zinc-400 uppercase">Mission Objectives</h3>
+                    <Button size="sm" onClick={() => setShowCreateObjective(true)}>
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Objective
+                    </Button>
+                  </div>
+
+                  {showCreateObjective && (
+                    <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded space-y-3">
+                      <Input
+                        value={objectiveForm.text}
+                        onChange={(e) => setObjectiveForm({ text: e.target.value })}
+                        placeholder="Objective description..."
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={addObjective}>Create</Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowCreateObjective(false)}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {(!selectedEvent.objectives || selectedEvent.objectives.length === 0) ? (
+                    <div className="text-center py-8 text-zinc-500 text-sm">
+                      No objectives set for this operation
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedEvent.objectives.map((objective) => (
+                        <div
+                          key={objective.id}
+                          className={`p-4 border rounded flex items-start justify-between ${
+                            objective.is_completed
+                              ? 'bg-green-500/10 border-green-500/30'
+                              : 'bg-zinc-800/50 border-zinc-700'
+                          }`}
+                        >
+                          <button
+                            onClick={() => toggleObjective(objective.id)}
+                            className="flex items-start gap-3 flex-1 text-left"
+                          >
+                            {objective.is_completed ? (
+                              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
+                            )}
+                            <span className={`text-sm ${objective.is_completed ? 'text-green-300 line-through' : 'text-white'}`}>
+                              {objective.text}
+                            </span>
+                          </button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteObjective(objective.id)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="reports" className="space-y-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-zinc-400 uppercase">After Action Reports</h3>
+                    <Button size="sm" onClick={() => setShowAARCreator(true)}>
+                      <Plus className="w-3 h-3 mr-1" />
+                      Create AAR
+                    </Button>
+                  </div>
+
+                  {showAARCreator && (
+                    <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded space-y-3">
+                      <Textarea
+                        value={aarForm.summary}
+                        onChange={(e) => setAARForm({ ...aarForm, summary: e.target.value })}
+                        placeholder="Operation summary..."
+                        className="min-h-[80px]"
+                      />
+                      <Textarea
+                        value={aarForm.successes}
+                        onChange={(e) => setAARForm({ ...aarForm, successes: e.target.value })}
+                        placeholder="What went well..."
+                        className="min-h-[60px]"
+                      />
+                      <Textarea
+                        value={aarForm.challenges}
+                        onChange={(e) => setAARForm({ ...aarForm, challenges: e.target.value })}
+                        placeholder="Challenges faced..."
+                        className="min-h-[60px]"
+                      />
+                      <Textarea
+                        value={aarForm.lessons_learned}
+                        onChange={(e) => setAARForm({ ...aarForm, lessons_learned: e.target.value })}
+                        placeholder="Lessons learned..."
+                        className="min-h-[60px]"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={createAAR}>Submit Report</Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowAARCreator(false)}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {reports.length === 0 ? (
+                    <div className="text-center py-8 text-zinc-500 text-sm">
+                      No reports filed for this operation
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {reports.map((report) => (
+                        <div key={report.id} className="p-4 bg-zinc-800/50 border border-zinc-700 rounded space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-orange-400" />
+                              <span className="text-xs font-bold text-zinc-400 uppercase">{report.report_type}</span>
+                            </div>
+                            <span className="text-xs text-zinc-500">
+                              {new Date(report.created_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                          
+                          <div>
+                            <div className="text-xs text-zinc-400 mb-1">Summary</div>
+                            <div className="text-sm text-white">{report.summary}</div>
+                          </div>
+
+                          {report.successes && (
+                            <div>
+                              <div className="text-xs text-green-400 mb-1">Successes</div>
+                              <div className="text-sm text-zinc-300">{report.successes}</div>
+                            </div>
+                          )}
+
+                          {report.challenges && (
+                            <div>
+                              <div className="text-xs text-yellow-400 mb-1">Challenges</div>
+                              <div className="text-sm text-zinc-300">{report.challenges}</div>
+                            </div>
+                          )}
+
+                          {report.lessons_learned && (
+                            <div>
+                              <div className="text-xs text-blue-400 mb-1">Lessons Learned</div>
+                              <div className="text-sm text-zinc-300">{report.lessons_learned}</div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Event Creation Modal */}
+      {showCreateEvent && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
+          <div className="bg-zinc-900 border-2 border-orange-500/50 p-6 max-w-2xl w-full mx-4 rounded-lg space-y-4">
+            <h2 className="text-xl font-black text-white uppercase">Create New Operation</h2>
+            
+            <Input
+              value={eventForm.title}
+              onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+              placeholder="Operation title..."
+            />
+
+            <Textarea
+              value={eventForm.description}
+              onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+              placeholder="Operation briefing..."
+              className="min-h-[100px]"
+            />
+
+            <Input
+              type="datetime-local"
+              value={eventForm.start_time}
+              onChange={(e) => setEventForm({ ...eventForm, start_time: e.target.value })}
+            />
+
+            <Input
+              value={eventForm.location}
+              onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+              placeholder="Location..."
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-zinc-400 mb-2 block">Type</label>
+                <select
+                  value={eventForm.event_type}
+                  onChange={(e) => setEventForm({ ...eventForm, event_type: e.target.value })}
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white p-2 rounded"
+                >
+                  <option value="casual">Casual</option>
+                  <option value="focused">Focused</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-400 mb-2 block">Priority</label>
+                <select
+                  value={eventForm.priority}
+                  onChange={(e) => setEventForm({ ...eventForm, priority: e.target.value })}
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white p-2 rounded"
+                >
+                  <option value="LOW">Low</option>
+                  <option value="STANDARD">Standard</option>
+                  <option value="HIGH">High</option>
+                  <option value="CRITICAL">Critical</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowCreateEvent(false)}>Cancel</Button>
+              <Button onClick={createEvent}>Create Operation</Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

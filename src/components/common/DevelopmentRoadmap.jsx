@@ -41,7 +41,7 @@ export default function DevelopmentRoadmap() {
 
   // Group modules by completion status
   const MODULE_STATUS = {
-    MissionControl: { name: 'Mission Control', completed: 60 },
+    MissionControl: { name: 'Mission Control', completed: 100 },
     CommsConsole: { name: 'Comms Array', completed: 100 },
     Settings: { name: 'System Admin', completed: 100 },
     AccessGate: { name: 'Access Gate', completed: 100 },

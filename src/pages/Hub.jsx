@@ -58,7 +58,7 @@ export default function Hub() {
   };
 
   const navItems = [
-    { name: 'Mission Control', path: 'MissionControl', icon: Monitor, description: 'Operations planning, execution, and war room' },
+    { name: 'Mission Control', path: 'MissionControl', icon: Monitor, description: 'Operations planning, execution, and reporting' },
     { name: 'Intel Nexus', path: 'IntelNexus', icon: Database, description: 'Intelligence gathering and threat analysis' },
     { name: 'War Academy', path: 'WarAcademy', icon: GraduationCap, description: 'Training, simulations, and combat readiness' },
     { name: 'Fleet Command', path: 'FleetCommand', icon: Box, description: 'Asset management, engineering, and tactical map' },
