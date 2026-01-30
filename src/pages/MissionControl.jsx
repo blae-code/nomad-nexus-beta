@@ -15,6 +15,9 @@ import EventNotificationManager from '@/components/events/EventNotificationManag
 import MissionBlueprints from '@/components/missions/MissionBlueprints';
 import SmartScheduling from '@/components/missions/SmartScheduling';
 import ThreatDatabase from '@/components/missions/ThreatDatabase';
+import EventRiskAssessment from '@/components/events/EventRiskAssessment';
+import ResourceManagement from '@/components/events/ResourceManagement';
+import PostEventAnalysis from '@/components/events/PostEventAnalysis';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
@@ -361,6 +364,14 @@ export default function MissionControl() {
                     <Target className="w-4 h-4 mr-2" />
                     Objectives
                   </TabsTrigger>
+                  <TabsTrigger value="risk">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Risk Analysis
+                  </TabsTrigger>
+                  <TabsTrigger value="resources">
+                    <Users className="w-4 h-4 mr-2" />
+                    Resources
+                  </TabsTrigger>
                   <TabsTrigger value="reports">
                     <FileText className="w-4 h-4 mr-2" />
                     Reports
@@ -455,6 +466,14 @@ export default function MissionControl() {
                   )}
                 </TabsContent>
 
+                <TabsContent value="risk" className="space-y-4 mt-4">
+                  <EventRiskAssessment event={selectedEvent} />
+                </TabsContent>
+
+                <TabsContent value="resources" className="space-y-4 mt-4">
+                  <ResourceManagement event={selectedEvent} onUpdate={() => loadEventDetails(selectedEvent.id)} />
+                </TabsContent>
+
                 <TabsContent value="reports" className="space-y-4 mt-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-zinc-400 uppercase">After Action Reports</h3>
@@ -502,7 +521,15 @@ export default function MissionControl() {
                       No reports filed for this operation
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                      {/* Post-Event Analysis */}
+                      {selectedEvent.status === 'completed' && (
+                        <div className="border-b border-zinc-700 pb-6">
+                          <h4 className="text-sm font-bold text-zinc-400 uppercase mb-4">Automated Analysis</h4>
+                          <PostEventAnalysis event={selectedEvent} />
+                        </div>
+                      )}
+
                       {reports.map((report) => (
                         <div key={report.id} className="p-4 bg-zinc-800/50 border border-zinc-700 rounded space-y-3">
                           <div className="flex items-center justify-between">
