@@ -40,7 +40,7 @@ export default function MissionControl() {
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showAITools, setShowAITools] = useState(null); // 'blueprints', 'scheduling', 'threats'
+  const [showPlanningTools, setShowPlanningTools] = useState(null);
 
   // Objective form
   const [objectiveForm, setObjectiveForm] = useState({
@@ -113,21 +113,21 @@ export default function MissionControl() {
     setShowTemplates(false);
   };
 
-  const handleBlueprintSelect = (blueprintData) => {
+  const handleBlueprintSelect = (blueprintTemplate) => {
     setEventForm((prev) => ({
       ...prev,
-      ...blueprintData,
+      ...blueprintTemplate,
       start_time: prev.start_time || '',
     }));
-    setShowAITools(null);
+    setShowPlanningTools(null);
   };
 
   const handleScheduleSelected = (scheduleData) => {
     setEventForm((prev) => ({
       ...prev,
-      ...scheduleData,
+      start_time: scheduleData.start_time,
     }));
-    setShowAITools(null);
+    setShowPlanningTools(null);
   };
 
   const addObjective = async () => {
