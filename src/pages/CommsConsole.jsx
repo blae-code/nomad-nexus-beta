@@ -9,6 +9,8 @@ import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 import { useCurrentUser } from '@/components/useCurrentUser';
 import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils/commsAccessPolicy';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
+import VoiceNetBrowser from '@/components/voice/VoiceNetBrowser';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,9 @@ export default function CommsConsole() {
   const [riggsyPrompt, setRiggsyPrompt] = useState('');
   const [riggsyResponse, setRiggsyResponse] = useState('');
   const [riggsyLoading, setRiggsyLoading] = useState(false);
+
+  // Voice Net state
+  const [showVoiceNetCreator, setShowVoiceNetCreator] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -244,6 +249,10 @@ Provide a helpful, concise response with tactical awareness.`,
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Polls
                   </TabsTrigger>
+                  <TabsTrigger value="voice">
+                    <Radio className="w-4 h-4 mr-2" />
+                    Voice Nets
+                  </TabsTrigger>
                   <TabsTrigger value="riggsy">
                     <Bot className="w-4 h-4 mr-2" />
                     Riggsy AI
@@ -372,6 +381,23 @@ Provide a helpful, concise response with tactical awareness.`,
                         </div>
                       );
                     })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="voice" className="flex-1 flex flex-col">
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    {showVoiceNetCreator ? (
+                      <VoiceNetCreator
+                        onSuccess={() => {
+                          setShowVoiceNetCreator(false);
+                        }}
+                        onCancel={() => setShowVoiceNetCreator(false)}
+                      />
+                    ) : (
+                      <VoiceNetBrowser
+                        onCreateNew={() => setShowVoiceNetCreator(true)}
+                      />
+                    )}
                   </div>
                 </TabsContent>
 
