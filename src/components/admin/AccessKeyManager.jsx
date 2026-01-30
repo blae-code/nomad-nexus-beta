@@ -262,7 +262,12 @@ Redeem at Access Gate with your callsign.
       )}
 
       {/* Discord Message Modal */}
-      <Dialog open={!!generatedMessage} onOpenChange={(open) => !open && setGeneratedMessage(null)}>
+      <Dialog open={!!generatedMessage} onOpenChange={(open) => {
+        if (!open) {
+          setGeneratedMessage(null);
+          loadKeys(); // Refresh list when dialog closes
+        }
+      }}>
         <DialogContent className="max-w-md bg-zinc-900 border-zinc-700">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-orange-400">
