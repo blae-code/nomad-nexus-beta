@@ -6,6 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Shield, Compass, Flame, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
 
+const glowStyle = `
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(234, 88, 12, 0.35), inset 0 0 20px rgba(234, 88, 12, 0.05); }
+    50% { box-shadow: 0 0 25px rgba(234, 88, 12, 0.5), inset 0 0 20px rgba(234, 88, 12, 0.15); }
+  }
+  .glow-box {
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+`;
+
 export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -87,8 +97,22 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-      <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,88,12,0.03)_50%,transparent_75%)] bg-[length:40px_40px] opacity-30" />
+    <div className="min-h-screen bg-zinc-950 relative overflow-hidden">
+      <style>{glowStyle}</style>
+      
+      {/* Background layers */}
+      <div className="absolute inset-0 bg-radial-gradient from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.02)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      
+      {/* Corner accents */}
+      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-orange-500/40 opacity-50" />
+      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-orange-500/40 opacity-50" />
+      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-orange-500/40 opacity-50" />
+      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-orange-500/40 opacity-50" />
+      
+      {/* Subtle glow orbs */}
+      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-orange-500/8 rounded-full blur-3xl opacity-20" />
+      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl opacity-20" />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
@@ -98,20 +122,25 @@ export default function Onboarding() {
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
-                  className={`w-full h-1 ${s <= step ? 'bg-orange-500' : 'bg-zinc-800'} ${s < 5 ? 'mr-2' : ''}`}
+                  className={`w-full h-1.5 transition-all duration-300 ${s <= step ? 'bg-gradient-to-r from-orange-600 to-orange-500' : 'bg-zinc-800'} ${s < 5 ? 'mr-2' : ''}`}
                 />
               ))}
             </div>
-            <div className="text-xs text-zinc-500 text-center font-mono uppercase tracking-wider">
-              Step {step} of 5
+            <div className="text-xs text-zinc-600 text-center font-mono uppercase tracking-widest">
+              ▼ Step {step} of 5 ▼
             </div>
           </div>
 
           {/* Step 1: Welcome */}
           {step === 1 && (
-            <div className="border-2 border-orange-500/30 bg-zinc-950/95 p-8">
-              <div className="flex items-center justify-center mb-6">
-                <Flame className="w-20 h-20 text-orange-500" />
+           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+             <div className="flex items-center justify-center mb-6">
+               <div className="relative">
+                 <div className="absolute inset-0 bg-orange-500/30 rounded-lg blur-2xl animate-pulse" />
+                 <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center">
+                   <Flame className="w-10 h-10 text-orange-300" />
+                 </div>
+               </div>
               </div>
               <h1 className="text-4xl font-black uppercase tracking-widest text-center text-white mb-4">
                 Welcome, Wanderer
@@ -135,7 +164,7 @@ export default function Onboarding() {
 
           {/* Step 2: Identity */}
           {step === 2 && (
-            <div className="border-2 border-orange-500/30 bg-zinc-950/95 p-8">
+           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
               <div className="flex items-center gap-3 mb-6">
                 <Compass className="w-8 h-8 text-orange-500" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
@@ -145,26 +174,26 @@ export default function Onboarding() {
               
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-xs font-black text-zinc-400 uppercase tracking-wider mb-2">
-                    RSI Callsign (Verified)
+                  <label className="block text-xs font-bold text-orange-300 uppercase tracking-[0.15em] mb-2">
+                    ◆ RSI Callsign (Verified)
                   </label>
                   <Input
                     value={formData.rsiCallsign}
                     disabled
-                    className="bg-zinc-900/50 border-zinc-700 text-zinc-500 cursor-not-allowed"
+                    className="bg-zinc-900/60 border-2 border-orange-500/30 text-zinc-400 cursor-not-allowed"
                   />
                   <p className="text-xs text-zinc-600 mt-1">This is your verified Star Citizen identity</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-zinc-400 uppercase tracking-wider mb-2">
-                    Nomad Nexus Callsign (Display Name)
+                  <label className="block text-xs font-bold text-orange-300 uppercase tracking-[0.15em] mb-2">
+                    ◆ Nomad Nexus Callsign (Display Name)
                   </label>
                   <Input
                     placeholder="Choose your display name..."
                     value={formData.nomadCallsign}
                     onChange={(e) => setFormData({ ...formData, nomadCallsign: e.target.value })}
-                    className="bg-zinc-900/50 border-zinc-700"
+                    className="bg-zinc-900/60 border-2 border-orange-500/30 focus:border-orange-500/60 focus:bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 transition-all duration-200"
                   />
                   <p className="text-xs text-zinc-600 mt-1">
                     This is how you'll appear to other Nomads. Can be changed anytime.
@@ -172,14 +201,14 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-zinc-400 uppercase tracking-wider mb-2">
-                    Bio (Optional)
+                  <label className="block text-xs font-bold text-orange-300 uppercase tracking-[0.15em] mb-2">
+                    ◆ Bio (Optional)
                   </label>
                   <Textarea
                     placeholder="Tell us your story, wanderer..."
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    className="bg-zinc-900/50 border-zinc-700 h-24"
+                    className="bg-zinc-900/60 border-2 border-orange-500/30 focus:border-orange-500/60 focus:bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-24 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -197,7 +226,7 @@ export default function Onboarding() {
 
           {/* Step 3: The Code */}
           {step === 3 && (
-            <div className="border-2 border-orange-500/30 bg-zinc-950/95 p-8">
+           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
               <div className="flex items-center gap-3 mb-6">
                 <Shield className="w-8 h-8 text-orange-500" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
@@ -252,9 +281,9 @@ export default function Onboarding() {
 
           {/* Step 4: AI Consent */}
           {step === 4 && (
-            <div className="border-2 border-orange-500/30 bg-zinc-950/95 p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <Brain className="w-8 h-8 text-orange-500" />
+           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+             <div className="flex items-center gap-3 mb-6">
+               <Brain className="w-8 h-8 text-orange-400" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
                   AI Capabilities & Preferences
                 </h2>
@@ -367,9 +396,14 @@ export default function Onboarding() {
 
           {/* Step 5: Confirmation */}
           {step === 5 && (
-            <div className="border-2 border-orange-500/30 bg-zinc-950/95 p-8">
-              <div className="flex items-center justify-center mb-6">
-                <Flame className="w-16 h-16 text-orange-500 animate-pulse" />
+           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+             <div className="flex items-center justify-center mb-6">
+               <div className="relative">
+                 <div className="absolute inset-0 bg-orange-500/30 rounded-lg blur-2xl animate-pulse" />
+                 <div className="relative w-16 h-16 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center">
+                   <Flame className="w-8 h-8 text-orange-300" />
+                 </div>
+               </div>
               </div>
               
               <h2 className="text-3xl font-black uppercase tracking-widest text-center text-white mb-4">
