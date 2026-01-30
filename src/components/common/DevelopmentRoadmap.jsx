@@ -5,6 +5,7 @@ import RoadmapNotificationHandler from '@/components/roadmap/RoadmapNotification
 
 export default function DevelopmentRoadmap() {
   const [expanded, setExpanded] = useState(true);
+  const [groupBy, setGroupBy] = useState('status'); // 'status' or 'phase'
   
   const featureDescriptions = {
     'Infrastructure & Database': 'Core backend systems, database schema, and persistence layer for all Nexus data',
@@ -40,76 +41,42 @@ export default function DevelopmentRoadmap() {
     'Release': 'Final production release: hardening, documentation, and full launch sequence',
   };
 
-  const milestones = [
-    {
-      phase: 'Phase 1',
-      title: 'Foundation & Core Systems',
-      version: '0.5.0',
-      status: 'in-progress',
-      completion: 85,
-      features: [
-        { name: 'Infrastructure & Database', status: 'complete' },
-        { name: 'Authentication & Access Control', status: 'complete' },
-        { name: 'Voice Net Architecture', status: 'complete' },
-        { name: 'Text Comms & Messaging', status: 'complete' },
-        { name: 'Performance Optimization', status: 'in-progress' },
-      ],
-    },
-    {
-      phase: 'Phase 2',
-      title: 'User Experience & Onboarding',
-      version: '0.7.0',
-      status: 'in-progress',
-      completion: 60,
-      features: [
-        { name: 'Complete Onboarding Flow', status: 'in-progress' },
-        { name: 'Member Profiles & Identity', status: 'in-progress' },
-        { name: 'Role-based Access Control', status: 'in-progress' },
-        { name: 'Rank & Membership System', status: 'planned' },
-        { name: 'User Directory & Discovery', status: 'planned' },
-      ],
-    },
-    {
-      phase: 'Phase 3',
-      title: 'Operations & Events',
-      version: '0.8.0',
-      status: 'planned',
-      completion: 35,
-      features: [
-        { name: 'Event Management & Planning', status: 'planned' },
-        { name: 'Tactical Operations Console', status: 'planned' },
-        { name: 'Squad Formation & Assignment', status: 'planned' },
-        { name: 'Objective Tracking', status: 'planned' },
-        { name: 'Operation Reports & AAR', status: 'planned' },
-      ],
-    },
-    {
-      phase: 'Phase 4',
-      title: 'Analytics & Intelligence',
-      version: '0.9.0',
-      status: 'planned',
-      completion: 10,
-      features: [
-        { name: 'Voice Analytics & Metrics', status: 'planned' },
-        { name: 'Comms Intelligence Dashboard', status: 'planned' },
-        { name: 'Performance Analysis Tools', status: 'planned' },
-        { name: 'Historical Data & Reporting', status: 'planned' },
-      ],
-    },
-    {
-      phase: 'Release',
-      title: 'Nomad Nexus 1.0',
-      version: '1.0.0',
-      status: 'planned',
-      completion: 0,
-      features: [
-        { name: 'Production Hardening', status: 'planned' },
-        { name: 'Full Documentation', status: 'planned' },
-        { name: 'Public Release & Onboarding', status: 'planned' },
-        { name: 'Community Support Launch', status: 'planned' },
-      ],
-    },
-  ];
+  // Group modules by completion status
+  const MODULE_STATUS = {
+    MissionControl: { name: 'Mission Control', completed: 60 },
+    CommsConsole: { name: 'Comms Central', completed: 70 },
+    Settings: { name: 'System Admin', completed: 100 },
+    AccessGate: { name: 'Access Gate', completed: 100 },
+    NomadRegistry: { name: 'Nomad Registry', completed: 40 },
+    FleetCommand: { name: 'Fleet Command', completed: 35 },
+    DataVault: { name: 'Data Vault', completed: 30 },
+    QAConsole: { name: 'QA Console', completed: 25 },
+    FrontierOps: { name: 'Frontier Ops', completed: 25 },
+    WarAcademy: { name: 'War Academy', completed: 20 },
+    TradeNexus: { name: 'Trade Nexus', completed: 25 },
+    IntelNexus: { name: 'Intel Nexus', completed: 15 },
+    HighCommand: { name: 'High Command', completed: 10 },
+    NexusTraining: { name: 'Nexus Training', completed: 10 },
+  };
+
+  const moduleGroups = {
+    complete: Object.entries(MODULE_STATUS)
+      .filter(([_, data]) => data.completed === 100)
+      .map(([key, data]) => ({ key, ...data })),
+    active: Object.entries(MODULE_STATUS)
+      .filter(([_, data]) => data.completed >= 40 && data.completed < 100)
+      .sort((a, b) => b[1].completed - a[1].completed)
+      .map(([key, data]) => ({ key, ...data })),
+    planned: Object.entries(MODULE_STATUS)
+      .filter(([_, data]) => data.completed < 40)
+      .sort((a, b) => b[1].completed - a[1].completed)
+      .map(([key, data]) => ({ key, ...data })),
+  };
+
+  const overallCompletion = Math.round(
+    Object.values(MODULE_STATUS).reduce((sum, mod) => sum + mod.completed, 0) /
+      Object.keys(MODULE_STATUS).length
+  );
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -139,96 +106,103 @@ export default function DevelopmentRoadmap() {
 
   return (
     <>
-      <RoadmapNotificationHandler roadmapMilestones={milestones} />
       <div className="space-y-2">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between p-2.5 bg-gradient-to-r from-orange-500/10 to-transparent border border-zinc-800/60 rounded hover:border-orange-500/40 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase tracking-widest text-orange-500">Nomad Nexus 1.0 Roadmap</h2>
-          <div className="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-800/50 text-zinc-400 rounded">38%</div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-orange-500">Module Development Status</h2>
+          <div className="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-800/50 text-zinc-400 rounded">{overallCompletion}%</div>
         </div>
         <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
       {expanded && (
-        <div className="space-y-2">
-          {milestones.map((milestone) => {
-            const statusIcon = milestone.status === 'complete' ? <CheckCircle2 className="w-3 h-3 text-green-400" /> :
-                               milestone.status === 'in-progress' ? <Zap className="w-3 h-3 text-yellow-400" /> :
-                               <Target className="w-3 h-3 text-red-400" />;
+        <div className="space-y-3">
+          {/* Complete Modules */}
+          {moduleGroups.complete.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 px-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-green-400">Production Ready</h3>
+                <div className="flex-1 h-px bg-green-500/20" />
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {moduleGroups.complete.map((module) => (
+                  <div
+                    key={module.key}
+                    className="px-2.5 py-1.5 bg-green-500/10 border border-green-500/30 rounded flex items-center justify-between"
+                  >
+                    <span className="text-[10px] font-semibold text-green-300">{module.name}</span>
+                    <CheckCircle2 className="w-3 h-3 text-green-400" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
+          {/* Active Development */}
+          {moduleGroups.active.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 px-2">
+                <Zap className="w-3.5 h-3.5 text-yellow-400" />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Active Development</h3>
+                <div className="flex-1 h-px bg-yellow-500/20" />
+              </div>
+              <div className="space-y-1.5">
+                {moduleGroups.active.map((module) => {
             return (
-              <TooltipProvider key={milestone.phase}>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <div className="border border-zinc-800/60 rounded bg-zinc-900/30 overflow-hidden cursor-help">
-                      {/* Compact Header */}
-                      <div className="px-3 py-2 border-b border-zinc-800/40 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {statusIcon}
-                          <span className="text-xs font-bold text-white uppercase tracking-wider">{milestone.phase}</span>
-                          <span className="text-[9px] font-mono px-1.5 py-0 bg-zinc-800/50 text-zinc-400 rounded">v{milestone.version}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <div className="w-10 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${
-                                milestone.completion === 100 ? 'bg-green-500' :
-                                milestone.completion >= 60 ? 'bg-yellow-500' :
-                                'bg-red-600'
-                              }`}
-                              style={{ width: `${milestone.completion}%` }}
-                            />
-                          </div>
-                          <span className={`text-[9px] font-mono font-bold w-6 text-right ${milestone.completion === 100 ? 'text-green-400' : milestone.completion >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
-                            {milestone.completion}%
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Compact Features List */}
-                      <div className="flex flex-wrap gap-1 px-2 py-1.5">
-                        {milestone.features.map((feature) => (
-                          <TooltipProvider key={feature.name}>
-                            <Tooltip delayDuration={200}>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium transition-colors border cursor-help ${
-                                    feature.status === 'complete'
-                                      ? 'bg-green-500/15 border-green-500/40 text-green-300'
-                                      : feature.status === 'in-progress'
-                                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
-                                      : 'bg-red-500/15 border-red-500/40 text-red-300'
-                                  }`}
-                                >
-                                  {getStatusIcon(feature.status)}
-                                  <span className="whitespace-nowrap">{feature.name}</span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="bg-zinc-950 border-orange-500/40 max-w-xs">
-                                <p className="text-xs text-zinc-200">{featureDescriptions[feature.name] || feature.name}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ))}
-                      </div>
+              <div key={module.key} className="border border-zinc-800/60 rounded bg-zinc-900/30 overflow-hidden">
+                <div className="px-3 py-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Clock className="w-3 h-3 text-yellow-400" />
+                    <span className="text-[10px] font-semibold text-white">{module.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-16 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-yellow-500 transition-all"
+                        style={{ width: `${module.completed}%` }}
+                      />
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="bg-zinc-950 border-yellow-500/40 max-w-sm">
-                    <div className="space-y-1.5">
-                      <p className="font-semibold text-orange-400">{milestone.title}</p>
-                      <p className="text-xs text-zinc-200">{phaseDescriptions[milestone.phase]}</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                    <span className="text-[9px] font-mono font-bold text-yellow-400 w-7 text-right">
+                      {module.completed}%
+                    </span>
+                  </div>
+                </div>
+              </div>
             );
-          })}
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded px-2.5 py-1.5 text-[9px]">
-            <div className="font-semibold text-blue-300">Focus: Core comms → Events → Analytics → 1.0</div>
-          </div>
+            })}
+            </div>
+            </div>
+            )}
+
+            {/* Planned Modules */}
+            {moduleGroups.planned.length > 0 && (
+            <div className="space-y-1.5">
+            <div className="flex items-center gap-2 px-2">
+            <Target className="w-3.5 h-3.5 text-red-400" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-red-400">Planning Phase</h3>
+            <div className="flex-1 h-px bg-red-500/20" />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+            {moduleGroups.planned.map((module) => (
+            <div
+              key={module.key}
+              className="px-2 py-1.5 bg-zinc-800/30 border border-zinc-700/50 rounded text-center"
+            >
+              <div className="text-[9px] font-semibold text-zinc-400">{module.name}</div>
+              <div className="text-[8px] font-mono text-red-400 mt-0.5">{module.completed}%</div>
+            </div>
+            ))}
+            </div>
+            </div>
+            )}
+
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded px-2.5 py-1.5 text-[9px]">
+            <div className="font-semibold text-blue-300">Priority: Comms Central → Mission Control → Operations Infrastructure</div>
+            </div>
         </div>
       )}
       </div>
