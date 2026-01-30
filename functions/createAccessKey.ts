@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { grantsRank } = await req.json();
+    const { grantsRank, grantsPermissions } = await req.json();
 
     if (!grantsRank) {
       return Response.json({ error: 'grantsRank is required' }, { status: 400 });
@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
       max_uses: 1,
       uses_count: 0,
       grants_rank: grantsRank,
+      grants_roles: grantsPermissions || [],
       expires_at: null,
     });
 
