@@ -213,14 +213,14 @@ export default function AccessGate() {
             {/* Verify Button */}
             <Button
               onClick={handleRedeem}
-              disabled={loading || !accessCode.trim() || !callsign.trim()}
+              disabled={loading || verifyingAuth || !accessCode.trim() || !callsign.trim()}
               className="w-full h-12 mt-8 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-full group-hover:-translate-x-full transition-transform duration-500" />
-              {loading ? (
+              {loading || verifyingAuth ? (
                 <span className="flex items-center justify-center gap-2 relative z-10">
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  VERIFYING...
+                  {verifyingAuth ? 'CONFIRMING AUTH...' : 'VERIFYING...'}
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2 relative z-10">
