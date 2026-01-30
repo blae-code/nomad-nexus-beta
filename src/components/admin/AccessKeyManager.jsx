@@ -83,14 +83,11 @@ export default function AccessKeyManager() {
     }
 
     try {
-      const key = await base44.asServiceRole.entities.AccessKey.create({
-        code: generateRandomCode(),
-        status: 'ACTIVE',
-        max_uses: 1,
-        uses_count: 0,
-        grants_rank: formData.grantsRank,
-        expires_at: null,
+      const response = await base44.functions.invoke('createAccessKey', {
+        grantsRank: formData.grantsRank,
       });
+
+      const key = response.data.key;
 
       // Generate immersive Discord message
       const message = generateDiscordMessage(adminCallsign, recipientCallsign, key.code, formData.grantsRank);
