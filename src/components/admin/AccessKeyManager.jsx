@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -24,35 +23,37 @@ export default function AccessKeyManager() {
   const [keys, setKeys] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [generatedMessage, setGeneratedMessage] = useState('');
-  const [showMessageModal, setShowMessageModal] = useState(false);
   const [formData, setFormData] = useState({
     count: 1,
     maxUses: 1,
     grantsRank: 'VAGRANT',
     expiresIn: 30, // days
   });
+  const [recipientCallsign, setRecipientCallsign] = useState('');
+  const [adminCallsign, setAdminCallsign] = useState('');
+  const [generatedMessage, setGeneratedMessage] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Load keys and current user
+  // Load keys and admin callsign
   useEffect(() => {
-    const init = async () => {
-      await loadKeys();
-      try {
-        const user = await base44.auth.me();
-        const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
-        setCurrentUser({
-          ...user,
-          callsign: profiles[0]?.callsign || user.full_name || 'Unknown',
-        });
-      } catch (err) {
-        console.error('Failed to load user:', err);
-      }
-    };
-    init();
+    loadKeys();
+    loadAdminCallsign();
   }, []);
+
+  const loadAdminCallsign = async () => {
+    try {
+      const user = await base44.auth.me();
+      const profile = await base44.entities.MemberProfile.filter({ user_id: user.id });
+      if (profile && profile.length > 0) {
+        setAdminCallsign(profile[0].callsign || user.full_name);
+      } else {
+        setAdminCallsign(user.full_name);
+      }
+    } catch (err) {
+      console.error('Failed to load admin callsign:', err);
+    }
+  };
 
   const loadKeys = async () => {
     try {
@@ -76,82 +77,68 @@ export default function AccessKeyManager() {
     return code;
   };
 
-  const generateDiscordMessage = (keyCode, rank, issuerCallsign) => {
-    const rankTitles = {
-      VAGRANT: 'Trial Member',
-      SCOUT: 'Scout',
-      VOYAGER: 'Voyager',
-      PIONEER: 'Pioneer',
-      FOUNDER: 'Founder',
-    };
-
-    return `╔═══════════════════════════════════════╗
-║   🛡️  REDSCAR NOMADS COLLECTIVE  🛡️   ║
-║        ACCESS AUTHORIZATION         ║
-╚═══════════════════════════════════════╝
-
-Greetings, Nomad.
-
-You have been granted access to the **Nomad Nexus** tactical operations platform by **${issuerCallsign}**.
-
-**┌─ CLEARANCE GRANTED ─┐**
-**RANK:** ${rankTitles[rank] || rank}
-**ACCESS CODE:** \`${keyCode}\`
-
-**┌─ ENTRY PROTOCOL ─┐**
-1. Navigate to the **Security Checkpoint**: [Access Gate]
-2. Enter your **ACCESS CODE** and choose a **CALLSIGN**
-3. Complete onboarding and join the collective
-
-**┌─ SECURITY NOTICE ─┐**
-⚠️ This code is bound to your identity and expires if unused.
-⚠️ Keep it secure. Do not share or expose publicly.
-
-**The frontier awaits. Welcome to the Nomads.**
-
-—— **${issuerCallsign}** | Redscar Nomads Operations`;
-  };
-
   const handleCreateKeys = async (e) => {
     e.preventDefault();
+
+    if (!recipientCallsign.trim()) {
+      setError('Please enter the recipient\'s callsign');
+      return;
+    }
 
     try {
       const newKeys = [];
       for (let i = 0; i < formData.count; i++) {
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + formData.expiresIn);
-
         const key = await base44.asServiceRole.entities.AccessKey.create({
           code: generateRandomCode(),
           status: 'ACTIVE',
-          maxUses: formData.maxUses,
-          usesCount: 0,
-          grantsRank: formData.grantsRank,
-          expiresAt: expiresAt.toISOString(),
-          created_by_user_id: currentUser?.id,
+          max_uses: formData.maxUses,
+          uses_count: 0,
+          grants_rank: formData.grantsRank,
+          expires_at: null, // Never expires
         });
         newKeys.push(key);
       }
 
-      // Generate Discord message for the first key (if single key generation)
-      if (newKeys.length === 1 && currentUser) {
-        const message = generateDiscordMessage(
-          newKeys[0].code,
-          newKeys[0].grantsRank,
-          currentUser.callsign
-        );
-        setGeneratedMessage(message);
-        setShowMessageModal(true);
-      }
-
-      setSuccess(`Created ${newKeys.length} access key(s)`);
+      // Generate immersive Discord message
+      const message = generateDiscordMessage(adminCallsign, recipientCallsign, newKeys[0].code, formData.grantsRank);
+      setGeneratedMessage(message);
+      
+      setSuccess(`Generated ${newKeys.length} access key(s) - Message ready to copy`);
       setFormData({ count: 1, maxUses: 1, grantsRank: 'VAGRANT', expiresIn: 30 });
-      setShowCreateForm(false);
+      setRecipientCallsign('');
       setError(null);
       await loadKeys();
     } catch (err) {
       setError(`Failed to create keys: ${err.message}`);
     }
+  };
+
+  const generateDiscordMessage = (issuer, recipient, code, rank) => {
+    return `**⸻ CLASSIFIED TRANSMISSION ⸻**
+**FROM:** ${issuer} | Command Authority
+**TO:** ${recipient} | Nomad Designate
+**SUBJECT:** Authorization Protocol — Access Granted
+
+**▸ AUTHORIZATION CODE:**
+\`\`\`
+${code}
+\`\`\`
+
+**▸ CLEARANCE LEVEL:** ${rank}
+**▸ VALIDITY:** Permanent
+**▸ BINDING:** Forever linked to your identity
+
+You have been granted access to **Nomad Nexus Operations**. This code is your key to the network—redeem it at the Access Gate to establish your presence in our system.
+
+**INSTRUCTIONS:**
+1. Navigate to the Access Gate
+2. Enter your designated callsign
+3. Submit your authorization code
+4. Complete identity verification protocols
+
+This access key is non-transferable and eternally bound to you. Guard it accordingly.
+
+**⸻ END TRANSMISSION ⸻**`;
   };
 
   const handleRevokeKey = async (keyId) => {
@@ -174,19 +161,6 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
     navigator.clipboard.writeText(code);
     setSuccess(`Copied: ${code}`);
     setTimeout(() => setSuccess(null), 2000);
-  };
-
-  const handleCopyMessage = () => {
-    navigator.clipboard.writeText(generatedMessage);
-    setSuccess('Discord message copied to clipboard!');
-    setTimeout(() => setSuccess(null), 2000);
-  };
-
-  const handleGenerateMessageForKey = (key) => {
-    if (!currentUser) return;
-    const message = generateDiscordMessage(key.code, key.grantsRank, currentUser.callsign);
-    setGeneratedMessage(message);
-    setShowMessageModal(true);
   };
 
   const filteredKeys = keys.filter((k) =>
@@ -259,6 +233,18 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
           <h3 className="font-bold text-orange-400">Generate Access Keys</h3>
 
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="text-xs font-bold text-zinc-300 block mb-1">Recipient Callsign *</label>
+              <Input
+                type="text"
+                placeholder="Enter recipient's callsign"
+                value={recipientCallsign}
+                onChange={(e) => setRecipientCallsign(e.target.value)}
+                className="bg-zinc-900 border-zinc-700"
+                required
+              />
+            </div>
+
             <div>
               <label className="text-xs font-bold text-zinc-300 block mb-1">Number of Keys</label>
               <Input
@@ -283,7 +269,7 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
               />
             </div>
 
-            <div>
+            <div className="col-span-2">
               <label className="text-xs font-bold text-zinc-300 block mb-1">Grants Rank</label>
               <Select value={formData.grantsRank} onValueChange={(rank) => setFormData({ ...formData, grantsRank: rank })}>
                 <SelectTrigger className="bg-zinc-900 border-zinc-700">
@@ -298,22 +284,14 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div>
-              <label className="text-xs font-bold text-zinc-300 block mb-1">Expires In (days)</label>
-              <Input
-                type="number"
-                min="1"
-                max="365"
-                value={formData.expiresIn}
-                onChange={(e) => setFormData({ ...formData, expiresIn: parseInt(e.target.value) })}
-                className="bg-zinc-900 border-zinc-700"
-              />
-            </div>
+          <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-blue-300">
+            <strong>Note:</strong> Keys never expire and are permanently linked to the recipient's identity
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
+            <Button type="button" variant="outline" onClick={() => { setShowCreateForm(false); setGeneratedMessage(null); }}>
               Cancel
             </Button>
             <Button type="submit" className="bg-orange-600 hover:bg-orange-500">
@@ -321,6 +299,41 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
             </Button>
           </div>
         </form>
+      )}
+
+      {/* Generated Discord Message */}
+      {generatedMessage && (
+        <div className="p-4 bg-zinc-900/50 border border-orange-500/30 rounded space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-orange-400 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Discord Message Ready
+            </h3>
+            <Button
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(generatedMessage);
+                setSuccess('Message copied to clipboard!');
+                setTimeout(() => setSuccess(null), 2000);
+              }}
+              className="bg-orange-600 hover:bg-orange-500"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Message
+            </Button>
+          </div>
+          <pre className="text-xs text-zinc-300 bg-zinc-950 p-3 rounded border border-zinc-700 overflow-x-auto whitespace-pre-wrap">
+{generatedMessage}
+          </pre>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setGeneratedMessage(null)}
+            className="w-full"
+          >
+            Dismiss
+          </Button>
+        </div>
       )}
 
       {/* Keys List */}
@@ -364,11 +377,9 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
                     </p>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Expires:</span>
+                    <span className="text-zinc-500">Status:</span>
                     <p className="text-zinc-300">
-                      {expiresAt
-                        ? `${expiresAt.toLocaleDateString()} ${isExpired ? '(expired)' : ''}`
-                        : 'Never'}
+                      Permanent
                     </p>
                   </div>
                 </div>
@@ -384,26 +395,15 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
                     Copy
                   </Button>
                   {key.status !== 'REVOKED' && key.status !== 'REDEEMED' && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleGenerateMessageForKey(key)}
-                        className="text-zinc-400 hover:text-blue-400"
-                      >
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        Discord
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRevokeKey(key.id)}
-                        className="text-zinc-400 hover:text-red-400"
-                      >
-                        <Lock className="w-4 h-4 mr-1" />
-                        Revoke
-                      </Button>
-                    </>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRevokeKey(key.id)}
+                      className="text-zinc-400 hover:text-red-400"
+                    >
+                      <Lock className="w-4 h-4 mr-1" />
+                      Revoke
+                    </Button>
                   )}
                 </div>
               </div>
@@ -415,56 +415,6 @@ You have been granted access to the **Nomad Nexus** tactical operations platform
       <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-zinc-400">
         Total: {keys.length} key{keys.length !== 1 ? 's' : ''} ({keys.filter((k) => k.status === 'ACTIVE').length} active)
       </div>
-
-      {/* Discord Message Modal */}
-      {showMessageModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border-2 border-orange-500/30 rounded-lg max-w-2xl w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-orange-400 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                Discord Invitation Message
-              </h3>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowMessageModal(false)}
-                className="text-zinc-400 hover:text-white"
-              >
-                ✕
-              </Button>
-            </div>
-
-            <div className="mb-4">
-              <Textarea
-                value={generatedMessage}
-                readOnly
-                className="font-mono text-xs bg-zinc-950 border-zinc-700 text-zinc-300 min-h-[400px]"
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setShowMessageModal(false)}
-              >
-                Close
-              </Button>
-              <Button
-                onClick={handleCopyMessage}
-                className="bg-blue-600 hover:bg-blue-500"
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Copy to Clipboard
-              </Button>
-            </div>
-
-            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-zinc-400">
-              💡 Copy this message and send it to the new member via Discord DM.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
