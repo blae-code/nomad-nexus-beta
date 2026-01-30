@@ -6,20 +6,23 @@
 export const MODULE_STATUS = {
   MissionControl: {
     name: 'Mission Control',
-    completed: 35,
+    completed: 60,
     features: [
       { name: 'Event Planning UI', status: 'complete' },
-      { name: 'Participant Management', status: 'in-progress' },
-      { name: 'Real-time War Room', status: 'planned' },
+      { name: 'Participant Management', status: 'complete' },
+      { name: 'Voice/Comms Binding', status: 'complete' },
+      { name: 'Real-time War Room', status: 'in-progress' },
+      { name: 'Incident Export', status: 'in-progress' },
       { name: 'Briefing Templates', status: 'planned' },
       { name: 'Debrief Analytics', status: 'planned' },
     ],
   },
   IntelNexus: {
     name: 'Intel Nexus',
-    completed: 20,
+    completed: 15,
     features: [
       { name: 'Database Schema', status: 'complete' },
+      { name: 'Basic UI Scaffolding', status: 'complete' },
       { name: 'Threat Assessment', status: 'planned' },
       { name: 'Intelligence Reports', status: 'planned' },
       { name: 'Analysis Dashboard', status: 'planned' },
@@ -28,10 +31,10 @@ export const MODULE_STATUS = {
   },
   WarAcademy: {
     name: 'War Academy',
-    completed: 30,
+    completed: 20,
     features: [
       { name: 'Training Modules UI', status: 'complete' },
-      { name: 'Skill Progression', status: 'in-progress' },
+      { name: 'Skill Progression', status: 'planned' },
       { name: 'Certification System', status: 'planned' },
       { name: 'Simulation Engine', status: 'planned' },
       { name: 'Instructor Tools', status: 'planned' },
@@ -39,22 +42,22 @@ export const MODULE_STATUS = {
   },
   FleetCommand: {
     name: 'Fleet Command',
-    completed: 40,
+    completed: 35,
     features: [
       { name: 'Asset Database', status: 'complete' },
-      { name: 'Tactical Map', status: 'in-progress' },
       { name: 'Maintenance Tracking', status: 'complete' },
+      { name: 'Tactical Map', status: 'in-progress' },
       { name: 'Engineering Queue', status: 'planned' },
       { name: 'Fleet Analytics', status: 'planned' },
     ],
   },
   NomadRegistry: {
     name: 'Nomad Registry',
-    completed: 45,
+    completed: 40,
     features: [
       { name: 'Member Profiles', status: 'complete' },
       { name: 'Availability Tracking', status: 'complete' },
-      { name: 'Achievements System', status: 'in-progress' },
+      { name: 'Achievements System', status: 'planned' },
       { name: 'Reputation Scores', status: 'planned' },
       { name: 'Member Analytics', status: 'planned' },
     ],
@@ -72,29 +75,30 @@ export const MODULE_STATUS = {
   },
   CommsConsole: {
     name: 'Comms Central',
-    completed: 55,
+    completed: 70,
     features: [
       { name: 'Channel Management', status: 'complete' },
       { name: 'Message System', status: 'complete' },
-      { name: 'Voice Integration', status: 'in-progress' },
-      { name: 'Broadcast System', status: 'planned' },
-      { name: 'Comms Analytics', status: 'planned' },
+      { name: 'Voice Integration', status: 'complete' },
+      { name: 'Unread Tracking', status: 'complete' },
+      { name: 'Poll System', status: 'planned' },
+      { name: 'AI Assistant (Riggsy)', status: 'planned' },
     ],
   },
   HighCommand: {
     name: 'High Command',
-    completed: 15,
+    completed: 10,
     features: [
+      { name: 'Basic UI Scaffolding', status: 'complete' },
       { name: 'Governance Framework', status: 'planned' },
       { name: 'Voting System', status: 'planned' },
       { name: 'Diplomatic Registry', status: 'planned' },
       { name: 'Alliance Management', status: 'planned' },
-      { name: 'Policy Documents', status: 'planned' },
     ],
   },
   FrontierOps: {
     name: 'Frontier Ops',
-    completed: 20,
+    completed: 25,
     features: [
       { name: 'Bounty Board UI', status: 'complete' },
       { name: 'Mission Contracts', status: 'in-progress' },
@@ -105,11 +109,11 @@ export const MODULE_STATUS = {
   },
   DataVault: {
     name: 'Data Vault',
-    completed: 35,
+    completed: 30,
     features: [
       { name: 'Document Storage', status: 'complete' },
       { name: 'Knowledge Base', status: 'complete' },
-      { name: 'Search System', status: 'in-progress' },
+      { name: 'Search System', status: 'planned' },
       { name: 'Analytics Dashboard', status: 'planned' },
       { name: 'Auto-Archival', status: 'planned' },
     ],
@@ -149,13 +153,13 @@ export const MODULE_STATUS = {
   },
   QAConsole: {
     name: 'QA Console',
-    completed: 5,
+    completed: 25,
     features: [
-      { name: 'QA Tools Framework', status: 'planned' },
+      { name: 'Ticket Submission', status: 'complete' },
+      { name: 'AI Summary', status: 'complete' },
+      { name: 'Admin Tools', status: 'in-progress' },
       { name: 'Test Triggers', status: 'planned' },
-      { name: 'Data Generators', status: 'planned' },
       { name: 'System Monitoring', status: 'planned' },
-      { name: 'Debug Dashboard', status: 'planned' },
     ],
   },
 };
