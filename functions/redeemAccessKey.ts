@@ -117,52 +117,63 @@ Deno.serve(async (req) => {
       status: newStatus
     });
 
-    // Only update member profile if user exists
-    if (user) {
-      let profile = null;
-      const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
-      if (profiles && profiles.length > 0) {
-        profile = profiles[0];
-      }
+    // Redeem atomically
+     const newRedeemed = user ? [...(key.redeemed_by_user_ids || []), user.id] : (key.redeemed_by_user_ids || []);
+     const newUseCount = key.uses_count + 1;
+     const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
 
-      if (profile) {
-        await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
-          callsign: callsign.trim(),
-          rank: key.grants_rank || 'VAGRANT',
-          roles: [...(profile.roles || []), ...(key.grants_roles || [])]
-        });
-      } else {
-        // Create profile if it doesn't exist
-        await base44.asServiceRole.entities.MemberProfile.create({
-          user_id: user.id,
-          callsign: callsign.trim(),
-          rank: key.grants_rank || 'VAGRANT',
-          roles: key.grants_roles || []
-        });
-      }
+     await base44.asServiceRole.entities.AccessKey.update(key.id, {
+       uses_count: newUseCount,
+       redeemed_by_user_ids: newRedeemed,
+       status: newStatus
+     });
 
-      // Log successful redemption
-      await base44.asServiceRole.entities.AdminAuditLog.create({
-        actor_user_id: user.id,
-        action: 'redeem_access_key',
-        payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles },
-        executed_by: user.id,
-        executed_at: new Date().toISOString(),
-        step_name: 'access_control',
-        status: 'success'
-      }).catch(err => console.error('Audit log error:', err));
+     // Only update member profile if user exists
+     if (user) {
+       let profile = null;
+       const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
+       if (profiles && profiles.length > 0) {
+         profile = profiles[0];
+       }
+
+       if (profile) {
+         await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
+           callsign: callsign.trim(),
+           rank: key.grants_rank || 'VAGRANT',
+           roles: [...(profile.roles || []), ...(key.grants_roles || [])]
+         });
+       } else {
+         // Create profile if it doesn't exist
+         await base44.asServiceRole.entities.MemberProfile.create({
+           user_id: user.id,
+           callsign: callsign.trim(),
+           rank: key.grants_rank || 'VAGRANT',
+           roles: key.grants_roles || []
+         });
+       }
+
+       // Log successful redemption
+       await base44.asServiceRole.entities.AdminAuditLog.create({
+         actor_user_id: user.id,
+         action: 'redeem_access_key',
+         payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles },
+         executed_by: user.id,
+         executed_at: new Date().toISOString(),
+         step_name: 'access_control',
+         status: 'success'
+       }).catch(err => console.error('Audit log error:', err));
+     }
+
+     clearFailures(userId);
+
+     return Response.json({
+       success: true,
+       grants_rank: key.grants_rank,
+       grants_roles: key.grants_roles,
+       message: 'Access code redeemed successfully'
+     });
+    } catch (error) {
+     console.error('redeemAccessKey error:', error);
+     return Response.json({ success: false, message: error.message }, { status: 500 });
     }
-
-    clearFailures(userId);
-
-    return Response.json({
-      success: true,
-      grants_rank: key.grants_rank,
-      grants_roles: key.grants_roles,
-      message: 'Access code redeemed successfully'
-    });
-  } catch (error) {
-    console.error('redeemAccessKey error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
 });
