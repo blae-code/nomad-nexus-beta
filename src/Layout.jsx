@@ -50,22 +50,35 @@ export default function Layout({ children, currentPageName }) {
   // Single AuthProvider at app root (wraps all pages)
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <ShellUIProvider>
-          <ActiveOpProvider>
-            <VoiceNetProvider>
-              {isFullScreen ? (
-                <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
-                  {children}
-                </div>
-              ) : (
-                <LayoutContent currentPageName={currentPageName} children={children} />
-              )}
-            </VoiceNetProvider>
-          </ActiveOpProvider>
-        </ShellUIProvider>
-      </NotificationProvider>
+      <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
     </AuthProvider>
+  );
+}
+
+function LayoutWithAuth({ children, currentPageName, isFullScreen }) {
+  const { error: authError, initialized } = useAuth();
+
+  // If auth initialization failed/timed out, show fatal error screen
+  if (initialized && authError) {
+    return <FatalAuthError error={authError} />;
+  }
+
+  return (
+    <NotificationProvider>
+      <ShellUIProvider>
+        <ActiveOpProvider>
+          <VoiceNetProvider>
+            {isFullScreen ? (
+              <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
+                {children}
+              </div>
+            ) : (
+              <LayoutContent currentPageName={currentPageName} children={children} />
+            )}
+          </VoiceNetProvider>
+        </ActiveOpProvider>
+      </ShellUIProvider>
+    </NotificationProvider>
   );
 }
 
