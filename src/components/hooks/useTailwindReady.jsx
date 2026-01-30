@@ -76,16 +76,34 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
         const finalElapsed = Date.now() - startTime;
         setElapsed(finalElapsed);
         setWaiting(false);
-        setError(
-          `Tailwind styles failed to load after ${finalElapsed}ms. Check console for details.`
-        );
-        console.error(
-          '✗ Tailwind CDN timeout. Stylesheets:',
-          Array.from(document.styleSheets).map((s) => ({
+
+        // Gather detailed diagnostics
+        const twScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
+        const scriptPresent = !!twScript;
+        const scriptLoaded = twScript?.loaded || false;
+        const tailwindGlobal = typeof window.tailwind !== 'undefined';
+
+        const details = [
+          `Waited ${finalElapsed}ms without Tailwind utilities loading.`,
+          `Tailwind CDN script: ${scriptPresent ? '✓ Present' : '✗ Missing'}${
+            scriptPresent ? ` (loaded=${scriptLoaded})` : ''
+          }`,
+          `window.tailwind: ${tailwindGlobal ? '✓ Defined' : '✗ Undefined'}`,
+          'Check browser console & network tab for CDN load errors.',
+        ].join(' ');
+
+        setError(details);
+        
+        console.error('✗ Tailwind CDN timeout:', {
+          waited: finalElapsed,
+          scriptPresent,
+          scriptLoaded,
+          tailwindGlobal,
+          stylesheets: Array.from(document.styleSheets).map((s) => ({
             href: s.href || 'inline',
             rules: s.cssRules?.length || 0,
-          }))
-        );
+          })),
+        });
       }
     }, timeoutMs);
 
