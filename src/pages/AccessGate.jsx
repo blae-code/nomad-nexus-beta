@@ -89,10 +89,10 @@ export default function AccessGate() {
       <style>{scanlineStyle}</style>
       
       {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-slate-950 to-slate-900/40 opacity-60" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
 
       {/* Dynamic grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(220,38,38,0.03)_1px,transparent_1px),linear-gradient(rgba(30,41,59,0.03)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
       
       {/* Animated scanline effect */}
       <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
@@ -104,29 +104,27 @@ export default function AccessGate() {
       <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
 
       {/* Subtle background glow */}
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-500/8 rounded-full blur-3xl opacity-20" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-500/5 rounded-full blur-3xl opacity-20" />
+      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
+      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-red-500/20 glow-box">
+        <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-red-700/30 glow-box">
           {/* Header Section */}
-          <div className="border-b border-red-500/30 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent p-8 relative overflow-hidden">
+          <div className="border-b border-red-700/50 bg-gradient-to-r from-red-700/15 via-transparent to-transparent p-8 relative overflow-hidden">
             <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-red-500/35 rounded-lg blur-2xl animate-pulse" />
-                <div className="absolute inset-0 bg-red-600/20 rounded-lg blur-lg animate-pulse" style={{ animationDelay: '0.3s' }} />
-                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-red-500/40 to-red-600/15 border-2 border-red-500/60 flex items-center justify-center shadow-lg shadow-red-500/30">
-                  <Shield className="w-10 h-10 text-red-200" strokeWidth={1.5} />
-                </div>
-              </div>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
+                alt="Redscar Nomads"
+                className="w-20 h-20 drop-shadow-lg"
+              />
             </div>
 
             <div className="text-center space-y-2.5">
-              <h1 className="text-4xl font-black uppercase tracking-[0.15em] text-white drop-shadow-lg">
-                Nexus <span className="text-red-400">Gate</span>
+              <h1 className="text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
+                Nexus <span className="text-red-600">Gate</span>
               </h1>
-              <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
-              <p className="text-[11px] text-red-300/60 uppercase tracking-[0.2em] font-semibold">
+              <div className="h-px bg-gradient-to-r from-transparent via-red-700/40 to-transparent" />
+              <p className="text-[10px] text-gray-400 uppercase tracking-[0.25em] font-bold">
                 Authorization Protocol
               </p>
             </div>
@@ -204,8 +202,8 @@ export default function AccessGate() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-red-500/30 bg-gradient-to-r from-red-500/5 to-transparent px-8 py-5">
-            <p className="text-[10px] text-red-300/60 text-center uppercase tracking-[0.2em] font-bold">
+          <div className="border-t border-red-700/40 bg-gradient-to-r from-red-700/5 to-transparent px-8 py-5">
+            <p className="text-[10px] text-red-700/70 text-center uppercase tracking-[0.2em] font-bold">
               ⸻ REDSCAR NOMADS COMMAND ⸻
             </p>
           </div>

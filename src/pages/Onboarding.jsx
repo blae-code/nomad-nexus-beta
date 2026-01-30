@@ -108,10 +108,10 @@ export default function Onboarding() {
       <style>{glowStyle}</style>
       
       {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-slate-950 to-slate-900/40 opacity-60" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
       
       {/* Dynamic grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(220,38,38,0.03)_1px,transparent_1px),linear-gradient(rgba(30,41,59,0.03)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
       
       {/* Animated scanline effect */}
       <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
@@ -123,8 +123,8 @@ export default function Onboarding() {
       <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
       
       {/* Subtle background glow */}
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-500/8 rounded-full blur-3xl opacity-20" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-500/5 rounded-full blur-3xl opacity-20" />
+      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
+      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
@@ -134,7 +134,7 @@ export default function Onboarding() {
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
-                  className={`w-full h-1.5 transition-all duration-300 ${s <= step ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-slate-800'} ${s < 5 ? 'mr-2' : ''}`}
+                  className={`w-full h-1.5 transition-all duration-300 ${s <= step ? 'bg-gradient-to-r from-red-700 to-red-600' : 'bg-slate-800'} ${s < 5 ? 'mr-2' : ''}`}
                 />
               ))}
             </div>
@@ -147,12 +147,11 @@ export default function Onboarding() {
           {step === 1 && (
            <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
              <div className="flex items-center justify-center mb-6">
-               <div className="relative">
-                 <div className="absolute inset-0 bg-red-500/30 rounded-lg blur-2xl animate-pulse" />
-                 <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-red-500/40 to-red-600/15 border-2 border-red-500/60 flex items-center justify-center">
-                   <Flame className="w-10 h-10 text-red-300" />
-                 </div>
-               </div>
+               <img 
+                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
+                 alt="Redscar Nomads"
+                 className="w-20 h-20 drop-shadow-lg"
+               />
               </div>
               <h1 className="text-4xl font-black uppercase tracking-widest text-center text-white mb-4">
                 Welcome, Wanderer
@@ -176,9 +175,9 @@ export default function Onboarding() {
 
           {/* Step 2: Identity */}
           {step === 2 && (
-           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
+           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
               <div className="flex items-center gap-3 mb-6">
-                <Compass className="w-8 h-8 text-red-500" />
+                <Compass className="w-8 h-8 text-red-600" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
                   Establish Identity
                 </h2>
@@ -238,9 +237,9 @@ export default function Onboarding() {
 
           {/* Step 3: The Code */}
           {step === 3 && (
-           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
+           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
               <div className="flex items-center gap-3 mb-6">
-                <Shield className="w-8 h-8 text-red-500" />
+                <Shield className="w-8 h-8 text-red-600" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
                   The Redscar Code
                 </h2>
@@ -293,9 +292,9 @@ export default function Onboarding() {
 
           {/* Step 4: AI Consent */}
           {step === 4 && (
-           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
+           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
              <div className="flex items-center gap-3 mb-6">
-               <Brain className="w-8 h-8 text-red-400" />
+               <Brain className="w-8 h-8 text-red-600" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
                   AI Capabilities & Preferences
                 </h2>
@@ -408,12 +407,13 @@ export default function Onboarding() {
 
           {/* Step 5: Confirmation */}
           {step === 5 && (
-           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
+           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
              <div className="flex items-center justify-center mb-6">
-               <div className="relative">
-                 <div className="absolute inset-0 bg-red-500/30 rounded-lg blur-2xl animate-pulse" />
-                 <div className="relative w-16 h-16 rounded-lg bg-gradient-to-br from-red-500/40 to-red-600/15 border-2 border-red-500/60 flex items-center justify-center">
-                   <Flame className="w-8 h-8 text-red-300" />
+               <img 
+                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
+                 alt="Redscar Nomads"
+                 className="w-16 h-16 drop-shadow-lg"
+               />
                  </div>
                </div>
               </div>
