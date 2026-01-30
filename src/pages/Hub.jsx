@@ -89,18 +89,18 @@ export default function Hub() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto space-y-6">
+    <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto">
       {/* Command Center Header */}
-       <div className="space-y-4">
-         <div className="flex items-center justify-between">
-           <div>
-             <h1 className="text-2xl font-black uppercase tracking-widest text-white">
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-widest text-white">
               Development <span className="text-orange-500">Hub</span>
-             </h1>
-             <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Module Status & Navigation</p>
-           </div>
-           {/* Status Indicators */}
-           <div className="flex items-center gap-4">
+            </h1>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Module Status & Navigation</p>
+          </div>
+          {/* Status Indicators */}
+          <div className="flex items-center gap-4">
             {activeOp?.activeEvent && (
               <div className="text-right">
                 <div className="text-xs text-zinc-400">ACTIVE OP</div>
@@ -117,56 +117,62 @@ export default function Hub() {
         </div>
       </div>
 
-      {/* Complete Modules */}
-      {organizedItems.complete.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-400" />
-            <h2 className="text-xs font-black text-green-400 uppercase tracking-widest">Complete ({organizedItems.complete.length})</h2>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
-            {organizedItems.complete.map((item, index) => (
-              <ModuleCard key={item.path} item={item} index={index} />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
+        {/* Left Column - Modules */}
+        <div className="col-span-2 overflow-y-auto space-y-6 pr-2">
+          {/* Complete Modules */}
+          {organizedItems.complete.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <h2 className="text-xs font-black text-green-400 uppercase tracking-widest">Complete ({organizedItems.complete.length})</h2>
+              </div>
+              <div className="grid grid-cols-4 gap-3 auto-rows-min">
+                {organizedItems.complete.map((item, index) => (
+                  <ModuleCard key={item.path} item={item} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* In-Progress Modules */}
-      {organizedItems.inProgress.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-orange-400" />
-            <h2 className="text-xs font-black text-orange-400 uppercase tracking-widest">In Development ({organizedItems.inProgress.length})</h2>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
-            {organizedItems.inProgress.map((item, index) => (
-              <ModuleCard key={item.path} item={item} index={index} />
-            ))}
-          </div>
-        </div>
-      )}
+          {/* In-Progress Modules */}
+          {organizedItems.inProgress.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-orange-400" />
+                <h2 className="text-xs font-black text-orange-400 uppercase tracking-widest">In Development ({organizedItems.inProgress.length})</h2>
+              </div>
+              <div className="grid grid-cols-4 gap-3 auto-rows-min">
+                {organizedItems.inProgress.map((item, index) => (
+                  <ModuleCard key={item.path} item={item} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Planned Modules */}
-      {organizedItems.planned.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-zinc-500" />
-            <h2 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Planned ({organizedItems.planned.length})</h2>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 auto-rows-min">
-            {organizedItems.planned.map((item, index) => (
-              <ModuleCard key={item.path} item={item} index={index} />
-            ))}
-          </div>
+          {/* Planned Modules */}
+          {organizedItems.planned.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-zinc-500" />
+                <h2 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Planned ({organizedItems.planned.length})</h2>
+              </div>
+              <div className="grid grid-cols-4 gap-3 auto-rows-min">
+                {organizedItems.planned.map((item, index) => (
+                  <ModuleCard key={item.path} item={item} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Development Roadmap - Full Width Below Modules */}
-      <div className="border-t border-zinc-800/40 pt-6 mt-6">
-       <DevelopmentRoadmap />
+        {/* Right Column - Roadmap */}
+        <div className="col-span-1 border-l border-zinc-800/40 pl-6 overflow-y-auto">
+          <DevelopmentRoadmap />
+        </div>
       </div>
-      </div>
+    </div>
       );
       }
 
