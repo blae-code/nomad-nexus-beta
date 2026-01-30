@@ -21,6 +21,12 @@ export default function Hub() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Allow dev mode access (Base44 editor)
+        if (isDevMode()) {
+          setLoading(false);
+          return;
+        }
+        
         const isAuth = await base44.auth.isAuthenticated();
         if (!isAuth) {
           window.location.href = createPageUrl('AccessGate');
