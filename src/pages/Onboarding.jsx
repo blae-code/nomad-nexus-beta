@@ -145,7 +145,7 @@ export default function Onboarding() {
 
           {/* Step 1: Welcome */}
           {step === 1 && (
-           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
+           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
              <div className="flex items-center justify-center mb-6">
                <img 
                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
