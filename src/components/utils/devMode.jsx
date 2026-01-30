@@ -6,15 +6,21 @@
 export function isDevMode() {
   if (typeof window === 'undefined') return false;
   
-  // Check if running in Base44 preview/editor (iframe or special domain)
-  const isBase44Editor = window.location.hostname.includes('base44') || 
-                         window.self !== window.top || 
-                         window.location.search.includes('base44_editor');
+  // Check localStorage first (most reliable for Base44 preview)
+  try {
+    const devFlag = localStorage.getItem('nexus.dev_mode');
+    if (devFlag === 'true') return true;
+    if (devFlag === 'false') return false;
+  } catch (e) {
+    // localStorage might not be available in some contexts
+  }
   
-  // Check for dev flag in localStorage (can be set manually)
-  const devFlag = localStorage.getItem('nexus.dev_mode') === 'true';
+  // Check if running in Base44 preview/editor
+  const isBase44Preview = window.location.hostname.includes('base44') || 
+                          window.location.hostname.includes('localhost') ||
+                          window.location.hostname.includes('127.0.0.1');
   
-  return isBase44Editor || devFlag;
+  return isBase44Preview;
 }
 
 export function enableDevMode() {
