@@ -18,7 +18,8 @@ import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
 import { initScrollGuard } from '@/components/utils/scrollGuard';
-import { AuthProvider } from '@/components/providers/AuthProvider';
+import { AuthProvider, useAuth } from '@/components/providers/AuthProvider';
+import FatalAuthError from '@/components/auth/FatalAuthError';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
