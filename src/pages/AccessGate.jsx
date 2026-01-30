@@ -90,7 +90,7 @@ export default function AccessGate() {
       <style>{scanlineStyle}</style>
       
       {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-radial-gradient from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
       
       {/* Dynamic grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.02)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
