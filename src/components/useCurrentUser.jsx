@@ -70,6 +70,12 @@ export const useCurrentUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
         const currentUser = await base44.auth.me();
         // Map real user to canon structure if needed
         setUser({
