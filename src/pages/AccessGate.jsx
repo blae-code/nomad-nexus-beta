@@ -153,7 +153,7 @@ export default function AccessGate() {
 
             {/* Callsign Field */}
             <div className="space-y-2.5 group">
-              <label className="text-[10px] font-bold text-orange-300 uppercase tracking-[0.15em] block">
+              <label className="text-[10px] font-bold text-emerald-300 uppercase tracking-[0.15em] block">
                 ◆ Callsign
               </label>
               <div className="relative">
