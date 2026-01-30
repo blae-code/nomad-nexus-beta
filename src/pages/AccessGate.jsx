@@ -136,7 +136,7 @@ export default function AccessGate() {
           <div className="p-8 space-y-6">
             {/* Access Code Field */}
             <div className="space-y-2.5 group">
-              <label className="text-[10px] font-bold text-orange-300 uppercase tracking-[0.15em] block">
+              <label className="text-[10px] font-bold text-amber-300 uppercase tracking-[0.15em] block">
                 ◆ Access Code
               </label>
               <div className="relative">
@@ -145,9 +145,9 @@ export default function AccessGate() {
                   placeholder="XXXX-XXXX-XXXX"
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                  className="font-mono uppercase tracking-widest text-center h-12 bg-zinc-900/60 border-2 border-orange-500/30 group-focus-within:border-orange-500/60 group-focus-within:bg-zinc-900 focus:border-orange-500/60 focus:bg-zinc-900 text-orange-300 placeholder:text-zinc-600 transition-all duration-200"
+                  className="font-mono uppercase tracking-widest text-center h-12 bg-zinc-900/60 border-2 border-amber-500/30 group-focus-within:border-amber-500/60 group-focus-within:bg-zinc-900 focus:border-amber-500/60 focus:bg-zinc-900 text-amber-300 placeholder:text-zinc-600 transition-all duration-200"
                 />
-                <div className="absolute -inset-1 border border-orange-500/0 group-focus-within:border-orange-500/20 rounded transition-all duration-200 pointer-events-none" />
+                <div className="absolute -inset-1 border border-amber-500/0 group-focus-within:border-amber-500/20 rounded transition-all duration-200 pointer-events-none" />
               </div>
             </div>
 
