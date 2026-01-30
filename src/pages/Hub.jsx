@@ -44,14 +44,14 @@ export default function Hub() {
     { name: 'QA Console', path: 'QAConsole', icon: Bug, description: 'Development and QA testing tools for admins' },
   ];
 
-  // Organize modules by completion status
+  // Organize modules by completion status (dynamically calculated from features)
   const organizedItems = {
-    complete: navItems.filter(item => (MODULE_STATUS[item.path]?.completed || 0) === 100).sort((a, b) => b.path.localeCompare(a.path)),
+    complete: navItems.filter(item => calculateCompletion(item.path) === 100).sort((a, b) => b.path.localeCompare(a.path)),
     inProgress: navItems.filter(item => {
-      const completion = MODULE_STATUS[item.path]?.completed || 0;
+      const completion = calculateCompletion(item.path);
       return completion > 0 && completion < 100;
-    }).sort((a, b) => (MODULE_STATUS[b.path]?.completed || 0) - (MODULE_STATUS[a.path]?.completed || 0)),
-    planned: navItems.filter(item => (MODULE_STATUS[item.path]?.completed || 0) === 0).sort((a, b) => a.name.localeCompare(b.name)),
+    }).sort((a, b) => calculateCompletion(b.path) - calculateCompletion(a.path)),
+    planned: navItems.filter(item => calculateCompletion(item.path) === 0).sort((a, b) => a.name.localeCompare(b.name)),
   };
 
   return (
