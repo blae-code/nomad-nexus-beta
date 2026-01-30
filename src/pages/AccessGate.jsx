@@ -115,8 +115,8 @@ export default function AccessGate() {
               <div className="relative">
                 <div className="absolute inset-0 bg-orange-500/35 rounded-lg blur-2xl animate-pulse" />
                 <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-lg animate-pulse" style={{ animationDelay: '0.3s' }} />
-                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                  <Shield className="w-10 h-10 text-orange-300" strokeWidth={1.5} />
+                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-purple-500/40 to-purple-600/15 border-2 border-purple-500/60 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <Shield className="w-10 h-10 text-purple-300" strokeWidth={1.5} />
                 </div>
               </div>
             </div>
