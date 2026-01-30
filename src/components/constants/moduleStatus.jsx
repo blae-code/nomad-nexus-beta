@@ -243,6 +243,9 @@ export const MODULE_STATUS = {
     features: [
       { name: 'User Management', status: 'complete' },
       { name: 'Access Key Manager', status: 'complete' },
+      { name: 'Access Key Audit Logging', status: 'complete' },
+      { name: 'Bulk Key Revocation', status: 'complete' },
+      { name: 'Advanced Key Filtering', status: 'complete' },
       { name: 'Data Validation', status: 'complete' },
       { name: 'Diagnostics Bundle', status: 'complete' },
       { name: 'Immersive Seed', status: 'complete' },
