@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Shield, Compass, Flame, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
+import { isDevMode } from '@/components/utils/devMode';
 
 const glowStyle = `
   @keyframes glow-pulse {
