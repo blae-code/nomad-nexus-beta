@@ -63,6 +63,7 @@ import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import MemberManagement from './pages/MemberManagement';
+import MemberProgression from './pages/MemberProgression';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +84,7 @@ export const PAGES = {
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
     "MemberManagement": MemberManagement,
+    "MemberProgression": MemberProgression,
 }
 
 export const pagesConfig = {
