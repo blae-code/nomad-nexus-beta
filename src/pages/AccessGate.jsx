@@ -38,8 +38,7 @@ export default function AccessGate() {
           window.location.href = createPageUrl('Hub');
         }
       } catch (err) {
-        console.error('Auth check error:', err);
-        setError(err.message);
+        // Silently ignore auth errors - user is unauthenticated, which is expected on login page
       }
     };
     checkAuth();
