@@ -131,7 +131,7 @@ Redeem at Access Gate with your callsign.
     }
 
     try {
-      await base44.asServiceRole.entities.AccessKey.update(keyId, {
+      await base44.entities.AccessKey.update(keyId, {
         status: 'REVOKED',
       });
       setSuccess('Access key revoked');
