@@ -181,8 +181,8 @@ Redeem at Access Gate with your callsign.
   return (
     <div className="space-y-4">
       {/* Header + Search */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 relative">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex-1 relative min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             placeholder="Search codes or ranks..."
@@ -191,13 +191,23 @@ Redeem at Access Gate with your callsign.
             className="pl-10 bg-zinc-900 border-zinc-700"
           />
         </div>
-        <Button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-orange-600 hover:bg-orange-500"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Generate Keys
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showRevoked ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setShowRevoked(!showRevoked)}
+            className={showRevoked ? 'bg-orange-600 hover:bg-orange-500' : ''}
+          >
+            Show Revoked
+          </Button>
+          <Button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="bg-orange-600 hover:bg-orange-500"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Generate Keys
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
