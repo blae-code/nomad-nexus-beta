@@ -35,12 +35,19 @@ function clearFailures(userId) {
 }
 
 Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    
-    // Allow unauthenticated users to redeem; they'll create profile in onboarding
-    const userId = user?.id || 'anonymous';
+   try {
+     const base44 = createClientFromRequest(req);
+
+     // For unauthenticated users, we need to use service role to look up keys
+     // Authenticated users use their own token
+     let user = null;
+     try {
+       user = await base44.auth.me();
+     } catch (err) {
+       // User is not authenticated - that's OK for initial redemption
+     }
+
+     const userId = user?.id || 'anonymous';
 
     // Rate limit check
     const limit = checkRateLimit(userId);
