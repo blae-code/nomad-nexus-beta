@@ -14,6 +14,13 @@ const glowStyle = `
   .glow-box {
     animation: glow-pulse 4s ease-in-out infinite;
   }
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+  .scanline-overlay {
+    animation: scan 8s linear infinite;
+  }
 `;
 
 export default function Onboarding() {
