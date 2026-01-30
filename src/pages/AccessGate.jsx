@@ -35,6 +35,11 @@ export default function AccessGate() {
   const [verifyingAuth, setVerifyingAuth] = useState(false);
   const [hasSavedLogin, setHasSavedLogin] = useState(false);
 
+  // Debug marker
+  useEffect(() => {
+    console.log('CUSTOM ACCESSGATE LOADED', window.location.href);
+  }, []);
+
   // Check for saved login and auto-redeem if present
   useEffect(() => {
     const checkSavedLogin = async () => {
