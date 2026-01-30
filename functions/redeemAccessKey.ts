@@ -38,8 +38,7 @@ Deno.serve(async (req) => {
    try {
      const base44 = createClientFromRequest(req);
 
-     // For unauthenticated users, we need to use service role to look up keys
-     // Authenticated users use their own token
+     // Try to get authenticated user, but allow unauthenticated access for key redemption
      let user = null;
      try {
        user = await base44.auth.me();
@@ -49,38 +48,36 @@ Deno.serve(async (req) => {
 
      const userId = user?.id || 'anonymous';
 
-    // Rate limit check
-    const limit = checkRateLimit(userId);
-    if (!limit.allowed) {
-      return Response.json({
-        success: false,
-        message: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
-        lockout_seconds: limit.remaining
-      }, { status: 429 });
-    }
+     // Rate limit check
+     const limit = checkRateLimit(userId);
+     if (!limit.allowed) {
+       return Response.json({
+         success: false,
+         message: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
+         lockout_seconds: limit.remaining
+       }, { status: 429 });
+     }
 
-    const payload = await req.json();
-    const { code, callsign } = payload;
+     const payload = await req.json();
+     const { code, callsign } = payload;
 
-    if (code === 'DEMO-ACCESS') {
-      recordFailure(userId);
-      return Response.json({ success: false, message: 'Demo access is no longer supported' }, { status: 403 });
-    }
+     if (code === 'DEMO-ACCESS') {
+       recordFailure(userId);
+       return Response.json({ success: false, message: 'Demo access is no longer supported' }, { status: 403 });
+     }
 
-    if (!code || typeof code !== 'string') {
-      recordFailure(userId);
-      return Response.json({ success: false, message: 'Invalid code' }, { status: 400 });
-    }
+     if (!code || typeof code !== 'string') {
+       recordFailure(userId);
+       return Response.json({ success: false, message: 'Invalid code' }, { status: 400 });
+     }
 
-    if (!callsign || typeof callsign !== 'string' || callsign.trim().length === 0) {
-      recordFailure(userId);
-      return Response.json({ success: false, message: 'Callsign is required' }, { status: 400 });
-    }
+     if (!callsign || typeof callsign !== 'string' || callsign.trim().length === 0) {
+       recordFailure(userId);
+       return Response.json({ success: false, message: 'Callsign is required' }, { status: 400 });
+     }
 
-    // Find key (atomically) - use service role to look up
-    // This ensures unauthenticated users can still redeem keys
-    const sdkClient = user ? base44 : base44.asServiceRole;
-    const keys = await sdkClient.entities.AccessKey.filter({ code });
+     // Find key (atomically) - ALWAYS use service role for unauthenticated access
+     const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
 
     if (!keys || keys.length === 0) {
       recordFailure(userId);
