@@ -12,7 +12,7 @@ import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 
 export default function Hub() {
   const [loading, setLoading] = useState(true);
-  const { user } = useCurrentUser();
+  const [authError, setAuthError] = useState(false);
   const { isContextPanelOpen, isCommsDockOpen } = useShellUI();
   const voiceNet = useVoiceNet();
   const activeOp = useActiveOp();
@@ -37,15 +37,16 @@ export default function Hub() {
         
         setLoading(false);
       } catch (error) {
+        setAuthError(true);
         window.location.href = createPageUrl('AccessGate');
       }
     };
     checkAuth();
   }, []);
 
-  if (loading) {
+  if (loading || authError) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center bg-zinc-950">
         <div className="text-orange-500 text-sm uppercase tracking-widest font-semibold">Initializing...</div>
       </div>
     );
