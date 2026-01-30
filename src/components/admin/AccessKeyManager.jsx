@@ -31,6 +31,7 @@ export default function AccessKeyManager() {
   const [keys, setKeys] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showRevoked, setShowRevoked] = useState(false);
   const [formData, setFormData] = useState({
     grantsRank: 'VAGRANT',
   });
