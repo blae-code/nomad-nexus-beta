@@ -52,12 +52,14 @@ export default function CSSDebugOverlay() {
 
       // 2. Test Tailwind utilities
       const testEl = document.createElement('div');
-      testEl.className = 'hidden bg-slate-950 text-white';
+      testEl.className = 'hidden bg-slate-950 text-white m-0 p-0 rounded border';
       document.body.appendChild(testEl);
 
       const computed = window.getComputedStyle(testEl);
       const hidden = computed.display === 'none';
       const bgColor = computed.backgroundColor;
+      const hasBorder = computed.borderWidth !== '0px';
+      const hasRounded = computed.borderRadius !== '0px';
 
       results.computedStyles.hidden = {
         display: computed.display,
@@ -69,10 +71,24 @@ export default function CSSDebugOverlay() {
         expectedSlate950: bgColor.includes('15, 23, 42') || bgColor === 'rgb(15, 23, 42)',
       };
 
+      results.computedStyles.border = {
+        borderWidth: computed.borderWidth,
+        hasBorder: hasBorder,
+      };
+
+      results.computedStyles.rounded = {
+        borderRadius: computed.borderRadius,
+        hasRounded: hasRounded,
+      };
+
+      // Count found utilities
+      const utilitiesFound = [hidden, results.computedStyles.bgColor.expectedSlate950, hasBorder, hasRounded].filter(Boolean).length;
+      results.utilitiesFound = utilitiesFound;
+
       // Determine Tailwind status
-      if (hidden && results.computedStyles.bgColor.expectedSlate950) {
+      if (utilitiesFound >= 3) {
         results.tailwindStatus = 'OK';
-      } else if (!hidden && !results.computedStyles.bgColor.expectedSlate950) {
+      } else if (utilitiesFound === 0) {
         results.tailwindStatus = 'MISSING/PURGED';
       } else {
         results.tailwindStatus = 'PARTIAL';
