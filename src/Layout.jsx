@@ -51,6 +51,7 @@ export default function Layout({ children, currentPageName }) {
   // Single AuthProvider at app root (wraps all pages)
   return (
     <AuthProvider>
+      <AuthDebugOverlay />
       <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
     </AuthProvider>
   );
