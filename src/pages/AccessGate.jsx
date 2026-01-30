@@ -104,8 +104,8 @@ export default function AccessGate() {
       <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-orange-500/40 opacity-50" />
 
       {/* Subtle background glow */}
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-orange-500/8 rounded-full blur-3xl opacity-20" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl opacity-20" />
+      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-purple-500/8 rounded-full blur-3xl opacity-20" />
+      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl opacity-20" />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-orange-500/20 glow-box">
