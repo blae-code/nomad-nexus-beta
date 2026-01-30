@@ -527,6 +527,21 @@ export default function MissionControl() {
         </div>
       </div>
 
+      {/* Templates Modal */}
+      {showTemplates && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
+          <div className="bg-zinc-900 border-2 border-orange-500/50 p-6 max-w-2xl w-full mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-black text-white uppercase mb-6">Event Templates</h2>
+            <EventTemplateManager onTemplateSelect={handleTemplateSelect} />
+            <div className="mt-6">
+              <Button onClick={() => setShowTemplates(false)} variant="outline" className="w-full">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Event Creation Modal */}
       {showCreateEvent && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
