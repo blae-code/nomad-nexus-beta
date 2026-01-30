@@ -12,8 +12,8 @@ const scanlineStyle = `
     100% { transform: translateY(100%); }
   }
   @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(234, 88, 12, 0.35), inset 0 0 20px rgba(234, 88, 12, 0.05); }
-    50% { box-shadow: 0 0 25px rgba(234, 88, 12, 0.5), inset 0 0 20px rgba(234, 88, 12, 0.15); }
+    0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), inset 0 0 20px rgba(239, 68, 68, 0.05); }
+    50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.15); }
   }
   .scanline-overlay {
     animation: scan 8s linear infinite;
@@ -113,10 +113,10 @@ export default function AccessGate() {
           <div className="border-b border-red-500/30 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent p-8 relative overflow-hidden">
             <div className="flex items-center justify-center mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-orange-500/35 rounded-lg blur-2xl animate-pulse" />
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-lg animate-pulse" style={{ animationDelay: '0.3s' }} />
-                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-purple-500/40 to-purple-600/15 border-2 border-purple-500/60 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                  <Shield className="w-10 h-10 text-purple-300" strokeWidth={1.5} />
+                <div className="absolute inset-0 bg-red-500/35 rounded-lg blur-2xl animate-pulse" />
+                <div className="absolute inset-0 bg-red-600/20 rounded-lg blur-lg animate-pulse" style={{ animationDelay: '0.3s' }} />
+                <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-red-500/40 to-red-600/15 border-2 border-red-500/60 flex items-center justify-center shadow-lg shadow-red-500/30">
+                  <Shield className="w-10 h-10 text-red-200" strokeWidth={1.5} />
                 </div>
               </div>
             </div>
