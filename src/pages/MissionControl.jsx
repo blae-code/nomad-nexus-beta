@@ -586,7 +586,44 @@ export default function MissionControl() {
               </div>
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="space-y-3 border-t border-zinc-700 pt-4">
+              <button
+                onClick={() => setShowRecurrence(!showRecurrence)}
+                className="w-full text-left p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 rounded text-sm font-semibold text-orange-400 transition"
+              >
+                {showRecurrence ? '✕ Hide Recurrence' : '+ Add Recurrence'}
+              </button>
+              
+              {showRecurrence && (
+                <EventRecurrenceManager
+                  onSave={(recurrence) => {
+                    setEventForm({ ...eventForm, recurrence });
+                    setShowRecurrence(false);
+                  }}
+                  onCancel={() => setShowRecurrence(false)}
+                  defaultValue={eventForm.recurrence}
+                />
+              )}
+
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="w-full text-left p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 rounded text-sm font-semibold text-orange-400 transition"
+              >
+                {showNotifications ? '✕ Hide Notifications' : '+ Add Notifications'}
+              </button>
+
+              {showNotifications && (
+                <EventNotificationManager
+                  onSave={(notifData) => {
+                    setEventForm({ ...eventForm, notifications: notifData.notifications });
+                    setShowNotifications(false);
+                  }}
+                  eventId={selectedEvent?.id}
+                />
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
               <Button variant="outline" onClick={() => setShowCreateEvent(false)}>Cancel</Button>
               <Button onClick={createEvent}>Create Operation</Button>
             </div>
