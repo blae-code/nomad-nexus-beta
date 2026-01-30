@@ -40,7 +40,7 @@ export default function MissionControl() {
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showAITools, setShowAITools] = useState(null); // 'blueprints', 'scheduling', 'threats'
+  const [showPlanningTools, setShowPlanningTools] = useState(null);
 
   // Objective form
   const [objectiveForm, setObjectiveForm] = useState({
@@ -113,21 +113,21 @@ export default function MissionControl() {
     setShowTemplates(false);
   };
 
-  const handleBlueprintSelect = (blueprintData) => {
+  const handleBlueprintSelect = (blueprintTemplate) => {
     setEventForm((prev) => ({
       ...prev,
-      ...blueprintData,
+      ...blueprintTemplate,
       start_time: prev.start_time || '',
     }));
-    setShowAITools(null);
+    setShowPlanningTools(null);
   };
 
   const handleScheduleSelected = (scheduleData) => {
     setEventForm((prev) => ({
       ...prev,
-      ...scheduleData,
+      start_time: scheduleData.start_time,
     }));
-    setShowAITools(null);
+    setShowPlanningTools(null);
   };
 
   const addObjective = async () => {
@@ -236,21 +236,18 @@ export default function MissionControl() {
           <h1 className="text-3xl font-black uppercase tracking-wider text-white">Mission Control</h1>
           <p className="text-zinc-400 text-sm">Operations planning, execution, and reporting</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => setShowAITools('blueprints')} variant="outline" size="sm">
-            ✨ Blueprints
-          </Button>
-          <Button onClick={() => setShowAITools('scheduling')} variant="outline" size="sm">
-            🧠 Smart Schedule
-          </Button>
-          <Button onClick={() => setShowAITools('threats')} variant="outline" size="sm">
-            🛡️ Threats
-          </Button>
-          <Button onClick={() => setShowCreateEvent(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Operation
-          </Button>
-        </div>
+        <div className="flex gap-2">
+           <Button onClick={() => setShowTemplates(true)} variant="outline">
+             📋 Templates
+           </Button>
+           <Button onClick={() => setShowPlanningTools('blueprints')} variant="outline">
+             ⚙️ AI Planning
+           </Button>
+           <Button onClick={() => setShowCreateEvent(true)}>
+             <Plus className="w-4 h-4 mr-2" />
+             New Operation
+           </Button>
+         </div>
       </div>
 
       {/* Calendar View */}
@@ -569,42 +566,54 @@ export default function MissionControl() {
         </div>
       )}
 
-      {/* AI Tools Modals */}
-      {showAITools === 'blueprints' && (
+      {/* AI Planning Tools Modal */}
+      {showPlanningTools && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
           <div className="bg-zinc-900 border-2 border-purple-500/50 p-6 max-w-3xl w-full mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-black text-white uppercase mb-6">✨ Mission Blueprints</h2>
-            <MissionBlueprints onSelectBlueprint={handleBlueprintSelect} />
-            <div className="mt-6">
-              <Button onClick={() => setShowAITools(null)} variant="outline" className="w-full">
-                Close
-              </Button>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-black text-white uppercase">AI Mission Planning</h2>
+              <button
+                onClick={() => setShowPlanningTools(null)}
+                className="text-zinc-400 hover:text-white text-xl"
+              >
+                ✕
+              </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {showAITools === 'scheduling' && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
-          <div className="bg-zinc-900 border-2 border-blue-500/50 p-6 max-w-2xl w-full mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-black text-white uppercase mb-6">🧠 Smart Scheduling</h2>
-            <SmartScheduling onScheduleSelected={handleScheduleSelected} />
-            <div className="mt-6">
-              <Button onClick={() => setShowAITools(null)} variant="outline" className="w-full">
-                Close
-              </Button>
+            <div className="space-y-6">
+              {/* Tabs Navigation */}
+              <div className="flex gap-2 border-b border-zinc-700">
+                {['blueprints', 'scheduling', 'threats'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setShowPlanningTools(tab)}
+                    className={`px-4 py-2 text-sm font-bold uppercase transition ${
+                      showPlanningTools === tab
+                        ? 'text-orange-400 border-b-2 border-orange-500'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    {tab === 'blueprints' && '⚙️ Blueprints'}
+                    {tab === 'scheduling' && '📅 Smart Schedule'}
+                    {tab === 'threats' && '⚠️ Threats'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Content */}
+              {showPlanningTools === 'blueprints' && (
+                <MissionBlueprints onSelectBlueprint={handleBlueprintSelect} />
+              )}
+              {showPlanningTools === 'scheduling' && (
+                <SmartScheduling onScheduleSelected={handleScheduleSelected} />
+              )}
+              {showPlanningTools === 'threats' && (
+                <ThreatDatabase />
+              )}
             </div>
-          </div>
-        </div>
-      )}
 
-      {showAITools === 'threats' && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
-          <div className="bg-zinc-900 border-2 border-red-500/50 p-6 max-w-2xl w-full mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-black text-white uppercase mb-6">🛡️ Threat Database</h2>
-            <ThreatDatabase selectedLocation={eventForm.location} />
             <div className="mt-6">
-              <Button onClick={() => setShowAITools(null)} variant="outline" className="w-full">
+              <Button onClick={() => setShowPlanningTools(null)} variant="outline" className="w-full">
                 Close
               </Button>
             </div>
