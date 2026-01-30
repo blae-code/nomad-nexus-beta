@@ -33,26 +33,46 @@ const cn = (...classes) => {
 };
 
 export default function Layout({ children, currentPageName }) {
-  if (!children) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-orange-500 text-xl">Loading...</div>
-      </div>
-    );
-  }
+        if (!children) {
+          return (
+            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+              <div className="text-orange-500 text-xl">Loading...</div>
+            </div>
+          );
+        }
 
-  return (
-    <NotificationProvider>
-      <ShellUIProvider>
-        <ActiveOpProvider>
-          <VoiceNetProvider>
-            <LayoutContent currentPageName={currentPageName} children={children} />
-          </VoiceNetProvider>
-        </ActiveOpProvider>
-      </ShellUIProvider>
-    </NotificationProvider>
-  );
-}
+        // Full-screen pages that hide shell UI
+        const fullScreenPages = ['AccessGate', 'Onboarding'];
+        const isFullScreen = fullScreenPages.includes(currentPageName);
+
+        if (isFullScreen) {
+          return (
+            <NotificationProvider>
+              <ShellUIProvider>
+                <ActiveOpProvider>
+                  <VoiceNetProvider>
+                    <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
+                      {children}
+                    </div>
+                  </VoiceNetProvider>
+                </ActiveOpProvider>
+              </ShellUIProvider>
+            </NotificationProvider>
+          );
+        }
+
+        return (
+          <NotificationProvider>
+            <ShellUIProvider>
+              <ActiveOpProvider>
+                <VoiceNetProvider>
+                  <LayoutContent currentPageName={currentPageName} children={children} />
+                </VoiceNetProvider>
+              </ActiveOpProvider>
+            </ShellUIProvider>
+          </NotificationProvider>
+        );
+      }
 
 function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
