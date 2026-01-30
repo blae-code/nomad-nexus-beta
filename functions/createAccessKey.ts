@@ -37,6 +37,17 @@ Deno.serve(async (req) => {
       grants_rank: grantsRank,
       grants_roles: grantsPermissions || [],
       expires_at: null,
+      created_by_user_id: user.id,
+    });
+
+    // Log audit trail
+    await base44.asServiceRole.functions.invoke('logAccessKeyAudit', {
+      access_key_id: key.id,
+      action: 'CREATE',
+      details: {
+        grants_rank: grantsRank,
+        grants_roles: grantsPermissions,
+      },
     });
 
     return Response.json({ key });
