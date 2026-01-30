@@ -30,7 +30,13 @@ export default function MissionControl() {
     location: '',
     event_type: 'casual',
     priority: 'STANDARD',
+    recurrence: null,
+    notifications: [],
   });
+
+  const [showRecurrence, setShowRecurrence] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Objective form
   const [objectiveForm, setObjectiveForm] = useState({
