@@ -167,11 +167,19 @@ Deno.serve(async (req) => {
 
       clearFailures(userId);
 
+      // Generate login token for "Remember Me" functionality
+      const loginToken = btoa(JSON.stringify({
+        code: code,
+        callsign: callsign.trim(),
+        timestamp: Date.now()
+      }));
+
       return Response.json({
         success: true,
         grants_rank: key.grants_rank,
         grants_roles: key.grants_roles,
         code_hash: key.code.substring(0, 4) + '****' + key.code.substring(key.code.length - 4),
+        loginToken: loginToken,
         message: 'Access code redeemed successfully - complete registration on next screen'
       });
      } catch (error) {
