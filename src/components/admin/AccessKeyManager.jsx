@@ -7,6 +7,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,8 +24,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare, X, ChevronDown } from 'lucide-react';
+import { Copy, Trash2, Key, Plus, Search, CheckCircle2, Lock, AlertCircle, MessageSquare, X, ChevronDown, History } from 'lucide-react';
 import GrantsSelector from './GrantsSelector';
+import AccessKeyAuditLog from './AccessKeyAuditLog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
@@ -53,6 +55,9 @@ export default function AccessKeyManager() {
   const [generatedMessage, setGeneratedMessage] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showAuditLog, setShowAuditLog] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState(new Set());
+  const [filterRank, setFilterRank] = useState('ALL');
 
   // Load keys and admin callsign
   useEffect(() => {
@@ -153,10 +158,71 @@ export default function AccessKeyManager() {
       await base44.entities.AccessKey.update(keyId, {
         status: 'REVOKED',
       });
+      // Log audit trail
+      await base44.functions.invoke('logAccessKeyAudit', {
+        access_key_id: keyId,
+        action: 'REVOKE',
+        details: { reason: 'Manual revocation' },
+      });
       setSuccess('Access key revoked');
       await loadKeys();
     } catch (err) {
       setError(`Failed to revoke key: ${err.message}`);
+    }
+  };
+
+  const handleBulkRevoke = async () => {
+    if (selectedKeys.size === 0) {
+      setError('No keys selected for revocation');
+      return;
+    }
+
+    if (!confirm(`Revoke ${selectedKeys.size} access key(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const keysArray = Array.from(selectedKeys);
+      await Promise.all(
+        keysArray.map((keyId) =>
+          base44.entities.AccessKey.update(keyId, { status: 'REVOKED' })
+        )
+      );
+      
+      // Log each revocation
+      await Promise.all(
+        keysArray.map((keyId) =>
+          base44.functions.invoke('logAccessKeyAudit', {
+            access_key_id: keyId,
+            action: 'REVOKE',
+            details: { reason: 'Bulk revocation' },
+          })
+        )
+      );
+
+      setSuccess(`${selectedKeys.size} key(s) revoked`);
+      setSelectedKeys(new Set());
+      await loadKeys();
+    } catch (err) {
+      setError(`Failed to revoke keys: ${err.message}`);
+    }
+  };
+
+  const toggleKeySelection = (keyId) => {
+    const newSelected = new Set(selectedKeys);
+    if (newSelected.has(keyId)) {
+      newSelected.delete(keyId);
+    } else {
+      newSelected.add(keyId);
+    }
+    setSelectedKeys(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedKeys.size === filteredKeys.length) {
+      setSelectedKeys(new Set());
+    } else {
+      setSelectedKeys(new Set(filteredKeys.map((k) => k.id)));
     }
   };
 
@@ -170,7 +236,8 @@ export default function AccessKeyManager() {
     const matchesSearch = k.code?.includes(searchTerm.toUpperCase()) || k.grantsRank?.includes(searchTerm.toUpperCase());
     const isNotRevoked = k.status !== 'REVOKED';
     const shouldShow = showRevoked || isNotRevoked;
-    return matchesSearch && shouldShow;
+    const rankMatch = filterRank === 'ALL' || k.grants_rank === filterRank;
+    return matchesSearch && shouldShow && rankMatch;
   });
 
   const getStatusColor = (status) => {
@@ -199,17 +266,51 @@ export default function AccessKeyManager() {
   return (
     <div className="space-y-4">
       {/* Header + Search */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex-1 relative min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <Input
-            placeholder="Search codes or ranks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-700"
-          />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex-1 relative min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Input
+              placeholder="Search codes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-zinc-900 border-zinc-700"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAuditLog(!showAuditLog)}
+              className={showAuditLog ? 'bg-orange-600 text-white' : ''}
+            >
+              <History className="w-4 h-4 mr-2" />
+              Audit Log
+            </Button>
+            <Button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="bg-orange-600 hover:bg-orange-500"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Generate Keys
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={filterRank}
+            onChange={(e) => setFilterRank(e.target.value)}
+            className="px-3 py-2 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100"
+          >
+            <option value="ALL">All Ranks</option>
+            {RANK_OPTIONS.map((rank) => (
+              <option key={rank} value={rank}>
+                {rank}
+              </option>
+            ))}
+          </select>
           <Button
             variant={showRevoked ? 'default' : 'outline'}
             size="sm"
@@ -218,13 +319,16 @@ export default function AccessKeyManager() {
           >
             Show Revoked
           </Button>
-          <Button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-orange-600 hover:bg-orange-500"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Generate Keys
-          </Button>
+          {selectedKeys.size > 0 && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkRevoke}
+              className="bg-red-600 hover:bg-red-500"
+            >
+              Revoke {selectedKeys.size}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -360,84 +464,130 @@ export default function AccessKeyManager() {
         </DialogContent>
       </Dialog>
 
-      {/* Keys List */}
+      {/* Audit Log */}
+      {showAuditLog && (
+        <div className="p-4 bg-zinc-900/50 border border-orange-500/20 rounded">
+          <AccessKeyAuditLog />
+        </div>
+      )}
+
+      {/* Keys List with Selection */}
       <div className="space-y-2">
         {filteredKeys.length === 0 ? (
           <div className="p-4 text-center text-zinc-400">
             {keys.length === 0 ? 'No access keys yet' : 'No results'}
           </div>
         ) : (
-          filteredKeys.map((key) => {
-            const expiresAt = key.expiresAt ? new Date(key.expiresAt) : null;
-            const isExpired = expiresAt && expiresAt < new Date();
+          <>
+            {/* Select All Checkbox */}
+            {filteredKeys.length > 0 && (
+              <div className="p-2 bg-zinc-900/30 border border-zinc-700/30 rounded flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedKeys.size === filteredKeys.length}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                <span className="text-xs text-zinc-400">
+                  {selectedKeys.size > 0 ? `${selectedKeys.size} selected` : 'Select all on this page'}
+                </span>
+              </div>
+            )}
 
-            return (
-              <div
-                key={key.id}
-                className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded hover:border-zinc-600 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-4 mb-2">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Key className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                    <code className="font-mono text-sm text-zinc-200 font-bold truncate">{key.code}</code>
-                  </div>
+            {/* Keys */}
+            {filteredKeys.map((key) => {
+              const expiresAt = key.expiresAt ? new Date(key.expiresAt) : null;
+              const isExpired = expiresAt && expiresAt < new Date();
+              const isSelected = selectedKeys.has(key.id);
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`text-xs px-2 py-1 rounded ${getStatusColor(key.status)}`}>
-                      {key.status}
-                    </span>
-                  </div>
-                </div>
+              return (
+                <div
+                  key={key.id}
+                  className={`p-4 border rounded transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-orange-500/10 border-orange-500/40'
+                      : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600'
+                  }`}
+                  onClick={() => key.status !== 'REDEEMED' && key.status !== 'REVOKED' && toggleKeySelection(key.id)}
+                >
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {key.status !== 'REDEEMED' && key.status !== 'REVOKED' && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleKeySelection(key.id)}
+                          className="w-4 h-4 cursor-pointer flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                      <Key className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                      <code className="font-mono text-sm text-zinc-200 font-bold truncate">{key.code}</code>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3 text-xs mb-3">
-                  <div>
-                    <span className="text-zinc-500">Rank:</span>
-                    <p className="text-zinc-300 font-mono">{key.grants_rank}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Expiration:</span>
-                    <p className="text-zinc-300">Never</p>
-                  </div>
-                </div>
-
-                {key.grants_roles && key.grants_roles.length > 0 && (
-                  <div className="mb-3">
-                    <span className="text-zinc-500 text-xs block mb-1">Grants:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {key.grants_roles.map((role) => (
-                        <span key={role} className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded">
-                          {role}
-                        </span>
-                      ))}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`text-xs px-2 py-1 rounded ${getStatusColor(key.status)}`}>
+                        {key.status}
+                      </span>
                     </div>
                   </div>
-                )}
 
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleCopyCode(key.code)}
-                    className="text-zinc-400 hover:text-orange-400"
-                  >
-                    <Copy className="w-4 h-4 mr-1" />
-                    Copy
-                  </Button>
-                  {key.status !== 'REVOKED' && key.status !== 'REDEEMED' && (
+                  <div className="grid grid-cols-2 gap-3 text-xs mb-3">
+                    <div>
+                      <span className="text-zinc-500">Rank:</span>
+                      <p className="text-zinc-300 font-mono">{key.grants_rank}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Created:</span>
+                      <p className="text-zinc-300">{format(new Date(key.created_date), 'MMM dd, yyyy')}</p>
+                    </div>
+                  </div>
+
+                  {key.grants_roles && key.grants_roles.length > 0 && (
+                    <div className="mb-3">
+                      <span className="text-zinc-500 text-xs block mb-1">Grants:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {key.grants_roles.map((role) => (
+                          <span key={role} className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded">
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 justify-end">
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleRevokeKey(key.id)}
-                      className="text-zinc-400 hover:text-red-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyCode(key.code);
+                      }}
+                      className="text-zinc-400 hover:text-orange-400"
                     >
-                      <Lock className="w-4 h-4 mr-1" />
-                      Revoke
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copy
                     </Button>
-                  )}
+                    {key.status !== 'REVOKED' && key.status !== 'REDEEMED' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRevokeKey(key.id);
+                        }}
+                        className="text-zinc-400 hover:text-red-400"
+                      >
+                        <Lock className="w-4 h-4 mr-1" />
+                        Revoke
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </>
         )}
       </div>
 
