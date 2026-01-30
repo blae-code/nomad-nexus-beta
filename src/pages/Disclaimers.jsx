@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight, Download, Shield, Lock, Database, Brain, AlertCircle, CheckCircle2, Zap, Eye, Server } from 'lucide-react';
-import { isDevMode } from '@/components/utils/devMode';
+import { useAuth } from '@/components/providers/AuthProvider';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 const glowStyle = `
   @keyframes glow-pulse {
@@ -23,29 +24,13 @@ const glowStyle = `
 `;
 
 export default function Disclaimers() {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
   const [acceptedPWA, setAcceptedPWA] = useState(false);
   const [acceptedData, setAcceptedData] = useState(false);
   const [acceptedAI, setAcceptedAI] = useState(false);
   const [aiDefaults, setAiDefaults] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        if (!currentUser) {
-          window.location.href = createPageUrl('AccessGate');
-          return;
-        }
-        setUser(currentUser);
-      } catch (err) {
-        window.location.href = createPageUrl('AccessGate');
-      }
-    };
-    checkAuth();
-  }, []);
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
@@ -82,15 +67,8 @@ export default function Disclaimers() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-red-500 text-xl font-black uppercase tracking-widest">Initializing...</div>
-      </div>
-    );
-  }
-
   return (
+    <RouteGuard requiredAuth="authenticated">
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
       <style>{glowStyle}</style>
       
@@ -495,5 +473,6 @@ export default function Disclaimers() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }
