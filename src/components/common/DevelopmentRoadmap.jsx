@@ -1,28 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CheckCircle2, AlertCircle, Clock, Target, Zap, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MODULE_STATUS } from '@/components/constants/moduleStatus';
 
 export default function DevelopmentRoadmap() {
   const [expanded, setExpanded] = useState(true);
   
-  // Group modules by completion status
-  const MODULE_STATUS = {
-    MissionControl: { name: 'Mission Control', completed: 60 },
-    CommsConsole: { name: 'Comms Array', completed: 70 },
-    Settings: { name: 'System Admin', completed: 75 },
-    AccessGate: { name: 'Access Gate', completed: 100 },
-    Hub: { name: 'Command Hub', completed: 65 },
-    NomadRegistry: { name: 'Nomad Registry', completed: 30 },
-    FleetCommand: { name: 'Fleet Command', completed: 25 },
-    DataVault: { name: 'Data Vault', completed: 25 },
-    QAConsole: { name: 'QA Console', completed: 100 },
-    FrontierOps: { name: 'Frontier Ops', completed: 25 },
-    TradeNexus: { name: 'Trade Nexus', completed: 20 },
-    WarAcademy: { name: 'War Academy', completed: 18 },
-    IntelNexus: { name: 'Intel Nexus', completed: 12 },
-    HighCommand: { name: 'High Command', completed: 10 },
-    NexusTraining: { name: 'Nexus Training', completed: 10 },
-  };
+  // Calculate completion percentages dynamically based on features
+  const calculateCompletion = useMemo(() => {
+    return Object.entries(MODULE_STATUS).reduce((acc, [key, module]) => {
+      const totalFeatures = module.features.length;
+      const completedFeatures = module.features.filter(f => f.status === 'complete').length;
+      const inProgressFeatures = module.features.filter(f => f.status === 'in-progress').length;
+      
+      // Formula: completed features + 0.5 * in-progress features
+      const completion = totalFeatures > 0 
+        ? Math.round(((completedFeatures + inProgressFeatures * 0.5) / totalFeatures) * 100)
+        : module.completed || 0;
+      
+      acc[key] = { ...module, calculated: completion };
+      return acc;
+    }, {});
+  }, []);
 
   const moduleGroups = {
     complete: Object.entries(MODULE_STATUS)
