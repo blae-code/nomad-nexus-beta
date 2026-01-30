@@ -140,10 +140,11 @@ export default function Hub() {
         </div>
       </div>
     </div>
-      );
-      }
+    </RouteGuard>
+    );
+    }
 
-      function ModuleCard({ item, index }) {
+    function ModuleCard({ item, index }) {
   const Icon = item.icon;
   const status = MODULE_STATUS[item.path];
   const statusPercentage = status?.completed || 0;
