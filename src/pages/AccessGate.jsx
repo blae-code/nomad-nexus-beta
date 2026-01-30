@@ -32,18 +32,11 @@ export default function AccessGate() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Dev mode check - synchronous, no auth needed
-    if (isDevMode()) {
-      window.location.href = createPageUrl('Hub');
-      return;
-    }
-
-    // Only check auth if not in dev mode
     const checkAuth = async () => {
       try {
         const isAuth = await base44.auth.isAuthenticated();
         if (isAuth) {
-          window.location.href = createPageUrl('Hub');
+          window.location.href = createPageUrl('Disclaimers');
         }
       } catch (err) {
         // Silently ignore auth errors - user is unauthenticated, which is expected

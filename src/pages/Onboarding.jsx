@@ -38,12 +38,6 @@ export default function Onboarding() {
   });
 
   useEffect(() => {
-    // Dev mode - allow access
-    if (isDevMode()) {
-      setUser({ id: 'dev', email: 'dev@localhost', role: 'user' });
-      return;
-    }
-
     const checkAuth = async () => {
       try {
         const currentUser = await base44.auth.me();

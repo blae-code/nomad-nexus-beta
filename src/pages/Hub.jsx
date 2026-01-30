@@ -19,12 +19,6 @@ export default function Hub() {
   const activeOp = useActiveOp();
 
   useEffect(() => {
-    // Dev mode - skip all auth
-    if (isDevMode()) {
-      setLoading(false);
-      return;
-    }
-
     const checkAuth = async () => {
       try {
         const isAuth = await base44.auth.isAuthenticated();
@@ -37,7 +31,7 @@ export default function Hub() {
         if (authUser.role !== 'admin') {
           const profiles = await base44.entities.MemberProfile.filter({ user_id: authUser.id });
           if (profiles.length === 0 || !profiles[0].onboarding_completed) {
-            window.location.href = createPageUrl('Onboarding');
+            window.location.href = createPageUrl('Disclaimers');
             return;
           }
         }
