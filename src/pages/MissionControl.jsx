@@ -12,6 +12,9 @@ import EventCalendarView from '@/components/events/EventCalendarView';
 import EventTemplateManager from '@/components/events/EventTemplateManager';
 import EventRecurrenceManager from '@/components/events/EventRecurrenceManager';
 import EventNotificationManager from '@/components/events/EventNotificationManager';
+import MissionBlueprints from '@/components/missions/MissionBlueprints';
+import SmartScheduling from '@/components/missions/SmartScheduling';
+import ThreatDatabase from '@/components/missions/ThreatDatabase';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
