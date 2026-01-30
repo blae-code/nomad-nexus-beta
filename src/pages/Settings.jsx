@@ -164,13 +164,17 @@ export default function Settings() {
 
             {/* Content */}
             <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-lg p-6 overflow-hidden">
-              <div className="max-w-full overflow-x-auto">
-                {activeTab === 'users' && <UserManagement />}
-                {activeTab === 'keys' && <AccessKeyManager />}
-                {activeTab === 'validation' && <DataValidation />}
-                {activeTab === 'diagnostics' && <DiagnosticsBundle />}
-                {activeTab === 'seed' && <ImmersiveSeed />}
-                {activeTab === 'reset' && <FactoryReset />}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-full">
+                <div className="overflow-x-auto">
+                  {activeTab === 'users' && <UserManagement />}
+                  {activeTab === 'keys' && <AccessKeyManager />}
+                  {activeTab === 'validation' && <DataValidation />}
+                </div>
+                <div className="overflow-x-auto">
+                  {activeTab === 'diagnostics' && <DiagnosticsBundle />}
+                  {activeTab === 'seed' && <ImmersiveSeed />}
+                  {activeTab === 'reset' && <FactoryReset />}
+                </div>
               </div>
             </div>
           </>
