@@ -123,8 +123,9 @@ Deno.serve(async (req) => {
        status: newStatus
      });
 
-     // Only update member profile if user exists
+     // Handle profile creation/update
      if (user) {
+       // User is authenticated - update or create profile
        let profile = null;
        const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
        if (profiles && profiles.length > 0) {
@@ -157,6 +158,11 @@ Deno.serve(async (req) => {
          step_name: 'access_control',
          status: 'success'
        }).catch(err => console.error('Audit log error:', err));
+     } else {
+       // Unauthenticated user - store redemption data in key for later profile creation during onboarding
+       await base44.asServiceRole.entities.AccessKey.update(key.id, {
+         pending_callsign: callsign.trim()
+       });
      }
 
       clearFailures(userId);
@@ -165,7 +171,8 @@ Deno.serve(async (req) => {
         success: true,
         grants_rank: key.grants_rank,
         grants_roles: key.grants_roles,
-        message: 'Access code redeemed successfully'
+        code_hash: key.code.substring(0, 4) + '****' + key.code.substring(key.code.length - 4),
+        message: 'Access code redeemed successfully - complete registration on next screen'
       });
      } catch (error) {
       console.error('redeemAccessKey error:', error);
