@@ -52,11 +52,14 @@ export default function Layout({ children, currentPageName }) {
   }
 
   // Single AuthProvider at app root (wraps all pages)
+  // TailwindReadyGate ensures styles load before rendering anything
   return (
-    <AuthProvider>
-      <AuthDebugOverlay />
-      <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
-    </AuthProvider>
+    <TailwindReadyGate timeoutMs={8000}>
+      <AuthProvider>
+        <AuthDebugOverlay />
+        <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
+      </AuthProvider>
+    </TailwindReadyGate>
   );
 }
 
