@@ -152,6 +152,10 @@ export default function QAConsole() {
             <DataGenerator />
           </TabsContent>
 
+          <TabsContent value="voice">
+            <VoiceDebugPanel />
+          </TabsContent>
+
           <TabsContent value="logs">
             <LogsViewer />
           </TabsContent>
