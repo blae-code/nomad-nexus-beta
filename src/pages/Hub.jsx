@@ -129,6 +129,9 @@ export default function Hub() {
                           <h3 className="text-xs font-bold text-white uppercase tracking-wider leading-tight">
                             {item.name}
                           </h3>
+                          <p className="text-[10px] text-zinc-400 leading-tight line-clamp-2">
+                            {item.description}
+                          </p>
                           {status && (
                             <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full flex items-center justify-center gap-1">
                               <span className={`text-[10px] font-mono font-bold ${getStatusColor(statusPercentage)}`}>{statusPercentage}%</span>

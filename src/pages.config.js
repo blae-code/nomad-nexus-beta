@@ -52,6 +52,7 @@ import CommsConsole from './pages/CommsConsole';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
 import Hub from './pages/Hub';
+import MissionControl from './pages/MissionControl';
 import Onboarding from './pages/Onboarding';
 import PageNotFound from './pages/PageNotFound';
 import QAConsole from './pages/QAConsole';
@@ -61,7 +62,6 @@ import SystemAdmin from './pages/SystemAdmin';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import MissionControl from './pages/MissionControl';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +71,7 @@ export const PAGES = {
     "Events": Events,
     "FleetManager": FleetManager,
     "Hub": Hub,
+    "MissionControl": MissionControl,
     "Onboarding": Onboarding,
     "PageNotFound": PageNotFound,
     "QAConsole": QAConsole,
@@ -80,7 +81,6 @@ export const PAGES = {
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "MissionControl": MissionControl,
 }
 
 export const pagesConfig = {
