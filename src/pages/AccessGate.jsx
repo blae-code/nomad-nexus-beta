@@ -58,24 +58,63 @@ export default function AccessGate() {
     
     try {
       const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
-            if (response?.data?.success) {
-                          setMessage('Access granted! Redirecting...');
-                          setTimeout(() => {
-                            window.location.href = createPageUrl('Disclaimers');
-                          }, 1500);
-                        } else {
-              const errorMsg = response?.data?.message || 'Invalid credentials';
-              if (errorMsg.includes('REVOKED') || errorMsg.includes('revoked')) {
-                setMessage('⸻ Authorization Revoked ⸻\n\nThis access code has been deactivated. Contact your issuing officer for reissuance.\n\n⸻');
-              } else {
-                setMessage(errorMsg);
-              }
-            }
+      
+      if (response?.data?.success) {
+        // Auth granted by backend, now verify it's established on client
+        setMessage('Access granted! Confirming authentication...');
+        setVerifyingAuth(true);
+        
+        try {
+          // Wait up to 10 seconds for auth confirmation
+          const confirmAuthPromise = confirmAuthEstablished();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Auth confirmation timeout')), 10000)
+          );
+          
+          await Promise.race([confirmAuthPromise, timeoutPromise]);
+          
+          // Auth confirmed, redirect to Disclaimers
+          setMessage('Authorization confirmed. Redirecting...');
+          setTimeout(() => {
+            window.location.href = createPageUrl('Disclaimers');
+          }, 800);
+        } catch (authErr) {
+          setVerifyingAuth(false);
+          setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);
+          setLoading(false);
+        }
+      } else {
+        const errorMsg = response?.data?.message || 'Invalid credentials';
+        if (errorMsg.includes('REVOKED') || errorMsg.includes('revoked')) {
+          setMessage('⸻ Authorization Revoked ⸻\n\nThis access code has been deactivated. Contact your issuing officer for reissuance.\n\n⸻');
+        } else {
+          setMessage(errorMsg);
+        }
+        setLoading(false);
+      }
     } catch (error) {
       console.error('Redeem error:', error);
       setMessage('Error validating credentials');
-    } finally {
       setLoading(false);
+    }
+  };
+
+  const confirmAuthEstablished = async () => {
+    try {
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) {
+        throw new Error('Session not established');
+      }
+      
+      // Also verify we can fetch user data
+      const user = await base44.auth.me();
+      if (!user) {
+        throw new Error('User data unavailable');
+      }
+      
+      return true;
+    } catch (err) {
+      throw new Error(err.message || 'Auth verification failed');
     }
   };
 
