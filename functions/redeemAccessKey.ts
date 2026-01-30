@@ -77,8 +77,10 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, message: 'Callsign is required' }, { status: 400 });
     }
 
-    // Find key (atomically)
-    const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+    // Find key (atomically) - use service role to look up
+    // This ensures unauthenticated users can still redeem keys
+    const sdkClient = user ? base44 : base44.asServiceRole;
+    const keys = await sdkClient.entities.AccessKey.filter({ code });
 
     if (!keys || keys.length === 0) {
       recordFailure(userId);
