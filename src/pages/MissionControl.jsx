@@ -40,7 +40,7 @@ export default function MissionControl() {
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showPlanningTools, setShowPlanningTools] = useState(null);
+  const [showAITools, setShowAITools] = useState(null); // 'blueprints', 'scheduling', 'threats'
 
   // Objective form
   const [objectiveForm, setObjectiveForm] = useState({
@@ -113,21 +113,21 @@ export default function MissionControl() {
     setShowTemplates(false);
   };
 
-  const handleBlueprintSelect = (blueprintTemplate) => {
+  const handleBlueprintSelect = (blueprintData) => {
     setEventForm((prev) => ({
       ...prev,
-      ...blueprintTemplate,
+      ...blueprintData,
       start_time: prev.start_time || '',
     }));
-    setShowPlanningTools(null);
+    setShowAITools(null);
   };
 
   const handleScheduleSelected = (scheduleData) => {
     setEventForm((prev) => ({
       ...prev,
-      start_time: scheduleData.start_time,
+      ...scheduleData,
     }));
-    setShowPlanningTools(null);
+    setShowAITools(null);
   };
 
   const addObjective = async () => {
@@ -236,9 +236,15 @@ export default function MissionControl() {
           <h1 className="text-3xl font-black uppercase tracking-wider text-white">Mission Control</h1>
           <p className="text-zinc-400 text-sm">Operations planning, execution, and reporting</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowTemplates(true)} variant="outline">
-            📋 Templates
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => setShowAITools('blueprints')} variant="outline" size="sm">
+            ✨ Blueprints
+          </Button>
+          <Button onClick={() => setShowAITools('scheduling')} variant="outline" size="sm">
+            🧠 Smart Schedule
+          </Button>
+          <Button onClick={() => setShowAITools('threats')} variant="outline" size="sm">
+            🛡️ Threats
           </Button>
           <Button onClick={() => setShowCreateEvent(true)}>
             <Plus className="w-4 h-4 mr-2" />
