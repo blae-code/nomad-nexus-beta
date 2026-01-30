@@ -34,11 +34,14 @@ export default function PermissionGuard({
     );
   }
 
-  // No user (shouldn't happen with fallback, but safety check)
+  // No user - redirect to login
   if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = createPageUrl('AccessGate');
+    }
     return fallback || (
       <div className="p-4 text-center text-orange-500">
-        Not authenticated
+        Redirecting to authentication...
       </div>
     );
   }
