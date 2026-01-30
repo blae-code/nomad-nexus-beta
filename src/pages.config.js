@@ -64,6 +64,7 @@ import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import MemberManagement from './pages/MemberManagement';
 import MemberProgression from './pages/MemberProgression';
+import FleetTracking from './pages/FleetTracking';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +86,7 @@ export const PAGES = {
     "UserDirectory": UserDirectory,
     "MemberManagement": MemberManagement,
     "MemberProgression": MemberProgression,
+    "FleetTracking": FleetTracking,
 }
 
 export const pagesConfig = {
