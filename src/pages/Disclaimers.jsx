@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight, Download, Shield, Lock, Database, Brain, AlertCircle, CheckCircle2, Zap, Eye, Server } from 'lucide-react';
+import { isDevMode } from '@/components/utils/devMode';
 
 const glowStyle = `
   @keyframes glow-pulse {
@@ -31,6 +32,12 @@ export default function Disclaimers() {
   const [aiDefaults, setAiDefaults] = useState(true);
 
   useEffect(() => {
+    // Dev mode - allow access
+    if (isDevMode()) {
+      setUser({ id: 'dev', email: 'dev@localhost', role: 'user' });
+      return;
+    }
+
     const checkAuth = async () => {
       try {
         const currentUser = await base44.auth.me();
