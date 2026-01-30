@@ -108,23 +108,23 @@ export default function Onboarding() {
       <style>{glowStyle}</style>
       
       {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
+      <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-slate-950 to-slate-900/40 opacity-60" />
       
       {/* Dynamic grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.02)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(220,38,38,0.03)_1px,transparent_1px),linear-gradient(rgba(30,41,59,0.03)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
       
       {/* Animated scanline effect */}
       <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
       
       {/* Corner accents */}
-      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-orange-500/40 opacity-50" />
-      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-orange-500/40 opacity-50" />
-      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-orange-500/40 opacity-50" />
-      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-orange-500/40 opacity-50" />
+      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-red-500/40 opacity-50" />
+      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-red-500/40 opacity-50" />
+      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-red-500/40 opacity-50" />
+      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
       
       {/* Subtle background glow */}
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-orange-500/8 rounded-full blur-3xl opacity-20" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl opacity-20" />
+      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-500/8 rounded-full blur-3xl opacity-20" />
+      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-500/5 rounded-full blur-3xl opacity-20" />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
@@ -145,12 +145,12 @@ export default function Onboarding() {
 
           {/* Step 1: Welcome */}
           {step === 1 && (
-           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
              <div className="flex items-center justify-center mb-6">
                <div className="relative">
-                 <div className="absolute inset-0 bg-orange-500/30 rounded-lg blur-2xl animate-pulse" />
-                 <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center">
-                   <Flame className="w-10 h-10 text-orange-300" />
+                 <div className="absolute inset-0 bg-red-500/30 rounded-lg blur-2xl animate-pulse" />
+                 <div className="relative w-20 h-20 rounded-lg bg-gradient-to-br from-red-500/40 to-red-600/15 border-2 border-red-500/60 flex items-center justify-center">
+                   <Flame className="w-10 h-10 text-red-300" />
                  </div>
                </div>
               </div>
@@ -176,7 +176,7 @@ export default function Onboarding() {
 
           {/* Step 2: Identity */}
           {step === 2 && (
-           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
               <div className="flex items-center gap-3 mb-6">
                 <Compass className="w-8 h-8 text-orange-500" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
@@ -192,7 +192,7 @@ export default function Onboarding() {
                   <Input
                     value={formData.rsiCallsign}
                     disabled
-                    className="bg-zinc-900/60 border-2 border-orange-500/30 text-zinc-400 cursor-not-allowed"
+                    className="bg-slate-900/60 border-2 border-red-500/30 text-slate-400 cursor-not-allowed"
                   />
                   <p className="text-xs text-zinc-600 mt-1">This is your verified Star Citizen identity</p>
                 </div>
@@ -205,7 +205,7 @@ export default function Onboarding() {
                     placeholder="Choose your display name..."
                     value={formData.nomadCallsign}
                     onChange={(e) => setFormData({ ...formData, nomadCallsign: e.target.value })}
-                    className="bg-zinc-900/60 border-2 border-orange-500/30 focus:border-orange-500/60 focus:bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 transition-all duration-200"
+                    className="bg-slate-900/60 border-2 border-red-500/30 focus:border-red-500/60 focus:bg-slate-900 text-white placeholder:text-slate-600 transition-all duration-200"
                   />
                   <p className="text-xs text-zinc-600 mt-1">
                     This is how you'll appear to other Nomads. Can be changed anytime.
@@ -220,7 +220,7 @@ export default function Onboarding() {
                     placeholder="Tell us your story, wanderer..."
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    className="bg-zinc-900/60 border-2 border-orange-500/30 focus:border-orange-500/60 focus:bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-24 transition-all duration-200"
+                    className="bg-slate-900/60 border-2 border-red-500/30 focus:border-red-500/60 focus:bg-slate-900 text-white placeholder:text-slate-600 h-24 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -238,7 +238,7 @@ export default function Onboarding() {
 
           {/* Step 3: The Code */}
           {step === 3 && (
-           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
               <div className="flex items-center gap-3 mb-6">
                 <Shield className="w-8 h-8 text-orange-500" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
@@ -246,7 +246,7 @@ export default function Onboarding() {
                 </h2>
               </div>
 
-              <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6 mb-6 space-y-3 max-h-64 overflow-y-auto">
+              <div className="bg-slate-900/50 border-2 border-slate-800 p-6 mb-6 space-y-3 max-h-64 overflow-y-auto">
                 <div className="text-sm text-zinc-300 space-y-2">
                   <p className="text-orange-400 font-bold">Rules to be followed by all who wander with us:</p>
                   <p>1. <span className="text-orange-400">Help First. Combat Second.</span> Redscar will always try to help wanderers, no matter background or status.</p>
@@ -262,10 +262,10 @@ export default function Onboarding() {
               <label className="flex items-start gap-3 mb-6 cursor-pointer group">
                 <div className={`mt-0.5 w-5 h-5 border-2 flex items-center justify-center transition-all ${
                   formData.acceptedCode 
-                    ? 'border-orange-500 bg-orange-500/20' 
-                    : 'border-zinc-700 group-hover:border-zinc-600'
+                    ? 'border-red-500 bg-red-500/20' 
+                    : 'border-slate-700 group-hover:border-slate-600'
                 }`}>
-                  {formData.acceptedCode && <Check className="w-3 h-3 text-orange-500" />}
+                  {formData.acceptedCode && <Check className="w-3 h-3 text-red-500" />}
                 </div>
                 <div className="flex-1">
                   <input
@@ -274,8 +274,8 @@ export default function Onboarding() {
                     onChange={(e) => setFormData({ ...formData, acceptedCode: e.target.checked })}
                     className="sr-only"
                   />
-                  <span className="text-sm text-zinc-300">
-                    I accept and will abide by <span className="text-orange-400 font-bold">The Redscar Code</span>
+                  <span className="text-sm text-white">
+                    I accept and will abide by <span className="text-red-400 font-bold">The Redscar Code</span>
                   </span>
                 </div>
               </label>
@@ -293,7 +293,7 @@ export default function Onboarding() {
 
           {/* Step 4: AI Consent */}
           {step === 4 && (
-           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
              <div className="flex items-center gap-3 mb-6">
                <Brain className="w-8 h-8 text-orange-400" />
                 <h2 className="text-2xl font-black uppercase tracking-widest text-white">
@@ -311,14 +311,14 @@ export default function Onboarding() {
 
               <div className="space-y-5 mb-6">
                 {/* Main AI Features Toggle */}
-                <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded">
+                <div className="bg-slate-900/40 border border-slate-800 p-5 rounded">
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <div className={`mt-1 w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                       formData.aiConsent 
-                        ? 'border-orange-500 bg-orange-500/20' 
-                        : 'border-zinc-700 group-hover:border-zinc-600'
+                        ? 'border-red-500 bg-red-500/20' 
+                        : 'border-slate-700 group-hover:border-slate-600'
                     }`}>
-                      {formData.aiConsent && <Check className="w-3 h-3 text-orange-500" />}
+                      {formData.aiConsent && <Check className="w-3 h-3 text-red-500" />}
                     </div>
                     <div className="flex-1">
                       <input
@@ -353,14 +353,14 @@ export default function Onboarding() {
 
                 {/* Conversation History Sub-option */}
                 {formData.aiConsent && (
-                  <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded ml-6">
+                  <div className="bg-slate-900/40 border border-slate-800 p-5 rounded ml-6">
                     <label className="flex items-start gap-3 cursor-pointer group">
                       <div className={`mt-1 w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        formData.aiUseHistory 
-                          ? 'border-orange-500 bg-orange-500/20' 
-                          : 'border-zinc-700 group-hover:border-zinc-600'
-                      }`}>
-                        {formData.aiUseHistory && <Check className="w-3 h-3 text-orange-500" />}
+                          formData.aiUseHistory 
+                            ? 'border-red-500 bg-red-500/20' 
+                            : 'border-slate-700 group-hover:border-slate-600'
+                        }`}>
+                        {formData.aiUseHistory && <Check className="w-3 h-3 text-red-500" />}
                       </div>
                       <div className="flex-1">
                         <input
@@ -408,12 +408,12 @@ export default function Onboarding() {
 
           {/* Step 5: Confirmation */}
           {step === 5 && (
-           <div className="border-2 border-orange-500/50 bg-zinc-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-orange-500/20 glow-box">
+           <div className="border-2 border-red-500/50 bg-slate-950/85 backdrop-blur-xl p-8 shadow-2xl shadow-red-500/20 glow-box">
              <div className="flex items-center justify-center mb-6">
                <div className="relative">
-                 <div className="absolute inset-0 bg-orange-500/30 rounded-lg blur-2xl animate-pulse" />
-                 <div className="relative w-16 h-16 rounded-lg bg-gradient-to-br from-orange-500/40 to-orange-600/15 border-2 border-orange-500/60 flex items-center justify-center">
-                   <Flame className="w-8 h-8 text-orange-300" />
+                 <div className="absolute inset-0 bg-red-500/30 rounded-lg blur-2xl animate-pulse" />
+                 <div className="relative w-16 h-16 rounded-lg bg-gradient-to-br from-red-500/40 to-red-600/15 border-2 border-red-500/60 flex items-center justify-center">
+                   <Flame className="w-8 h-8 text-red-300" />
                  </div>
                </div>
               </div>
@@ -427,26 +427,26 @@ export default function Onboarding() {
                 Your journey on The Eternal Voyage begins now.
               </p>
 
-              <div className="bg-zinc-900/50 border-2 border-zinc-800 p-6 mb-6 space-y-3">
+              <div className="bg-slate-900/50 border-2 border-slate-800 p-6 mb-6 space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500 font-bold uppercase tracking-wide">RSI Callsign:</span>
+                  <span className="text-slate-500 font-bold uppercase tracking-wide">RSI Callsign:</span>
                   <span className="text-white font-mono">{formData.rsiCallsign}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500 font-bold uppercase tracking-wide">Display Name:</span>
+                  <span className="text-slate-500 font-bold uppercase tracking-wide">Display Name:</span>
                   <span className="text-white font-mono">{formData.nomadCallsign || formData.rsiCallsign}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500 font-bold uppercase tracking-wide">Rank:</span>
-                  <span className="text-orange-400 font-bold">VAGRANT</span>
+                  <span className="text-slate-500 font-bold uppercase tracking-wide">Rank:</span>
+                  <span className="text-red-400 font-bold">VAGRANT</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500 font-bold uppercase tracking-wide">Code Accepted:</span>
+                  <span className="text-slate-500 font-bold uppercase tracking-wide">Code Accepted:</span>
                   <span className="text-green-400 font-bold">YES</span>
                 </div>
               </div>
 
-              <div className="bg-orange-500/10 border-l-4 border-orange-500 p-4 mb-6">
+              <div className="bg-red-500/10 border-l-4 border-red-500 p-4 mb-6">
                 <p className="text-xs text-zinc-300 italic">
                   "The nomadic theme runs deep. Not only in our playstyle of constant motion, 
                   but also in real life. Members always knowing they have a bonfire to come back to."
