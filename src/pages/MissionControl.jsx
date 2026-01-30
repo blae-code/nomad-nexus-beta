@@ -215,10 +215,23 @@ export default function MissionControl() {
           <h1 className="text-3xl font-black uppercase tracking-wider text-white">Mission Control</h1>
           <p className="text-zinc-400 text-sm">Operations planning, execution, and reporting</p>
         </div>
-        <Button onClick={() => setShowCreateEvent(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Operation
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowTemplates(true)} variant="outline">
+            📋 Templates
+          </Button>
+          <Button onClick={() => setShowCreateEvent(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Operation
+          </Button>
+        </div>
+      </div>
+
+      {/* Calendar View */}
+      <div className="mb-6">
+        <EventCalendarView events={events} onEventClick={(event) => {
+          setSelectedEvent(event);
+          loadEventDetails(event.id);
+        }} />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
