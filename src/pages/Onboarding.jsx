@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Shield, Compass, Flame, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
-import { isDevMode } from '@/components/utils/devMode';
+import { useAuth } from '@/components/providers/AuthProvider';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 const glowStyle = `
   @keyframes glow-pulse {
@@ -25,9 +26,9 @@ const glowStyle = `
 `;
 
 export default function Onboarding() {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     rsiCallsign: '',
     nomadCallsign: '',
@@ -37,37 +38,23 @@ export default function Onboarding() {
     aiUseHistory: true,
   });
 
+  // Load user's existing callsign
   useEffect(() => {
-    const checkAuth = async () => {
+    if (!user) return;
+    
+    const loadProfile = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        if (!currentUser) {
-          window.location.href = createPageUrl('AccessGate');
-          return;
+        const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+        if (profiles.length > 0) {
+          setFormData(prev => ({ ...prev, rsiCallsign: profiles[0]?.callsign || '' }));
         }
-        
-        // Admin users skip onboarding
-        if (currentUser.role === 'admin') {
-          window.location.href = createPageUrl('Hub');
-          return;
-        }
-        
-        // Check if already onboarded
-        const profiles = await base44.entities.MemberProfile.filter({ user_id: currentUser.id });
-        if (profiles.length > 0 && profiles[0].onboarding_completed) {
-          window.location.href = createPageUrl('Hub');
-          return;
-        }
-        
-        setUser(currentUser);
-        setFormData(prev => ({ ...prev, rsiCallsign: profiles[0]?.callsign || '' }));
       } catch (err) {
-        console.error('Auth error:', err);
-        window.location.href = createPageUrl('AccessGate');
+        console.error('Profile load error:', err);
       }
     };
-    checkAuth();
-  }, []);
+    
+    loadProfile();
+  }, [user]);
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
@@ -96,15 +83,8 @@ export default function Onboarding() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-         <div className="text-red-500 text-xl font-black uppercase tracking-widest">Initializing...</div>
-      </div>
-    );
-  }
-
   return (
+    <RouteGuard requiredAuth="authenticated">
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
       <style>{glowStyle}</style>
       
@@ -465,5 +445,6 @@ export default function Onboarding() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }
