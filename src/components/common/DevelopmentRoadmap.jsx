@@ -48,7 +48,7 @@ export default function DevelopmentRoadmap() {
     NomadRegistry: { name: 'Nomad Registry', completed: 40 },
     FleetCommand: { name: 'Fleet Command', completed: 35 },
     DataVault: { name: 'Data Vault', completed: 30 },
-    QAConsole: { name: 'QA Console', completed: 25 },
+    QAConsole: { name: 'QA Console', completed: 100 },
     FrontierOps: { name: 'Frontier Ops', completed: 25 },
     WarAcademy: { name: 'War Academy', completed: 20 },
     TradeNexus: { name: 'Trade Nexus', completed: 25 },
