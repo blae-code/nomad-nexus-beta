@@ -3,6 +3,7 @@ import '@/globals.css';
 import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import ConstructionTicker from '@/components/layout/ConstructionTicker';
+import CSSDebugOverlay from '@/components/debug/CSSDebugOverlay';
 
 import ContextPanel from '@/components/layout/ContextPanel';
 
