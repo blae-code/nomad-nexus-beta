@@ -1,10 +1,12 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/providers/AuthProvider';
 import LoadingScreen from '@/components/common/LoadingScreen';
 import { createPageUrl } from '@/utils';
 
 /**
  * RouteGuard - Handles route protection and redirects based on auth state
+ * Uses Navigate for safe client-side routing (no direct window.location.href during render)
  * @param {string} requiredAuth - 'none' | 'authenticated' | 'onboarded'
  * @param {ReactNode} children - Page content to render
  */
@@ -16,27 +18,39 @@ export default function RouteGuard({ requiredAuth = 'authenticated', children })
     return <LoadingScreen />;
   }
 
-  // Route: public (no auth required)
+  // Route: public (no auth required) - allow once initialized
   if (requiredAuth === 'none') {
     return children;
   }
 
   // No user, redirect to AccessGate
   if (!user) {
-    window.location.href = createPageUrl('AccessGate');
-    return <LoadingScreen />;
+    return (
+      <>
+        <LoadingScreen />
+        <Navigate to={createPageUrl('AccessGate')} replace />
+      </>
+    );
   }
 
-  // User is authenticated but not disclaimers/onboarded - redirect to Disclaimers
+  // User is authenticated but incomplete onboarding flow
   if (requiredAuth === 'onboarded' && user.role !== 'admin') {
     if (!disclaimersCompleted) {
-      window.location.href = createPageUrl('Disclaimers');
-      return <LoadingScreen />;
+      return (
+        <>
+          <LoadingScreen />
+          <Navigate to={createPageUrl('Disclaimers')} replace />
+        </>
+      );
     }
 
     if (!onboardingCompleted) {
-      window.location.href = createPageUrl('Onboarding');
-      return <LoadingScreen />;
+      return (
+        <>
+          <LoadingScreen />
+          <Navigate to={createPageUrl('Onboarding')} replace />
+        </>
+      );
     }
   }
 
