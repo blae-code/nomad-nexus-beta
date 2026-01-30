@@ -167,7 +167,7 @@ export default function Hub() {
                             <div key={idx} className={`flex items-start gap-2 text-xs ${bgColor} p-2 rounded`}>
                               <FeatureIcon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${featureColor}`} />
                               <div>
-                                <div className={`font-semibold ${featureColor}`}>{feature.name}</div>
+                                <div className="font-semibold text-white">{feature.name}</div>
                                 <div className="text-zinc-500 text-[10px] capitalize mt-0.5">
                                   {feature.status === 'complete' && 'Ready to use'}
                                   {feature.status === 'in-progress' && 'Currently in development'}
