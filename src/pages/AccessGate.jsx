@@ -89,10 +89,10 @@ export default function AccessGate() {
       <style>{scanlineStyle}</style>
       
       {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-zinc-950 to-zinc-950 opacity-60" />
-      
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-zinc-950 to-purple-950/20 opacity-60" />
+
       {/* Dynamic grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,88,12,0.02)_1px,transparent_1px),linear-gradient(rgba(234,88,12,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(217,119,6,0.02)_1px,transparent_1px),linear-gradient(rgba(88,28,135,0.02)_1px,transparent_1px)] bg-[length:40px_40px] opacity-40" />
       
       {/* Animated scanline effect */}
       <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
