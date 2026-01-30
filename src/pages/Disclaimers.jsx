@@ -93,24 +93,20 @@ export default function Disclaimers() {
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
       <style>{glowStyle}</style>
       
-      {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
       <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
       
-      {/* Corner accents */}
       <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-red-500/40 opacity-50" />
       <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-red-500/40 opacity-50" />
       <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-red-500/40 opacity-50" />
       <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
       
-      {/* Subtle background glow */}
       <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
       <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
-          {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex justify-between mb-2">
               {[1, 2, 3].map((s) => (
