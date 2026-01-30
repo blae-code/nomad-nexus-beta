@@ -23,25 +23,19 @@ export default function RouteGuard({ requiredAuth = 'authenticated', children })
 
   // No user, redirect to AccessGate
   if (!user) {
-    React.useEffect(() => {
-      window.location.href = createPageUrl('AccessGate');
-    }, []);
+    window.location.href = createPageUrl('AccessGate');
     return <LoadingScreen />;
   }
 
   // User is authenticated but not disclaimers/onboarded - redirect to Disclaimers
-  if (requiredAuth === 'onboarded' && !user.role === 'admin') {
+  if (requiredAuth === 'onboarded' && user.role !== 'admin') {
     if (!disclaimersCompleted) {
-      React.useEffect(() => {
-        window.location.href = createPageUrl('Disclaimers');
-      }, []);
+      window.location.href = createPageUrl('Disclaimers');
       return <LoadingScreen />;
     }
 
     if (!onboardingCompleted) {
-      React.useEffect(() => {
-        window.location.href = createPageUrl('Onboarding');
-      }, []);
+      window.location.href = createPageUrl('Onboarding');
       return <LoadingScreen />;
     }
   }
