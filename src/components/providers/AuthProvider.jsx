@@ -17,43 +17,53 @@ export function AuthProvider({ children }) {
       try {
         let currentUser = null;
 
-        try {
-          currentUser = await base44.auth.me();
-        } catch (err) {
-          // 401 or any error means user is not authenticated
-          if (err?.response?.status === 401 || err?.status === 401) {
-            setUser(null);
+        // Wrap in timeout (10 seconds)
+        const authPromise = (async () => {
+          try {
+            currentUser = await base44.auth.me();
+          } catch (err) {
+            // 401 or any error means user is not authenticated
+            if (err?.response?.status === 401 || err?.status === 401) {
+              setUser(null);
+              setInitialized(true);
+              setLoading(false);
+              return 'unauthenticated';
+            }
+            throw err;
+          }
+
+          setUser(currentUser);
+
+          // Skip checks for admins
+          if (currentUser.role === 'admin') {
+            setOnboardingCompleted(true);
+            setDisclaimersCompleted(true);
             setInitialized(true);
             setLoading(false);
-            return;
+            return 'success';
           }
-          throw err;
-        }
 
-        setUser(currentUser);
+          // Check member profile for onboarding/disclaimers status
+          const profiles = await base44.entities.MemberProfile.filter({ 
+            user_id: currentUser.id 
+          });
 
-        // Skip checks for admins
-        if (currentUser.role === 'admin') {
-          setOnboardingCompleted(true);
-          setDisclaimersCompleted(true);
+          if (profiles.length > 0) {
+            const profile = profiles[0];
+            setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
+            setOnboardingCompleted(!!profile.onboarding_completed);
+          }
+
           setInitialized(true);
           setLoading(false);
-          return;
-        }
+          return 'success';
+        })();
 
-        // Check member profile for onboarding/disclaimers status
-        const profiles = await base44.entities.MemberProfile.filter({ 
-          user_id: currentUser.id 
-        });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Authentication initialization timeout (10s exceeded)')), 10000)
+        );
 
-        if (profiles.length > 0) {
-          const profile = profiles[0];
-          setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
-          setOnboardingCompleted(!!profile.onboarding_completed);
-        }
-
-        setInitialized(true);
-        setLoading(false);
+        await Promise.race([authPromise, timeoutPromise]);
       } catch (err) {
         console.error('Auth initialization error:', err);
         setError(err);
