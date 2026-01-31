@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CheckCircle2, AlertCircle, Clock, Target, Zap, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MODULE_STATUS, calculateCompletion } from '@/components/constants/moduleStatus';
+import { MODULE_STATUS } from '@/components/constants/moduleStatus';
 
 export default function DevelopmentRoadmap() {
   const [expanded, setExpanded] = useState(true);
