@@ -31,11 +31,14 @@ export default function CSSDebugOverlay() {
       
       document.body.removeChild(testEl);
 
+      const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
       const results = {
         tailwindReady,
         timeToReadyMs: tailwindReady ? Date.now() - startTime : null,
         styleTagsCount: document.querySelectorAll('style').length,
-        hasTailwindCdnScript: !!document.querySelector('script[src*="cdn.tailwindcss.com"]'),
+        tailwindScriptSrc: tailwindScript ? tailwindScript.src : null,
+        hasTailwindCdnScript: !!tailwindScript,
+        hasHiddenUtility: tailwindReady,
         timestamp: new Date().toISOString(),
       };
 
