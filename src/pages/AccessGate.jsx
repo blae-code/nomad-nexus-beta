@@ -134,11 +134,20 @@ export default function AccessGate() {
                 // Auth confirmed, redirect (admins bypass disclaimers)
                 setMessage('Authorization confirmed. Redirecting...');
                 emitReadyBeacon('authenticated');
+                
+                // Wait for AuthProvider to complete setup before navigating
                 setTimeout(async () => {
-                  const user = await base44.auth.me();
-                  const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
-                  window.location.href = createPageUrl(targetPage);
-                }, 800);
+                  try {
+                    const user = await base44.auth.me();
+                    // Give AuthProvider time to fetch MemberProfile
+                    await new Promise(r => setTimeout(r, 1500));
+                    const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
+                    window.location.href = createPageUrl(targetPage);
+                  } catch (err) {
+                    setMessage('Profile initialization failed. Retrying...');
+                    handleRedeem(); // Retry
+                  }
+                }, 200);
               } catch (authErr) {
                 setVerifyingAuth(false);
                 setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);
