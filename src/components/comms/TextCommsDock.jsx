@@ -55,7 +55,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     loadChannels();
   }, [activeOp?.binding?.commsChannelId, selectedChannelId]);
 
-  // Load messages for selected channel
+  // Load messages for selected channel + real-time subscription
   useEffect(() => {
     if (!selectedChannelId) return;
 
@@ -74,6 +74,17 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     };
 
     loadMessages();
+
+    // Subscribe to real-time message updates
+    const unsubscribe = base44.entities.Message.subscribe((event) => {
+      if (event.type === 'create' && event.data?.channel_id === selectedChannelId) {
+        setMessages((prev) => [...prev, event.data]);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [selectedChannelId, markChannelRead]);
 
   // Auto-scroll to bottom on new messages

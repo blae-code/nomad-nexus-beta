@@ -4,8 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getMessages, getReadState, setReadState, getChannels } from '@/components/services/commsService';
-import { CommsChannelDefaults } from '@/components/models/comms';
+import { base44 } from '@/api/base44Client';
 
 export function useUnreadCounts(userId) {
   const [channels, setChannels] = useState([]);
@@ -20,39 +19,53 @@ export function useUnreadCounts(userId) {
    * Calculate unread count for a channel
    */
   const calculateUnread = useCallback(async (channelId) => {
-    const messages = await getMessages(channelId);
-    const readState = await getReadState(userId, 'CHANNEL', channelId);
+    try {
+      const messages = await base44.entities.Message.filter({ channel_id: channelId });
+      const readStates = await base44.entities.CommsReadState.filter({
+        user_id: userId,
+        scope_type: 'CHANNEL',
+        scope_id: channelId,
+      });
+      const readState = readStates[0];
 
-    if (!readState) {
-      // No read state = all messages unread
-      return messages.length;
+      if (!readState) {
+        // No read state = all messages unread
+        return messages.length;
+      }
+
+      const lastReadAt = new Date(readState.last_read_at).getTime();
+      const unread = messages.filter((msg) => new Date(msg.created_date).getTime() > lastReadAt).length;
+      return unread;
+    } catch (error) {
+      console.error('Error calculating unread:', error);
+      return 0;
     }
-
-    const lastReadAt = new Date(readState.lastReadAt).getTime();
-    const unread = messages.filter((msg) => new Date(msg.createdAt).getTime() > lastReadAt).length;
-    return unread;
   }, [userId]);
 
   /**
    * Recalculate all unread counts
    */
   const refreshUnreadCounts = useCallback(async () => {
-    const allChannels = await getChannels();
-    setChannels(allChannels);
+    try {
+      const allChannels = await base44.entities.Channel.list();
+      setChannels(allChannels);
 
-    const counts = {};
-    for (const channel of allChannels) {
-      counts[channel.id] = await calculateUnread(channel.id);
+      const counts = {};
+      for (const channel of allChannels) {
+        counts[channel.id] = await calculateUnread(channel.id);
+      }
+
+      setUnreadByChannel(counts);
+
+      // Tab-level unread = sum of casual channels
+      const casualCount = allChannels
+        .filter((ch) => ch.category === 'casual')
+        .reduce((sum, ch) => sum + (counts[ch.id] || 0), 0);
+
+      setUnreadByTab((prev) => ({ ...prev, comms: casualCount }));
+    } catch (error) {
+      console.error('Error refreshing unread counts:', error);
     }
-
-    setUnreadByChannel(counts);
-
-    // Tab-level unread = sum of casual channels
-    const casualCount = allChannels
-      .filter((ch) => ch.type === CommsChannelDefaults.CASUAL)
-      .reduce((sum, ch) => sum + (counts[ch.id] || 0), 0);
-
-    setUnreadByTab((prev) => ({ ...prev, comms: casualCount }));
   }, [calculateUnread]);
 
   /**
@@ -67,11 +80,33 @@ export function useUnreadCounts(userId) {
 
       // Debounce: wait 500ms before writing
       markReadTimeoutRef.current[channelId] = setTimeout(async () => {
-        await setReadState(userId, 'CHANNEL', channelId);
+        try {
+          // Check if read state exists
+          const existing = await base44.entities.CommsReadState.filter({
+            user_id: userId,
+            scope_type: 'CHANNEL',
+            scope_id: channelId,
+          });
 
-        // Refresh counts after marking read
-        const newCount = await calculateUnread(channelId);
-        setUnreadByChannel((prev) => ({ ...prev, [channelId]: newCount }));
+          if (existing[0]) {
+            await base44.entities.CommsReadState.update(existing[0].id, {
+              last_read_at: new Date().toISOString(),
+            });
+          } else {
+            await base44.entities.CommsReadState.create({
+              user_id: userId,
+              scope_type: 'CHANNEL',
+              scope_id: channelId,
+              last_read_at: new Date().toISOString(),
+            });
+          }
+
+          // Refresh counts after marking read
+          const newCount = await calculateUnread(channelId);
+          setUnreadByChannel((prev) => ({ ...prev, [channelId]: newCount }));
+        } catch (error) {
+          console.error('Error marking channel as read:', error);
+        }
       }, 500);
     },
     [userId, calculateUnread]
@@ -87,8 +122,30 @@ export function useUnreadCounts(userId) {
       }
 
       markReadTimeoutRef.current[tabId] = setTimeout(async () => {
-        await setReadState(userId, 'TAB', tabId);
-        setUnreadByTab((prev) => ({ ...prev, [tabId]: 0 }));
+        try {
+          const existing = await base44.entities.CommsReadState.filter({
+            user_id: userId,
+            scope_type: 'TAB',
+            scope_id: tabId,
+          });
+
+          if (existing[0]) {
+            await base44.entities.CommsReadState.update(existing[0].id, {
+              last_read_at: new Date().toISOString(),
+            });
+          } else {
+            await base44.entities.CommsReadState.create({
+              user_id: userId,
+              scope_type: 'TAB',
+              scope_id: tabId,
+              last_read_at: new Date().toISOString(),
+            });
+          }
+          
+          setUnreadByTab((prev) => ({ ...prev, [tabId]: 0 }));
+        } catch (error) {
+          console.error('Error marking tab as read:', error);
+        }
       }, 500);
     },
     [userId]
