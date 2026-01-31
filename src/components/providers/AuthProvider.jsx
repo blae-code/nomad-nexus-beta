@@ -55,26 +55,26 @@ export function AuthProvider({ children }) {
               }
 
               // Check member profile for onboarding/disclaimers status
-              // Note: MemberProfile has no user_id reference; find via created_by (User email)
-              try {
-                // Get all MemberProfiles and find one created by current user's email
-                const allProfiles = await base44.entities.MemberProfile.list();
-                if (!isMounted) return;
+               // MemberProfile.created_by matches User.email, so find by current user's email
+               try {
+                 const allProfiles = await base44.entities.MemberProfile.list();
+                 if (!isMounted) return;
 
-                // Find profile created by this user (via created_by which is the creator's email)
-                // For now, take first profile as MemberProfile is per-user in this architecture
-                const profile = allProfiles[0];
-                
-                if (profile) {
-                  setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
-                  setOnboardingCompleted(!!profile.onboarding_completed);
-                  // Store member_profile_id in context if needed by other components
-                  setUser(prev => prev ? { ...prev, member_profile_id: profile.id } : prev);
-                }
-              } catch (profileErr) {
-                if (!isMounted) return;
-                console.warn('Profile fetch warning:', profileErr?.message);
-              }
+                 // Find profile created by this user (created_by = User.email)
+                 const profile = allProfiles.find(p => p.created_by === currentUser.email);
+
+                 if (profile) {
+                   setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
+                   setOnboardingCompleted(!!profile.onboarding_completed);
+                   // Store member_profile_id in context for other components
+                   setUser(prev => prev ? { ...prev, member_profile_id: profile.id, member_profile_data: profile } : prev);
+                 } else {
+                   console.warn('No MemberProfile found for user:', currentUser.email);
+                 }
+               } catch (profileErr) {
+                 if (!isMounted) return;
+                 console.warn('Profile fetch warning:', profileErr?.message);
+               }
             } catch (err) {
               if (!isMounted) return;
               console.error('Auth initialization error:', err?.message);
