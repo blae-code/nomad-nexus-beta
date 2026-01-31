@@ -80,16 +80,19 @@ export default function AccessGate() {
   }, []);
 
   const handleRedeem = async () => {
-    if (!accessCode.trim() || !callsign.trim()) {
+    const trimmedCode = accessCode.trim();
+    const trimmedCallsign = callsign.trim();
+
+    if (!trimmedCode || !trimmedCallsign) {
       setMessage('Please enter both access code and callsign');
       return;
     }
-    
+
     setLoading(true);
     setMessage('');
-    
+
     try {
-            const response = await base44.functions.invoke('redeemAccessKey', { code: accessCode, callsign: callsign });
+            const response = await base44.functions.invoke('redeemAccessKey', { code: trimmedCode, callsign: trimmedCallsign });
 
             if (response?.data?.success) {
               // Save login token if "Remember Me" is checked
