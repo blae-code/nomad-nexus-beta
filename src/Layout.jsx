@@ -40,6 +40,7 @@ const cn = (...classes) => {
 
 export default function Layout({ children, currentPageName }) {
   // Boot marker - app entry executed
+  // Rebuild trigger
   React.useEffect(() => {
     window.__NN_BOOTED__ = true;
     window.__NN_BOOT_TIME__ = Date.now();
