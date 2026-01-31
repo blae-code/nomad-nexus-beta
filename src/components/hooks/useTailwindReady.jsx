@@ -19,36 +19,25 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
 
     const checkTailwind = () => {
       try {
-        // First check: Are there any stylesheets loaded?
-        const stylesheets = Array.from(document.styleSheets);
-        if (stylesheets.length === 0) {
-          return false; // No stylesheets yet, keep waiting
-        }
-
-        // Count total rules across all stylesheets
-        const totalRules = stylesheets.reduce((sum, s) => {
-          try {
-            return sum + (s.cssRules?.length || 0);
-          } catch (e) {
-            // CORS-blocked stylesheet, assume it has rules
-            return sum + 1;
-          }
-        }, 0);
-
-        // If we have a substantial stylesheet (production bundle), assume ready
-        // Production bundles typically have 100+ rules
-        if (totalRules >= 100) {
+        // Check for any <link> stylesheets in the document
+        const linkStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+        
+        // If we have link stylesheets, consider CSS ready (production build)
+        if (linkStylesheets.length > 0) {
           if (isMounted) {
             clearInterval(pollInterval);
             clearTimeout(timeoutHandle);
             setReady(true);
             setWaiting(false);
-            console.log('✓ CSS bundle loaded and ready', { stylesheets: stylesheets.length, totalRules });
+            console.log('✓ CSS bundle detected and ready', { 
+              linkCount: linkStylesheets.length,
+              hrefs: linkStylesheets.map(l => l.href)
+            });
           }
           return true;
         }
 
-        // Fallback: Test if any basic styles are working
+        // Fallback for CDN or inline styles: Test if basic Tailwind utilities work
         const testEl = document.createElement('div');
         testEl.className = 'hidden';
         testEl.style.position = 'absolute';
@@ -65,7 +54,7 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
           clearTimeout(timeoutHandle);
           setReady(true);
           setWaiting(false);
-          console.log('✓ Tailwind utilities working');
+          console.log('✓ Tailwind utilities working (CDN/inline)');
         }
 
         return tailwindReady;
