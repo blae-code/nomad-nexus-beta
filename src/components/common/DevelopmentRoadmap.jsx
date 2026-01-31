@@ -142,8 +142,8 @@ export default function DevelopmentRoadmap() {
             )}
 
             <div className="bg-blue-500/10 border border-blue-500/30 rounded px-2.5 py-1.5 text-[9px]">
-            <div className="font-semibold text-blue-300 mb-1">Phase 5: UX/Immersion Enhancement</div>
-            <div className="text-blue-400 text-[8px]">Adding utility features, audio feedback, progression systems, and tactical polish across all modules</div>
+            <div className="font-semibold text-blue-300 mb-1">Phase 9: Advanced AI Features</div>
+            <div className="text-blue-400 text-[8px]">AI moderation, real-time translation, sentiment analysis, and next-gen communication features</div>
             </div>
         </div>
       )}
