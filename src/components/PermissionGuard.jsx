@@ -23,6 +23,7 @@ export default function PermissionGuard({
   requiredRoles = null,
   requireAllRoles = false,
   fallback = null,
+  currentPageName = null,
 }) {
   const { user, loading } = useCurrentUser();
 
