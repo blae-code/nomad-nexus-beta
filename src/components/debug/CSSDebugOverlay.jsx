@@ -3,13 +3,11 @@ import React, { useEffect, useState } from 'react';
 export default function CSSDebugOverlay() {
   const [diagnostics, setDiagnostics] = useState(null);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [timeToReady, setTimeToReady] = useState(null);
 
   useEffect(() => {
-    // Check if debug_css=true is in URL
     const params = new URLSearchParams(window.location.search);
     const debugEnabled = params.get('debug_css') === 'true';
-    
+
     if (!debugEnabled) {
       return;
     }
@@ -17,9 +15,7 @@ export default function CSSDebugOverlay() {
     setShowOverlay(true);
     const startTime = Date.now();
 
-    // Run diagnostics
     const runDiagnostics = () => {
-      // Test Tailwind utilities
       const testEl = document.createElement('div');
       testEl.className = 'hidden';
       testEl.style.position = 'absolute';
@@ -27,39 +23,49 @@ export default function CSSDebugOverlay() {
       document.body.appendChild(testEl);
 
       const computed = window.getComputedStyle(testEl);
-      const tailwindReady = computed.display === 'none';
-      
+      const hasHiddenUtility = computed.display === 'none';
       document.body.removeChild(testEl);
 
       const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
+      const styleSheets = Array.from(document.styleSheets).map((sheet) => {
+        let rules = 0;
+        let corsStatus = 'ok';
+        try {
+          rules = sheet.cssRules?.length || 0;
+        } catch (err) {
+          rules = 0;
+          corsStatus = 'cors-blocked';
+        }
+
+        return {
+          href: sheet.href || 'inline',
+          rules,
+          corsStatus,
+        };
+      });
+
       const results = {
-        tailwindReady,
-        timeToReadyMs: tailwindReady ? Date.now() - startTime : null,
-        styleTagsCount: document.querySelectorAll('style').length,
+        hasHiddenUtility,
+        tailwindGlobalPresent: typeof window.tailwind !== 'undefined',
         tailwindScriptSrc: tailwindScript ? tailwindScript.src : null,
-        hasTailwindCdnScript: !!tailwindScript,
-        hasHiddenUtility: tailwindReady,
+        styleTagCount: document.querySelectorAll('style').length,
+        linkTagCount: document.querySelectorAll('link[rel="stylesheet"]').length,
+        styleSheets,
+        timeToReadyMs: hasHiddenUtility ? Date.now() - startTime : null,
         timestamp: new Date().toISOString(),
       };
 
       setDiagnostics(results);
-      if (tailwindReady && timeToReady === null) {
-        setTimeToReady(results.timeToReadyMs);
-      }
-
-      return tailwindReady;
+      return hasHiddenUtility;
     };
 
-    // Initial check
     if (!runDiagnostics()) {
-      // Poll until ready
       const interval = setInterval(() => {
         if (runDiagnostics()) {
           clearInterval(interval);
         }
       }, 100);
 
-      // Stop after 10 seconds
       setTimeout(() => clearInterval(interval), 10000);
     }
   }, []);
@@ -68,9 +74,9 @@ export default function CSSDebugOverlay() {
     return null;
   }
 
-  const bgColor = diagnostics.tailwindReady ? '#064e3b' : '#7f1d1d';
-  const borderColor = diagnostics.tailwindReady ? '#10b981' : '#ef4444';
-  const statusColor = diagnostics.tailwindReady ? '#34d399' : '#f87171';
+  const bgColor = diagnostics.hasHiddenUtility ? '#064e3b' : '#7f1d1d';
+  const borderColor = diagnostics.hasHiddenUtility ? '#10b981' : '#ef4444';
+  const statusColor = diagnostics.hasHiddenUtility ? '#34d399' : '#f87171';
 
   return (
     <div
@@ -79,13 +85,13 @@ export default function CSSDebugOverlay() {
         bottom: '16px',
         right: '16px',
         zIndex: 9999,
-        maxWidth: '320px',
+        maxWidth: '360px',
         backgroundColor: bgColor,
         border: `2px solid ${borderColor}`,
         borderRadius: '8px',
         padding: '12px',
         fontFamily: 'monospace',
-        fontSize: '12px',
+        fontSize: '11px',
         color: '#ffffff',
         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
       }}
@@ -107,51 +113,65 @@ export default function CSSDebugOverlay() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#d1d5db' }}>
-        <div>
-          <span style={{ fontWeight: 'bold' }}>tailwindReady:</span>
-          <span style={{ marginLeft: '8px', color: statusColor, fontWeight: 'bold' }}>
-            {diagnostics.tailwindReady ? 'true' : 'false'}
-          </span>
-        </div>
-
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', color: '#d1d5db' }}>
         <div>
           <span style={{ fontWeight: 'bold' }}>hasHiddenUtility:</span>
-          <span style={{ marginLeft: '8px', color: diagnostics.hasHiddenUtility ? '#34d399' : '#f87171', fontWeight: 'bold' }}>
+          <span style={{ marginLeft: '6px', color: statusColor, fontWeight: 'bold' }}>
             {diagnostics.hasHiddenUtility ? 'true' : 'false'}
           </span>
         </div>
 
         <div>
-          <span style={{ fontWeight: 'bold' }}>timeToReadyMs:</span>
-          <span style={{ marginLeft: '8px' }}>
-            {diagnostics.timeToReadyMs !== null ? diagnostics.timeToReadyMs : 'pending...'}
+          <span style={{ fontWeight: 'bold' }}>tailwindGlobalPresent:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.tailwindGlobalPresent ? '#34d399' : '#f87171' }}>
+            {diagnostics.tailwindGlobalPresent ? 'true' : 'false'}
           </span>
         </div>
 
         <div>
-          <span style={{ fontWeight: 'bold' }}>styleTagsCount:</span>
-          <span style={{ marginLeft: '8px' }}>{diagnostics.styleTagsCount}</span>
-        </div>
-
-        <div>
           <span style={{ fontWeight: 'bold' }}>tailwindScriptSrc:</span>
-          <span style={{ marginLeft: '8px', fontSize: '10px', wordBreak: 'break-all' }}>
+          <span style={{ marginLeft: '6px', fontSize: '10px', wordBreak: 'break-all' }}>
             {diagnostics.tailwindScriptSrc || 'none'}
           </span>
         </div>
 
         <div>
-          <span style={{ fontWeight: 'bold' }}>hasTailwindCdnScript:</span>
-          <span style={{ marginLeft: '8px', color: diagnostics.hasTailwindCdnScript ? '#34d399' : '#f87171' }}>
-            {diagnostics.hasTailwindCdnScript ? 'true' : 'false'}
+          <span style={{ fontWeight: 'bold' }}>styleTagCount:</span>
+          <span style={{ marginLeft: '6px' }}>{diagnostics.styleTagCount}</span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>linkTagCount:</span>
+          <span style={{ marginLeft: '6px' }}>{diagnostics.linkTagCount}</span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>timeToReadyMs:</span>
+          <span style={{ marginLeft: '6px' }}>
+            {diagnostics.timeToReadyMs !== null ? diagnostics.timeToReadyMs : 'pending...'}
           </span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>stylesheets:</span>
+          <div style={{ marginTop: '4px', maxHeight: '120px', overflowY: 'auto' }}>
+            {diagnostics.styleSheets.map((sheet, index) => (
+              <div key={`${sheet.href}-${index}`} style={{ marginBottom: '4px' }}>
+                <div style={{ fontSize: '10px', color: '#e5e7eb', wordBreak: 'break-all' }}>
+                  {sheet.href}
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af' }}>
+                  rules: {sheet.rules} | cors: {sheet.corsStatus}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div
         style={{
-          marginTop: '12px',
+          marginTop: '10px',
           paddingTop: '8px',
           borderTop: '1px solid rgba(255, 255, 255, 0.2)',
           fontSize: '10px',

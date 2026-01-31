@@ -4,69 +4,69 @@ import React, { useState } from 'react';
  * TailwindError - Inline-styled error screen (no Tailwind classes)
  * Shown if Tailwind CDN fails to load after timeout
  */
-export default function TailwindError({ elapsed, error }) {
+export default function TailwindError({ elapsedMs = 0, error }) {
   const [copied, setCopied] = useState(false);
 
   const handleRetry = () => {
     window.location.reload();
   };
 
+  const collectDiagnostics = () => {
+    const testHiddenUtility = () => {
+      try {
+        const testEl = document.createElement('div');
+        testEl.className = 'hidden';
+        testEl.style.position = 'absolute';
+        testEl.style.visibility = 'hidden';
+        document.body.appendChild(testEl);
+        const computed = window.getComputedStyle(testEl);
+        const result = computed.display === 'none';
+        document.body.removeChild(testEl);
+        return result;
+      } catch {
+        return false;
+      }
+    };
+
+    const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
+    const tailwindScriptSrc = tailwindScript ? tailwindScript.getAttribute('src') : null;
+
+    const stylesheets = Array.from(document.styleSheets).map((sheet) => {
+      let rules = 0;
+      let corsStatus = 'ok';
+      try {
+        rules = sheet.cssRules?.length || 0;
+      } catch (err) {
+        rules = 0;
+        corsStatus = 'cors-blocked';
+      }
+
+      return {
+        href: sheet.href || 'inline',
+        rules,
+        corsStatus,
+      };
+    });
+
+    return {
+      timestamp: new Date().toISOString(),
+      waitedMs: elapsedMs,
+      errorPhase: error?.phase || 'unknown',
+      scriptPresent: error?.scriptPresent ?? Boolean(tailwindScript),
+      hasHiddenUtility: testHiddenUtility(),
+      tailwindGlobalPresent: typeof window.tailwind !== 'undefined',
+      tailwindScriptSrc,
+      styleTagCount: document.querySelectorAll('style').length,
+      linkTagCount: document.querySelectorAll('link[rel="stylesheet"]').length,
+      stylesheets,
+      pageUrl: window.location.href,
+      userAgent: navigator.userAgent,
+    };
+  };
+
   const handleCopyDiagnostics = async () => {
     try {
-      // Test if Tailwind utilities are working
-      const testHiddenUtility = () => {
-        try {
-          const testEl = document.createElement('div');
-          testEl.className = 'hidden';
-          testEl.style.position = 'absolute';
-          testEl.style.visibility = 'hidden';
-          document.body.appendChild(testEl);
-          const computed = window.getComputedStyle(testEl);
-          const result = computed.display === 'none';
-          document.body.removeChild(testEl);
-          return result;
-        } catch {
-          return false;
-        }
-      };
-
-      // Get Tailwind script src if present
-      const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
-      const tailwindScriptSrc = tailwindScript ? tailwindScript.getAttribute('src') : null;
-
-      // Check for CSP meta tag
-      const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-      const cspMetaPresent = cspMeta ? cspMeta.getAttribute('content') : null;
-
-      const diagnostics = {
-        timestamp: new Date().toISOString(),
-        timeWaited: `${elapsed}ms`,
-        userAgent: navigator.userAgent,
-        pageUrl: window.location.href,
-        hasHiddenUtility: testHiddenUtility(),
-        tailwindGlobalPresent: typeof window.tailwind !== 'undefined',
-        tailwindScriptSrc,
-        cspMetaPresent,
-        styleTagCount: document.querySelectorAll('style').length,
-        linkTagCount: document.querySelectorAll('link[rel="stylesheet"]').length,
-        stylesheets: Array.from(document.styleSheets).map((s) => {
-          let rules = 0;
-          let rulesStatus = 'ok';
-          try {
-            rules = s.cssRules?.length || 0;
-          } catch (e) {
-            rules = 0;
-            rulesStatus = 'CORS blocked';
-          }
-          return {
-            href: s.href || 'inline',
-            rules,
-            rulesStatus,
-            crossOrigin: s.ownerNode?.getAttribute('crossorigin') || 'none',
-          };
-        }),
-      };
-
+      const diagnostics = collectDiagnostics();
       const text = JSON.stringify(diagnostics, null, 2);
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -84,124 +84,99 @@ export default function TailwindError({ elapsed, error }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#09090b',
+        backgroundColor: '#0b0b10',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         color: '#ffffff',
-        padding: '16px',
+        padding: '24px',
       }}
     >
       <div
         style={{
-          maxWidth: '500px',
+          maxWidth: '560px',
+          width: '100%',
           textAlign: 'center',
+          border: '1px solid rgba(248, 113, 113, 0.25)',
+          borderRadius: '16px',
+          padding: '28px',
+          backgroundColor: 'rgba(12, 12, 18, 0.85)',
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6)',
         }}
       >
-        {/* Error icon */}
         <div
           style={{
-            fontSize: '48px',
-            marginBottom: '24px',
-            opacity: 0.7,
+            fontSize: '42px',
+            marginBottom: '16px',
+            color: '#f87171',
           }}
         >
-          ⚠
+          ⛔
         </div>
 
-        {/* Heading */}
         <h1
           style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
-            marginBottom: '12px',
-            letterSpacing: '0.025em',
+            fontSize: '22px',
+            fontWeight: '800',
+            marginBottom: '10px',
+            letterSpacing: '0.18em',
             textTransform: 'uppercase',
           }}
         >
-          Signal Loss — UI Telemetry Offline
+          SIGNAL LOSS — UI TELEMETRY OFFLINE
         </h1>
 
-        {/* Error message */}
         <p
           style={{
             fontSize: '14px',
             color: 'rgba(255, 255, 255, 0.7)',
-            marginBottom: '24px',
-            lineHeight: '1.5',
+            marginBottom: '20px',
+            lineHeight: '1.6',
           }}
         >
-          Nomad Nexus is online, but your interface package didn't arrive.
-          This usually happens when the styling uplink is blocked or delayed.
+          Nomad Nexus is online, but the styling uplink never arrived. This usually means the
+          Tailwind CDN was blocked, slow, or stripped by network policy.
         </p>
 
-        {/* What you can do */}
+        <div
+          style={{
+            backgroundColor: 'rgba(248, 113, 113, 0.08)',
+            border: '1px solid rgba(248, 113, 113, 0.2)',
+            borderRadius: '10px',
+            padding: '12px',
+            marginBottom: '18px',
+            textAlign: 'left',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            color: 'rgba(255, 255, 255, 0.7)',
+          }}
+        >
+          <div>
+            <strong>Waited:</strong> {(elapsedMs / 1000).toFixed(1)}s
+          </div>
+          <div>
+            <strong>Failure Phase:</strong> {error?.phase || 'unknown'}
+          </div>
+          <div>
+            <strong>Tailwind Script:</strong> {error?.scriptPresent ? 'present' : 'missing'}
+          </div>
+        </div>
+
         <div
           style={{
             fontSize: '13px',
-            color: 'rgba(255, 255, 255, 0.8)',
+            color: 'rgba(255, 255, 255, 0.75)',
             marginBottom: '16px',
             lineHeight: '1.6',
             textAlign: 'left',
           }}
         >
-          <div style={{ fontWeight: '600', marginBottom: '8px' }}>What you can do:</div>
+          <div style={{ fontWeight: '600', marginBottom: '8px' }}>Recovery options:</div>
           <ul style={{ listStyle: 'disc', paddingLeft: '20px', margin: '0' }}>
             <li>Retry the uplink (recommended)</li>
-            <li>If you're on a restricted network, try a different connection</li>
-            <li>If the issue persists, send diagnostics to a Ranger or Systems lead</li>
+            <li>Disable CSS/script blockers or whitelist cdn.tailwindcss.com</li>
+            <li>Try a different network if you are on a restricted link</li>
           </ul>
         </div>
 
-        {/* Diagnostics label */}
-        <div
-          style={{
-            fontSize: '11px',
-            color: 'rgba(255, 255, 255, 0.5)',
-            marginBottom: '8px',
-            fontWeight: '500',
-          }}
-        >
-          Diagnostics Packet — includes URL, browser signature, wait time, and style beacon status
-        </div>
-
-        {/* Diagnostics box */}
-        <div
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '24px',
-            fontSize: '12px',
-            fontFamily: 'monospace',
-            textAlign: 'left',
-            color: 'rgba(255, 255, 255, 0.6)',
-            maxHeight: '120px',
-            overflowY: 'auto',
-          }}
-        >
-          <div>
-            <strong>Wait Time:</strong> {(elapsed / 1000).toFixed(1)}s
-          </div>
-          <div>
-            <strong>Style Beacons:</strong> {document.styleSheets.length}
-          </div>
-          <div>
-            <strong>Script Tags:</strong>{' '}
-            {document.querySelectorAll('script').length}
-          </div>
-          <div>
-            <strong>Styling CDN:</strong>{' '}
-            {document.querySelector('script[src*="cdn.tailwindcss.com"]')
-              ? '✓ Present'
-              : '✗ Missing'}
-          </div>
-          <div>
-            <strong>Uplink Status:</strong>{' '}
-            {typeof window.tailwind !== 'undefined' ? '✓ Active' : '✗ Offline'}
-          </div>
-        </div>
-
-        {/* Action buttons */}
         <div
           style={{
             display: 'flex',
@@ -213,17 +188,16 @@ export default function TailwindError({ elapsed, error }) {
           <button
             onClick={handleRetry}
             style={{
-              padding: '12px 24px',
+              padding: '12px 22px',
               backgroundColor: '#dc2626',
               color: '#ffffff',
               border: 'none',
-              borderRadius: '6px',
-              fontSize: '13px',
+              borderRadius: '8px',
+              fontSize: '12px',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'background-color 200ms',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
             }}
             onMouseOver={(e) => (e.target.style.backgroundColor = '#b91c1c')}
             onMouseOut={(e) => (e.target.style.backgroundColor = '#dc2626')}
@@ -234,31 +208,23 @@ export default function TailwindError({ elapsed, error }) {
           <button
             onClick={handleCopyDiagnostics}
             style={{
-              padding: '12px 24px',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              padding: '12px 22px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
               color: '#ffffff',
               border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '6px',
-              fontSize: '13px',
+              borderRadius: '8px',
+              fontSize: '12px',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'background-color 200ms',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
             }}
-            onMouseOver={(e) => (
-              (e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)')
-            )}
-            onMouseOut={(e) => (
-              (e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)')
-            )}
+            onMouseOver={(e) => (e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)')}
+            onMouseOut={(e) => (e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)')}
           >
-            {copied ? '✓ Copied' : 'Copy Diagnostics'}
+            {copied ? 'Copied' : 'Copy Diagnostics'}
           </button>
-        </div>
 
-        {/* Clear session button */}
-        <div style={{ marginTop: '12px', textAlign: 'center' }}>
           <button
             onClick={() => {
               localStorage.clear();
@@ -266,42 +232,28 @@ export default function TailwindError({ elapsed, error }) {
               window.location.reload();
             }}
             style={{
-              padding: '8px 16px',
+              padding: '12px 22px',
               backgroundColor: 'transparent',
-              color: 'rgba(255, 255, 255, 0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '6px',
+              color: 'rgba(255, 255, 255, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
               fontSize: '12px',
-              fontWeight: '600',
+              fontWeight: '700',
               cursor: 'pointer',
-              transition: 'all 200ms',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-              e.target.style.color = 'rgba(255, 255, 255, 0.7)';
+              e.target.style.color = 'rgba(255, 255, 255, 0.9)';
             }}
             onMouseOut={(e) => {
               e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = 'rgba(255, 255, 255, 0.5)';
+              e.target.style.color = 'rgba(255, 255, 255, 0.6)';
             }}
           >
-            Clear Session & Reload
+            Clear Session &amp; Reload
           </button>
-        </div>
-
-        {/* Footer microcopy */}
-        <div
-          style={{
-            marginTop: '24px',
-            fontSize: '11px',
-            color: 'rgba(255, 255, 255, 0.4)',
-            lineHeight: '1.5',
-            fontStyle: 'italic',
-          }}
-        >
-          If this keeps happening, your network may be blocking the styling beacon.
         </div>
       </div>
     </div>
