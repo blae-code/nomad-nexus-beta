@@ -116,6 +116,13 @@ export default function CSSDebugOverlay() {
         </div>
 
         <div>
+          <span style={{ fontWeight: 'bold' }}>hasHiddenUtility:</span>
+          <span style={{ marginLeft: '8px', color: diagnostics.hasHiddenUtility ? '#34d399' : '#f87171', fontWeight: 'bold' }}>
+            {diagnostics.hasHiddenUtility ? 'true' : 'false'}
+          </span>
+        </div>
+
+        <div>
           <span style={{ fontWeight: 'bold' }}>timeToReadyMs:</span>
           <span style={{ marginLeft: '8px' }}>
             {diagnostics.timeToReadyMs !== null ? diagnostics.timeToReadyMs : 'pending...'}
@@ -125,6 +132,13 @@ export default function CSSDebugOverlay() {
         <div>
           <span style={{ fontWeight: 'bold' }}>styleTagsCount:</span>
           <span style={{ marginLeft: '8px' }}>{diagnostics.styleTagsCount}</span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>tailwindScriptSrc:</span>
+          <span style={{ marginLeft: '8px', fontSize: '10px', wordBreak: 'break-all' }}>
+            {diagnostics.tailwindScriptSrc || 'none'}
+          </span>
         </div>
 
         <div>
