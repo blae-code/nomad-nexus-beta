@@ -111,6 +111,7 @@ export default function AccessGate() {
 
                 // Auth confirmed, redirect to Disclaimers
                 setMessage('Authorization confirmed. Redirecting...');
+                emitReadyBeacon('authenticated');
                 setTimeout(() => {
                   window.location.href = createPageUrl('Disclaimers');
                 }, 800);
