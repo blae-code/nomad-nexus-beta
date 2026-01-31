@@ -13,14 +13,14 @@ import { createPageUrl } from '@/utils';
 export default function RouteGuard({ requiredAuth = 'authenticated', children }) {
   const { user, loading, initialized, onboardingCompleted, disclaimersCompleted } = useAuth();
 
-  // Still initializing auth state
-  if (loading || !initialized) {
-    return <LoadingScreen />;
-  }
-
-  // Route: public (no auth required) - allow once initialized
+  // Route: public (no auth required) - allow immediately, don't wait for loading
   if (requiredAuth === 'none') {
     return children;
+  }
+
+  // Still initializing auth state (only for protected routes)
+  if (loading || !initialized) {
+    return <LoadingScreen />;
   }
 
   // No user, redirect to AccessGate
