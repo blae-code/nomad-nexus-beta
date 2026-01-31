@@ -47,31 +47,32 @@ export function AuthProvider({ children }) {
 
               // Load MemberProfile (source of truth for auth state, not User.role)
               try {
-                // Fetch all profiles and find one created by the service for this user
-                // (service creates profiles when access keys are redeemed)
                 const allProfiles = await base44.entities.MemberProfile.filter({});
                 if (!isMounted) return;
 
-                // MemberProfile.created_by will be service email, so look by other fields
-                // For now, get the most recently created one (created after user registration)
-                // In production, store user_email in MemberProfile for reliable lookup
+                console.log('[AUTH] Found', allProfiles.length, 'total profiles');
+
                 let profile = null;
 
                 // Try to find by exact email match in created_by (for manually created profiles)
                 profile = allProfiles.find(p => p.created_by === currentUser.email);
 
-                // If not found, assume most recent profile is the user's (service-created)
+                // If not found, assume most recent profile is the user's (service-created on key redemption)
                 if (!profile && allProfiles.length > 0) {
-                  profile = allProfiles.sort((a, b) => 
+                  const sortedByDate = allProfiles.sort((a, b) => 
                     new Date(b.created_date) - new Date(a.created_date)
-                  )[0];
+                  );
+                  profile = sortedByDate[0];
+                  console.log('[AUTH] Using most recent profile as fallback:', profile.id, 'callsign:', profile.callsign, 'rank:', profile.rank);
                 }
 
                 if (!profile) {
-                  console.warn('No MemberProfile found for user:', currentUser.email);
+                  console.error('[AUTH] No MemberProfile found. User email:', currentUser.email, 'Profiles:', allProfiles.map(p => ({ id: p.id, callsign: p.callsign, created_by: p.created_by })));
                   setUser(null);
                   return;
                 }
+
+                console.log('[AUTH] Loaded profile:', profile.id, 'rank:', profile.rank);
 
                 // Store profile and check admin status via rank
                 const isAdmin = profile.rank === 'Pioneer';
