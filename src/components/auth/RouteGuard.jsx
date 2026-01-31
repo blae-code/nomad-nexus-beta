@@ -54,7 +54,10 @@ export default function RouteGuard({ requiredAuth = 'authenticated', currentPage
   }
 
   // Still initializing auth state (only for protected routes)
-  if (loading || !initialized) {
+  if (loading || !initialized || profileLoading) {
+    if (requiredAuth === 'none') {
+      return children;
+    }
     return <LoadingScreen />;
   }
 
@@ -64,6 +67,28 @@ export default function RouteGuard({ requiredAuth = 'authenticated', currentPage
       <>
         <LoadingScreen />
         <Navigate to={createPageUrl('AccessGate')} replace />
+      </>
+    );
+  }
+
+  // User is authenticated but has no MemberProfile - force onboarding
+  if (!memberProfile && user.role !== 'admin') {
+    if (currentPageName !== 'Onboarding') {
+      return (
+        <>
+          <LoadingScreen />
+          <Navigate to={createPageUrl('Onboarding')} replace />
+        </>
+      );
+    }
+  }
+
+  // User has profile but is trying to access onboarding - redirect to hub
+  if (memberProfile && currentPageName === 'Onboarding' && user.role !== 'admin') {
+    return (
+      <>
+        <LoadingScreen />
+        <Navigate to={createPageUrl('Hub')} replace />
       </>
     );
   }
