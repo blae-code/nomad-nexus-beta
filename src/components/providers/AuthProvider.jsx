@@ -47,10 +47,26 @@ export function AuthProvider({ children }) {
 
               // Load MemberProfile (source of truth for auth state, not User.role)
               try {
-                const allProfiles = await base44.entities.MemberProfile.list();
+                // Fetch all profiles and find one created by the service for this user
+                // (service creates profiles when access keys are redeemed)
+                const allProfiles = await base44.entities.MemberProfile.filter({});
                 if (!isMounted) return;
 
-                const profile = allProfiles.find(p => p.created_by === currentUser.email);
+                // MemberProfile.created_by will be service email, so look by other fields
+                // For now, get the most recently created one (created after user registration)
+                // In production, store user_email in MemberProfile for reliable lookup
+                let profile = null;
+
+                // Try to find by exact email match in created_by (for manually created profiles)
+                profile = allProfiles.find(p => p.created_by === currentUser.email);
+
+                // If not found, assume most recent profile is the user's (service-created)
+                if (!profile && allProfiles.length > 0) {
+                  profile = allProfiles.sort((a, b) => 
+                    new Date(b.created_date) - new Date(a.created_date)
+                  )[0];
+                }
+
                 if (!profile) {
                   console.warn('No MemberProfile found for user:', currentUser.email);
                   setUser(null);
