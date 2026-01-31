@@ -50,6 +50,18 @@ export default function CSSDebugOverlay() {
       return appReady;
     };
 
+    // Check for fatal bootstrap failure first
+    if (!window.__NN_BOOTED__) {
+      console.error('[NN] BOOTSTRAP_MISSING - App entry did not execute');
+      setDiagnostics({
+        bootstrapPresent: false,
+        fatalError: 'BOOTSTRAP_MISSING',
+        message: 'App bundle did not load or execute. Check network, CSP, and console for errors.',
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
     if (!runDiagnostics()) {
       const interval = setInterval(() => {
         if (runDiagnostics()) {
@@ -57,12 +69,50 @@ export default function CSSDebugOverlay() {
         }
       }, 100);
 
-      setTimeout(() => clearInterval(interval), 5000);
+      setTimeout(() => {
+        clearInterval(interval);
+        if (!diagnostics || !diagnostics.appReady) {
+          console.warn('[NN] App readiness timeout after 5s');
+        }
+      }, 5000);
     }
   }, []);
 
   if (!showOverlay || !diagnostics) {
     return null;
+  }
+
+  // Fatal error styling
+  if (diagnostics.fatalError) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '16px',
+          right: '16px',
+          zIndex: 9999,
+          maxWidth: '360px',
+          backgroundColor: '#7f1d1d',
+          border: '2px solid #ef4444',
+          borderRadius: '8px',
+          padding: '12px',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          color: '#ffffff',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <div style={{ fontWeight: 'bold', color: '#f87171', marginBottom: '12px', fontSize: '14px' }}>
+          ⚠ {diagnostics.fatalError}
+        </div>
+        <div style={{ color: '#fca5a5', marginBottom: '8px' }}>
+          {diagnostics.message}
+        </div>
+        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
+          {new Date(diagnostics.timestamp).toLocaleTimeString()}
+        </div>
+      </div>
+    );
   }
 
   const bgColor = diagnostics.appReady ? '#064e3b' : '#7f1d1d';
