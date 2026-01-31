@@ -68,16 +68,24 @@ export const useCurrentUser = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUser = async () => {
       try {
+        // Guard: only check auth once per mount
         const isAuth = await base44.auth.isAuthenticated();
+        if (!isMounted) return;
+
         if (!isAuth) {
           setUser(null);
           setLoading(false);
           return;
         }
+
+        // Only call User/me if authenticated
         const currentUser = await base44.auth.me();
-        // Map real user to canon structure if needed
+        if (!isMounted) return;
+
         setUser({
           id: currentUser.id,
           email: currentUser.email,
@@ -86,18 +94,33 @@ export const useCurrentUser = () => {
           rank: currentUser.rank || 'VAGRANT',
           membership: currentUser.membership || 'GUEST',
           roles: currentUser.roles || [],
-          role: currentUser.role, // Keep legacy role field
+          role: currentUser.role,
         });
-      } catch (err) {
-        // Stub phase: return mock user variant
-        setUser(MOCK_USER_VARIANTS[MOCK_USER_VARIANT] || MOCK_USER_VARIANTS.VAGRANT);
         setError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        // Non-401 errors: return mock user for stub phase
+        if (err?.response?.status !== 401 && err?.status !== 401) {
+          setUser(MOCK_USER_VARIANTS[MOCK_USER_VARIANT] || MOCK_USER_VARIANTS.VAGRANT);
+          setError(null);
+        } else {
+          // 401 explicitly means no user
+          setUser(null);
+          setError(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUser();
+
+    // Cleanup: prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { user, loading, error };

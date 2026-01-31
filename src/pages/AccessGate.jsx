@@ -43,19 +43,30 @@ export default function AccessGate() {
 
   // Check for saved login and auto-redeem if present
   useEffect(() => {
+    let isMounted = true;
+
     const checkSavedLogin = async () => {
       try {
         const isAuth = await base44.auth.isAuthenticated();
+        if (!isMounted) return;
+
         if (isAuth) {
           emitReadyBeacon('authenticated');
-          // Admins bypass disclaimers, go straight to Hub
-          const user = await base44.auth.me();
-          const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
-          window.location.href = createPageUrl(targetPage);
+          // Only fetch User/me if authenticated
+          try {
+            const user = await base44.auth.me();
+            if (!isMounted) return;
+            const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
+            window.location.href = createPageUrl(targetPage);
+          } catch (userErr) {
+            if (isMounted) {
+              setError('Failed to load user profile');
+            }
+          }
           return;
         }
 
-        // Check for saved login token
+        // Not authenticated - check for saved login token
         const savedToken = localStorage.getItem('nexus.login.token');
         if (savedToken) {
           setHasSavedLogin(true);
@@ -65,18 +76,24 @@ export default function AccessGate() {
             setCallsign(loginData.callsign);
             setRememberMe(true);
           } catch (e) {
-            // Invalid token, clear it
             localStorage.removeItem('nexus.login.token');
           }
         }
 
         emitReadyBeacon('unauthenticated');
       } catch (err) {
-        emitReadyBeacon('error');
-        setError(err.message || 'Authentication check failed');
+        if (isMounted) {
+          emitReadyBeacon('error');
+          setError(err.message || 'Authentication check failed');
+        }
       }
     };
+    
     checkSavedLogin();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleRedeem = async () => {
