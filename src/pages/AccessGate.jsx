@@ -115,38 +115,14 @@ export default function AccessGate() {
 
                 await Promise.race([confirmAuthPromise, timeoutPromise]);
 
-                // Auth confirmed, redirect (admins bypass disclaimers)
-                  setMessage('Authorization confirmed. Redirecting...');
-                  emitReadyBeacon('authenticated');
+                // Auth confirmed by backend, AuthProvider will handle session on next load
+                setMessage('Authorization confirmed. Redirecting...');
+                emitReadyBeacon('authenticated');
 
-                  // Wait longer to ensure auth is fully settled
-                  setTimeout(async () => {
-                    try {
-                      const user = await base44.auth.me();
-                      if (!user) {
-                        setMessage('Session lost. Please try again.');
-                        setLoading(false);
-                        return;
-                      }
-
-                      // Extra delay to ensure AuthProvider can fetch MemberProfile
-                      await new Promise(r => setTimeout(r, 2000));
-
-                      // Check MemberProfile rank, not User.role (source of truth)
-                      const profiles = await base44.entities.MemberProfile.filter({});
-                      const userProfile = profiles.sort((a, b) => 
-                        new Date(b.created_date) - new Date(a.created_date)
-                      )[0];
-
-                      const isAdmin = userProfile?.rank === 'Pioneer';
-                      const targetPage = isAdmin ? 'Hub' : 'Disclaimers';
-                      window.location.href = createPageUrl(targetPage);
-                    } catch (err) {
-                      console.error('Redirect error:', err);
-                      setMessage('Failed to initialize. Please try again.');
-                      setLoading(false);
-                    }
-                  }, 500);
+                // Redirect to Hub (AuthProvider will determine next page based on rank/onboarding)
+                setTimeout(() => {
+                  window.location.href = createPageUrl('Hub');
+                }, 1000);
               } catch (authErr) {
                 setVerifyingAuth(false);
                 setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);
