@@ -74,9 +74,12 @@ Deno.serve(async (req) => {
 
     const memberProfile = profiles[0];
 
-    // Step 3: Verify this profile was created by this access key
+    // Step 3: Verify this profile can use this access key
+    // Either: key was redeemed by this profile, OR key is still ACTIVE (first-time login)
     const wasRedeemedByProfile = key.redeemed_by_member_profile_ids?.includes(memberProfile.id);
-    if (!wasRedeemedByProfile) {
+    const isKeyActive = key.status === 'ACTIVE';
+    
+    if (!wasRedeemedByProfile && !isKeyActive) {
       return Response.json({ success: false, message: 'Callsign does not match access code' }, { status: 403 });
     }
 
