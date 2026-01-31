@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 
 /**
+ * No-op compatibility export for Base44 infrastructure
+ * Tailwind is managed by Base44, no injection needed
+ */
+export function ensureTailwindCdn() {
+  return Promise.resolve();
+}
+
+/**
  * Passive Tailwind detection - trusts Base44 infrastructure
  * No injection, no safelist, no style verification
  */
