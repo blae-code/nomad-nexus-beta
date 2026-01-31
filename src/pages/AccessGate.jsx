@@ -355,6 +355,9 @@ export default function AccessGate() {
         </div>
       </div>
 
+      {/* Hidden readiness beacon */}
+      {authState && <div id="nn-ready" data-state={authState} style={{ display: 'none' }} />}
+
       {/* Debug marker - bottom left corner */}
       <div className="fixed bottom-3 left-3 text-[9px] px-2 py-1 bg-green-900/40 border border-green-500/30 text-green-400 rounded opacity-60 hover:opacity-100 transition-opacity font-mono z-50">
         ✓ CUSTOM ACCESSGATE LOADED
