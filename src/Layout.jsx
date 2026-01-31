@@ -4,8 +4,7 @@ import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import ConstructionTicker from '@/components/layout/ConstructionTicker';
 import CSSDebugOverlay from '@/components/debug/CSSDebugOverlay';
-import TailwindReadyGate from '@/components/tailwind/TailwindReadyGate';
-import TailwindSafelist from '@/components/tailwind/TailwindSafelist';
+
 
 import ContextPanel from '@/components/layout/ContextPanel';
 
@@ -53,17 +52,11 @@ export default function Layout({ children, currentPageName }) {
   }
 
   // Single AuthProvider at app root (wraps all pages)
-  // TailwindReadyGate ensures styles load before rendering anything
   return (
-    <>
-      <TailwindSafelist />
-      <TailwindReadyGate timeoutMs={8000}>
-        <AuthProvider>
-          <AuthDebugOverlay />
-          <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
-        </AuthProvider>
-      </TailwindReadyGate>
-    </>
+    <AuthProvider>
+      <AuthDebugOverlay />
+      <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
+    </AuthProvider>
   );
 }
 
