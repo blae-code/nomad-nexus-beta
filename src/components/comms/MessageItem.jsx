@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Edit2, Trash2, Smile, MoreVertical, Reply } from 'lucide-react';
+import { Edit2, Trash2, Smile, MoreVertical, Reply, Pin, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,7 +24,9 @@ export default function MessageItem({
   lastSeen,
   onEdit,
   onDelete,
-  onReply
+  onReply,
+  onPin,
+  showThreadButton = true,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
@@ -210,6 +212,17 @@ export default function MessageItem({
               ))}
             </div>
           )}
+
+          {/* Thread Indicator */}
+          {message.thread_message_count > 0 && (
+            <button
+              onClick={() => onReply?.(message)}
+              className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-orange-500/30 transition-colors text-xs text-zinc-400 hover:text-orange-400"
+            >
+              <MessageSquare className="w-3 h-3" />
+              <span>{message.thread_message_count} {message.thread_message_count === 1 ? 'reply' : 'replies'}</span>
+            </button>
+          )}
         </div>
 
         {/* Actions Menu */}
@@ -221,10 +234,16 @@ export default function MessageItem({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {onReply && (
+              {showThreadButton && onReply && !message.parent_message_id && (
                 <DropdownMenuItem onClick={() => onReply(message)}>
                   <Reply className="w-3 h-3 mr-2" />
                   Reply in thread
+                </DropdownMenuItem>
+              )}
+              {isAdmin && onPin && !message.parent_message_id && (
+                <DropdownMenuItem onClick={() => onPin(message)}>
+                  <Pin className="w-3 h-3 mr-2" />
+                  Pin message
                 </DropdownMenuItem>
               )}
               {canEdit && (

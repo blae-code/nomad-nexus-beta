@@ -18,6 +18,8 @@ import TypingIndicator from '@/components/comms/TypingIndicator';
 import { useLastSeen } from '@/components/hooks/useLastSeen';
 import MessageItem from '@/components/comms/MessageItem';
 import MessageComposer from '@/components/comms/MessageComposer';
+import ThreadPanel from '@/components/comms/ThreadPanel';
+import PinnedMessages from '@/components/comms/PinnedMessages';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -27,6 +29,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [messageInput, setMessageInput] = useState('');
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [threadPanelMessage, setThreadPanelMessage] = useState(null);
   const messagesEndRef = useRef(null);
 
   const { user } = useCurrentUser();
@@ -308,14 +311,18 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
               </div>
 
               {/* Message Area */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Channel Header */}
-                {selectedChannel && (
-                 <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
-                   {!canAccessChannel(selectedChannel) && <Lock className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />}
-                   <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate">#{selectedChannel.name}</span>
-                 </div>
-                )}
+              <div className="flex-1 flex overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {/* Channel Header */}
+                  {selectedChannel && (
+                   <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
+                     {!canAccessChannel(selectedChannel) && <Lock className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />}
+                     <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate">#{selectedChannel.name}</span>
+                   </div>
+                  )}
+
+                  {/* Pinned Messages */}
+                  <PinnedMessages channelId={selectedChannelId} />
 
                 {/* Messages — Enhanced with MessageItem component */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-1 text-xs flex flex-col min-h-0">
@@ -367,15 +374,44 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                                 }
                               }
                             }}
-                          />
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </>
-                  )}
-                  {/* Typing Indicator */}
-                  {typingUsers.length > 0 && <TypingIndicator userIds={typingUsers} />}
-                </div>
+                            onReply={(msg) => setThreadPanelMessage(msg)}
+                            onPin={async (msg) => {
+                              try {
+                                // Check if already pinned
+                                const existing = await base44.entities.PinnedMessage.filter({
+                                  channel_id: selectedChannelId,
+                                  message_id: msg.id,
+                                });
+
+                                if (existing.length > 0) {
+                                  alert('Message already pinned');
+                                  return;
+                                }
+
+                                // Get current pin count for order
+                                const allPinned = await base44.entities.PinnedMessage.filter({
+                                  channel_id: selectedChannelId,
+                                });
+
+                                await base44.entities.PinnedMessage.create({
+                                  channel_id: selectedChannelId,
+                                  message_id: msg.id,
+                                  pinned_by: user.id,
+                                  pin_order: allPinned.length,
+                                });
+                              } catch (error) {
+                                console.error('Failed to pin message:', error);
+                              }
+                            }}
+                            />
+                            );
+                            })}
+                            <div ref={messagesEndRef} />
+                            </>
+                            )}
+                            {/* Typing Indicator */}
+                            {typingUsers.length > 0 && <TypingIndicator userIds={typingUsers} />}
+                            </div>
 
                 {/* Composer — Enhanced with MessageComposer */}
                 {!selectedChannel || !canAccessChannel(selectedChannel) ? (
@@ -398,10 +434,21 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                        console.error('Failed to send message:', error);
                      }
                    }}
-                 />
-                )}
-              </div>
-              </div>
+                   />
+                   )}
+                   </div>
+
+                   {/* Thread Panel */}
+                   {threadPanelMessage && (
+                   <ThreadPanel
+                   parentMessage={threadPanelMessage}
+                   onClose={() => setThreadPanelMessage(null)}
+                   currentUserId={user?.id}
+                   isAdmin={user?.role === 'admin'}
+                   />
+                   )}
+                   </div>
+                   </div>
               )}
 
 
