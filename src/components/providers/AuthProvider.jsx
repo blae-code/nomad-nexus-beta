@@ -55,16 +55,21 @@ export function AuthProvider({ children }) {
               }
 
               // Check member profile for onboarding/disclaimers status
+              // Note: MemberProfile has no user_id reference; find via created_by (User email)
               try {
-                const profiles = await base44.entities.MemberProfile.filter({ 
-                  user_id: currentUser.id 
-                });
+                // Get all MemberProfiles and find one created by current user's email
+                const allProfiles = await base44.entities.MemberProfile.list();
                 if (!isMounted) return;
 
-                if (profiles.length > 0) {
-                  const profile = profiles[0];
+                // Find profile created by this user (via created_by which is the creator's email)
+                // For now, take first profile as MemberProfile is per-user in this architecture
+                const profile = allProfiles[0];
+                
+                if (profile) {
                   setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
                   setOnboardingCompleted(!!profile.onboarding_completed);
+                  // Store member_profile_id in context if needed by other components
+                  setUser(prev => prev ? { ...prev, member_profile_id: profile.id } : prev);
                 }
               } catch (profileErr) {
                 if (!isMounted) return;

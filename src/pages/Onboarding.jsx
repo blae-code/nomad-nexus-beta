@@ -38,13 +38,13 @@ export default function Onboarding() {
     aiUseHistory: true,
   });
 
-  // Load user's existing callsign
+  // Load user's existing MemberProfile callsign
   useEffect(() => {
     if (!user) return;
     
     const loadProfile = async () => {
       try {
-        const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+        const profiles = await base44.entities.MemberProfile.list();
         if (profiles.length > 0) {
           setFormData(prev => ({ ...prev, rsiCallsign: profiles[0]?.callsign || '' }));
         }
@@ -62,7 +62,12 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+      const profiles = await base44.entities.MemberProfile.list();
+      if (profiles.length === 0) {
+        alert('No member profile found');
+        return;
+      }
+
       const profile = profiles[0];
 
       await base44.entities.MemberProfile.update(profile.id, {

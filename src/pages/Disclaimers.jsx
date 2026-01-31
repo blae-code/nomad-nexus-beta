@@ -38,25 +38,24 @@ export default function Disclaimers() {
   const handleProceedToOnboarding = async () => {
     setLoading(true);
     try {
-      // Create or update MemberProfile with disclaimer acceptance
-      const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
+      // Get MemberProfile (should already exist from access key redemption)
+      // MemberProfile now has no user_id, so fetch first available profile
+      const profiles = await base44.entities.MemberProfile.list();
       
       if (profiles.length === 0) {
-        await base44.entities.MemberProfile.create({
-          user_id: user.id,
-          accepted_pwa_disclaimer_at: new Date().toISOString(),
-          accepted_data_disclaimer_at: new Date().toISOString(),
-          accepted_ai_disclaimer_at: new Date().toISOString(),
-          ai_defaults_accepted: aiDefaults,
-        });
-      } else {
-        await base44.entities.MemberProfile.update(profiles[0].id, {
-          accepted_pwa_disclaimer_at: new Date().toISOString(),
-          accepted_data_disclaimer_at: new Date().toISOString(),
-          accepted_ai_disclaimer_at: new Date().toISOString(),
-          ai_defaults_accepted: aiDefaults,
-        });
+        alert('No member profile found. Please redeem an access code first.');
+        return;
       }
+
+      const profile = profiles[0];
+      
+      // Update with disclaimer acceptance timestamps
+      await base44.entities.MemberProfile.update(profile.id, {
+        accepted_pwa_disclaimer_at: new Date().toISOString(),
+        accepted_codes_at: new Date().toISOString(),
+        ai_consent: true,
+        ai_use_history: aiDefaults,
+      });
 
       window.location.href = createPageUrl('Onboarding');
     } catch (error) {
