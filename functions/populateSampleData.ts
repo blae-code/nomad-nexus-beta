@@ -320,7 +320,7 @@ async function seedWeekOfActivity(base44, userId, seed = 42, scale = 1.0) {
       for (let i = 0; i < 2; i++) {
         statuses.push({
           event_id: eventForStatus.id,
-          user_id: userId,
+          member_profile_id: userId,
           status: 'DISTRESS',
           role: roles[i % roles.length]
         });
@@ -330,7 +330,7 @@ async function seedWeekOfActivity(base44, userId, seed = 42, scale = 1.0) {
       for (let i = 2; i < Math.ceil(4 + rng() * 4 * scale); i++) {
         statuses.push({
           event_id: eventForStatus.id,
-          user_id: userId,
+          member_profile_id: userId,
           status: otherStatuses[Math.floor(rng() * otherStatuses.length)],
           role: roles[Math.floor(rng() * roles.length)]
         });
