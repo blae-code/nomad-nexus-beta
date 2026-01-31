@@ -13,21 +13,58 @@ export default function TailwindError({ elapsed, error }) {
 
   const handleCopyDiagnostics = async () => {
     try {
+      // Test if Tailwind utilities are working
+      const testHiddenUtility = () => {
+        try {
+          const testEl = document.createElement('div');
+          testEl.className = 'hidden';
+          testEl.style.position = 'absolute';
+          testEl.style.visibility = 'hidden';
+          document.body.appendChild(testEl);
+          const computed = window.getComputedStyle(testEl);
+          const result = computed.display === 'none';
+          document.body.removeChild(testEl);
+          return result;
+        } catch {
+          return false;
+        }
+      };
+
+      // Get Tailwind script src if present
+      const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
+      const tailwindScriptSrc = tailwindScript ? tailwindScript.getAttribute('src') : null;
+
+      // Check for CSP meta tag
+      const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      const cspMetaPresent = cspMeta ? cspMeta.getAttribute('content') : null;
+
       const diagnostics = {
         timestamp: new Date().toISOString(),
         timeWaited: `${elapsed}ms`,
         userAgent: navigator.userAgent,
         pageUrl: window.location.href,
-        stylesheets: Array.from(document.styleSheets).map((s) => ({
-          href: s.href || 'inline',
-          rules: s.cssRules?.length || 0,
-          crossOrigin: s.ownerNode?.getAttribute('crossorigin') || 'none',
-        })),
-        tailwindScriptPresent: !!document.querySelector(
-          'script[src*="cdn.tailwindcss.com"]'
-        ),
+        hasHiddenUtility: testHiddenUtility(),
+        tailwindGlobalPresent: typeof window.tailwind !== 'undefined',
+        tailwindScriptSrc,
+        cspMetaPresent,
         styleTagCount: document.querySelectorAll('style').length,
         linkTagCount: document.querySelectorAll('link[rel="stylesheet"]').length,
+        stylesheets: Array.from(document.styleSheets).map((s) => {
+          let rules = 0;
+          let rulesStatus = 'ok';
+          try {
+            rules = s.cssRules?.length || 0;
+          } catch (e) {
+            rules = 0;
+            rulesStatus = 'CORS blocked';
+          }
+          return {
+            href: s.href || 'inline',
+            rules,
+            rulesStatus,
+            crossOrigin: s.ownerNode?.getAttribute('crossorigin') || 'none',
+          };
+        }),
       };
 
       const text = JSON.stringify(diagnostics, null, 2);
