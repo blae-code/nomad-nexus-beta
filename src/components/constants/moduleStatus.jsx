@@ -311,6 +311,11 @@ export function calculateCompletion(moduleKey) {
   const module = MODULE_STATUS[moduleKey];
   if (!module || !module.features) return 0;
 
+  // Use the completed property directly if available (set manually)
+  if (module.completed !== undefined) {
+    return module.completed;
+  }
+
   const completeCount = module.features.filter(f => f.status === 'complete').length;
   const inProgressCount = module.features.filter(f => f.status === 'in-progress').length;
 
