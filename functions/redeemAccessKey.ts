@@ -110,12 +110,50 @@ Deno.serve(async (req) => {
        return Response.json({ success: false, message: 'This access code has expired' }, { status: 403 });
      }
 
+     // Check if this callsign already has an active profile (returning user with same key)
+     let existingProfile = null;
+     try {
+       const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ callsign: callsign.trim() });
+       if (profiles && profiles.length > 0) {
+         existingProfile = profiles[0];
+         console.log('Existing profile found for callsign:', existingProfile.id);
+       }
+     } catch (filterErr) {
+       console.error('Filter existing profile error:', filterErr?.message);
+     }
+
+     // If existing profile found and key was previously redeemed by this profile, allow re-login
+     const isPreviouslyRedeemedByThisProfile = existingProfile && 
+       key.redeemed_by_member_profile_ids?.includes(existingProfile.id);
+
+     if (isPreviouslyRedeemedByThisProfile) {
+       // Re-login with same key - just verify and return success
+       console.log('Re-login detected for existing profile:', existingProfile.id);
+       clearFailures(redemptionId);
+       const loginToken = btoa(JSON.stringify({
+         code: code,
+         callsign: callsign.trim(),
+         memberProfileId: existingProfile.id,
+         timestamp: Date.now()
+       }));
+
+       return Response.json({
+         success: true,
+         member_profile_id: existingProfile.id,
+         grants_rank: existingProfile.rank,
+         grants_roles: existingProfile.roles,
+         loginToken: loginToken,
+         message: 'Login successful - welcome back'
+       });
+     }
+
+     // New user - check if key is still available for new redemptions
      if (key.uses_count >= key.max_uses) {
        recordFailure(redemptionId);
        return Response.json({ success: false, message: 'This access code has reached its usage limit' }, { status: 403 });
      }
 
-     // Create MemberProfile directly (Member-first registration, no User entity)
+     // Create MemberProfile for new user
      let newMemberProfile = null;
      try {
        // If key grants admin/Pioneer rank, mark onboarding complete automatically
@@ -140,7 +178,7 @@ Deno.serve(async (req) => {
        return Response.json({ success: false, message: 'Member profile creation failed' }, { status: 500 });
      }
 
-     // Update AccessKey to link to MemberProfile ID
+     // Update AccessKey to link to new MemberProfile ID
      const newRedeemed = [...(key.redeemed_by_member_profile_ids || []), newMemberProfile.id];
      const newUseCount = key.uses_count + 1;
      const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
