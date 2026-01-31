@@ -77,9 +77,10 @@ export default function TailwindError({ elapsed, error }) {
             fontWeight: 'bold',
             marginBottom: '12px',
             letterSpacing: '0.025em',
+            textTransform: 'uppercase',
           }}
         >
-          Styles Not Loading
+          Signal Loss — UI Telemetry Offline
         </h1>
 
         {/* Error message */}
@@ -91,8 +92,27 @@ export default function TailwindError({ elapsed, error }) {
             lineHeight: '1.5',
           }}
         >
-          {error}
+          Nomad Nexus is online, but your interface package didn't arrive.
+          This usually happens when the styling uplink is blocked or delayed.
         </p>
+
+        {/* What you can do */}
+        <div
+          style={{
+            fontSize: '13px',
+            color: 'rgba(255, 255, 255, 0.8)',
+            marginBottom: '16px',
+            lineHeight: '1.6',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ fontWeight: '600', marginBottom: '8px' }}>What you can do:</div>
+          <ul style={{ listStyle: 'disc', paddingLeft: '20px', margin: '0' }}>
+            <li>Retry the uplink (recommended)</li>
+            <li>If you're on a restricted network, try a different connection</li>
+            <li>If the issue persists, send diagnostics to a Ranger or Systems lead</li>
+          </ul>
+        </div>
 
         {/* Diagnostics box */}
         <div
