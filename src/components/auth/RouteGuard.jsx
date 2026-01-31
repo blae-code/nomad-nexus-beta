@@ -35,7 +35,10 @@ export default function RouteGuard({ requiredAuth = 'authenticated', children })
 
   // User is authenticated but incomplete onboarding flow (non-admins only)
   if (requiredAuth === 'onboarded') {
-    if (user.role !== 'admin') {
+    // Check if admin via User.role OR MemberProfile rank
+    const isAdmin = user.role === 'admin' || user.member_profile_id?.rank === 'Pioneer';
+
+    if (!isAdmin) {
       if (!disclaimersCompleted) {
         return (
           <>
