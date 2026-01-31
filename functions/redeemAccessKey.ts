@@ -52,7 +52,13 @@ Deno.serve(async (req) => {
        }, { status: 429 });
      }
 
-     const payload = await req.json();
+     let payload;
+     try {
+       payload = await req.json();
+     } catch (parseErr) {
+       recordFailure(redemptionId);
+       return Response.json({ success: false, message: 'Invalid request format' }, { status: 400 });
+     }
      const { code, callsign } = payload;
 
      if (code === 'DEMO-ACCESS') {
