@@ -1,7 +1,9 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Animations */
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
@@ -11,6 +13,33 @@
   }
 }
 
+@keyframes glow-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), inset 0 0 20px rgba(239, 68, 68, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+}
+
+@keyframes scan {
+  0% { 
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Utility Classes */
 .animate-shimmer {
   animation: shimmer 2s infinite;
+}
+
+.glow-box {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.scanline-overlay {
+  animation: scan 8s linear infinite;
 }
