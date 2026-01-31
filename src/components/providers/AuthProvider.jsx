@@ -18,7 +18,12 @@ export function AuthProvider({ children }) {
     const checkAuth = async () => {
       try {
         // Guard: only check isAuthenticated first, never call User/me unless authenticated
-        const isAuth = await base44.auth.isAuthenticated();
+        // Mark initialized immediately so AccessGate can render (don't block on this call)
+        const isAuthPromise = base44.auth.isAuthenticated();
+        const isAuth = await Promise.race([
+          isAuthPromise,
+          new Promise(resolve => setTimeout(() => resolve(false), 3000)) // 3s timeout
+        ]);
         if (!isMounted) return;
 
         if (!isAuth) {
