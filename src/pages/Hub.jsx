@@ -9,6 +9,7 @@ import { useCurrentUser } from '@/components/useCurrentUser';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
+import NexusLoadingOverlay from '@/components/common/NexusLoadingOverlay';
 import { useAuth } from '@/components/providers/AuthProvider';
 import RouteGuard from '@/components/auth/RouteGuard';
 
@@ -56,6 +57,7 @@ export default function Hub() {
 
   return (
     <RouteGuard requiredAuth="onboarded">
+      <NexusLoadingOverlay isLoading={authLoading} message="Loading command center..." />
       <div className="w-full h-full flex flex-col px-6 py-6 overflow-y-auto">
       {/* Command Center Header */}
       <div className="space-y-4 mb-6">
