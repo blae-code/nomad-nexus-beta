@@ -31,19 +31,30 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Get MemberProfile for current user
+    let memberProfileId = null;
+    try {
+      const profiles = await base44.entities.MemberProfile.list();
+      if (profiles.length > 0) {
+        memberProfileId = profiles[0].id;
+      }
+    } catch (err) {
+      console.error('[PRESENCE] Failed to get member profile:', err.message);
+      return Response.json({ error: 'Member profile not found' }, { status: 404 });
+    }
+
     // Find or create presence record
-    const filterQuery = { user_id: user.id };
+    const filterQuery = { member_profile_id: memberProfileId };
     let existing = [];
     
     try {
       existing = await base44.asServiceRole.entities.UserPresence.filter(filterQuery);
     } catch (err) {
-      // If filter fails, treat as no existing record
       console.debug('[PRESENCE] Filter failed, will create new:', err.message);
     }
 
     const presenceData = {
-      user_id: user.id,
+      member_profile_id: memberProfileId,
       status,
       is_transmitting: isTransmitting || false,
       last_activity: new Date().toISOString(),

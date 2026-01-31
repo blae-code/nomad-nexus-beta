@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
             event_id: eventId,
             type: 'SYSTEM',
             severity: 'LOW',
-            actor_user_id: user.id,
+            actor_member_profile_id: user.id,
             summary: `Communications provisioning complete: ${netsCreated.length} nets initialized`,
             details: {
                 nets_created: netsCreated.map(n => ({ code: n.code, label: n.label, room: n.livekit_room_name })),

@@ -185,7 +185,7 @@ async function seedWeekOfActivity(base44, userId, seed = 42, scale = 1.0) {
       const channel = refs.channels[Math.floor(rng() * refs.channels.length)];
       messages.push({
         channel_id: channel.id,
-        user_id: userId,
+        member_profile_id: userId,
         content: msgTemplates[Math.floor(rng() * msgTemplates.length)],
         read_by: [userId],
         created_date: new Date(Date.now() - rng() * 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -297,11 +297,11 @@ async function seedWeekOfActivity(base44, userId, seed = 42, scale = 1.0) {
     for (let i = 0; i < Math.ceil(rng() * 8 * scale); i++) {
       const amount = Math.floor(rng() * 50000) + 1000;
       transactions.push({
+        coffer_id: 'general', // Placeholder - should link to actual coffer
+        member_profile_id: userId,
+        amount: Math.random() > 0.4 ? amount : -amount,
         description: `${txTypes[Math.floor(rng() * txTypes.length)]} - Operation funds`,
-        amount,
-        transaction_type: Math.random() > 0.4 ? 'inflow' : 'outflow',
-        recorded_by: userId,
-        timestamp: new Date(Date.now() - rng() * 7 * 24 * 60 * 60 * 1000).toISOString()
+        transaction_date: new Date(Date.now() - rng() * 7 * 24 * 60 * 60 * 1000).toISOString()
       });
     }
     
@@ -367,7 +367,7 @@ async function seedWeekOfActivity(base44, userId, seed = 42, scale = 1.0) {
   // === NOTIFICATION PREFS ===
   try {
     await base44.asServiceRole.entities.NotificationPreference.create({
-      user_id: userId,
+      member_profile_id: userId,
       high_priority_alerts: true,
       event_assignments: true,
       event_status_changes: true,

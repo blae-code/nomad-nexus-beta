@@ -23,16 +23,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Fetch admin's member profile
-    const adminProfiles = await base44.asServiceRole.entities.MemberProfile.filter({ 
-      created_by: user.id 
-    });
-    
-    if (!adminProfiles || adminProfiles.length === 0) {
-      return Response.json({ error: 'Admin member profile not found' }, { status: 404 });
-    }
-
-    const adminMemberProfileId = adminProfiles[0].id;
+    // For admins, use their User ID directly (admins bypass member_profile_id requirement initially)
+    // In production, admins should also have MemberProfiles, but this allows bootstrap
+    const adminMemberProfileId = user.id; // Use user.id as placeholder for admin context
 
     const { grantsRank, grantsPermissions } = await req.json();
 
