@@ -21,79 +21,74 @@ export function AuthProvider({ children }) {
               setInitialized(true);
               setLoading(false);
 
-              // Then check auth in background (don't block rendering)
-              const isAuthPromise = base44.auth.isAuthenticated();
-              const isAuth = await Promise.race([
-                isAuthPromise,
-                new Promise(resolve => setTimeout(() => resolve(false), 3000)) // 3s timeout
-              ]);
+              // Member-first authentication: Check localStorage for stored session token
+              const savedToken = localStorage.getItem('nexus.login.token');
+              if (!savedToken) {
+                console.log('[AUTH] No saved login token found');
+                setUser(null);
+                return;
+              }
+
+              // Decode saved token to get code + callsign
+              let loginData;
+              try {
+                loginData = JSON.parse(atob(savedToken));
+              } catch (decodeErr) {
+                console.warn('[AUTH] Invalid token format:', decodeErr.message);
+                localStorage.removeItem('nexus.login.token');
+                setUser(null);
+                return;
+              }
+
+              const { code, callsign } = loginData;
+              if (!code || !callsign) {
+                console.warn('[AUTH] Token missing code or callsign');
+                localStorage.removeItem('nexus.login.token');
+                setUser(null);
+                return;
+              }
+
+              // Call verifyMemberSession to validate the session
+              let response;
+              try {
+                response = await base44.functions.invoke('verifyMemberSession', { code, callsign });
+              } catch (invokeErr) {
+                console.error('[AUTH] verifyMemberSession failed:', invokeErr?.message);
+                setUser(null);
+                return;
+              }
+
               if (!isMounted) return;
 
-              if (!isAuth) {
+              // Check if verification succeeded
+              if (!response?.data?.success || !response?.data?.member) {
+                console.warn('[AUTH] Session verification failed:', response?.data?.message);
+                localStorage.removeItem('nexus.login.token');
                 setUser(null);
                 return;
               }
 
-              // Only fetch User/me if authenticated
-              let currentUser = null;
-              try {
-                currentUser = await base44.auth.me();
-                if (!isMounted) return;
-              } catch (err) {
-                console.warn('User fetch failed after auth check:', err?.message);
-                setUser(null);
-                return;
-              }
+              const memberProfile = response.data.member;
+              console.log('[AUTH] Session verified. Member:', memberProfile.id, 'callsign:', memberProfile.callsign, 'rank:', memberProfile.rank);
 
-              // Load MemberProfile (source of truth for auth state, not User.role)
-              try {
-                const allProfiles = await base44.entities.MemberProfile.filter({});
-                if (!isMounted) return;
+              // Set authenticated user with member profile as source of truth
+              const isAdmin = memberProfile.rank === 'Pioneer';
+              setUser({
+                member_profile_id: memberProfile.id,
+                member_profile_data: memberProfile,
+                is_admin: isAdmin,
+                // Legacy fields for compatibility
+                email: null,
+                full_name: memberProfile.callsign,
+                id: memberProfile.id
+              });
 
-                console.log('[AUTH] Found', allProfiles.length, 'total profiles');
-
-                let profile = null;
-
-                // Try to find by exact email match in created_by (for manually created profiles)
-                profile = allProfiles.find(p => p.created_by === currentUser.email);
-
-                // If not found, assume most recent profile is the user's (service-created on key redemption)
-                if (!profile && allProfiles.length > 0) {
-                  const sortedByDate = allProfiles.sort((a, b) => 
-                    new Date(b.created_date) - new Date(a.created_date)
-                  );
-                  profile = sortedByDate[0];
-                  console.log('[AUTH] Using most recent profile as fallback:', profile.id, 'callsign:', profile.callsign, 'rank:', profile.rank);
-                }
-
-                if (!profile) {
-                  console.error('[AUTH] No MemberProfile found. User email:', currentUser.email, 'Profiles:', allProfiles.map(p => ({ id: p.id, callsign: p.callsign, created_by: p.created_by })));
-                  setUser(null);
-                  return;
-                }
-
-                console.log('[AUTH] Loaded profile:', profile.id, 'rank:', profile.rank);
-
-                // Store profile and check admin status via rank
-                const isAdmin = profile.rank === 'Pioneer';
-                setUser({
-                  ...currentUser,
-                  member_profile_id: profile.id,
-                  member_profile_data: profile,
-                  is_admin: isAdmin
-                });
-
-                // Set onboarding/disclaimers based on profile
-                setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
-                setOnboardingCompleted(!!profile.onboarding_completed);
-              } catch (profileErr) {
-                if (!isMounted) return;
-                console.error('MemberProfile fetch failed:', profileErr?.message);
-                setUser(null);
-              }
+              // Set onboarding/disclaimers based on profile
+              setDisclaimersCompleted(!!memberProfile.accepted_pwa_disclaimer_at);
+              setOnboardingCompleted(!!memberProfile.onboarding_completed);
             } catch (err) {
               if (!isMounted) return;
-              console.error('Auth initialization error:', err?.message);
+              console.error('[AUTH] Auth initialization error:', err?.message);
               setUser(null);
             }
           };
