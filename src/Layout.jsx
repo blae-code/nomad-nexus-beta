@@ -191,5 +191,5 @@ function LayoutContent({ currentPageName, children }) {
         <CommandPaletteUI />
       </div>
       </CommandPaletteProvider>
-        );
-        }
+      );
+      }
