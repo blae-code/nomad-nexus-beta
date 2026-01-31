@@ -23,17 +23,8 @@ export default function PermissionGuard({
   requiredRoles = null,
   requireAllRoles = false,
   fallback = null,
-  currentPageName = null,
 }) {
   const { user, loading } = useCurrentUser();
-  const [routeGuardReady, setRouteGuardReady] = React.useState(false);
-
-  // Wrap RouteGuard to extract children safely
-  const guardedContent = React.useMemo(() => (
-    <RouteGuard requiredAuth="authenticated" currentPageName={currentPageName}>
-      {children}
-    </RouteGuard>
-  ), [children, currentPageName]);
 
   // Still loading auth
   if (loading) {
@@ -83,7 +74,7 @@ export default function PermissionGuard({
     // Admins should always have access - this shouldn't happen
     if (user.role === 'admin') {
       console.warn('Admin permission check failed:', { user, minRank, allowedRanks, requiredRoles });
-      return guardedContent;
+      return <>{children}</>;
     }
     
     return fallback || (
@@ -94,5 +85,5 @@ export default function PermissionGuard({
     );
   }
 
-  return guardedContent;
+  return <>{children}</>;
 }
