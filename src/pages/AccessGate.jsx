@@ -41,36 +41,15 @@ export default function AccessGate() {
     console.log('CUSTOM ACCESSGATE LOADED', window.location.href);
   }, []);
 
-  // Check for saved login and auto-redeem if present
+  // Check for saved login token to pre-fill form (don't auto-redirect)
   useEffect(() => {
     let isMounted = true;
 
     const checkSavedLogin = async () => {
       try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isMounted) return;
-
-        if (isAuth) {
-          emitReadyBeacon('authenticated');
-          // Only fetch User/me if authenticated
-          try {
-            const user = await base44.auth.me();
-            if (!isMounted) return;
-            
-            // Redirect immediately - Route Guard and AuthProvider will handle the flow
-            const targetPage = 'Hub';
-            window.location.href = createPageUrl(targetPage);
-          } catch (userErr) {
-            if (isMounted) {
-              setError('Failed to load user profile');
-            }
-          }
-          return;
-        }
-
-        // Not authenticated - check for saved login token
+        // Check for saved login token to pre-fill form
         const savedToken = localStorage.getItem('nexus.login.token');
-        if (savedToken) {
+        if (savedToken && isMounted) {
           setHasSavedLogin(true);
           try {
             const loginData = JSON.parse(atob(savedToken));
@@ -90,7 +69,7 @@ export default function AccessGate() {
         }
       }
     };
-    
+
     checkSavedLogin();
 
     return () => {
