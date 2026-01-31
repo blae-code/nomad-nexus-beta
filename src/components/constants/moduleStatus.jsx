@@ -155,7 +155,7 @@ export const MODULE_STATUS = {
   },
   CommsConsole: {
     name: 'Comms Array',
-    completed: 100,
+    completed: 83,
     features: [
       { name: 'Channel Management', status: 'complete' },
       { name: 'Message System', status: 'complete' },
