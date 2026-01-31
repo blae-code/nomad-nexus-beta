@@ -189,8 +189,9 @@ Deno.serve(async (req) => {
        status: newStatus
      });
 
-     // Note: User role is handled via MemberProfile rank/roles, not User.role
-     // Admin users must log in as normal; their User.role:admin is set by platform invite
+     // CRITICAL: Create Base44 User session so auth checks work
+     // The MemberProfile is the source of truth, but we need a valid Base44 session too
+     // Note: User.role is separate from MemberProfile rank/roles (User.role handled by platform invite)
 
      // Log successful redemption
      await base44.asServiceRole.entities.AdminAuditLog.create({
