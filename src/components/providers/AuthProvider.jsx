@@ -45,36 +45,35 @@ export function AuthProvider({ children }) {
                 return;
               }
 
-              setUser(currentUser);
+              // Load MemberProfile (source of truth for auth state, not User.role)
+              try {
+                const allProfiles = await base44.entities.MemberProfile.list();
+                if (!isMounted) return;
 
-              // Skip profile checks for admins
-              if (currentUser.role === 'admin') {
-                setOnboardingCompleted(true);
-                setDisclaimersCompleted(true);
-                return;
+                const profile = allProfiles.find(p => p.created_by === currentUser.email);
+                if (!profile) {
+                  console.warn('No MemberProfile found for user:', currentUser.email);
+                  setUser(null);
+                  return;
+                }
+
+                // Store profile and check admin status via rank
+                const isAdmin = profile.rank === 'Pioneer';
+                setUser({
+                  ...currentUser,
+                  member_profile_id: profile.id,
+                  member_profile_data: profile,
+                  is_admin: isAdmin
+                });
+
+                // Set onboarding/disclaimers based on profile
+                setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
+                setOnboardingCompleted(!!profile.onboarding_completed);
+              } catch (profileErr) {
+                if (!isMounted) return;
+                console.error('MemberProfile fetch failed:', profileErr?.message);
+                setUser(null);
               }
-
-              // Check member profile for onboarding/disclaimers status
-               // MemberProfile.created_by matches User.email, so find by current user's email
-               try {
-                 const allProfiles = await base44.entities.MemberProfile.list();
-                 if (!isMounted) return;
-
-                 // Find profile created by this user (created_by = User.email)
-                 const profile = allProfiles.find(p => p.created_by === currentUser.email);
-
-                 if (profile) {
-                   setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
-                   setOnboardingCompleted(!!profile.onboarding_completed);
-                   // Store member_profile_id in context for other components
-                   setUser(prev => prev ? { ...prev, member_profile_id: profile.id, member_profile_data: profile } : prev);
-                 } else {
-                   console.warn('No MemberProfile found for user:', currentUser.email);
-                 }
-               } catch (profileErr) {
-                 if (!isMounted) return;
-                 console.warn('Profile fetch warning:', profileErr?.message);
-               }
             } catch (err) {
               if (!isMounted) return;
               console.error('Auth initialization error:', err?.message);
