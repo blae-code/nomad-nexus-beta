@@ -26,6 +26,7 @@ import GlobalMessageSearch from '@/components/comms/GlobalMessageSearch';
 import MentionsView from '@/components/comms/MentionsView';
 import ChannelNotificationSettings from '@/components/comms/ChannelNotificationSettings';
 import ModerationPanel from '@/components/comms/ModerationPanel';
+import AIModerationIndicator from '@/components/comms/AIModerationIndicator';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -443,15 +444,18 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                      </Button>
 
                      {user?.role === 'admin' && (
-                       <Button
-                         size="icon"
-                         variant="ghost"
-                         onClick={() => setShowModerationPanel(true)}
-                         className="h-6 w-6"
-                         title="Moderation tools"
-                       >
-                         <Shield className="w-3 h-3" />
-                       </Button>
+                       <>
+                         <Button
+                           size="icon"
+                           variant="ghost"
+                           onClick={() => setShowModerationPanel(true)}
+                           className="h-6 w-6"
+                           title="Moderation tools"
+                         >
+                           <Shield className="w-3 h-3" />
+                         </Button>
+                         <AIModerationIndicator channelId={selectedChannel.id} isAdmin={true} />
+                       </>
                      )}
                    </div>
                   )}
