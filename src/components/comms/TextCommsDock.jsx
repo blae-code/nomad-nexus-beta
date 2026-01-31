@@ -399,10 +399,9 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                    )}
                    </div>
                    )}
-                   </div>
 
-              {/* Message Area */}
-              <div className="flex-1 flex overflow-hidden">
+                   {/* Message Area */}
+                   <div className="flex-1 flex overflow-hidden">
                 <div className="flex-1 flex flex-col overflow-hidden">
                   {/* Channel Header */}
                   {selectedChannel && (
@@ -506,41 +505,41 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
 
                 {/* Composer — Enhanced with MessageComposer */}
                 {!selectedChannel || !canAccessChannel(selectedChannel) ? (
-                 <div className="border-t border-orange-500/10 p-3 bg-zinc-900/40 flex-shrink-0">
-                   <div className="flex items-center gap-2 text-[10px] text-zinc-600 px-3 py-2 bg-zinc-800/30 rounded border border-zinc-700/50">
-                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                     <span className="truncate">Cannot post to this channel</span>
-                   </div>
-                 </div>
+                  <div className="border-t border-orange-500/10 p-3 bg-zinc-900/40 flex-shrink-0">
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-600 px-3 py-2 bg-zinc-800/30 rounded border border-zinc-700/50">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">Cannot post to this channel</span>
+                    </div>
+                  </div>
                 ) : (
-                 <MessageComposer
-                   channelId={selectedChannelId}
-                   userId={user?.id}
-                   onSendMessage={async (messageData) => {
-                     try {
-                       await base44.entities.Message.create(messageData);
-                       clearTyping();
-                       refreshUnreadCounts();
-                     } catch (error) {
-                       console.error('Failed to send message:', error);
-                     }
-                   }}
-                   />
-                   )}
-                   </div>
+                  <MessageComposer
+                    channelId={selectedChannelId}
+                    userId={user?.id}
+                    onSendMessage={async (messageData) => {
+                      try {
+                        await base44.entities.Message.create(messageData);
+                        clearTyping();
+                        refreshUnreadCounts();
+                      } catch (error) {
+                        console.error('Failed to send message:', error);
+                      }
+                    }}
+                  />
+                )}
+                </div>
 
-                   {/* Thread Panel */}
-                   {threadPanelMessage && (
-                   <ThreadPanel
-                   parentMessage={threadPanelMessage}
-                   onClose={() => setThreadPanelMessage(null)}
-                   currentUserId={user?.id}
-                   isAdmin={user?.role === 'admin'}
-                   />
-                   )}
-                   </div>
-                   </div>
-              )}
+                {/* Thread Panel */}
+                {threadPanelMessage && (
+                <ThreadPanel
+                  parentMessage={threadPanelMessage}
+                  onClose={() => setThreadPanelMessage(null)}
+                  currentUserId={user?.id}
+                  isAdmin={user?.role === 'admin'}
+                />
+                )}
+                </div>
+                </div>
+                )}
 
 
         </div>

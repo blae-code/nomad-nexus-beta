@@ -6,9 +6,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 
+const unreadByChannel = {};
+
 export function useUnreadCounts(userId) {
   const [channels, setChannels] = useState([]);
-  const [unreadByChannel, setUnreadByChannel] = useState({}); // { channelId: count }
+  const [unreadByChannelState, setUnreadByChannelState] = useState({}); // { channelId: count }
   const [unreadByTab, setUnreadByTab] = useState({ comms: 0, polls: 0, riggsy: 0, inbox: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -53,9 +55,14 @@ export function useUnreadCounts(userId) {
       const counts = {};
       for (const channel of allChannels) {
         counts[channel.id] = await calculateUnread(channel.id);
-      }
+        }
 
-      setUnreadByChannel(counts);
+        setUnreadByChannelState(counts);
+
+        // Also update exported object
+        Object.keys(counts).forEach(key => {
+        unreadByChannel[key] = counts[key];
+        });
 
       // Tab-level unread = sum of casual channels
       const casualCount = allChannels
@@ -103,7 +110,8 @@ export function useUnreadCounts(userId) {
 
           // Refresh counts after marking read
           const newCount = await calculateUnread(channelId);
-          setUnreadByChannel((prev) => ({ ...prev, [channelId]: newCount }));
+          setUnreadByChannelState((prev) => ({ ...prev, [channelId]: newCount }));
+          unreadByChannel[channelId] = newCount;
         } catch (error) {
           console.error('Error marking channel as read:', error);
         }
@@ -166,7 +174,7 @@ export function useUnreadCounts(userId) {
 
   return {
     channels,
-    unreadByChannel,
+    unreadByChannel: unreadByChannelState,
     unreadByTab,
     loading,
     markChannelRead,
