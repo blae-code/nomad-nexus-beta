@@ -107,13 +107,8 @@ export default function AccessGate() {
               setVerifyingAuth(true);
 
               try {
-                // Wait up to 10 seconds for auth confirmation
-                const confirmAuthPromise = confirmAuthEstablished();
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Auth confirmation timeout')), 10000)
-                );
-
-                await Promise.race([confirmAuthPromise, timeoutPromise]);
+                // Token already saved by redeemAccessKey, just wait for AuthProvider to pick it up
+                await new Promise(r => setTimeout(r, 500));
 
                 // Auth confirmed by backend, AuthProvider will handle session on next load
                 setMessage('Authorization confirmed. Redirecting...');
