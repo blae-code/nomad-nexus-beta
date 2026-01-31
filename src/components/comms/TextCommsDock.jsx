@@ -560,11 +560,21 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                 </div>
                 )}
 
+                {activeTab === 'mentions' && (
+                <MentionsView 
+                user={user} 
+                onJumpToMessage={(msg) => {
+                  setSelectedChannelId(msg.channel_id);
+                  setActiveTab('comms');
+                  setViewMode('channels');
+                }}
+                />
+                )}
 
-        </div>
-      )}
+                </div>
+                )}
 
-      {/* User Picker Modal */}
+                {/* User Picker Modal */}
       <UserPickerModal
         isOpen={showUserPicker}
         onClose={() => setShowUserPicker(false)}
