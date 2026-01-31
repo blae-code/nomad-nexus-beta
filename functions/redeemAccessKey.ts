@@ -56,17 +56,17 @@ Deno.serve(async (req) => {
      const { code, callsign } = payload;
 
      if (code === 'DEMO-ACCESS') {
-       recordFailure(userId);
+       recordFailure(redemptionId);
        return Response.json({ success: false, message: 'Demo access is no longer supported' }, { status: 403 });
      }
 
      if (!code || typeof code !== 'string') {
-       recordFailure(userId);
+       recordFailure(redemptionId);
        return Response.json({ success: false, message: 'Invalid code' }, { status: 400 });
      }
 
      if (!callsign || typeof callsign !== 'string' || callsign.trim().length === 0) {
-       recordFailure(userId);
+       recordFailure(redemptionId);
        return Response.json({ success: false, message: 'Callsign is required' }, { status: 400 });
      }
 
