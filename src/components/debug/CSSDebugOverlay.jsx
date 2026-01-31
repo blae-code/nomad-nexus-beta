@@ -16,47 +16,35 @@ export default function CSSDebugOverlay() {
     const startTime = Date.now();
 
     const runDiagnostics = () => {
-      const testEl = document.createElement('div');
-      testEl.className = 'hidden';
-      testEl.style.position = 'absolute';
-      testEl.style.visibility = 'hidden';
-      document.body.appendChild(testEl);
+      // Tier A: DOM-ready check (O(1))
+      const domReady = document.readyState === 'complete' || document.readyState === 'interactive';
+      const rootExists = Boolean(document.getElementById('root'));
+      
+      // Tier B: App-ready check (beacon or fallback)
+      const beacon = document.getElementById('nn-ready');
+      const rootMounted = rootExists && document.getElementById('root').children.length > 0;
+      const appReady = beacon || rootMounted;
 
-      const computed = window.getComputedStyle(testEl);
-      const hasHiddenUtility = computed.display === 'none';
-      document.body.removeChild(testEl);
-
+      // O(1) Tailwind detection (no CSS enumeration)
       const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
-      const styleSheets = Array.from(document.styleSheets).map((sheet) => {
-        let rules = 0;
-        let corsStatus = 'ok';
-        try {
-          rules = sheet.cssRules?.length || 0;
-        } catch (err) {
-          rules = 0;
-          corsStatus = 'cors-blocked';
-        }
-
-        return {
-          href: sheet.href || 'inline',
-          rules,
-          corsStatus,
-        };
-      });
+      const tailwindGlobal = typeof window.tailwind !== 'undefined';
 
       const results = {
-        hasHiddenUtility,
-        tailwindGlobalPresent: typeof window.tailwind !== 'undefined',
-        tailwindScriptSrc: tailwindScript ? tailwindScript.src : null,
-        styleTagCount: document.querySelectorAll('style').length,
-        linkTagCount: document.querySelectorAll('link[rel="stylesheet"]').length,
-        styleSheets,
-        timeToReadyMs: hasHiddenUtility ? Date.now() - startTime : null,
+        domReady,
+        rootExists,
+        rootMounted,
+        beaconPresent: Boolean(beacon),
+        beaconState: beacon?.dataset?.state || null,
+        appReady,
+        tailwindScriptPresent: Boolean(tailwindScript),
+        tailwindScriptSrc: tailwindScript?.src || null,
+        tailwindGlobalPresent: tailwindGlobal,
+        timeToReadyMs: appReady ? Date.now() - startTime : null,
         timestamp: new Date().toISOString(),
       };
 
       setDiagnostics(results);
-      return hasHiddenUtility;
+      return appReady;
     };
 
     if (!runDiagnostics()) {
@@ -66,7 +54,7 @@ export default function CSSDebugOverlay() {
         }
       }, 100);
 
-      setTimeout(() => clearInterval(interval), 10000);
+      setTimeout(() => clearInterval(interval), 5000);
     }
   }, []);
 
@@ -74,9 +62,9 @@ export default function CSSDebugOverlay() {
     return null;
   }
 
-  const bgColor = diagnostics.hasHiddenUtility ? '#064e3b' : '#7f1d1d';
-  const borderColor = diagnostics.hasHiddenUtility ? '#10b981' : '#ef4444';
-  const statusColor = diagnostics.hasHiddenUtility ? '#34d399' : '#f87171';
+  const bgColor = diagnostics.appReady ? '#064e3b' : '#7f1d1d';
+  const borderColor = diagnostics.appReady ? '#10b981' : '#ef4444';
+  const statusColor = diagnostics.appReady ? '#34d399' : '#f87171';
 
   return (
     <div
@@ -115,9 +103,53 @@ export default function CSSDebugOverlay() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', color: '#d1d5db' }}>
         <div>
-          <span style={{ fontWeight: 'bold' }}>hasHiddenUtility:</span>
+          <span style={{ fontWeight: 'bold' }}>appReady:</span>
           <span style={{ marginLeft: '6px', color: statusColor, fontWeight: 'bold' }}>
-            {diagnostics.hasHiddenUtility ? 'true' : 'false'}
+            {diagnostics.appReady ? 'true' : 'false'}
+          </span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>domReady:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.domReady ? '#34d399' : '#f87171' }}>
+            {diagnostics.domReady ? 'true' : 'false'}
+          </span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>rootExists:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.rootExists ? '#34d399' : '#f87171' }}>
+            {diagnostics.rootExists ? 'true' : 'false'}
+          </span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>rootMounted:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.rootMounted ? '#34d399' : '#f87171' }}>
+            {diagnostics.rootMounted ? 'true' : 'false'}
+          </span>
+        </div>
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>beaconPresent:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.beaconPresent ? '#34d399' : '#f87171' }}>
+            {diagnostics.beaconPresent ? 'true' : 'false'}
+          </span>
+        </div>
+
+        {diagnostics.beaconState && (
+          <div>
+            <span style={{ fontWeight: 'bold' }}>beaconState:</span>
+            <span style={{ marginLeft: '6px', color: '#34d399' }}>
+              {diagnostics.beaconState}
+            </span>
+          </div>
+        )}
+
+        <div>
+          <span style={{ fontWeight: 'bold' }}>tailwindScriptPresent:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.tailwindScriptPresent ? '#34d399' : '#f87171' }}>
+            {diagnostics.tailwindScriptPresent ? 'true' : 'false'}
           </span>
         </div>
 
@@ -129,43 +161,10 @@ export default function CSSDebugOverlay() {
         </div>
 
         <div>
-          <span style={{ fontWeight: 'bold' }}>tailwindScriptSrc:</span>
-          <span style={{ marginLeft: '6px', fontSize: '10px', wordBreak: 'break-all' }}>
-            {diagnostics.tailwindScriptSrc || 'none'}
-          </span>
-        </div>
-
-        <div>
-          <span style={{ fontWeight: 'bold' }}>styleTagCount:</span>
-          <span style={{ marginLeft: '6px' }}>{diagnostics.styleTagCount}</span>
-        </div>
-
-        <div>
-          <span style={{ fontWeight: 'bold' }}>linkTagCount:</span>
-          <span style={{ marginLeft: '6px' }}>{diagnostics.linkTagCount}</span>
-        </div>
-
-        <div>
           <span style={{ fontWeight: 'bold' }}>timeToReadyMs:</span>
           <span style={{ marginLeft: '6px' }}>
             {diagnostics.timeToReadyMs !== null ? diagnostics.timeToReadyMs : 'pending...'}
           </span>
-        </div>
-
-        <div>
-          <span style={{ fontWeight: 'bold' }}>stylesheets:</span>
-          <div style={{ marginTop: '4px', maxHeight: '120px', overflowY: 'auto' }}>
-            {diagnostics.styleSheets.map((sheet, index) => (
-              <div key={`${sheet.href}-${index}`} style={{ marginBottom: '4px' }}>
-                <div style={{ fontSize: '10px', color: '#e5e7eb', wordBreak: 'break-all' }}>
-                  {sheet.href}
-                </div>
-                <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                  rules: {sheet.rules} | cors: {sheet.corsStatus}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
