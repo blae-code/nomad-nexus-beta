@@ -20,6 +20,8 @@ import MessageItem from '@/components/comms/MessageItem';
 import MessageComposer from '@/components/comms/MessageComposer';
 import ThreadPanel from '@/components/comms/ThreadPanel';
 import PinnedMessages from '@/components/comms/PinnedMessages';
+import DMChannelList from '@/components/comms/DMChannelList';
+import UserPickerModal from '@/components/comms/UserPickerModal';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -30,6 +32,9 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [threadPanelMessage, setThreadPanelMessage] = useState(null);
+  const [showUserPicker, setShowUserPicker] = useState(false);
+  const [userPickerMode, setUserPickerMode] = useState('dm');
+  const [viewMode, setViewMode] = useState('channels'); // 'channels' or 'dms'
   const messagesEndRef = useRef(null);
 
   const { user } = useCurrentUser();
@@ -107,6 +112,11 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
         content: messageInput,
       });
 
+      // Update channel's last_message_at
+      await base44.entities.Channel.update(selectedChannelId, {
+        last_message_at: new Date().toISOString(),
+      });
+
       setMessages((prev) => [...prev, newMsg]);
       setMessageInput('');
       clearTyping();
@@ -115,6 +125,60 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       console.error('Failed to send message:', error);
     }
   }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts, clearTyping]);
+
+  const handleCreateDM = async ({ userIds }) => {
+    try {
+      // Check if DM already exists
+      const existingDMs = await base44.entities.Channel.filter({ is_dm: true });
+      const existing = existingDMs.find(ch => {
+        const participants = ch.dm_participants || [];
+        return participants.length === 2 &&
+          participants.includes(user.id) &&
+          participants.includes(userIds[0]);
+      });
+
+      if (existing) {
+        setSelectedChannelId(existing.id);
+        setViewMode('dms');
+        return;
+      }
+
+      // Create new DM channel
+      const dmChannel = await base44.entities.Channel.create({
+        name: `DM-${user.id}-${userIds[0]}`,
+        type: 'text',
+        category: 'direct',
+        is_dm: true,
+        is_group_chat: false,
+        dm_participants: [user.id, userIds[0]],
+      });
+
+      setSelectedChannelId(dmChannel.id);
+      setViewMode('dms');
+    } catch (error) {
+      console.error('Failed to create DM:', error);
+    }
+  };
+
+  const handleCreateGroup = async ({ userIds, groupName }) => {
+    try {
+      const groupChannel = await base44.entities.Channel.create({
+        name: groupName,
+        type: 'text',
+        category: 'direct',
+        is_dm: true,
+        is_group_chat: true,
+        dm_participants: [user.id, ...userIds],
+        group_name: groupName,
+        group_owner_id: user.id,
+      });
+
+      setSelectedChannelId(groupChannel.id);
+      setViewMode('dms');
+    } catch (error) {
+      console.error('Failed to create group:', error);
+    }
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -174,22 +238,31 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       {/* Tabs — Comms active, others disabled with "coming soon" */}
       {!isMinimized && (
         <div className="flex border-b border-orange-500/10 bg-zinc-950/40 flex-shrink-0 overflow-x-auto">
-          {['comms', 'polls', 'riggsy', 'inbox'].map((tab) => (
+          {['comms', 'dms', 'polls', 'riggsy', 'inbox'].map((tab) => (
             <button
               key={tab}
-              onClick={() => tab === 'comms' && setActiveTab(tab)}
-              disabled={tab !== 'comms'}
+              onClick={() => {
+                if (tab === 'comms') {
+                  setActiveTab('comms');
+                  setViewMode('channels');
+                } else if (tab === 'dms') {
+                  setActiveTab('comms');
+                  setViewMode('dms');
+                }
+              }}
+              disabled={tab !== 'comms' && tab !== 'dms'}
               className={`whitespace-nowrap text-[11px] font-semibold uppercase px-3 py-2 transition-all border-b-2 ${
-                tab !== 'comms'
+                tab !== 'comms' && tab !== 'dms'
                   ? 'text-zinc-600 border-transparent cursor-not-allowed opacity-50'
-                  : activeTab === tab
+                  : (tab === 'comms' && viewMode === 'channels') || (tab === 'dms' && viewMode === 'dms')
                   ? 'text-orange-400 border-orange-500'
                   : 'text-zinc-500 hover:text-zinc-300 border-transparent hover:border-orange-500/30'
               }`}
-              title={tab !== 'comms' ? 'Coming soon' : ''}
+              title={tab !== 'comms' && tab !== 'dms' ? 'Coming soon' : ''}
             >
-              {tab === 'comms' && <>Comms {unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>}
-              {tab !== 'comms' && <>{tab} <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
+              {tab === 'comms' && <>Channels {viewMode === 'channels' && unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>}
+              {tab === 'dms' && <>DMs</>}
+              {tab !== 'comms' && tab !== 'dms' && <>{tab} <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
             </button>
           ))}
         </div>
@@ -200,8 +273,25 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
         <div className="flex-1 overflow-hidden flex flex-col">
           {activeTab === 'comms' && (
             <div className="flex-1 overflow-hidden flex">
-              {/* Channel List */}
+              {/* Channel/DM List */}
               <div className="w-48 lg:w-56 border-r border-orange-500/10 flex flex-col overflow-hidden min-w-0 flex-shrink-0">
+              {viewMode === 'dms' ? (
+                <DMChannelList
+                  currentUserId={user?.id}
+                  selectedChannelId={selectedChannelId}
+                  onSelectChannel={setSelectedChannelId}
+                  onCreateDM={() => {
+                    setUserPickerMode('dm');
+                    setShowUserPicker(true);
+                  }}
+                  onCreateGroup={() => {
+                    setUserPickerMode('group');
+                    setShowUserPicker(true);
+                  }}
+                  unreadCounts={unreadByChannel}
+                />
+              ) : (
+                <>
               {/* Search Input */}
               <div className="px-2 py-2 flex-shrink-0">
                 <Input
@@ -306,9 +396,10 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                        </div>
                      )}
                    </>
-                 )}
-               </div>
-              </div>
+                   )}
+                   </div>
+                   )}
+                   </div>
 
               {/* Message Area */}
               <div className="flex-1 flex overflow-hidden">
@@ -454,6 +545,15 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
 
         </div>
       )}
+
+      {/* User Picker Modal */}
+      <UserPickerModal
+        isOpen={showUserPicker}
+        onClose={() => setShowUserPicker(false)}
+        onConfirm={userPickerMode === 'dm' ? handleCreateDM : handleCreateGroup}
+        mode={userPickerMode}
+        currentUserId={user?.id}
+      />
     </div>
   );
 }
