@@ -34,6 +34,7 @@ export default function AccessGate() {
   const [error, setError] = useState(null);
   const [verifyingAuth, setVerifyingAuth] = useState(false);
   const [hasSavedLogin, setHasSavedLogin] = useState(false);
+  const [authState, setAuthState] = useState(null);
 
   // Debug marker
   useEffect(() => {
