@@ -78,31 +78,35 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
         setWaiting(false);
 
         // Gather detailed diagnostics
-        const twScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
-        const scriptPresent = !!twScript;
-        const scriptLoaded = twScript?.loaded || false;
-        const tailwindGlobal = typeof window.tailwind !== 'undefined';
+        const stylesheets = Array.from(document.styleSheets);
+        const hasStyles = stylesheets.length > 0;
+        const totalRules = stylesheets.reduce((sum, s) => {
+          try {
+            return sum + (s.cssRules?.length || 0);
+          } catch (e) {
+            return sum;
+          }
+        }, 0);
 
         const details = [
           `Waited ${finalElapsed}ms without Tailwind utilities loading.`,
-          `Tailwind CDN script: ${scriptPresent ? '✓ Present' : '✗ Missing'}${
-            scriptPresent ? ` (loaded=${scriptLoaded})` : ''
-          }`,
-          `window.tailwind: ${tailwindGlobal ? '✓ Defined' : '✗ Undefined'}`,
-          'Check browser console & network tab for CDN load errors.',
+          `Stylesheets: ${stylesheets.length} (${totalRules} rules)`,
+          hasStyles 
+            ? 'Styles present but Tailwind utilities not working.' 
+            : 'No stylesheets loaded.',
+          'Check browser console & network tab for CSS load errors.',
         ].join(' ');
 
         setError(details);
         
-        console.error('✗ Tailwind CDN timeout:', {
+        console.error('✗ Tailwind CSS timeout:', {
           waited: finalElapsed,
-          scriptPresent,
-          scriptLoaded,
-          tailwindGlobal,
-          stylesheets: Array.from(document.styleSheets).map((s) => ({
+          stylesheets: stylesheets.map((s) => ({
             href: s.href || 'inline',
-            rules: s.cssRules?.length || 0,
+            rules: (() => { try { return s.cssRules?.length || 0; } catch { return 'CORS blocked'; } })(),
+            crossOrigin: s.href ? new URL(s.href).origin !== window.location.origin ? 'cross-origin' : 'same-origin' : 'inline',
           })),
+          totalRules,
         });
       }
     }, timeoutMs);
