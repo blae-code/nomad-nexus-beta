@@ -254,19 +254,17 @@ export default function TailwindError({ elapsed, error }) {
           </button>
         </div>
 
-        {/* Help text */}
+        {/* Footer microcopy */}
         <div
           style={{
             marginTop: '24px',
-            fontSize: '12px',
+            fontSize: '11px',
             color: 'rgba(255, 255, 255, 0.4)',
             lineHeight: '1.5',
+            fontStyle: 'italic',
           }}
         >
-          <p>
-            If this persists, check your internet connection or contact support
-            with the diagnostics above.
-          </p>
+          If this keeps happening, your network may be blocking the styling beacon.
         </div>
       </div>
     </div>
