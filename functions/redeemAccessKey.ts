@@ -115,28 +115,29 @@ Deno.serve(async (req) => {
        return Response.json({ success: false, message: 'This access code has reached its usage limit' }, { status: 403 });
      }
 
-     // Create new user with callsign as email
-     let newUser = null;
+     // Create MemberProfile directly (Member-first registration, no User entity)
+     let newMemberProfile = null;
      try {
-       const sanitizedEmail = callsign.trim().toLowerCase().replace(/\s+/g, '_') + '@nexus.local';
-       newUser = await base44.asServiceRole.auth.createUser({
-         email: sanitizedEmail,
-         full_name: callsign.trim()
+       newMemberProfile = await base44.asServiceRole.entities.MemberProfile.create({
+         user_id: redemptionId, // Use redemptionId as placeholder (no real user)
+         callsign: callsign.trim(),
+         rank: key.grants_rank || 'VAGRANT',
+         roles: key.grants_roles || []
        });
-       console.log('New user created:', newUser.id);
+       console.log('New member profile created:', newMemberProfile.id);
      } catch (createErr) {
-       console.error('User creation error:', createErr?.message);
+       console.error('Member profile creation error:', createErr?.message);
        recordFailure(redemptionId);
-       return Response.json({ success: false, message: 'Failed to create user account' }, { status: 500 });
+       return Response.json({ success: false, message: 'Failed to create member profile' }, { status: 500 });
      }
 
-     if (!newUser || !newUser.id) {
+     if (!newMemberProfile || !newMemberProfile.id) {
        recordFailure(redemptionId);
-       return Response.json({ success: false, message: 'User creation failed' }, { status: 500 });
+       return Response.json({ success: false, message: 'Member profile creation failed' }, { status: 500 });
      }
 
-     // Redeem key atomically with new user ID
-     const newRedeemed = [...(key.redeemed_by_user_ids || []), newUser.id];
+     // Update AccessKey to link to MemberProfile ID
+     const newRedeemed = [...(key.redeemed_by_user_ids || []), newMemberProfile.id];
      const newUseCount = key.uses_count + 1;
      const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
 
@@ -146,20 +147,12 @@ Deno.serve(async (req) => {
        status: newStatus
      });
 
-     // Create member profile for new user
-     await base44.asServiceRole.entities.MemberProfile.create({
-       user_id: newUser.id,
-       callsign: callsign.trim(),
-       rank: key.grants_rank || 'VAGRANT',
-       roles: key.grants_roles || []
-     });
-
      // Log successful redemption
      await base44.asServiceRole.entities.AdminAuditLog.create({
-       actor_user_id: newUser.id,
+       actor_user_id: newMemberProfile.id,
        action: 'redeem_access_key',
-       payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles },
-       executed_by: newUser.id,
+       payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles, member_profile_id: newMemberProfile.id },
+       executed_by: newMemberProfile.id,
        executed_at: new Date().toISOString(),
        step_name: 'access_control',
        status: 'success'
@@ -167,22 +160,22 @@ Deno.serve(async (req) => {
 
       clearFailures(redemptionId);
 
-      // Generate login token for "Remember Me" functionality
+      // Generate login token for Member-first authentication
       const loginToken = btoa(JSON.stringify({
         code: code,
         callsign: callsign.trim(),
-        userId: newUser.id,
+        memberProfileId: newMemberProfile.id,
         timestamp: Date.now()
       }));
 
       return Response.json({
         success: true,
-        user_id: newUser.id,
+        member_profile_id: newMemberProfile.id,
         grants_rank: key.grants_rank,
         grants_roles: key.grants_roles,
         code_hash: key.code.substring(0, 4) + '****' + key.code.substring(key.code.length - 4),
         loginToken: loginToken,
-        message: 'Access code redeemed successfully - account created'
+        message: 'Access code redeemed successfully - member profile created'
       });
      } catch (error) {
       console.error('redeemAccessKey error:', error);
