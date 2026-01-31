@@ -155,6 +155,14 @@ export default function AccessGate() {
     }
   };
 
+  const emitReadyBeacon = (state) => {
+    if (authState === state) return; // Only emit once per state
+    setAuthState(state);
+    
+    // Dispatch custom event
+    window.dispatchEvent(new CustomEvent('nn:ready', { detail: { state } }));
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4">
