@@ -26,6 +26,14 @@ export default function PermissionGuard({
   currentPageName = null,
 }) {
   const { user, loading } = useCurrentUser();
+  const [routeGuardReady, setRouteGuardReady] = React.useState(false);
+
+  // Wrap RouteGuard to extract children safely
+  const guardedContent = React.useMemo(() => (
+    <RouteGuard requiredAuth="authenticated" currentPageName={currentPageName}>
+      {children}
+    </RouteGuard>
+  ), [children, currentPageName]);
 
   // Still loading auth
   if (loading) {
