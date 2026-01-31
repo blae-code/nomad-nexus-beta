@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Minimize2, Hash, Lock, Send, AlertCircle, Search } from 'lucide-react';
+import { Minimize2, Hash, Lock, Send, AlertCircle, Search, Bell, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
@@ -24,6 +24,8 @@ import DMChannelList from '@/components/comms/DMChannelList';
 import UserPickerModal from '@/components/comms/UserPickerModal';
 import GlobalMessageSearch from '@/components/comms/GlobalMessageSearch';
 import MentionsView from '@/components/comms/MentionsView';
+import ChannelNotificationSettings from '@/components/comms/ChannelNotificationSettings';
+import ModerationPanel from '@/components/comms/ModerationPanel';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -38,6 +40,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [userPickerMode, setUserPickerMode] = useState('dm');
   const [viewMode, setViewMode] = useState('channels'); // 'channels' or 'dms'
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showModerationPanel, setShowModerationPanel] = useState(false);
   const messagesEndRef = useRef(null);
 
   const { user } = useCurrentUser();
@@ -426,7 +430,29 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                   {selectedChannel && (
                    <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
                      {!canAccessChannel(selectedChannel) && <Lock className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />}
-                     <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate">#{selectedChannel.name}</span>
+                     <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate flex-1">#{selectedChannel.name}</span>
+
+                     <Button
+                       size="icon"
+                       variant="ghost"
+                       onClick={() => setShowNotificationSettings(true)}
+                       className="h-6 w-6"
+                       title="Notification settings"
+                     >
+                       <Bell className="w-3 h-3" />
+                     </Button>
+
+                     {user?.role === 'admin' && (
+                       <Button
+                         size="icon"
+                         variant="ghost"
+                         onClick={() => setShowModerationPanel(true)}
+                         className="h-6 w-6"
+                         title="Moderation tools"
+                       >
+                         <Shield className="w-3 h-3" />
+                       </Button>
+                     )}
                    </div>
                   )}
 
@@ -592,6 +618,22 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
           setViewMode('channels');
         }}
         currentUserId={user?.id}
+      />
+
+      {/* Channel Notification Settings */}
+      <ChannelNotificationSettings
+        channel={selectedChannel}
+        isOpen={showNotificationSettings}
+        onClose={() => setShowNotificationSettings(false)}
+        userId={user?.id}
+      />
+
+      {/* Moderation Panel */}
+      <ModerationPanel
+        channel={selectedChannel}
+        isOpen={showModerationPanel}
+        onClose={() => setShowModerationPanel(false)}
+        currentUser={user}
       />
     </div>
   );
