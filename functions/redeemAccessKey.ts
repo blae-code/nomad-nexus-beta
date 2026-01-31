@@ -36,6 +36,8 @@ function clearFailures(userId) {
 
 Deno.serve(async (req) => {
    try {
+     // For unauthenticated key redemption, we need service-level access
+     // Don't create base44 from request - use it only for service operations
      const base44 = createClientFromRequest(req);
 
      // Try to get authenticated user, but allow unauthenticated access for key redemption
