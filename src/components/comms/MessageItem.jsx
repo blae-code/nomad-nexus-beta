@@ -1,0 +1,275 @@
+/**
+ * MessageItem — Enhanced message display with edit, delete, reactions, and rich text
+ */
+
+import React, { useState } from 'react';
+import { Edit2, Trash2, Smile, MoreVertical, Reply } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import ReactMarkdown from 'react-markdown';
+import { base44 } from '@/api/base44Client';
+
+const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '👀', '🔥', '✅', '❌'];
+
+export default function MessageItem({ 
+  message, 
+  currentUserId, 
+  isAdmin, 
+  lastSeen,
+  onEdit,
+  onDelete,
+  onReply
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+  const canEdit = currentUserId === message.user_id;
+  const canDelete = isAdmin || currentUserId === message.user_id;
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim() || editContent === message.content) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      await base44.entities.Message.update(message.id, {
+        content: editContent,
+        is_edited: true,
+        edit_history: [
+          ...(message.edit_history || []),
+          { content: message.content, edited_at: new Date().toISOString() }
+        ]
+      });
+      setIsEditing(false);
+      onEdit?.();
+    } catch (error) {
+      console.error('Failed to edit message:', error);
+    }
+  };
+
+  const handleReaction = async (emoji) => {
+    try {
+      const reactions = message.reactions || [];
+      const existingReaction = reactions.find(r => r.emoji === emoji);
+
+      let newReactions;
+      if (existingReaction) {
+        // Toggle reaction
+        if (existingReaction.user_ids.includes(currentUserId)) {
+          // Remove user's reaction
+          newReactions = reactions.map(r => 
+            r.emoji === emoji 
+              ? { ...r, user_ids: r.user_ids.filter(id => id !== currentUserId) }
+              : r
+          ).filter(r => r.user_ids.length > 0);
+        } else {
+          // Add user's reaction
+          newReactions = reactions.map(r => 
+            r.emoji === emoji 
+              ? { ...r, user_ids: [...r.user_ids, currentUserId] }
+              : r
+          );
+        }
+      } else {
+        // New reaction
+        newReactions = [...reactions, { emoji, user_ids: [currentUserId] }];
+      }
+
+      await base44.entities.Message.update(message.id, { reactions: newReactions });
+      setShowReactionPicker(false);
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+    }
+  };
+
+  if (message.is_deleted) {
+    return (
+      <div className="opacity-50 text-zinc-600 text-xs italic py-2">
+        [Message deleted{message.deleted_reason ? `: ${message.deleted_reason}` : ''}]
+      </div>
+    );
+  }
+
+  return (
+    <div className="group hover:bg-zinc-900/20 -mx-2 px-2 py-1.5 rounded transition-colors">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {/* Message Header */}
+          <div className="flex items-center gap-2 text-[10px] mb-1">
+            {lastSeen?.isOnline && (
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" title="Online now" />
+            )}
+            <span className="font-semibold text-zinc-400 truncate">{message.user_id}</span>
+            <span className="text-zinc-600 flex-shrink-0">•</span>
+            <span className="text-zinc-600 flex-shrink-0">
+              {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            {message.is_edited && (
+              <>
+                <span className="text-zinc-600 flex-shrink-0">•</span>
+                <span className="text-zinc-600 flex-shrink-0 italic">(edited)</span>
+              </>
+            )}
+          </div>
+
+          {/* Message Content */}
+          {isEditing ? (
+            <div className="space-y-2">
+              <Input
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSaveEdit();
+                  }
+                  if (e.key === 'Escape') {
+                    setIsEditing(false);
+                    setEditContent(message.content);
+                  }
+                }}
+                className="h-8 text-xs"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleSaveEdit} className="h-6 text-xs">Save</Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setIsEditing(false);
+                  setEditContent(message.content);
+                }} className="h-6 text-xs">Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-zinc-300 text-xs leading-relaxed break-words">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                  code: ({ inline, children }) => 
+                    inline 
+                      ? <code className="px-1 py-0.5 bg-zinc-800 rounded text-orange-400">{children}</code>
+                      : <pre className="bg-zinc-900 p-2 rounded overflow-x-auto my-2"><code className="text-green-400">{children}</code></pre>,
+                  a: ({ children, href }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
+                      {children}
+                    </a>
+                  ),
+                  strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                  em: ({ children }) => <em className="italic">{children}</em>,
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            </div>
+          )}
+
+          {/* Attachments */}
+          {message.attachments && message.attachments.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {message.attachments.map((url, idx) => (
+                <div key={idx}>
+                  {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img src={url} alt="attachment" className="max-w-sm rounded border border-zinc-700" />
+                  ) : (
+                    <a 
+                      href={url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-orange-400 hover:underline flex items-center gap-1"
+                    >
+                      📎 {url.split('/').pop()}
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Reactions */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {message.reactions.map((reaction, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleReaction(reaction.emoji)}
+                  className={`px-2 py-0.5 rounded-full text-xs border transition-colors ${
+                    reaction.user_ids.includes(currentUserId)
+                      ? 'bg-orange-500/20 border-orange-500/50'
+                      : 'bg-zinc-800 border-zinc-700 hover:border-zinc-600'
+                  }`}
+                >
+                  {reaction.emoji} {reaction.user_ids.length}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Actions Menu */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-6 w-6">
+                <MoreVertical className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onReply && (
+                <DropdownMenuItem onClick={() => onReply(message)}>
+                  <Reply className="w-3 h-3 mr-2" />
+                  Reply in thread
+                </DropdownMenuItem>
+              )}
+              {canEdit && (
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Edit2 className="w-3 h-3 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete?.(message)}
+                  className="text-red-400"
+                >
+                  <Trash2 className="w-3 h-3 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="relative">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-6 w-6"
+              onClick={() => setShowReactionPicker(!showReactionPicker)}
+            >
+              <Smile className="w-3 h-3" />
+            </Button>
+            {showReactionPicker && (
+              <div className="absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded p-2 flex gap-1 shadow-lg z-10">
+                {COMMON_EMOJIS.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => handleReaction(emoji)}
+                    className="hover:bg-zinc-800 rounded px-1.5 py-1 text-sm transition-colors"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

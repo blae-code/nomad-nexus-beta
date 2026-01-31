@@ -16,6 +16,8 @@ import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 import { useTypingIndicator } from '@/components/hooks/useTypingIndicator';
 import TypingIndicator from '@/components/comms/TypingIndicator';
 import { useLastSeen } from '@/components/hooks/useLastSeen';
+import MessageItem from '@/components/comms/MessageItem';
+import MessageComposer from '@/components/comms/MessageComposer';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -315,86 +317,89 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                  </div>
                 )}
 
-                {/* Messages — Improved styling with better hierarchy */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs flex flex-col min-h-0">
-                   {loadingMessages && (
-                     <div className="flex items-center justify-center h-full text-zinc-500">
-                       <div className="text-xs text-center">
-                         <div className="animate-pulse mb-2 text-orange-500">⟳</div>
-                         <div>Loading messages...</div>
-                       </div>
-                     </div>
-                   )}
-                   {messages.length === 0 && !loadingMessages && (
-                     <div className="flex items-center justify-center h-full text-zinc-600">
-                       <div className="text-center">
-                         <div className="text-[10px] opacity-50 mb-1">—</div>
-                         <div className="text-[10px]">No messages in this channel yet</div>
-                       </div>
-                     </div>
-                   )}
-                   {messages.length > 0 && (
-                     <>
-                       {messages.map((msg) => {
-                         const lastSeen = lastSeenMap[msg.user_id];
-                         return (
-                           <div key={msg.id} className="group">
-                             <div className="flex items-center gap-2 text-[10px] mb-1">
-                               {lastSeen?.isOnline && (
-                                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" title="Online now" />
-                               )}
-                               <span className="font-semibold text-zinc-400 truncate">{msg.user_id || 'Unknown'}</span>
-                               <span className="text-zinc-600 flex-shrink-0">•</span>
-                               <span className="text-zinc-600 flex-shrink-0">{new Date(msg.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                               {lastSeen && !lastSeen.isOnline && (
-                                 <>
-                                   <span className="text-zinc-600 flex-shrink-0">•</span>
-                                   <span className="text-zinc-600 flex-shrink-0" title={`Last active: ${lastSeen.timestamp}`}>{lastSeen.formatted}</span>
-                                 </>
-                               )}
-                             </div>
-                             <p className="text-zinc-300 leading-relaxed break-words">{msg.content}</p>
-                           </div>
-                         );
-                       })}
-                       <div ref={messagesEndRef} />
-                     </>
-                   )}
-                   {/* Typing Indicator */}
-                   {typingUsers.length > 0 && <TypingIndicator userIds={typingUsers} />}
-                </div>
-
-                {/* Composer — Expandable input with clear send button */}
-                <div className="border-t border-orange-500/10 p-3 bg-zinc-900/40 flex-shrink-0">
-                  {!selectedChannel || !canAccessChannel(selectedChannel) ? (
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-600 px-3 py-2 bg-zinc-800/30 rounded border border-zinc-700/50">
-                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="truncate">Cannot post to this channel</span>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 items-center">
-                      <Input
-                        value={messageInput}
-                        onChange={(e) => {
-                          setMessageInput(e.target.value);
-                          if (e.target.value) signalTyping();
-                        }}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your message..."
-                        className="h-9 text-xs flex-1 bg-zinc-900 border-orange-500/20 placeholder:text-zinc-600 focus:border-orange-500/40 transition-colors min-w-0"
-                      />
-                      <Button
-                        size="icon"
-                        onClick={handleSendMessage}
-                        disabled={!messageInput.trim()}
-                        className="h-9 w-9 flex-shrink-0 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
-                        title="Send message (Enter)"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
+                {/* Messages — Enhanced with MessageItem component */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-1 text-xs flex flex-col min-h-0">
+                  {loadingMessages && (
+                    <div className="flex items-center justify-center h-full text-zinc-500">
+                      <div className="text-xs text-center">
+                        <div className="animate-pulse mb-2 text-orange-500">⟳</div>
+                        <div>Loading messages...</div>
+                      </div>
                     </div>
                   )}
+                  {messages.length === 0 && !loadingMessages && (
+                    <div className="flex items-center justify-center h-full text-zinc-600">
+                      <div className="text-center">
+                        <div className="text-[10px] opacity-50 mb-1">—</div>
+                        <div className="text-[10px]">No messages in this channel yet</div>
+                      </div>
+                    </div>
+                  )}
+                  {messages.length > 0 && (
+                    <>
+                      {messages.map((msg) => {
+                        const lastSeen = lastSeenMap[msg.user_id];
+                        return (
+                          <MessageItem
+                            key={msg.id}
+                            message={msg}
+                            currentUserId={user?.id}
+                            isAdmin={user?.role === 'admin'}
+                            lastSeen={lastSeen}
+                            onEdit={() => {
+                              // Refresh messages after edit
+                              const loadMessages = async () => {
+                                const msgs = await base44.entities.Message.filter({ channel_id: selectedChannelId });
+                                setMessages(msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
+                              };
+                              loadMessages();
+                            }}
+                            onDelete={async (msgToDelete) => {
+                              if (confirm('Delete this message?')) {
+                                try {
+                                  await base44.entities.Message.update(msgToDelete.id, {
+                                    is_deleted: true,
+                                    deleted_by: user.id,
+                                    deleted_at: new Date().toISOString(),
+                                  });
+                                } catch (error) {
+                                  console.error('Failed to delete message:', error);
+                                }
+                              }
+                            }}
+                          />
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                  {/* Typing Indicator */}
+                  {typingUsers.length > 0 && <TypingIndicator userIds={typingUsers} />}
                 </div>
+
+                {/* Composer — Enhanced with MessageComposer */}
+                {!selectedChannel || !canAccessChannel(selectedChannel) ? (
+                 <div className="border-t border-orange-500/10 p-3 bg-zinc-900/40 flex-shrink-0">
+                   <div className="flex items-center gap-2 text-[10px] text-zinc-600 px-3 py-2 bg-zinc-800/30 rounded border border-zinc-700/50">
+                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                     <span className="truncate">Cannot post to this channel</span>
+                   </div>
+                 </div>
+                ) : (
+                 <MessageComposer
+                   channelId={selectedChannelId}
+                   userId={user?.id}
+                   onSendMessage={async (messageData) => {
+                     try {
+                       await base44.entities.Message.create(messageData);
+                       clearTyping();
+                       refreshUnreadCounts();
+                     } catch (error) {
+                       console.error('Failed to send message:', error);
+                     }
+                   }}
+                 />
+                )}
               </div>
               </div>
               )}
