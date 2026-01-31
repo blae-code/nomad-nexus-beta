@@ -34,31 +34,31 @@ export default function RouteGuard({ requiredAuth = 'authenticated', children })
   }
 
   // User is authenticated but incomplete onboarding flow (non-admins only)
-  if (requiredAuth === 'onboarded') {
-    // Check if admin via User.role OR MemberProfile rank
-    const isAdmin = user.role === 'admin' || user.member_profile_id?.rank === 'Pioneer';
+   if (requiredAuth === 'onboarded') {
+     // Check admin status via MemberProfile rank (source of truth)
+     const isAdmin = user.is_admin || user.member_profile_data?.rank === 'Pioneer';
 
-    if (!isAdmin) {
-      if (!disclaimersCompleted) {
-        return (
-          <>
-            <LoadingScreen />
-            <Navigate to={createPageUrl('Disclaimers')} replace />
-          </>
-        );
-      }
+     if (!isAdmin) {
+       if (!disclaimersCompleted) {
+         return (
+           <>
+             <LoadingScreen />
+             <Navigate to={createPageUrl('Disclaimers')} replace />
+           </>
+         );
+       }
 
-      if (!onboardingCompleted) {
-        return (
-          <>
-            <LoadingScreen />
-            <Navigate to={createPageUrl('Onboarding')} replace />
-          </>
-        );
-      }
-    }
-    // Admins automatically pass 'onboarded' checks
-  }
+       if (!onboardingCompleted) {
+         return (
+           <>
+             <LoadingScreen />
+             <Navigate to={createPageUrl('Onboarding')} replace />
+           </>
+         );
+       }
+     }
+     // Admins automatically pass 'onboarded' checks
+   }
 
   // All checks passed, render children
   return children;
