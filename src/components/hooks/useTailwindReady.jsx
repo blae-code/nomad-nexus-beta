@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /**
- * useTailwindReady - Detects if Tailwind CDN styles are loaded by testing computed styles
+ * useTailwindReady - Detects if Tailwind styles are loaded (bundled or CDN) by testing computed styles
  * @param {number} timeoutMs - Timeout in milliseconds (default 8000)
  * @returns {object} { ready: boolean, error: string | null, waiting: boolean }
  */
