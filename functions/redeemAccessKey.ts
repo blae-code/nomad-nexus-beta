@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
          timestamp: Date.now()
        }));
 
+       // Frontend will save this as localStorage.setItem('nexus.login.token', response.data.loginToken)
        return Response.json({
          success: true,
          member_profile_id: existingProfile.id,
@@ -214,6 +215,7 @@ Deno.serve(async (req) => {
         timestamp: Date.now()
       }));
 
+      // Frontend will save this as localStorage.setItem('nexus.login.token', response.data.loginToken)
       return Response.json({
         success: true,
         member_profile_id: newMemberProfile.id,
