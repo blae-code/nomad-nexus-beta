@@ -47,6 +47,7 @@ export default function AccessGate() {
       try {
         const isAuth = await base44.auth.isAuthenticated();
         if (isAuth) {
+          emitReadyBeacon('authenticated');
           window.location.href = createPageUrl('Disclaimers');
           return;
         }
@@ -65,8 +66,11 @@ export default function AccessGate() {
             localStorage.removeItem('nexus.login.token');
           }
         }
+
+        emitReadyBeacon('unauthenticated');
       } catch (err) {
-        // Silently ignore
+        emitReadyBeacon('error');
+        setError(err.message || 'Authentication check failed');
       }
     };
     checkSavedLogin();
