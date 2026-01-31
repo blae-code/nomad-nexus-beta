@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
      const redemptionId = crypto.randomUUID();
 
      // Rate limit check
-     const limit = checkRateLimit(userId);
+     const limit = checkRateLimit(redemptionId);
      if (!limit.allowed) {
        return Response.json({
          success: false,
