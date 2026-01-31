@@ -41,7 +41,7 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
           clearTimeout(timeoutHandle);
           setReady(true);
           setWaiting(false);
-          console.log('✓ Tailwind CDN loaded and ready');
+          console.log('✓ Tailwind CSS loaded and ready');
         }
 
         return tailwindReady;
