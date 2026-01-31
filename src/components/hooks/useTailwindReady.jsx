@@ -19,29 +19,51 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
 
     const checkTailwind = () => {
       try {
-        // Create test element with a known Tailwind utility
-        const testEl = document.createElement('div');
-        testEl.className = 'hidden';
-        testEl.style.position = 'absolute';
-        testEl.style.visibility = 'hidden';
-        document.body.appendChild(testEl);
+        // First check: Are there any stylesheets loaded?
+        const stylesheets = Array.from(document.styleSheets);
+        if (stylesheets.length === 0) {
+          return false; // No stylesheets yet, keep waiting
+        }
 
-        // Check computed style
-        const computed = window.getComputedStyle(testEl);
-        const display = computed.display;
+        // Second check: Test multiple Tailwind utilities to ensure styles are applied
+        const testContainer = document.createElement('div');
+        testContainer.style.position = 'absolute';
+        testContainer.style.visibility = 'hidden';
+        testContainer.style.pointerEvents = 'none';
         
-        // Clean up immediately
-        document.body.removeChild(testEl);
+        // Test multiple utilities to be more confident
+        testContainer.innerHTML = `
+          <div class="hidden" data-test="hidden"></div>
+          <div class="flex" data-test="flex"></div>
+          <div class="text-red-500" data-test="color"></div>
+        `;
+        
+        document.body.appendChild(testContainer);
 
-        // If display is 'none', Tailwind is loaded
-        const tailwindReady = display === 'none';
+        const hiddenEl = testContainer.querySelector('[data-test="hidden"]');
+        const flexEl = testContainer.querySelector('[data-test="flex"]');
+        const colorEl = testContainer.querySelector('[data-test="color"]');
+
+        const hiddenStyle = window.getComputedStyle(hiddenEl);
+        const flexStyle = window.getComputedStyle(flexEl);
+        const colorStyle = window.getComputedStyle(colorEl);
+
+        // Clean up
+        document.body.removeChild(testContainer);
+
+        // Check if Tailwind utilities are working
+        const hiddenWorks = hiddenStyle.display === 'none';
+        const flexWorks = flexStyle.display === 'flex';
+        const colorWorks = colorStyle.color === 'rgb(239, 68, 68)'; // text-red-500
+
+        const tailwindReady = hiddenWorks && flexWorks && colorWorks;
 
         if (tailwindReady && isMounted) {
           clearInterval(pollInterval);
           clearTimeout(timeoutHandle);
           setReady(true);
           setWaiting(false);
-          console.log('✓ Tailwind CSS loaded and ready');
+          console.log('✓ Tailwind CSS loaded and ready', { hiddenWorks, flexWorks, colorWorks });
         }
 
         return tailwindReady;
