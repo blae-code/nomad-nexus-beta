@@ -77,7 +77,14 @@ Deno.serve(async (req) => {
      }
 
      // Find key - use service role for unrestricted access
-     const keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+     let keys = [];
+     try {
+       keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+     } catch (filterErr) {
+       console.error('Filter error:', filterErr?.message);
+       recordFailure(userId);
+       return Response.json({ success: false, message: 'Invalid access code' }, { status: 404 });
+     }
 
      if (!keys || keys.length === 0) {
        recordFailure(userId);
