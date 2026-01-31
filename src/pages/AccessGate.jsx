@@ -56,7 +56,9 @@ export default function AccessGate() {
           try {
             const user = await base44.auth.me();
             if (!isMounted) return;
-            const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
+            
+            // Redirect immediately - Route Guard and AuthProvider will handle the flow
+            const targetPage = 'Hub';
             window.location.href = createPageUrl(targetPage);
           } catch (userErr) {
             if (isMounted) {
