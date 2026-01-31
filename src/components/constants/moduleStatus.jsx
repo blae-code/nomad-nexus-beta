@@ -6,7 +6,7 @@
 export const MODULE_STATUS = {
   MissionControl: {
     name: 'Mission Control',
-    completed: 100,
+    completed: 36,
     features: [
       { name: 'Event Management', status: 'complete' },
       { name: 'Tactical Operations Console', status: 'complete' },
@@ -34,7 +34,7 @@ export const MODULE_STATUS = {
   },
   FleetTracking: {
     name: 'Fleet Tracking',
-    completed: 100,
+    completed: 67,
     features: [
       { name: 'Live Asset Map', status: 'complete' },
       { name: 'Real-time Location Updates', status: 'complete' },
@@ -48,7 +48,7 @@ export const MODULE_STATUS = {
   },
   MemberProgression: {
     name: 'Member Progression',
-    completed: 100,
+    completed: 75,
     features: [
       { name: 'Skill Tree Visualization', status: 'complete' },
       { name: 'AI-Powered Skill Assessment', status: 'complete' },
@@ -62,7 +62,7 @@ export const MODULE_STATUS = {
   },
   ReportBuilder: {
     name: 'Report Builder',
-    completed: 100,
+    completed: 73,
     features: [
       { name: 'Custom Report Filters', status: 'complete' },
       { name: 'Report Generation Engine', status: 'complete' },
@@ -79,7 +79,7 @@ export const MODULE_STATUS = {
   },
   IntelNexus: {
     name: 'Intel Nexus',
-    completed: 12,
+    completed: 17,
     features: [
       { name: 'Database Schema', status: 'complete' },
       { name: 'Basic UI Scaffolding', status: 'complete' },
@@ -97,7 +97,7 @@ export const MODULE_STATUS = {
   },
   WarAcademy: {
     name: 'War Academy',
-    completed: 18,
+    completed: 17,
     features: [
       { name: 'Training Modules UI', status: 'complete' },
       { name: 'Training Scenario Library', status: 'planned' },
@@ -125,7 +125,7 @@ export const MODULE_STATUS = {
   },
   NomadRegistry: {
     name: 'Nomad Registry',
-    completed: 30,
+    completed: 20,
     features: [
       { name: 'Member Profiles', status: 'complete' },
       { name: 'Availability Tracking', status: 'complete' },
@@ -141,7 +141,7 @@ export const MODULE_STATUS = {
   },
   TradeNexus: {
     name: 'Trade Nexus',
-    completed: 20,
+    completed: 19,
     features: [
       { name: 'Treasury System', status: 'complete' },
       { name: 'Marketplace UI', status: 'in-progress' },
@@ -204,7 +204,7 @@ export const MODULE_STATUS = {
   },
   FrontierOps: {
     name: 'Frontier Ops',
-    completed: 25,
+    completed: 30,
     features: [
       { name: 'Bounty Board UI', status: 'complete' },
       { name: 'Mission Contracts', status: 'in-progress' },
@@ -229,7 +229,7 @@ export const MODULE_STATUS = {
   },
   NexusTraining: {
     name: 'Nexus Training',
-    completed: 10,
+    completed: 0,
     features: [
       { name: 'Tutorial Framework', status: 'planned' },
       { name: 'Interactive Guides', status: 'planned' },
@@ -284,7 +284,7 @@ export const MODULE_STATUS = {
   },
   Hub: {
    name: 'Command Hub',
-   completed: 75,
+   completed: 38,
    features: [
      { name: 'Module Navigation', status: 'complete' },
      { name: 'Development Roadmap', status: 'complete' },
