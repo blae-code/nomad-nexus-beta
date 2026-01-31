@@ -36,19 +36,11 @@ function clearFailures(userId) {
 
 Deno.serve(async (req) => {
    try {
-     // For unauthenticated key redemption, we need service-level access
-     // Don't create base44 from request - use it only for service operations
+     // For new user registration via access key
      const base44 = createClientFromRequest(req);
 
-     // Try to get authenticated user, but allow unauthenticated access for key redemption
-     let user = null;
-     try {
-       user = await base44.auth.me();
-     } catch (err) {
-       // User is not authenticated - that's OK for initial redemption
-     }
-
-     const userId = user?.id || 'anonymous';
+     // Generate unique ID for rate limiting (before user creation)
+     const redemptionId = crypto.randomUUID();
 
      // Rate limit check
      const limit = checkRateLimit(userId);
