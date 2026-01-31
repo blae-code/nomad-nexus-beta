@@ -272,7 +272,7 @@ export default function AccessGate() {
               </label>
               <div className="relative">
                 <Input
-                  type="text"
+                  type="password"
                   placeholder="XXXX-XXXX-XXXX"
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
