@@ -23,6 +23,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
+    // Fetch admin's member profile
+    const adminProfiles = await base44.asServiceRole.entities.MemberProfile.filter({ 
+      created_by: user.id 
+    });
+    
+    if (!adminProfiles || adminProfiles.length === 0) {
+      return Response.json({ error: 'Admin member profile not found' }, { status: 404 });
+    }
+
+    const adminMemberProfileId = adminProfiles[0].id;
+
     const { grantsRank, grantsPermissions } = await req.json();
 
     if (!grantsRank) {
@@ -37,7 +48,7 @@ Deno.serve(async (req) => {
       grants_rank: grantsRank,
       grants_roles: grantsPermissions || [],
       expires_at: null,
-      created_by_user_id: user.id,
+      created_by_member_profile_id: adminMemberProfileId,
     });
 
     // Log audit trail

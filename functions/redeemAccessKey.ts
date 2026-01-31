@@ -119,7 +119,6 @@ Deno.serve(async (req) => {
      let newMemberProfile = null;
      try {
        newMemberProfile = await base44.asServiceRole.entities.MemberProfile.create({
-         user_id: redemptionId, // Use redemptionId as placeholder (no real user)
          callsign: callsign.trim(),
          rank: key.grants_rank || 'VAGRANT',
          roles: key.grants_roles || []
@@ -137,22 +136,22 @@ Deno.serve(async (req) => {
      }
 
      // Update AccessKey to link to MemberProfile ID
-     const newRedeemed = [...(key.redeemed_by_user_ids || []), newMemberProfile.id];
+     const newRedeemed = [...(key.redeemed_by_member_profile_ids || []), newMemberProfile.id];
      const newUseCount = key.uses_count + 1;
      const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
 
      await base44.asServiceRole.entities.AccessKey.update(key.id, {
        uses_count: newUseCount,
-       redeemed_by_user_ids: newRedeemed,
+       redeemed_by_member_profile_ids: newRedeemed,
        status: newStatus
      });
 
      // Log successful redemption
      await base44.asServiceRole.entities.AdminAuditLog.create({
-       actor_user_id: newMemberProfile.id,
+       actor_member_profile_id: newMemberProfile.id,
        action: 'redeem_access_key',
        payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles, member_profile_id: newMemberProfile.id },
-       executed_by: newMemberProfile.id,
+       executed_by_member_profile_id: newMemberProfile.id,
        executed_at: new Date().toISOString(),
        step_name: 'access_control',
        status: 'success'

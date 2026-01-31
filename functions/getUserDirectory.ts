@@ -4,45 +4,44 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Parse optional body for filtered user IDs
-    let userIds = null;
+    // Parse optional body for filtered member profile IDs
+    let memberProfileIds = null;
     if (req.method === 'POST' || req.method === 'PUT') {
       try {
         const body = await req.json();
-        userIds = body.userIds && Array.isArray(body.userIds) ? body.userIds : null;
+        memberProfileIds = body.memberProfileIds && Array.isArray(body.memberProfileIds) ? body.memberProfileIds : null;
       } catch {
         // Ignore parse errors
       }
     }
 
-    // Fetch users (service role allows non-admin access to User entity)
-    let users = [];
-    if (userIds && userIds.length > 0) {
-      // Fetch specific users in parallel
-      users = await Promise.all(
-        userIds.map(id => base44.asServiceRole.entities.User.get(id).catch(() => null))
+    // Fetch member profiles (service role allows unrestricted access)
+    let members = [];
+    if (memberProfileIds && memberProfileIds.length > 0) {
+      // Fetch specific members in parallel
+      members = await Promise.all(
+        memberProfileIds.map(id => base44.asServiceRole.entities.MemberProfile.get(id).catch(() => null))
       );
-      users = users.filter(u => u !== null);
+      members = members.filter(m => m !== null);
     } else {
-      // Fetch all users
-      users = await base44.asServiceRole.entities.User.list();
+      // Fetch all members
+      members = await base44.asServiceRole.entities.MemberProfile.list();
     }
 
-    // Map to public directory (exclude sensitive fields like email)
-    const directory = users.map(user => ({
-      id: user.id,
-      callsign: user.callsign || user.rsi_handle || user.full_name || 'Unknown',
-      rsi_handle: user.rsi_handle,
-      rank: user.rank,
-      avatar_url: user.avatar_url,
-      assigned_role_ids: user.assigned_role_ids || []
+    // Map to public directory (exclude sensitive fields)
+    const directory = members.map(member => ({
+      id: member.id,
+      callsign: member.callsign || 'Unknown',
+      rank: member.rank || 'VAGRANT',
+      roles: member.roles || [],
+      bio: member.bio || ''
     }));
 
-    return Response.json({ users: directory });
+    return Response.json({ members: directory });
   } catch (error) {
-    console.error('[USER_DIRECTORY] Error:', error);
+    console.error('[MEMBER_DIRECTORY] Error:', error);
     return Response.json(
-      { error: error.message, users: [] },
+      { error: error.message, members: [] },
       { status: 500 }
     );
   }
