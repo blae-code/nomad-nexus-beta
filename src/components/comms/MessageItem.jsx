@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Edit2, Trash2, Smile, MoreVertical, Reply, Pin, MessageSquare } from 'lucide-react';
+import { Edit2, Trash2, Smile, MoreVertical, Reply, Pin, MessageSquare, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
+import MessageTranslator from '@/components/comms/MessageTranslator';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '👀', '🔥', '✅', '❌'];
 
@@ -287,6 +288,8 @@ export default function MessageItem({
               </div>
             )}
           </div>
+
+          <MessageTranslator message={message} />
         </div>
       </div>
     </div>
