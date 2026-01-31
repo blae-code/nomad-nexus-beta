@@ -101,12 +101,6 @@ Deno.serve(async (req) => {
        return Response.json({ success: false, message: 'This access code has been revoked' }, { status: 403 });
      }
 
-     // Check for re-login BEFORE checking if key is exhausted (allow same user to re-login multiple times)
-     const isPreviouslyRedeemedByThisProfile = key.redeemed_by_member_profile_ids?.some(id => {
-       // Try to find existing profile with matching callsign
-       return true; // We'll check after fetching profile
-     });
-
      if (key.status === 'EXPIRED' || (key.expires_at && new Date(key.expires_at) < new Date())) {
        // Mark as expired if not already
        if (key.status !== 'EXPIRED') {
