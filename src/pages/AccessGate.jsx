@@ -110,13 +110,17 @@ export default function AccessGate() {
                 // Token already saved by redeemAccessKey, just wait for AuthProvider to pick it up
                 await new Promise(r => setTimeout(r, 500));
 
-                // Auth confirmed by backend, AuthProvider will handle session on next load
+                // Auth confirmed by backend, determine redirect based on rank
                 setMessage('Authorization confirmed. Redirecting...');
                 emitReadyBeacon('authenticated');
 
-                // Redirect to Hub (AuthProvider will determine next page based on rank/onboarding)
+                // Redirect: Admins (Pioneer rank) go to Hub; everyone else goes to Disclaimers
+                const grantedRank = response?.data?.grants_rank;
+                const isAdmin = grantedRank === 'Pioneer';
+                const nextPage = isAdmin ? 'Hub' : 'Disclaimers';
+
                 setTimeout(() => {
-                  window.location.href = createPageUrl('Hub');
+                  window.location.href = createPageUrl(nextPage);
                 }, 1000);
               } catch (authErr) {
                 setVerifyingAuth(false);
