@@ -168,7 +168,7 @@ function LayoutContent({ currentPageName, children }) {
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
           <div className="flex-1 overflow-hidden flex gap-0">
             <main className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : isCommsDockOpen && dockMinimized ? 'pb-12' : 'pb-0'} transition-all duration-200`}>
-              <PermissionGuard>{children}</PermissionGuard>
+              <PermissionGuard currentPageName={currentPageName}>{children}</PermissionGuard>
             </main>
 
             {/* ContextPanel — right sidebar, collapsible */}
