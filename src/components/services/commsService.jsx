@@ -1,123 +1,145 @@
 /**
- * Comms Service — In-memory mock store for channels, messages, read state
- * Swappable to Base44 SDK later
+ * Comms Service — Base44 SDK integration for channels, messages, read state
+ * Migrated from mock service to real persistence
  */
 
-import { createCommsChannel, createCommsMessage, createReadState, CommsChannelDefaults } from '@/components/models/comms';
-
-// Mock stores
-const mockChannels = {};
-const mockMessages = {};
-const mockReadState = {};
-
-/**
- * Initialize default casual channels
- */
-function initializeDefaultChannels() {
-  const channels = [
-    createCommsChannel({ id: 'general', name: 'General', type: CommsChannelDefaults.CASUAL }),
-    createCommsChannel({ id: 'lounge', name: 'Lounge', type: CommsChannelDefaults.CASUAL }),
-    createCommsChannel({ id: 'rangersclan', name: 'Rangers Clan', type: CommsChannelDefaults.FOCUSED, isTemporary: false }),
-    createCommsChannel({ id: 'shamans', name: 'Shamans Guild', type: CommsChannelDefaults.FOCUSED, isTemporary: false }),
-    createCommsChannel({ id: 'tempfocused', name: 'Temporary Focused Op', type: CommsChannelDefaults.FOCUSED, isTemporary: true }),
-  ];
-
-  channels.forEach((ch) => {
-    mockChannels[ch.id] = ch;
-  });
-}
-
-// Init on load
-initializeDefaultChannels();
+import { base44 } from '@/api/base44Client';
 
 /**
  * Get all channels
  */
 export async function getChannels() {
-  return Object.values(mockChannels);
+  try {
+    return await base44.entities.Channel.list('name', 100);
+  } catch (error) {
+    console.error('Error loading channels:', error);
+    return [];
+  }
 }
 
 /**
  * Get channel by ID
  */
 export async function getChannel(channelId) {
-  return mockChannels[channelId] || null;
+  try {
+    return await base44.entities.Channel.get(channelId);
+  } catch (error) {
+    console.error('Error loading channel:', error);
+    return null;
+  }
 }
 
 /**
  * Get messages for a channel
  */
 export async function getMessages(channelId, limit = 50) {
-  const channelMessages = mockMessages[channelId] || [];
-  return channelMessages.slice(-limit);
+  try {
+    const messages = await base44.entities.Message.filter(
+      { channel_id: channelId },
+      '-created_date',
+      limit
+    );
+    
+    // Reverse to show oldest first
+    return messages.reverse();
+  } catch (error) {
+    console.error('Error loading messages:', error);
+    return [];
+  }
 }
 
 /**
  * Send a message to a channel
  */
 export async function sendMessage(channelId, authorId, authorCallsign, body) {
-  if (!mockChannels[channelId]) {
-    throw new Error(`Channel ${channelId} not found`);
+  try {
+    const message = await base44.entities.Message.create({
+      channel_id: channelId,
+      user_id: authorId,
+      content: body,
+    });
+
+    // Enrich with author callsign for local display
+    return {
+      ...message,
+      authorCallsign,
+      body,
+      createdAt: message.created_date,
+    };
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
   }
-
-  const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  const message = createCommsMessage({
-    id: messageId,
-    channelId,
-    authorId,
-    authorCallsign,
-    body,
-    createdAt: new Date().toISOString(),
-  });
-
-  if (!mockMessages[channelId]) {
-    mockMessages[channelId] = [];
-  }
-
-  mockMessages[channelId].push(message);
-  return message;
 }
 
 /**
  * Get read state for a user + scope
  */
 export async function getReadState(userId, scopeType, scopeId) {
-  const key = `${userId}:${scopeType}:${scopeId}`;
-  return mockReadState[key] || null;
+  try {
+    const states = await base44.entities.CommsReadState.filter({
+      user_id: userId,
+      scope_type: scopeType,
+      scope_id: scopeId,
+    });
+    return states[0] || null;
+  } catch (error) {
+    console.error('Error loading read state:', error);
+    return null;
+  }
 }
 
 /**
  * Update read state (mark as read)
  */
 export async function setReadState(userId, scopeType, scopeId) {
-  const key = `${userId}:${scopeType}:${scopeId}`;
-  const readState = createReadState({
-    id: key,
-    userId,
-    scopeType,
-    scopeId,
-    lastReadAt: new Date().toISOString(),
-  });
-
-  mockReadState[key] = readState;
-  return readState;
+  try {
+    // Check if read state already exists
+    const existing = await getReadState(userId, scopeType, scopeId);
+    
+    if (existing) {
+      return await base44.entities.CommsReadState.update(existing.id, {
+        last_read_at: new Date().toISOString(),
+      });
+    } else {
+      return await base44.entities.CommsReadState.create({
+        user_id: userId,
+        scope_type: scopeType,
+        scope_id: scopeId,
+        last_read_at: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    console.error('Error updating read state:', error);
+    throw error;
+  }
 }
 
 /**
- * Seed some demo messages for testing
- */
-export async function seedDemoMessages() {
-  await sendMessage('general', 'user-001', 'Scout', 'Welcome to the console!');
-  await sendMessage('general', 'user-002', 'Vagrant', 'Roger that, standing by.');
-  await sendMessage('lounge', 'user-001', 'Scout', 'Anyone up for a casual op tonight?');
-}
-
-/**
- * Subscribe to new messages for a channel (simple callback)
+ * Subscribe to new messages for a channel (real-time)
  * Returns unsubscribe function
  */
 export function subscribeToChannel(channelId, callback) {
-  // Stub: would use WebSocket or Base44 subscriptions later
-  // For now, return no-op unsubscribe
-  return () => {};
+  try {
+    const unsubscribe = base44.entities.Message.subscribe((event) => {
+      // Only trigger for messages in this channel
+      if (event.data?.channel_id === channelId && event.type === 'create') {
+        callback(event.data);
+      }
+    });
+    
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error subscribing to channel:', error);
+    return () => {}; // Return no-op unsubscribe
+  }
+}
+
+/**
+ * Get connection state for real-time subscriptions
+ */
+export function getConnectionState() {
+  // Placeholder for connection monitoring
+  // Base44 SDK handles connection internally
+  return 'connected';
 }
