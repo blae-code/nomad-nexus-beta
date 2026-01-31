@@ -180,25 +180,27 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
             clearInterval(pollInterval);
             const finalElapsed = Date.now() - startTime;
             setElapsed(finalElapsed);
+
+            // Final deterministic check before declaring failure (avoid false-negative)
+            const finalCheck = testTailwindUtility();
+            
+            if (finalCheck) {
+              setReady(true);
+              setWaiting(false);
+              console.log('✓ Tailwind CSS ready (final check succeeded)');
+              return;
+            }
+
+            // Confirmed failure - Tailwind utilities not working
             setWaiting(false);
 
-            // Gather detailed diagnostics
-            const stylesheets = Array.from(document.styleSheets);
-            const linkTags = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
             const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
-            const totalRules = stylesheets.reduce((sum, s) => {
-              try {
-                return sum + (s.cssRules?.length || 0);
-              } catch (e) {
-                return sum;
-              }
-            }, 0);
+            const hasHiddenUtility = finalCheck;
 
             const details = [
               `Waited ${finalElapsed}ms without Tailwind utilities loading.`,
-              `Stylesheets: ${stylesheets.length} (${totalRules} rules)`,
-              `Link tags: ${linkTags.length}`,
               `Tailwind CDN script: ${tailwindScript ? 'present' : 'missing'}`,
+              `Hidden utility test: ${hasHiddenUtility ? 'PASS' : 'FAIL'}`,
               'Check browser console & network tab for CSS/CDN load errors.',
             ].join(' ');
 
@@ -207,12 +209,7 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
             console.error('✗ Tailwind CSS timeout:', {
               waited: finalElapsed,
               tailwindScript: tailwindScript ? 'present' : 'missing',
-              linkTags: linkTags.map(l => l.href),
-              stylesheets: stylesheets.map((s) => ({
-                href: s.href || 'inline',
-                rules: (() => { try { return s.cssRules?.length || 0; } catch { return 'CORS blocked'; } })(),
-              })),
-              totalRules,
+              hasHiddenUtility,
             });
           }
         }, timeoutMs);
