@@ -166,7 +166,21 @@ export default function AccessGate() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4">
-        <div className="text-red-400">Initialization error: {error}</div>
+        {/* Hidden readiness beacon */}
+        <div id="nn-ready" data-state="error" style={{ display: 'none' }} />
+        
+        <div className="max-w-md w-full bg-black/80 border-2 border-red-700/70 p-8 rounded shadow-2xl shadow-red-700/30">
+          <div className="text-center space-y-6">
+            <div className="text-red-400 text-lg font-bold">⚠ Initialization Error</div>
+            <div className="text-red-300 text-sm">{error}</div>
+            <Button
+              onClick={() => window.location.reload()}
+              className="w-full bg-red-600 hover:bg-red-500 text-white"
+            >
+              Retry
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
