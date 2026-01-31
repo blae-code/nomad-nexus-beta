@@ -114,6 +114,18 @@ export default function TailwindError({ elapsed, error }) {
           </ul>
         </div>
 
+        {/* Diagnostics label */}
+        <div
+          style={{
+            fontSize: '11px',
+            color: 'rgba(255, 255, 255, 0.5)',
+            marginBottom: '8px',
+            fontWeight: '500',
+          }}
+        >
+          Diagnostics Packet — includes URL, browser signature, wait time, and style beacon status
+        </div>
+
         {/* Diagnostics box */}
         <div
           style={{
@@ -131,24 +143,24 @@ export default function TailwindError({ elapsed, error }) {
           }}
         >
           <div>
-            <strong>Waited:</strong> {(elapsed / 1000).toFixed(1)}s
+            <strong>Wait Time:</strong> {(elapsed / 1000).toFixed(1)}s
           </div>
           <div>
-            <strong>Stylesheets:</strong> {document.styleSheets.length}
+            <strong>Style Beacons:</strong> {document.styleSheets.length}
           </div>
           <div>
-            <strong>Script tags:</strong>{' '}
+            <strong>Script Tags:</strong>{' '}
             {document.querySelectorAll('script').length}
           </div>
           <div>
-            <strong>Tailwind CDN:</strong>{' '}
+            <strong>Styling CDN:</strong>{' '}
             {document.querySelector('script[src*="cdn.tailwindcss.com"]')
               ? '✓ Present'
               : '✗ Missing'}
           </div>
           <div>
-            <strong>window.tailwind:</strong>{' '}
-            {typeof window.tailwind !== 'undefined' ? '✓ Loaded' : '✗ Undefined'}
+            <strong>Uplink Status:</strong>{' '}
+            {typeof window.tailwind !== 'undefined' ? '✓ Active' : '✗ Offline'}
           </div>
         </div>
 
