@@ -25,45 +25,47 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
           return false; // No stylesheets yet, keep waiting
         }
 
-        // Second check: Test multiple Tailwind utilities to ensure styles are applied
-        const testContainer = document.createElement('div');
-        testContainer.style.position = 'absolute';
-        testContainer.style.visibility = 'hidden';
-        testContainer.style.pointerEvents = 'none';
-        
-        // Test multiple utilities to be more confident
-        testContainer.innerHTML = `
-          <div class="hidden" data-test="hidden"></div>
-          <div class="flex" data-test="flex"></div>
-          <div class="text-red-500" data-test="color"></div>
-        `;
-        
-        document.body.appendChild(testContainer);
+        // Count total rules across all stylesheets
+        const totalRules = stylesheets.reduce((sum, s) => {
+          try {
+            return sum + (s.cssRules?.length || 0);
+          } catch (e) {
+            // CORS-blocked stylesheet, assume it has rules
+            return sum + 1;
+          }
+        }, 0);
 
-        const hiddenEl = testContainer.querySelector('[data-test="hidden"]');
-        const flexEl = testContainer.querySelector('[data-test="flex"]');
-        const colorEl = testContainer.querySelector('[data-test="color"]');
+        // If we have a substantial stylesheet (production bundle), assume ready
+        // Production bundles typically have 100+ rules
+        if (totalRules >= 100) {
+          if (isMounted) {
+            clearInterval(pollInterval);
+            clearTimeout(timeoutHandle);
+            setReady(true);
+            setWaiting(false);
+            console.log('✓ CSS bundle loaded and ready', { stylesheets: stylesheets.length, totalRules });
+          }
+          return true;
+        }
 
-        const hiddenStyle = window.getComputedStyle(hiddenEl);
-        const flexStyle = window.getComputedStyle(flexEl);
-        const colorStyle = window.getComputedStyle(colorEl);
+        // Fallback: Test if any basic styles are working
+        const testEl = document.createElement('div');
+        testEl.className = 'hidden';
+        testEl.style.position = 'absolute';
+        testEl.style.visibility = 'hidden';
+        document.body.appendChild(testEl);
 
-        // Clean up
-        document.body.removeChild(testContainer);
+        const computed = window.getComputedStyle(testEl);
+        document.body.removeChild(testEl);
 
-        // Check if Tailwind utilities are working
-        const hiddenWorks = hiddenStyle.display === 'none';
-        const flexWorks = flexStyle.display === 'flex';
-        const colorWorks = colorStyle.color === 'rgb(239, 68, 68)'; // text-red-500
-
-        const tailwindReady = hiddenWorks && flexWorks && colorWorks;
+        const tailwindReady = computed.display === 'none';
 
         if (tailwindReady && isMounted) {
           clearInterval(pollInterval);
           clearTimeout(timeoutHandle);
           setReady(true);
           setWaiting(false);
-          console.log('✓ Tailwind CSS loaded and ready', { hiddenWorks, flexWorks, colorWorks });
+          console.log('✓ Tailwind utilities working');
         }
 
         return tailwindReady;
