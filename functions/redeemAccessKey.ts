@@ -163,16 +163,18 @@ Deno.serve(async (req) => {
       const loginToken = btoa(JSON.stringify({
         code: code,
         callsign: callsign.trim(),
+        userId: newUser.id,
         timestamp: Date.now()
       }));
 
       return Response.json({
         success: true,
+        user_id: newUser.id,
         grants_rank: key.grants_rank,
         grants_roles: key.grants_roles,
         code_hash: key.code.substring(0, 4) + '****' + key.code.substring(key.code.length - 4),
         loginToken: loginToken,
-        message: 'Access code redeemed successfully - complete registration on next screen'
+        message: 'Access code redeemed successfully - account created'
       });
      } catch (error) {
       console.error('redeemAccessKey error:', error);
