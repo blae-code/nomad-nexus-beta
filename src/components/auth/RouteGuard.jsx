@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/providers/AuthProvider';
 import LoadingScreen from '@/components/common/LoadingScreen';
+import AuthSecurityFailure from '@/components/auth/AuthSecurityFailure';
 import { createPageUrl } from '@/utils';
 
 /**
@@ -19,19 +20,22 @@ export default function RouteGuard({ requiredAuth = 'authenticated', children })
   }
 
   // Still initializing auth state (only for protected routes)
-  if (loading || !initialized) {
-    return <LoadingScreen />;
-  }
+        if (loading || !initialized) {
+          return <LoadingScreen />;
+        }
 
-  // No user, redirect to AccessGate
-  if (!user) {
-    return (
-      <>
-        <LoadingScreen />
-        <Navigate to={createPageUrl('AccessGate')} replace />
-      </>
-    );
-  }
+        // No user - show security failure for onboarded checks, redirect for authenticated checks
+        if (!user) {
+          if (requiredAuth === 'onboarded') {
+            return <AuthSecurityFailure reason="session_expired" />;
+          }
+          return (
+            <>
+              <LoadingScreen />
+              <Navigate to={createPageUrl('AccessGate')} replace />
+            </>
+          );
+        }
 
   // User is authenticated but incomplete onboarding flow (non-admins only)
    if (requiredAuth === 'onboarded') {
