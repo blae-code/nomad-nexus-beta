@@ -131,7 +131,15 @@ export default function AccessGate() {
 
                       // Extra delay to ensure AuthProvider can fetch MemberProfile
                       await new Promise(r => setTimeout(r, 2000));
-                      const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
+
+                      // Check MemberProfile rank, not User.role (source of truth)
+                      const profiles = await base44.entities.MemberProfile.filter({});
+                      const userProfile = profiles.sort((a, b) => 
+                        new Date(b.created_date) - new Date(a.created_date)
+                      )[0];
+
+                      const isAdmin = userProfile?.rank === 'Pioneer';
+                      const targetPage = isAdmin ? 'Hub' : 'Disclaimers';
                       window.location.href = createPageUrl(targetPage);
                     } catch (err) {
                       console.error('Redirect error:', err);
