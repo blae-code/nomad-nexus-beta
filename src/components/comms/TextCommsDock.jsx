@@ -398,7 +398,9 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                    </>
                    )}
                    </div>
+                   </>
                    )}
+                   </div>
 
                    {/* Message Area */}
                    <div className="flex-1 flex overflow-hidden">
