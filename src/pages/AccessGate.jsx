@@ -48,7 +48,10 @@ export default function AccessGate() {
         const isAuth = await base44.auth.isAuthenticated();
         if (isAuth) {
           emitReadyBeacon('authenticated');
-          window.location.href = createPageUrl('Disclaimers');
+          // Admins bypass disclaimers, go straight to Hub
+          const user = await base44.auth.me();
+          const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
+          window.location.href = createPageUrl(targetPage);
           return;
         }
 
@@ -109,11 +112,13 @@ export default function AccessGate() {
 
                 await Promise.race([confirmAuthPromise, timeoutPromise]);
 
-                // Auth confirmed, redirect to Disclaimers
+                // Auth confirmed, redirect (admins bypass disclaimers)
                 setMessage('Authorization confirmed. Redirecting...');
                 emitReadyBeacon('authenticated');
-                setTimeout(() => {
-                  window.location.href = createPageUrl('Disclaimers');
+                setTimeout(async () => {
+                  const user = await base44.auth.me();
+                  const targetPage = user?.role === 'admin' ? 'Hub' : 'Disclaimers';
+                  window.location.href = createPageUrl(targetPage);
                 }, 800);
               } catch (authErr) {
                 setVerifyingAuth(false);
