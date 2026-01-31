@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Minimize2, Hash, Lock, Send, AlertCircle } from 'lucide-react';
+import { Minimize2, Hash, Lock, Send, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
@@ -22,6 +22,8 @@ import ThreadPanel from '@/components/comms/ThreadPanel';
 import PinnedMessages from '@/components/comms/PinnedMessages';
 import DMChannelList from '@/components/comms/DMChannelList';
 import UserPickerModal from '@/components/comms/UserPickerModal';
+import GlobalMessageSearch from '@/components/comms/GlobalMessageSearch';
+import MentionsView from '@/components/comms/MentionsView';
 
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
@@ -35,6 +37,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [userPickerMode, setUserPickerMode] = useState('dm');
   const [viewMode, setViewMode] = useState('channels'); // 'channels' or 'dms'
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const messagesEndRef = useRef(null);
 
   const { user } = useCurrentUser();
@@ -223,6 +226,17 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
           <h3 className="text-[11px] font-black uppercase text-zinc-300 tracking-widest">{isMinimized ? 'COMMS' : 'Communications Terminal'}</h3>
         </div>
         <div className="flex gap-1">
+          {!isMinimized && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setShowGlobalSearch(true)}
+              className="h-7 w-7 text-zinc-500 hover:text-orange-400 transition-colors"
+              title="Search all messages"
+            >
+              <Search className="w-3.5 h-3.5" />
+            </Button>
+          )}
           <Button
             size="icon"
             variant="ghost"
@@ -238,7 +252,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       {/* Tabs — Comms active, others disabled with "coming soon" */}
       {!isMinimized && (
         <div className="flex border-b border-orange-500/10 bg-zinc-950/40 flex-shrink-0 overflow-x-auto">
-          {['comms', 'dms', 'polls', 'riggsy', 'inbox'].map((tab) => (
+          {['comms', 'dms', 'mentions', 'polls', 'riggsy', 'inbox'].map((tab) => (
             <button
               key={tab}
               onClick={() => {
@@ -248,21 +262,24 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                 } else if (tab === 'dms') {
                   setActiveTab('comms');
                   setViewMode('dms');
+                } else if (tab === 'mentions') {
+                  setActiveTab('mentions');
                 }
               }}
-              disabled={tab !== 'comms' && tab !== 'dms'}
+              disabled={tab !== 'comms' && tab !== 'dms' && tab !== 'mentions'}
               className={`whitespace-nowrap text-[11px] font-semibold uppercase px-3 py-2 transition-all border-b-2 ${
-                tab !== 'comms' && tab !== 'dms'
+                tab !== 'comms' && tab !== 'dms' && tab !== 'mentions'
                   ? 'text-zinc-600 border-transparent cursor-not-allowed opacity-50'
-                  : (tab === 'comms' && viewMode === 'channels') || (tab === 'dms' && viewMode === 'dms')
+                  : activeTab === tab || (tab === 'comms' && viewMode === 'channels' && activeTab === 'comms') || (tab === 'dms' && viewMode === 'dms' && activeTab === 'comms')
                   ? 'text-orange-400 border-orange-500'
                   : 'text-zinc-500 hover:text-zinc-300 border-transparent hover:border-orange-500/30'
               }`}
-              title={tab !== 'comms' && tab !== 'dms' ? 'Coming soon' : ''}
+              title={tab !== 'comms' && tab !== 'dms' && tab !== 'mentions' ? 'Coming soon' : ''}
             >
               {tab === 'comms' && <>Channels {viewMode === 'channels' && unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>}
               {tab === 'dms' && <>DMs</>}
-              {tab !== 'comms' && tab !== 'dms' && <>{tab} <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
+              {tab === 'mentions' && <>@Mentions</>}
+              {tab !== 'comms' && tab !== 'dms' && tab !== 'mentions' && <>{tab} <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
             </button>
           ))}
         </div>
@@ -553,6 +570,17 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
         onClose={() => setShowUserPicker(false)}
         onConfirm={userPickerMode === 'dm' ? handleCreateDM : handleCreateGroup}
         mode={userPickerMode}
+        currentUserId={user?.id}
+      />
+
+      {/* Global Message Search */}
+      <GlobalMessageSearch
+        isOpen={showGlobalSearch}
+        onClose={() => setShowGlobalSearch(false)}
+        onSelectMessage={(msg) => {
+          setSelectedChannelId(msg.channel_id);
+          setViewMode('channels');
+        }}
         currentUserId={user?.id}
       />
     </div>
