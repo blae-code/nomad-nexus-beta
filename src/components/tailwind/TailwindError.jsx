@@ -176,34 +176,38 @@ export default function TailwindError({ elapsed, error }) {
           <button
             onClick={handleRetry}
             style={{
-              padding: '10px 20px',
+              padding: '12px 24px',
               backgroundColor: '#dc2626',
               color: '#ffffff',
               border: 'none',
               borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
+              fontSize: '13px',
+              fontWeight: '700',
               cursor: 'pointer',
               transition: 'background-color 200ms',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
             }}
             onMouseOver={(e) => (e.target.style.backgroundColor = '#b91c1c')}
             onMouseOut={(e) => (e.target.style.backgroundColor = '#dc2626')}
           >
-            Retry
+            Retry Uplink
           </button>
 
           <button
             onClick={handleCopyDiagnostics}
             style={{
-              padding: '10px 20px',
+              padding: '12px 24px',
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               color: '#ffffff',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
+              fontSize: '13px',
+              fontWeight: '700',
               cursor: 'pointer',
               transition: 'background-color 200ms',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
             }}
             onMouseOver={(e) => (
               (e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)')
@@ -213,6 +217,40 @@ export default function TailwindError({ elapsed, error }) {
             )}
           >
             {copied ? '✓ Copied' : 'Copy Diagnostics'}
+          </button>
+        </div>
+
+        {/* Clear session button */}
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <button
+            onClick={() => {
+              localStorage.clear();
+              sessionStorage.clear();
+              window.location.reload();
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'transparent',
+              color: 'rgba(255, 255, 255, 0.5)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 200ms',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+              e.target.style.color = 'rgba(255, 255, 255, 0.7)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = 'rgba(255, 255, 255, 0.5)';
+            }}
+          >
+            Clear Session & Reload
           </button>
         </div>
 
