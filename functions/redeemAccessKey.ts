@@ -107,8 +107,28 @@ Deno.serve(async (req) => {
        return Response.json({ success: false, message: 'This access code has reached its usage limit' }, { status: 403 });
      }
 
-     // Redeem atomically
-     const newRedeemed = user ? [...(key.redeemed_by_user_ids || []), user.id] : (key.redeemed_by_user_ids || []);
+     // Create new user with callsign as email
+     let newUser = null;
+     try {
+       const sanitizedEmail = callsign.trim().toLowerCase().replace(/\s+/g, '_') + '@nexus.local';
+       newUser = await base44.asServiceRole.auth.createUser({
+         email: sanitizedEmail,
+         full_name: callsign.trim()
+       });
+       console.log('New user created:', newUser.id);
+     } catch (createErr) {
+       console.error('User creation error:', createErr?.message);
+       recordFailure(redemptionId);
+       return Response.json({ success: false, message: 'Failed to create user account' }, { status: 500 });
+     }
+
+     if (!newUser || !newUser.id) {
+       recordFailure(redemptionId);
+       return Response.json({ success: false, message: 'User creation failed' }, { status: 500 });
+     }
+
+     // Redeem key atomically with new user ID
+     const newRedeemed = [...(key.redeemed_by_user_ids || []), newUser.id];
      const newUseCount = key.uses_count + 1;
      const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
 
@@ -118,49 +138,26 @@ Deno.serve(async (req) => {
        status: newStatus
      });
 
-     // Handle profile creation/update
-     if (user) {
-       // User is authenticated - update or create profile
-       let profile = null;
-       const profiles = await base44.asServiceRole.entities.MemberProfile.filter({ user_id: user.id });
-       if (profiles && profiles.length > 0) {
-         profile = profiles[0];
-       }
+     // Create member profile for new user
+     await base44.asServiceRole.entities.MemberProfile.create({
+       user_id: newUser.id,
+       callsign: callsign.trim(),
+       rank: key.grants_rank || 'VAGRANT',
+       roles: key.grants_roles || []
+     });
 
-       if (profile) {
-         await base44.asServiceRole.entities.MemberProfile.update(profile.id, {
-           callsign: callsign.trim(),
-           rank: key.grants_rank || 'VAGRANT',
-           roles: [...(profile.roles || []), ...(key.grants_roles || [])]
-         });
-       } else {
-         // Create profile if it doesn't exist
-         await base44.asServiceRole.entities.MemberProfile.create({
-           user_id: user.id,
-           callsign: callsign.trim(),
-           rank: key.grants_rank || 'VAGRANT',
-           roles: key.grants_roles || []
-         });
-       }
+     // Log successful redemption
+     await base44.asServiceRole.entities.AdminAuditLog.create({
+       actor_user_id: newUser.id,
+       action: 'redeem_access_key',
+       payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles },
+       executed_by: newUser.id,
+       executed_at: new Date().toISOString(),
+       step_name: 'access_control',
+       status: 'success'
+     }).catch(err => console.error('Audit log error:', err));
 
-       // Log successful redemption
-       await base44.asServiceRole.entities.AdminAuditLog.create({
-         actor_user_id: user.id,
-         action: 'redeem_access_key',
-         payload: { code, callsign: callsign.trim(), rank: key.grants_rank, roles: key.grants_roles },
-         executed_by: user.id,
-         executed_at: new Date().toISOString(),
-         step_name: 'access_control',
-         status: 'success'
-       }).catch(err => console.error('Audit log error:', err));
-     } else {
-       // Unauthenticated user - store redemption data in key for later profile creation during onboarding
-       await base44.asServiceRole.entities.AccessKey.update(key.id, {
-         pending_callsign: callsign.trim()
-       });
-     }
-
-      clearFailures(userId);
+      clearFailures(redemptionId);
 
       // Generate login token for "Remember Me" functionality
       const loginToken = btoa(JSON.stringify({
