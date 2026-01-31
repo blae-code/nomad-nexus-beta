@@ -1,213 +1,97 @@
 import { useEffect, useState } from 'react';
-import { getTailwindSafelistHtml } from '@/components/tailwind/tailwindSafelistHtml';
-
-const TAILWIND_CDN_SRC = 'https://cdn.tailwindcss.com';
-const TAILWIND_SCRIPT_SELECTOR = 'script[src*="cdn.tailwindcss.com"]';
-const SAFELIST_SELECTOR = '[data-nexus-tailwind-safelist="true"]';
-const TAILWIND_PROMISE_KEY = '__NEXUS_TAILWIND_CDN_PROMISE__';
 
 /**
- * Tests if Tailwind utilities are working by checking computed styles
+ * Passive Tailwind detection - trusts Base44 infrastructure
+ * No injection, no safelist, no style verification
  */
-function testTailwindUtility() {
-  try {
-    const testEl = document.createElement('div');
-    testEl.className = 'hidden';
-    testEl.style.position = 'absolute';
-    testEl.style.visibility = 'hidden';
-    document.body.appendChild(testEl);
+function detectTailwind() {
+  if (typeof window === 'undefined') return false;
+  
+  // Fast O(1) checks
+  const hasScript = Boolean(document.querySelector('script[src*="cdn.tailwindcss.com"]'));
+  const hasGlobal = typeof window.tailwind !== 'undefined';
+  
+  return hasScript || hasGlobal;
+}
 
-    const computed = window.getComputedStyle(testEl);
-    document.body.removeChild(testEl);
-
-    return computed.display === 'none';
-  } catch (err) {
-    console.warn('Error testing Tailwind utility:', err);
+/**
+ * Two-tier readiness: DOM-ready (fast) + App-ready (beacon or fallback)
+ */
+function checkAppReady() {
+  // Tier A: DOM-ready
+  if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
     return false;
   }
-}
-
-function ensureSafelistInjected() {
-  if (document.querySelector(SAFELIST_SELECTOR)) {
-    return;
-  }
-
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = getTailwindSafelistHtml().trim();
-  const safelistNode = wrapper.firstElementChild;
-
-  if (!safelistNode) {
-    throw new Error('Tailwind safelist HTML is empty');
-  }
-
-  if (!safelistNode.getAttribute('data-nexus-tailwind-safelist')) {
-    safelistNode.setAttribute('data-nexus-tailwind-safelist', 'true');
-  }
-
-  if (!safelistNode.getAttribute('style')) {
-    safelistNode.setAttribute('style', 'display:none');
-  }
-
-  document.body.appendChild(safelistNode);
-}
-
-function getTailwindScript() {
-  return document.querySelector(TAILWIND_SCRIPT_SELECTOR);
-}
-
-function createTailwindFailure({ phase, waitedMs }) {
-  return {
-    phase,
-    waitedMs,
-    scriptPresent: Boolean(getTailwindScript()),
-  };
-}
-
-function waitForHiddenUtility({ timeoutMs, startTime, resolve, reject }) {
-  const checkReady = () => {
-    if (testTailwindUtility()) {
-      resolve();
-      return true;
-    }
-    return false;
-  };
-
-  if (checkReady()) {
-    return;
-  }
-
-  let timeoutHandle = null;
-  const interval = setInterval(() => {
-    if (checkReady()) {
-      clearInterval(interval);
-      if (timeoutHandle) {
-        clearTimeout(timeoutHandle);
-      }
-    }
-  }, 50);
-
-  timeoutHandle = setTimeout(() => {
-    clearInterval(interval);
-    reject(
-      createTailwindFailure({
-        phase: 'readyCheck',
-        waitedMs: Date.now() - startTime,
-      }),
-    );
-  }, timeoutMs);
+  
+  const root = document.getElementById('root');
+  if (!root) return false;
+  
+  // Tier B: App-ready (prefer beacon)
+  const beacon = document.getElementById('nn-ready');
+  if (beacon) return true;
+  
+  // Fallback: React mounted (root has children)
+  return root.children.length > 0;
 }
 
 /**
- * Ensures Tailwind CDN is loaded, injecting it if missing
- * @param {number} timeoutMs - Timeout in milliseconds
- * @returns {Promise<void>} Resolves when Tailwind is ready, rejects on failure
- */
-export function ensureTailwindCdn({ timeoutMs = 16000 } = {}) {
-  if (typeof window === 'undefined') {
-    return Promise.resolve();
-  }
-
-  if (globalThis[TAILWIND_PROMISE_KEY]) {
-    return globalThis[TAILWIND_PROMISE_KEY];
-  }
-
-  globalThis[TAILWIND_PROMISE_KEY] = new Promise((resolve, reject) => {
-    const startTime = Date.now();
-
-    const rejectWithPhase = (phase) => {
-      reject(
-        createTailwindFailure({
-          phase,
-          waitedMs: Date.now() - startTime,
-        }),
-      );
-    };
-
-    try {
-      ensureSafelistInjected();
-    } catch (error) {
-      console.error('Failed to inject Tailwind safelist:', error);
-      rejectWithPhase('inject');
-      return;
-    }
-
-    if (testTailwindUtility()) {
-      resolve();
-      return;
-    }
-
-    const existingScript = getTailwindScript();
-
-    if (existingScript) {
-      waitForHiddenUtility({ timeoutMs, startTime, resolve, reject });
-      return;
-    }
-
-    try {
-      const script = document.createElement('script');
-      script.src = TAILWIND_CDN_SRC;
-      script.async = false;
-
-      script.onload = () => {
-        waitForHiddenUtility({ timeoutMs, startTime, resolve, reject });
-      };
-
-      script.onerror = () => {
-        rejectWithPhase('load');
-      };
-
-      document.head.appendChild(script);
-    } catch (error) {
-      console.error('Failed to inject Tailwind CDN script:', error);
-      rejectWithPhase('inject');
-    }
-  });
-
-  return globalThis[TAILWIND_PROMISE_KEY];
-}
-
-/**
- * useTailwindReady - Detects if Tailwind styles are loaded (bundled or CDN) by testing computed styles
- * @param {number} timeoutMs - Timeout in milliseconds (default 8000)
+ * useTailwindReady - Passive detection with fast readiness contract
+ * @param {number} timeoutMs - Timeout in milliseconds (default 3000)
  * @returns {object} { ready: boolean, error: string | null, waiting: boolean }
  */
-export function useTailwindReady({ timeoutMs = 16000 } = {}) {
-  const initialReady = typeof window !== 'undefined' && testTailwindUtility();
-  const [ready, setReady] = useState(initialReady);
+export function useTailwindReady({ timeoutMs = 3000 } = {}) {
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
-  const [waiting, setWaiting] = useState(!initialReady);
-  const [elapsed, setElapsed] = useState(0);
+  const [waiting, setWaiting] = useState(true);
 
   useEffect(() => {
-    if (ready) {
-      return undefined;
-    }
-
     let isMounted = true;
     const startTime = Date.now();
-    const elapsedTimer = setInterval(() => {
-      if (!isMounted) return;
-      setElapsed(Date.now() - startTime);
-    }, 100);
 
-    ensureTailwindCdn({ timeoutMs })
-      .then(() => {
-        if (!isMounted) return;
+    const checkReady = () => {
+      if (!isMounted) return false;
+      
+      const tailwindPresent = detectTailwind();
+      const appReady = checkAppReady();
+      
+      if (tailwindPresent && appReady) {
         setReady(true);
         setWaiting(false);
-      })
-      .catch((err) => {
-        if (!isMounted) return;
-        setError(err);
-        setWaiting(false);
-        setElapsed(Date.now() - startTime);
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate check
+    if (checkReady()) return;
+
+    // Fast polling (100ms)
+    const interval = setInterval(() => {
+      if (checkReady()) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    // Timeout
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      if (!isMounted) return;
+      
+      setError({
+        phase: 'timeout',
+        waitedMs: Date.now() - startTime,
+        tailwindPresent: detectTailwind(),
+        appReady: checkAppReady(),
       });
+      setWaiting(false);
+    }, timeoutMs);
 
     return () => {
       isMounted = false;
-      clearInterval(elapsedTimer);
+      clearInterval(interval);
+      clearTimeout(timeout);
     };
-  }, [ready, timeoutMs]);
+  }, [timeoutMs]);
 
-  return { ready, error, waiting, elapsed, hasHiddenUtility: ready };
+  return { ready, error, waiting };
 }
