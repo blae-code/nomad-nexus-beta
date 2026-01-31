@@ -12,8 +12,9 @@ export default function CSSDebugOverlay() {
       return;
     }
 
+    console.log('[NN] CSSDebugOverlay initialized');
     setShowOverlay(true);
-    const startTime = Date.now();
+    const startTime = window.__NN_BOOT_TIME__ || Date.now();
 
     const runDiagnostics = () => {
       // Tier A: DOM-ready check (O(1))
@@ -30,6 +31,7 @@ export default function CSSDebugOverlay() {
       const tailwindGlobal = typeof window.tailwind !== 'undefined';
 
       const results = {
+        bootstrapPresent: Boolean(window.__NN_BOOTED__),
         domReady,
         rootExists,
         rootMounted,
@@ -43,6 +45,7 @@ export default function CSSDebugOverlay() {
         timestamp: new Date().toISOString(),
       };
 
+      console.log('[NN] Diagnostics run:', results);
       setDiagnostics(results);
       return appReady;
     };
@@ -102,6 +105,13 @@ export default function CSSDebugOverlay() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', color: '#d1d5db' }}>
+        <div>
+          <span style={{ fontWeight: 'bold' }}>bootstrapPresent:</span>
+          <span style={{ marginLeft: '6px', color: diagnostics.bootstrapPresent ? '#34d399' : '#f87171', fontWeight: 'bold' }}>
+            {diagnostics.bootstrapPresent ? 'true' : 'false'}
+          </span>
+        </div>
+
         <div>
           <span style={{ fontWeight: 'bold' }}>appReady:</span>
           <span style={{ marginLeft: '6px', color: statusColor, fontWeight: 'bold' }}>

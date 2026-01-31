@@ -39,6 +39,13 @@ const cn = (...classes) => {
 };
 
 export default function Layout({ children, currentPageName }) {
+  // Boot marker - app entry executed
+  React.useEffect(() => {
+    window.__NN_BOOTED__ = true;
+    window.__NN_BOOT_TIME__ = Date.now();
+    console.log('[NN] App booted at', new Date().toISOString());
+  }, []);
+
   // Full-screen pages that hide shell UI
   const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
   const isFullScreen = fullScreenPages.includes(currentPageName);
