@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     const key = accessKeys[0];
 
-    // Check key status
+    // Check key status (ACTIVE or REDEEMED are valid for login)
     if (key.status === 'REVOKED') {
       return Response.json({ success: false, message: 'This access code has been revoked' }, { status: 403 });
     }
