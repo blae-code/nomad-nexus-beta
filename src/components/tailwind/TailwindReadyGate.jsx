@@ -7,7 +7,7 @@ import TailwindError from './TailwindError';
  * TailwindReadyGate - Prevents app rendering until Tailwind CDN loads
  * Shows loader or error screen (with inline styles only) while waiting
  */
-export default function TailwindReadyGate({ children, timeoutMs = 8000 }) {
+export default function TailwindReadyGate({ children, timeoutMs = 16000 }) {
   const { ready, error, waiting, elapsed } = useTailwindReady({ timeoutMs });
 
   // Still waiting for Tailwind
@@ -17,7 +17,7 @@ export default function TailwindReadyGate({ children, timeoutMs = 8000 }) {
 
   // Tailwind load failed
   if (error) {
-    return <TailwindError error={error} elapsed={elapsed} />;
+    return <TailwindError error={error} elapsedMs={elapsed} />;
   }
 
   // Tailwind ready, render children

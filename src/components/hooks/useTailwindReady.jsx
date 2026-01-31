@@ -1,4 +1,10 @@
 import { useEffect, useState } from 'react';
+import { getTailwindSafelistHtml } from '@/components/tailwind/tailwindSafelistHtml';
+
+const TAILWIND_CDN_SRC = 'https://cdn.tailwindcss.com';
+const TAILWIND_SCRIPT_SELECTOR = 'script[src*="cdn.tailwindcss.com"]';
+const SAFELIST_SELECTOR = '[data-nexus-tailwind-safelist="true"]';
+const TAILWIND_PROMISE_KEY = '__NEXUS_TAILWIND_CDN_PROMISE__';
 
 /**
  * Tests if Tailwind utilities are working by checking computed styles
@@ -21,87 +27,143 @@ function testTailwindUtility() {
   }
 }
 
+function ensureSafelistInjected() {
+  if (document.querySelector(SAFELIST_SELECTOR)) {
+    return;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = getTailwindSafelistHtml().trim();
+  const safelistNode = wrapper.firstElementChild;
+
+  if (!safelistNode) {
+    throw new Error('Tailwind safelist HTML is empty');
+  }
+
+  if (!safelistNode.getAttribute('data-nexus-tailwind-safelist')) {
+    safelistNode.setAttribute('data-nexus-tailwind-safelist', 'true');
+  }
+
+  if (!safelistNode.getAttribute('style')) {
+    safelistNode.setAttribute('style', 'display:none');
+  }
+
+  document.body.appendChild(safelistNode);
+}
+
+function getTailwindScript() {
+  return document.querySelector(TAILWIND_SCRIPT_SELECTOR);
+}
+
+function createTailwindFailure({ phase, waitedMs }) {
+  return {
+    phase,
+    waitedMs,
+    scriptPresent: Boolean(getTailwindScript()),
+  };
+}
+
+function waitForHiddenUtility({ timeoutMs, startTime, resolve, reject }) {
+  const checkReady = () => {
+    if (testTailwindUtility()) {
+      resolve();
+      return true;
+    }
+    return false;
+  };
+
+  if (checkReady()) {
+    return;
+  }
+
+  let timeoutHandle = null;
+  const interval = setInterval(() => {
+    if (checkReady()) {
+      clearInterval(interval);
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    }
+  }, 50);
+
+  timeoutHandle = setTimeout(() => {
+    clearInterval(interval);
+    reject(
+      createTailwindFailure({
+        phase: 'readyCheck',
+        waitedMs: Date.now() - startTime,
+      }),
+    );
+  }, timeoutMs);
+}
+
 /**
  * Ensures Tailwind CDN is loaded, injecting it if missing
  * @param {number} timeoutMs - Timeout in milliseconds
  * @returns {Promise<void>} Resolves when Tailwind is ready, rejects on failure
  */
-function ensureTailwindCdn({ timeoutMs }) {
-  return new Promise((resolve, reject) => {
-    // If Tailwind already works, resolve immediately
+export function ensureTailwindCdn({ timeoutMs = 16000 } = {}) {
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  if (globalThis[TAILWIND_PROMISE_KEY]) {
+    return globalThis[TAILWIND_PROMISE_KEY];
+  }
+
+  globalThis[TAILWIND_PROMISE_KEY] = new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const rejectWithPhase = (phase) => {
+      reject(
+        createTailwindFailure({
+          phase,
+          waitedMs: Date.now() - startTime,
+        }),
+      );
+    };
+
+    try {
+      ensureSafelistInjected();
+    } catch (error) {
+      console.error('Failed to inject Tailwind safelist:', error);
+      rejectWithPhase('inject');
+      return;
+    }
+
     if (testTailwindUtility()) {
-      console.log('✓ Tailwind utilities already working');
       resolve();
       return;
     }
 
-    // Check if Tailwind CDN script exists
-    const existingScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
-    
+    const existingScript = getTailwindScript();
+
     if (existingScript) {
-      // Script exists but not ready yet, wait for it
-      console.log('⏳ Tailwind CDN script found, waiting for load...');
-      
-      const startTime = Date.now();
-      const checkInterval = setInterval(() => {
-        if (testTailwindUtility()) {
-          clearInterval(checkInterval);
-          resolve();
-        } else if (Date.now() - startTime > timeoutMs) {
-          clearInterval(checkInterval);
-          reject(new Error('Tailwind CDN script loaded but utilities not working'));
-        }
-      }, 50);
+      waitForHiddenUtility({ timeoutMs, startTime, resolve, reject });
       return;
     }
 
-    // Inject Tailwind CDN script
-    console.log('⚠️ Tailwind CDN missing, injecting...');
-    const script = document.createElement('script');
-    script.src = 'https://cdn.tailwindcss.com';
-    script.async = false;
-    
-    let resolved = false;
-    const startTime = Date.now();
+    try {
+      const script = document.createElement('script');
+      script.src = TAILWIND_CDN_SRC;
+      script.async = false;
 
-    script.onload = () => {
-      console.log('✓ Tailwind CDN script loaded');
-      
-      // Poll for utilities to become available
-      const checkInterval = setInterval(() => {
-        if (testTailwindUtility()) {
-          clearInterval(checkInterval);
-          if (!resolved) {
-            resolved = true;
-            resolve();
-          }
-        } else if (Date.now() - startTime > timeoutMs) {
-          clearInterval(checkInterval);
-          if (!resolved) {
-            resolved = true;
-            reject(new Error('Tailwind CDN loaded but utilities not working after ' + timeoutMs + 'ms'));
-          }
-        }
-      }, 50);
-    };
+      script.onload = () => {
+        waitForHiddenUtility({ timeoutMs, startTime, resolve, reject });
+      };
 
-    script.onerror = () => {
-      if (!resolved) {
-        resolved = true;
-        reject(new Error('Failed to load Tailwind CDN (network error or blocked)'));
-      }
-    };
+      script.onerror = () => {
+        rejectWithPhase('load');
+      };
 
-    setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        reject(new Error('Tailwind CDN script injection timeout after ' + timeoutMs + 'ms'));
-      }
-    }, timeoutMs);
-
-    document.head.appendChild(script);
-    window.__NEXUS_TAILWIND_CDN_REQUESTED__ = true;
+      document.head.appendChild(script);
+    } catch (error) {
+      console.error('Failed to inject Tailwind CDN script:', error);
+      rejectWithPhase('inject');
+    }
   });
+
+  return globalThis[TAILWIND_PROMISE_KEY];
 }
 
 /**
@@ -109,118 +171,43 @@ function ensureTailwindCdn({ timeoutMs }) {
  * @param {number} timeoutMs - Timeout in milliseconds (default 8000)
  * @returns {object} { ready: boolean, error: string | null, waiting: boolean }
  */
-export function useTailwindReady({ timeoutMs = 8000 } = {}) {
-  const [ready, setReady] = useState(false);
+export function useTailwindReady({ timeoutMs = 16000 } = {}) {
+  const initialReady = typeof window !== 'undefined' && testTailwindUtility();
+  const [ready, setReady] = useState(initialReady);
   const [error, setError] = useState(null);
-  const [waiting, setWaiting] = useState(true);
+  const [waiting, setWaiting] = useState(!initialReady);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    let pollInterval = null;
-    let timeoutHandle = null;
+    if (ready) {
+      return undefined;
+    }
+
     let isMounted = true;
     const startTime = Date.now();
+    const elapsedTimer = setInterval(() => {
+      if (!isMounted) return;
+      setElapsed(Date.now() - startTime);
+    }, 100);
 
-    // Step 1: Ensure Tailwind CDN is present (inject if missing)
     ensureTailwindCdn({ timeoutMs })
       .then(() => {
         if (!isMounted) return;
-
-        // Step 2: Tailwind is confirmed ready
         setReady(true);
         setWaiting(false);
-        console.log('✓ Tailwind CSS ready (computed style test passed)');
       })
       .catch((err) => {
         if (!isMounted) return;
-
-        // Step 3: Fallback - poll for readiness in case CDN loads asynchronously
-        console.warn('⚠️ ensureTailwindCdn failed, falling back to polling:', err.message);
-
-        const checkTailwind = () => {
-          try {
-            const tailwindReady = testTailwindUtility();
-
-            if (tailwindReady && isMounted) {
-              clearInterval(pollInterval);
-              clearTimeout(timeoutHandle);
-              setReady(true);
-              setWaiting(false);
-              console.log('✓ Tailwind CSS ready (fallback poll succeeded)');
-            }
-
-            return tailwindReady;
-          } catch (err) {
-            console.warn('Error checking Tailwind:', err);
-            return false;
-          }
-        };
-
-        // Initial check
-        if (checkTailwind()) {
-          return;
-        }
-
-        // Poll every 50ms
-        pollInterval = setInterval(() => {
-          if (!isMounted) return;
-
-          const elapsed = Date.now() - startTime;
-          setElapsed(elapsed);
-
-          if (checkTailwind()) {
-            clearInterval(pollInterval);
-            clearTimeout(timeoutHandle);
-          }
-        }, 50);
-
-        // Timeout after specified duration
-        timeoutHandle = setTimeout(() => {
-          if (isMounted && !ready) {
-            clearInterval(pollInterval);
-            const finalElapsed = Date.now() - startTime;
-            setElapsed(finalElapsed);
-
-            // Final deterministic check before declaring failure (avoid false-negative)
-            const finalCheck = testTailwindUtility();
-            
-            if (finalCheck) {
-              setReady(true);
-              setWaiting(false);
-              console.log('✓ Tailwind CSS ready (final check succeeded)');
-              return;
-            }
-
-            // Confirmed failure - Tailwind utilities not working
-            setWaiting(false);
-
-            const tailwindScript = document.querySelector('script[src*="cdn.tailwindcss.com"]');
-            const hasHiddenUtility = finalCheck;
-
-            const details = [
-              `Waited ${finalElapsed}ms without Tailwind utilities loading.`,
-              `Tailwind CDN script: ${tailwindScript ? 'present' : 'missing'}`,
-              `Hidden utility test: ${hasHiddenUtility ? 'PASS' : 'FAIL'}`,
-              'Check browser console & network tab for CSS/CDN load errors.',
-            ].join(' ');
-
-            setError(details);
-
-            console.error('✗ Tailwind CSS timeout:', {
-              waited: finalElapsed,
-              tailwindScript: tailwindScript ? 'present' : 'missing',
-              hasHiddenUtility,
-            });
-          }
-        }, timeoutMs);
+        setError(err);
+        setWaiting(false);
+        setElapsed(Date.now() - startTime);
       });
 
     return () => {
       isMounted = false;
-      clearInterval(pollInterval);
-      clearTimeout(timeoutHandle);
+      clearInterval(elapsedTimer);
     };
-  }, [timeoutMs]);
+  }, [ready, timeoutMs]);
 
-  return { ready, error, waiting, elapsed };
+  return { ready, error, waiting, elapsed, hasHiddenUtility: ready };
 }

@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import '@/globals.css';
 import { createPageUrl } from '@/utils';
 import Header from '@/components/layout/Header';
 import ConstructionTicker from '@/components/layout/ConstructionTicker';
 import CSSDebugOverlay from '@/components/debug/CSSDebugOverlay';
-import TailwindReadyGate from '@/components/tailwind/TailwindReadyGate';
-import TailwindSafelist from '@/components/tailwind/TailwindSafelist';
 
 
 import ContextPanel from '@/components/layout/ContextPanel';
@@ -45,23 +43,18 @@ export default function Layout({ children, currentPageName }) {
   const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
   const isFullScreen = fullScreenPages.includes(currentPageName);
 
-  // Enforce Tailwind readiness at the highest possible point
-  // TailwindSafelist must be present BEFORE TailwindReadyGate for JIT scanning
   return (
     <>
-      <TailwindSafelist />
-      <TailwindReadyGate timeoutMs={16000}>
-        {!children ? (
-          <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-            <div className="text-orange-500 text-xl">Loading...</div>
-          </div>
-        ) : (
-          <AuthProvider>
-            <AuthDebugOverlay />
-            <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
-          </AuthProvider>
-        )}
-      </TailwindReadyGate>
+      {!children ? (
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+          <div className="text-orange-500 text-xl">Loading...</div>
+        </div>
+      ) : (
+        <AuthProvider>
+          <AuthDebugOverlay />
+          <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
+        </AuthProvider>
+      )}
     </>
   );
 }
