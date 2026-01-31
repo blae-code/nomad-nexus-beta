@@ -43,63 +43,9 @@ function checkAppReady() {
 }
 
 /**
- * useTailwindReady - Passive detection with fast readiness contract
- * @param {number} timeoutMs - Timeout in milliseconds (default 3000)
- * @returns {object} { ready: boolean, error: string | null, waiting: boolean }
+ * useTailwindReady - No-op (CDN checks removed)
+ * Tailwind is managed by Base44 platform
  */
-export function useTailwindReady({ timeoutMs = 3000 } = {}) {
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState(null);
-  const [waiting, setWaiting] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    const startTime = Date.now();
-
-    const checkReady = () => {
-      if (!isMounted) return false;
-      
-      const tailwindPresent = detectTailwind();
-      const appReady = checkAppReady();
-      
-      if (tailwindPresent && appReady) {
-        setReady(true);
-        setWaiting(false);
-        return true;
-      }
-      return false;
-    };
-
-    // Immediate check
-    if (checkReady()) return;
-
-    // Fast polling (100ms)
-    const interval = setInterval(() => {
-      if (checkReady()) {
-        clearInterval(interval);
-      }
-    }, 100);
-
-    // Timeout
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-      if (!isMounted) return;
-      
-      setError({
-        phase: 'timeout',
-        waitedMs: Date.now() - startTime,
-        tailwindPresent: detectTailwind(),
-        appReady: checkAppReady(),
-      });
-      setWaiting(false);
-    }, timeoutMs);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [timeoutMs]);
-
-  return { ready, error, waiting };
+export function useTailwindReady() {
+  return { ready: true, error: null, waiting: false };
 }
