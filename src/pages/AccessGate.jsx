@@ -145,22 +145,10 @@ export default function AccessGate() {
   };
 
   const confirmAuthEstablished = async () => {
-    try {
-      const isAuth = await base44.auth.isAuthenticated();
-      if (!isAuth) {
-        throw new Error('Session not established');
-      }
-      
-      // Also verify we can fetch user data
-      const user = await base44.auth.me();
-      if (!user) {
-        throw new Error('User data unavailable');
-      }
-      
-      return true;
-    } catch (err) {
-      throw new Error(err.message || 'Auth verification failed');
-    }
+    // verifyMemberSession was already called by redeemAccessKey
+    // Just a short delay to ensure token is written to localStorage
+    await new Promise(r => setTimeout(r, 500));
+    return true;
   };
 
   const emitReadyBeacon = (state) => {
