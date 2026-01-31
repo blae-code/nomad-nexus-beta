@@ -118,12 +118,17 @@ Deno.serve(async (req) => {
      // Create MemberProfile directly (Member-first registration, no User entity)
      let newMemberProfile = null;
      try {
+       // If key grants admin/Pioneer rank, mark onboarding complete automatically
+       const isAdmin = key.grants_rank === 'Pioneer' || key.grants_roles?.includes('admin');
        newMemberProfile = await base44.asServiceRole.entities.MemberProfile.create({
          callsign: callsign.trim(),
          rank: key.grants_rank || 'VAGRANT',
-         roles: key.grants_roles || []
+         roles: key.grants_roles || [],
+         onboarding_completed: isAdmin,
+         accepted_pwa_disclaimer_at: isAdmin ? new Date().toISOString() : null,
+         accepted_codes_at: isAdmin ? new Date().toISOString() : null
        });
-       console.log('New member profile created:', newMemberProfile.id);
+       console.log('New member profile created:', newMemberProfile.id, 'admin:', isAdmin);
      } catch (createErr) {
        console.error('Member profile creation error:', createErr?.message);
        recordFailure(redemptionId);
