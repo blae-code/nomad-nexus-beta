@@ -57,10 +57,12 @@ export default function Layout({ children, currentPageName }) {
   return (
     <>
       <TailwindSafelist />
-      <AuthProvider>
-        <AuthDebugOverlay />
-        <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
-      </AuthProvider>
+      <TailwindReadyGate timeoutMs={8000}>
+        <AuthProvider>
+          <AuthDebugOverlay />
+          <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
+        </AuthProvider>
+      </TailwindReadyGate>
     </>
   );
 }

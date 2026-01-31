@@ -19,25 +19,7 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
 
     const checkTailwind = () => {
       try {
-        // Check for any <link> stylesheets in the document
-        const linkStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
-        
-        // If we have link stylesheets, consider CSS ready (production build)
-        if (linkStylesheets.length > 0) {
-          if (isMounted) {
-            clearInterval(pollInterval);
-            clearTimeout(timeoutHandle);
-            setReady(true);
-            setWaiting(false);
-            console.log('✓ CSS bundle detected and ready', { 
-              linkCount: linkStylesheets.length,
-              hrefs: linkStylesheets.map(l => l.href)
-            });
-          }
-          return true;
-        }
-
-        // Fallback for CDN or inline styles: Test if basic Tailwind utilities work
+        // Canonical test: Create element with .hidden and check if display is 'none'
         const testEl = document.createElement('div');
         testEl.className = 'hidden';
         testEl.style.position = 'absolute';
@@ -54,7 +36,7 @@ export function useTailwindReady({ timeoutMs = 8000 } = {}) {
           clearTimeout(timeoutHandle);
           setReady(true);
           setWaiting(false);
-          console.log('✓ Tailwind utilities working (CDN/inline)');
+          console.log('✓ Tailwind CSS ready (computed style test passed)');
         }
 
         return tailwindReady;
