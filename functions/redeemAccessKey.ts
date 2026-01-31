@@ -36,29 +36,31 @@ function clearFailures(userId) {
 
 Deno.serve(async (req) => {
    try {
-     // For new user registration via access key
-     const base44 = createClientFromRequest(req);
+      // For new user registration via access key
+      const base44 = createClientFromRequest(req);
 
-     // Generate unique ID for rate limiting (before user creation)
-     const redemptionId = crypto.randomUUID();
+      // Generate unique ID for rate limiting (before user creation)
+      const redemptionId = crypto.randomUUID();
 
-     // Rate limit check
-     const limit = checkRateLimit(redemptionId);
-     if (!limit.allowed) {
-       return Response.json({
-         success: false,
-         message: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
-         lockout_seconds: limit.remaining
-       }, { status: 429 });
-     }
+      // Rate limit check
+      const limit = checkRateLimit(redemptionId);
+      if (!limit.allowed) {
+        return Response.json({
+          success: false,
+          message: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
+          lockout_seconds: limit.remaining
+        }, { status: 429 });
+      }
 
-     let payload;
-     try {
-       payload = await req.json();
-     } catch (parseErr) {
-       recordFailure(redemptionId);
-       return Response.json({ success: false, message: 'Invalid request format' }, { status: 400 });
-     }
+      let payload;
+      try {
+        const body = await req.text();
+        payload = body ? JSON.parse(body) : {};
+      } catch (parseErr) {
+        console.error('JSON parse error:', parseErr?.message, 'body was:', await req.text().catch(() => 'unreadable'));
+        recordFailure(redemptionId);
+        return Response.json({ success: false, message: 'Invalid request format' }, { status: 400 });
+      }
      const { code, callsign } = payload;
 
      if (code === 'DEMO-ACCESS') {
