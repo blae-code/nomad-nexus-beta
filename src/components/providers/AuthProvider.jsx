@@ -5,93 +5,84 @@ import { createPageUrl } from '@/utils';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [disclaimersCompleted, setDisclaimersCompleted] = useState(false);
-  const [error, setError] = useState(null);
-  const [initialized, setInitialized] = useState(false);
+        const [user, setUser] = useState(null);
+        const [loading, setLoading] = useState(true);
+        const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+        const [disclaimersCompleted, setDisclaimersCompleted] = useState(false);
+        const [error, setError] = useState(null);
+        const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
+        useEffect(() => {
+          let isMounted = true;
 
-    const checkAuth = async () => {
-      try {
-        // Guard: only check isAuthenticated first, never call User/me unless authenticated
-        // Mark initialized immediately so AccessGate can render (don't block on this call)
-        const isAuthPromise = base44.auth.isAuthenticated();
-        const isAuth = await Promise.race([
-          isAuthPromise,
-          new Promise(resolve => setTimeout(() => resolve(false), 3000)) // 3s timeout
-        ]);
-        if (!isMounted) return;
+          const checkAuth = async () => {
+            try {
+              // Mark initialized immediately to allow public pages to render
+              setInitialized(true);
+              setLoading(false);
 
-        if (!isAuth) {
-          setUser(null);
-          setInitialized(true);
-          setLoading(false);
-          return;
-        }
+              // Then check auth in background (don't block rendering)
+              const isAuthPromise = base44.auth.isAuthenticated();
+              const isAuth = await Promise.race([
+                isAuthPromise,
+                new Promise(resolve => setTimeout(() => resolve(false), 3000)) // 3s timeout
+              ]);
+              if (!isMounted) return;
 
-        // Only fetch User/me if authenticated
-        let currentUser = null;
-        try {
-          currentUser = await base44.auth.me();
-          if (!isMounted) return;
-        } catch (err) {
-          // If User/me fails when isAuthenticated=true, something is wrong
-          console.warn('User fetch failed after auth check:', err?.message);
-          setUser(null);
-          setInitialized(true);
-          setLoading(false);
-          return;
-        }
+              if (!isAuth) {
+                setUser(null);
+                return;
+              }
 
-        setUser(currentUser);
+              // Only fetch User/me if authenticated
+              let currentUser = null;
+              try {
+                currentUser = await base44.auth.me();
+                if (!isMounted) return;
+              } catch (err) {
+                console.warn('User fetch failed after auth check:', err?.message);
+                setUser(null);
+                return;
+              }
 
-        // Skip profile checks for admins
-        if (currentUser.role === 'admin') {
-          setOnboardingCompleted(true);
-          setDisclaimersCompleted(true);
-          setInitialized(true);
-          setLoading(false);
-          return;
-        }
+              setUser(currentUser);
 
-        // Check member profile for onboarding/disclaimers status
-        try {
-          const profiles = await base44.entities.MemberProfile.filter({ 
-            user_id: currentUser.id 
-          });
-          if (!isMounted) return;
+              // Skip profile checks for admins
+              if (currentUser.role === 'admin') {
+                setOnboardingCompleted(true);
+                setDisclaimersCompleted(true);
+                return;
+              }
 
-          if (profiles.length > 0) {
-            const profile = profiles[0];
-            setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
-            setOnboardingCompleted(!!profile.onboarding_completed);
-          }
-        } catch (profileErr) {
-          if (!isMounted) return;
-          console.warn('Profile fetch warning:', profileErr?.message);
-        }
+              // Check member profile for onboarding/disclaimers status
+              try {
+                const profiles = await base44.entities.MemberProfile.filter({ 
+                  user_id: currentUser.id 
+                });
+                if (!isMounted) return;
 
-        setInitialized(true);
-        setLoading(false);
-      } catch (err) {
-        if (!isMounted) return;
-        console.error('Auth initialization error:', err?.message);
-        setUser(null);
-        setInitialized(true);
-        setLoading(false);
-      }
-    };
+                if (profiles.length > 0) {
+                  const profile = profiles[0];
+                  setDisclaimersCompleted(!!profile.accepted_pwa_disclaimer_at);
+                  setOnboardingCompleted(!!profile.onboarding_completed);
+                }
+              } catch (profileErr) {
+                if (!isMounted) return;
+                console.warn('Profile fetch warning:', profileErr?.message);
+              }
+            } catch (err) {
+              if (!isMounted) return;
+              console.error('Auth initialization error:', err?.message);
+              setUser(null);
+            }
+          };
 
-    checkAuth();
+          checkAuth();
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+          return () => {
+            isMounted = false;
+          };
+        }, []);
 
   const value = {
     user,
