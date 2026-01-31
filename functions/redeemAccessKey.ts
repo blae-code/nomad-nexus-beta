@@ -189,16 +189,8 @@ Deno.serve(async (req) => {
        status: newStatus
      });
 
-     // If key grants admin role, promote User entity to admin
-     const isAdmin = key.grants_rank === 'Pioneer' || key.grants_roles?.includes('admin');
-     if (isAdmin) {
-       try {
-         await base44.auth.updateMe({ role: 'admin' });
-         console.log('User promoted to admin role');
-       } catch (promoteErr) {
-         console.error('Admin promotion error:', promoteErr?.message);
-       }
-     }
+     // Note: User role is handled via MemberProfile rank/roles, not User.role
+     // Admin users must log in as normal; their User.role:admin is set by platform invite
 
      // Log successful redemption
      await base44.asServiceRole.entities.AdminAuditLog.create({
