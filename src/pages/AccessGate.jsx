@@ -7,6 +7,8 @@ import { Shield, Zap, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 import RouteGuard from '@/components/auth/RouteGuard';
+import PageTransition from '@/components/transitions/PageTransition';
+import AsyncLoadingOverlay from '@/components/transitions/AsyncLoadingOverlay';
 
 const scanlineStyle = `
   @keyframes scan {
@@ -204,8 +206,10 @@ export default function AccessGate() {
 
   return (
     <RouteGuard requiredAuth="none">
-      <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
-      <style>{scanlineStyle}</style>
+      <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
+      <PageTransition>
+        <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
+        <style>{scanlineStyle}</style>
       
       {/* Animated radial gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
@@ -379,7 +383,8 @@ export default function AccessGate() {
       <div className="fixed bottom-3 left-3 text-[9px] px-2 py-1 bg-green-900/40 border border-green-500/30 text-green-400 rounded opacity-60 hover:opacity-100 transition-opacity font-mono z-50">
         ✓ CUSTOM ACCESSGATE LOADED
       </div>
-    </div>
-    </RouteGuard>
-  );
-}
+      </div>
+      </PageTransition>
+      </RouteGuard>
+      );
+      }
