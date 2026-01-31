@@ -83,7 +83,7 @@ export default function PermissionGuard({
     // Admins should always have access - this shouldn't happen
     if (user.role === 'admin') {
       console.warn('Admin permission check failed:', { user, minRank, allowedRanks, requiredRoles });
-      return <>{children}</>;
+      return guardedContent;
     }
     
     return fallback || (
@@ -94,5 +94,5 @@ export default function PermissionGuard({
     );
   }
 
-  return <>{children}</>;
+  return guardedContent;
 }
