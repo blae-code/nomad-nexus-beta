@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { createPresenceRecord, getOrCreateClientId } from '@/components/models/presence';
 import * as presenceService from '@/components/services/presenceService';
 
@@ -18,7 +18,8 @@ const CLEANUP_INTERVAL_MS = 60000;   // 60 seconds
  */
 export function usePresenceHeartbeat(config = {}) {
   const { intervalMs = HEARTBEAT_INTERVAL_MS, enabled = true } = config;
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const clientIdRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
   const cleanupIntervalRef = useRef(null);
