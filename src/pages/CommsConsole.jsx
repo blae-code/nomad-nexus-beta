@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Radio, AlertCircle, Lock, Unlock, BarChart3, Bot, Plus, CheckCircle, Volume2, Mic, Settings } from 'lucide-react';
 import PermissionGuard from '@/components/PermissionGuard';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils/commsAccessPolicy';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
@@ -161,7 +161,8 @@ Provide a helpful, concise response with tactical awareness.`,
     }
   };
 
-  const { user: currentUser } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const currentUser = authUser?.member_profile_data || null;
 
   const updateSpeechSettings = (newSettings) => {
     setSpeechSettings(newSettings);
