@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     // Step 2: Fetch MemberProfile by callsign
     let profiles = [];
     try {
-      profiles = await base44.asServiceRole.entities.MemberProfile.filter({ callsign: trimmedCallsign });
+      profiles = await base44.entities.MemberProfile.filter({ callsign: trimmedCallsign });
     } catch (filterErr) {
       console.error('MemberProfile filter error:', filterErr?.message);
       return Response.json({ success: false, message: 'Failed to verify member' }, { status: 500 });
