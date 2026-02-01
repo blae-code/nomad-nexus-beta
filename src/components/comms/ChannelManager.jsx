@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Radio, Plus, Trash2, Lock, Unlock, Edit } from 'lucide-react';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 
 export default function ChannelManager() {
@@ -11,7 +11,8 @@ export default function ChannelManager() {
   const [loading, setLoading] = useState(true);
   const [showCreator, setShowCreator] = useState(false);
   const [newChannel, setNewChannel] = useState({ name: '', category: 'casual', type: 'text' });
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
 
   useEffect(() => {
     loadChannels();
