@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Lock, Radio, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 export default function ActiveNets() {
   const voiceNet = useVoiceNet();
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const [joiningNetId, setJoiningNetId] = useState(null);
 
   const groupedNets = {

@@ -9,7 +9,7 @@ import { Minimize2, Hash, Lock, Send, AlertCircle, Search, Bell, Shield } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
@@ -45,7 +45,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const { unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
   const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);

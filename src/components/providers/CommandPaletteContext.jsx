@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 
@@ -236,7 +236,8 @@ export function CommandPaletteProvider({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
 
   const callbacks = useMemo(
     () => ({
