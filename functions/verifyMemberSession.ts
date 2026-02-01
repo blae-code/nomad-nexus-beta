@@ -1,7 +1,9 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClient } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * Verify Member Session - Validates custom auth without relying on Base44's User table
+ * 
+ * PUBLIC ENDPOINT - No authentication required
  * 
  * Accepts code + callsign pair and verifies:
  * - AccessKey exists and is valid
@@ -12,7 +14,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    // Use service role directly - no request auth needed
+    const base44 = createClient({
+      appId: Deno.env.get('BASE44_APP_ID'),
+      serviceRoleKey: Deno.env.get('BASE44_SERVICE_ROLE_KEY')
+    });
 
     let payload;
     try {
