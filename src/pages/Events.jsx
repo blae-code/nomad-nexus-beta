@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus } from 'lucide-react';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function Events() {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const activeOp = useActiveOp();
-  const { user } = useCurrentUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     const init = async () => {
