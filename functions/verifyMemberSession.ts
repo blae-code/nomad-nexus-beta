@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     // Step 1: Verify AccessKey exists and is active
     let accessKeys = [];
     try {
-      accessKeys = await base44.asServiceRole.entities.AccessKey.filter({ code });
+      accessKeys = await base44.entities.AccessKey.filter({ code });
     } catch (filterErr) {
       console.error('AccessKey filter error:', filterErr?.message);
       return Response.json({ success: false, message: 'Invalid access code' }, { status: 404 });
