@@ -17,17 +17,21 @@ export function AuthProvider({ children }) {
 
           const checkAuth = async () => {
             try {
-              // Mark initialized immediately to allow public pages to render
-              setInitialized(true);
-              setLoading(false);
-
-              // Member-first authentication: Check localStorage for stored session token
+              // Member-first authentication: Check localStorage for stored session token FIRST
               const savedToken = localStorage.getItem('nexus.login.token');
               if (!savedToken) {
                 console.log('[AUTH] No saved login token found');
-                setUser(null);
+                if (isMounted) {
+                  setUser(null);
+                  setInitialized(true);
+                  setLoading(false);
+                }
                 return;
               }
+
+              // Mark initialized immediately to allow public pages to render
+              setInitialized(true);
+              setLoading(false);
 
               // Decode saved token to get code + callsign
               let loginData;
