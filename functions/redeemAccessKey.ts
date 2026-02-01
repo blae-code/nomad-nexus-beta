@@ -122,13 +122,26 @@ Deno.serve(async (req) => {
        console.error('Filter existing profile error:', filterErr?.message);
      }
 
-     // If existing profile found and key was previously redeemed by this profile, allow re-login
-     const isPreviouslyRedeemedByThisProfile = existingProfile && 
-       key.redeemed_by_member_profile_ids?.includes(existingProfile.id);
+     // If existing profile found, allow login and associate with key if needed
+     if (existingProfile) {
+       const alreadyAssociated = key.redeemed_by_member_profile_ids?.includes(existingProfile.id);
+       
+       // If not already associated, add profile to key's redeemed list
+       if (!alreadyAssociated) {
+         console.log('Associating existing profile with key:', existingProfile.id);
+         const newRedeemed = [...(key.redeemed_by_member_profile_ids || []), existingProfile.id];
+         const newUseCount = key.uses_count + 1;
+         const newStatus = newUseCount >= key.max_uses ? 'REDEEMED' : 'ACTIVE';
+         
+         await base44.asServiceRole.entities.AccessKey.update(key.id, {
+           uses_count: newUseCount,
+           redeemed_by_member_profile_ids: newRedeemed,
+           status: newStatus
+         });
+       }
 
-     if (isPreviouslyRedeemedByThisProfile) {
        // Re-login with same key - just verify and return success
-       console.log('Re-login detected for existing profile:', existingProfile.id);
+       console.log('Login successful for existing profile:', existingProfile.id);
        clearFailures(redemptionId);
        const loginToken = btoa(JSON.stringify({
          code: code,
