@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import {
   Bug,
   AlertTriangle,
@@ -42,7 +42,8 @@ const DEV_ADMIN_OVERRIDE_ENABLED = false;
 export default function QAConsole() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
 
   useEffect(() => {
     const checkAuth = async () => {
