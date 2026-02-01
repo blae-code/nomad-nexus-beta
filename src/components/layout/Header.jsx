@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { useCommandPalette } from '@/components/providers/CommandPaletteContext';
 import { useShellUI } from '@/components/providers/ShellUIContext';
 import { createPageUrl } from '@/utils';
@@ -21,7 +21,8 @@ import VerseClock from '@/components/header/VerseClock';
  * No horizontal scroll, responsive padding
  */
 export default function Header() {
-  const { user, loading } = useCurrentUser();
+  const { user: authUser, loading } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const paletteContext = useCommandPalette();
   const shellUI = useShellUI();
   

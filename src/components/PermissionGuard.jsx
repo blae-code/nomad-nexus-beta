@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPageUrl } from '@/utils';
-import { useCurrentUser } from './useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { isRankSufficient, RANKS } from './constants/ranks';
 import { hasRequiredRole, hasAllRequiredRoles } from './constants/roles';
 import { Lock } from 'lucide-react';
@@ -24,7 +24,8 @@ export default function PermissionGuard({
   requireAllRoles = false,
   fallback = null,
 }) {
-  const { user, loading } = useCurrentUser();
+  const { user: authUser, loading } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
 
   // Still loading auth
   if (loading) {

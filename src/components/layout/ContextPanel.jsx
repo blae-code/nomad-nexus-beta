@@ -4,7 +4,7 @@ import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAudioDevices } from '@/components/voice/hooks/useAudioDevices';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { getRankLabel, getMembershipLabel } from '@/components/constants/labels';
 import { ChevronDown, X, Radio, Users, Mic, BarChart3, Activity, ExternalLink, Copy, RotateCcw, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,7 +64,8 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
   const readiness = useReadiness();
   const latency = useLatency();
   const voiceNet = useVoiceNet();
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const { inputDevices, selectedDeviceId, selectDevice } = useAudioDevices();
   const voiceHealth = useVoiceHealth(voiceNet, latency);
   const activeOp = useActiveOp();

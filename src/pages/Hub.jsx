@@ -5,7 +5,7 @@ import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSea
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MODULE_STATUS, getStatusColor, getStatusBgColor, calculateCompletion } from '@/components/constants/moduleStatus';
 import { useShellUI } from '@/components/providers/ShellUIContext';
-import { useCurrentUser } from '@/components/useCurrentUser';
+
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
