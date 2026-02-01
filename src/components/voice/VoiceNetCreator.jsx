@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Radio, Plus, X } from 'lucide-react';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function VoiceNetCreator({ onSuccess, onCancel }) {
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const [form, setForm] = useState({
     code: '',
     label: '',

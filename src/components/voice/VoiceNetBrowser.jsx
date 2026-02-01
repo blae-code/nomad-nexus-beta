@@ -3,14 +3,15 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Radio, Plus, Trash2, Power, Users, Lock, Shield } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 
 export default function VoiceNetBrowser({ onCreateNew }) {
   const [voiceNets, setVoiceNets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const voiceNet = useVoiceNet();
 
   useEffect(() => {
