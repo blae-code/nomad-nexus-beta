@@ -45,6 +45,14 @@ export default function Layout({ children, currentPageName }) {
     window.__NN_BOOTED__ = true;
     window.__NN_BOOT_TIME__ = Date.now();
     console.log('[NN] App booted at', new Date().toISOString());
+    
+    // Inject PWA manifest link
+    if (!document.querySelector('link[rel="manifest"]')) {
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/api/servePWA/manifest.json';
+      document.head.appendChild(manifestLink);
+    }
   }, []);
 
   // Full-screen pages that hide shell UI
