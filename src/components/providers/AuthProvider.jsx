@@ -58,7 +58,10 @@ export function AuthProvider({ children }) {
                 response = await base44.functions.invoke('verifyMemberSession', { code, callsign });
               } catch (invokeErr) {
                 console.error('[AUTH] verifyMemberSession failed:', invokeErr?.message);
-                setUser(null);
+                // Don't remove token on first failure - might be network issue
+                if (isMounted) {
+                  setUser(null);
+                }
                 return;
               }
 
