@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Copy, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { countAllDomains } from '@/components/services/dataRegistry';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { useShellUI } from '@/components/providers/ShellUIContext';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useNotification } from '@/components/providers/NotificationContext';
@@ -16,7 +16,8 @@ import { APP_VERSION, APP_BUILD_PHASE, APP_BUILD_DATE } from '@/components/const
 export default function DiagnosticsBundle() {
   const [bundle, setBundle] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { user } = useCurrentUser();
+  const { user: authUser } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
   const shellUI = useShellUI();
   const voiceNet = useVoiceNet();
   const activeOp = useActiveOp();
