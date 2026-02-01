@@ -95,11 +95,15 @@ export default function AccessGate() {
             const response = await base44.functions.invoke('redeemAccessKey', { code: trimmedCode, callsign: trimmedCallsign });
 
             if (response?.data?.success) {
-              // Save login token if "Remember Me" is checked
-              if (rememberMe && response?.data?.loginToken) {
+              // CRITICAL: Always save login token (required for auth), regardless of "Remember Me"
+              if (response?.data?.loginToken) {
                 localStorage.setItem('nexus.login.token', response.data.loginToken);
-              } else {
-                localStorage.removeItem('nexus.login.token');
+              }
+              // "Remember Me" now only affects whether we pre-fill the form on next visit
+              if (!rememberMe) {
+                // Still save token for this session, but clear form data
+                localStorage.removeItem('nexus.login.code');
+                localStorage.removeItem('nexus.login.callsign');
               }
 
               // Auth granted by backend, now verify it's established on client
