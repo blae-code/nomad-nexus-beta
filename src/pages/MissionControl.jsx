@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCircle, Circle, FileText, BarChart3, Edit, Trash2 } from 'lucide-react';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
-import { useCurrentUser } from '@/components/useCurrentUser';
+import { useAuth } from '@/components/providers/AuthProvider';
 import EventCalendarView from '@/components/events/EventCalendarView';
 import EventTemplateManager from '@/components/events/EventTemplateManager';
 import EventRecurrenceManager from '@/components/events/EventRecurrenceManager';
@@ -59,7 +59,7 @@ export default function MissionControl() {
   });
 
   const activeOp = useActiveOp();
-  const { user } = useCurrentUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadEvents();
