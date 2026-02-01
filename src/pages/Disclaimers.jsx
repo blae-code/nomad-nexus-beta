@@ -38,19 +38,23 @@ export default function Disclaimers() {
   const handleProceedToOnboarding = async () => {
     setLoading(true);
     try {
-      // Get MemberProfile (should already exist from access key redemption)
-      // MemberProfile now has no user_id, so fetch first available profile
-      const profiles = await base44.entities.MemberProfile.list();
-      
-      if (profiles.length === 0) {
+      // Get the correct MemberProfile for the authenticated user
+      if (!user?.member_profile_id) {
         alert('No member profile found. Please redeem an access code first.');
+        setLoading(false);
         return;
       }
 
-      const profile = profiles[0];
+      const profile = await base44.entities.MemberProfile.filter({ id: user.member_profile_id });
+      
+      if (!profile || profile.length === 0) {
+        alert('Member profile not found. Please contact support.');
+        setLoading(false);
+        return;
+      }
       
       // Update with disclaimer acceptance timestamps
-      await base44.entities.MemberProfile.update(profile.id, {
+      await base44.entities.MemberProfile.update(profile[0].id, {
         accepted_pwa_disclaimer_at: new Date().toISOString(),
         accepted_codes_at: new Date().toISOString(),
         ai_consent: true,
