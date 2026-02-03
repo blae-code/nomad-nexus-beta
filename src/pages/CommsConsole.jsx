@@ -87,11 +87,13 @@ export default function CommsConsole() {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChannel) return;
-    
-    const user = await base44.auth.me();
+    if (!currentUserId) {
+      alert('You must be authenticated to send messages.');
+      return;
+    }
     await base44.entities.Message.create({
       channel_id: selectedChannel.id,
-      user_id: user.id,
+      user_id: currentUserId,
       content: newMessage.trim(),
     });
     
@@ -103,8 +105,10 @@ export default function CommsConsole() {
     if (!pollQuestion.trim() || !selectedChannel) return;
     const validOptions = pollOptions.filter(opt => opt.trim());
     if (validOptions.length < 2) return;
-
-    const user = await base44.auth.me();
+    if (!currentUserId) {
+      alert('You must be authenticated to create polls.');
+      return;
+    }
     const formattedOptions = validOptions.map((text, idx) => ({
       id: `opt_${idx}`,
       text: text
@@ -115,7 +119,7 @@ export default function CommsConsole() {
       scope_id: selectedChannel.id,
       question: pollQuestion.trim(),
       options: formattedOptions,
-      created_by: user.id,
+      created_by: currentUserId,
       closes_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
     });
 
@@ -126,10 +130,13 @@ export default function CommsConsole() {
   };
 
   const votePoll = async (pollId, optionId) => {
-    const user = await base44.auth.me();
+    if (!currentUserId) {
+      alert('You must be authenticated to vote.');
+      return;
+    }
     await base44.entities.PollVote.create({
       poll_id: pollId,
-      user_id: user.id,
+      user_id: currentUserId,
       selected_option_ids: [optionId],
     });
     loadPolls(selectedChannel.id);
@@ -162,7 +169,8 @@ Provide a helpful, concise response with tactical awareness.`,
   };
 
   const { user: authUser } = useAuth();
-  const currentUser = authUser?.member_profile_data || null;
+  const currentUser = authUser?.member_profile_data || authUser;
+  const currentUserId = currentUser?.id || authUser?.member_profile_id || authUser?.id;
 
   const updateSpeechSettings = (newSettings) => {
     setSpeechSettings(newSettings);
