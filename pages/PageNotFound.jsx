@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { createPageUrl } from '@/utils';
 import { Home } from 'lucide-react';
 
 export default function PageNotFound() {
