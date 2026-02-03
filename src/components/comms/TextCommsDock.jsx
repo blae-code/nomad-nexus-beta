@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { isAdminUser } from '@/utils';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
@@ -47,6 +48,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
 
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
+  const isAdmin = isAdminUser(authUser);
   const { unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
   const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);
@@ -444,7 +446,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                        <Bell className="w-3 h-3" />
                      </Button>
 
-                     {user?.role === 'admin' && (
+                     {isAdmin && (
                        <>
                          <Button
                            size="icon"
@@ -491,7 +493,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                             key={msg.id}
                             message={msg}
                             currentUserId={user?.id}
-                            isAdmin={user?.role === 'admin'}
+                            isAdmin={isAdmin}
                             lastSeen={lastSeen}
                             onEdit={() => {
                               // Refresh messages after edit
@@ -584,7 +586,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                   parentMessage={threadPanelMessage}
                   onClose={() => setThreadPanelMessage(null)}
                   currentUserId={user?.id}
-                  isAdmin={user?.role === 'admin'}
+                  isAdmin={isAdmin}
                 />
                 )}
                 </div>

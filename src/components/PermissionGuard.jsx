@@ -1,5 +1,5 @@
 import React from 'react';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, isAdminUser } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isRankSufficient, RANKS } from './constants/ranks';
 import { hasRequiredRole, hasAllRequiredRoles } from './constants/roles';
@@ -73,7 +73,7 @@ export default function PermissionGuard({
 
   if (!hasPermission) {
     // Admins should always have access - this shouldn't happen
-    if (user.role === 'admin') {
+    if (isAdminUser(authUser)) {
       console.warn('Admin permission check failed:', { user, minRank, allowedRanks, requiredRoles });
       return <>{children}</>;
     }

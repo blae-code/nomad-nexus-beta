@@ -60,7 +60,9 @@ export function AuthProvider({ children }) {
                 callsign: displayCallsign || memberProfile.callsign,
               };
 
-              const isAdmin = memberProfile.rank === 'Pioneer';
+              const rank = (memberProfile.rank || '').toString().toUpperCase();
+              const roles = (memberProfile.roles || []).map((r) => r.toString().toLowerCase());
+              const isAdmin = rank === 'PIONEER' || rank === 'FOUNDER' || roles.includes('admin');
               setUser({
                 id: memberProfile.id,
                 member_profile_id: memberProfile.id,

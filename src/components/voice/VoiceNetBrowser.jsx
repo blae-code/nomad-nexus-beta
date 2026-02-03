@@ -6,12 +6,14 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
+import { isAdminUser } from '@/utils';
 
 export default function VoiceNetBrowser({ onCreateNew }) {
   const [voiceNets, setVoiceNets] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
+  const isAdmin = isAdminUser(authUser);
   const voiceNet = useVoiceNet();
 
   useEffect(() => {
@@ -146,7 +148,7 @@ export default function VoiceNetBrowser({ onCreateNew }) {
                       </Button>
                     )}
 
-                    {user.role === 'admin' && (
+                    {isAdmin && (
                       <Button
                         size="sm"
                         variant="ghost"

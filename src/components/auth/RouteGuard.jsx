@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/providers/AuthProvider';
 import LoadingScreen from '@/components/common/LoadingScreen';
 import AuthSecurityFailure from '@/components/auth/AuthSecurityFailure';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, isAdminUser } from '@/utils';
 
 /**
  * RouteGuard - Handles route protection and redirects based on auth state
@@ -78,7 +78,7 @@ export default function RouteGuard({ requiredAuth = 'authenticated', children })
   // User is authenticated but incomplete onboarding flow (non-admins only)
   if (requiredAuth === 'onboarded') {
     // Check admin status via MemberProfile rank (source of truth)
-    const isAdmin = user.is_admin || user.member_profile_data?.rank === 'Pioneer';
+    const isAdmin = isAdminUser(user);
 
     if (!isAdmin) {
       if (!disclaimersCompleted) {

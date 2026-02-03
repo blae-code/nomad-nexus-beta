@@ -3,9 +3,8 @@
  * Provides system testing, data inspection, performance monitoring, and debugging utilities
  */
 
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import React, { useState } from 'react';
+import { createPageUrl, isAdminUser } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import {
   Bug,
@@ -37,43 +36,12 @@ import PerformanceDashboard from '@/components/qa/PerformanceDashboard';
 import DataGenerator from '@/components/qa/DataGenerator';
 import VoiceDebugPanel from '@/components/qa/VoiceDebugPanel';
 
-const DEV_ADMIN_OVERRIDE_ENABLED = false;
-
 export default function QAConsole() {
-  const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
-  const { user: authUser } = useAuth();
+  const { user: authUser, loading, initialized } = useAuth();
   const user = authUser?.member_profile_data || authUser;
+  const authorized = initialized && !!authUser && isAdminUser(authUser);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          window.location.href = createPageUrl('AccessGate');
-          return;
-        }
-
-        const me = await base44.auth.me();
-        const isAdmin = me.role === 'admin' || (DEV_ADMIN_OVERRIDE_ENABLED && (me.rank === 'FOUNDER' || me.rank === 'PIONEER'));
-
-        if (!isAdmin) {
-          window.location.href = createPageUrl('Hub');
-          return;
-        }
-
-        setAuthorized(true);
-      } catch (error) {
-        window.location.href = createPageUrl('AccessGate');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (loading) {
+  if (loading || !initialized) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-orange-500 text-xl">LOADING...</div>

@@ -19,7 +19,11 @@ export default function PromotionRecommendations({ member, onMemberUpdate }) {
     setLoading(true);
     try {
       const events = await base44.entities.Event.list('-start_time', 100);
-      const memberEvents = events.filter((e) => e.assigned_user_ids?.includes(member.id));
+      const memberId = member.profile?.id || member.id;
+      const memberEvents = events.filter((e) => {
+        const assigned = e.assigned_member_profile_ids || e.assigned_user_ids || [];
+        return assigned.includes(memberId);
+      });
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `Generate a promotion recommendation for this organization member:
@@ -67,7 +71,8 @@ export default function PromotionRecommendations({ member, onMemberUpdate }) {
 
     setPromoting(true);
     try {
-      const profile = await base44.entities.MemberProfile.filter({ user_id: member.id });
+      const profileId = member.profile?.id || member.id;
+      const profile = await base44.entities.MemberProfile.filter({ id: profileId });
       if (profile.length > 0) {
         await base44.entities.MemberProfile.update(profile[0].id, {
           rank: recommendation.recommended_rank,

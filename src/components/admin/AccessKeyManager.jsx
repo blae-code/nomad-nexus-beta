@@ -6,7 +6,8 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, getDisplayCallsign } from '@/utils';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,26 +59,19 @@ export default function AccessKeyManager() {
   const [showAuditLog, setShowAuditLog] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState(new Set());
   const [filterRank, setFilterRank] = useState('ALL');
+  const { user: authUser } = useAuth();
+  const adminProfile = authUser?.member_profile_data || authUser;
 
   // Load keys and admin callsign
   useEffect(() => {
     loadKeys();
-    loadAdminCallsign();
   }, []);
 
-  const loadAdminCallsign = async () => {
-    try {
-      const user = await base44.auth.me();
-      const profile = await base44.entities.MemberProfile.filter({ user_id: user.id });
-      if (profile && profile.length > 0) {
-        setAdminCallsign(profile[0].callsign || user.full_name);
-      } else {
-        setAdminCallsign(user.full_name);
-      }
-    } catch (err) {
-      console.error('Failed to load admin callsign:', err);
-    }
-  };
+  useEffect(() => {
+    if (!adminProfile) return;
+    const display = getDisplayCallsign(adminProfile);
+    setAdminCallsign(display || adminProfile.full_name || adminProfile.callsign || '');
+  }, [adminProfile]);
 
   const loadKeys = async () => {
     try {

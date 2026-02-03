@@ -21,21 +21,14 @@ export default function MemberManagement() {
   const loadMembers = async () => {
     setLoading(true);
     try {
-      const users = await base44.entities.User.list();
-      const profiles = await Promise.all(
-        users.map(async (user) => {
-          try {
-            const profile = await base44.entities.MemberProfile.filter({ user_id: user.id });
-            return {
-              ...user,
-              profile: profile[0] || null,
-            };
-          } catch {
-            return { ...user, profile: null };
-          }
-        })
-      );
-      setMembers(profiles);
+      const profiles = await base44.entities.MemberProfile.list('-created_date', 200);
+      const membersFromProfiles = (profiles || []).map((profile) => ({
+        id: profile.id,
+        full_name: getDisplayCallsign(profile) || profile.callsign || 'Unknown',
+        email: profile.email || '',
+        profile,
+      }));
+      setMembers(membersFromProfiles);
     } catch (error) {
       console.error('Failed to load members:', error);
     } finally {

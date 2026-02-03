@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Radio, Plus, Trash2, Lock, Unlock, Edit } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
+import { isAdminUser } from '@/utils';
 
 export default function ChannelManager() {
   const [channels, setChannels] = useState([]);
@@ -81,7 +82,7 @@ export default function ChannelManager() {
           <h3 className="text-lg font-bold text-white uppercase">Text Channels</h3>
           <p className="text-xs text-zinc-500">Manage communication channels</p>
         </div>
-        {user?.role === 'admin' && (
+        {isAdminUser(authUser) && (
           <Button onClick={() => setShowCreator(!showCreator)} size="sm">
             <Plus className="w-4 h-4 mr-2" />
             Create Channel
@@ -169,7 +170,7 @@ export default function ChannelManager() {
                   </div>
                 </div>
 
-                {user?.role === 'admin' && (
+                {isAdminUser(authUser) && (
                   <Button
                     size="sm"
                     variant="ghost"

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useCommandPalette } from '@/components/providers/CommandPaletteContext';
 import { useShellUI } from '@/components/providers/ShellUIContext';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, isAdminUser } from '@/utils';
 import { useReadiness } from '@/components/hooks/useReadiness';
 import { useLatency } from '@/components/hooks/useLatency';
 import { usePresenceRoster } from '@/components/hooks/usePresenceRoster';
@@ -77,7 +77,7 @@ export default function Header() {
   }
 
   // Admin users have special display
-  const isAdmin = user.role === 'admin';
+  const isAdmin = isAdminUser(authUser);
   const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank || 'VAGRANT');
 
   return (

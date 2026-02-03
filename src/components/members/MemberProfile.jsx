@@ -22,7 +22,13 @@ export default function MemberProfile({ member, onMemberUpdate }) {
     setLoadingHistory(true);
     try {
       const events = await base44.entities.Event.list('-start_time', 100);
-      const memberEvents = events.filter((e) => e.assigned_user_ids?.includes(member.id)).slice(0, 10);
+      const memberId = member.profile?.id || member.id;
+      const memberEvents = events
+        .filter((e) => {
+          const assigned = e.assigned_member_profile_ids || e.assigned_user_ids || [];
+          return assigned.includes(memberId);
+        })
+        .slice(0, 10);
       setParticipationHistory(memberEvents);
     } catch (error) {
       console.error('Failed to load participation history:', error);

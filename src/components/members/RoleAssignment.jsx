@@ -34,7 +34,8 @@ export default function RoleAssignment({ member, onComplete, onMemberUpdate }) {
   const saveRoles = async () => {
     setSaving(true);
     try {
-      const profile = await base44.entities.MemberProfile.filter({ user_id: member.id });
+      const profileId = member.profile?.id || member.id;
+      const profile = await base44.entities.MemberProfile.filter({ id: profileId });
       if (profile.length > 0) {
         await base44.entities.MemberProfile.update(profile[0].id, { roles });
       }

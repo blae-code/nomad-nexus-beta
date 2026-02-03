@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
+import { isAdminUser } from '@/utils';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 
 /**
@@ -165,7 +166,7 @@ const createActionRegistry = (user, callbacks) => {
       icon: 'Shield',
       shortcut: '⌘⇧A',
       onExecute: () => callbacks.navigate('SystemAdmin'),
-      isVisible: (u) => u?.role === 'admin',
+      isVisible: (u) => isAdminUser(u),
     },
     // Toggle: CommsDock
     {

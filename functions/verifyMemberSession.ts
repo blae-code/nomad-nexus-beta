@@ -65,13 +65,21 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, message: 'This access code has expired' }, { status: 403 });
     }
 
-    // Step 2: Fetch MemberProfile by callsign
+    // Step 2: Fetch MemberProfile by callsign (fallback to display_callsign)
     let profiles = [];
     try {
       profiles = await base44.entities.MemberProfile.filter({ callsign: trimmedCallsign });
     } catch (filterErr) {
       console.error('MemberProfile filter error:', filterErr?.message);
       return Response.json({ success: false, message: 'Failed to verify member' }, { status: 500 });
+    }
+
+    if (!profiles || profiles.length === 0) {
+      try {
+        profiles = await base44.entities.MemberProfile.filter({ display_callsign: trimmedCallsign });
+      } catch (filterErr) {
+        console.error('MemberProfile display_callsign filter error:', filterErr?.message);
+      }
     }
 
     if (!profiles || profiles.length === 0) {
@@ -82,11 +90,24 @@ Deno.serve(async (req) => {
 
     // Step 3: Verify this profile can use this access key
     // Either: key was redeemed by this profile, OR key is still ACTIVE (first-time login)
-    const wasRedeemedByProfile = key.redeemed_by_member_profile_ids?.includes(memberProfile.id);
+    const redeemedIds = key.redeemed_by_member_profile_ids || [];
+    const wasRedeemedByProfile = redeemedIds.includes(memberProfile.id);
     const isKeyActive = key.status === 'ACTIVE';
+    const canAssociateRedeemed =
+      key.status === 'REDEEMED' && redeemedIds.length === 0;
     
-    if (!wasRedeemedByProfile && !isKeyActive) {
+    if (!wasRedeemedByProfile && !isKeyActive && !canAssociateRedeemed) {
       return Response.json({ success: false, message: 'Callsign does not match access code' }, { status: 403 });
+    }
+
+    if (!wasRedeemedByProfile && (isKeyActive || canAssociateRedeemed)) {
+      try {
+        await base44.asServiceRole.entities.AccessKey.update(key.id, {
+          redeemed_by_member_profile_ids: [...redeemedIds, memberProfile.id],
+        });
+      } catch (updateErr) {
+        console.error('AccessKey association update failed:', updateErr?.message);
+      }
     }
 
     // Success: Return the verified member profile

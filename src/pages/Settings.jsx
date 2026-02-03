@@ -3,9 +3,8 @@
  * GATED: Admin users only (rank: Founder/Pioneer OR dev flag)
  */
 
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import React, { useState } from 'react';
+import { createPageUrl, isAdminUser } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { 
   Shield,
@@ -28,51 +27,13 @@ import DiagnosticsBundle from '@/components/admin/DiagnosticsBundle';
 import UserManagement from '@/components/admin/UserManagement';
 import AccessKeyManager from '@/components/admin/AccessKeyManager';
 
-// Dev-only admin override (DISABLED BY DEFAULT)
-const DEV_ADMIN_OVERRIDE_ENABLED = false;
-
 export default function Settings() {
-  const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const { user: authUser } = useAuth();
-  const user = authUser?.member_profile_data || null;
+  const { user: authUser, loading, initialized } = useAuth();
+  const user = authUser?.member_profile_data || authUser;
+  const authorized = initialized && !!authUser && isAdminUser(authUser);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          window.location.href = createPageUrl('AccessGate');
-          return;
-        }
-
-        // Check authorization
-        const me = await base44.auth.me();
-
-        // Admin check: user.role === 'admin' OR rank is FOUNDER/PIONEER with dev flag
-        const isAdmin =
-          me.role === 'admin' ||
-          (DEV_ADMIN_OVERRIDE_ENABLED && (me.rank === 'FOUNDER' || me.rank === 'PIONEER'));
-
-        if (!isAdmin) {
-          // Redirect unauthorized users
-          window.location.href = createPageUrl('Hub');
-          return;
-        }
-
-        setAuthorized(true);
-      } catch (error) {
-        window.location.href = createPageUrl('AccessGate');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (loading) {
+  if (loading || !initialized) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-orange-500 text-xl">LOADING...</div>
