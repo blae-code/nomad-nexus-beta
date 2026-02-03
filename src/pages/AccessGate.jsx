@@ -60,6 +60,7 @@ export default function AccessGate() {
             setRememberMe(true);
           } catch (e) {
             localStorage.removeItem('nexus.login.token');
+            localStorage.removeItem('nexus.display_callsign');
           }
         }
 
@@ -290,7 +291,19 @@ export default function AccessGate() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
+                    const savedToken = localStorage.getItem('nexus.login.token');
+                    if (savedToken) {
+                      try {
+                        const loginData = JSON.parse(atob(savedToken));
+                        if (loginData?.memberProfileId) {
+                          localStorage.removeItem(`nexus.display_callsign.${loginData.memberProfileId}`);
+                        }
+                      } catch (e) {
+                        // ignore decode errors
+                      }
+                    }
                     localStorage.removeItem('nexus.login.token');
+                    localStorage.removeItem('nexus.display_callsign');
                     setHasSavedLogin(false);
                     setAccessCode('');
                     setCallsign('');

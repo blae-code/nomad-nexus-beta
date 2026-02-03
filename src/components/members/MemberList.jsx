@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, User } from 'lucide-react';
+import { getDisplayCallsign } from '@/utils';
 
 export default function MemberList({ members, selectedMember, onSelectMember }) {
   const getRankColor = (rank) => {
@@ -47,7 +48,7 @@ export default function MemberList({ members, selectedMember, onSelectMember }) 
               <div>
                 <div className="font-bold text-white text-sm">{member.full_name}</div>
                 <div className={`text-xs ${getRankColor(member.profile?.rank || 'VAGRANT')}`}>
-                  {member.profile?.callsign || 'No callsign'}
+                  {getDisplayCallsign(member.profile) || 'No callsign'}
                 </div>
               </div>
             </div>

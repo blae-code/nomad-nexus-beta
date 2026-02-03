@@ -95,6 +95,7 @@ Deno.serve(async (req) => {
       member: {
         id: memberProfile.id,
         callsign: memberProfile.callsign,
+        display_callsign: memberProfile.display_callsign,
         rank: memberProfile.rank,
         roles: memberProfile.roles,
         bio: memberProfile.bio,

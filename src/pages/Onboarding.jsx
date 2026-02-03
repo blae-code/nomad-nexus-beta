@@ -44,9 +44,13 @@ export default function Onboarding() {
     
     const loadProfile = async () => {
       try {
-        const profiles = await base44.entities.MemberProfile.list();
+        if (!user.member_profile_id) return;
+        const profiles = await base44.entities.MemberProfile.filter({ id: user.member_profile_id });
         if (profiles.length > 0) {
-          setFormData(prev => ({ ...prev, rsiCallsign: profiles[0]?.callsign || '' }));
+          setFormData(prev => ({
+            ...prev,
+            rsiCallsign: profiles[0]?.callsign || ''
+          }));
         }
       } catch (err) {
         console.error('Profile load error:', err);
@@ -62,7 +66,12 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const profiles = await base44.entities.MemberProfile.list();
+      if (!user?.member_profile_id) {
+        alert('No member profile found');
+        return;
+      }
+
+      const profiles = await base44.entities.MemberProfile.filter({ id: user.member_profile_id });
       if (profiles.length === 0) {
         alert('No member profile found');
         return;
@@ -70,14 +79,30 @@ export default function Onboarding() {
 
       const profile = profiles[0];
 
-      await base44.entities.MemberProfile.update(profile.id, {
-        callsign: formData.nomadCallsign || formData.rsiCallsign,
+      const trimmedDisplay = formData.nomadCallsign?.trim() || '';
+      const updatePayload = {
         bio: formData.bio,
         onboarding_completed: true,
         accepted_codes_at: new Date().toISOString(),
         ai_consent: formData.aiConsent,
         ai_use_history: formData.aiUseHistory,
-      });
+        ...(trimmedDisplay ? { display_callsign: trimmedDisplay } : {}),
+      };
+
+      try {
+        await base44.entities.MemberProfile.update(profile.id, updatePayload);
+      } catch (updateErr) {
+        if (updatePayload.display_callsign) {
+          const { display_callsign, ...fallbackPayload } = updatePayload;
+          await base44.entities.MemberProfile.update(profile.id, fallbackPayload);
+        } else {
+          throw updateErr;
+        }
+      }
+
+      if (trimmedDisplay) {
+        localStorage.setItem(`nexus.display_callsign.${profile.id}`, trimmedDisplay);
+      }
 
       window.location.href = createPageUrl('Hub');
     } catch (error) {

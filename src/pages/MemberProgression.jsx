@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Search, Users, TrendingUp } from 'lucide-react';
 import { LoadingState, EmptyState } from '@/components/common/UIStates';
+import { getDisplayCallsign } from '@/utils';
 import SkillTree from '@/components/progression/SkillTree';
 import PromotionRecommendations from '@/components/progression/PromotionRecommendations';
 import MentorshipMatching from '@/components/progression/MentorshipMatching';
@@ -41,11 +42,11 @@ export default function MemberProgression() {
     }
   };
 
-  const filteredMembers = members.filter(
-    (m) =>
-      m.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.profile?.callsign?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMembers = members.filter((m) => {
+    const query = searchQuery.toLowerCase();
+    const display = getDisplayCallsign(m.profile).toLowerCase();
+    return m.full_name.toLowerCase().includes(query) || display.includes(query);
+  });
 
   if (loading) {
     return (
@@ -89,7 +90,7 @@ export default function MemberProgression() {
                 }`}
               >
                 <div className="font-bold text-white text-sm">{member.full_name}</div>
-                <div className="text-xs text-zinc-400">{member.profile?.callsign || 'N/A'}</div>
+                <div className="text-xs text-zinc-400">{getDisplayCallsign(member.profile) || 'N/A'}</div>
               </button>
             ))}
           </div>

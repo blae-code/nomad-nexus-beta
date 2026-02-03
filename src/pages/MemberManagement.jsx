@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Users, UserPlus } from 'lucide-react';
+import { getDisplayCallsign } from '@/utils';
 import { LoadingState, EmptyState } from '@/components/common/UIStates';
 import MemberList from '@/components/members/MemberList';
 import MemberProfile from '@/components/members/MemberProfile';
@@ -42,11 +43,15 @@ export default function MemberManagement() {
     }
   };
 
-  const filteredMembers = members.filter((member) =>
-    member.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.profile?.callsign?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMembers = members.filter((member) => {
+    const query = searchQuery.toLowerCase();
+    const display = getDisplayCallsign(member.profile).toLowerCase();
+    return (
+      member.full_name.toLowerCase().includes(query) ||
+      member.email.toLowerCase().includes(query) ||
+      display.includes(query)
+    );
+  });
 
   if (loading) {
     return (

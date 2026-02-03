@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getDisplayCallsign } from '@/utils';
 import { Loader2, Zap, Award } from 'lucide-react';
 
 const SKILL_CATEGORIES = {
@@ -25,7 +26,7 @@ export default function SkillTree({ member }) {
         prompt: `Generate a detailed skill tree for this Star Citizen member based on their profile:
 
         Name: ${member.full_name}
-        Callsign: ${member.profile?.callsign || 'N/A'}
+        Callsign: ${getDisplayCallsign(member.profile) || 'N/A'}
         Current Rank: ${member.profile?.rank || 'VAGRANT'}
         Current Roles: ${member.profile?.roles?.join(', ') || 'None'}
 

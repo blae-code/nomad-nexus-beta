@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getDisplayCallsign } from '@/utils';
 import { Loader2, Zap } from 'lucide-react';
 
 export default function SkillAssessment({ member, participationHistory }) {
@@ -22,7 +23,7 @@ export default function SkillAssessment({ member, participationHistory }) {
         prompt: `Assess the operational skills and performance profile of a Star Citizen organization member based on this data:
 
         Member: ${member.full_name}
-        Callsign: ${member.profile?.callsign || 'N/A'}
+        Callsign: ${getDisplayCallsign(member.profile) || 'N/A'}
         Rank: ${member.profile?.rank || 'VAGRANT'}
         Member Since: ${memberSince} days
         Operations Participated: ${operationCount}

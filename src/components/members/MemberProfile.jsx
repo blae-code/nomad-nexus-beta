@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar, Zap, Activity, Award, Mail, Shield } from 'lucide-react';
+import { getDisplayCallsign } from '@/utils';
 import RoleAssignment from '@/components/members/RoleAssignment';
 import SkillAssessment from '@/components/members/SkillAssessment';
 
@@ -55,7 +56,7 @@ export default function MemberProfile({ member, onMemberUpdate }) {
             {member.profile?.callsign && (
               <p className={`text-sm font-bold flex items-center gap-2 ${getRankColor(member.profile?.rank)}`}>
                 <Shield className="w-4 h-4" />
-                {member.profile.callsign} • {member.profile?.rank}
+                {getDisplayCallsign(member.profile) || member.profile.callsign} • {member.profile?.rank}
               </p>
             )}
           </div>
@@ -91,7 +92,7 @@ export default function MemberProfile({ member, onMemberUpdate }) {
             </div>
             <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
               <div className="text-xs text-zinc-400 mb-2">CALLSIGN</div>
-              <div className="text-lg font-bold text-white">{member.profile?.callsign || 'N/A'}</div>
+              <div className="text-lg font-bold text-white">{getDisplayCallsign(member.profile) || 'N/A'}</div>
             </div>
             <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
               <div className="text-xs text-zinc-400 mb-2">STATUS</div>

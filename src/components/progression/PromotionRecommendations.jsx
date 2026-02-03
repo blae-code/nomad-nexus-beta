@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Loader2, TrendingUp, CheckCircle } from 'lucide-react';
+import { getDisplayCallsign } from '@/utils';
 
 const RANK_HIERARCHY = ['VAGRANT', 'SCOUT', 'VOYAGER', 'COMMANDER'];
 
@@ -24,7 +25,7 @@ export default function PromotionRecommendations({ member, onMemberUpdate }) {
         prompt: `Generate a promotion recommendation for this organization member:
 
         Member: ${member.full_name}
-        Callsign: ${member.profile?.callsign || 'N/A'}
+        Callsign: ${getDisplayCallsign(member.profile) || 'N/A'}
         Current Rank: ${member.profile?.rank || 'VAGRANT'}
         Current Roles: ${member.profile?.roles?.join(', ') || 'None'}
         Operations Participated: ${memberEvents.length}

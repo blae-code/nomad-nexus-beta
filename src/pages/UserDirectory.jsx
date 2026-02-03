@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
+import { getDisplayCallsign } from '@/utils';
 import { Search, Users as UsersIcon } from 'lucide-react';
 import EmptyState from '@/components/common/EmptyState';
 
@@ -22,9 +23,12 @@ export default function UserDirectory() {
     return <div className="p-8 text-center text-orange-500">LOADING...</div>;
   }
 
-  const filteredProfiles = profiles.filter(p => 
-    p.callsign?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProfiles = profiles.filter((p) => {
+    const display = getDisplayCallsign(p).toLowerCase();
+    const canonical = (p.callsign || '').toLowerCase();
+    const query = searchTerm.toLowerCase();
+    return display.includes(query) || canonical.includes(query);
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -63,7 +67,7 @@ export default function UserDirectory() {
                   <UsersIcon className="w-6 h-6 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white uppercase">{profile.callsign}</h3>
+                  <h3 className="text-lg font-bold text-white uppercase">{getDisplayCallsign(profile) || 'Unknown'}</h3>
                   <p className="text-sm text-zinc-500 uppercase">{profile.rank}</p>
                 </div>
               </div>

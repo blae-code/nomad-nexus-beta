@@ -27,6 +27,7 @@ export function AuthProvider({ children }) {
           } catch (decodeErr) {
             console.warn('[AUTH] Invalid token format:', decodeErr.message);
             localStorage.removeItem('nexus.login.token');
+            localStorage.removeItem('nexus.display_callsign');
           }
 
           if (loginData?.code && loginData?.callsign) {
@@ -41,14 +42,33 @@ export function AuthProvider({ children }) {
               const memberProfile = response.data.member;
               console.log('[AUTH] Member authenticated:', memberProfile.callsign, 'rank:', memberProfile.rank);
 
+              const perUserDisplayKey = `nexus.display_callsign.${memberProfile.id}`;
+              let storedDisplay = localStorage.getItem(perUserDisplayKey);
+              if (!storedDisplay) {
+                const legacyDisplay = localStorage.getItem('nexus.display_callsign');
+                if (legacyDisplay) {
+                  storedDisplay = legacyDisplay;
+                  localStorage.setItem(perUserDisplayKey, legacyDisplay);
+                  localStorage.removeItem('nexus.display_callsign');
+                }
+              }
+              const displayCallsign = memberProfile.display_callsign || storedDisplay || null;
+              const memberProfileForUI = {
+                ...memberProfile,
+                login_callsign: memberProfile.callsign,
+                display_callsign: displayCallsign,
+                callsign: displayCallsign || memberProfile.callsign,
+              };
+
               const isAdmin = memberProfile.rank === 'Pioneer';
               setUser({
                 id: memberProfile.id,
                 member_profile_id: memberProfile.id,
-                member_profile_data: memberProfile,
+                member_profile_data: memberProfileForUI,
                 is_admin: isAdmin,
                 email: null,
-                full_name: memberProfile.callsign,
+                full_name: memberProfileForUI.callsign,
+                callsign: memberProfileForUI.callsign,
                 authType: 'member'
               });
               setDisclaimersCompleted(!!memberProfile.accepted_pwa_disclaimer_at);
@@ -59,6 +79,10 @@ export function AuthProvider({ children }) {
             } else {
               console.warn('[AUTH] Session verification failed:', response?.data?.message);
               localStorage.removeItem('nexus.login.token');
+              localStorage.removeItem('nexus.display_callsign');
+              if (loginData?.memberProfileId) {
+                localStorage.removeItem(`nexus.display_callsign.${loginData.memberProfileId}`);
+              }
             }
           }
         }
@@ -87,6 +111,10 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       localStorage.removeItem('nexus.login.token');
+      localStorage.removeItem('nexus.display_callsign');
+      if (user?.member_profile_id) {
+        localStorage.removeItem(`nexus.display_callsign.${user.member_profile_id}`);
+      }
       setUser(null);
       window.location.href = createPageUrl('AccessGate');
     } catch (err) {
