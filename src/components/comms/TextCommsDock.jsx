@@ -46,6 +46,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
+  const [polls, setPolls] = useState([]);
+  const [loadingPolls, setLoadingPolls] = useState(false);
+  const [showPollCreator, setShowPollCreator] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [riggsyPrompt, setRiggsyPrompt] = useState('');
+  const [riggsyResponse, setRiggsyResponse] = useState('');
+  const [riggsyLoading, setRiggsyLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const { user: authUser } = useAuth();
@@ -214,6 +222,104 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     }
   };
 
+  const loadPolls = useCallback(async () => {
+    if (!selectedChannelId) return;
+    setLoadingPolls(true);
+    try {
+      const pollsList = await base44.entities.Poll.filter(
+        { scope: 'CHANNEL', scope_id: selectedChannelId },
+        '-created_date',
+        20
+      );
+      const pollsWithVotes = await Promise.all(
+        pollsList.map(async (poll) => {
+          const votes = await base44.entities.PollVote.filter({ poll_id: poll.id });
+          return { ...poll, votes };
+        })
+      );
+      setPolls(pollsWithVotes);
+    } catch (error) {
+      console.error('Failed to load polls:', error);
+    } finally {
+      setLoadingPolls(false);
+    }
+  }, [selectedChannelId]);
+
+  useEffect(() => {
+    if (activeTab === 'polls') {
+      loadPolls();
+    }
+  }, [activeTab, selectedChannelId, loadPolls]);
+
+  const createPoll = async () => {
+    if (!pollQuestion.trim() || !selectedChannelId || !user?.id) return;
+    const validOptions = pollOptions.filter((opt) => opt.trim());
+    if (validOptions.length < 2) return;
+
+    try {
+      const formattedOptions = validOptions.map((text, idx) => ({
+        id: `opt_${idx}`,
+        text: text.trim(),
+      }));
+
+      await base44.entities.Poll.create({
+        scope: 'CHANNEL',
+        scope_id: selectedChannelId,
+        question: pollQuestion.trim(),
+        options: formattedOptions,
+        created_by: user.id,
+        closes_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setShowPollCreator(false);
+      loadPolls();
+    } catch (error) {
+      console.error('Failed to create poll:', error);
+    }
+  };
+
+  const votePoll = async (pollId, optionId) => {
+    if (!user?.id) return;
+    try {
+      await base44.entities.PollVote.create({
+        poll_id: pollId,
+        user_id: user.id,
+        selected_option_ids: [optionId],
+      });
+      loadPolls();
+    } catch (error) {
+      console.error('Failed to vote in poll:', error);
+    }
+  };
+
+  const askRiggsy = async () => {
+    if (!riggsyPrompt.trim()) return;
+    setRiggsyLoading(true);
+    setRiggsyResponse('');
+
+    try {
+      const channelContext = messages.slice(-10).map((m) => m.content).join('\n');
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are Riggsy, a tactical AI assistant for the Nomad Nexus communication system. 
+
+Recent channel activity:
+${channelContext}
+
+User question: ${riggsyPrompt}
+
+Provide a helpful, concise response with tactical awareness.`,
+      });
+
+      setRiggsyResponse(result);
+    } catch (error) {
+      setRiggsyResponse('Error: Unable to reach Riggsy at this time.');
+    } finally {
+      setRiggsyLoading(false);
+    }
+  };
+
   // Sync unread counts whenever channels change
   React.useEffect(() => {
     refreshUnreadCounts();
@@ -288,22 +394,28 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                   setViewMode('dms');
                 } else if (tab === 'mentions') {
                   setActiveTab('mentions');
+                } else if (tab === 'polls') {
+                  setActiveTab('polls');
+                } else if (tab === 'riggsy') {
+                  setActiveTab('riggsy');
                 }
               }}
-              disabled={tab !== 'comms' && tab !== 'dms' && tab !== 'mentions'}
+              disabled={tab === 'inbox'}
               className={`whitespace-nowrap text-[11px] font-semibold uppercase px-3 py-2 transition-all border-b-2 ${
-                tab !== 'comms' && tab !== 'dms' && tab !== 'mentions'
+                tab === 'inbox'
                   ? 'text-zinc-600 border-transparent cursor-not-allowed opacity-50'
                   : activeTab === tab || (tab === 'comms' && viewMode === 'channels' && activeTab === 'comms') || (tab === 'dms' && viewMode === 'dms' && activeTab === 'comms')
                   ? 'text-orange-400 border-orange-500'
                   : 'text-zinc-500 hover:text-zinc-300 border-transparent hover:border-orange-500/30'
               }`}
-              title={tab !== 'comms' && tab !== 'dms' && tab !== 'mentions' ? 'Coming soon' : ''}
+              title={tab === 'inbox' ? 'Coming soon' : ''}
             >
               {tab === 'comms' && <>Channels {viewMode === 'channels' && unreadByTab?.comms > 0 && <span className="ml-1 text-orange-400">({unreadByTab.comms})</span>}</>}
               {tab === 'dms' && <>DMs</>}
               {tab === 'mentions' && <>@Mentions</>}
-              {tab !== 'comms' && tab !== 'dms' && tab !== 'mentions' && <>{tab} <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
+              {tab === 'polls' && <>Polls</>}
+              {tab === 'riggsy' && <>Riggsy</>}
+              {tab === 'inbox' && <>Inbox <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
             </button>
           ))}
         </div>
@@ -627,6 +739,146 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                   setViewMode('channels');
                 }}
                 />
+                )}
+
+                {activeTab === 'polls' && (
+                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                    {!selectedChannelId ? (
+                      <div className="text-xs text-zinc-600 text-center py-4">Select a channel to view polls.</div>
+                    ) : (
+                      <>
+                        {!showPollCreator && (
+                          <Button onClick={() => setShowPollCreator(true)} variant="outline" className="w-full text-xs">
+                            Create Poll
+                          </Button>
+                        )}
+
+                        {showPollCreator && (
+                          <div className="p-3 bg-zinc-900/50 rounded border border-zinc-800 space-y-2">
+                            <Input
+                              value={pollQuestion}
+                              onChange={(e) => setPollQuestion(e.target.value)}
+                              placeholder="Poll question..."
+                              className="h-8 text-xs"
+                            />
+                            {pollOptions.map((opt, idx) => (
+                              <Input
+                                key={idx}
+                                value={opt}
+                                onChange={(e) => {
+                                  const updated = [...pollOptions];
+                                  updated[idx] = e.target.value;
+                                  setPollOptions(updated);
+                                }}
+                                placeholder={`Option ${idx + 1}`}
+                                className="h-8 text-xs"
+                              />
+                            ))}
+                            <div className="flex gap-2">
+                              <Button onClick={() => setPollOptions([...pollOptions, ''])} variant="outline" size="sm">
+                                Add Option
+                              </Button>
+                              <Button onClick={createPoll} size="sm">Create</Button>
+                              <Button onClick={() => setShowPollCreator(false)} variant="outline" size="sm">Cancel</Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {loadingPolls ? (
+                          <div className="text-xs text-zinc-600 text-center py-4">Loading polls...</div>
+                        ) : polls.length === 0 ? (
+                          <div className="text-xs text-zinc-600 text-center py-4">No polls yet.</div>
+                        ) : (
+                          polls.map((poll) => {
+                            const userVote = poll.votes?.find((v) => v.user_id === user?.id);
+                            const voteCounts = {};
+                            poll.options?.forEach((opt) => (voteCounts[opt.id] = 0));
+                            poll.votes?.forEach((vote) => {
+                              vote.selected_option_ids?.forEach((optId) => {
+                                voteCounts[optId] = (voteCounts[optId] || 0) + 1;
+                              });
+                            });
+                            const totalVotes = poll.votes?.length || 0;
+
+                            return (
+                              <div key={poll.id} className="p-3 bg-zinc-900/40 rounded border border-zinc-800 space-y-2">
+                                <div className="text-xs font-semibold text-white">{poll.question}</div>
+                                <div className="space-y-1.5">
+                                  {poll.options?.map((option) => {
+                                    const count = voteCounts[option.id] || 0;
+                                    const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                                    const hasVoted = userVote?.selected_option_ids?.includes(option.id);
+
+                                    return (
+                                      <button
+                                        key={option.id}
+                                        onClick={() => !userVote && votePoll(poll.id, option.id)}
+                                        disabled={!!userVote}
+                                        className={`w-full p-2 rounded border text-left text-xs transition-colors ${
+                                          hasVoted
+                                            ? 'bg-orange-500/20 border-orange-500'
+                                            : userVote
+                                            ? 'bg-zinc-900/30 border-zinc-700 cursor-not-allowed'
+                                            : 'bg-zinc-900/30 border-zinc-700 hover:border-orange-500/50'
+                                        }`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-zinc-200">{option.text}</span>
+                                          <span className="text-[10px] text-zinc-500">{count} ({percentage}%)</span>
+                                        </div>
+                                        {userVote && (
+                                          <div className="mt-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-orange-500" style={{ width: `${percentage}%` }} />
+                                          </div>
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <div className="text-[10px] text-zinc-600">
+                                  {totalVotes} vote{totalVotes !== 1 ? 's' : ''} • Ends {poll.closes_at ? new Date(poll.closes_at).toLocaleDateString() : '—'}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'riggsy' && (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                      <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded">
+                        <div className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-1">Riggsy Tactical AI</div>
+                        <div className="text-[11px] text-zinc-400">
+                          Ask for comms summaries, tactical insights, or channel guidance.
+                        </div>
+                      </div>
+
+                      {riggsyResponse && (
+                        <div className="p-3 bg-zinc-900/40 border border-zinc-800 rounded">
+                          <div className="text-[10px] text-blue-400 font-semibold mb-2">RIGGSY RESPONSE</div>
+                          <div className="text-xs text-zinc-300 whitespace-pre-wrap">{riggsyResponse}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-orange-500/10 p-3 bg-zinc-900/40">
+                      <div className="flex gap-2">
+                        <Input
+                          value={riggsyPrompt}
+                          onChange={(e) => setRiggsyPrompt(e.target.value)}
+                          placeholder="Ask Riggsy anything..."
+                          className="h-9 text-xs"
+                        />
+                        <Button onClick={askRiggsy} disabled={!riggsyPrompt.trim() || riggsyLoading} className="h-9">
+                          {riggsyLoading ? '...' : 'Ask'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 </div>
