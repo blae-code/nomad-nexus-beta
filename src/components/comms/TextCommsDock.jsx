@@ -152,6 +152,15 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
         }).catch(() => {});
       }
 
+      if (newMsg?.id && typeof messageInput === 'string' && messageInput.includes('#')) {
+        invokeMemberFunction('routeChannelMessage', {
+          messageId: newMsg.id,
+          channelId: selectedChannelId,
+          content: messageInput,
+          isRouted: false,
+        }).catch(() => {});
+      }
+
       setMessages((prev) => [...prev, newMsg]);
       setMessageInput('');
       clearTyping();
@@ -704,6 +713,14 @@ Provide a helpful, concise response with tactical awareness.`,
                             messageId: newMsg.id,
                             channelId: selectedChannelId,
                             content: messageData.content,
+                          }).catch(() => {});
+                        }
+                        if (newMsg?.id && messageData?.content && messageData.content.includes('#')) {
+                          invokeMemberFunction('routeChannelMessage', {
+                            messageId: newMsg.id,
+                            channelId: selectedChannelId,
+                            content: messageData.content,
+                            isRouted: false,
                           }).catch(() => {});
                         }
                         clearTyping();

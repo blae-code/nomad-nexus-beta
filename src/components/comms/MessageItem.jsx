@@ -118,6 +118,12 @@ export default function MessageItem({
             <span className="text-zinc-600 flex-shrink-0">
               {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
+            {message.is_routed && (
+              <>
+                <span className="text-zinc-600 flex-shrink-0">•</span>
+                <span className="text-[9px] uppercase tracking-widest text-orange-400">Routed</span>
+              </>
+            )}
             {message.is_edited && (
               <>
                 <span className="text-zinc-600 flex-shrink-0">•</span>

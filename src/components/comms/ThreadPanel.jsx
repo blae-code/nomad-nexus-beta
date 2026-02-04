@@ -11,11 +11,13 @@ import MessageComposer from './MessageComposer';
 import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { invokeMemberFunction } from '@/api/memberFunctions';
+import { getThreadSubscription, setThreadSubscription } from '@/components/services/threadSubscriptionService';
 
 export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin }) {
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const repliesEndRef = useRef(null);
+  const [isFollowing, setIsFollowing] = useState(true);
   const { user: authUser } = useAuth();
   const currentUser = authUser?.member_profile_data || authUser;
   const fallbackMemberMap = React.useMemo(() => {
@@ -54,6 +56,16 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
 
     loadReplies();
 
+    const loadSubscription = async () => {
+      if (!currentUserId) return;
+      const subscription = await getThreadSubscription(parentMessage.id, currentUserId);
+      if (subscription && typeof subscription.is_following === 'boolean') {
+        setIsFollowing(subscription.is_following);
+      }
+    };
+
+    loadSubscription();
+
     // Subscribe to new replies in this thread
     const unsubscribe = base44.entities.Message.subscribe((event) => {
       if (event.type === 'create' && event.data?.parent_message_id === parentMessage.id) {
@@ -87,6 +99,11 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
         }).catch(() => {});
       }
 
+      if (currentUserId) {
+        await setThreadSubscription(parentMessage.id, currentUserId, true);
+        setIsFollowing(true);
+      }
+
       // Update parent message thread count and participants
       const updatedParticipants = Array.from(
         new Set([...(parentMessage.thread_participants || []), messageData.user_id])
@@ -97,18 +114,12 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
         thread_participants: updatedParticipants,
       });
 
-      // Create notification for parent message author (if not self-reply)
-      if (parentMessage.user_id !== messageData.user_id) {
-        await base44.entities.Notification.create({
-          user_id: parentMessage.user_id,
-          type: 'thread_reply',
-          title: 'New thread reply',
-          message: `Someone replied to your message in #${parentMessage.channel_id}`,
-          channel_id: parentMessage.channel_id,
-          related_entity_type: 'message',
-          related_entity_id: parentMessage.id,
-          is_read: false,
-        });
+      if (newReply?.id) {
+        invokeMemberFunction('processThreadReplyNotifications', {
+          parentMessageId: parentMessage.id,
+          replyMessageId: newReply.id,
+          channelId: parentMessage.channel_id,
+        }).catch(() => {});
       }
     } catch (error) {
       console.error('Failed to send reply:', error);
@@ -123,9 +134,25 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
           <CornerDownRight className="w-4 h-4 text-orange-500" />
           <span className="text-xs font-bold text-white uppercase">Thread</span>
         </div>
-        <Button size="icon" variant="ghost" onClick={onClose} className="h-6 w-6">
-          <X className="w-3 h-3" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={isFollowing ? 'default' : 'outline'}
+            onClick={async () => {
+              const next = !isFollowing;
+              setIsFollowing(next);
+              if (currentUserId) {
+                await setThreadSubscription(parentMessage.id, currentUserId, next);
+              }
+            }}
+            className="h-7 text-xs"
+          >
+            {isFollowing ? 'Following' : 'Follow'}
+          </Button>
+          <Button size="icon" variant="ghost" onClick={onClose} className="h-6 w-6">
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Parent Message */}
