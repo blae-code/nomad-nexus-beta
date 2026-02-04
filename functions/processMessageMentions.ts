@@ -87,10 +87,16 @@ Deno.serve(async (req) => {
       // Respect per-channel mute settings
       let muted = false;
       try {
-        const prefs = await base44.asServiceRole.entities.NotificationPreference.filter({
+        let prefs = await base44.asServiceRole.entities.NotificationPreference.filter({
           user_id: member.id,
           channel_id: channelId,
         });
+        if (!prefs || prefs.length === 0) {
+          prefs = await base44.asServiceRole.entities.NotificationPreference.filter({
+            member_profile_id: member.id,
+            channel_id: channelId,
+          });
+        }
         if (prefs?.[0]?.muted) muted = true;
       } catch {
         // ignore

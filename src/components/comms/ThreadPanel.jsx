@@ -104,6 +104,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
           type: 'thread_reply',
           title: 'New thread reply',
           message: `Someone replied to your message in #${parentMessage.channel_id}`,
+          channel_id: parentMessage.channel_id,
           related_entity_type: 'message',
           related_entity_id: parentMessage.id,
           is_read: false,

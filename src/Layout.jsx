@@ -24,6 +24,7 @@ import { initScrollGuard } from '@/components/utils/scrollGuard';
 import { useAuth } from '@/components/providers/AuthProvider';
 import FatalAuthError from '@/components/auth/FatalAuthError';
 import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
+import { useRealtimeNotifications } from '@/components/hooks/useRealtimeNotifications';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -106,6 +107,7 @@ function LayoutWithAuth({ children, currentPageName, isFullScreen }) {
 function LayoutContent({ currentPageName, children }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
+  useRealtimeNotifications();
 
   const { isContextPanelOpen, isCommsDockOpen, dockMinimized, contextPanelMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized, setContextPanelMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();

@@ -29,10 +29,26 @@ export default function ChannelNotificationSettings({ channel, isOpen, onClose, 
 
     const loadSettings = async () => {
       try {
-        const prefs = await base44.entities.NotificationPreference.filter({
-          user_id: userId,
-          channel_id: channel.id,
-        });
+        let prefs = [];
+        try {
+          prefs = await base44.entities.NotificationPreference.filter({
+            user_id: userId,
+            channel_id: channel.id,
+          });
+        } catch {
+          prefs = [];
+        }
+
+        if (prefs.length === 0) {
+          try {
+            prefs = await base44.entities.NotificationPreference.filter({
+              member_profile_id: userId,
+              channel_id: channel.id,
+            });
+          } catch {
+            prefs = [];
+          }
+        }
 
         if (prefs.length > 0) {
           const pref = prefs[0];
@@ -54,10 +70,26 @@ export default function ChannelNotificationSettings({ channel, isOpen, onClose, 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const existing = await base44.entities.NotificationPreference.filter({
-        user_id: userId,
-        channel_id: channel.id,
-      });
+      let existing = [];
+      try {
+        existing = await base44.entities.NotificationPreference.filter({
+          user_id: userId,
+          channel_id: channel.id,
+        });
+      } catch {
+        existing = [];
+      }
+
+      if (existing.length === 0) {
+        try {
+          existing = await base44.entities.NotificationPreference.filter({
+            member_profile_id: userId,
+            channel_id: channel.id,
+          });
+        } catch {
+          existing = [];
+        }
+      }
 
       if (existing.length > 0) {
         await base44.entities.NotificationPreference.update(existing[0].id, settings);
