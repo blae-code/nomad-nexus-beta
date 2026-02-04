@@ -14,7 +14,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { getThreadSubscription, setThreadSubscription } from '@/components/services/threadSubscriptionService';
 
-export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin }) {
+export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin, composerDisabled, composerDisabledReason }) {
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const repliesEndRef = useRef(null);
@@ -228,6 +228,9 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
         userId={currentUserId}
         onSendMessage={handleSendReply}
         placeholder="Reply to thread..."
+        draftKey={parentMessage?.id ? `nexus.comms.draft.thread.${parentMessage.id}` : ''}
+        disabled={composerDisabled}
+        disabledReason={composerDisabledReason}
       />
     </div>
   );

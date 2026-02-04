@@ -1,7 +1,7 @@
 # Comms Array — Module Audit & Path Forward
 
-**Audit Date:** 2026-01-31  
-**Current Status:** 85% Complete (Phase 6 In Progress)
+**Audit Date:** 2026-02-04  
+**Current Status:** 92% Complete (Phase 6 Complete)
 
 ---
 
@@ -52,6 +52,7 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 ### Notifications & Moderation (Phase 6)
 - ✅ **Per-Channel Notification Settings** — Mute, desktop notifications, sound
 - ✅ **Notification Preferences** — Mentions-only mode, customization
+- ✅ **Do Not Disturb** — Global mute across all channels
 - ✅ **User Timeouts** — Temporary channel mutes with expiration
 - ✅ **Moderation Panel** — Admin tools for channel management
 - ✅ **Mute Management** — View active timeouts, unmute users
@@ -59,6 +60,12 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 ### UI/UX
 - ✅ **Typing Indicators** — Real-time "user is typing" feedback
 - ✅ **Last Seen Timestamps** — Online/offline status with last activity
+- ✅ **Message Drafts** — Per-channel draft persistence
+- ✅ **Emoji Picker** — Native emoji picker for reactions + composing
+- ✅ **Export History** — Download channel history (JSON/CSV)
+- ✅ **Slow Mode Enforcement** — Respect channel slow mode timers
+- ✅ **Read-Only Channels** — Composer gating for read-only channels
+- ✅ **Link Previews** — On-demand rich previews for URLs
 - ✅ **Message Composer** — Rich text toolbar, attachment upload
 - ✅ **Responsive Design** — Mobile-friendly collapsible dock
 - ✅ **Keyboard Shortcuts** — Enter to send, Shift+Enter for newline
@@ -68,11 +75,11 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 ## In Progress Features 🔨
 
 ### Phase 6 Completion
-- 🔨 **Desktop Notifications** — Browser notification API integration
-- 🔨 **Do Not Disturb Mode** — Global mute across all channels
-- 🔨 **Message Draft Persistence** — Save unsent messages per channel
-- 🔨 **Emoji Picker** — Native emoji selector for reactions
-- 🔨 **Export History** — Download channel conversations
+- ✅ **Desktop Notifications** — Browser notification API integration
+- ✅ **Do Not Disturb Mode** — Global mute across all channels
+- ✅ **Message Draft Persistence** — Save unsent messages per channel
+- ✅ **Emoji Picker** — Native emoji selector for reactions
+- ✅ **Export History** — Download channel conversations
 
 ---
 
@@ -92,7 +99,7 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 ### Performance & Polish
 - 📋 **Message Virtualization** — Optimize rendering for large histories
 - 📋 **Image Lazy Loading** — Progressive image loading
-- 📋 **Link Previews** — Rich embeds for URLs
+- 📋 **Link Previews (auto)** — Auto-fetch previews with caching + opt-out
 - 📋 **Code Syntax Highlighting** — Language-specific highlighting
 - 📋 **Message Reactions Panel** — Expanded reaction picker
 

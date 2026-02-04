@@ -28,6 +28,13 @@ const playNotificationSound = () => {
 };
 
 const getPrefKey = (userId, channelId) => `${userId || 'anon'}:${channelId || 'global'}`;
+const isDndEnabled = () => {
+  try {
+    return localStorage.getItem('nexus.notifications.dnd') === 'true';
+  } catch {
+    return false;
+  }
+};
 
 export function useRealtimeNotifications({ enabled = true } = {}) {
   const { user: authUser } = useAuth();
@@ -78,6 +85,7 @@ export function useRealtimeNotifications({ enabled = true } = {}) {
 
     const handleNotification = async (notif) => {
       if (!notif || notif.user_id !== user.id) return;
+      if (isDndEnabled()) return;
 
       const pref = await loadPreferences(notif.channel_id);
       if (pref?.muted) return;

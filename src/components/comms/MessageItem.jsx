@@ -2,8 +2,8 @@
  * MessageItem — Enhanced message display with edit, delete, reactions, and rich text
  */
 
-import React, { useState } from 'react';
-import { Edit2, Trash2, Smile, MoreVertical, Reply, Pin, MessageSquare, Languages } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Edit2, Trash2, Smile, MoreVertical, Reply, Pin, MessageSquare, Languages, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +17,8 @@ import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
 import MessageTranslator from '@/components/comms/MessageTranslator';
 import { getMembershipLabel, getRankLabel, getRoleLabel } from '@/components/constants/labels';
+import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
+import LinkPreview from '@/components/comms/LinkPreview';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '👀', '🔥', '✅', '❌'];
 const STATUS_META = {
@@ -59,6 +61,8 @@ export default function MessageItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showLinkPreview, setShowLinkPreview] = useState(false);
   const displayLabel = authorLabel || message.author_callsign || message.display_callsign || message.user_id;
   const profile = memberProfile || {};
   const normalizedRank = profile.rank ? profile.rank.toString().toUpperCase() : null;
@@ -75,6 +79,12 @@ export default function MessageItem({
   );
   const netLabel = presenceRecord?.current_net?.label || presenceRecord?.current_net?.code || null;
   const typingChannel = presenceRecord?.typing_in_channel || null;
+  const linkUrls = useMemo(() => {
+    if (!message?.content) return [];
+    const matches = message.content.match(/https?:\/\/[^\s)]+/g);
+    return matches ? Array.from(new Set(matches)) : [];
+  }, [message?.content]);
+  const primaryLink = linkUrls[0] || null;
 
   const canEdit = currentUserId === message.user_id;
   const canDelete = isAdmin || currentUserId === message.user_id;
@@ -311,6 +321,23 @@ export default function MessageItem({
             </div>
           )}
 
+          {/* Link Preview */}
+          {primaryLink && (
+            <div className="mt-2">
+              {!showLinkPreview ? (
+                <button
+                  onClick={() => setShowLinkPreview(true)}
+                  className="text-[10px] text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Preview link
+                </button>
+              ) : (
+                <LinkPreview url={primaryLink} />
+              )}
+            </div>
+          )}
+
           {/* Reactions */}
           {message.reactions && message.reactions.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
@@ -401,6 +428,15 @@ export default function MessageItem({
                     {emoji}
                   </button>
                 ))}
+                <button
+                  onClick={() => {
+                    setShowReactionPicker(false);
+                    setShowEmojiPicker(true);
+                  }}
+                  className="hover:bg-zinc-800 rounded px-1.5 py-1 text-xs text-orange-300 border border-orange-500/30"
+                >
+                  +
+                </button>
               </div>
             )}
           </div>
@@ -408,6 +444,12 @@ export default function MessageItem({
           <MessageTranslator message={message} />
         </div>
       </div>
+
+      <EmojiPickerModal
+        isOpen={showEmojiPicker}
+        onClose={() => setShowEmojiPicker(false)}
+        onSelect={(emoji) => handleReaction(emoji)}
+      />
     </div>
   );
 }

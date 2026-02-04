@@ -26,10 +26,15 @@ export default function ModerationPanel({ channel, isOpen, onClose, currentUser 
 
     const loadMutedUsers = async () => {
       try {
-        const mutes = await base44.entities.ChannelMute.filter({
-          channel_id: channel.id,
-          is_active: true,
-        });
+        let mutes = [];
+        try {
+          mutes = await base44.entities.ChannelMute.filter({
+            channel_id: channel.id,
+            is_active: true,
+          });
+        } catch {
+          mutes = [];
+        }
         setMutedUsers(mutes);
       } catch (error) {
         console.error('Failed to load muted users:', error);
@@ -48,7 +53,9 @@ export default function ModerationPanel({ channel, isOpen, onClose, currentUser 
 
       await base44.entities.ChannelMute.create({
         channel_id: channel.id,
+        member_profile_id: targetUserId,
         user_id: targetUserId,
+        muted_by_member_profile_id: currentUser.id,
         muted_by: currentUser.id,
         reason: muteReason || 'No reason provided',
         expires_at: expiresAt.toISOString(),
@@ -56,10 +63,15 @@ export default function ModerationPanel({ channel, isOpen, onClose, currentUser 
       });
 
       // Reload muted users
-      const mutes = await base44.entities.ChannelMute.filter({
-        channel_id: channel.id,
-        is_active: true,
-      });
+      let mutes = [];
+      try {
+        mutes = await base44.entities.ChannelMute.filter({
+          channel_id: channel.id,
+          is_active: true,
+        });
+      } catch {
+        mutes = [];
+      }
       setMutedUsers(mutes);
 
       setTargetUserId('');
@@ -164,7 +176,7 @@ export default function ModerationPanel({ channel, isOpen, onClose, currentUser 
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
                           <div className="text-sm text-white font-medium">
-                            {mute.user_id}
+                            {mute.member_profile_id || mute.user_id}
                           </div>
                           <div className="text-xs text-zinc-500">
                             {remaining > 0 ? `${remaining}m remaining` : 'Expired'}

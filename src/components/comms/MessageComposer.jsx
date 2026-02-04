@@ -2,11 +2,12 @@
  * MessageComposer — Enhanced input for sending messages with formatting and attachments
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, Bold, Italic, Code, X } from 'lucide-react';
+import { Send, Paperclip, Bold, Italic, Code, Smile, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
 
 export default function MessageComposer({ 
   channelId, 
@@ -14,15 +15,52 @@ export default function MessageComposer({
   onSendMessage, 
   onTyping,
   disabled = false,
+  disabledReason = '',
+  draftKey = '',
   placeholder = "Type message..."
 }) {
   const [body, setBody] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const draftTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    const stored = localStorage.getItem(draftKey);
+    if (stored && stored !== body) {
+      setBody(stored);
+      return;
+    }
+    if (!stored) {
+      setBody('');
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    if (draftTimeoutRef.current) {
+      clearTimeout(draftTimeoutRef.current);
+    }
+    draftTimeoutRef.current = setTimeout(() => {
+      if (body && body.trim()) {
+        localStorage.setItem(draftKey, body);
+      } else {
+        localStorage.removeItem(draftKey);
+      }
+    }, 350);
+
+    return () => {
+      if (draftTimeoutRef.current) {
+        clearTimeout(draftTimeoutRef.current);
+      }
+    };
+  }, [body, draftKey]);
 
   const handleSend = async () => {
+    if (disabled || uploading) return;
     if (!body.trim() && attachments.length === 0) return;
 
     const messageData = {
@@ -32,10 +70,17 @@ export default function MessageComposer({
       attachments: attachments.length > 0 ? attachments : undefined,
     };
 
-    await onSendMessage(messageData);
-    setBody('');
-    setAttachments([]);
-    textareaRef.current?.focus();
+    try {
+      await onSendMessage(messageData);
+      setBody('');
+      setAttachments([]);
+      if (draftKey) {
+        localStorage.removeItem(draftKey);
+      }
+      textareaRef.current?.focus();
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -67,6 +112,25 @@ export default function MessageComposer({
 
   const removeAttachment = (url) => {
     setAttachments(prev => prev.filter(a => a !== url));
+  };
+
+  const insertTextAtCursor = (text) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = body.substring(start, end);
+    const before = body.substring(0, start);
+    const after = body.substring(end);
+    const updated = before + text + after;
+    setBody(updated);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + text.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
   };
 
   const insertFormatting = (format) => {
@@ -110,6 +174,12 @@ export default function MessageComposer({
 
   return (
     <div className="border-t border-orange-500/10 p-3 bg-zinc-900/40 flex-shrink-0 space-y-2">
+      {disabledReason && (
+        <div className="text-[10px] text-orange-300 bg-orange-500/10 border border-orange-500/20 rounded px-2 py-1">
+          {disabledReason}
+        </div>
+      )}
+
       {/* Attachments Preview */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -141,6 +211,7 @@ export default function MessageComposer({
           onClick={() => insertFormatting('bold')}
           className="h-7 w-7"
           title="Bold (Ctrl+B)"
+          disabled={disabled}
         >
           <Bold className="w-3 h-3" />
         </Button>
@@ -150,6 +221,7 @@ export default function MessageComposer({
           onClick={() => insertFormatting('italic')}
           className="h-7 w-7"
           title="Italic (Ctrl+I)"
+          disabled={disabled}
         >
           <Italic className="w-3 h-3" />
         </Button>
@@ -159,8 +231,19 @@ export default function MessageComposer({
           onClick={() => insertFormatting('code')}
           className="h-7 w-7"
           title="Code"
+          disabled={disabled}
         >
           <Code className="w-3 h-3" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => setShowEmojiPicker(true)}
+          className="h-7 w-7"
+          title="Insert emoji"
+          disabled={disabled}
+        >
+          <Smile className="w-3 h-3" />
         </Button>
         <div className="border-l border-zinc-700 h-5 mx-1" />
         <input
@@ -207,6 +290,12 @@ export default function MessageComposer({
           <Send className="w-4 h-4" />
         </Button>
       </div>
+
+      <EmojiPickerModal
+        isOpen={showEmojiPicker}
+        onClose={() => setShowEmojiPicker(false)}
+        onSelect={(emoji) => insertTextAtCursor(emoji)}
+      />
     </div>
   );
 }

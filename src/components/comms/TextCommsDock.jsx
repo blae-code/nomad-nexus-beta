@@ -5,9 +5,16 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Minimize2, Hash, Lock, Send, AlertCircle, Search, Bell, Shield } from 'lucide-react';
+import { Minimize2, Hash, Lock, AlertCircle, Search, Bell, Shield, Moon, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -54,6 +61,19 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [riggsyPrompt, setRiggsyPrompt] = useState('');
   const [riggsyResponse, setRiggsyResponse] = useState('');
   const [riggsyLoading, setRiggsyLoading] = useState(false);
+  const [dndEnabled, setDndEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('nexus.notifications.dnd') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [muteInfo, setMuteInfo] = useState(null);
+  const [muteRemaining, setMuteRemaining] = useState(null);
+  const [lastSentAt, setLastSentAt] = useState(null);
+  const [slowModeRemaining, setSlowModeRemaining] = useState(0);
   const messagesEndRef = useRef(null);
 
   const { user: authUser } = useAuth();
@@ -79,6 +99,10 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     return { [user.id]: { label, profile } };
   }, [user?.id, user?.callsign, user?.full_name, user?.email, user?.rank, user?.membership, user?.roles]);
   const { memberMap } = useMemberProfileMap(messageUserIds, { fallbackMap: fallbackMemberMap });
+  const slowModeKey = React.useMemo(() => {
+    if (!selectedChannelId || !user?.id) return null;
+    return `nexus.comms.lastSent.${selectedChannelId}.${user.id}`;
+  }, [selectedChannelId, user?.id]);
 
   // Load channels
   useEffect(() => {
@@ -100,6 +124,89 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
 
     loadChannels();
   }, [activeOp?.binding?.commsChannelId, selectedChannelId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nexus.notifications.dnd', dndEnabled ? 'true' : 'false');
+    } catch {
+      // ignore storage errors
+    }
+  }, [dndEnabled]);
+
+  useEffect(() => {
+    if (!slowModeKey) {
+      setLastSentAt(null);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(slowModeKey);
+      setLastSentAt(stored ? Number(stored) : null);
+    } catch {
+      setLastSentAt(null);
+    }
+  }, [slowModeKey]);
+
+  useEffect(() => {
+    if (!selectedChannelId || !user?.id) {
+      setMuteInfo(null);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadMuteStatus = async () => {
+      try {
+        let mutes = [];
+        try {
+          mutes = await base44.entities.ChannelMute.filter({
+            channel_id: selectedChannelId,
+            member_profile_id: user.id,
+            is_active: true,
+          });
+        } catch {
+          mutes = [];
+        }
+
+        if (!mutes || mutes.length === 0) {
+          try {
+            mutes = await base44.entities.ChannelMute.filter({
+              channel_id: selectedChannelId,
+              user_id: user.id,
+              is_active: true,
+            });
+          } catch {
+            mutes = [];
+          }
+        }
+
+        const activeMute = (mutes || []).find((mute) => {
+          if (!mute?.expires_at) return true;
+          return new Date(mute.expires_at).getTime() > Date.now();
+        }) || null;
+
+        if (activeMute?.expires_at && new Date(activeMute.expires_at).getTime() <= Date.now()) {
+          try {
+            await base44.entities.ChannelMute.update(activeMute.id, { is_active: false });
+          } catch {
+            // ignore update failure
+          }
+        }
+
+        if (isActive) {
+          setMuteInfo(activeMute);
+        }
+      } catch (error) {
+        console.error('Failed to load mute status:', error);
+        if (isActive) setMuteInfo(null);
+      }
+    };
+
+    loadMuteStatus();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedChannelId, user?.id]);
 
   // Load messages for selected channel + real-time subscription
   useEffect(() => {
@@ -240,6 +347,102 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     }
   };
 
+  const exportHistory = async (format) => {
+    if (!selectedChannelId) return;
+    setExporting(true);
+
+    try {
+      const msgs = await base44.entities.Message.filter(
+        { channel_id: selectedChannelId },
+        'created_date',
+        1000
+      );
+
+      const messagesForExport = (msgs || []).map((msg) => ({
+        id: msg.id,
+        created_date: msg.created_date,
+        user_id: msg.user_id,
+        author: memberMap[msg.user_id]?.label || msg.author_callsign || msg.display_callsign || msg.user_id,
+        content: msg.content || '',
+        attachments: msg.attachments || [],
+        reactions: msg.reactions || [],
+        is_edited: msg.is_edited || false,
+        is_deleted: msg.is_deleted || false,
+        parent_message_id: msg.parent_message_id || null,
+      }));
+
+      const channelLabel = selectedChannel?.name || selectedChannelId;
+      const safeChannel = channelLabel.toString().replace(/[^a-z0-9_-]/gi, '_');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+      if (format === 'json') {
+        const payload = {
+          channel: channelLabel,
+          exported_at: new Date().toISOString(),
+          messages: messagesForExport,
+        };
+        const content = JSON.stringify(payload, null, 2);
+        downloadFile(`${safeChannel}_${timestamp}.json`, content, 'application/json');
+      }
+
+      if (format === 'csv') {
+        const header = [
+          'id',
+          'created_date',
+          'user_id',
+          'author',
+          'content',
+          'attachments',
+          'reactions',
+          'is_edited',
+          'is_deleted',
+          'parent_message_id',
+        ];
+        const rows = messagesForExport.map((msg) => [
+          msg.id,
+          msg.created_date,
+          msg.user_id,
+          msg.author,
+          msg.content,
+          JSON.stringify(msg.attachments || []),
+          JSON.stringify(msg.reactions || []),
+          msg.is_edited,
+          msg.is_deleted,
+          msg.parent_message_id || '',
+        ]);
+        const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\n');
+        downloadFile(`${safeChannel}_${timestamp}.csv`, csv, 'text/csv');
+      }
+    } catch (error) {
+      console.error('Failed to export history:', error);
+    } finally {
+      setExporting(false);
+      setShowExportDialog(false);
+    }
+  };
+
+  const escapeCsv = (value) => {
+    if (value === null || value === undefined) return '""';
+    const str = String(value).replace(/"/g, '""');
+    return `"${str}"`;
+  };
+
+  const downloadFile = (filename, content, type) => {
+    try {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download file:', error);
+    }
+  };
+
   const loadPolls = useCallback(async () => {
     if (!selectedChannelId) return;
     setLoadingPolls(true);
@@ -361,7 +564,58 @@ Provide a helpful, concise response with tactical awareness.`,
     .flatMap(([, chans]) => chans)
     .filter((ch) => ch.name.toLowerCase().includes(searchInput.toLowerCase()));
 
-  const selectedChannel = channels.find((ch) => ch.id === selectedChannelId);
+  const selectedChannel = React.useMemo(
+    () => channels.find((ch) => ch.id === selectedChannelId),
+    [channels, selectedChannelId]
+  );
+  const slowModeSeconds = selectedChannel?.slow_mode_seconds ? Number(selectedChannel.slow_mode_seconds) : 0;
+  const isReadOnly = Boolean(selectedChannel?.is_read_only) && !isAdmin;
+  const isMuted = Boolean(muteInfo);
+  const composerDisabled = isReadOnly || isMuted || slowModeRemaining > 0;
+  const composerDisabledReason = isReadOnly
+    ? 'Read-only channel: only admins can post.'
+    : isMuted
+    ? `Muted${muteRemaining ? ` · ${muteRemaining}m remaining` : ''}`
+    : slowModeRemaining > 0
+    ? `Slow mode: wait ${slowModeRemaining}s`
+    : '';
+
+  useEffect(() => {
+    if (!slowModeSeconds || !lastSentAt || isAdmin) {
+      setSlowModeRemaining(0);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const expiresAt = lastSentAt + slowModeSeconds * 1000;
+      const diff = Math.ceil((expiresAt - Date.now()) / 1000);
+      setSlowModeRemaining(diff > 0 ? diff : 0);
+    };
+
+    updateRemaining();
+    const interval = setInterval(updateRemaining, 1000);
+    return () => clearInterval(interval);
+  }, [slowModeSeconds, lastSentAt, isAdmin]);
+
+  useEffect(() => {
+    if (!muteInfo?.expires_at) {
+      setMuteRemaining(null);
+      return;
+    }
+    const updateRemaining = () => {
+      const diffMs = new Date(muteInfo.expires_at).getTime() - Date.now();
+      if (diffMs <= 0) {
+        setMuteRemaining(null);
+        return;
+      }
+      const minutes = Math.ceil(diffMs / 60000);
+      setMuteRemaining(minutes);
+    };
+
+    updateRemaining();
+    const interval = setInterval(updateRemaining, 30000);
+    return () => clearInterval(interval);
+  }, [muteInfo?.expires_at]);
 
   if (!isOpen) return null;
 
@@ -581,6 +835,26 @@ Provide a helpful, concise response with tactical awareness.`,
                    <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
                      {!canAccessChannel(selectedChannel) && <Lock className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />}
                      <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate flex-1">#{selectedChannel.name}</span>
+                     {selectedChannel?.is_read_only && (
+                       <span className="text-[9px] uppercase tracking-widest text-zinc-500 border border-zinc-700/60 px-2 py-0.5 rounded">
+                         Read-only
+                       </span>
+                     )}
+                     {slowModeSeconds > 0 && (
+                       <span className="text-[9px] uppercase tracking-widest text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded">
+                         Slow {slowModeSeconds}s
+                       </span>
+                     )}
+
+                     <Button
+                       size="icon"
+                       variant="ghost"
+                       onClick={() => setDndEnabled((prev) => !prev)}
+                       className={`h-6 w-6 ${dndEnabled ? 'text-orange-400' : ''}`}
+                       title={dndEnabled ? 'Disable Do Not Disturb' : 'Enable Do Not Disturb'}
+                     >
+                       <Moon className="w-3 h-3" />
+                     </Button>
 
                      <Button
                        size="icon"
@@ -590,6 +864,16 @@ Provide a helpful, concise response with tactical awareness.`,
                        title="Notification settings"
                      >
                        <Bell className="w-3 h-3" />
+                     </Button>
+
+                     <Button
+                       size="icon"
+                       variant="ghost"
+                       onClick={() => setShowExportDialog(true)}
+                       className="h-6 w-6"
+                       title="Export channel history"
+                     >
+                       <Download className="w-3 h-3" />
                      </Button>
 
                      {isAdmin && (
@@ -716,7 +1000,11 @@ Provide a helpful, concise response with tactical awareness.`,
                   <MessageComposer
                     channelId={selectedChannelId}
                     userId={user?.id}
+                    draftKey={selectedChannelId ? `nexus.comms.draft.${selectedChannelId}` : ''}
+                    disabled={composerDisabled}
+                    disabledReason={composerDisabledReason}
                     onSendMessage={async (messageData) => {
+                      if (composerDisabled) return;
                       try {
                         const newMsg = await base44.entities.Message.create(messageData);
                         if (newMsg?.id && messageData?.content && messageData.content.includes('@')) {
@@ -736,6 +1024,15 @@ Provide a helpful, concise response with tactical awareness.`,
                         }
                         clearTyping();
                         refreshUnreadCounts();
+                        if (slowModeKey) {
+                          const now = Date.now();
+                          setLastSentAt(now);
+                          try {
+                            localStorage.setItem(slowModeKey, String(now));
+                          } catch {
+                            // ignore storage errors
+                          }
+                        }
                       } catch (error) {
                         console.error('Failed to send message:', error);
                       }
@@ -752,6 +1049,8 @@ Provide a helpful, concise response with tactical awareness.`,
                   onClose={() => setThreadPanelMessage(null)}
                   currentUserId={user?.id}
                   isAdmin={isAdmin}
+                  composerDisabled={composerDisabled}
+                  composerDisabledReason={composerDisabledReason}
                 />
                 )}
                 </div>
@@ -939,6 +1238,42 @@ Provide a helpful, concise response with tactical awareness.`,
         onClose={() => setShowNotificationSettings(false)}
         userId={user?.id}
       />
+
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Export Channel History</DialogTitle>
+            <div className="text-xs text-zinc-500">
+              {selectedChannel ? `#${selectedChannel.name}` : 'Select a channel'}
+            </div>
+          </DialogHeader>
+          <div className="space-y-3 text-xs text-zinc-400">
+            <div>
+              Exports the most recent 1,000 messages from this channel.
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => exportHistory('json')}
+                disabled={exporting || !selectedChannelId}
+              >
+                {exporting ? 'Exporting...' : 'Export JSON'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => exportHistory('csv')}
+                disabled={exporting || !selectedChannelId}
+              >
+                Export CSV
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Moderation Panel */}
       <ModerationPanel
