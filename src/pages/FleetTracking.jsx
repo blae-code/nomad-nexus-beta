@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, List, Activity } from 'lucide-react';
+import { MapPin, List, Activity, BarChart3 } from 'lucide-react';
 import { LoadingState } from '@/components/common/UIStates';
 import FleetMap from '@/components/fleet/FleetMap';
 import FleetList from '@/components/fleet/FleetList';
 import AssetDetails from '@/components/fleet/AssetDetails';
+import FleetTelemetryPanel from '@/components/fleet/FleetTelemetryPanel';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 
 export default function FleetTracking() {
+  const activeOp = useActiveOp();
   const [assets, setAssets] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +90,10 @@ export default function FleetTracking() {
               <Activity className="w-4 h-4 mr-2" />
               Details
             </TabsTrigger>
+            <TabsTrigger value="telemetry">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Telemetry
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -104,6 +111,10 @@ export default function FleetTracking() {
           ) : (
             <div className="h-full flex items-center justify-center text-zinc-500">Select an asset to view details</div>
           )}
+        </TabsContent>
+
+        <TabsContent value="telemetry" className="flex-1 m-0 p-0">
+          <FleetTelemetryPanel assets={assets} activeEvent={activeOp?.activeEvent || events.find((e) => e.status === 'active')} />
         </TabsContent>
       </Tabs>
     </div>

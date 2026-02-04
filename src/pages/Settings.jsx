@@ -18,6 +18,7 @@ import {
   Clock,
   Target,
   Radio,
+  Plug,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import AccessKeyManager from '@/components/admin/AccessKeyManager';
 import CommsRoutingRules from '@/components/admin/CommsRoutingRules';
 import ChannelPackManager from '@/components/admin/ChannelPackManager';
+import IntegrationSettings from '@/components/admin/IntegrationSettings';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -67,6 +69,7 @@ export default function Settings() {
     { id: 'keys', label: 'Keys', icon: Shield },
     { id: 'routing', label: 'Routing', icon: Target },
     { id: 'packs', label: 'Comms Packs', icon: Radio },
+    { id: 'integrations', label: 'Integrations', icon: Plug },
     { id: 'validation', label: 'Data', icon: Database },
     { id: 'diagnostics', label: 'Diagnostics', icon: Zap },
     { id: 'seed', label: 'Seed', icon: Sparkles },
@@ -137,6 +140,7 @@ export default function Settings() {
                   {activeTab === 'keys' && <AccessKeyManager />}
                   {activeTab === 'routing' && <CommsRoutingRules />}
                   {activeTab === 'packs' && <ChannelPackManager />}
+                  {activeTab === 'integrations' && <IntegrationSettings />}
                   {activeTab === 'validation' && <DataValidation />}
                 </div>
                 <div className="overflow-x-auto">

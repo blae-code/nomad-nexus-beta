@@ -12,6 +12,7 @@ import { LiveKitTransport } from './transport/LiveKitTransport';
 import * as voiceService from '@/components/services/voiceService';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { useFocusedConfirmation } from '@/components/voice/FocusedNetConfirmation';
+import { base44 } from '@/api/base44Client';
 
 const VoiceNetContext = createContext(null);
 
@@ -22,6 +23,7 @@ export function VoiceNetProvider({ children }) {
   const [error, setError] = useState(null);
   const [micEnabled, setMicEnabled] = useState(true);
   const [pttActive, setPTTActive] = useState(false);
+  const [voiceNets, setVoiceNets] = useState(DEFAULT_VOICE_NETS);
 
   const transportRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
@@ -87,9 +89,38 @@ export function VoiceNetProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    const loadVoiceNets = async () => {
+      try {
+        const nets = await base44.entities.VoiceNet.list('-created_date', 100);
+        if (Array.isArray(nets) && nets.length > 0) {
+          setVoiceNets(nets);
+          return;
+        }
+      } catch (error) {
+        console.debug('[VoiceNetProvider] VoiceNet list failed:', error?.message);
+      }
+      setVoiceNets(DEFAULT_VOICE_NETS);
+    };
+
+    loadVoiceNets();
+
+    if (!base44.entities.VoiceNet?.subscribe) return;
+    const unsubscribe = base44.entities.VoiceNet.subscribe((event) => {
+      setVoiceNets((prev) => {
+        if (event.type === 'create') return [...prev, event.data];
+        if (event.type === 'update') return prev.map((n) => (n.id === event.id ? event.data : n));
+        if (event.type === 'delete') return prev.filter((n) => n.id !== event.id);
+        return prev;
+      });
+    });
+
+    return () => unsubscribe?.();
+  }, []);
+
   const joinNet = useCallback(async (netId, user) => {
     // Find the net
-    const net = DEFAULT_VOICE_NETS.find((n) => n.id === netId);
+    const net = voiceNets.find((n) => n.id === netId) || DEFAULT_VOICE_NETS.find((n) => n.id === netId);
     if (!net) {
       setError('Net not found');
       return;
@@ -193,7 +224,7 @@ export function VoiceNetProvider({ children }) {
       setError(err.message);
       setConnectionState(VOICE_CONNECTION_STATE.ERROR);
     }
-  }, [activeNetId, focusedConfirmation]);
+  }, [activeNetId, focusedConfirmation, voiceNets]);
 
   const leaveNet = useCallback(async () => {
     if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
@@ -242,7 +273,7 @@ export function VoiceNetProvider({ children }) {
     leaveNet,
     togglePTT,
     setMicEnabled: handleSetMicEnabled,
-    voiceNets: DEFAULT_VOICE_NETS,
+    voiceNets,
     focusedConfirmation,
   };
 

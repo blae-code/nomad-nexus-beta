@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Lock, Unlock, Radio, Volume2, Mic, Users } from 'lucide-react';
+import { AlertCircle, Lock, Unlock, Radio, Volume2, Mic, Users, Shuffle, Sparkles } from 'lucide-react';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils/commsAccessPolicy';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
 import VoiceNetBrowser from '@/components/voice/VoiceNetBrowser';
+import VoiceNetDirector from '@/components/voice/VoiceNetDirector';
 import ChannelManager from '@/components/comms/ChannelManager';
 import SpeechSettings from '@/components/comms/SpeechSettings';
 import { getSpeechEngine } from '@/components/comms/SpeechEngine';
 import CommsRosterPanel from '@/components/comms/CommsRosterPanel';
+import CommsQueryPanel from '@/components/comms/CommsQueryPanel';
 
 export default function CommsConsole() {
   const [showTempFocused, setShowTempFocused] = useState(false);
@@ -160,6 +162,10 @@ export default function CommsConsole() {
                 <Radio className="w-4 h-4 mr-2" />
                 Voice Nets
               </TabsTrigger>
+              <TabsTrigger value="netops">
+                <Shuffle className="w-4 h-4 mr-2" />
+                Net Ops
+              </TabsTrigger>
               <TabsTrigger value="roster">
                 <Users className="w-4 h-4 mr-2" />
                 Roster
@@ -167,6 +173,10 @@ export default function CommsConsole() {
               <TabsTrigger value="speech">
                 <Volume2 className="w-4 h-4 mr-2" />
                 Speech
+              </TabsTrigger>
+              <TabsTrigger value="intel">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Comms Intel
               </TabsTrigger>
             </TabsList>
 
@@ -189,6 +199,10 @@ export default function CommsConsole() {
               )}
             </TabsContent>
 
+            <TabsContent value="netops" className="mt-4">
+              <VoiceNetDirector />
+            </TabsContent>
+
             <TabsContent value="roster" className="mt-4">
               <CommsRosterPanel />
             </TabsContent>
@@ -202,6 +216,10 @@ export default function CommsConsole() {
                 <Mic className="w-3 h-3" />
                 Speech controls are available in the Comms Dock message composer.
               </div>
+            </TabsContent>
+
+            <TabsContent value="intel" className="mt-4">
+              <CommsQueryPanel />
             </TabsContent>
           </Tabs>
         </div>

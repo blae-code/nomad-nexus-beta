@@ -3,10 +3,13 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Box, AlertCircle, CheckCircle, Wrench } from 'lucide-react';
 import EmptyState from '@/components/common/EmptyState';
+import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 
 export default function FleetManager() {
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState([]);
+  const ownerIds = assets.map((a) => a.owner_member_profile_id).filter(Boolean);
+  const { memberMap } = useMemberProfileMap(ownerIds);
 
   useEffect(() => {
     const init = async () => {
@@ -70,6 +73,14 @@ export default function FleetManager() {
                       <span className="text-zinc-500">Status:</span>
                       <span className="ml-2 text-white">{asset.status}</span>
                     </div>
+                    {asset.owner_member_profile_id && (
+                      <div>
+                        <span className="text-zinc-500">Owner:</span>
+                        <span className="ml-2 text-white">
+                          {memberMap[asset.owner_member_profile_id]?.label || asset.owner_member_profile_id}
+                        </span>
+                      </div>
+                    )}
                     {asset.location && (
                       <div>
                         <span className="text-zinc-500">Location:</span>
@@ -85,6 +96,12 @@ export default function FleetManager() {
                   {asset.maintenance_notes && (
                     <div className="mt-3 text-sm text-zinc-400">
                       <span className="text-zinc-500">Notes:</span> {asset.maintenance_notes}
+                    </div>
+                  )}
+
+                  {asset.loadout && (
+                    <div className="mt-3 text-sm text-zinc-400">
+                      <span className="text-zinc-500">Loadout:</span> {JSON.stringify(asset.loadout)}
                     </div>
                   )}
                 </div>

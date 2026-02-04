@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Calendar, Zap, Activity, Award, Mail, Shield } from 'lucide-react';
+import { Calendar, Zap, Activity, Award, Mail, Shield, Medal, Ship } from 'lucide-react';
 import { getDisplayCallsign } from '@/utils';
 import { getMembershipLabel } from '@/components/constants/labels';
 import RoleAssignment from '@/components/members/RoleAssignment';
 import SkillAssessment from '@/components/members/SkillAssessment';
+import MemberDossier from '@/components/members/MemberDossier';
+import MemberHangar from '@/components/members/MemberHangar';
+import MemberCommendations from '@/components/members/MemberCommendations';
 
 export default function MemberProfile({ member, onMemberUpdate }) {
   const [participationHistory, setParticipationHistory] = useState([]);
@@ -87,13 +90,25 @@ export default function MemberProfile({ member, onMemberUpdate }) {
             <Award className="w-4 h-4 mr-2" />
             Overview
           </TabsTrigger>
+          <TabsTrigger value="dossier">
+            <Medal className="w-4 h-4 mr-2" />
+            Dossier
+          </TabsTrigger>
           <TabsTrigger value="participation">
             <Activity className="w-4 h-4 mr-2" />
             Participation
           </TabsTrigger>
+          <TabsTrigger value="hangar">
+            <Ship className="w-4 h-4 mr-2" />
+            Hangar
+          </TabsTrigger>
           <TabsTrigger value="skills">
             <Zap className="w-4 h-4 mr-2" />
             Skills
+          </TabsTrigger>
+          <TabsTrigger value="commendations">
+            <Medal className="w-4 h-4 mr-2" />
+            Commendations
           </TabsTrigger>
         </TabsList>
 
@@ -141,6 +156,14 @@ export default function MemberProfile({ member, onMemberUpdate }) {
           )}
         </TabsContent>
 
+        <TabsContent value="dossier" className="space-y-4">
+          <MemberDossier
+            member={member}
+            participationHistory={participationHistory}
+            onMemberUpdate={onMemberUpdate}
+          />
+        </TabsContent>
+
         {/* Participation Tab */}
         <TabsContent value="participation" className="space-y-4">
           <div className="flex items-center justify-between mb-4">
@@ -175,9 +198,17 @@ export default function MemberProfile({ member, onMemberUpdate }) {
           )}
         </TabsContent>
 
+        <TabsContent value="hangar" className="space-y-4">
+          <MemberHangar memberId={member.profile?.id || member.id} onMemberUpdate={onMemberUpdate} />
+        </TabsContent>
+
         {/* Skills Tab */}
         <TabsContent value="skills">
           <SkillAssessment member={member} participationHistory={participationHistory} />
+        </TabsContent>
+
+        <TabsContent value="commendations">
+          <MemberCommendations memberId={member.profile?.id || member.id} />
         </TabsContent>
       </Tabs>
     </div>

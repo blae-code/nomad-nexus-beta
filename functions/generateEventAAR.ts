@@ -28,6 +28,18 @@ Deno.serve(async (req) => {
       500
     );
 
+    // Fetch member-submitted AAR entries
+    let aarEntries = [];
+    try {
+      aarEntries = await base44.entities.EventReport.filter(
+        { event_id: eventId, report_type: 'AAR_ENTRY' },
+        '-created_date',
+        200
+      );
+    } catch (error) {
+      aarEntries = [];
+    }
+
     // Aggregate log data for AAR generation
     const logSummary = {
       total_logs: logs.length,
@@ -69,6 +81,9 @@ OPERATION EVENTS SUMMARY:
 
 KEY EVENTS (reverse chronological):
 ${logSummary.timeline_summary.map(e => \`- [\${e.severity}] \${e.type}: \${e.summary}\`).join('\n')}
+
+MEMBER SUBMISSIONS:
+${aarEntries.map(entry => `- ${entry.summary || 'No summary'} | Successes: ${entry.successes || 'n/a'} | Challenges: ${entry.challenges || 'n/a'} | Lessons: ${entry.lessons_learned || 'n/a'} | Feedback: ${entry.feedback || 'n/a'} | Tags: ${(entry.tags || []).join(', ')}`).join('\n')}
 
 Generate a structured AAR in markdown format with these sections:
 1. EXECUTIVE SUMMARY (2-3 sentences)

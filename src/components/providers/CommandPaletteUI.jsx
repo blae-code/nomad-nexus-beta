@@ -19,6 +19,11 @@ import {
   ClipboardCopy,
   RotateCcw,
   Lock,
+  Target,
+  ScrollText,
+  Boxes,
+  Monitor,
+  ClipboardList,
 } from 'lucide-react';
 
 /**
@@ -153,7 +158,8 @@ export default function CommandPaletteUI() {
                   
                   const iconMap = {
                     Home, Calendar, Radio, Users, Map, Box, DollarSign, Settings, FileSearch,
-                    PanelRight, MessageSquare, Bell, Zap, AlertTriangle, ClipboardCopy, RotateCcw, Lock
+                    PanelRight, MessageSquare, Bell, Zap, AlertTriangle, ClipboardCopy, RotateCcw, Lock,
+                    Target, ScrollText, Boxes, Monitor, ClipboardList
                   };
                   const IconComponent = action.icon ? iconMap[action.icon] : null;
 

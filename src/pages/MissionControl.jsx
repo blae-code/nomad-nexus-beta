@@ -15,6 +15,7 @@ import EventNotificationManager from '@/components/events/EventNotificationManag
 import MissionBlueprints from '@/components/missions/MissionBlueprints';
 import SmartScheduling from '@/components/missions/SmartScheduling';
 import ThreatDatabase from '@/components/missions/ThreatDatabase';
+import OperationPlanner from '@/components/missions/OperationPlanner';
 import EventRiskAssessment from '@/components/events/EventRiskAssessment';
 import ResourceManagement from '@/components/events/ResourceManagement';
 import PostEventAnalysis from '@/components/events/PostEventAnalysis';
@@ -38,6 +39,7 @@ export default function MissionControl() {
     priority: 'STANDARD',
     recurrence: null,
     notifications: [],
+    training_prerequisites: '',
   });
 
   const [showRecurrence, setShowRecurrence] = useState(false);
@@ -56,7 +58,11 @@ export default function MissionControl() {
     successes: '',
     challenges: '',
     lessons_learned: '',
+    feedback: '',
+    tags: '',
+    key_moments: [],
   });
+  const [keyMomentInput, setKeyMomentInput] = useState('');
 
   const activeOp = useActiveOp();
   const { user } = useAuth();
@@ -100,6 +106,7 @@ export default function MissionControl() {
       priority: 'STANDARD',
       recurrence: null,
       notifications: [],
+      training_prerequisites: '',
     });
     setShowRecurrence(false);
     setShowNotifications(false);
@@ -169,15 +176,40 @@ export default function MissionControl() {
     loadEventDetails(selectedEvent.id);
   };
 
+  const updateRSVP = async (status) => {
+    if (!selectedEvent || !user?.id) return;
+    const going = new Set(selectedEvent.rsvp_going_ids || []);
+    const maybe = new Set(selectedEvent.rsvp_maybe_ids || []);
+    const declined = new Set(selectedEvent.rsvp_declined_ids || []);
+
+    going.delete(user.id);
+    maybe.delete(user.id);
+    declined.delete(user.id);
+
+    if (status === 'going') going.add(user.id);
+    if (status === 'maybe') maybe.add(user.id);
+    if (status === 'declined') declined.add(user.id);
+
+    await base44.entities.Event.update(selectedEvent.id, {
+      rsvp_going_ids: Array.from(going),
+      rsvp_maybe_ids: Array.from(maybe),
+      rsvp_declined_ids: Array.from(declined),
+    });
+    loadEventDetails(selectedEvent.id);
+  };
+
   const createAAR = async () => {
     if (!aarForm.summary.trim() || !selectedEvent) return;
     await base44.entities.EventReport.create({
       event_id: selectedEvent.id,
-      report_type: 'AAR',
+      report_type: 'AAR_ENTRY',
       summary: aarForm.summary,
       successes: aarForm.successes,
       challenges: aarForm.challenges,
       lessons_learned: aarForm.lessons_learned,
+      feedback: aarForm.feedback,
+      tags: aarForm.tags ? aarForm.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      key_moments: aarForm.key_moments,
       created_by: user.id,
     });
 
@@ -186,7 +218,11 @@ export default function MissionControl() {
       successes: '',
       challenges: '',
       lessons_learned: '',
+      feedback: '',
+      tags: '',
+      key_moments: [],
     });
+    setKeyMomentInput('');
     setShowAARCreator(false);
     setActiveTab('reports');
   };
@@ -335,6 +371,11 @@ export default function MissionControl() {
                       </div>
                     )}
                   </div>
+                  {selectedEvent.training_prerequisites && (
+                    <div className="mt-3 text-xs text-orange-300">
+                      Training prerequisites: {selectedEvent.training_prerequisites}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -351,6 +392,27 @@ export default function MissionControl() {
                     <Power className="w-3 h-3 mr-1" />
                     {activeOp.activeEventId === selectedEvent.id ? 'Active' : 'Activate'}
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => setActiveTab('reports')}>
+                    View Reports
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mb-6 grid grid-cols-3 gap-3">
+                <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded">
+                  <div className="text-[10px] uppercase text-zinc-500">Going</div>
+                  <div className="text-lg font-bold text-green-400">{(selectedEvent.rsvp_going_ids || []).length}</div>
+                  <Button size="sm" variant="outline" onClick={() => updateRSVP('going')} className="mt-2 w-full">RSVP Going</Button>
+                </div>
+                <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded">
+                  <div className="text-[10px] uppercase text-zinc-500">Maybe</div>
+                  <div className="text-lg font-bold text-yellow-400">{(selectedEvent.rsvp_maybe_ids || []).length}</div>
+                  <Button size="sm" variant="outline" onClick={() => updateRSVP('maybe')} className="mt-2 w-full">RSVP Maybe</Button>
+                </div>
+                <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded">
+                  <div className="text-[10px] uppercase text-zinc-500">Declined</div>
+                  <div className="text-lg font-bold text-red-400">{(selectedEvent.rsvp_declined_ids || []).length}</div>
+                  <Button size="sm" variant="outline" onClick={() => updateRSVP('declined')} className="mt-2 w-full">RSVP Decline</Button>
                 </div>
               </div>
 
@@ -509,6 +571,48 @@ export default function MissionControl() {
                         placeholder="Lessons learned..."
                         className="min-h-[60px]"
                       />
+                      <Textarea
+                        value={aarForm.feedback}
+                        onChange={(e) => setAARForm({ ...aarForm, feedback: e.target.value })}
+                        placeholder="Feedback for leadership or logistics..."
+                        className="min-h-[60px]"
+                      />
+                      <Input
+                        value={aarForm.tags}
+                        onChange={(e) => setAARForm({ ...aarForm, tags: e.target.value })}
+                        placeholder="Tags (comma-separated)"
+                      />
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            value={keyMomentInput}
+                            onChange={(e) => setKeyMomentInput(e.target.value)}
+                            placeholder="Add key moment (e.g., 'Bravo wing secured LZ')"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (!keyMomentInput.trim()) return;
+                              setAARForm((prev) => ({
+                                ...prev,
+                                key_moments: [...prev.key_moments, keyMomentInput.trim()],
+                              }));
+                              setKeyMomentInput('');
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                        {aarForm.key_moments.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {aarForm.key_moments.map((moment, idx) => (
+                              <span key={`${moment}-${idx}`} className="text-[10px] text-zinc-300 border border-zinc-600 px-2 py-1 rounded">
+                                {moment}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={createAAR}>Submit Report</Button>
                         <Button size="sm" variant="outline" onClick={() => setShowAARCreator(false)}>Cancel</Button>
@@ -567,6 +671,36 @@ export default function MissionControl() {
                               <div className="text-sm text-zinc-300">{report.lessons_learned}</div>
                             </div>
                           )}
+
+                          {report.feedback && (
+                            <div>
+                              <div className="text-xs text-purple-400 mb-1">Feedback</div>
+                              <div className="text-sm text-zinc-300">{report.feedback}</div>
+                            </div>
+                          )}
+
+                          {Array.isArray(report.key_moments) && report.key_moments.length > 0 && (
+                            <div>
+                              <div className="text-xs text-orange-400 mb-1">Key Moments</div>
+                              <div className="flex flex-wrap gap-2">
+                                {report.key_moments.map((moment, idx) => (
+                                  <span key={`${moment}-${idx}`} className="text-[10px] text-zinc-300 border border-zinc-700 px-2 py-1 rounded">
+                                    {moment}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {Array.isArray(report.tags) && report.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {report.tags.map((tag, idx) => (
+                                <span key={`${tag}-${idx}`} className="text-[10px] text-cyan-300 border border-cyan-500/30 px-2 py-1 rounded uppercase">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -610,7 +744,7 @@ export default function MissionControl() {
             <div className="space-y-6">
               {/* Tabs Navigation */}
               <div className="flex gap-2 border-b border-zinc-700">
-                {['blueprints', 'scheduling', 'threats'].map((tab) => (
+                {['blueprints', 'planner', 'scheduling', 'threats'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setShowPlanningTools(tab)}
@@ -621,6 +755,7 @@ export default function MissionControl() {
                     }`}
                   >
                     {tab === 'blueprints' && '⚙️ Blueprints'}
+                    {tab === 'planner' && '🧠 Planner'}
                     {tab === 'scheduling' && '📅 Smart Schedule'}
                     {tab === 'threats' && '⚠️ Threats'}
                   </button>
@@ -630,6 +765,9 @@ export default function MissionControl() {
               {/* Content */}
               {showPlanningTools === 'blueprints' && (
                 <MissionBlueprints onSelectBlueprint={handleBlueprintSelect} />
+              )}
+              {showPlanningTools === 'planner' && (
+                <OperationPlanner eventId={selectedEvent?.id} />
               )}
               {showPlanningTools === 'scheduling' && (
                 <SmartScheduling onScheduleSelected={handleScheduleSelected} />
@@ -677,6 +815,12 @@ export default function MissionControl() {
               value={eventForm.location}
               onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
               placeholder="Location..."
+            />
+
+            <Input
+              value={eventForm.training_prerequisites}
+              onChange={(e) => setEventForm({ ...eventForm, training_prerequisites: e.target.value })}
+              placeholder="Training prerequisites (comma-separated)..."
             />
 
             <div className="grid grid-cols-2 gap-4">

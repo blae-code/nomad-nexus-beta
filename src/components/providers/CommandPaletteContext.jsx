@@ -117,6 +117,60 @@ const createActionRegistry = (user, callbacks) => {
       shortcut: '⌘M',
       onExecute: () => callbacks.navigate('UniverseMap'),
     },
+    // Navigate: Command Center
+    {
+      id: 'nav:command-center',
+      label: 'Command Center',
+      category: 'Navigate',
+      description: 'Issue orders and track acknowledgements',
+      icon: 'Target',
+      onExecute: () => callbacks.navigate('CommandCenter'),
+    },
+    // Navigate: Mission Board
+    {
+      id: 'nav:mission-board',
+      label: 'Mission Board',
+      category: 'Navigate',
+      description: 'Bounties and in-universe contracts',
+      icon: 'ScrollText',
+      onExecute: () => callbacks.navigate('MissionBoard'),
+    },
+    // Navigate: Logistics
+    {
+      id: 'nav:logistics',
+      label: 'Logistics Hub',
+      category: 'Navigate',
+      description: 'Inventory and resource tracking',
+      icon: 'Boxes',
+      onExecute: () => callbacks.navigate('LogisticsHub'),
+    },
+    // Navigate: Strategic Objectives
+    {
+      id: 'nav:objectives',
+      label: 'Strategic Objectives',
+      category: 'Navigate',
+      description: 'Long-term org goals',
+      icon: 'Target',
+      onExecute: () => callbacks.navigate('StrategicObjectives'),
+    },
+    // Navigate: HUD Mode
+    {
+      id: 'nav:hud',
+      label: 'HUD Mode',
+      category: 'Navigate',
+      description: 'Second-screen tactical HUD',
+      icon: 'Monitor',
+      onExecute: () => callbacks.navigate('HudMode'),
+    },
+    // Navigate: Onboarding Pipeline
+    {
+      id: 'nav:onboarding-pipeline',
+      label: 'Onboarding Pipeline',
+      category: 'Navigate',
+      description: 'Recruit checklist and milestones',
+      icon: 'ClipboardList',
+      onExecute: () => callbacks.navigate('OnboardingPipeline'),
+    },
     // Navigate: Fleet Manager
     {
       id: 'nav:fleet',

@@ -89,6 +89,13 @@ const pageMap = {
   '/admin': 'admin',
   '/adminconsole': 'admin', // deprecated, redirect to /admin
   '/universemap': 'universemap',
+  '/frontierops': 'frontierops',
+  '/commandcenter': 'commandcenter',
+  '/missionboard': 'missionboard',
+  '/logisticshub': 'logisticshub',
+  '/strategicobjectives': 'strategicobjectives',
+  '/onboardingpipeline': 'onboardingpipeline',
+  '/hudmode': 'hudmode',
   '/fleetmanager': 'fleetmanager',
   '/rescue': 'rescue',
   '/channels': 'channels',

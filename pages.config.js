@@ -9,11 +9,16 @@ import Diagnostics from './pages/Diagnostics';
 import EventReporting from './pages/EventReporting';
 import Events from './pages/Events';
 import FleetManager from './pages/FleetManager';
+import FrontierOps from './pages/FrontierOps';
 import Hub from './pages/Hub';
 import Intelligence from './pages/Intelligence';
+import HudMode from './pages/HudMode';
+import LogisticsHub from './pages/LogisticsHub';
 import MissionControl from './pages/MissionControl';
+import MissionBoard from './pages/MissionBoard';
 import NomadOpsDashboard from './pages/NomadOpsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
+import OnboardingPipeline from './pages/OnboardingPipeline';
 import OperationControl from './pages/OperationControl';
 import OperationWorkspace from './pages/OperationWorkspace';
 import PageNotFound from './pages/PageNotFound';
@@ -24,6 +29,7 @@ import RoleManager from './pages/RoleManager';
 import Settings from './pages/Settings';
 import SmokeCheck from './pages/SmokeCheck';
 import SquadDetail from './pages/SquadDetail';
+import StrategicObjectives from './pages/StrategicObjectives';
 import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
@@ -45,11 +51,16 @@ export const PAGES = {
     "EventReporting": EventReporting,
     "Events": Events,
     "FleetManager": FleetManager,
+    "FrontierOps": FrontierOps,
     "Hub": Hub,
     "Intelligence": Intelligence,
+    "HudMode": HudMode,
+    "LogisticsHub": LogisticsHub,
     "MissionControl": MissionControl,
+    "MissionBoard": MissionBoard,
     "NomadOpsDashboard": NomadOpsDashboard,
     "NotificationSettings": NotificationSettings,
+    "OnboardingPipeline": OnboardingPipeline,
     "OperationControl": OperationControl,
     "OperationWorkspace": OperationWorkspace,
     "PageNotFound": PageNotFound,
@@ -60,6 +71,7 @@ export const PAGES = {
     "Settings": Settings,
     "SmokeCheck": SmokeCheck,
     "SquadDetail": SquadDetail,
+    "StrategicObjectives": StrategicObjectives,
     "Treasury": Treasury,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,

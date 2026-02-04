@@ -5,6 +5,8 @@ import { AlertTriangle, Loader2, Shield } from 'lucide-react';
 export default function EventRiskAssessment({ event }) {
   const [assessment, setAssessment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
 
   useEffect(() => {
     generateRiskAssessment();
@@ -58,6 +60,20 @@ export default function EventRiskAssessment({ event }) {
     }
   };
 
+  const runThreatScan = async () => {
+    if (!event?.id) return;
+    setScanLoading(true);
+    try {
+      const response = await base44.functions.invoke('detectCommsAnomalies', { eventId: event.id });
+      setScanResult(response?.data?.analysis || null);
+    } catch (error) {
+      console.error('Threat scan failed:', error);
+      setScanResult(null);
+    } finally {
+      setScanLoading(false);
+    }
+  };
+
   const getRiskColor = (level) => {
     const colors = {
       LOW: 'bg-green-950/30 border-green-600/50 text-green-400',
@@ -93,6 +109,16 @@ export default function EventRiskAssessment({ event }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs uppercase tracking-widest text-zinc-500">AI Risk Suite</h3>
+        <button
+          onClick={runThreatScan}
+          className="text-xs px-3 py-1 border border-zinc-700 rounded text-zinc-300 hover:border-orange-500/50"
+          disabled={scanLoading}
+        >
+          {scanLoading ? 'Scanning...' : 'Run Threat Scan'}
+        </button>
+      </div>
       {/* Overall Risk */}
       <div className={`p-6 border rounded flex items-center justify-between ${getRiskColor(assessment.overall_risk_level)}`}>
         <div>
@@ -187,6 +213,26 @@ export default function EventRiskAssessment({ event }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {scanResult && (
+        <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded space-y-3">
+          <div className="text-xs uppercase tracking-widest text-zinc-500">Predictive Threat Scan</div>
+          <div className="text-sm text-zinc-300">{scanResult.summary}</div>
+          {scanResult.anomalies?.length > 0 && (
+            <div className="space-y-2">
+              {scanResult.anomalies.map((item, idx) => (
+                <div key={idx} className="text-xs text-zinc-300 border border-zinc-700/50 rounded p-2">
+                  <div className="text-[10px] text-orange-300 uppercase">{item.severity} • {item.type}</div>
+                  <div>{item.description}</div>
+                  {item.recommended_action && (
+                    <div className="text-[10px] text-zinc-500 mt-1">Action: {item.recommended_action}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
