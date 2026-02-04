@@ -1,5 +1,35 @@
 import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
+function getDefaultMembershipForRank(rank: string | null | undefined) {
+  const normalized = (rank || '').toString().toUpperCase();
+  switch (normalized) {
+    case 'SCOUT':
+      return 'MEMBER';
+    case 'VOYAGER':
+      return 'AFFILIATE';
+    case 'FOUNDER':
+    case 'PIONEER':
+      return 'PARTNER';
+    case 'VAGRANT':
+      return 'VAGRANT';
+    default:
+      return null;
+  }
+}
+
+function getMembershipLabel(membership: string | null | undefined) {
+  const normalized = (membership || '').toString().toUpperCase();
+  const labels: Record<string, string> = {
+    GUEST: 'Guest',
+    VAGRANT: 'Prospect',
+    PROSPECT: 'Prospect',
+    MEMBER: 'Member',
+    AFFILIATE: 'Affiliate',
+    PARTNER: 'Partner',
+  };
+  return labels[normalized] || membership || '';
+}
+
 Deno.serve(async (req) => {
   try {
     const payload = await readJson(req);
@@ -12,13 +42,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { accessKeyCode, accessKeyRank, appUrl = 'https://nomadnexus.space' } = payload;
+    const { accessKeyCode, accessKeyRank, accessKeyMembership, grantsMembership, appUrl = 'https://nomadnexus.space' } = payload;
 
     if (!accessKeyCode) {
       return Response.json({ error: 'Access key code required' }, { status: 400 });
     }
 
     const inviteUrl = `${appUrl}/access-gate?key=${encodeURIComponent(accessKeyCode)}`;
+    const membership = accessKeyMembership || grantsMembership || getDefaultMembershipForRank(accessKeyRank);
+    const membershipLabel = getMembershipLabel(membership);
 
     // Discord rich embed JSON format
     const discordEmbed = {
@@ -31,6 +63,11 @@ Deno.serve(async (req) => {
           value: `**${accessKeyRank || 'VAGRANT'}**`,
           inline: true
         },
+        ...(membershipLabel ? [{
+          name: '🛡️ Membership Tier',
+          value: `**${membershipLabel}**`,
+          inline: true
+        }] : []),
         {
           name: '📋 Access Key',
           value: `\`\`\`${accessKeyCode}\`\`\``,
@@ -46,12 +83,13 @@ Deno.serve(async (req) => {
     };
 
     // Plain text version for easy copying
+    const membershipLine = membershipLabel ? `\n🛡️ Membership Tier: **${membershipLabel}**\n` : '\n';
     const plainText = `⚔️ You've Been Invited to Nomad Nexus
 
 Join our operations hub for Star Citizen. Get authorized access and start your journey.
 
 🎖️ Granted Rank: **${accessKeyRank || 'VAGRANT'}**
-
+${membershipLine}
 📋 Access Key: ${accessKeyCode}
 
 🔗 Quick Access: ${inviteUrl}
@@ -62,13 +100,14 @@ Click the link above to redeem your access key and begin your onboarding. Questi
 Nomad Nexus Operations Hub`;
 
     // Markdown version for Discord
+    const membershipSection = membershipLabel ? `\n## 🛡️ Membership Tier\n**${membershipLabel}**\n` : '\n';
     const markdownVersion = `# ⚔️ You've Been Invited to Nomad Nexus
 
 Join our operations hub for Star Citizen. Get authorized access and start your journey.
 
 ## 🎖️ Granted Rank
 **${accessKeyRank || 'VAGRANT'}**
-
+${membershipSection}
 ## 📋 Access Key
 \`\`\`
 ${accessKeyCode}
@@ -84,6 +123,7 @@ Click the link above to redeem your access key and begin your onboarding. Questi
       success: true,
       accessKey: accessKeyCode,
       grantedRank: accessKeyRank,
+      grantedMembership: membership,
       inviteUrl,
       discord: {
         embed: discordEmbed,

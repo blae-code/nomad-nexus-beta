@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar, Zap, Activity, Award, Mail, Shield } from 'lucide-react';
 import { getDisplayCallsign } from '@/utils';
+import { getMembershipLabel } from '@/components/constants/labels';
 import RoleAssignment from '@/components/members/RoleAssignment';
 import SkillAssessment from '@/components/members/SkillAssessment';
 
@@ -60,10 +61,17 @@ export default function MemberProfile({ member, onMemberUpdate }) {
               {member.email}
             </p>
             {member.profile?.callsign && (
-              <p className={`text-sm font-bold flex items-center gap-2 ${getRankColor(member.profile?.rank)}`}>
-                <Shield className="w-4 h-4" />
-                {getDisplayCallsign(member.profile) || member.profile.callsign} • {member.profile?.rank}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className={`text-sm font-bold flex items-center gap-2 ${getRankColor(member.profile?.rank)}`}>
+                  <Shield className="w-4 h-4" />
+                  {getDisplayCallsign(member.profile) || member.profile.callsign} • {member.profile?.rank}
+                </p>
+                {member.profile?.membership && (
+                  <span className="text-[10px] font-mono font-semibold uppercase border rounded px-1.5 py-0.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/50">
+                    {getMembershipLabel(member.profile?.membership)}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -95,6 +103,12 @@ export default function MemberProfile({ member, onMemberUpdate }) {
             <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
               <div className="text-xs text-zinc-400 mb-2">RANK</div>
               <div className="text-lg font-bold text-orange-400">{member.profile?.rank || 'VAGRANT'}</div>
+            </div>
+            <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
+              <div className="text-xs text-zinc-400 mb-2">MEMBERSHIP</div>
+              <div className="text-lg font-bold text-cyan-300">
+                {getMembershipLabel(member.profile?.membership || 'VAGRANT')}
+              </div>
             </div>
             <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
               <div className="text-xs text-zinc-400 mb-2">CALLSIGN</div>
