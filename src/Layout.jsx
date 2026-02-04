@@ -21,7 +21,7 @@ import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
 import { initScrollGuard } from '@/components/utils/scrollGuard';
-import { AuthProvider, useAuth } from '@/components/providers/AuthProvider';
+import { useAuth } from '@/components/providers/AuthProvider';
 import FatalAuthError from '@/components/auth/FatalAuthError';
 import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
 
@@ -66,10 +66,10 @@ export default function Layout({ children, currentPageName }) {
           <div className="text-orange-500 text-xl">Loading...</div>
         </div>
       ) : (
-        <AuthProvider>
+        <>
           <AuthDebugOverlay />
           <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
-        </AuthProvider>
+        </>
       )}
     </>
   );

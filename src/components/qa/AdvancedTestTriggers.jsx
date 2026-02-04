@@ -63,7 +63,7 @@ export default function AdvancedTestTriggers() {
     try {
       const startTime = Date.now();
       const promises = [
-        base44.entities.User.list(),
+        base44.entities.MemberProfile.list(),
         base44.entities.Event.list(),
         base44.entities.Channel.list(),
         base44.entities.Message.list(),
@@ -83,7 +83,7 @@ export default function AdvancedTestTriggers() {
     setRunning(true);
     try {
       const results = {
-        users: (await base44.entities.User.list()).length === 0,
+        members: (await base44.entities.MemberProfile.list()).length === 0,
         events: (await base44.entities.Event.list()).length === 0,
         channels: (await base44.entities.Channel.list()).length === 0,
       };

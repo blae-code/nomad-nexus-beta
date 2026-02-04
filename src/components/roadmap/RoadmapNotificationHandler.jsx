@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '@/components/providers/NotificationContext';
 import { base44 } from '@/api/base44Client';
-import { AlertCircle, CheckCircle2, Zap } from 'lucide-react';
+import { CheckCircle2, Zap } from 'lucide-react';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 /**
  * RoadmapNotificationHandler
@@ -10,6 +11,9 @@ import { AlertCircle, CheckCircle2, Zap } from 'lucide-react';
 export default function RoadmapNotificationHandler({ roadmapMilestones = [] }) {
   const { addNotification } = useNotification();
   const [previousState, setPreviousState] = useState(null);
+  const { user: authUser } = useAuth();
+  const memberProfile = authUser?.member_profile_data || authUser;
+  const notificationEmail = memberProfile?.email || authUser?.email || null;
 
   useEffect(() => {
     if (!roadmapMilestones || roadmapMilestones.length === 0) return;
@@ -38,7 +42,7 @@ export default function RoadmapNotificationHandler({ roadmapMilestones = [] }) {
             });
 
             // Trigger email notification
-            notifyAboutCompletion(milestone);
+            notifyAboutCompletion(milestone, notificationEmail);
           } else if (milestone.completion >= 50 && previousMilestone.completion < 50) {
             // Reached 50% progress
             addNotification({
@@ -76,21 +80,20 @@ export default function RoadmapNotificationHandler({ roadmapMilestones = [] }) {
     }
 
     setPreviousState(currentState);
-  }, [roadmapMilestones, previousState, addNotification]);
+  }, [roadmapMilestones, previousState, addNotification, notificationEmail]);
 
   return null;
 }
 
-async function notifyAboutCompletion(milestone) {
+async function notifyAboutCompletion(milestone, email) {
   try {
-    const user = await base44.auth.me();
-    if (!user || !user.email) return;
+    if (!email) return;
 
     await base44.functions.invoke('notifyRoadmapUpdate', {
       milestoneType: milestone.phase,
       change: `${milestone.title} has been completed`,
       severity: 'HIGH',
-      emailRecipients: [user.email],
+      emailRecipients: [email],
     });
   } catch (error) {
     console.warn('Failed to send milestone completion email:', error);

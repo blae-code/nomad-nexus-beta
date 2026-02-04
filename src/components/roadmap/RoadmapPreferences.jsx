@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Mail, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 /**
  * RoadmapPreferences
@@ -17,20 +18,20 @@ export default function RoadmapPreferences() {
   });
 
   const [saved, setSaved] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user: authUser, initialized } = useAuth();
+  const memberProfile = authUser?.member_profile_data || authUser;
 
   useEffect(() => {
+    if (!initialized) return;
     loadUserPreferences();
-  }, []);
+  }, [initialized, memberProfile?.id]);
 
   const loadUserPreferences = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-
-      // Load saved preferences from user data if available
-      if (currentUser?.roadmapNotificationPrefs) {
-        setPreferences(currentUser.roadmapNotificationPrefs);
+      if (!memberProfile) return;
+      const storedPrefs = memberProfile.roadmapNotificationPrefs || memberProfile.roadmap_notification_prefs;
+      if (storedPrefs) {
+        setPreferences(storedPrefs);
       }
     } catch (error) {
       console.error('Failed to load preferences:', error);
@@ -39,8 +40,10 @@ export default function RoadmapPreferences() {
 
   const handleSave = async () => {
     try {
-      // Save preferences to user data
-      await base44.auth.updateMe({
+      if (!memberProfile?.id) {
+        throw new Error('No member profile available');
+      }
+      await base44.entities.MemberProfile.update(memberProfile.id, {
         roadmapNotificationPrefs: preferences,
       });
 

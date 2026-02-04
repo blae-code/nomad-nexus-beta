@@ -3,9 +3,10 @@
  * Provides system testing, data inspection, performance monitoring, and debugging utilities
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPageUrl, isAdminUser } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { base44 } from '@/api/base44Client';
 import {
   Bug,
   AlertTriangle,
@@ -150,8 +151,8 @@ function OverviewPanel() {
   const loadSystemHealth = async () => {
     setLoading(true);
     try {
-      const [users, events, channels, messages, voiceNets] = await Promise.all([
-        base44.entities.User.list(),
+      const [members, events, channels, messages, voiceNets] = await Promise.all([
+        base44.entities.MemberProfile.list(),
         base44.entities.Event.list(),
         base44.entities.Channel.list(),
         base44.entities.Message.list(),
@@ -159,7 +160,7 @@ function OverviewPanel() {
       ]);
 
       setSystemHealth({
-        users: users.length,
+        users: members.length,
         events: events.length,
         channels: channels.length,
         messages: messages.length,
@@ -173,7 +174,7 @@ function OverviewPanel() {
   };
 
   const healthMetrics = [
-    { icon: Users, label: 'Total Users', value: systemHealth?.users || 0, color: 'blue' },
+    { icon: Users, label: 'Total Members', value: systemHealth?.users || 0, color: 'blue' },
     { icon: Calendar, label: 'Events', value: systemHealth?.events || 0, color: 'green' },
     { icon: MessageSquare, label: 'Channels', value: systemHealth?.channels || 0, color: 'purple' },
     { icon: MessageSquare, label: 'Messages', value: systemHealth?.messages || 0, color: 'cyan' },
@@ -263,14 +264,13 @@ function OverviewPanel() {
 
 // Entity Inspector
 function EntityInspector() {
-  const [entityType, setEntityType] = useState('User');
+  const [entityType, setEntityType] = useState('MemberProfile');
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [copied, setCopied] = useState(false);
 
   const entityTypes = [
-    'User',
     'MemberProfile',
     'Event',
     'Channel',
@@ -415,6 +415,7 @@ function EntityInspector() {
 
 // System Health Panel
 function SystemHealthPanel() {
+  const { isAuthenticated } = useAuth();
   const [checks, setChecks] = useState([
     { name: 'Authentication', status: 'pass', message: 'User auth working correctly' },
     { name: 'Database Access', status: 'pass', message: 'All entities accessible' },
@@ -426,20 +427,16 @@ function SystemHealthPanel() {
     const newChecks = [];
 
     // Auth check
-    try {
-      const isAuth = await base44.auth.isAuthenticated();
-      newChecks.push({
-        name: 'Authentication',
-        status: isAuth ? 'pass' : 'fail',
-        message: isAuth ? 'User auth working correctly' : 'Authentication failed',
-      });
-    } catch (error) {
-      newChecks.push({ name: 'Authentication', status: 'fail', message: error.message });
-    }
+    const hasAuth = !!isAuthenticated;
+    newChecks.push({
+      name: 'Authentication',
+      status: hasAuth ? 'pass' : 'fail',
+      message: hasAuth ? 'User auth working correctly' : 'Authentication failed',
+    });
 
     // Database check
     try {
-      await base44.entities.User.list();
+      await base44.entities.MemberProfile.list();
       newChecks.push({ name: 'Database Access', status: 'pass', message: 'All entities accessible' });
     } catch (error) {
       newChecks.push({ name: 'Database Access', status: 'fail', message: error.message });
@@ -715,6 +712,7 @@ function LogsViewer() {
 function TestingTools() {
   const [testResult, setTestResult] = useState(null);
   const [runningTest, setRunningTest] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const runTest = async (testName, testFn) => {
     setRunningTest(true);
@@ -732,12 +730,11 @@ function TestingTools() {
   };
 
   const testAuth = async () => {
-    const isAuth = await base44.auth.isAuthenticated();
-    if (!isAuth) throw new Error('Authentication failed');
+    if (!isAuthenticated) throw new Error('Authentication failed');
   };
 
   const testDatabase = async () => {
-    await base44.entities.User.list();
+    await base44.entities.MemberProfile.list();
   };
 
   const testVoiceNet = async () => {
@@ -754,7 +751,7 @@ function TestingTools() {
   };
 
   const testLoadTest = async () => {
-    const promises = Array(10).fill(null).map(() => base44.entities.User.list());
+    const promises = Array(10).fill(null).map(() => base44.entities.MemberProfile.list());
     await Promise.all(promises);
   };
 

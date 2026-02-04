@@ -34,9 +34,8 @@ export default function UserPickerModal({
     const loadUsers = async () => {
       setLoading(true);
       try {
-        const allUsers = await base44.entities.User.list();
-        // Exclude current user
-        const others = allUsers.filter(u => u.id !== currentUserId);
+        const allMembers = await base44.entities.MemberProfile.list();
+        const others = allMembers.filter((member) => member.id !== currentUserId);
         setUsers(others);
       } catch (error) {
         console.error('Failed to load users:', error);
@@ -80,9 +79,15 @@ export default function UserPickerModal({
     onClose();
   };
 
-  const filteredUsers = users.filter(u => 
-    (u.full_name || u.email).toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter((u) => {
+    const searchValue = [
+      u.display_callsign,
+      u.callsign,
+      u.full_name,
+      u.email,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return searchValue.includes(searchQuery.toLowerCase());
+  });
 
   const canConfirm = mode === 'dm' 
     ? selectedUserIds.length === 1
@@ -136,6 +141,7 @@ export default function UserPickerModal({
               <div className="divide-y divide-zinc-800">
                 {filteredUsers.map(user => {
                   const isSelected = selectedUserIds.includes(user.id);
+                  const displayName = user.display_callsign || user.callsign || user.full_name || user.email || 'Unknown';
                   return (
                     <button
                       key={user.id}
@@ -146,9 +152,14 @@ export default function UserPickerModal({
                     >
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white truncate">
-                          {user.full_name || user.email}
+                          {displayName}
                         </div>
-                        {user.email && user.full_name && (
+                        {user.callsign && user.display_callsign && (
+                          <div className="text-xs text-zinc-500 truncate">
+                            {user.callsign}
+                          </div>
+                        )}
+                        {user.email && displayName !== user.email && (
                           <div className="text-xs text-zinc-500 truncate">
                             {user.email}
                           </div>

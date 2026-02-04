@@ -13,6 +13,18 @@ export default function ResourceManagement({ event, onUpdate }) {
     loadResources();
   }, [event?.id]);
 
+  const getAssignmentInfo = () => {
+    const memberIds = Array.isArray(event?.assigned_member_profile_ids)
+      ? event.assigned_member_profile_ids
+      : [];
+    const legacyIds = Array.isArray(event?.assigned_user_ids)
+      ? event.assigned_user_ids
+      : [];
+    const assignedIds = memberIds.length > 0 ? memberIds : legacyIds;
+    const field = memberIds.length > 0 ? 'assigned_member_profile_ids' : 'assigned_user_ids';
+    return { assignedIds, field };
+  };
+
   const loadResources = async () => {
     setLoadingAssets(true);
     setLoadingPersonnel(true);
@@ -22,10 +34,11 @@ export default function ResourceManagement({ event, onUpdate }) {
       const assignedAssets = allAssets.filter((a) => event.assigned_asset_ids?.includes(a.id));
       setAssets(assignedAssets);
 
-      if (event.assigned_user_ids?.length > 0) {
-        const users = await base44.entities.User.list();
-        const assignedUsers = users.filter((u) => event.assigned_user_ids.includes(u.id));
-        setPersonnel(assignedUsers);
+      const { assignedIds } = getAssignmentInfo();
+      if (assignedIds.length > 0) {
+        const members = await base44.entities.MemberProfile.list();
+        const assignedMembers = members.filter((m) => assignedIds.includes(m.id));
+        setPersonnel(assignedMembers);
       }
     } catch (error) {
       console.error('Failed to load resources:', error);
@@ -41,9 +54,10 @@ export default function ResourceManagement({ event, onUpdate }) {
     onUpdate();
   };
 
-  const removePersonnel = async (userId) => {
-    const updated = event.assigned_user_ids.filter((id) => id !== userId);
-    await base44.entities.Event.update(event.id, { assigned_user_ids: updated });
+  const removePersonnel = async (memberId) => {
+    const { assignedIds, field } = getAssignmentInfo();
+    const updated = assignedIds.filter((id) => id !== memberId);
+    await base44.entities.Event.update(event.id, { [field]: updated });
     onUpdate();
   };
 
@@ -68,8 +82,12 @@ export default function ResourceManagement({ event, onUpdate }) {
             {personnel.map((member) => (
               <div key={member.id} className="p-3 bg-blue-950/20 border border-blue-600/30 rounded flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-blue-300">{member.full_name}</div>
-                  <div className="text-xs text-blue-200">{member.email}</div>
+                  <div className="text-sm font-semibold text-blue-300">
+                    {member.display_callsign || member.callsign || member.full_name || member.email}
+                  </div>
+                  {member.rank && (
+                    <div className="text-xs text-blue-200">{member.rank}</div>
+                  )}
                 </div>
                 <button
                   onClick={() => removePersonnel(member.id)}

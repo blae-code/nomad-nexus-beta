@@ -4,6 +4,7 @@ const port = 4173;
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.{js,jsx,ts,tsx}',
   timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,

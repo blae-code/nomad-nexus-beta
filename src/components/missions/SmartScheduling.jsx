@@ -13,11 +13,11 @@ export default function SmartScheduling({ onScheduleSelected }) {
     const generateSchedulingSuggestions = async () => {
       try {
         setLoading(true);
-        const users = await base44.entities.User.list();
+        const members = await base44.entities.MemberProfile.list();
         const events = await base44.entities.Event.list();
 
         // Analyze member availability and historical data
-        const memberCount = users.length;
+        const memberCount = members.length;
         const avgEventDuration =
           events.length > 0
             ? events.reduce((sum, e) => {
