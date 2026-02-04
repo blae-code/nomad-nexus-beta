@@ -9,6 +9,7 @@ import { Minimize2, Hash, Lock, Send, AlertCircle, Search, Bell, Shield } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
+import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isAdminUser } from '@/utils';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
@@ -49,11 +50,17 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
   const isAdmin = isAdminUser(authUser);
-  const { unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
+  const { unreadByChannel, unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
   const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);
   const messageUserIds = [...new Set(messages.map(m => m.user_id))];
   const { lastSeenMap } = useLastSeen(messageUserIds);
+  const fallbackMemberMap = React.useMemo(() => {
+    if (!user?.id) return {};
+    const label = user.callsign || user.full_name || user.email || 'System Admin';
+    return { [user.id]: { label } };
+  }, [user?.id, user?.callsign, user?.full_name, user?.email]);
+  const { memberMap } = useMemberProfileMap(messageUserIds, { fallbackMap: fallbackMemberMap });
 
   // Load channels
   useEffect(() => {
@@ -353,8 +360,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                              >
                                <Hash className="w-3 h-3 flex-shrink-0 opacity-70" />
                                <span className="truncate">{ch.name}</span>
-                               {unreadByTab?.[ch.id] > 0 && (
-                                 <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                               {unreadByChannel?.[ch.id] > 0 && (
+                                 <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByChannel[ch.id]}</span>
                                )}
                              </button>
                            ))}
@@ -385,8 +392,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                                >
                                  {!canAccess ? <Lock className="w-3 h-3 flex-shrink-0 opacity-70" /> : <Hash className="w-3 h-3 flex-shrink-0 opacity-70" />}
                                  <span className="truncate flex-1 min-w-0">{ch.name}</span>
-                                 {unreadByTab?.[ch.id] > 0 && (
-                                   <span className="ml-auto text-orange-400 font-semibold text-[10px] flex-shrink-0">{unreadByTab[ch.id]}</span>
+                                 {unreadByChannel?.[ch.id] > 0 && (
+                                   <span className="ml-auto text-orange-400 font-semibold text-[10px] flex-shrink-0">{unreadByChannel[ch.id]}</span>
                                  )}
                                </button>
                              );
@@ -412,8 +419,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                              >
                                <Hash className="w-3 h-3 flex-shrink-0 opacity-70" />
                                <span className="truncate">{ch.name}</span>
-                               {unreadByTab?.[ch.id] > 0 && (
-                                 <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByTab[ch.id]}</span>
+                               {unreadByChannel?.[ch.id] > 0 && (
+                                 <span className="ml-auto text-orange-400 font-semibold text-[10px]">{unreadByChannel[ch.id]}</span>
                                )}
                              </button>
                            ))}
@@ -495,6 +502,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                             currentUserId={user?.id}
                             isAdmin={isAdmin}
                             lastSeen={lastSeen}
+                            authorLabel={memberMap[msg.user_id]?.label}
                             onEdit={() => {
                               // Refresh messages after edit
                               const loadMessages = async () => {
@@ -576,6 +584,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                         console.error('Failed to send message:', error);
                       }
                     }}
+                    onTyping={signalTyping}
                   />
                 )}
                 </div>

@@ -12,6 +12,7 @@ export default function MessageComposer({
   channelId, 
   userId,
   onSendMessage, 
+  onTyping,
   disabled = false,
   placeholder = "Type message..."
 }) {
@@ -188,7 +189,10 @@ export default function MessageComposer({
           ref={textareaRef}
           placeholder={uploading ? 'Uploading...' : placeholder}
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => {
+            setBody(e.target.value);
+            onTyping?.();
+          }}
           onKeyDown={handleKeyDown}
           disabled={disabled || uploading}
           className="text-xs min-h-[60px] max-h-[120px] bg-zinc-900 border-orange-500/20 placeholder:text-zinc-600 focus:border-orange-500/40 transition-colors resize-none"

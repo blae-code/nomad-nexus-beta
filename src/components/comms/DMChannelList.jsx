@@ -7,6 +7,7 @@ import { base44 } from '@/api/base44Client';
 import { Hash, Users, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 
 export default function DMChannelList({ 
   currentUserId, 
@@ -19,6 +20,16 @@ export default function DMChannelList({
   const [dmChannels, setDmChannels] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const participantIds = React.useMemo(() => {
+    const ids = new Set();
+    dmChannels.forEach((channel) => {
+      (channel.dm_participants || []).forEach((id) => {
+        if (id && id !== currentUserId) ids.add(id);
+      });
+    });
+    return Array.from(ids);
+  }, [dmChannels, currentUserId]);
+  const { memberMap } = useMemberProfileMap(participantIds);
 
   useEffect(() => {
     const loadDMs = async () => {
@@ -70,7 +81,7 @@ export default function DMChannelList({
               const now = new Date();
               return (now - lastActivity) < 5 * 60 * 1000; // 5 minutes
             })
-            .map(p => p.user_id)
+            .map(p => p.member_profile_id || p.user_id)
         );
         setOnlineUsers(online);
       } catch (error) {
@@ -90,7 +101,7 @@ export default function DMChannelList({
     
     // For 1-on-1 DM, show the other participant
     const otherUserId = channel.dm_participants?.find(id => id !== currentUserId);
-    return otherUserId || 'Unknown';
+    return memberMap[otherUserId]?.label || otherUserId || 'Unknown';
   };
 
   const filteredChannels = dmChannels.filter(ch => 

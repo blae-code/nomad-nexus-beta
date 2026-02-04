@@ -8,11 +8,29 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import MessageItem from './MessageItem';
 import MessageComposer from './MessageComposer';
+import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin }) {
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const repliesEndRef = useRef(null);
+  const { user: authUser } = useAuth();
+  const currentUser = authUser?.member_profile_data || authUser;
+  const fallbackMemberMap = React.useMemo(() => {
+    if (!currentUser?.id) return {};
+    const label = currentUser.callsign || currentUser.full_name || currentUser.email || 'System Admin';
+    return { [currentUser.id]: { label } };
+  }, [currentUser?.id, currentUser?.callsign, currentUser?.full_name, currentUser?.email]);
+  const threadUserIds = React.useMemo(() => {
+    const ids = new Set();
+    if (parentMessage?.user_id) ids.add(parentMessage.user_id);
+    replies.forEach((reply) => {
+      if (reply.user_id) ids.add(reply.user_id);
+    });
+    return Array.from(ids);
+  }, [parentMessage?.id, parentMessage?.user_id, replies]);
+  const { memberMap } = useMemberProfileMap(threadUserIds, { fallbackMap: fallbackMemberMap });
 
   useEffect(() => {
     if (!parentMessage) return;
@@ -106,6 +124,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
           message={parentMessage}
           currentUserId={currentUserId}
           isAdmin={isAdmin}
+          authorLabel={memberMap[parentMessage?.user_id]?.label}
           onEdit={() => {}}
           onDelete={() => {}}
         />
@@ -131,6 +150,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
                 message={reply}
                 currentUserId={currentUserId}
                 isAdmin={isAdmin}
+                authorLabel={memberMap[reply.user_id]?.label}
                 onEdit={() => {
                   // Refresh replies after edit
                   const loadReplies = async () => {

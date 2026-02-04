@@ -18,9 +18,24 @@ export const useLastSeen = (userIds) => {
     const fetchLastSeen = async () => {
       try {
         const presenceRecords = await Promise.all(
-          userIds.map(uid => 
-            base44.entities.UserPresence.filter({ user_id: uid }).then(p => p[0])
-          )
+          userIds.map(async (uid) => {
+            let records = [];
+            try {
+              records = await base44.entities.UserPresence.filter({ member_profile_id: uid });
+            } catch (error) {
+              records = [];
+            }
+
+            if (!records || records.length === 0) {
+              try {
+                records = await base44.entities.UserPresence.filter({ user_id: uid });
+              } catch (error) {
+                records = [];
+              }
+            }
+
+            return records[0];
+          })
         );
 
         const map = {};

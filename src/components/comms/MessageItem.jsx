@@ -23,6 +23,7 @@ export default function MessageItem({
   currentUserId, 
   isAdmin, 
   lastSeen,
+  authorLabel,
   onEdit,
   onDelete,
   onReply,
@@ -110,7 +111,9 @@ export default function MessageItem({
             {lastSeen?.isOnline && (
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" title="Online now" />
             )}
-            <span className="font-semibold text-zinc-400 truncate">{message.user_id}</span>
+            <span className="font-semibold text-zinc-400 truncate">
+              {authorLabel || message.author_callsign || message.display_callsign || message.user_id}
+            </span>
             <span className="text-zinc-600 flex-shrink-0">•</span>
             <span className="text-zinc-600 flex-shrink-0">
               {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

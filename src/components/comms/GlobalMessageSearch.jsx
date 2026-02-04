@@ -13,12 +13,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function GlobalMessageSearch({ isOpen, onClose, onSelectMessage, currentUserId }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [channels, setChannels] = useState({});
+  const { user: authUser } = useAuth();
+  const currentUser = authUser?.member_profile_data || authUser;
+  const fallbackMemberMap = React.useMemo(() => {
+    if (currentUser?.id) {
+      const label = currentUser.callsign || currentUser.full_name || currentUser.email || 'System Admin';
+      return { [currentUser.id]: { label } };
+    }
+    if (currentUserId) {
+      return { [currentUserId]: { label: 'You' } };
+    }
+    return {};
+  }, [currentUser?.id, currentUser?.callsign, currentUser?.full_name, currentUser?.email, currentUserId]);
+  const resultUserIds = React.useMemo(() => {
+    return Array.from(new Set(results.map((msg) => msg.user_id).filter(Boolean)));
+  }, [results]);
+  const { memberMap } = useMemberProfileMap(resultUserIds, { fallbackMap: fallbackMemberMap });
 
   useEffect(() => {
     if (!isOpen) {
@@ -157,7 +175,9 @@ export default function GlobalMessageSearch({ isOpen, onClose, onSelectMessage, 
                     <div className="flex items-start gap-2">
                       <User className="w-3 h-3 text-zinc-600 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs text-zinc-400 mb-1">{msg.user_id}</div>
+                        <div className="text-xs text-zinc-400 mb-1">
+                          {memberMap[msg.user_id]?.label || msg.user_id}
+                        </div>
                         <div className="text-sm text-zinc-300 line-clamp-2">
                           {msg.content}
                         </div>

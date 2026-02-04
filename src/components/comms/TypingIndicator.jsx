@@ -1,35 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
+import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 
 export default function TypingIndicator({ userIds }) {
-  const [profiles, setProfiles] = useState([]);
+  const limitedIds = React.useMemo(() => (userIds || []).slice(0, 3), [userIds]);
+  const { memberMap } = useMemberProfileMap(limitedIds);
 
-  useEffect(() => {
-    if (userIds.length === 0) {
-      setProfiles([]);
-      return;
-    }
+  const names = limitedIds
+    .map((id) => memberMap[id]?.label)
+    .filter(Boolean)
+    .slice(0, 2);
+  const totalCount = (userIds || []).length;
+  const remaining = totalCount - names.length;
 
-    const loadProfiles = async () => {
-      try {
-        const profilesList = await Promise.all(
-          userIds.slice(0, 3).map(uid => 
-            base44.entities.MemberProfile.filter({ user_id: uid }).then(p => p[0])
-          )
-        );
-        setProfiles(profilesList.filter(Boolean));
-      } catch (error) {
-        // Silently fail
-      }
-    };
-
-    loadProfiles();
-  }, [userIds.join(',')]);
-
-  if (profiles.length === 0) return null;
-
-  const names = profiles.map(p => p.callsign).slice(0, 2);
-  const remaining = userIds.length - names.length;
+  if (names.length === 0) return null;
 
   return (
     <div className="flex items-center gap-2 text-xs text-zinc-500 py-2 px-3">
