@@ -8,7 +8,7 @@ import { LoadingState, EmptyState } from '@/components/common/UIStates';
 import MemberList from '@/components/members/MemberList';
 import MemberProfile from '@/components/members/MemberProfile';
 
-export default function MemberManagement() {
+export default function MemberManagement({ embedded = false }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState(null);
@@ -46,30 +46,33 @@ export default function MemberManagement() {
     );
   });
 
+  const containerClass = embedded ? 'w-full' : 'max-w-7xl mx-auto px-4 py-8';
+
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className={containerClass}>
         <LoadingState label="Loading member data..." />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-black uppercase tracking-wider text-white">Member Management</h1>
-          <p className="text-zinc-400 text-sm">View profiles, track participation, manage roles</p>
+    <div className={containerClass}>
+      {!embedded && (
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-wider text-white">Member Management</h1>
+            <p className="text-zinc-400 text-sm">View profiles, track participation, manage roles</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={loadMembers}>
+            🔄 Refresh
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={loadMembers}>
-          🔄 Refresh
-        </Button>
-      </div>
+      )}
 
       {/* Search */}
-      <div className="mb-6">
-        <div className="relative">
+      <div className={`mb-6 ${embedded ? 'flex items-center gap-2' : ''}`}>
+        <div className={`relative ${embedded ? 'flex-1' : ''}`}>
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             value={searchQuery}
@@ -78,6 +81,11 @@ export default function MemberManagement() {
             className="pl-10"
           />
         </div>
+        {embedded && (
+          <Button variant="outline" size="sm" onClick={loadMembers}>
+            🔄 Refresh
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-6">

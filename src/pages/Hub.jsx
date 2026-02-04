@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, isAdminUser } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { Shield, Users, Calendar, Radio, Map, Box, DollarSign, Settings, FileSearch, GraduationCap, FileText, Database, Package, BarChart3, BookOpen, Store, ClipboardList, Award, UserPlus, Sparkles, Gamepad2, Monitor, Wrench, Heart, Handshake, Radio as SignalIcon, Gavel, Target, Compass, HelpCircle, Bug, CheckCircle2, Clock, AlertCircle, Zap, Users2, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -41,18 +41,21 @@ export default function Hub() {
     { name: 'Data Vault', path: 'DataVault', icon: BookOpen, description: 'Knowledge archive and analytics' },
     { name: 'Nexus Training', path: 'NexusTraining', icon: HelpCircle, description: 'Tutorials and guides for using the Nexus platform' },
     { name: 'Access Gate', path: 'AccessGate', icon: Shield, description: 'Member verification and onboarding' },
-    { name: 'System Admin', path: 'Settings', icon: Settings, description: 'Configuration and administration' },
-    { name: 'QA Console', path: 'QAConsole', icon: Bug, description: 'Development and QA testing tools for admins' },
+    { name: 'System Admin', path: 'Settings', icon: Settings, description: 'Configuration and administration', adminOnly: true },
+    { name: 'QA Console', path: 'QAConsole', icon: Bug, description: 'Development and QA testing tools for admins', adminOnly: true },
   ];
+
+  const isAdmin = isAdminUser(user);
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   // Organize modules by completion status (dynamically calculated from features)
   const organizedItems = {
-    complete: navItems.filter(item => calculateCompletion(item.path) === 100).sort((a, b) => b.path.localeCompare(a.path)),
-    inProgress: navItems.filter(item => {
+    complete: visibleNavItems.filter(item => calculateCompletion(item.path) === 100).sort((a, b) => b.path.localeCompare(a.path)),
+    inProgress: visibleNavItems.filter(item => {
       const completion = calculateCompletion(item.path);
       return completion > 0 && completion < 100;
     }).sort((a, b) => calculateCompletion(b.path) - calculateCompletion(a.path)),
-    planned: navItems.filter(item => calculateCompletion(item.path) === 0).sort((a, b) => a.name.localeCompare(b.name)),
+    planned: visibleNavItems.filter(item => calculateCompletion(item.path) === 0).sort((a, b) => a.name.localeCompare(b.name)),
   };
 
   return (
