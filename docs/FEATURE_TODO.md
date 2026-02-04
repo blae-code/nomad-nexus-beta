@@ -19,6 +19,12 @@ This list tracks all future‑facing features discussed and where they stand. It
   Status: Implemented via `processThreadReplyNotifications`.
 - [x] **Channel routing rules** — `#ops`/`#intel` auto‑route  
   Status: Implemented via `routeChannelMessage` with safe defaults.
+- [x] **Command system** — `/whisper`, `/broadcast`, `/sitrep`, `/orders`  
+  Status: Implemented in Comms Dock with command help.
+- [x] **Structured templates** — SITREP/CONTACT/STATUS/ORDERS/LOGISTICS/ALERT  
+  Status: Implemented via Comms Template dialog.
+- [x] **Channel pack recommendations** — role/rank/squad suggestions  
+  Status: Implemented with Base44 entity fallback.
 - [x] **Channel routing admin UI** — manage routing rules in System Admin  
   Status: Implemented with safe fallback; editing enabled when `ChannelRoutingRule` exists.
 

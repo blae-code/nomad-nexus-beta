@@ -327,12 +327,12 @@
 - [ ] Add "Event Channels" section in channel list
 
 ### Tactical Commands
-- [ ] Create `/` command parser in MessageComposer
-- [ ] Implement `/status` command (display current user status)
-- [ ] Implement `/sitrep` command (display situation report)
-- [ ] Implement `/whisper` command (send private message to role/rank)
-- [ ] Create command autocomplete dropdown
-- [ ] Add command help modal (`/help`)
+- [x] Create `/` command parser in MessageComposer
+- [x] Implement `/status` command (structured status update)
+- [x] Implement `/sitrep` command (multi-channel summary)
+- [x] Implement `/whisper` command (role/rank/squad/member)
+- [x] Create command autocomplete dropdown (inline help)
+- [x] Add command help modal (`/help`)
 - [ ] Create `TacticalCommand` entity for custom commands (admin-defined)
 
 ### Command Permissions

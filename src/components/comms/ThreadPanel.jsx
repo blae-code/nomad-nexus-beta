@@ -42,6 +42,17 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
   }, [parentMessage?.id, parentMessage?.user_id, replies]);
   const { memberMap } = useMemberProfileMap(threadUserIds, { fallbackMap: fallbackMemberMap });
   const { presenceMap, lastSeenMap } = usePresenceMap(threadUserIds);
+  const canViewMessage = React.useCallback(
+    (msg) => {
+      const meta = msg?.whisper_metadata;
+      if (!meta?.is_whisper) return true;
+      if (isAdmin) return true;
+      if (meta.sender_member_profile_id === currentUserId) return true;
+      const recipients = meta.recipient_member_profile_ids || [];
+      return recipients.includes(currentUserId);
+    },
+    [currentUserId, isAdmin]
+  );
 
   useEffect(() => {
     if (!parentMessage) return;
@@ -54,7 +65,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
           'created_date',
           100
         );
-        setReplies(threadReplies);
+        setReplies((threadReplies || []).filter(canViewMessage));
       } catch (error) {
         console.error('Failed to load thread replies:', error);
       } finally {
@@ -77,6 +88,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
     // Subscribe to new replies in this thread
     const unsubscribe = base44.entities.Message.subscribe((event) => {
       if (event.type === 'create' && event.data?.parent_message_id === parentMessage.id) {
+        if (!canViewMessage(event.data)) return;
         setReplies(prev => [...prev, event.data]);
       }
     });
@@ -210,7 +222,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
                       'created_date',
                       100
                     );
-                    setReplies(threadReplies);
+                    setReplies((threadReplies || []).filter(canViewMessage));
                   };
                   loadReplies();
                 }}

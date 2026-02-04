@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
-    const { message, targetType, targetIds, eventId, netId } = payload;
+    const { message, targetType, targetIds, eventId, netId, channelId } = payload;
 
     if (!message || !targetType || !targetIds || targetIds.length === 0) {
       return Response.json({ 
@@ -30,18 +30,25 @@ Deno.serve(async (req) => {
     }
 
     // Fetch target users based on type
-    let recipientUserIds = [];
-    let recipientNames = [];
+    let recipientUserIds: string[] = [];
+    let recipientNames: string[] = [];
 
     if (targetType === 'role') {
-      // Get users with specific roles
+      // Get users with specific roles (role ID or name)
       const allMembers = await base44.entities.MemberProfile.list();
       for (const roleId of targetIds) {
-        const role = await base44.entities.Role.get(roleId);
-        if (role) {
-          recipientNames.push(role.name);
-          const membersWithRole = allMembers.filter(m => 
-            Array.isArray(m.roles) && m.roles.includes(role.name)
+        let roleName = roleId;
+        try {
+          const role = await base44.entities.Role.get(roleId);
+          if (role?.name) roleName = role.name;
+        } catch {
+          // roleId may already be name
+        }
+
+        if (roleName) {
+          recipientNames.push(roleName);
+          const membersWithRole = allMembers.filter(m =>
+            Array.isArray(m.roles) && m.roles.map((r) => r.toString().toLowerCase()).includes(roleName.toString().toLowerCase())
           );
           recipientUserIds.push(...membersWithRole.map(m => m.id));
         }
@@ -55,16 +62,34 @@ Deno.serve(async (req) => {
         recipientUserIds.push(...membersWithRank.map(m => m.id));
       }
     } else if (targetType === 'squad') {
-      // Get users in specific squads
+      // Get users in specific squads (ID or name)
+      const squads = await base44.entities.Squad.list();
+      const squadsById = new Map(squads.map((s) => [s.id, s]));
+      const squadsByName = new Map(squads.map((s) => [s.name?.toLowerCase?.() || '', s]));
+
       for (const squadId of targetIds) {
-        const squad = await base44.entities.Squad.get(squadId);
+        const squad =
+          squadsById.get(squadId) ||
+          squadsByName.get(squadId?.toLowerCase?.() || '') ||
+          null;
         if (squad) {
           recipientNames.push(squad.name);
           const memberships = await base44.entities.SquadMembership.filter({
-            squad_id: squadId,
+            squad_id: squad.id,
             status: 'active'
           });
           recipientUserIds.push(...memberships.map(m => m.member_profile_id || m.user_id));
+        }
+      }
+    } else if (targetType === 'member') {
+      // Explicit member profile IDs
+      const allMembers = await base44.entities.MemberProfile.list();
+      const memberMap = new Map(allMembers.map((m) => [m.id, m]));
+      for (const memberId of targetIds) {
+        const member = memberMap.get(memberId);
+        if (member) {
+          recipientNames.push(member.display_callsign || member.callsign || member.full_name || member.id);
+          recipientUserIds.push(member.id);
         }
       }
     }
@@ -80,7 +105,7 @@ Deno.serve(async (req) => {
 
     // Create whisper message
     const whisperMessage = await base44.entities.Message.create({
-      channel_id: netId || eventId || 'global',
+      channel_id: channelId || netId || eventId || 'global',
       user_id: memberProfile.id,
       content: `[WHISPER to ${recipientNames.join(', ')}] ${message}`,
       whisper_metadata: {

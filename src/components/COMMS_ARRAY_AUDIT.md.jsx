@@ -57,6 +57,12 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 - ✅ **Moderation Panel** — Admin tools for channel management
 - ✅ **Mute Management** — View active timeouts, unmute users
 
+### Command & Structured Comms (Phase 6.5)
+- ✅ **Command system** — `/whisper`, `/broadcast`, `/sitrep`, `/orders`, `/status`, `/contact`
+- ✅ **Structured templates** — SITREP/CONTACT/STATUS/ORDERS/LOGISTICS/ALERT
+- ✅ **Priority badges** — visual flags for critical comms
+- ✅ **Whisper visibility** — only sender/recipients see whisper traffic
+
 ### UI/UX
 - ✅ **Typing Indicators** — Real-time "user is typing" feedback
 - ✅ **Last Seen Timestamps** — Online/offline status with last activity
@@ -69,6 +75,8 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 - ✅ **Message Composer** — Rich text toolbar, attachment upload
 - ✅ **Responsive Design** — Mobile-friendly collapsible dock
 - ✅ **Keyboard Shortcuts** — Enter to send, Shift+Enter for newline
+- ✅ **Roster panel** — Fleet/Wing/Squad roster assignment UI
+- ✅ **Channel pack recommendations** — Role/Rank/Squad channel suggestions
 
 ---
 

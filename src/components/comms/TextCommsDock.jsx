@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Minimize2, Hash, Lock, AlertCircle, Search, Bell, Shield, Moon, Download } from 'lucide-react';
+import { Minimize2, Hash, Lock, AlertCircle, Search, Bell, Shield, Moon, Download, HelpCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -18,6 +18,7 @@ import {
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
 import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useNotification } from '@/components/providers/NotificationContext';
 import { isAdminUser } from '@/utils';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
@@ -37,7 +38,47 @@ import MentionsView from '@/components/comms/MentionsView';
 import ChannelNotificationSettings from '@/components/comms/ChannelNotificationSettings';
 import ModerationPanel from '@/components/comms/ModerationPanel';
 import AIModerationIndicator from '@/components/comms/AIModerationIndicator';
+import CommsTemplateDialog from '@/components/comms/CommsTemplateDialog';
+import { useChannelPackRecommendations } from '@/components/hooks/useChannelPackRecommendations';
 
+const COMMAND_DEFS = [
+  { id: 'help', usage: '/help', description: 'Show command list' },
+  { id: 'whisper', usage: '/whisper role:Rangers <message>', description: 'Whisper to role/rank/squad/member' },
+  { id: 'broadcast', usage: '/broadcast #ops,#intel <message>', description: 'Broadcast to channels or scope' },
+  { id: 'sitrep', usage: '/sitrep 30', description: 'Generate a SITREP (minutes window)' },
+  { id: 'orders', usage: '/orders <message>', description: 'Post an ORDERS template' },
+  { id: 'status', usage: '/status <message>', description: 'Post a STATUS template' },
+  { id: 'contact', usage: '/contact <message>', description: 'Post a CONTACT report' },
+];
+
+const parseCommandLine = (input) => {
+  if (!input || typeof input !== 'string') return null;
+  const trimmed = input.trim();
+  if (!trimmed.startsWith('/')) return null;
+  const [cmd, ...rest] = trimmed.slice(1).split(' ');
+  return { command: cmd.toLowerCase(), args: rest.join(' ').trim() };
+};
+
+const parseTargetToken = (token) => {
+  if (!token) return null;
+  const trimmed = token.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('@')) {
+    return { type: 'member', values: [trimmed.slice(1)] };
+  }
+  if (trimmed.includes(':')) {
+    const [rawType, rawValues] = trimmed.split(':');
+    const values = rawValues ? rawValues.split(',').map((v) => v.trim()).filter(Boolean) : [];
+    return { type: rawType.toLowerCase(), values };
+  }
+  return null;
+};
+
+const formatTemplate = (label, message) => {
+  const header = `[${label.toUpperCase()}]`;
+  if (!message) return header;
+  return `${header} ${message}`;
+};
 export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [activeTab, setActiveTab] = useState('comms');
   const [channels, setChannels] = useState([]);
@@ -70,15 +111,21 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showCommandHelp, setShowCommandHelp] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [muteInfo, setMuteInfo] = useState(null);
   const [muteRemaining, setMuteRemaining] = useState(null);
   const [lastSentAt, setLastSentAt] = useState(null);
   const [slowModeRemaining, setSlowModeRemaining] = useState(0);
   const messagesEndRef = useRef(null);
+  const rolesCacheRef = useRef(null);
+  const squadsCacheRef = useRef(null);
+  const membersCacheRef = useRef(null);
 
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
   const isAdmin = isAdminUser(authUser);
+  const { addNotification } = useNotification();
   const { unreadByChannel, unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
   const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);
@@ -99,10 +146,24 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     return { [user.id]: { label, profile } };
   }, [user?.id, user?.callsign, user?.full_name, user?.email, user?.rank, user?.membership, user?.roles]);
   const { memberMap } = useMemberProfileMap(messageUserIds, { fallbackMap: fallbackMemberMap });
+  const { recommendedChannels } = useChannelPackRecommendations(user, channels);
   const slowModeKey = React.useMemo(() => {
     if (!selectedChannelId || !user?.id) return null;
     return `nexus.comms.lastSent.${selectedChannelId}.${user.id}`;
   }, [selectedChannelId, user?.id]);
+
+  const canViewMessage = useCallback((msg) => {
+    const meta = msg?.whisper_metadata;
+    if (!meta?.is_whisper) return true;
+    if (isAdmin) return true;
+    const recipients = meta.recipient_member_profile_ids || [];
+    if (meta.sender_member_profile_id === user?.id) return true;
+    return recipients.includes(user?.id);
+  }, [isAdmin, user?.id]);
+
+  const notify = useCallback((title, message, type = 'info') => {
+    addNotification?.({ title, message, type, duration: 6000 });
+  }, [addNotification]);
 
   // Load channels
   useEffect(() => {
@@ -216,7 +277,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       setLoadingMessages(true);
       try {
         const msgs = await base44.entities.Message.filter({ channel_id: selectedChannelId });
-        setMessages(msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
+        const visible = (msgs || []).filter(canViewMessage);
+        setMessages(visible.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
         // Mark as read (debounced)
         setTimeout(() => markChannelRead(selectedChannelId), 500);
       } catch (error) {
@@ -231,6 +293,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     // Subscribe to real-time message updates
     const unsubscribe = base44.entities.Message.subscribe((event) => {
       if (event.type === 'create' && event.data?.channel_id === selectedChannelId) {
+        if (!canViewMessage(event.data)) return;
         setMessages((prev) => [...prev, event.data]);
       }
     });
@@ -249,6 +312,12 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     if (!messageInput.trim() || !selectedChannelId || !user?.id) return;
 
     try {
+      const handled = await executeCommand(messageInput);
+      if (handled) {
+        setMessageInput('');
+        return;
+      }
+
       const newMsg = await base44.entities.Message.create({
         channel_id: selectedChannelId,
         user_id: user.id,
@@ -284,7 +353,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     } catch (error) {
       console.error('Failed to send message:', error);
     }
-  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts, clearTyping]);
+  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts, clearTyping, executeCommand]);
 
   const handleCreateDM = async ({ userIds }) => {
     try {
@@ -557,8 +626,245 @@ Provide a helpful, concise response with tactical awareness.`,
     if (channel.category === 'focused') {
       return canAccessFocusedComms(user);
     }
+    if (Array.isArray(channel.allowed_role_tags) && channel.allowed_role_tags.length > 0) {
+      const roles = (user?.roles || []).map((r) => r.toString().toLowerCase());
+      const allowed = channel.allowed_role_tags.map((r) => r.toString().toLowerCase());
+      if (!allowed.some((role) => roles.includes(role))) return false;
+    }
+    if (channel.min_rank_required) {
+      const rank = (user?.rank || '').toString().toUpperCase();
+      const min = channel.min_rank_required.toString().toUpperCase();
+      const order = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
+      if (order.indexOf(rank) < order.indexOf(min)) return false;
+    }
     return true;
   };
+
+  const ensureRoles = useCallback(async () => {
+    if (rolesCacheRef.current) return rolesCacheRef.current;
+    try {
+      const roles = await base44.entities.Role.list();
+      rolesCacheRef.current = Array.isArray(roles) ? roles : [];
+    } catch {
+      rolesCacheRef.current = [];
+    }
+    return rolesCacheRef.current;
+  }, []);
+
+  const ensureSquads = useCallback(async () => {
+    if (squadsCacheRef.current) return squadsCacheRef.current;
+    try {
+      const squads = await base44.entities.Squad.list();
+      squadsCacheRef.current = Array.isArray(squads) ? squads : [];
+    } catch {
+      squadsCacheRef.current = [];
+    }
+    return squadsCacheRef.current;
+  }, []);
+
+  const ensureMembers = useCallback(async () => {
+    if (membersCacheRef.current) return membersCacheRef.current;
+    try {
+      const members = await base44.entities.MemberProfile.list();
+      membersCacheRef.current = Array.isArray(members) ? members : [];
+    } catch {
+      membersCacheRef.current = [];
+    }
+    return membersCacheRef.current;
+  }, []);
+
+  const resolveWhisperTargets = useCallback(async (targetSpec) => {
+    if (!targetSpec) return null;
+    const { type, values } = targetSpec;
+    if (!values || values.length === 0) return null;
+
+    if (type === 'member') {
+      const members = await ensureMembers();
+      const resolved = values
+        .map((value) => {
+          const lower = value.toLowerCase();
+          return members.find((m) =>
+            [m.callsign, m.display_callsign, m.full_name, m.email]
+              .filter(Boolean)
+              .some((field) => field.toString().toLowerCase() === lower)
+          );
+        })
+        .filter(Boolean);
+      return { targetType: 'member', targetIds: resolved.map((m) => m.id) };
+    }
+
+    if (type === 'role') {
+      const roles = await ensureRoles();
+      const resolved = values.map((value) => {
+        const lower = value.toLowerCase();
+        const role = roles.find((r) => r.name?.toLowerCase?.() === lower || r.slug?.toLowerCase?.() === lower);
+        return role?.id || value;
+      });
+      return { targetType: 'role', targetIds: resolved };
+    }
+
+    if (type === 'rank') {
+      return { targetType: 'rank', targetIds: values.map((value) => value.toUpperCase()) };
+    }
+
+    if (type === 'squad') {
+      const squads = await ensureSquads();
+      const resolved = values.map((value) => {
+        const lower = value.toLowerCase();
+        const squad = squads.find((s) => s.name?.toLowerCase?.() === lower || s.slug?.toLowerCase?.() === lower);
+        return squad?.id || value;
+      });
+      return { targetType: 'squad', targetIds: resolved };
+    }
+
+    return null;
+  }, [ensureMembers, ensureRoles, ensureSquads]);
+
+  const executeCommand = useCallback(async (content) => {
+    const parsed = parseCommandLine(content);
+    if (!parsed) return false;
+
+    const { command, args } = parsed;
+    if (command === 'help') {
+      setShowCommandHelp(true);
+      return true;
+    }
+
+    if (command === 'whisper') {
+      const [targetToken, ...messageParts] = args.split(' ');
+      const message = messageParts.join(' ').trim();
+      const targetSpec = parseTargetToken(targetToken);
+      if (!targetSpec || !message) {
+        notify('Whisper', 'Usage: /whisper role:Rangers <message>', 'warning');
+        return true;
+      }
+      const resolved = await resolveWhisperTargets(targetSpec);
+      if (!resolved?.targetIds?.length) {
+        notify('Whisper', 'No matching recipients found.', 'warning');
+        return true;
+      }
+      try {
+        await invokeMemberFunction('sendWhisper', {
+          message,
+          targetType: resolved.targetType,
+          targetIds: resolved.targetIds,
+          channelId: selectedChannelId,
+          eventId: activeOp?.activeEventId || null,
+        });
+        notify('Whisper sent', `Delivered to ${resolved.targetIds.length} recipient(s).`, 'success');
+      } catch (error) {
+        console.error('Whisper failed:', error);
+        notify('Whisper failed', error?.message || 'Unable to send whisper.', 'error');
+      }
+      return true;
+    }
+
+    if (command === 'broadcast') {
+      const [targetToken, ...messageParts] = args.split(' ');
+      const message = messageParts.join(' ').trim();
+      if (!message) {
+        notify('Broadcast', 'Usage: /broadcast #ops,#intel <message>', 'warning');
+        return true;
+      }
+      const target = targetToken || 'fleet';
+      const payload = { message, eventId: activeOp?.activeEventId || null };
+
+      if (target.startsWith('#')) {
+        payload.channelNames = target.replace('#', '').split(',').map((t) => t.trim()).filter(Boolean);
+      } else if (target.includes(':')) {
+        const [scope, scopeRaw] = target.split(':');
+        payload.scope = scope.toLowerCase();
+        payload.scopeNames = scopeRaw ? scopeRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+      } else if (['fleet', 'wing', 'squad'].includes(target.toLowerCase())) {
+        payload.scope = target.toLowerCase();
+      } else {
+        payload.channelNames = [target];
+      }
+
+      try {
+        await invokeMemberFunction('broadcastMessage', payload);
+        notify('Broadcast sent', 'Message delivered to target channels.', 'success');
+      } catch (error) {
+        console.error('Broadcast failed:', error);
+        notify('Broadcast failed', error?.message || 'Unable to broadcast.', 'error');
+      }
+      return true;
+    }
+
+    if (command === 'sitrep') {
+      if (!selectedChannelId) {
+        notify('SITREP', 'Select a channel to post the SITREP.', 'warning');
+        return true;
+      }
+      const windowMinutes = Number.parseInt(args, 10);
+      const timeWindowMinutes = Number.isFinite(windowMinutes) ? windowMinutes : 15;
+      try {
+        const response = await invokeMemberFunction('generateMultiChannelSummary', {
+          timeWindowMinutes,
+          eventId: activeOp?.activeEventId || null,
+        });
+        const sitrep = response?.data?.sitrep || response?.data;
+        const summary = sitrep?.summary || sitrep?.operational_status || 'SITREP generated.';
+        const message = `[SITREP] ${summary}`;
+        const newMsg = await base44.entities.Message.create({
+          channel_id: selectedChannelId,
+          user_id: user?.id,
+          content: message,
+        });
+        if (newMsg?.id && message.includes('@')) {
+          invokeMemberFunction('processMessageMentions', {
+            messageId: newMsg.id,
+            channelId: selectedChannelId,
+            content: message,
+          }).catch(() => {});
+        }
+        if (newMsg?.id && message.includes('#')) {
+          invokeMemberFunction('routeChannelMessage', {
+            messageId: newMsg.id,
+            channelId: selectedChannelId,
+            content: message,
+            isRouted: false,
+          }).catch(() => {});
+        }
+      } catch (error) {
+        console.error('SITREP failed:', error);
+        notify('SITREP failed', error?.message || 'Unable to generate SITREP.', 'error');
+      }
+      return true;
+    }
+
+    if (['orders', 'status', 'contact'].includes(command)) {
+      if (!selectedChannelId) {
+        notify('Command', 'Select a channel to post this command.', 'warning');
+        return true;
+      }
+      const message = formatTemplate(command, args);
+      const newMsg = await base44.entities.Message.create({
+        channel_id: selectedChannelId,
+        user_id: user?.id,
+        content: message,
+      });
+      if (newMsg?.id && message.includes('@')) {
+        invokeMemberFunction('processMessageMentions', {
+          messageId: newMsg.id,
+          channelId: selectedChannelId,
+          content: message,
+        }).catch(() => {});
+      }
+      if (newMsg?.id && message.includes('#')) {
+        invokeMemberFunction('routeChannelMessage', {
+          messageId: newMsg.id,
+          channelId: selectedChannelId,
+          content: message,
+          isRouted: false,
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    notify('Unknown command', 'Use /help to view available commands.', 'warning');
+    return true;
+  }, [activeOp?.activeEventId, notify, resolveWhisperTargets, selectedChannelId, user?.id]);
 
   const filteredChannels = Object.entries(groupedChannels)
     .flatMap(([, chans]) => chans)
@@ -727,6 +1033,27 @@ Provide a helpful, concise response with tactical awareness.`,
                 />
               </div>
 
+              {recommendedChannels?.length > 0 && (
+                <div className="px-2 pb-2">
+                  <div className="text-[9px] uppercase tracking-widest text-orange-400 mb-1">Recommended</div>
+                  <div className="space-y-1">
+                    {recommendedChannels.map((ch) => (
+                      <button
+                        key={ch.id}
+                        onClick={() => setSelectedChannelId(ch.id)}
+                        className={`w-full text-left px-2 py-1 rounded text-[11px] transition-colors ${
+                          selectedChannelId === ch.id
+                            ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                            : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200'
+                        }`}
+                      >
+                        #{ch.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
                {/* Channel Groups */}
                <div className="flex-1 overflow-y-auto space-y-3 px-2 py-2">
                  {groupedChannels.casual.length === 0 && groupedChannels.focused.length === 0 && groupedChannels.temporary.length === 0 ? (
@@ -859,11 +1186,31 @@ Provide a helpful, concise response with tactical awareness.`,
                      <Button
                        size="icon"
                        variant="ghost"
+                       onClick={() => setShowTemplateDialog(true)}
+                       className="h-6 w-6"
+                       title="Send structured template"
+                     >
+                       <Sparkles className="w-3 h-3" />
+                     </Button>
+
+                     <Button
+                       size="icon"
+                       variant="ghost"
                        onClick={() => setShowNotificationSettings(true)}
                        className="h-6 w-6"
                        title="Notification settings"
                      >
                        <Bell className="w-3 h-3" />
+                     </Button>
+
+                     <Button
+                       size="icon"
+                       variant="ghost"
+                       onClick={() => setShowCommandHelp(true)}
+                       className="h-6 w-6"
+                       title="Command help"
+                     >
+                       <HelpCircle className="w-3 h-3" />
                      </Button>
 
                      <Button
@@ -932,7 +1279,8 @@ Provide a helpful, concise response with tactical awareness.`,
                               // Refresh messages after edit
                               const loadMessages = async () => {
                                 const msgs = await base44.entities.Message.filter({ channel_id: selectedChannelId });
-                                setMessages(msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
+                                const visible = (msgs || []).filter(canViewMessage);
+                                setMessages(visible.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
                               };
                               loadMessages();
                             }}
@@ -1006,6 +1354,9 @@ Provide a helpful, concise response with tactical awareness.`,
                     onSendMessage={async (messageData) => {
                       if (composerDisabled) return;
                       try {
+                        const handled = await executeCommand(messageData?.content || '');
+                        if (handled) return;
+
                         const newMsg = await base44.entities.Message.create(messageData);
                         if (newMsg?.id && messageData?.content && messageData.content.includes('@')) {
                           invokeMemberFunction('processMessageMentions', {
@@ -1239,6 +1590,56 @@ Provide a helpful, concise response with tactical awareness.`,
         userId={user?.id}
       />
 
+      <CommsTemplateDialog
+        isOpen={showTemplateDialog}
+        onClose={() => setShowTemplateDialog(false)}
+        channels={channels}
+        defaultChannelId={selectedChannelId}
+        onSendTemplate={async ({ content, channelIds }) => {
+          if (!content) return;
+          if (!channelIds || channelIds.length === 0) {
+            notify('Template', 'Select at least one channel.', 'warning');
+            return;
+          }
+
+          try {
+            if (channelIds.length > 1) {
+              await invokeMemberFunction('broadcastMessage', {
+                message: content,
+                channelIds,
+                eventId: activeOp?.activeEventId || null,
+              });
+            } else {
+              const newMsg = await base44.entities.Message.create({
+                channel_id: channelIds[0],
+                user_id: user?.id,
+                content,
+              });
+              if (newMsg?.id && content.includes('@')) {
+                invokeMemberFunction('processMessageMentions', {
+                  messageId: newMsg.id,
+                  channelId: channelIds[0],
+                  content,
+                }).catch(() => {});
+              }
+              if (newMsg?.id && content.includes('#')) {
+                invokeMemberFunction('routeChannelMessage', {
+                  messageId: newMsg.id,
+                  channelId: channelIds[0],
+                  content,
+                  isRouted: false,
+                }).catch(() => {});
+              }
+            }
+            setShowTemplateDialog(false);
+            notify('Template sent', 'Structured message delivered.', 'success');
+          } catch (error) {
+            console.error('Template send failed:', error);
+            notify('Template failed', error?.message || 'Unable to send template.', 'error');
+          }
+        }}
+      />
+
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1269,6 +1670,28 @@ Provide a helpful, concise response with tactical awareness.`,
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCommandHelp} onOpenChange={setShowCommandHelp}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Comms Commands</DialogTitle>
+            <div className="text-xs text-zinc-500">Tactical shortcuts for structured comms.</div>
+          </DialogHeader>
+          <div className="space-y-2 text-xs text-zinc-300">
+            {COMMAND_DEFS.map((cmd) => (
+              <div key={cmd.id} className="flex items-start gap-3 border border-zinc-800 rounded p-2 bg-zinc-900/40">
+                <div className="font-mono text-orange-300 whitespace-nowrap">{cmd.usage}</div>
+                <div className="text-zinc-400">{cmd.description}</div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCommandHelp(false)}>
               Close
             </Button>
           </DialogFooter>

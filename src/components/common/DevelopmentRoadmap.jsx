@@ -143,7 +143,7 @@ export default function DevelopmentRoadmap() {
 
             <div className="bg-green-500/10 border border-green-500/30 rounded px-2.5 py-1.5 text-[9px]">
             <div className="font-semibold text-green-300 mb-1">Phase 10: Comms Array Stabilization ✓</div>
-            <div className="text-green-400 text-[8px]">Comms Array now ~92% complete with desktop notifications, DND, drafts, emoji picker, export history, and manual link previews</div>
+            <div className="text-green-400 text-[8px]">Comms Array now ~94% complete with command system, templates, roster tools, DND, drafts, export history, and manual link previews</div>
             </div>
         </div>
       )}

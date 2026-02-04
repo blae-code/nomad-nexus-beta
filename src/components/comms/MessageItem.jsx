@@ -44,6 +44,29 @@ const deriveStatusKey = (presenceRecord, lastSeen) => {
   return 'offline';
 };
 
+const getMessageBadge = (message) => {
+  if (message?.whisper_metadata?.is_whisper) {
+    return { label: 'Whisper', className: 'text-purple-300 border-purple-500/40 bg-purple-500/10' };
+  }
+  if (message?.broadcast_metadata?.is_broadcast) {
+    return { label: 'Broadcast', className: 'text-orange-300 border-orange-500/40 bg-orange-500/10' };
+  }
+
+  if (!message?.content) return null;
+  const match = message.content.match(/^\[(PRIORITY|URGENT|ALERT|SITREP|ORDERS|STATUS|CONTACT|LOGISTICS)(?::([A-Z]+))?\]/i);
+  if (!match) return null;
+  const base = match[1].toUpperCase();
+  const level = match[2]?.toUpperCase?.() || null;
+  const label = level ? `${base}:${level}` : base;
+  const isHigh = base === 'URGENT' || base === 'ALERT' || level === 'HIGH' || level === 'CRITICAL';
+  return {
+    label,
+    className: isHigh
+      ? 'text-red-300 border-red-500/40 bg-red-500/10'
+      : 'text-blue-300 border-blue-500/40 bg-blue-500/10',
+  };
+};
+
 export default function MessageItem({ 
   message, 
   currentUserId, 
@@ -79,6 +102,7 @@ export default function MessageItem({
   );
   const netLabel = presenceRecord?.current_net?.label || presenceRecord?.current_net?.code || null;
   const typingChannel = presenceRecord?.typing_in_channel || null;
+  const badge = getMessageBadge(message);
   const linkUrls = useMemo(() => {
     if (!message?.content) return [];
     const matches = message.content.match(/https?:\/\/[^\s)]+/g);
@@ -235,6 +259,14 @@ export default function MessageItem({
             <span className="text-zinc-600 flex-shrink-0">
               {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
+            {badge && (
+              <>
+                <span className="text-zinc-600 flex-shrink-0">•</span>
+                <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border ${badge.className}`}>
+                  {badge.label}
+                </span>
+              </>
+            )}
             {message.is_routed && (
               <>
                 <span className="text-zinc-600 flex-shrink-0">•</span>

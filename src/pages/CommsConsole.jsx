@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Lock, Unlock, Radio, Volume2, Mic } from 'lucide-react';
+import { AlertCircle, Lock, Unlock, Radio, Volume2, Mic, Users } from 'lucide-react';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canAccessFocusedComms, getAccessDenialReason } from '@/components/utils/commsAccessPolicy';
@@ -10,6 +10,7 @@ import VoiceNetBrowser from '@/components/voice/VoiceNetBrowser';
 import ChannelManager from '@/components/comms/ChannelManager';
 import SpeechSettings from '@/components/comms/SpeechSettings';
 import { getSpeechEngine } from '@/components/comms/SpeechEngine';
+import CommsRosterPanel from '@/components/comms/CommsRosterPanel';
 
 export default function CommsConsole() {
   const [showTempFocused, setShowTempFocused] = useState(false);
@@ -159,6 +160,10 @@ export default function CommsConsole() {
                 <Radio className="w-4 h-4 mr-2" />
                 Voice Nets
               </TabsTrigger>
+              <TabsTrigger value="roster">
+                <Users className="w-4 h-4 mr-2" />
+                Roster
+              </TabsTrigger>
               <TabsTrigger value="speech">
                 <Volume2 className="w-4 h-4 mr-2" />
                 Speech
@@ -182,6 +187,10 @@ export default function CommsConsole() {
                   onCreateNew={() => setShowVoiceNetCreator(true)}
                 />
               )}
+            </TabsContent>
+
+            <TabsContent value="roster" className="mt-4">
+              <CommsRosterPanel />
             </TabsContent>
 
             <TabsContent value="speech" className="mt-4">

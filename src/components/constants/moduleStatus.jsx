@@ -155,7 +155,7 @@ export const MODULE_STATUS = {
   },
   CommsConsole: {
     name: 'Comms Array',
-    completed: 90,
+    completed: 94,
     features: [
       { name: 'Channel Management', status: 'complete' },
       { name: 'Message System', status: 'complete' },
@@ -183,6 +183,11 @@ export const MODULE_STATUS = {
       { name: 'Emoji Picker', status: 'complete' },
       { name: 'Link Previews (manual)', status: 'in-progress' },
       { name: 'Read Receipts', status: 'planned' },
+      { name: 'Command System', status: 'complete' },
+      { name: 'Structured Templates', status: 'complete' },
+      { name: 'Whispers & Broadcasts', status: 'complete' },
+      { name: 'Fleet/Wing/Squad Roster', status: 'complete' },
+      { name: 'Channel Pack Recommendations', status: 'complete' },
       { name: 'Discord Bridge Integration', status: 'planned' },
       { name: 'Voice Commands', status: 'planned' },
       { name: 'Keyboard Shortcuts Overlay', status: 'planned' },

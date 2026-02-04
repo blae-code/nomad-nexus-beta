@@ -9,6 +9,16 @@ import { Send, Paperclip, Bold, Italic, Code, Smile, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
 
+const COMMAND_HINTS = [
+  { usage: '/help', desc: 'List available commands' },
+  { usage: '/whisper role:Rangers <msg>', desc: 'Whisper to role/rank/squad/member' },
+  { usage: '/broadcast #ops,#intel <msg>', desc: 'Broadcast to channels or scope' },
+  { usage: '/sitrep 30', desc: 'Generate a SITREP summary' },
+  { usage: '/orders <msg>', desc: 'Structured orders message' },
+  { usage: '/contact <msg>', desc: 'Structured contact report' },
+  { usage: '/status <msg>', desc: 'Structured status update' },
+];
+
 export default function MessageComposer({ 
   channelId, 
   userId,
@@ -23,6 +33,7 @@ export default function MessageComposer({
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showCommandHelp, setShowCommandHelp] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const draftTimeoutRef = useRef(null);
@@ -58,6 +69,11 @@ export default function MessageComposer({
       }
     };
   }, [body, draftKey]);
+
+  useEffect(() => {
+    const trimmed = body.trim();
+    setShowCommandHelp(trimmed.startsWith('/'));
+  }, [body]);
 
   const handleSend = async () => {
     if (disabled || uploading) return;
@@ -290,6 +306,18 @@ export default function MessageComposer({
           <Send className="w-4 h-4" />
         </Button>
       </div>
+
+      {showCommandHelp && (
+        <div className="text-[10px] text-zinc-400 border border-zinc-800 bg-zinc-900/40 rounded p-2 space-y-1">
+          <div className="text-[9px] uppercase tracking-widest text-orange-400">Commands</div>
+          {COMMAND_HINTS.map((cmd) => (
+            <div key={cmd.usage} className="flex items-start gap-2">
+              <span className="font-mono text-orange-300">{cmd.usage}</span>
+              <span className="text-zinc-500">{cmd.desc}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <EmojiPickerModal
         isOpen={showEmojiPicker}

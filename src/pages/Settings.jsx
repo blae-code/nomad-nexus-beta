@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Clock,
   Target,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +28,7 @@ import DiagnosticsBundle from '@/components/admin/DiagnosticsBundle';
 import UserManagement from '@/components/admin/UserManagement';
 import AccessKeyManager from '@/components/admin/AccessKeyManager';
 import CommsRoutingRules from '@/components/admin/CommsRoutingRules';
+import ChannelPackManager from '@/components/admin/ChannelPackManager';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -64,6 +66,7 @@ export default function Settings() {
     { id: 'users', label: 'Users', icon: Users },
     { id: 'keys', label: 'Keys', icon: Shield },
     { id: 'routing', label: 'Routing', icon: Target },
+    { id: 'packs', label: 'Comms Packs', icon: Radio },
     { id: 'validation', label: 'Data', icon: Database },
     { id: 'diagnostics', label: 'Diagnostics', icon: Zap },
     { id: 'seed', label: 'Seed', icon: Sparkles },
@@ -133,6 +136,7 @@ export default function Settings() {
                   {activeTab === 'users' && <UserManagement />}
                   {activeTab === 'keys' && <AccessKeyManager />}
                   {activeTab === 'routing' && <CommsRoutingRules />}
+                  {activeTab === 'packs' && <ChannelPackManager />}
                   {activeTab === 'validation' && <DataValidation />}
                 </div>
                 <div className="overflow-x-auto">
@@ -196,6 +200,20 @@ function OverviewTab({ user, setActiveTab }) {
         'Set target channels per tag',
         'Edit rule tags and destinations',
         'Fallback to default rules when schema missing',
+      ],
+    },
+    {
+      id: 'packs',
+      icon: Radio,
+      title: 'Channel Packs',
+      description: 'Auto-recommend channels by role/rank/squad',
+      status: 'BETA',
+      color: 'orange',
+      features: [
+        'Role-based channel recommendations',
+        'Rank and membership targeting',
+        'Squad pack support',
+        'Local fallback if schema missing',
       ],
     },
     {
