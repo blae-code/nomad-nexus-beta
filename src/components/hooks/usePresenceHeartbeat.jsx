@@ -36,10 +36,11 @@ export function usePresenceHeartbeat(config = {}) {
     clientIdRef.current = getOrCreateClientId();
 
     // Write presence immediately
-    const writePresenceImmediately = async () => {
+    const writePresenceImmediately = async (statusOverride = null) => {
       try {
         const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
           route: window.location.pathname,
+          ...(statusOverride ? { status: statusOverride } : {}),
           // activeNetId will be injected by VoiceNetProvider when connected
         });
         await presenceService.writePresence(presenceRecord);
@@ -94,6 +95,7 @@ export function usePresenceHeartbeat(config = {}) {
     // Visibility-aware pause/resume
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        writePresenceImmediately('idle');
         // Tab is hidden; pause heartbeat
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current);
@@ -101,7 +103,7 @@ export function usePresenceHeartbeat(config = {}) {
         }
       } else {
         // Tab is visible; resume heartbeat (write immediately + restart interval)
-        writePresenceImmediately();
+        writePresenceImmediately('online');
         startHeartbeat();
       }
     };

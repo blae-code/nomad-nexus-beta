@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 
 const TYPING_TIMEOUT = 3000; // 3 seconds
 const TYPING_DEBOUNCE = 500; // 0.5 seconds
@@ -11,7 +12,6 @@ export const useTypingIndicator = (channelId, userId) => {
   const [typingUsers, setTypingUsers] = useState([]);
   const typingTimeoutRef = useRef(null);
   const lastTypingSignalRef = useRef(0);
-  const presenceRecordIdRef = useRef(null);
 
   // Subscribe to typing events
   useEffect(() => {
@@ -53,33 +53,6 @@ export const useTypingIndicator = (channelId, userId) => {
     };
   }, [channelId, userId]);
 
-  const resolvePresenceRecordId = useCallback(async () => {
-    if (!userId) return null;
-    if (presenceRecordIdRef.current) return presenceRecordIdRef.current;
-
-    let records = [];
-    try {
-      records = await base44.entities.UserPresence.filter({ member_profile_id: userId });
-    } catch (error) {
-      records = [];
-    }
-
-    if (!records || records.length === 0) {
-      try {
-        records = await base44.entities.UserPresence.filter({ user_id: userId });
-      } catch (error) {
-        records = [];
-      }
-    }
-
-    if (records && records.length > 0) {
-      presenceRecordIdRef.current = records[0].id;
-      return records[0].id;
-    }
-
-    return null;
-  }, [userId]);
-
   // Signal that user is typing
   const signalTyping = useCallback(async () => {
     if (!channelId || !userId) return;
@@ -90,35 +63,23 @@ export const useTypingIndicator = (channelId, userId) => {
     lastTypingSignalRef.current = now;
 
     try {
-      let recordId = await resolvePresenceRecordId();
-      if (!recordId) {
-        const created = await base44.entities.UserPresence.create({
-          member_profile_id: userId,
-          typing_in_channel: channelId,
-          last_activity: new Date().toISOString(),
-        });
-        recordId = created?.id || null;
-        presenceRecordIdRef.current = recordId;
-      } else {
-        await base44.entities.UserPresence.update(recordId, {
-          typing_in_channel: channelId,
-          last_activity: new Date().toISOString(),
-        });
-      }
+      await invokeMemberFunction('updateUserPresence', {
+        status: 'online',
+        typingInChannel: channelId,
+      });
 
       // Clear typing indicator after timeout
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        if (presenceRecordIdRef.current) {
-          base44.entities.UserPresence.update(presenceRecordIdRef.current, {
-            typing_in_channel: null,
-          });
-        }
+        invokeMemberFunction('updateUserPresence', {
+          status: 'online',
+          typingInChannel: null,
+        }).catch(() => {});
       }, TYPING_TIMEOUT);
     } catch (error) {
       // Silently fail - typing indicators are non-critical
     }
-  }, [channelId, userId, resolvePresenceRecordId]);
+  }, [channelId, userId]);
 
   // Clear typing indicator
   const clearTyping = useCallback(async () => {
@@ -127,16 +88,14 @@ export const useTypingIndicator = (channelId, userId) => {
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     
     try {
-      const recordId = await resolvePresenceRecordId();
-      if (recordId) {
-        await base44.entities.UserPresence.update(recordId, {
-          typing_in_channel: null,
-        });
-      }
+      await invokeMemberFunction('updateUserPresence', {
+        status: 'online',
+        typingInChannel: null,
+      });
     } catch (error) {
       // Silently fail
     }
-  }, [userId, resolvePresenceRecordId]);
+  }, [userId]);
 
   return {
     typingUsers: typingUsers.map(u => u.user_id),

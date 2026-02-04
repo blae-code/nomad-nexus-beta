@@ -8,6 +8,7 @@ import { Hash, Users, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
+import * as presenceService from '@/components/services/presenceService';
 
 export default function DMChannelList({ 
   currentUserId, 
@@ -73,15 +74,9 @@ export default function DMChannelList({
   useEffect(() => {
     const loadOnlineStatus = async () => {
       try {
-        const allPresence = await base44.entities.UserPresence.list();
+        const allPresence = await presenceService.getOnlineUsers(5 * 60 * 1000);
         const online = new Set(
-          allPresence
-            .filter(p => {
-              const lastActivity = new Date(p.last_activity);
-              const now = new Date();
-              return (now - lastActivity) < 5 * 60 * 1000; // 5 minutes
-            })
-            .map(p => p.member_profile_id || p.user_id)
+          (allPresence || []).map((p) => p.member_profile_id || p.user_id)
         );
         setOnlineUsers(online);
       } catch (error) {

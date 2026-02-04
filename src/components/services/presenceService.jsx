@@ -4,6 +4,35 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
+
+const VALID_STATUS = new Set(['online', 'idle', 'in-call', 'transmitting', 'away', 'offline']);
+
+const normalizeStatus = (status) => {
+  if (!status) return 'online';
+  const value = status.toString().toLowerCase();
+  return VALID_STATUS.has(value) ? value : 'online';
+};
+
+const upsertMockPresence = (presenceRecord) => {
+  if (!presenceRecord?.userId) return null;
+  const existing = mockPresenceStore[presenceRecord.userId];
+  if (existing) {
+    mockPresenceStore[presenceRecord.userId] = {
+      ...existing,
+      ...presenceRecord,
+      lastSeenAt: new Date().toISOString(),
+    };
+  } else {
+    mockPresenceStore[presenceRecord.userId] = {
+      id: `presence_${presenceRecord.userId}_${Date.now()}`,
+      ...presenceRecord,
+      lastSeenAt: new Date().toISOString(),
+      created_date: new Date().toISOString(),
+    };
+  }
+  return mockPresenceStore[presenceRecord.userId];
+};
 
 /**
  * In-memory fallback store (for when Base44 entity not available)
@@ -18,26 +47,29 @@ let mockPresenceStore = {};
  */
 export async function writePresence(presenceRecord) {
   try {
-    // Try to use Base44 SDK if UserPresence entity exists
-    // For now, fall back to mock store (can be swapped later)
-    const existing = mockPresenceStore[presenceRecord.userId];
-    if (existing) {
-      // Simulate update
-      mockPresenceStore[presenceRecord.userId] = {
-        ...existing,
-        ...presenceRecord,
-        lastSeenAt: new Date().toISOString(),
-      };
-    } else {
-      // Simulate create
-      mockPresenceStore[presenceRecord.userId] = {
-        id: `presence_${presenceRecord.userId}_${Date.now()}`,
-        ...presenceRecord,
-        lastSeenAt: new Date().toISOString(),
-        created_date: new Date().toISOString(),
-      };
+    const status = normalizeStatus(presenceRecord?.status);
+    const payload = {
+      status,
+      netId: presenceRecord?.activeNetId,
+      eventId: presenceRecord?.eventId,
+      isTransmitting: !!presenceRecord?.isTransmitting,
+    };
+
+    if (Object.prototype.hasOwnProperty.call(presenceRecord || {}, 'typingInChannel')) {
+      payload.typingInChannel = presenceRecord.typingInChannel;
     }
-    return mockPresenceStore[presenceRecord.userId];
+
+    try {
+      const response = await invokeMemberFunction('updateUserPresence', payload);
+      const presence = response?.data?.presence;
+      if (presence) {
+        return presence;
+      }
+    } catch (error) {
+      console.debug('[presenceService] updateUserPresence failed:', error?.message);
+    }
+
+    return upsertMockPresence(presenceRecord);
   } catch (error) {
     console.error('[presenceService] writePresence failed:', error);
     throw error;
@@ -87,11 +119,50 @@ export async function getAllPresence() {
  */
 export async function getPresenceForUser(userId) {
   try {
-    return mockPresenceStore[userId] || null;
+    const map = await getPresenceForUsers([userId]);
+    return map[userId] || null;
   } catch (error) {
     console.error('[presenceService] getPresenceForUser failed:', error);
     throw error;
   }
+}
+
+/**
+ * Get presence map for specific users
+ * @param {string[]} memberProfileIds
+ * @returns {Promise<Record<string, any>>}
+ */
+export async function getPresenceForUsers(memberProfileIds = []) {
+  if (!memberProfileIds || memberProfileIds.length === 0) return {};
+  try {
+    const response = await invokeMemberFunction('getPresenceSnapshot', { memberProfileIds });
+    if (response?.data?.presenceById) {
+      return response.data.presenceById;
+    }
+  } catch (error) {
+    console.debug('[presenceService] getPresenceSnapshot failed:', error?.message);
+  }
+
+  const fallback = {};
+  await Promise.all(
+    memberProfileIds.map(async (id) => {
+      if (mockPresenceStore[id]) {
+        fallback[id] = mockPresenceStore[id];
+        return;
+      }
+      try {
+        let records = await base44.entities.UserPresence.filter({ member_profile_id: id });
+        if (!records || records.length === 0) {
+          records = await base44.entities.UserPresence.filter({ user_id: id });
+        }
+        if (records?.[0]) fallback[id] = records[0];
+      } catch (error) {
+        // ignore
+      }
+    })
+  );
+
+  return fallback;
 }
 
 /**
@@ -101,15 +172,24 @@ export async function getPresenceForUser(userId) {
  */
 export async function getOnlineUsers(recencyWindowMs = 90000) {
   try {
+    const response = await invokeMemberFunction('getOnlinePresence', { recencyWindowMs });
+    if (response?.data?.presence) {
+      return response.data.presence;
+    }
+  } catch (error) {
+    console.error('[presenceService] getOnlineUsers failed:', error);
+  }
+  try {
     const all = await getAllPresence();
     const now = Date.now();
     return all.filter((record) => {
-      if (!record.lastSeenAt) return false;
-      const lastSeen = new Date(record.lastSeenAt).getTime();
+      const lastSeenAt = record.last_activity || record.lastSeenAt;
+      if (!lastSeenAt) return false;
+      const lastSeen = new Date(lastSeenAt).getTime();
       return now - lastSeen <= recencyWindowMs;
     });
   } catch (error) {
-    console.error('[presenceService] getOnlineUsers failed:', error);
+    console.error('[presenceService] getOnlineUsers fallback failed:', error);
     return [];
   }
 }
@@ -153,6 +233,7 @@ export default {
   queryPresence,
   getAllPresence,
   getPresenceForUser,
+  getPresenceForUsers,
   getOnlineUsers,
   cleanupOfflineRecords,
   resetPresenceStore,

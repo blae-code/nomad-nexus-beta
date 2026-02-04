@@ -4,15 +4,15 @@
  */
 
 export const PRESENCE_STATUS = {
-  ONLINE: 'ONLINE',
-  AWAY: 'AWAY',
-  OFFLINE: 'OFFLINE',
+  ONLINE: 'online',
+  AWAY: 'away',
+  OFFLINE: 'offline',
 };
 
 /**
  * Presence record shape (minimum fields)
  * @typedef {Object} PresenceRecord
- * @property {string} userId - User ID from auth
+ * @property {string} userId - Member profile ID from auth
  * @property {string} callsign - Display callsign
  * @property {string} rank - Rank label (e.g., SCOUT, VAGRANT)
  * @property {string} membership - Membership tier

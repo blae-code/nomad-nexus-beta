@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import * as presenceService from '@/components/services/presenceService';
 
 /**
  * Hook to fetch and format last seen timestamps for users
@@ -17,34 +17,17 @@ export const useLastSeen = (userIds) => {
 
     const fetchLastSeen = async () => {
       try {
-        const presenceRecords = await Promise.all(
-          userIds.map(async (uid) => {
-            let records = [];
-            try {
-              records = await base44.entities.UserPresence.filter({ member_profile_id: uid });
-            } catch (error) {
-              records = [];
-            }
-
-            if (!records || records.length === 0) {
-              try {
-                records = await base44.entities.UserPresence.filter({ user_id: uid });
-              } catch (error) {
-                records = [];
-              }
-            }
-
-            return records[0];
-          })
-        );
+        const presenceMap = await presenceService.getPresenceForUsers(userIds);
 
         const map = {};
-        presenceRecords.forEach((record, idx) => {
-          if (record?.last_activity) {
-            map[userIds[idx]] = {
-              timestamp: record.last_activity,
-              formatted: formatLastSeen(record.last_activity),
-              isOnline: isRecentlyActive(record.last_activity),
+        userIds.forEach((uid) => {
+          const record = presenceMap?.[uid];
+          const lastActivity = record?.last_activity || record?.lastSeenAt;
+          if (lastActivity) {
+            map[uid] = {
+              timestamp: lastActivity,
+              formatted: formatLastSeen(lastActivity),
+              isOnline: isRecentlyActive(lastActivity),
             };
           }
         });
