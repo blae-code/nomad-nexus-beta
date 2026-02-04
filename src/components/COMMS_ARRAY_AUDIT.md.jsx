@@ -71,7 +71,7 @@ The Comms Array module has evolved from a 70% complete foundation to an 85% prod
 - ✅ **Export History** — Download channel history (JSON/CSV)
 - ✅ **Slow Mode Enforcement** — Respect channel slow mode timers
 - ✅ **Read-Only Channels** — Composer gating for read-only channels
-- ✅ **Link Previews** — On-demand rich previews for URLs
+- ✅ **Link Previews** — Auto previews with caching + manual toggle
 - ✅ **Message Composer** — Rich text toolbar, attachment upload
 - ✅ **Responsive Design** — Mobile-friendly collapsible dock
 - ✅ **Keyboard Shortcuts** — Enter to send, Shift+Enter for newline

@@ -113,6 +113,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [exporting, setExporting] = useState(false);
   const [showCommandHelp, setShowCommandHelp] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [autoLinkPreview, setAutoLinkPreview] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nexus.comms.autoLinkPreview');
+      return stored !== 'false';
+    } catch {
+      return true;
+    }
+  });
   const [muteInfo, setMuteInfo] = useState(null);
   const [muteRemaining, setMuteRemaining] = useState(null);
   const [lastSentAt, setLastSentAt] = useState(null);
@@ -193,6 +201,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       // ignore storage errors
     }
   }, [dndEnabled]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nexus.comms.autoLinkPreview', autoLinkPreview ? 'true' : 'false');
+    } catch {
+      // ignore storage errors
+    }
+  }, [autoLinkPreview]);
 
   useEffect(() => {
     if (!slowModeKey) {
@@ -1275,6 +1291,7 @@ Provide a helpful, concise response with tactical awareness.`,
                             presenceRecord={presenceMap[msg.user_id]}
                             authorLabel={memberMap[msg.user_id]?.label}
                             memberProfile={memberMap[msg.user_id]?.profile}
+                            autoLinkPreview={autoLinkPreview}
                             onEdit={() => {
                               // Refresh messages after edit
                               const loadMessages = async () => {
@@ -1402,6 +1419,7 @@ Provide a helpful, concise response with tactical awareness.`,
                   isAdmin={isAdmin}
                   composerDisabled={composerDisabled}
                   composerDisabledReason={composerDisabledReason}
+                  autoLinkPreview={autoLinkPreview}
                 />
                 )}
                 </div>
@@ -1588,6 +1606,8 @@ Provide a helpful, concise response with tactical awareness.`,
         isOpen={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
         userId={user?.id}
+        autoLinkPreview={autoLinkPreview}
+        onToggleAutoLinkPreview={setAutoLinkPreview}
       />
 
       <CommsTemplateDialog

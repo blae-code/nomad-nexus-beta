@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 
-export default function ChannelNotificationSettings({ channel, isOpen, onClose, userId }) {
+export default function ChannelNotificationSettings({ channel, isOpen, onClose, userId, autoLinkPreview = true, onToggleAutoLinkPreview }) {
   const [settings, setSettings] = useState({
     muted: false,
     desktop_notifications: true,
@@ -138,7 +138,7 @@ export default function ChannelNotificationSettings({ channel, isOpen, onClose, 
             />
           </div>
 
-          {!settings.muted && (
+      {!settings.muted && (
             <>
               <div className="flex items-center justify-between">
                 <div>
@@ -177,6 +177,17 @@ export default function ChannelNotificationSettings({ channel, isOpen, onClose, 
                 <Switch
                   checked={settings.mentions_only}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, mentions_only: checked }))}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">Auto Link Previews</div>
+                  <div className="text-xs text-zinc-500">Show previews automatically</div>
+                </div>
+                <Switch
+                  checked={autoLinkPreview}
+                  onCheckedChange={(checked) => onToggleAutoLinkPreview?.(checked)}
                 />
               </div>
             </>

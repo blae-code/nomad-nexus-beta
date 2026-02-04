@@ -283,11 +283,11 @@
 - [ ] Add optional transcription via `Core.InvokeLLM()`
 
 ### Link Previews
-- [ ] Detect URLs in message content
-- [ ] Fetch URL metadata (title, description, image)
-- [ ] Display rich link preview cards
-- [ ] Cache previews to avoid re-fetching
-- [ ] Add option to disable previews per message
+- [x] Detect URLs in message content
+- [x] Fetch URL metadata (title, description, image)
+- [x] Display rich link preview cards
+- [x] Cache previews to avoid re-fetching
+- [x] Add option to disable previews per message (auto toggle)
 
 ### Code Block Syntax Highlighting
 - [ ] Detect code blocks in markdown (triple backticks)

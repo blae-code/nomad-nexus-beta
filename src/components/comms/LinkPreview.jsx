@@ -6,13 +6,53 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ExternalLink, Loader2 } from 'lucide-react';
 
-export default function LinkPreview({ url, onClose }) {
+const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
+const memoryCache = new Map();
+
+const getCacheKey = (url) => `nexus.linkpreview.${encodeURIComponent(url)}`;
+
+const loadCachedPreview = (url) => {
+  const cached = memoryCache.get(url);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return cached.data;
+  }
+  try {
+    const raw = localStorage.getItem(getCacheKey(url));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.data || !parsed?.at) return null;
+    if (Date.now() - parsed.at > CACHE_TTL_MS) return null;
+    memoryCache.set(url, parsed);
+    return parsed.data;
+  } catch {
+    return null;
+  }
+};
+
+const saveCachedPreview = (url, data) => {
+  const entry = { data, at: Date.now() };
+  memoryCache.set(url, entry);
+  try {
+    localStorage.setItem(getCacheKey(url), JSON.stringify(entry));
+  } catch {
+    // ignore cache errors
+  }
+};
+
+export default function LinkPreview({ url }) {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPreview = async () => {
       try {
+        const cached = loadCachedPreview(url);
+        if (cached) {
+          setPreview(cached);
+          setLoading(false);
+          return;
+        }
+
         const response = await base44.integrations.Core.InvokeLLM({
           prompt: `Extract metadata from this URL and return structured data: ${url}
 
@@ -30,6 +70,7 @@ Return JSON with: title, description, image, domain`,
         });
 
         setPreview(response);
+        if (response) saveCachedPreview(url, response);
       } catch (error) {
         console.error('Failed to fetch preview:', error);
       } finally {

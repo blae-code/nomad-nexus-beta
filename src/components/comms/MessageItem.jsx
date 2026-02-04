@@ -74,6 +74,7 @@ export default function MessageItem({
   lastSeen,
   presenceRecord,
   memberProfile,
+  autoLinkPreview = true,
   authorLabel,
   onEdit,
   onDelete,
@@ -109,6 +110,7 @@ export default function MessageItem({
     return matches ? Array.from(new Set(matches)) : [];
   }, [message?.content]);
   const primaryLink = linkUrls[0] || null;
+  const shouldShowPreview = autoLinkPreview || showLinkPreview;
 
   const canEdit = currentUserId === message.user_id;
   const canDelete = isAdmin || currentUserId === message.user_id;
@@ -356,7 +358,7 @@ export default function MessageItem({
           {/* Link Preview */}
           {primaryLink && (
             <div className="mt-2">
-              {!showLinkPreview ? (
+              {!shouldShowPreview ? (
                 <button
                   onClick={() => setShowLinkPreview(true)}
                   className="text-[10px] text-orange-400 hover:text-orange-300 flex items-center gap-1"

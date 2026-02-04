@@ -155,7 +155,7 @@ export const MODULE_STATUS = {
   },
   CommsConsole: {
     name: 'Comms Array',
-    completed: 94,
+    completed: 95,
     features: [
       { name: 'Channel Management', status: 'complete' },
       { name: 'Message System', status: 'complete' },
@@ -181,7 +181,7 @@ export const MODULE_STATUS = {
       { name: 'Desktop Notifications', status: 'complete' },
       { name: 'Message Drafts', status: 'complete' },
       { name: 'Emoji Picker', status: 'complete' },
-      { name: 'Link Previews (manual)', status: 'in-progress' },
+      { name: 'Link Previews', status: 'complete' },
       { name: 'Read Receipts', status: 'planned' },
       { name: 'Command System', status: 'complete' },
       { name: 'Structured Templates', status: 'complete' },
