@@ -9,6 +9,7 @@ import { base44 } from '@/api/base44Client';
 import MessageItem from './MessageItem';
 import MessageComposer from './MessageComposer';
 import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
+import { usePresenceMap } from '@/components/hooks/usePresenceMap';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { getThreadSubscription, setThreadSubscription } from '@/components/services/threadSubscriptionService';
@@ -23,8 +24,14 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
   const fallbackMemberMap = React.useMemo(() => {
     if (!currentUser?.id) return {};
     const label = currentUser.callsign || currentUser.full_name || currentUser.email || 'System Admin';
-    return { [currentUser.id]: { label } };
-  }, [currentUser?.id, currentUser?.callsign, currentUser?.full_name, currentUser?.email]);
+    const profile = {
+      ...currentUser,
+      rank: currentUser.rank,
+      membership: currentUser.membership,
+      roles: currentUser.roles,
+    };
+    return { [currentUser.id]: { label, profile } };
+  }, [currentUser?.id, currentUser?.callsign, currentUser?.full_name, currentUser?.email, currentUser?.rank, currentUser?.membership, currentUser?.roles]);
   const threadUserIds = React.useMemo(() => {
     const ids = new Set();
     if (parentMessage?.user_id) ids.add(parentMessage.user_id);
@@ -34,6 +41,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
     return Array.from(ids);
   }, [parentMessage?.id, parentMessage?.user_id, replies]);
   const { memberMap } = useMemberProfileMap(threadUserIds, { fallbackMap: fallbackMemberMap });
+  const { presenceMap, lastSeenMap } = usePresenceMap(threadUserIds);
 
   useEffect(() => {
     if (!parentMessage) return;
@@ -162,6 +170,9 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
           currentUserId={currentUserId}
           isAdmin={isAdmin}
           authorLabel={memberMap[parentMessage?.user_id]?.label}
+          memberProfile={memberMap[parentMessage?.user_id]?.profile}
+          presenceRecord={presenceMap[parentMessage?.user_id]}
+          lastSeen={lastSeenMap[parentMessage?.user_id]}
           onEdit={() => {}}
           onDelete={() => {}}
         />
@@ -188,6 +199,9 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
                 currentUserId={currentUserId}
                 isAdmin={isAdmin}
                 authorLabel={memberMap[reply.user_id]?.label}
+                memberProfile={memberMap[reply.user_id]?.profile}
+                presenceRecord={presenceMap[reply.user_id]}
+                lastSeen={lastSeenMap[reply.user_id]}
                 onEdit={() => {
                   // Refresh replies after edit
                   const loadReplies = async () => {

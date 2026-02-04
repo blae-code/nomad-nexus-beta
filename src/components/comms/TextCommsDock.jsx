@@ -18,7 +18,7 @@ import { invokeMemberFunction } from '@/api/memberFunctions';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 import { useTypingIndicator } from '@/components/hooks/useTypingIndicator';
 import TypingIndicator from '@/components/comms/TypingIndicator';
-import { useLastSeen } from '@/components/hooks/useLastSeen';
+import { usePresenceMap } from '@/components/hooks/usePresenceMap';
 import MessageItem from '@/components/comms/MessageItem';
 import MessageComposer from '@/components/comms/MessageComposer';
 import ThreadPanel from '@/components/comms/ThreadPanel';
@@ -62,13 +62,22 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const { unreadByChannel, unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
   const { typingUsers, signalTyping, clearTyping } = useTypingIndicator(selectedChannelId, user?.id);
-  const messageUserIds = [...new Set(messages.map(m => m.user_id))];
-  const { lastSeenMap } = useLastSeen(messageUserIds);
+  const messageUserIds = React.useMemo(
+    () => Array.from(new Set(messages.map((m) => m.user_id).filter(Boolean))),
+    [messages]
+  );
+  const { presenceMap, lastSeenMap } = usePresenceMap(messageUserIds);
   const fallbackMemberMap = React.useMemo(() => {
     if (!user?.id) return {};
     const label = user.callsign || user.full_name || user.email || 'System Admin';
-    return { [user.id]: { label } };
-  }, [user?.id, user?.callsign, user?.full_name, user?.email]);
+    const profile = {
+      ...user,
+      rank: user.rank,
+      membership: user.membership,
+      roles: user.roles,
+    };
+    return { [user.id]: { label, profile } };
+  }, [user?.id, user?.callsign, user?.full_name, user?.email, user?.rank, user?.membership, user?.roles]);
   const { memberMap } = useMemberProfileMap(messageUserIds, { fallbackMap: fallbackMemberMap });
 
   // Load channels
@@ -632,7 +641,9 @@ Provide a helpful, concise response with tactical awareness.`,
                             currentUserId={user?.id}
                             isAdmin={isAdmin}
                             lastSeen={lastSeen}
+                            presenceRecord={presenceMap[msg.user_id]}
                             authorLabel={memberMap[msg.user_id]?.label}
+                            memberProfile={memberMap[msg.user_id]?.profile}
                             onEdit={() => {
                               // Refresh messages after edit
                               const loadMessages = async () => {

@@ -26,6 +26,7 @@ import DataValidation from '@/components/admin/DataValidation';
 import DiagnosticsBundle from '@/components/admin/DiagnosticsBundle';
 import UserManagement from '@/components/admin/UserManagement';
 import AccessKeyManager from '@/components/admin/AccessKeyManager';
+import CommsRoutingRules from '@/components/admin/CommsRoutingRules';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -62,6 +63,7 @@ export default function Settings() {
     { id: 'overview', label: 'Overview', icon: Users },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'keys', label: 'Keys', icon: Shield },
+    { id: 'routing', label: 'Routing', icon: Target },
     { id: 'validation', label: 'Data', icon: Database },
     { id: 'diagnostics', label: 'Diagnostics', icon: Zap },
     { id: 'seed', label: 'Seed', icon: Sparkles },
@@ -130,6 +132,7 @@ export default function Settings() {
                 <div className="overflow-x-auto">
                   {activeTab === 'users' && <UserManagement />}
                   {activeTab === 'keys' && <AccessKeyManager />}
+                  {activeTab === 'routing' && <CommsRoutingRules />}
                   {activeTab === 'validation' && <DataValidation />}
                 </div>
                 <div className="overflow-x-auto">
@@ -179,6 +182,20 @@ function OverviewTab({ user, setActiveTab }) {
         'Copy formatted messages for Discord',
         'Revoke keys (admins & pioneers)',
         'Track redemption status',
+      ],
+    },
+    {
+      id: 'routing',
+      icon: Target,
+      title: 'Comms Routing',
+      description: 'Manage #tag auto-routing rules',
+      status: 'BETA',
+      color: 'orange',
+      features: [
+        'Route #ops, #intel, #logi automatically',
+        'Set target channels per tag',
+        'Edit rule tags and destinations',
+        'Fallback to default rules when schema missing',
       ],
     },
     {

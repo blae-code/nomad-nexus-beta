@@ -11,16 +11,16 @@ This list tracks all future‑facing features discussed and where they stand. It
   Status: Implemented with preference cache.
 - [x] **Presence heartbeat** — member‑auth function + online roster  
   Status: Implemented (`updateUserPresence`, `getOnlinePresence`, `getPresenceSnapshot`).
-- [ ] **Presence context cards** — hover card showing active net/op + last seen  
-  Status: Partially implemented (last seen in messages); needs UI component + data wiring.
+- [x] **Presence context cards** — hover card showing active net/op + last seen  
+  Status: Implemented on message headers with presence + profile data.
 - [x] **Thread follow** — follow/unfollow in thread panel  
   Status: Implemented with localStorage fallback + optional entity.
 - [x] **Thread reply notifications** — notify parent + followers  
   Status: Implemented via `processThreadReplyNotifications`.
 - [x] **Channel routing rules** — `#ops`/`#intel` auto‑route  
   Status: Implemented via `routeChannelMessage` with safe defaults.
-- [ ] **Channel routing admin UI** — manage routing rules in System Admin  
-  Status: **[BLOCKED]** (requires `ChannelRoutingRule` entity & UI).
+- [x] **Channel routing admin UI** — manage routing rules in System Admin  
+  Status: Implemented with safe fallback; editing enabled when `ChannelRoutingRule` exists.
 
 ## Ops & Events
 - [ ] **Op timeline** — structured log with pinned comms  
@@ -61,7 +61,7 @@ This list tracks all future‑facing features discussed and where they stand. It
 ---
 ## Schema/Config Dependencies (Base44)
 These entities or configs should be added in Base44 to fully unlock features:
-- `ChannelRoutingRule` (tag, target_channel_names[])
+- `ChannelRoutingRule` (tag, target_channel_names[]) — optional; unlocks routing admin edits
 - `ThreadSubscription` (thread_message_id, user_id/member_profile_id, is_following)
 - `OperationLog` (event_id, actor_id, type, content, created_at)
 - `EventChecklist` (event_id, items[])

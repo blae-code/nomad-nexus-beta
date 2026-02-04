@@ -12,17 +12,43 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
 import MessageTranslator from '@/components/comms/MessageTranslator';
+import { getMembershipLabel, getRankLabel, getRoleLabel } from '@/components/constants/labels';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '👀', '🔥', '✅', '❌'];
+const STATUS_META = {
+  online: { label: 'Online', className: 'text-green-400 bg-green-500/10 border-green-500/30' },
+  idle: { label: 'Idle', className: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' },
+  'in-call': { label: 'In Call', className: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' },
+  transmitting: { label: 'Transmitting', className: 'text-orange-400 bg-orange-500/10 border-orange-500/30' },
+  away: { label: 'Away', className: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+  offline: { label: 'Offline', className: 'text-zinc-500 bg-zinc-800/60 border-zinc-700' },
+};
+
+const normalizeStatus = (status) => {
+  if (!status) return null;
+  const value = status.toString().toLowerCase();
+  return STATUS_META[value] ? value : null;
+};
+
+const deriveStatusKey = (presenceRecord, lastSeen) => {
+  if (presenceRecord?.is_transmitting) return 'transmitting';
+  const normalized = normalizeStatus(presenceRecord?.status);
+  if (normalized) return normalized;
+  if (lastSeen?.isOnline) return 'online';
+  return 'offline';
+};
 
 export default function MessageItem({ 
   message, 
   currentUserId, 
   isAdmin, 
   lastSeen,
+  presenceRecord,
+  memberProfile,
   authorLabel,
   onEdit,
   onDelete,
@@ -33,6 +59,22 @@ export default function MessageItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const displayLabel = authorLabel || message.author_callsign || message.display_callsign || message.user_id;
+  const profile = memberProfile || {};
+  const normalizedRank = profile.rank ? profile.rank.toString().toUpperCase() : null;
+  const normalizedMembership = profile.membership ? profile.membership.toString().toUpperCase() : null;
+  const roles = Array.isArray(profile.roles) ? profile.roles : [];
+  const statusKey = deriveStatusKey(presenceRecord, lastSeen);
+  const statusMeta = STATUS_META[statusKey] || STATUS_META.offline;
+  const hasHoverData = Boolean(
+    presenceRecord ||
+    lastSeen?.formatted ||
+    normalizedRank ||
+    normalizedMembership ||
+    roles.length > 0
+  );
+  const netLabel = presenceRecord?.current_net?.label || presenceRecord?.current_net?.code || null;
+  const typingChannel = presenceRecord?.typing_in_channel || null;
 
   const canEdit = currentUserId === message.user_id;
   const canDelete = isAdmin || currentUserId === message.user_id;
@@ -108,12 +150,77 @@ export default function MessageItem({
         <div className="flex-1 min-w-0">
           {/* Message Header */}
           <div className="flex items-center gap-2 text-[10px] mb-1">
-            {lastSeen?.isOnline && (
+            {statusKey !== 'offline' && (
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" title="Online now" />
             )}
-            <span className="font-semibold text-zinc-400 truncate">
-              {authorLabel || message.author_callsign || message.display_callsign || message.user_id}
-            </span>
+            {hasHoverData ? (
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <button
+                    type="button"
+                    className="font-semibold text-zinc-400 truncate hover:text-orange-300 transition-colors"
+                  >
+                    {displayLabel}
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent
+                  align="start"
+                  className="w-64 bg-zinc-950 border border-orange-500/30 shadow-xl"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs font-semibold text-zinc-100 truncate">{displayLabel}</div>
+                      <span className={`text-[9px] uppercase px-2 py-0.5 rounded border ${statusMeta.className}`}>
+                        {statusMeta.label}
+                      </span>
+                    </div>
+                    {(normalizedRank || normalizedMembership) && (
+                      <div className="flex flex-wrap gap-1">
+                        {normalizedRank && (
+                          <span className="text-[9px] uppercase px-2 py-0.5 rounded border border-zinc-700 text-zinc-300 bg-zinc-900/50">
+                            {getRankLabel(normalizedRank)}
+                          </span>
+                        )}
+                        {normalizedMembership && (
+                          <span className="text-[9px] uppercase px-2 py-0.5 rounded border border-orange-500/30 text-orange-300 bg-orange-500/10">
+                            {getMembershipLabel(normalizedMembership)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {roles.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {roles.map((role, idx) => (
+                          <span
+                            key={`${role}-${idx}`}
+                            className="text-[9px] uppercase px-2 py-0.5 rounded border border-zinc-700 text-zinc-400 bg-zinc-900/50"
+                          >
+                            {getRoleLabel(role.toString().toUpperCase())}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {netLabel && (
+                      <div className="text-[10px] text-zinc-400">
+                        Net: <span className="text-zinc-200">{netLabel}</span>
+                      </div>
+                    )}
+                    {typingChannel && (
+                      <div className="text-[10px] text-orange-300">
+                        Typing in <span className="text-zinc-200">{typingChannel}</span>
+                      </div>
+                    )}
+                    {lastSeen?.formatted && (
+                      <div className="text-[10px] text-zinc-500">
+                        Last seen: <span className="text-zinc-300">{lastSeen.formatted}</span>
+                      </div>
+                    )}
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            ) : (
+              <span className="font-semibold text-zinc-400 truncate">{displayLabel}</span>
+            )}
             <span className="text-zinc-600 flex-shrink-0">•</span>
             <span className="text-zinc-600 flex-shrink-0">
               {new Date(message.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
