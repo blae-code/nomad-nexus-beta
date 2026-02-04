@@ -116,6 +116,9 @@ export function VoiceNetProvider({ children }) {
     setError(null);
 
     try {
+      let shouldUseLiveKit = false;
+      let liveKitPayload = null;
+
       // Try to mint LiveKit token; fallback to mock if unavailable
       try {
         const tokenResp = await invokeMemberFunction('mintVoiceToken', {
@@ -126,25 +129,26 @@ export function VoiceNetProvider({ children }) {
           netType: net.type,
         });
 
-        if (tokenResp.data.error === 'VOICE_NOT_CONFIGURED') {
-          // Use mock transport
-          setUseRealTransport(false);
-        } else if (tokenResp.data.token && tokenResp.data.url) {
-          // Use LiveKit
+        if (tokenResp?.data?.error === 'VOICE_NOT_CONFIGURED') {
+          shouldUseLiveKit = false;
+        } else if (tokenResp?.data?.token && tokenResp?.data?.url) {
+          liveKitPayload = tokenResp.data;
           liveKitTokenRef.current = tokenResp.data;
           transportRef.current = new LiveKitTransport();
-          setUseRealTransport(true);
+          shouldUseLiveKit = true;
         }
       } catch (tokenErr) {
         console.warn('Token mint failed; using mock:', tokenErr);
-        setUseRealTransport(false);
+        shouldUseLiveKit = false;
       }
 
+      setUseRealTransport(shouldUseLiveKit);
+
       // Connect transport
-      const connectOptions = useRealTransport && liveKitTokenRef.current
+      const connectOptions = shouldUseLiveKit && liveKitPayload
         ? {
-            token: liveKitTokenRef.current.token,
-            url: liveKitTokenRef.current.url,
+            token: liveKitPayload.token,
+            url: liveKitPayload.url,
             netId,
             user,
           }

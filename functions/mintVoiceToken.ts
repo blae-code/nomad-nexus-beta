@@ -1,5 +1,5 @@
 import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
-import { SignJWT } from 'npm:jose@5.0.0';
+import { AccessToken } from 'npm:livekit@2.0.0';
 
 /**
  * Mint LiveKit access tokens for voice net sessions.
@@ -44,6 +44,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    const envMode = (Deno.env.get('NODE_ENV') || Deno.env.get('DENO_ENV') || '')?.toLowerCase();
+    const isDev = !envMode || envMode === 'development';
+
     // Check env vars
     const liveKitUrl = Deno.env.get('LIVEKIT_URL');
     const liveKitApiKey = Deno.env.get('LIVEKIT_API_KEY');
@@ -60,36 +63,53 @@ Deno.serve(async (req) => {
       );
     }
 
+    let normalizedUrl = liveKitUrl.trim();
+    if (!isDev && (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('ws://'))) {
+      return Response.json(
+        {
+          error: 'INSECURE_LIVEKIT_URL',
+          message: 'Insecure LiveKit URL blocked',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `wss://${normalizedUrl.slice(8)}`;
+    } else if (normalizedUrl.startsWith('http://')) {
+      normalizedUrl = `ws://${normalizedUrl.slice(7)}`;
+    } else if (!normalizedUrl.startsWith('wss://') && !normalizedUrl.startsWith('ws://')) {
+      normalizedUrl = `${isDev ? 'ws' : 'wss'}://${normalizedUrl}`;
+    }
+
     // Generate room name from netId (deterministic)
     const roomName = `nexus-net-${netId}`;
 
-    // Generate JWT token via JOSE
-    const token = await new SignJWT({
-      sub: userId,
-      iss: liveKitApiKey,
-      nbf: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
-      video: {
-        canPublish: false,
-        canPublishData: true,
-        canSubscribe: true,
-      },
-      audio: {
-        canPublish: true,
-        canSubscribe: true,
-      },
-      metadata: JSON.stringify({
-        callsign: callsign || memberProfile?.display_callsign || memberProfile?.callsign || adminUser?.full_name || 'Unknown',
-        clientId: clientId || '',
-        netId: netId,
-      }),
-    })
-      .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
-      .sign(new TextEncoder().encode(liveKitApiSecret));
+    const token = new AccessToken(liveKitApiKey, liveKitApiSecret);
+    token.identity = userId;
+    token.name =
+      callsign ||
+      memberProfile?.display_callsign ||
+      memberProfile?.callsign ||
+      adminUser?.full_name ||
+      'Unknown';
+    token.metadata = JSON.stringify({
+      callsign: callsign || memberProfile?.display_callsign || memberProfile?.callsign || adminUser?.full_name || 'Unknown',
+      clientId: clientId || '',
+      netId: netId,
+    });
+
+    token.addGrant({
+      room: roomName,
+      roomJoin: true,
+      canPublish: true,
+      canPublishData: true,
+      canSubscribe: true,
+    });
 
     return Response.json({
-      url: liveKitUrl,
-      token,
+      url: normalizedUrl,
+      token: token.toJwt(),
       roomName,
     });
   } catch (error) {
