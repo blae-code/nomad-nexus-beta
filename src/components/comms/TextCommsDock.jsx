@@ -14,6 +14,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { isAdminUser } from '@/utils';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 import { useTypingIndicator } from '@/components/hooks/useTypingIndicator';
 import TypingIndicator from '@/components/comms/TypingIndicator';
@@ -134,6 +135,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       await base44.entities.Channel.update(selectedChannelId, {
         last_message_at: new Date().toISOString(),
       });
+
+      if (newMsg?.id && typeof messageInput === 'string' && messageInput.includes('@')) {
+        invokeMemberFunction('processMessageMentions', {
+          messageId: newMsg.id,
+          channelId: selectedChannelId,
+          content: messageInput,
+        }).catch(() => {});
+      }
 
       setMessages((prev) => [...prev, newMsg]);
       setMessageInput('');
@@ -577,7 +586,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                     userId={user?.id}
                     onSendMessage={async (messageData) => {
                       try {
-                        await base44.entities.Message.create(messageData);
+                        const newMsg = await base44.entities.Message.create(messageData);
+                        if (newMsg?.id && messageData?.content && messageData.content.includes('@')) {
+                          invokeMemberFunction('processMessageMentions', {
+                            messageId: newMsg.id,
+                            channelId: selectedChannelId,
+                            content: messageData.content,
+                          }).catch(() => {});
+                        }
                         clearTyping();
                         refreshUnreadCounts();
                       } catch (error) {

@@ -10,6 +10,7 @@ import MessageItem from './MessageItem';
 import MessageComposer from './MessageComposer';
 import { useMemberProfileMap } from '@/components/hooks/useMemberProfileMap';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 
 export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin }) {
   const [replies, setReplies] = useState([]);
@@ -73,10 +74,18 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
   const handleSendReply = async (messageData) => {
     try {
       // Create reply with parent reference
-      await base44.entities.Message.create({
+      const newReply = await base44.entities.Message.create({
         ...messageData,
         parent_message_id: parentMessage.id,
       });
+
+      if (newReply?.id && messageData?.content && messageData.content.includes('@')) {
+        invokeMemberFunction('processMessageMentions', {
+          messageId: newReply.id,
+          channelId: parentMessage.channel_id,
+          content: messageData.content,
+        }).catch(() => {});
+      }
 
       // Update parent message thread count and participants
       const updatedParticipants = Array.from(

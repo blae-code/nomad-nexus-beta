@@ -14,6 +14,7 @@ import VoiceNetBrowser from '@/components/voice/VoiceNetBrowser';
 import ChannelManager from '@/components/comms/ChannelManager';
 import SpeechSettings from '@/components/comms/SpeechSettings';
 import { getSpeechEngine } from '@/components/comms/SpeechEngine';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 
 export default function CommsConsole() {
   const [loading, setLoading] = useState(true);
@@ -91,11 +92,19 @@ export default function CommsConsole() {
       alert('You must be authenticated to send messages.');
       return;
     }
-    await base44.entities.Message.create({
+    const newMsg = await base44.entities.Message.create({
       channel_id: selectedChannel.id,
       user_id: currentUserId,
       content: newMessage.trim(),
     });
+
+    if (newMsg?.id && newMessage.includes('@')) {
+      invokeMemberFunction('processMessageMentions', {
+        messageId: newMsg.id,
+        channelId: selectedChannel.id,
+        content: newMessage.trim(),
+      }).catch(() => {});
+    }
     
     setNewMessage('');
     loadMessages(selectedChannel.id);
