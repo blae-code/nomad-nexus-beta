@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
         uses_count: 0,
         grants_rank: 'VAGRANT',
         grants_roles: [],
+        grants_membership: 'VAGRANT',
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         redeemed_by_member_profile_ids: []
       },
@@ -29,6 +30,7 @@ Deno.serve(async (req) => {
         uses_count: 0,
         grants_rank: 'PILOT',
         grants_roles: [],
+        grants_membership: 'MEMBER',
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         redeemed_by_member_profile_ids: []
       }

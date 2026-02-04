@@ -3,6 +3,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 // In-memory rate limiter (5 min lockout after 10 failures)
 const failureMap = new Map();
 
+function getDefaultMembershipForRank(rank) {
+  const normalized = (rank || '').toString().toUpperCase();
+  switch (normalized) {
+    case 'SCOUT':
+      return 'MEMBER';
+    case 'VOYAGER':
+      return 'AFFILIATE';
+    case 'FOUNDER':
+    case 'PIONEER':
+      return 'PARTNER';
+    case 'VAGRANT':
+      return 'VAGRANT';
+    default:
+      return 'GUEST';
+  }
+}
+
 function checkRateLimit(userId) {
   const key = `${userId}:redeem`;
   const record = failureMap.get(key);
@@ -124,6 +141,17 @@ Deno.serve(async (req) => {
 
      // If existing profile found, allow login and associate with key if needed
      if (existingProfile) {
+       const desiredMembership = key.grants_membership || getDefaultMembershipForRank(existingProfile.rank || key.grants_rank);
+       const normalizedMembership = desiredMembership ? desiredMembership.toString().toUpperCase() : null;
+       if (!existingProfile.membership && normalizedMembership) {
+         try {
+           await base44.asServiceRole.entities.MemberProfile.update(existingProfile.id, {
+             membership: normalizedMembership
+           });
+         } catch (updateErr) {
+           console.warn('Failed to backfill membership:', updateErr?.message);
+         }
+       }
        const alreadyAssociated = key.redeemed_by_member_profile_ids?.includes(existingProfile.id);
        
        // If not already associated, add profile to key's redeemed list
@@ -172,14 +200,16 @@ Deno.serve(async (req) => {
      try {
        // If key grants admin/Pioneer rank, mark onboarding complete automatically
        const isAdmin = key.grants_rank === 'Pioneer' || key.grants_roles?.includes('admin');
-       newMemberProfile = await base44.asServiceRole.entities.MemberProfile.create({
-         callsign: callsign.trim(),
-         rank: key.grants_rank || 'VAGRANT',
-         roles: key.grants_roles || [],
-         onboarding_completed: isAdmin,
-         accepted_pwa_disclaimer_at: isAdmin ? new Date().toISOString() : null,
-         accepted_codes_at: isAdmin ? new Date().toISOString() : null
-       });
+       const membership = (key.grants_membership || getDefaultMembershipForRank(key.grants_rank)).toString().toUpperCase();
+        newMemberProfile = await base44.asServiceRole.entities.MemberProfile.create({
+          callsign: callsign.trim(),
+          rank: key.grants_rank || 'VAGRANT',
+          roles: key.grants_roles || [],
+          membership: membership,
+          onboarding_completed: isAdmin,
+          accepted_pwa_disclaimer_at: isAdmin ? new Date().toISOString() : null,
+          accepted_codes_at: isAdmin ? new Date().toISOString() : null
+        });
        console.log('New member profile created:', newMemberProfile.id, 'admin:', isAdmin);
      } catch (createErr) {
        console.error('Member profile creation error:', createErr?.message);

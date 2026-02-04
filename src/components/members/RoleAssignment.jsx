@@ -2,17 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Trash2, Plus } from 'lucide-react';
+import { ROLE_LIST } from '@/components/constants/roles';
 
-const AVAILABLE_ROLES = [
-  'COMMANDER',
-  'LEAD',
-  'MEDIC',
-  'LOGISTICS',
-  'PILOT',
-  'GUNNER',
-  'SCOUT',
-  'ENGINEER',
-];
+const AVAILABLE_ROLES = ROLE_LIST;
 
 export default function RoleAssignment({ member, onComplete, onMemberUpdate }) {
   const [roles, setRoles] = useState(member.profile?.roles || []);

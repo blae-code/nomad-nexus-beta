@@ -15,11 +15,13 @@ export default function MemberList({ members, selectedMember, onSelectMember }) 
 
   const getRoleBadgeColor = (role) => {
     const colors = {
-      COMMANDER: 'bg-red-600',
-      LEAD: 'bg-orange-600',
-      MEDIC: 'bg-green-600',
-      LOGISTICS: 'bg-blue-600',
-      PILOT: 'bg-purple-600',
+      Shamans: 'bg-red-600',
+      Rangers: 'bg-orange-600',
+      Industry: 'bg-blue-600',
+      Racing: 'bg-purple-600',
+      Rescue: 'bg-green-600',
+      Training: 'bg-amber-600',
+      Combat: 'bg-rose-600',
     };
     return colors[role] || 'bg-zinc-600';
   };

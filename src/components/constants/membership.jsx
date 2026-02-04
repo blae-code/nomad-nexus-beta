@@ -28,3 +28,23 @@ export const grantsFocusedAccess = (membership) => {
   ];
   return FOCUSED_TIERS.includes(membership);
 };
+
+/**
+ * Default membership mapping from rank (for access keys / new profiles)
+ */
+export const getDefaultMembershipForRank = (rank) => {
+  const normalized = (rank || '').toString().toUpperCase();
+  switch (normalized) {
+    case 'SCOUT':
+      return MEMBERSHIP.MEMBER;
+    case 'VOYAGER':
+      return MEMBERSHIP.AFFILIATE;
+    case 'FOUNDER':
+    case 'PIONEER':
+      return MEMBERSHIP.PARTNER;
+    case 'VAGRANT':
+      return MEMBERSHIP.VAGRANT;
+    default:
+      return MEMBERSHIP.GUEST;
+  }
+};

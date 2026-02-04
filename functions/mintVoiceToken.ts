@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Enforce policy: Focused nets require Member/Affiliate/Partner membership
     if (netType === 'FOCUSED' && !netId.includes('briefing-temp')) {
-      const membership = memberProfile?.membership || (isAdminMember(memberProfile) ? 'PARTNER' : 'CASUAL');
+      const membership = memberProfile?.membership || (isAdminMember(memberProfile) ? 'PARTNER' : 'GUEST');
       const allowedMemberships = ['MEMBER', 'AFFILIATE', 'PARTNER'];
       
       if (!allowedMemberships.includes(membership)) {

@@ -27,10 +27,13 @@ Deno.serve(async (req) => {
     const {
       grants_rank = 'VAGRANT',
       grants_roles = [],
+      grants_membership = null,
+      grantsMembership,
       expires_at,
       max_uses = 1,
       note
     } = payload;
+    const normalizedMembership = grants_membership || grantsMembership || null;
 
     // Generate unique code
     let code = generateAccessCode();
@@ -59,6 +62,7 @@ Deno.serve(async (req) => {
       redeemed_by_member_profile_ids: [],
       grants_rank,
       grants_roles,
+      grants_membership: normalizedMembership,
       note
     });
 
@@ -66,7 +70,7 @@ Deno.serve(async (req) => {
     await base44.entities.AdminAuditLog.create({
       actor_member_profile_id: memberProfile?.id || null,
       action: 'issue_access_key',
-      payload: { code, grants_rank, max_uses, expires_at: expiresAt },
+      payload: { code, grants_rank, grants_membership: normalizedMembership, max_uses, expires_at: expiresAt },
       executed_by_member_profile_id: memberProfile?.id || null,
       executed_at: new Date().toISOString(),
       step_name: 'access_control',
@@ -78,7 +82,8 @@ Deno.serve(async (req) => {
       status: 'ACTIVE',
       max_uses,
       expires_at: expiresAt,
-      grants_rank
+      grants_rank,
+      grants_membership: normalizedMembership
     });
   } catch (error) {
     console.error('issueAccessKey error:', error);

@@ -28,7 +28,8 @@ Deno.serve(async (req) => {
     }
 
     const adminMemberProfileId = memberProfile?.id || null;
-    const { grantsRank, grantsPermissions } = payload;
+    const { grantsRank, grantsPermissions, grantsMembership, grants_membership } = payload;
+    const normalizedMembership = grantsMembership || grants_membership || null;
 
     if (!grantsRank) {
       return Response.json({ error: 'grantsRank is required' }, { status: 400 });
@@ -41,6 +42,7 @@ Deno.serve(async (req) => {
       uses_count: 0,
       grants_rank: grantsRank,
       grants_roles: grantsPermissions || [],
+      grants_membership: normalizedMembership,
       expires_at: null,
       created_by_member_profile_id: adminMemberProfileId,
     });
@@ -62,6 +64,7 @@ Deno.serve(async (req) => {
       details: {
         grants_rank: grantsRank,
         grants_roles: grantsPermissions,
+        grants_membership: normalizedMembership,
       },
       timestamp: new Date().toISOString(),
       ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',

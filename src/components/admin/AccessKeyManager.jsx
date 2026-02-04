@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { createPageUrl, getDisplayCallsign } from '@/utils';
+import { MEMBERSHIP_LIST, getDefaultMembershipForRank } from '@/components/constants/membership';
+import { getMembershipLabel } from '@/components/constants/labels';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -50,6 +52,7 @@ export default function AccessKeyManager() {
   const [formData, setFormData] = useState({
     grantsRank: 'VAGRANT',
     grantsPermissions: RANK_GRANTS_CONFIG['VAGRANT'],
+    grantsMembership: getDefaultMembershipForRank('VAGRANT'),
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [recipientCallsign, setRecipientCallsign] = useState('');
@@ -108,16 +111,28 @@ export default function AccessKeyManager() {
       const response = await invokeMemberFunction('createAccessKey', {
         grantsRank: formData.grantsRank,
         grantsPermissions: formData.grantsPermissions,
+        grantsMembership: formData.grantsMembership,
       });
 
       const key = response.data.key;
 
       // Generate immersive Discord message
-      const message = generateDiscordMessage(adminCallsign, recipientCallsign, key.code, formData.grantsRank, formData.grantsPermissions);
+      const message = generateDiscordMessage(
+        adminCallsign,
+        recipientCallsign,
+        key.code,
+        formData.grantsRank,
+        formData.grantsPermissions,
+        formData.grantsMembership
+      );
       setGeneratedMessage(message);
 
       setSuccess('Access key generated - Message ready to copy');
-      setFormData({ grantsRank: 'VAGRANT', grantsPermissions: RANK_GRANTS_CONFIG['VAGRANT'] });
+      setFormData({
+        grantsRank: 'VAGRANT',
+        grantsPermissions: RANK_GRANTS_CONFIG['VAGRANT'],
+        grantsMembership: getDefaultMembershipForRank('VAGRANT'),
+      });
       setRecipientCallsign('');
       setShowAdvanced(false);
       setError(null);
@@ -127,17 +142,18 @@ export default function AccessKeyManager() {
     }
   };
 
-  const generateDiscordMessage = (issuer, recipient, code, rank, permissions) => {
+  const generateDiscordMessage = (issuer, recipient, code, rank, permissions, membership) => {
     const grantsText = permissions.length > 0 
       ? `\nGRANTS: ${permissions.join(', ')}`
       : '';
+    const membershipText = membership ? `\nMEMBERSHIP: ${getMembershipLabel(membership)}` : '';
     return `⸻ AUTHORIZATION GRANTED ⸻
 
   FROM: ${issuer}
   TO: ${recipient}
 
   ACCESS CODE: ${code}
-  RANK: ${rank}${grantsText}
+  RANK: ${rank}${membershipText}${grantsText}
 
   Redeem at: ${window.location.origin}${createPageUrl('AccessGate')}
 
@@ -228,7 +244,12 @@ export default function AccessKeyManager() {
   };
 
   const filteredKeys = keys.filter((k) => {
-    const matchesSearch = k.code?.includes(searchTerm.toUpperCase()) || k.grantsRank?.includes(searchTerm.toUpperCase());
+    const matchesSearch =
+      k.code?.includes(searchTerm.toUpperCase()) ||
+      k.grants_rank?.includes(searchTerm.toUpperCase()) ||
+      k.grantsRank?.includes(searchTerm.toUpperCase()) ||
+      k.grants_membership?.includes(searchTerm.toUpperCase()) ||
+      k.grantsMembership?.includes(searchTerm.toUpperCase());
     const isNotRevoked = k.status !== 'REVOKED';
     const shouldShow = showRevoked || isNotRevoked;
     const rankMatch = filterRank === 'ALL' || k.grants_rank === filterRank;
@@ -367,7 +388,8 @@ export default function AccessKeyManager() {
                   setFormData({ 
                     ...formData, 
                     grantsRank: rank,
-                    grantsPermissions: RANK_GRANTS_CONFIG[rank]
+                    grantsPermissions: RANK_GRANTS_CONFIG[rank],
+                    grantsMembership: getDefaultMembershipForRank(rank),
                   });
                 }}
               >
@@ -383,6 +405,31 @@ export default function AccessKeyManager() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-zinc-400 mt-1">Pre-configured with standard permissions for this rank</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-orange-300 block mb-2">Membership Tier *</label>
+              <Select
+                value={formData.grantsMembership}
+                onValueChange={(membership) => {
+                  setFormData({
+                    ...formData,
+                    grantsMembership: membership,
+                  });
+                }}
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100 h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {MEMBERSHIP_LIST.map((membership) => (
+                    <SelectItem key={membership} value={membership}>
+                      <span className="text-zinc-100">{getMembershipLabel(membership)}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-zinc-400 mt-1">Controls Focused comms + voice access</p>
             </div>
 
             {/* Advanced Settings Collapsible */}
@@ -531,6 +578,10 @@ export default function AccessKeyManager() {
                     <div>
                       <span className="text-zinc-500">Rank:</span>
                       <p className="text-zinc-300 font-mono">{key.grants_rank}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Membership:</span>
+                      <p className="text-zinc-300">{getMembershipLabel(key.grants_membership || 'VAGRANT')}</p>
                     </div>
                     <div>
                       <span className="text-zinc-500">Created:</span>
