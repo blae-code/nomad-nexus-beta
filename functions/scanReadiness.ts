@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createServiceClient } from './_shared/memberAuth.ts';
 
 /**
  * Scheduled scan - Check all active events for readiness issues
@@ -6,7 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
+        const base44 = createServiceClient();
 
         // Get all active events
         const activeEvents = await base44.asServiceRole.entities.Event.filter({ 

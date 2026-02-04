@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 // Timeout helper
 const withTimeout = (promise, ms = 2000) => Promise.race([
@@ -8,11 +8,14 @@ const withTimeout = (promise, ms = 2000) => Promise.race([
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const { action, data } = await req.json();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const { action, data } = payload;
 
-    const user = await base44.auth.me();
-    if (!user) {
+    if (!actorType || !memberProfile) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -23,9 +26,9 @@ Deno.serve(async (req) => {
       case 'scan_priority':
         return await scanPriority(base44, data);
       case 'suggest_nets':
-        return await suggestNets(base44, user, data);
+        return await suggestNets(base44, memberProfile, data);
       case 'ask_comms':
-        return await askComms(base44, user, data);
+        return await askComms(base44, memberProfile, data);
       default:
         return Response.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -149,7 +152,7 @@ async function suggestNets(base44, user, { eventId }) {
   const filterQuery = eventId ? { event_id: eventId } : {};
   const [nets, playerStatus] = await Promise.all([
     base44.entities.VoiceNet.filter(filterQuery),
-    base44.entities.PlayerStatus.filter({ user_id: user.id })
+    base44.entities.PlayerStatus.filter({ member_profile_id: user.id })
   ]);
 
   const status = playerStatus[0];

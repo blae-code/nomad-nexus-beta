@@ -1,12 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { CANONICAL_CHANNELS } from '@/components/comms/channelTaxonomy.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    const isFounder = (memberProfile?.rank || '').toUpperCase() === 'FOUNDER';
 
-    if (!user || user.rank !== 'Founder') {
+    if (!isAdmin && !isFounder) {
       return Response.json({ error: 'Founders only' }, { status: 403 });
     }
 
@@ -33,7 +38,7 @@ Deno.serve(async (req) => {
         canonical_key: canonicalKey,
         post_policy: config.post_policy,
         reply_policy: config.reply_policy,
-        created_by: user.id,
+        created_by_member_profile_id: memberProfile?.id || null,
         membership: [] // All members can access ORG channels
       });
 

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 /**
  * Validates Voyager Number uniqueness.
@@ -7,21 +7,26 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user || user.role !== 'admin') {
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 403 }
       );
     }
 
-    const { userId, newRank, voyagerNumber } = await req.json();
+    const { userId, newRank, voyagerNumber } = payload;
 
     // Only validate if rank is Voyager and number is provided
-    if (newRank !== 'Voyager' || voyagerNumber === null || voyagerNumber === undefined) {
-      if (newRank === 'Voyager' && (voyagerNumber === null || voyagerNumber === undefined)) {
+    const isVoyager = newRank === 'Voyager' || newRank === 'VOYAGER';
+    if (!isVoyager || voyagerNumber === null || voyagerNumber === undefined) {
+      if (isVoyager && (voyagerNumber === null || voyagerNumber === undefined)) {
         return Response.json({
           valid: false,
           error: 'Voyager Number (10-99) is required for Voyager rank'
@@ -40,15 +45,15 @@ Deno.serve(async (req) => {
     }
 
     // Check for duplicates
-    const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
-    const duplicate = allUsers.find(
-      u => u.voyager_number === num && u.id !== userId
+    const allMembers = await base44.entities.MemberProfile.list('-created_date', 500);
+    const duplicate = allMembers.find(
+      m => m.voyager_number === num && m.id !== userId
     );
 
     if (duplicate) {
       return Response.json({
         valid: false,
-        error: `Voyager Number ${num} is already assigned to ${duplicate.callsign || duplicate.email}`
+        error: `Voyager Number ${num} is already assigned to ${duplicate.display_callsign || duplicate.callsign || duplicate.full_name || 'another member'}`
       });
     }
 

@@ -1,23 +1,27 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    if (!user) {
+    if (!actorType || !memberProfile) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check permissions - must be Pioneer, Founder, or Voyager
-    const allowedRanks = ['Pioneer', 'Founder', 'Voyager'];
-    if (!allowedRanks.includes(user.rank)) {
+    const allowedRanks = ['PIONEER', 'FOUNDER', 'VOYAGER'];
+    const memberRank = (memberProfile.rank || '').toUpperCase();
+    if (!allowedRanks.includes(memberRank) && !isAdminMember(memberProfile)) {
       return Response.json({ 
         error: 'Insufficient rank - Pioneer or higher required' 
       }, { status: 403 });
     }
 
-    const { message, targetType, targetIds, eventId, netId } = await req.json();
+    const { message, targetType, targetIds, eventId, netId } = payload;
 
     if (!message || !targetType || !targetIds || targetIds.length === 0) {
       return Response.json({ 
@@ -31,36 +35,36 @@ Deno.serve(async (req) => {
 
     if (targetType === 'role') {
       // Get users with specific roles
-      const allUsers = await base44.asServiceRole.entities.User.list();
+      const allMembers = await base44.entities.MemberProfile.list();
       for (const roleId of targetIds) {
-        const role = await base44.asServiceRole.entities.Role.get(roleId);
+        const role = await base44.entities.Role.get(roleId);
         if (role) {
           recipientNames.push(role.name);
-          const usersWithRole = allUsers.filter(u => 
-            u.assigned_role_ids?.includes(roleId)
+          const membersWithRole = allMembers.filter(m => 
+            Array.isArray(m.roles) && m.roles.includes(role.name)
           );
-          recipientUserIds.push(...usersWithRole.map(u => u.id));
+          recipientUserIds.push(...membersWithRole.map(m => m.id));
         }
       }
     } else if (targetType === 'rank') {
       // Get users with specific ranks
-      const allUsers = await base44.asServiceRole.entities.User.list();
+      const allMembers = await base44.entities.MemberProfile.list();
       for (const rank of targetIds) {
         recipientNames.push(rank);
-        const usersWithRank = allUsers.filter(u => u.rank === rank);
-        recipientUserIds.push(...usersWithRank.map(u => u.id));
+        const membersWithRank = allMembers.filter(m => (m.rank || '').toUpperCase() === rank.toUpperCase());
+        recipientUserIds.push(...membersWithRank.map(m => m.id));
       }
     } else if (targetType === 'squad') {
       // Get users in specific squads
       for (const squadId of targetIds) {
-        const squad = await base44.asServiceRole.entities.Squad.get(squadId);
+        const squad = await base44.entities.Squad.get(squadId);
         if (squad) {
           recipientNames.push(squad.name);
-          const memberships = await base44.asServiceRole.entities.SquadMembership.filter({
+          const memberships = await base44.entities.SquadMembership.filter({
             squad_id: squadId,
             status: 'active'
           });
-          recipientUserIds.push(...memberships.map(m => m.user_id));
+          recipientUserIds.push(...memberships.map(m => m.member_profile_id || m.user_id));
         }
       }
     }
@@ -75,28 +79,28 @@ Deno.serve(async (req) => {
     }
 
     // Create whisper message
-    const whisperMessage = await base44.asServiceRole.entities.Message.create({
+    const whisperMessage = await base44.entities.Message.create({
       channel_id: netId || eventId || 'global',
-      user_id: user.id,
+      user_id: memberProfile.id,
       content: `[WHISPER to ${recipientNames.join(', ')}] ${message}`,
       whisper_metadata: {
         is_whisper: true,
-        sender_id: user.id,
-        sender_name: user.callsign || user.rsi_handle || user.full_name,
+        sender_member_profile_id: memberProfile.id,
+        sender_name: memberProfile.display_callsign || memberProfile.callsign || memberProfile.full_name,
         target_type: targetType,
         target_ids: targetIds,
-        recipient_user_ids: recipientUserIds,
+        recipient_member_profile_ids: recipientUserIds,
         sent_at: new Date().toISOString()
       }
     });
 
     // Create notifications for each recipient
     for (const recipientId of recipientUserIds) {
-      await base44.asServiceRole.entities.Notification.create({
+      await base44.entities.Notification.create({
         user_id: recipientId,
         type: 'direct_message',
         title: 'Whisper from Command',
-        message: `${user.callsign || user.rsi_handle}: ${message}`,
+        message: `${memberProfile.display_callsign || memberProfile.callsign}: ${message}`,
         related_entity_type: 'message',
         related_entity_id: whisperMessage.id,
         is_read: false
@@ -104,11 +108,11 @@ Deno.serve(async (req) => {
     }
 
     // Log the whisper
-    await base44.asServiceRole.entities.EventLog.create({
+    await base44.entities.EventLog.create({
       event_id: eventId || null,
       type: 'COMMS',
       severity: 'LOW',
-      actor_user_id: user.id,
+      actor_member_profile_id: memberProfile.id,
       summary: `Whisper sent to ${recipientNames.join(', ')} (${recipientUserIds.length} recipients)`,
       details: {
         target_type: targetType,

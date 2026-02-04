@@ -1,8 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createServiceClient } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
+        const base44 = createServiceClient();
         
         // Calculate cutoff: 48 hours ago
         const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);

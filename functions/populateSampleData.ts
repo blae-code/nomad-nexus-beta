@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 // Deterministic RNG for consistency with seed
 function seededRandom(seed) {
@@ -387,29 +387,43 @@ async function seedWeekOfActivity(base44, userId, seed = 42, scale = 1.0) {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, adminUser, memberProfile } = await getAuthContext(req, payload);
 
-    if (user?.role !== 'admin') {
+    const isAdmin = Boolean(adminUser) || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Parse optional seed & scale from query params or body
-    let seed = 42;
-    let scale = 1.0;
-    try {
-      const payload = await req.json().catch(() => ({}));
-      seed = payload.seed || 42;
-      scale = payload.scale || 1.0;
-    } catch (_) {}
+    // Parse optional seed & scale
+    const seed = Number.isFinite(payload.seed) ? payload.seed : 42;
+    const scale = Number.isFinite(payload.scale) ? payload.scale : 1.0;
 
-    const results = await seedWeekOfActivity(base44, user.id, seed, scale);
+    let seedOwnerId = payload.memberProfileId || payload.member_profile_id || memberProfile?.id || null;
+    if (!seedOwnerId) {
+      try {
+        const candidates = await base44.entities.MemberProfile.list('-created_date', 1);
+        seedOwnerId = candidates?.[0]?.id || null;
+      } catch {
+        seedOwnerId = null;
+      }
+    }
+
+    if (!seedOwnerId) {
+      return Response.json(
+        { error: 'No member profile available for seeding. Provide memberProfileId or redeem an access key first.' },
+        { status: 400 }
+      );
+    }
+
+    const results = await seedWeekOfActivity(base44, seedOwnerId, seed, scale);
 
     return Response.json({
       success: true,
       message: 'Sample data seeded successfully',
       created: results.created,
       errors: results.errors,
+      seed_owner_member_profile_id: seedOwnerId,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType || !memberProfile) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { event_id, marker_data } = await req.json();
+    const { event_id, marker_data } = payload;
 
     if (!event_id || !marker_data) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -20,7 +23,7 @@ Deno.serve(async (req) => {
     }
 
     // Create persistent marker
-    const marker = await base44.asServiceRole.entities.MapMarker.create({
+    const marker = await base44.entities.MapMarker.create({
       event_id,
       type: marker_data.type,
       label: marker_data.label,
@@ -30,12 +33,12 @@ Deno.serve(async (req) => {
     });
 
     // Log marker creation to event
-    await base44.asServiceRole.entities.EventLog.create({
+    await base44.entities.EventLog.create({
       event_id,
       timestamp: new Date().toISOString(),
       type: 'SYSTEM',
       severity: 'LOW',
-      actor_user_id: user.id,
+      actor_member_profile_id: memberProfile.id,
       summary: `Map marker created: ${marker_data.label}`,
       details: {
         marker_id: marker.id,

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 function generateRandomCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -11,29 +11,30 @@ function generateRandomCode() {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, adminUser, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user is admin
-    if (user.role !== 'admin') {
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // For admins, use their User ID directly (admins bypass member_profile_id requirement initially)
-    // In production, admins should also have MemberProfiles, but this allows bootstrap
-    const adminMemberProfileId = user.id; // Use user.id as placeholder for admin context
-
-    const { grantsRank, grantsPermissions } = await req.json();
+    const adminMemberProfileId = memberProfile?.id || null;
+    const { grantsRank, grantsPermissions } = payload;
 
     if (!grantsRank) {
       return Response.json({ error: 'grantsRank is required' }, { status: 400 });
     }
 
-    const key = await base44.asServiceRole.entities.AccessKey.create({
+    const key = await base44.entities.AccessKey.create({
       code: generateRandomCode(),
       status: 'ACTIVE',
       max_uses: 1,
@@ -45,13 +46,25 @@ Deno.serve(async (req) => {
     });
 
     // Log audit trail
-    await base44.asServiceRole.functions.invoke('logAccessKeyAudit', {
+    const actorName =
+      memberProfile?.display_callsign ||
+      memberProfile?.callsign ||
+      adminUser?.full_name ||
+      adminUser?.email ||
+      'Admin';
+
+    await base44.entities.AccessKeyAudit.create({
       access_key_id: key.id,
       action: 'CREATE',
+      performed_by_member_profile_id: memberProfile?.id || null,
+      performed_by_user_id: adminUser?.id || null,
+      performed_by_name: actorName,
       details: {
         grants_rank: grantsRank,
         grants_roles: grantsPermissions,
       },
+      timestamp: new Date().toISOString(),
+      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
     });
 
     return Response.json({ key });

@@ -1,40 +1,43 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const now = new Date();
 
     // Get all unsent notifications that are due
-    const notifications = await base44.asServiceRole.entities.EventNotification.filter({
+    const notifications = await base44.entities.EventNotification.filter({
       is_sent: false
     });
 
     let sentCount = 0;
 
     for (const notification of notifications) {
-      const event = await base44.asServiceRole.entities.Event.get(notification.event_id);
+      const event = await base44.entities.Event.get(notification.event_id);
       if (!event) continue;
 
       const scheduledTime = calculateNotificationTime(event.start_time, notification);
       
       if (scheduledTime && scheduledTime <= now && !notification.is_sent) {
         // Mark as sent
-        await base44.asServiceRole.entities.EventNotification.update(notification.id, {
+        await base44.entities.EventNotification.update(notification.id, {
           is_sent: true,
           sent_at: now.toISOString()
         });
 
         // Create in-app notification
         const notifMessage = notification.message || generateDefaultMessage(notification, event);
-        await base44.asServiceRole.entities.Notification.create({
-          user_id: notification.user_id,
+        await base44.entities.Notification.create({
+          user_id: notification.member_profile_id || notification.user_id,
           type: notification.type,
           title: `Event: ${event.title}`,
           message: notifMessage,

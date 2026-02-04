@@ -1,11 +1,12 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, adminUser, memberProfile } = await getAuthContext(req, payload);
 
-    if (!user || user.role !== 'admin') {
+    const isAdmin = Boolean(adminUser) || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,7 +20,7 @@ Deno.serve(async (req) => {
         grants_rank: 'VAGRANT',
         grants_roles: [],
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        redeemed_by_user_ids: []
+        redeemed_by_member_profile_ids: []
       },
       {
         code: 'TEST-0002-EFGH',
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
         grants_rank: 'PILOT',
         grants_roles: [],
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        redeemed_by_user_ids: []
+        redeemed_by_member_profile_ids: []
       }
     ]);
 

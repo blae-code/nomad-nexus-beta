@@ -3,18 +3,22 @@
  * Analyzes message content for policy violations
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
 
-    if (!user) {
+    if (!actorType || !isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { message_id, content, channel_id } = await req.json();
+    const { message_id, content, channel_id } = payload;
 
     if (!content || !message_id) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -43,18 +47,18 @@ Respond with a JSON object indicating if the message violates policies.`,
 
     // If violation detected, take action
     if (analysis.is_violation && analysis.should_auto_delete) {
-      await base44.asServiceRole.entities.Message.update(message_id, {
+      await base44.entities.Message.update(message_id, {
         is_deleted: true,
-        deleted_by: 'AI_MODERATOR',
+        deleted_by_member_profile_id: memberProfile?.id || null,
         deleted_at: new Date().toISOString(),
         deleted_reason: `Auto-moderation: ${analysis.reason}`
       });
     }
 
     // Create moderation log
-    await base44.asServiceRole.entities.AdminAuditLog.create({
+    await base44.entities.AdminAuditLog.create({
       action: 'AI_MODERATION',
-      performed_by: 'system',
+      actor_member_profile_id: memberProfile?.id || null,
       target_type: 'Message',
       target_id: message_id,
       details: {

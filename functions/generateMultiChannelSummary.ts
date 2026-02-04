@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 const withTimeout = (promise, ms = 2000) => Promise.race([
   promise,
@@ -7,14 +7,17 @@ const withTimeout = (promise, ms = 2000) => Promise.race([
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { eventId, timeWindowMinutes = 15, netIds = [] } = await req.json();
+    const { eventId, timeWindowMinutes = 15, netIds = [] } = payload;
 
     // Fetch activity from multiple channels
     const cutoffTime = new Date(Date.now() - timeWindowMinutes * 60000).toISOString();

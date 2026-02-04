@@ -4,13 +4,16 @@
  * Returns canonical commsResult structure
  */
 import { createCommsResult } from '../components/comms/commsContract.js';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = await import('npm:@base44/sdk@0.8.6').then(m => m.createClientFromRequest(req));
-
-    const user = await base44.auth.me();
-    if (!user) {
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    if (!actorType) {
       return Response.json(
         createCommsResult({
           ok: false,
@@ -22,8 +25,9 @@ Deno.serve(async (req) => {
     }
 
     // Check permission: Command rank or higher
-    const allowedRanks = ['Founder', 'Pioneer'];
-    if (!allowedRanks.includes(user.rank)) {
+    const allowedRanks = ['FOUNDER', 'PIONEER'];
+    const rank = (memberProfile?.rank || '').toUpperCase();
+    if (!allowedRanks.includes(rank) && !isAdminMember(memberProfile) && actorType !== 'admin') {
       return Response.json(
         createCommsResult({
           ok: false,
@@ -34,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { eventId, message } = await req.json();
+    const { eventId, message } = payload;
 
     if (!eventId || !message) {
       return Response.json(
@@ -47,7 +51,7 @@ Deno.serve(async (req) => {
     }
 
     // Find OP live feed channel
-    const channels = await base44.asServiceRole.entities.CommsChannel.filter(
+    const channels = await base44.entities.CommsChannel.filter(
       { scope_id: eventId, type: 'OPS_FEED' },
       '-created_date',
       1
@@ -64,9 +68,9 @@ Deno.serve(async (req) => {
     }
 
     // Create post in live feed
-    const post = await base44.asServiceRole.entities.CommsPost.create({
+    const post = await base44.entities.CommsPost.create({
       channel_id: channels[0].id,
-      author_id: user.id,
+      author_id: memberProfile?.id,
       content: message,
       template_type: 'OPS_UPDATE',
       is_pinned: true

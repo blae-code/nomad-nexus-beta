@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { netId, audioFileUrl, startTime, endTime } = await req.json();
+    const { netId, audioFileUrl, startTime, endTime } = payload;
 
     // Note: Actual transcription would require audio processing
     // This is a placeholder for the integration point
@@ -53,7 +56,7 @@ Format the response as a structured transcript with:
     });
 
     // Store transcript
-    const transcriptRecord = await base44.asServiceRole.entities.Message.create({
+    const transcriptRecord = await base44.entities.Message.create({
       channel_id: `transcript-${netId}`,
       user_id: 'system',
       content: JSON.stringify(transcript),

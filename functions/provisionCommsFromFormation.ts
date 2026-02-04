@@ -1,34 +1,38 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    if (!user) {
+    if (!actorType || !memberProfile) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Only Voyager+ can provision comms plans
-    const allowedRanks = ['Voyager', 'Founder', 'Pioneer'];
-    if (user.role !== 'admin' && !allowedRanks.includes(user.rank)) {
+    const allowedRanks = ['VOYAGER', 'FOUNDER', 'PIONEER'];
+    const rank = (memberProfile.rank || '').toUpperCase();
+    if (!isAdminMember(memberProfile) && !allowedRanks.includes(rank)) {
       return Response.json({ error: 'Insufficient permissions - Voyager+ required' }, { status: 403 });
     }
 
-    const { eventId } = await req.json();
+    const { eventId } = payload;
 
     if (!eventId) {
       return Response.json({ error: 'eventId required' }, { status: 400 });
     }
 
     // Fetch event
-    const event = await base44.asServiceRole.entities.Event.get(eventId);
+    const event = await base44.entities.Event.get(eventId);
     if (!event) {
       return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Fetch all units (Fleet, Wing, Squad)
-    const units = await base44.asServiceRole.entities.Squad.list();
+    const units = await base44.entities.Squad.list();
     
     // Separate by hierarchy
     const fleets = units.filter(u => u.hierarchy_level === 'fleet');
@@ -36,7 +40,7 @@ Deno.serve(async (req) => {
     const squads = units.filter(u => u.hierarchy_level === 'squad' || !u.hierarchy_level);
 
     // Check if nets already exist for this event
-    const existingNets = await base44.asServiceRole.entities.VoiceNet.filter({ event_id: eventId });
+    const existingNets = await base44.entities.VoiceNet.filter({ event_id: eventId });
     if (existingNets.length > 0) {
       return Response.json({ 
         error: 'Comms plan already exists',
@@ -137,7 +141,7 @@ Deno.serve(async (req) => {
 
     // Create all nets
     const createdNets = await Promise.all(
-      netsToCreate.map(net => base44.asServiceRole.entities.VoiceNet.create(net))
+      netsToCreate.map(net => base44.entities.VoiceNet.create(net))
     );
 
     return Response.json({

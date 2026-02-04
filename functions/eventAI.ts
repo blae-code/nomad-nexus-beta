@@ -1,9 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const { action, context } = await req.json();
+        const payload = await readJson(req);
+        const { base44, actorType } = await getAuthContext(req, payload);
+        const { action, context } = payload;
+
+        if (!actorType) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         if (!action || !context) {
             return Response.json({ error: 'Missing action or context' }, { status: 400 });

@@ -1,29 +1,32 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile, adminUser } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { eventId, reportType = 'summary' } = await req.json();
+    const { eventId, reportType = 'summary' } = payload;
 
     if (!eventId) {
       return Response.json({ error: 'Missing eventId' }, { status: 400 });
     }
 
     // Fetch event data
-    const event = await base44.asServiceRole.entities.Event.get(eventId);
-    const logs = await base44.asServiceRole.entities.EventLog.filter({ event_id: eventId });
-    const assignments = await base44.asServiceRole.entities.EventDutyAssignment.filter({ event_id: eventId });
-    const users = await base44.asServiceRole.entities.User.list();
+    const event = await base44.entities.Event.get(eventId);
+    const logs = await base44.entities.EventLog.filter({ event_id: eventId });
+    const assignments = await base44.entities.EventDutyAssignment.filter({ event_id: eventId });
+    const members = await base44.entities.MemberProfile.list();
 
-    const getUserName = (userId) => {
-      const u = users.find(user => user.id === userId);
-      return u?.callsign || u?.email || 'Unknown';
+    const getUserName = (memberId) => {
+      const member = members.find(m => m.id === memberId);
+      return member?.display_callsign || member?.callsign || member?.full_name || 'Unknown';
     };
 
     let content = '';
@@ -64,13 +67,13 @@ ${logs.slice(0, 10).map(log => `- **[${new Date(log.timestamp).toLocaleTimeStrin
 - **Priority**: ${event.priority}
 - **Status**: ${event.status}
 - **Location**: ${event.location || 'N/A'}
-- **Created By**: ${getUserName(event.created_by)}
+- **Created By**: ${getUserName(event.created_by_member_profile_id || event.created_by)}
 
 ### Description
 ${event.description || 'No description provided.'}
 
 ### Personnel Assignments (${assignments.length})
-${assignments.map(a => `- **${a.role_name}**: ${getUserName(a.user_id)} (assigned ${new Date(a.assigned_at).toLocaleDateString()})`).join('\n')}
+${assignments.map(a => `- **${a.role_name}**: ${getUserName(a.member_profile_id || a.user_id)} (assigned ${new Date(a.assigned_at).toLocaleDateString()})`).join('\n')}
 
 ### Objectives
 ${(event.objectives || []).map((obj, i) => `
@@ -100,7 +103,7 @@ ${log.details ? '```json\n' + JSON.stringify(log.details, null, 2) + '\n```' : '
 **Event**: ${event.title}
 **Date**: ${new Date(event.start_time).toLocaleDateString()}
 **Type**: ${event.event_type}
-**Commander**: ${getUserName(event.command_staff?.commander_id || event.created_by)}
+**Commander**: ${getUserName(event.command_staff?.commander_id || event.created_by_member_profile_id || event.created_by)}
 **Outcome**: ${event.status}
 
 ### Mission Overview
@@ -138,7 +141,7 @@ ${event.post_analysis?.lessons_learned || '(To be filled in during debrief)'}
 ${event.post_analysis?.recommendations || '(To be filled in during debrief)'}
 
 ---
-*AAR generated on ${new Date().toLocaleString()} by ${getUserName(user.id)}*`;
+*AAR generated on ${new Date().toLocaleString()} by ${getUserName(memberProfile?.id || adminUser?.id)}*`;
     }
 
     return Response.json({

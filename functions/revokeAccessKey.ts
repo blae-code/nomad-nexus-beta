@@ -1,11 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    if (!actorType) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
 
-    const payload = await req.json();
     const { keyId } = payload;
 
     if (!keyId) {
@@ -13,28 +19,29 @@ Deno.serve(async (req) => {
     }
 
     // Find the key
-    const key = await base44.asServiceRole.entities.AccessKey.get(keyId);
+    const key = await base44.entities.AccessKey.get(keyId);
     
     if (!key) {
       return Response.json({ error: 'Key not found' }, { status: 404 });
     }
 
     // Only admins and the pioneer who created the key can revoke it
-    if (user?.role !== 'admin' && user?.id !== key.created_by_user_id) {
+    const creatorId = key.created_by_member_profile_id || key.created_by_user_id;
+    if (!isAdmin && memberProfile?.id !== creatorId) {
       return Response.json({ error: 'You can only revoke keys you created' }, { status: 403 });
     }
 
     // Revoke it
-    await base44.asServiceRole.entities.AccessKey.update(key.id, {
+    await base44.entities.AccessKey.update(key.id, {
       status: 'REVOKED'
     });
 
     // Log revocation
-    await base44.asServiceRole.entities.AdminAuditLog.create({
-      actor_user_id: user.id,
+    await base44.entities.AdminAuditLog.create({
+      actor_member_profile_id: memberProfile?.id || null,
       action: 'revoke_access_key',
       payload: { keyId, original_status: key.status },
-      executed_by: user.id,
+      executed_by_member_profile_id: memberProfile?.id || null,
       executed_at: new Date().toISOString(),
       step_name: 'access_control',
       status: 'success'

@@ -4,13 +4,17 @@
  * Returns canonical commsResult structure
  */
 import { createCommsResult } from '../components/comms/commsContract.js';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = await import('npm:@base44/sdk@0.8.6').then(m => m.createClientFromRequest(req));
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    const user = await base44.auth.me();
-    if (!user) {
+    if (!actorType || !memberProfile) {
       return Response.json(
         createCommsResult({
           ok: false,
@@ -22,8 +26,9 @@ Deno.serve(async (req) => {
     }
 
     // Check permission: Voyager+ or Command role
-    const allowedRanks = ['Voyager', 'Pioneer', 'Founder'];
-    if (!allowedRanks.includes(user.rank)) {
+    const allowedRanks = ['VOYAGER', 'PIONEER', 'FOUNDER'];
+    const rank = (memberProfile.rank || '').toUpperCase();
+    if (!allowedRanks.includes(rank)) {
       return Response.json(
         createCommsResult({
           ok: false,
@@ -34,7 +39,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { eventId, leftRoom, rightRoom, bridgeType = 'OP_INTERNAL' } = await req.json();
+    const { eventId, leftRoom, rightRoom, bridgeType = 'OP_INTERNAL' } = payload;
 
     if (!eventId || !leftRoom || !rightRoom) {
       return Response.json(
@@ -47,12 +52,12 @@ Deno.serve(async (req) => {
     }
 
     // Create bridge session
-    const bridge = await base44.asServiceRole.entities.BridgeSession.create({
+    const bridge = await base44.entities.BridgeSession.create({
       event_id: eventId,
       left_room: leftRoom,
       right_room: rightRoom,
       bridge_type: bridgeType,
-      initiated_by: user.id,
+      initiated_by_member_profile_id: memberProfile.id,
       status: 'ACTIVE',
       started_at: new Date().toISOString(),
       metadata: {}

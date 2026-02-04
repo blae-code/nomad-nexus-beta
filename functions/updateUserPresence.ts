@@ -1,15 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const payload = await req.json();
     const { status, netId, eventId, isTransmitting } = payload;
 
     if (!status || !['online', 'idle', 'in-call', 'transmitting', 'away', 'offline'].includes(status)) {
@@ -32,14 +34,8 @@ Deno.serve(async (req) => {
     }
 
     // Get MemberProfile for current user
-    let memberProfileId = null;
-    try {
-      const profiles = await base44.entities.MemberProfile.list();
-      if (profiles.length > 0) {
-        memberProfileId = profiles[0].id;
-      }
-    } catch (err) {
-      console.error('[PRESENCE] Failed to get member profile:', err.message);
+    const memberProfileId = memberProfile?.id || null;
+    if (!memberProfileId) {
       return Response.json({ error: 'Member profile not found' }, { status: 404 });
     }
 
@@ -48,7 +44,7 @@ Deno.serve(async (req) => {
     let existing = [];
     
     try {
-      existing = await base44.asServiceRole.entities.UserPresence.filter(filterQuery);
+      existing = await base44.entities.UserPresence.filter(filterQuery);
     } catch (err) {
       console.debug('[PRESENCE] Filter failed, will create new:', err.message);
     }
@@ -65,12 +61,12 @@ Deno.serve(async (req) => {
 
     let presence;
     if (existing && existing.length > 0) {
-      presence = await base44.asServiceRole.entities.UserPresence.update(
+      presence = await base44.entities.UserPresence.update(
         existing[0].id,
         presenceData
       );
     } else {
-      presence = await base44.asServiceRole.entities.UserPresence.create(presenceData);
+      presence = await base44.entities.UserPresence.create(presenceData);
     }
 
     return Response.json({ success: true, presence });

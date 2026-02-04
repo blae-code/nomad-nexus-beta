@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const payload = await readJson(req);
+        const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+            allowAdmin: true,
+            allowMember: true
+        });
 
-        if (!user) {
+        if (!actorType || !memberProfile) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { nomineeId, reason } = await req.json();
+        const { nomineeId, reason } = payload;
 
         if (!nomineeId || !reason) {
             return Response.json({ error: 'Missing nomineeId or reason' }, { status: 400 });
@@ -18,7 +21,7 @@ Deno.serve(async (req) => {
         // 1. Enforce 4-month cooldown for the nominator
         // Get the user's last nomination
         const myNominations = await base44.entities.Nomination.list({
-            filter: { nominator_id: user.id },
+            filter: { nominator_id: memberProfile.id },
             sort: { created_date: -1 },
             limit: 1
         });
@@ -41,7 +44,7 @@ Deno.serve(async (req) => {
 
         // 2. Create the nomination
         await base44.entities.Nomination.create({
-            nominator_id: user.id,
+            nominator_id: memberProfile.id,
             nominee_id: nomineeId,
             reason: reason
         });
@@ -54,12 +57,12 @@ Deno.serve(async (req) => {
         if (nomineeNominations.length === 2) {
             // Notify The Pioneer
             // Find users with 'Pioneer' rank
-            const allUsers = await base44.entities.User.list();
-            const pioneers = allUsers.filter(u => u.rank === 'Pioneer');
+            const allMembers = await base44.entities.MemberProfile.list();
+            const pioneers = allMembers.filter(m => (m.rank || '').toUpperCase() === 'PIONEER');
             
             // Get nominee details for the email
-            const nominee = allUsers.find(u => u.id === nomineeId);
-            const nomineeName = nominee ? (nominee.rsi_handle || nominee.full_name) : 'Unknown Scout';
+            const nominee = allMembers.find(m => m.id === nomineeId);
+            const nomineeName = nominee ? (nominee.display_callsign || nominee.callsign || nominee.full_name) : 'Unknown Scout';
 
             for (const pioneer of pioneers) {
                 if (pioneer.email) {
@@ -72,7 +75,7 @@ COMMAND UPLINK // PRIORITY MESSAGE
 A Scout has received their second nomination for Voyager status.
 
 NOMINEE: ${nomineeName} (ID: ${nomineeId})
-NOMINATOR: ${user.rsi_handle || user.full_name}
+NOMINATOR: ${memberProfile.display_callsign || memberProfile.callsign || memberProfile.full_name}
 REASON: ${reason}
 
 Status pending final review.

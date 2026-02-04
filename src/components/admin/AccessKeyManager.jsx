@@ -6,6 +6,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { createPageUrl, getDisplayCallsign } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { format } from 'date-fns';
@@ -104,7 +105,7 @@ export default function AccessKeyManager() {
     }
 
     try {
-      const response = await base44.functions.invoke('createAccessKey', {
+      const response = await invokeMemberFunction('createAccessKey', {
         grantsRank: formData.grantsRank,
         grantsPermissions: formData.grantsPermissions,
       });
@@ -153,7 +154,7 @@ export default function AccessKeyManager() {
         status: 'REVOKED',
       });
       // Log audit trail
-      await base44.functions.invoke('logAccessKeyAudit', {
+      await invokeMemberFunction('logAccessKeyAudit', {
         access_key_id: keyId,
         action: 'REVOKE',
         details: { reason: 'Manual revocation' },
@@ -186,7 +187,7 @@ export default function AccessKeyManager() {
       // Log each revocation
       await Promise.all(
         keysArray.map((keyId) =>
-          base44.functions.invoke('logAccessKeyAudit', {
+          invokeMemberFunction('logAccessKeyAudit', {
             access_key_id: keyId,
             action: 'REVOKE',
             details: { reason: 'Bulk revocation' },

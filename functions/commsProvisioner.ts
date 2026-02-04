@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { COMMS_REGISTRY, getOrgChannelSlugs } from '@/components/comms/commsRegistry.js';
 
 /**
@@ -210,10 +210,15 @@ export const ensureDynamicChannelsForOperation = async (base44, opId, opTitle) =
  */
 export const provisionCommsEndpoint = Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    const isFounder = (memberProfile?.rank || '').toUpperCase() === 'FOUNDER';
 
-    if (!user || user.rank !== 'Founder') {
+    if (!isAdmin && !isFounder) {
       return Response.json({ error: 'Founders only' }, { status: 403 });
     }
 

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 const ENTITIES_TO_CLEAR = [
   'CofferTransaction',
@@ -41,11 +41,12 @@ const ENTITIES_TO_CLEAR = [
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, adminUser, memberProfile } = await getAuthContext(req, payload);
 
     // Admin-only operation
-    if (user?.role !== 'admin') {
+    const isAdmin = Boolean(adminUser) || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }

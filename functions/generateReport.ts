@@ -1,20 +1,23 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { filters } = await req.json();
+    const { filters } = payload;
 
     // Fetch data based on filters
-    const [events, users, assets] = await Promise.all([
+    const [events, members, assets] = await Promise.all([
       base44.entities.Event.list('-start_time', 100),
-      base44.entities.User.list(),
+      base44.entities.MemberProfile.list(),
       base44.entities.FleetAsset.list(),
     ]);
 
@@ -28,25 +31,20 @@ Deno.serve(async (req) => {
     });
 
     // Compile member data with operation counts
-    const memberData = await Promise.all(
-      users.map(async (user) => {
-        const operationsCount = filteredEvents.filter((e) => e.assigned_user_ids?.includes(user.id)).length;
-        let profile = null;
-        try {
-          const profiles = await base44.entities.MemberProfile.filter({ user_id: user.id });
-          profile = profiles[0];
-        } catch {
-          // No profile
-        }
-        return {
-          id: user.id,
-          full_name: user.full_name,
-          rank: profile?.rank || 'VAGRANT',
-          roles: profile?.roles || [],
-          operations_count: operationsCount,
-        };
-      })
-    );
+    const memberData = members.map((member) => {
+      const operationsCount = filteredEvents.filter((e) => {
+        const assigned = e.assigned_member_profile_ids || e.assigned_user_ids || [];
+        return assigned.includes(member.id);
+      }).length;
+
+      return {
+        id: member.id,
+        full_name: member.display_callsign || member.callsign || member.full_name || 'Unknown',
+        rank: member.rank || 'VAGRANT',
+        roles: member.roles || [],
+        operations_count: operationsCount,
+      };
+    });
 
     // Asset deployment counts
     const assetData = assets.map((asset) => ({

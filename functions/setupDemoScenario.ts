@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 /**
  * Setup Demo Scenario: Creates featured event, distress incident, rescue, and map markers
@@ -6,10 +6,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
 
-    if (!user || user.role !== 'admin') {
+    if (!isAdmin || !memberProfile) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -17,14 +21,14 @@ Deno.serve(async (req) => {
     const in30mins = new Date(now.getTime() + 30 * 60000);
 
     // 1. Create or fetch featured FOCUSED event
-    let event = await base44.asServiceRole.entities.Event.filter(
+    let event = await base44.entities.Event.filter(
       { event_type: 'focused', phase: { $ne: 'ARCHIVED' } },
       '-updated_date',
       1
     ).then(events => events[0]);
 
     if (!event) {
-      event = await base44.asServiceRole.entities.Event.create({
+      event = await base44.entities.Event.create({
         title: 'RESCUE OPERATION - Demo Scenario',
         description: 'Distressed pilot in Stanton sector. Coordinate rescue via comms and tactical map.',
         event_type: 'focused',
@@ -34,14 +38,14 @@ Deno.serve(async (req) => {
         start_time: now.toISOString(),
         end_time: in30mins.toISOString(),
         location: 'Stanton Sector 7-G',
-        host_id: user.id,
-        assigned_user_ids: [user.id],
+        host_member_profile_id: memberProfile.id,
+        assigned_member_profile_ids: [memberProfile.id],
         phase_transitioned_at: now.toISOString()
       });
     }
 
     // 2. Create distress incident
-    const incident = await base44.asServiceRole.entities.Incident.create({
+    const incident = await base44.entities.Incident.create({
       title: 'Distress Signal - Pilot Down',
       description: 'Pilot ejected after hull breach. Location: Stanton 7-G. Awaiting rescue team.',
       severity: 'CRITICAL',
@@ -50,13 +54,13 @@ Deno.serve(async (req) => {
       affected_area: 'Stanton Sector 7-G',
       coordinates: { lat: 15.5, lng: -42.3 },
       event_id: event.id,
-      reported_by: user.id,
+      reported_by_member_profile_id: memberProfile.id,
       priority: 1,
       tags: ['rescue', 'demo', 'critical']
     });
 
     // 3. Create command voice net for the event
-    const net = await base44.asServiceRole.entities.VoiceNet.create({
+    const net = await base44.entities.VoiceNet.create({
       event_id: event.id,
       code: 'COMMAND',
       label: 'Command Net - Demo',
@@ -68,7 +72,7 @@ Deno.serve(async (req) => {
     });
 
     // 4. Create rescue request linked to comms room
-    const rescueRequest = await base44.asServiceRole.entities.Incident.create({
+    const rescueRequest = await base44.entities.Incident.create({
       title: 'Rescue Request - MR-7',
       description: 'Medical rescue in progress. 2-person team deploying. ETA 5 mins.',
       severity: 'HIGH',
@@ -78,34 +82,34 @@ Deno.serve(async (req) => {
       coordinates: { lat: 15.5, lng: -42.3 },
       event_id: event.id,
       assigned_net_id: net.id,
-      reported_by: user.id,
+      reported_by_member_profile_id: memberProfile.id,
       priority: 1,
       tags: ['rescue', 'medical', 'demo']
     });
 
     // 5. Create tactical map markers: hot zone + rally point
-    const hotZone = await base44.asServiceRole.entities.MapMarker.create({
+    const hotZone = await base44.entities.MapMarker.create({
       event_id: event.id,
       type: 'distress',
       label: 'Hot Zone - Distress Location',
       coordinates: { lat: 15.5, lng: -42.3 },
-      created_by: user.id
+      created_by_member_profile_id: memberProfile.id
     });
 
-    const rallyPoint = await base44.asServiceRole.entities.MapMarker.create({
+    const rallyPoint = await base44.entities.MapMarker.create({
       event_id: event.id,
       type: 'rally',
       label: 'Rally Point Bravo',
       coordinates: { lat: 16.1, lng: -41.9 },
-      created_by: user.id
+      created_by_member_profile_id: memberProfile.id
     });
 
     // 6. Create command history for ping breadcrumb
-    const command = await base44.asServiceRole.entities.TacticalCommand.create({
+    const command = await base44.entities.TacticalCommand.create({
       event_id: event.id,
       message: 'RESCUE TEAM: Proceed to Rally Point Bravo, then advance to distress coordinates. Maintain OPSEC.',
       coordinates: { lat: 16.1, lng: -41.9 },
-      issued_by: user.id,
+      issued_by_member_profile_id: memberProfile.id,
       priority: 'CRITICAL',
       command_type: 'RALLY',
       status: 'ISSUED'

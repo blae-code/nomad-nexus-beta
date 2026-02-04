@@ -1,15 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const body = await readJson(req);
+    const { base44, actorType } = await getAuthContext(req, body, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
     const { action, channelId, messageContent, recentMessages = [], timeWindowHours = 24 } = body;
 
     // Action 1: Categorize and tag a message

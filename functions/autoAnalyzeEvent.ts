@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createServiceClient, readJson } from './_shared/memberAuth.ts';
 
 /**
  * Auto-analyze new events for tactical recommendations
@@ -6,8 +6,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const { event, data, payload_too_large } = await req.json();
+        const base44 = createServiceClient();
+        const { event, data, payload_too_large } = await readJson(req);
 
         // Fetch event if payload was too large
         const eventData = payload_too_large 

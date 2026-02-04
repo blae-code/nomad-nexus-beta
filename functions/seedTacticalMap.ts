@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
-
-  if (!user || user.role !== 'admin') {
+  const payload = await readJson(req);
+  const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+    allowAdmin: true,
+    allowMember: true
+  });
+  const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+  if (!isAdmin) {
     return Response.json({ error: 'Admin only' }, { status: 403 });
   }
 
   try {
-    const { eventId } = await req.json();
+    const { eventId } = payload;
 
     if (!eventId) {
       return Response.json({ error: 'eventId required' }, { status: 400 });
@@ -18,14 +21,14 @@ Deno.serve(async (req) => {
     // Create player statuses with DISTRESS (urgent)
     const playerStatuses = [
       {
-        user_id: 'user-1',
+        member_profile_id: 'member-1',
         event_id: eventId,
         status: 'READY',
         role: 'PILOT',
         coordinates: { lat: 35.6895, lng: 139.6917 }
       },
       {
-        user_id: 'user-2',
+        member_profile_id: 'member-2',
         event_id: eventId,
         status: 'ENGAGED',
         role: 'GUNNER',
@@ -33,7 +36,7 @@ Deno.serve(async (req) => {
         notes: 'Taking fire'
       },
       {
-        user_id: 'user-3',
+        member_profile_id: 'member-3',
         event_id: eventId,
         status: 'DISTRESS',
         role: 'MEDIC',
@@ -41,7 +44,7 @@ Deno.serve(async (req) => {
         notes: 'Critical condition'
       },
       {
-        user_id: 'user-4',
+        member_profile_id: 'member-4',
         event_id: eventId,
         status: 'DOWN',
         role: 'SCOUT',
@@ -121,7 +124,7 @@ Deno.serve(async (req) => {
       event_id: eventId,
       message: 'Converge on distress position. Medical priority.',
       coordinates: { lat: 35.6700, lng: 139.7000 },
-      issued_by: user.id,
+      issued_by_member_profile_id: memberProfile?.id || null,
       command_type: 'RALLY',
       priority: 'CRITICAL',
       status: 'ISSUED'
@@ -132,7 +135,7 @@ Deno.serve(async (req) => {
       event_id: eventId,
       type: 'RESCUE',
       severity: 'HIGH',
-      actor_user_id: user.id,
+      actor_member_profile_id: memberProfile?.id || null,
       summary: 'Distress beacon activated - personnel medical emergency',
       details: { incident_id: incident.id }
     });
@@ -141,7 +144,7 @@ Deno.serve(async (req) => {
       event_id: eventId,
       type: 'SYSTEM',
       severity: 'MEDIUM',
-      actor_user_id: user.id,
+      actor_member_profile_id: memberProfile?.id || null,
       summary: 'Tactical map initialized with seed data',
       details: { markers: 3, personnel: 4, incidents: 1 }
     });

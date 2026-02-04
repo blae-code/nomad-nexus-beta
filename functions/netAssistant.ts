@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 const withTimeout = (promise, ms = 2000) => Promise.race([
   promise,
@@ -7,14 +7,17 @@ const withTimeout = (promise, ms = 2000) => Promise.race([
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const payload = await readJson(req);
+        const { base44, actorType } = await getAuthContext(req, payload, {
+            allowAdmin: true,
+            allowMember: true
+        });
         
-        if (!user) {
+        if (!actorType) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { action, eventId, netIds } = await req.json();
+        const { action, eventId, netIds } = payload;
 
         if (!action) {
             return Response.json({ error: 'Missing action' }, { status: 400 });
@@ -166,7 +169,10 @@ ${Object.entries(netParticipation).map(([code, data]) =>
 ).join('\n')}
 
 CRITICAL ALERTS:
-${statuses.filter(s => s.status === 'DISTRESS').map(s => `- Distress signal from unit ${s.user_id.slice(0,8)}`).join('\n') || 'None'}
+${statuses.filter(s => s.status === 'DISTRESS').map(s => {
+  const id = (s.member_profile_id || s.user_id || '').toString();
+  return `- Distress signal from unit ${id.slice(0,8)}`;
+}).join('\n') || 'None'}
 
 Provide a brief executive summary (2-3 sentences) plus key metrics in JSON:
 {

@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { DEFAULT_VOICE_NETS, VOICE_CONNECTION_STATE, VOICE_SESSION_HEARTBEAT_MS, VOICE_SPEAKING_DEBOUNCE_MS } from '@/components/constants/voiceNet';
 import MockVoiceTransport from './transport/MockVoiceTransport';
 import { LiveKitTransport } from './transport/LiveKitTransport';
@@ -118,7 +118,7 @@ export function VoiceNetProvider({ children }) {
     try {
       // Try to mint LiveKit token; fallback to mock if unavailable
       try {
-        const tokenResp = await base44.functions.invoke('mintVoiceToken', {
+        const tokenResp = await invokeMemberFunction('mintVoiceToken', {
           netId,
           userId: user.id,
           callsign: user.callsign || 'Unknown',

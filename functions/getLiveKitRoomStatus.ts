@@ -1,16 +1,19 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 import { RoomServiceClient } from 'npm:livekit-server-sdk@2.0.0';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { actorType } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { rooms } = await req.json();
+    const { rooms } = payload;
 
     if (!rooms || !Array.isArray(rooms) || rooms.length === 0) {
       return Response.json({}, { status: 200 }); // Empty result for no rooms

@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const payload = await readJson(req);
+        const { base44, actorType } = await getAuthContext(req, payload, {
+            allowAdmin: true,
+            allowMember: true
+        });
         
-        if (!user) {
+        if (!actorType) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { action, eventId, messageIds, timeWindow } = await req.json();
+        const { action, eventId, messageIds, timeWindow } = payload;
 
         if (!action) {
             return Response.json({ error: 'Missing action' }, { status: 400 });
@@ -102,7 +105,7 @@ Return JSON with findings:
             // Store critical alerts as AIAgentLog entries AND EventLog
             if (result.critical_alerts?.length > 0 && eventId) {
                 for (const alert of result.critical_alerts.slice(0, 3)) {
-                    await base44.asServiceRole.entities.AIAgentLog.create({
+                    await base44.entities.AIAgentLog.create({
                         agent_slug: 'comms_monitor',
                         event_id: eventId,
                         type: 'ALERT',
@@ -112,7 +115,7 @@ Return JSON with findings:
                     });
 
                     // Also log to EventLog for timeline
-                    await base44.asServiceRole.entities.EventLog.create({
+                    await base44.entities.EventLog.create({
                         event_id: eventId,
                         type: 'COMMS',
                         severity: alert.severity === 'critical' ? 'HIGH' : alert.severity === 'high' ? 'MEDIUM' : 'LOW',

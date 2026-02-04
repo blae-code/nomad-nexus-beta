@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createServiceClient, isAdminMember } from './_shared/memberAuth.ts';
 
 /**
  * Auto-detect priority messages in comms
@@ -6,7 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
+        const base44 = createServiceClient();
         const { event, data, payload_too_large } = await req.json();
 
         const messageData = payload_too_large 
@@ -56,10 +56,11 @@ Also identify sentiment and key topics.`,
             const channel = await base44.asServiceRole.entities.Channel.get(messageData.channel_id);
             
             // Get admins to notify
-            const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+            const members = await base44.entities.MemberProfile.list();
+            const admins = members.filter((member) => isAdminMember(member));
             
             for (const admin of admins) {
-                await base44.asServiceRole.entities.Notification.create({
+                await base44.entities.Notification.create({
                     user_id: admin.id,
                     type: 'CRITICAL_MESSAGE',
                     title: `🚨 Critical Message in #${channel.name}`,

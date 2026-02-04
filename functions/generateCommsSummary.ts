@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { eventId, channelIds, startTime, endTime } = await req.json();
+    const { eventId, channelIds, startTime, endTime } = payload;
 
     // Fetch event details
     const event = await base44.entities.Event.filter({ id: eventId });
@@ -84,6 +87,7 @@ Generate a structured summary including:
       event_id: eventId,
       type: 'SYSTEM',
       severity: 'LOW',
+      actor_member_profile_id: memberProfile?.id || null,
       summary: 'Communications summary generated',
       details: {
         message_count: allMessages.length,

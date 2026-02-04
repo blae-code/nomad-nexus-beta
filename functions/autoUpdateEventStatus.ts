@@ -1,16 +1,21 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    const isSysAdmin = memberProfile?.is_system_administrator === true;
 
-    if (!user || (user.role !== 'admin' && !user.is_system_administrator)) {
+    if (!isAdmin && !isSysAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const now = new Date();
-    const events = await base44.asServiceRole.entities.Event.list();
+    const events = await base44.entities.Event.list();
     let updated = 0;
 
     for (const event of events) {
@@ -30,7 +35,7 @@ Deno.serve(async (req) => {
         newStatus = 'active';
         newPhase = 'ACTIVE';
         
-        await base44.asServiceRole.entities.EventLog.create({
+        await base44.entities.EventLog.create({
           event_id: event.id,
           timestamp: now.toISOString(),
           type: 'STATUS',
@@ -44,7 +49,7 @@ Deno.serve(async (req) => {
         newStatus = 'completed';
         newPhase = 'DEBRIEF';
         
-        await base44.asServiceRole.entities.EventLog.create({
+        await base44.entities.EventLog.create({
           event_id: event.id,
           timestamp: now.toISOString(),
           type: 'STATUS',
@@ -62,7 +67,7 @@ Deno.serve(async (req) => {
       ) {
         newPhase = 'BRIEFING';
         
-        await base44.asServiceRole.entities.EventLog.create({
+        await base44.entities.EventLog.create({
           event_id: event.id,
           timestamp: now.toISOString(),
           type: 'STATUS',
@@ -80,7 +85,7 @@ Deno.serve(async (req) => {
           updateData.phase_transitioned_at = now.toISOString();
         }
         
-        await base44.asServiceRole.entities.Event.update(event.id, updateData);
+        await base44.entities.Event.update(event.id, updateData);
         updated++;
       }
     }

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createServiceClient } from './_shared/memberAuth.ts';
 
 function generateAccessCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -11,7 +11,7 @@ function generateAccessCode() {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    const base44 = createServiceClient();
 
     // Generate unique admin access key (no auth required for bootstrap)
     const code = generateAccessCode();

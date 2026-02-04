@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 /**
  * Validates that only one Pioneer exists in the system.
@@ -7,35 +7,39 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user || user.role !== 'admin') {
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 403 }
       );
     }
 
-    const { userId, newRank } = await req.json();
+    const { userId, newRank } = payload;
 
     // Only validate if rank is being changed to Pioneer
-    if (newRank !== 'Pioneer') {
+    if (newRank !== 'Pioneer' && newRank !== 'PIONEER') {
       return Response.json({ valid: true });
     }
 
     // Fetch all users with Pioneer rank
-    const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
-    const currentPioneer = allUsers.find(u => u.rank === 'Pioneer' && u.id !== userId);
+    const allMembers = await base44.entities.MemberProfile.list('-created_date', 500);
+    const currentPioneer = allMembers.find(m => (m.rank || '').toUpperCase() === 'PIONEER' && m.id !== userId);
 
     if (currentPioneer) {
       return Response.json({
         valid: false,
-        error: `Pioneer rank is already assigned to ${currentPioneer.callsign || currentPioneer.email}. Remove that rank first.`,
+        error: `Pioneer rank is already assigned to ${currentPioneer.display_callsign || currentPioneer.callsign || currentPioneer.full_name}. Remove that rank first.`,
         currentPioneer: {
           id: currentPioneer.id,
           email: currentPioneer.email,
-          callsign: currentPioneer.callsign
+          callsign: currentPioneer.display_callsign || currentPioneer.callsign
         }
       });
     }

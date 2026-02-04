@@ -1,9 +1,13 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const body = await req.json();
+    const body = await readJson(req);
+    const { base44, actorType } = await getAuthContext(req, body);
+
+    if (!actorType) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     
     const { eventId, milestoneType, change, severity = 'INFO', emailRecipients = [] } = body;
     

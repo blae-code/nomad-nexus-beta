@@ -1,16 +1,19 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get all active recurrences
-    const recurrences = await base44.asServiceRole.entities.EventRecurrence.filter({
+    const recurrences = await base44.entities.EventRecurrence.filter({
       is_active: true
     });
 
@@ -19,13 +22,13 @@ Deno.serve(async (req) => {
 
     for (const recurrence of recurrences) {
       // Get the parent event
-      const parentEvent = await base44.asServiceRole.entities.Event.get(recurrence.event_id);
+      const parentEvent = await base44.entities.Event.get(recurrence.event_id);
       if (!parentEvent) continue;
 
       // Check if we should generate more events
       const shouldStop = checkRecurrenceEnd(recurrence, now);
       if (shouldStop) {
-        await base44.asServiceRole.entities.EventRecurrence.update(recurrence.id, { is_active: false });
+        await base44.entities.EventRecurrence.update(recurrence.id, { is_active: false });
         continue;
       }
 
@@ -34,7 +37,7 @@ Deno.serve(async (req) => {
       if (!nextDate || nextDate <= now) continue;
 
       // Create new event instance
-      const newEvent = await base44.asServiceRole.entities.Event.create({
+      const newEvent = await base44.entities.Event.create({
         ...parentEvent,
         start_time: nextDate.toISOString(),
         end_time: parentEvent.end_time ? 
@@ -46,18 +49,19 @@ Deno.serve(async (req) => {
       });
 
       // Update recurrence counter
-      await base44.asServiceRole.entities.EventRecurrence.update(recurrence.id, {
+      await base44.entities.EventRecurrence.update(recurrence.id, {
         occurrences_generated: recurrence.occurrences_generated + 1
       });
 
       generatedCount++;
 
       // Create notifications for participants
-      if (parentEvent.assigned_user_ids && parentEvent.assigned_user_ids.length > 0) {
-        for (const userId of parentEvent.assigned_user_ids) {
-          await base44.asServiceRole.entities.EventNotification.create({
+      const assignedIds = parentEvent.assigned_member_profile_ids || parentEvent.assigned_user_ids || [];
+      if (assignedIds.length > 0) {
+        for (const memberId of assignedIds) {
+          await base44.entities.EventNotification.create({
             event_id: newEvent.id,
-            user_id: userId,
+            member_profile_id: memberId,
             type: 'event_created',
             message: `New recurring event: ${newEvent.title}`
           });

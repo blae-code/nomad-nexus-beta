@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId, eventId, status, location, notes, callsign } = await req.json();
+    const { userId, eventId, status, location, notes, callsign } = payload;
 
     // Build analysis prompt
     const prompt = `Analyze this tactical status update for critical operational information:
@@ -44,7 +47,7 @@ Respond in JSON format.`;
 
     // Create AI Agent Log if significant AND EventLog for timeline
     if (analysis.severity === 'HIGH' || analysis.severity === 'CRITICAL' || analysis.is_distress) {
-      await base44.asServiceRole.entities.AIAgentLog.create({
+      await base44.entities.AIAgentLog.create({
         agent_slug: 'status_monitor',
         event_id: eventId,
         type: analysis.is_distress ? 'ALERT' : 'INFO',
@@ -61,11 +64,11 @@ Respond in JSON format.`;
       });
 
       // Log to EventLog for timeline
-      await base44.asServiceRole.entities.EventLog.create({
+      await base44.entities.EventLog.create({
         event_id: eventId,
         type: 'STATUS',
         severity: analysis.severity === 'CRITICAL' ? 'HIGH' : 'MEDIUM',
-        actor_user_id: userId,
+        actor_member_profile_id: memberProfile?.id || userId,
         summary: analysis.summary,
         details: {
           operator: callsign,

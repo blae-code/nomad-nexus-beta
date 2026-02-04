@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 /**
  * Generate AI summary and tags for feedback ticket
@@ -6,14 +6,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { feedbackId, title, description, type } = await req.json();
+    const { feedbackId, title, description, type } = payload;
 
     if (!feedbackId || !title || !description) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -48,7 +51,7 @@ Respond in JSON format:
     });
 
     // Update feedback with AI results
-    await base44.asServiceRole.entities.Feedback.update(feedbackId, {
+    await base44.entities.Feedback.update(feedbackId, {
       ai_summary: response.summary,
       ai_tags: response.tags
     });

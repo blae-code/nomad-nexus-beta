@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 const withTimeout = (promise, ms = 3000) => Promise.race([
   promise,
@@ -7,14 +7,17 @@ const withTimeout = (promise, ms = 3000) => Promise.race([
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
     
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { eventId, timeWindowMinutes = 30 } = await req.json();
+    const { eventId, timeWindowMinutes = 30 } = payload;
 
     // Fetch recent logs and activity
     const cutoffTime = new Date(Date.now() - timeWindowMinutes * 60000).toISOString();
@@ -97,10 +100,11 @@ Be concise and tactical. Focus on actionable intelligence.`,
     });
 
     // Log the analysis
-    await base44.asServiceRole.entities.EventLog.create({
+    await base44.entities.EventLog.create({
       event_id: eventId || null,
       type: 'SYSTEM',
       severity: response.overall_status === 'CRITICAL' ? 'HIGH' : response.overall_status === 'ELEVATED' ? 'MEDIUM' : 'LOW',
+      actor_member_profile_id: memberProfile?.id || null,
       summary: `AI Anomaly Detection: ${response.overall_status}`,
       details: {
         anomaly_count: response.anomalies?.length || 0,

@@ -1,17 +1,20 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType || !memberProfile) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user has AI consent
     const consent = await base44.entities.AIConsent.filter({
-      user_id: user.id,
+      member_profile_id: memberProfile.id,
       feature: 'RIGGSY_CHAT',
       is_enabled: true
     });
@@ -20,7 +23,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'AI features not enabled' }, { status: 403 });
     }
 
-    const { userMessage, contextRefs = [], ephemeral = false } = await req.json();
+    const { userMessage, contextRefs = [], ephemeral = false } = payload;
 
     if (!userMessage?.trim()) {
       return Response.json({ error: 'Empty message' }, { status: 400 });
@@ -54,7 +57,7 @@ User message: "${userMessage}"`,
     if (!ephemeral) {
       try {
         const history = await base44.entities.RiggsyChatHistory.filter({
-          user_id: user.id
+          member_profile_id: memberProfile.id
         });
 
         const messages = history?.[0]?.messages || [];
@@ -76,7 +79,7 @@ User message: "${userMessage}"`,
           await base44.entities.RiggsyChatHistory.update(history[0].id, { messages });
         } else {
           await base44.entities.RiggsyChatHistory.create({
-            user_id: user.id,
+            member_profile_id: memberProfile.id,
             messages,
             is_ephemeral: false
           });

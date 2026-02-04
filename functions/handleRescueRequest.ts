@@ -1,16 +1,19 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 import { RoomServiceClient, AccessToken } from 'npm:livekit-server-sdk@^2.0.0';
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const payload = await readJson(req);
+        const { base44, actorType, memberProfile, adminUser } = await getAuthContext(req, payload, {
+            allowAdmin: true,
+            allowMember: true
+        });
 
-        if (!user) {
+        if (!actorType || !memberProfile) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { type, location, description } = await req.json();
+        const { type, location, description } = payload;
 
         if (!type || !location) {
             return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -21,7 +24,7 @@ Deno.serve(async (req) => {
         const livekitUrl = Deno.env.get("LIVEKIT_URL");
 
         // 1. Create Temporary LiveKit Room
-        const roomName = `rescue-${Date.now()}-${user.id.substring(0, 5)}`;
+        const roomName = `rescue-${Date.now()}-${memberProfile.id.substring(0, 5)}`;
         let token = null;
 
         if (apiKey && apiSecret && livekitUrl) {
@@ -34,8 +37,8 @@ Deno.serve(async (req) => {
 
             // Generate token for the requester immediately
             const at = new AccessToken(apiKey, apiSecret, {
-                identity: user.id,
-                name: user.rsi_handle || user.full_name,
+                identity: memberProfile.id,
+                name: memberProfile.callsign || memberProfile.display_callsign || memberProfile.full_name || 'Unknown',
             });
             at.addGrant({
                 roomJoin: true,
@@ -48,7 +51,7 @@ Deno.serve(async (req) => {
 
         // 2. Create RescueRequest Record
         const rescueRecord = await base44.entities.RescueRequest.create({
-            requester_id: user.id,
+            requester_id: memberProfile.id,
             type: type,
             location: location,
             description: description,
@@ -58,17 +61,17 @@ Deno.serve(async (req) => {
 
         // 2a. Log distress event (if event_id is in context or available)
         // For now, we'll create a generic distress log
-        await base44.asServiceRole.entities.EventLog.create({
+        await base44.entities.EventLog.create({
             event_id: 'global-distress', // Could be passed in payload
             type: 'RESCUE',
             severity: 'HIGH',
-            actor_user_id: user.id,
+            actor_member_profile_id: memberProfile.id,
             summary: `DISTRESS BEACON: ${type} at ${location}`,
             details: {
                 distress_type: type,
                 location: location,
                 description: description,
-                requester: user.rsi_handle || user.full_name,
+                requester: memberProfile.callsign || memberProfile.display_callsign || memberProfile.full_name || 'Unknown',
                 rescue_ticket: rescueRecord.id,
                 comms_room: roomName
             }
@@ -76,16 +79,16 @@ Deno.serve(async (req) => {
 
         // 3. Update PlayerStatus to DISTRESS (triggers UI alerts)
         // Check if status exists
-        const existingStatus = await base44.entities.PlayerStatus.filter({ user_id: user.id });
+        const existingStatus = await base44.entities.PlayerStatus.filter({ member_profile_id: memberProfile.id });
         if (existingStatus.length > 0) {
-            await base44.asServiceRole.entities.PlayerStatus.update(existingStatus[0].id, {
+            await base44.entities.PlayerStatus.update(existingStatus[0].id, {
                 status: 'DISTRESS',
                 notes: `[${type}] ${description || location}`,
                 last_updated: new Date().toISOString()
             });
         } else {
-            await base44.asServiceRole.entities.PlayerStatus.create({
-                user_id: user.id,
+            await base44.entities.PlayerStatus.create({
+                member_profile_id: memberProfile.id,
                 status: 'DISTRESS',
                 notes: `[${type}] ${description || location}`,
                 last_updated: new Date().toISOString()
@@ -97,9 +100,11 @@ Deno.serve(async (req) => {
         // Note: Filter by role_tags isn't always direct if it's an array in JSON, 
         // but we can list and filter in memory for safety or use exact match if SDK supports array contains.
         // We'll list all users and filter.
-        const allUsers = await base44.entities.User.list();
-        const rescueUnits = allUsers.filter(u => 
-            u.role_tags && u.role_tags.includes('Redscar Rescue')
+        const allMembers = await base44.entities.MemberProfile.list();
+        const rescueUnits = allMembers.filter(member => {
+            const roles = Array.isArray(member.roles) ? member.roles : [];
+            return roles.includes('Redscar Rescue') || roles.includes('Rangers') || roles.includes('Shamans');
+        }
         );
 
         const emailPromises = rescueUnits.map(unit => {
@@ -110,7 +115,7 @@ Deno.serve(async (req) => {
                     body: `
 PRIORITY ALERT // RESCUE REQUESTED
 
-OPERATOR: ${user.rsi_handle || user.full_name}
+OPERATOR: ${memberProfile.callsign || memberProfile.display_callsign || memberProfile.full_name || 'Unknown'}
 LOCATION: ${location}
 TYPE: ${type}
 DETAILS: ${description || 'N/A'}

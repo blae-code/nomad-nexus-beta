@@ -90,6 +90,25 @@ export function AuthProvider({ children }) {
         }
 
         if (isMounted) {
+          try {
+            const adminUser = await base44.auth.me();
+            if (adminUser && adminUser.role === 'admin') {
+              setUser({
+                ...adminUser,
+                is_admin: true,
+                callsign: adminUser.callsign || adminUser.full_name || adminUser.email || 'System Admin',
+                authType: 'admin'
+              });
+              setDisclaimersCompleted(true);
+              setOnboardingCompleted(true);
+              setInitialized(true);
+              setLoading(false);
+              return;
+            }
+          } catch (adminErr) {
+            console.warn('[AUTH] Admin auth check failed:', adminErr?.message);
+          }
+
           setUser(null);
           setInitialized(true);
           setLoading(false);

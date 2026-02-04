@@ -5,6 +5,7 @@ const authMeMock = vi.fn();
 const listParticipantsMock = vi.fn();
 
 vi.mock('npm:@base44/sdk@0.8.6', () => ({
+  createClient: () => ({}),
   createClientFromRequest: () => ({
     auth: {
       me: authMeMock
@@ -32,7 +33,7 @@ afterEach(() => {
 
 describe('getLiveKitRoomStatus', () => {
   it('returns participant counts for rooms and handles missing rooms', async () => {
-    authMeMock.mockResolvedValue({ id: 'user-1' });
+    authMeMock.mockResolvedValue({ id: 'user-1', role: 'admin' });
     listParticipantsMock.mockImplementation((roomName: string) => {
       if (roomName === 'alpha') {
         return Promise.resolve([{ id: 'p1' }, { id: 'p2' }]);
@@ -41,6 +42,8 @@ describe('getLiveKitRoomStatus', () => {
     });
 
     const handler = await loadHandler('../../functions/getLiveKitRoomStatus.ts', {
+      BASE44_APP_ID: 'app-id',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
       LIVEKIT_URL: 'https://livekit.example.com',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret'
@@ -59,9 +62,12 @@ describe('getLiveKitRoomStatus', () => {
   });
 
   it('returns error response when LiveKit is not configured', async () => {
-    authMeMock.mockResolvedValue({ id: 'user-1' });
+    authMeMock.mockResolvedValue({ id: 'user-1', role: 'admin' });
 
-    const handler = await loadHandler('../../functions/getLiveKitRoomStatus.ts', {});
+    const handler = await loadHandler('../../functions/getLiveKitRoomStatus.ts', {
+      BASE44_APP_ID: 'app-id',
+      BASE44_SERVICE_ROLE_KEY: 'service-key'
+    });
 
     const response = await handler(buildRequest({ rooms: ['alpha'] }));
     const payload = await response.json();
@@ -74,6 +80,8 @@ describe('getLiveKitRoomStatus', () => {
     authMeMock.mockResolvedValue(null);
 
     const handler = await loadHandler('../../functions/getLiveKitRoomStatus.ts', {
+      BASE44_APP_ID: 'app-id',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
       LIVEKIT_URL: 'https://livekit.example.com',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret'

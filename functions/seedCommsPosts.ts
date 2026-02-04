@@ -1,12 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { CONTENT_TEMPLATES, generateSeedPost } from '@/components/comms/seedContentStyleGuide.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    const isFounder = (memberProfile?.rank || '').toUpperCase() === 'FOUNDER';
 
-    if (!user || user.rank !== 'Founder') {
+    if (!isAdmin && !isFounder) {
       return Response.json({ error: 'Founders only' }, { status: 403 });
     }
 
@@ -54,7 +59,7 @@ Deno.serve(async (req) => {
         for (const content of contentToSeed) {
           await base44.entities.CommsPost.create({
             channel_id: channel.id,
-            author_id: user.id,
+            author_id: memberProfile?.id || null,
             content: content,
             template_type: 'FREEFORM'
           });

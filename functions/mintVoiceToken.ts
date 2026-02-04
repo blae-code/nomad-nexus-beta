@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { SignJWT } from 'npm:jose@5.0.0';
 
 /**
@@ -8,22 +8,29 @@ import { SignJWT } from 'npm:jose@5.0.0';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, adminUser, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { netId, userId, callsign, clientId, netType } = await req.json();
+    const { netId, userId, callsign, clientId, netType } = payload;
 
     if (!netId || !userId) {
       return Response.json({ error: 'Missing netId or userId' }, { status: 400 });
     }
 
+    if (actorType === 'member' && memberProfile?.id && userId !== memberProfile.id) {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     // Enforce policy: Focused nets require Member/Affiliate/Partner membership
     if (netType === 'FOCUSED' && !netId.includes('briefing-temp')) {
-      const membership = user.membership || 'CASUAL';
+      const membership = memberProfile?.membership || (isAdminMember(memberProfile) ? 'PARTNER' : 'CASUAL');
       const allowedMemberships = ['MEMBER', 'AFFILIATE', 'PARTNER'];
       
       if (!allowedMemberships.includes(membership)) {
@@ -72,7 +79,7 @@ Deno.serve(async (req) => {
         canSubscribe: true,
       },
       metadata: JSON.stringify({
-        callsign: callsign || 'Unknown',
+        callsign: callsign || memberProfile?.display_callsign || memberProfile?.callsign || adminUser?.full_name || 'Unknown',
         clientId: clientId || '',
         netId: netId,
       }),

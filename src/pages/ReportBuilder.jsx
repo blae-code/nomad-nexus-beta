@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, Eye } from 'lucide-react';
@@ -26,7 +26,7 @@ export default function ReportBuilder() {
   const generateReport = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('generateReport', { filters });
+      const response = await invokeMemberFunction('generateReport', { filters });
       setReport(response.data);
     } catch (error) {
       console.error('Failed to generate report:', error);

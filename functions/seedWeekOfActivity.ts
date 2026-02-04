@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { CONTENT_TEMPLATES } from '@/components/comms/seedContentStyleGuide.js';
 import { ensureCommsBaseline } from './commsProvisioner.js';
 
@@ -71,13 +71,12 @@ const SEED_SCENARIOS = [
  * Get random user with matching rank
  */
 const getUserByRank = async (base44, rank) => {
-  const users = await base44.entities.User.filter({ rank }, null, 100);
-  if (users.length === 0) {
-    // Fallback: get any user
-    const allUsers = await base44.entities.User.list(null, 1);
-    return allUsers[0];
+  const members = await base44.entities.MemberProfile.filter({ rank }, null, 100);
+  if (members.length === 0) {
+    const allMembers = await base44.entities.MemberProfile.list(null, 1);
+    return allMembers[0];
   }
-  return users[Math.floor(Math.random() * users.length)];
+  return members[Math.floor(Math.random() * members.length)];
 };
 
 /**
@@ -100,10 +99,15 @@ const getTemplateContent = (templateKey) => {
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    const isFounder = (memberProfile?.rank || '').toUpperCase() === 'FOUNDER';
 
-    if (!user || user.rank !== 'Founder') {
+    if (!isAdmin && !isFounder) {
       return Response.json({ error: 'Founders only' }, { status: 403 });
     }
 

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createServiceClient } from './_shared/memberAuth.ts';
 
 /**
  * Auto-detect distress situations from status updates
@@ -6,7 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
+        const base44 = createServiceClient();
         const { event, data, old_data, payload_too_large } = await req.json();
 
         const statusData = payload_too_large 
@@ -27,11 +27,17 @@ Deno.serve(async (req) => {
         }
 
         // Get user details
-        const user = await base44.asServiceRole.entities.User.get(statusData.user_id);
-        const profile = await base44.asServiceRole.entities.MemberProfile.filter({ 
-            user_id: statusData.user_id 
-        });
-        const callsign = profile[0]?.callsign || user.full_name;
+        const memberProfileId = statusData.member_profile_id || statusData.user_id;
+        let profile = null;
+        if (memberProfileId) {
+            try {
+                profile = await base44.entities.MemberProfile.get(memberProfileId);
+            } catch {
+                const profiles = await base44.entities.MemberProfile.filter({ id: memberProfileId });
+                profile = profiles?.[0] ?? null;
+            }
+        }
+        const callsign = profile?.display_callsign || profile?.callsign || 'Unknown';
 
         // Create incident record
         const incident = await base44.asServiceRole.entities.Incident.create({
@@ -43,7 +49,7 @@ Deno.serve(async (req) => {
             location: statusData.current_location,
             coordinates: statusData.coordinates,
             status: 'OPEN',
-            reported_by: statusData.user_id
+            reported_by: memberProfileId
         });
 
         // Find nearby rescue-capable assets
@@ -72,7 +78,7 @@ Deno.serve(async (req) => {
             severity: 'HIGH',
             summary: `Distress detected: ${callsign} at ${statusData.current_location || 'unknown location'}`,
             details: JSON.stringify({
-                user_id: statusData.user_id,
+                user_id: memberProfileId,
                 status: statusData.status,
                 location: statusData.current_location,
                 coordinates: statusData.coordinates,
@@ -91,8 +97,8 @@ Deno.serve(async (req) => {
         );
 
         for (const rescuer of rescuers.slice(0, 5)) { // Notify top 5
-            await base44.asServiceRole.entities.Notification.create({
-                user_id: rescuer.user_id,
+            await base44.entities.Notification.create({
+                user_id: rescuer.id,
                 type: 'DISTRESS_ALERT',
                 title: `🆘 Distress Signal: ${callsign}`,
                 message: `${statusData.current_location || 'Unknown location'} - ${statusData.notes || 'Assistance needed'}`,

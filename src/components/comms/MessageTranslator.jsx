@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { Languages, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,7 +33,7 @@ export default function MessageTranslator({ message }) {
   const handleTranslate = async (targetLanguage) => {
     setTranslating(true);
     try {
-      const { data } = await base44.functions.invoke('translateMessage', {
+      const { data } = await invokeMemberFunction('translateMessage', {
         content: message.content,
         target_language: targetLanguage,
       });

@@ -1,15 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const payload = await readJson(req);
+        const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
+            allowAdmin: true,
+            allowMember: true
+        });
         
-        if (!user) {
+        if (!actorType || !memberProfile) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { eventId } = await req.json();
+        const { eventId } = payload;
 
         if (!eventId) {
             return Response.json({ error: 'Missing eventId' }, { status: 400 });
@@ -45,7 +48,7 @@ Deno.serve(async (req) => {
         // Create all nets in parallel for speed
         const netPromises = [
             // 1. Command Net
-            base44.asServiceRole.entities.VoiceNet.create({
+            base44.entities.VoiceNet.create({
                 event_id: eventId,
                 code: "COMMAND",
                 label: "Mission Command",
@@ -58,7 +61,7 @@ Deno.serve(async (req) => {
                 livekit_room_name: genRoomName("COMMAND")
             }),
             // 2. General Net
-            base44.asServiceRole.entities.VoiceNet.create({
+            base44.entities.VoiceNet.create({
                 event_id: eventId,
                 code: "GENERAL",
                 label: "General Chatter",
@@ -74,7 +77,7 @@ Deno.serve(async (req) => {
         squads.slice(0, 3).forEach(squad => {
             const code = squad.name.split(' ')[0].toUpperCase().substring(0, 8);
             netPromises.push(
-                base44.asServiceRole.entities.VoiceNet.create({
+                base44.entities.VoiceNet.create({
                     event_id: eventId,
                     code: code,
                     label: `${squad.name} Comms`,
@@ -92,11 +95,11 @@ Deno.serve(async (req) => {
         const netsCreated = await Promise.all(netPromises);
 
         // 4. Log comms provisioning to EventLog
-        await base44.asServiceRole.entities.EventLog.create({
+        await base44.entities.EventLog.create({
             event_id: eventId,
             type: 'SYSTEM',
             severity: 'LOW',
-            actor_member_profile_id: user.id,
+            actor_member_profile_id: memberProfile.id,
             summary: `Communications provisioning complete: ${netsCreated.length} nets initialized`,
             details: {
                 nets_created: netsCreated.map(n => ({ code: n.code, label: n.label, room: n.livekit_room_name })),

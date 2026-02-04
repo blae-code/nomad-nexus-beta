@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '@/components/providers/NotificationContext';
-import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { CheckCircle2, Zap } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 
@@ -89,7 +89,7 @@ async function notifyAboutCompletion(milestone, email) {
   try {
     if (!email) return;
 
-    await base44.functions.invoke('notifyRoadmapUpdate', {
+    await invokeMemberFunction('notifyRoadmapUpdate', {
       milestoneType: milestone.phase,
       change: `${milestone.title} has been completed`,
       severity: 'HIGH',

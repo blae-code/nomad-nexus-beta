@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 // Generate human-typeable 10-12 char code (exclude ambiguous: 0, O, 1, I, l)
 function generateAccessCode() {
@@ -12,15 +12,18 @@ function generateAccessCode() {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const payload = await readJson(req);
+    const { base44, actorType, adminUser, memberProfile } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
     // Only admins can issue keys
-    if (user?.role !== 'admin') {
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
+    if (!isAdmin) {
       return Response.json({ error: 'Admin required' }, { status: 403 });
     }
 
-    const payload = await req.json();
     const {
       grants_rank = 'VAGRANT',
       grants_roles = [],
@@ -46,25 +49,25 @@ Deno.serve(async (req) => {
     // Create access key
     const expiresAt = expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     
-    const key = await base44.asServiceRole.entities.AccessKey.create({
+    const key = await base44.entities.AccessKey.create({
       code,
       status: 'ACTIVE',
       max_uses,
       uses_count: 0,
       expires_at: expiresAt,
-      issued_by_user_id: user.id,
-      redeemed_by_user_ids: [],
+      issued_by_member_profile_id: memberProfile?.id || null,
+      redeemed_by_member_profile_ids: [],
       grants_rank,
       grants_roles,
       note
     });
 
     // Log to audit
-    await base44.asServiceRole.entities.AdminAuditLog.create({
-      actor_user_id: user.id,
+    await base44.entities.AdminAuditLog.create({
+      actor_member_profile_id: memberProfile?.id || null,
       action: 'issue_access_key',
       payload: { code, grants_rank, max_uses, expires_at: expiresAt },
-      executed_by: user.id,
+      executed_by_member_profile_id: memberProfile?.id || null,
       executed_at: new Date().toISOString(),
       step_name: 'access_control',
       status: 'success'

@@ -3,7 +3,7 @@
  * about feature completion. Respects user notification preferences.
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 const THEMATIC_MESSAGES = {
   SYSTEM_ADMIN_COMPLETE: {
@@ -16,14 +16,16 @@ const THEMATIC_MESSAGES = {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const body = await readJson(req);
+    const { base44, actorType, memberProfile } = await getAuthContext(req, body, {
+      allowAdmin: true,
+      allowMember: true
+    });
 
-    if (!user) {
+    if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
     const { feature, notifyAll = false } = body;
 
     if (!feature || !THEMATIC_MESSAGES[feature]) {
@@ -37,18 +39,19 @@ Deno.serve(async (req) => {
 
     // Get target users
     let targetUsers = [];
+    const isAdmin = actorType === 'admin' || isAdminMember(memberProfile);
     if (notifyAll) {
       // Service role: notify all users (admin only)
-      if (user.role !== 'admin') {
+      if (!isAdmin) {
         return Response.json(
           { error: 'Forbidden: Admin only' },
           { status: 403 }
         );
       }
-      targetUsers = await base44.asServiceRole.entities.User.list();
+      targetUsers = await base44.entities.MemberProfile.list();
     } else {
       // Notify current user only
-      targetUsers = [user];
+      targetUsers = memberProfile ? [memberProfile] : [];
     }
 
     // Create notification records (one per user)
