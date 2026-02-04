@@ -111,6 +111,9 @@ export default function MessageItem({
   }, [message?.content]);
   const primaryLink = linkUrls[0] || null;
   const shouldShowPreview = autoLinkPreview || showLinkPreview;
+  const readByIdsRaw = message.read_by_member_profile_ids || message.read_by || [];
+  const readByIds = Array.isArray(readByIdsRaw) ? readByIdsRaw : [];
+  const readCount = readByIds.filter((id) => id && id !== message.user_id).length;
 
   const canEdit = currentUserId === message.user_id;
   const canDelete = isAdmin || currentUserId === message.user_id;
@@ -340,6 +343,10 @@ export default function MessageItem({
                 <div key={idx}>
                   {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                     <img src={url} alt="attachment" className="max-w-sm rounded border border-zinc-700" />
+                  ) : url.match(/\.(mp3|wav|ogg|webm|m4a)$/i) ? (
+                    <audio controls className="w-full max-w-sm">
+                      <source src={url} />
+                    </audio>
                   ) : (
                     <a 
                       href={url} 
@@ -388,6 +395,12 @@ export default function MessageItem({
                   {reaction.emoji} {reaction.user_ids.length}
                 </button>
               ))}
+            </div>
+          )}
+
+          {currentUserId === message.user_id && readCount > 0 && (
+            <div className="mt-1 text-[10px] text-zinc-500">
+              Seen by {readCount}
             </div>
           )}
 

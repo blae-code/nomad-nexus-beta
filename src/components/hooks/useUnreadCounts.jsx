@@ -23,11 +23,28 @@ export function useUnreadCounts(userId) {
   const calculateUnread = useCallback(async (channelId) => {
     try {
       const messages = await base44.entities.Message.filter({ channel_id: channelId });
-      const readStates = await base44.entities.CommsReadState.filter({
-        user_id: userId,
-        scope_type: 'CHANNEL',
-        scope_id: channelId,
-      });
+      let readStates = [];
+      try {
+        readStates = await base44.entities.CommsReadState.filter({
+          member_profile_id: userId,
+          scope_type: 'CHANNEL',
+          scope_id: channelId,
+        });
+      } catch {
+        readStates = [];
+      }
+
+      if (!readStates || readStates.length === 0) {
+        try {
+          readStates = await base44.entities.CommsReadState.filter({
+            user_id: userId,
+            scope_type: 'CHANNEL',
+            scope_id: channelId,
+          });
+        } catch {
+          readStates = [];
+        }
+      }
       const readState = readStates[0];
 
       if (!readState) {
@@ -55,14 +72,14 @@ export function useUnreadCounts(userId) {
       const counts = {};
       for (const channel of allChannels) {
         counts[channel.id] = await calculateUnread(channel.id);
-        }
+      }
 
-        setUnreadByChannelState(counts);
+      setUnreadByChannelState(counts);
 
-        // Also update exported object
-        Object.keys(counts).forEach(key => {
+      // Also update exported object
+      Object.keys(counts).forEach(key => {
         unreadByChannel[key] = counts[key];
-        });
+      });
 
       // Tab-level unread = sum of casual channels
       const casualCount = allChannels
@@ -89,23 +106,50 @@ export function useUnreadCounts(userId) {
       markReadTimeoutRef.current[channelId] = setTimeout(async () => {
         try {
           // Check if read state exists
-          const existing = await base44.entities.CommsReadState.filter({
-            user_id: userId,
-            scope_type: 'CHANNEL',
-            scope_id: channelId,
-          });
+          let existing = [];
+          try {
+            existing = await base44.entities.CommsReadState.filter({
+              member_profile_id: userId,
+              scope_type: 'CHANNEL',
+              scope_id: channelId,
+            });
+          } catch {
+            existing = [];
+          }
+
+          if (!existing || existing.length === 0) {
+            try {
+              existing = await base44.entities.CommsReadState.filter({
+                user_id: userId,
+                scope_type: 'CHANNEL',
+                scope_id: channelId,
+              });
+            } catch {
+              existing = [];
+            }
+          }
 
           if (existing[0]) {
             await base44.entities.CommsReadState.update(existing[0].id, {
               last_read_at: new Date().toISOString(),
             });
           } else {
-            await base44.entities.CommsReadState.create({
-              user_id: userId,
-              scope_type: 'CHANNEL',
-              scope_id: channelId,
-              last_read_at: new Date().toISOString(),
-            });
+            try {
+              await base44.entities.CommsReadState.create({
+                member_profile_id: userId,
+                user_id: userId,
+                scope_type: 'CHANNEL',
+                scope_id: channelId,
+                last_read_at: new Date().toISOString(),
+              });
+            } catch {
+              await base44.entities.CommsReadState.create({
+                user_id: userId,
+                scope_type: 'CHANNEL',
+                scope_id: channelId,
+                last_read_at: new Date().toISOString(),
+              });
+            }
           }
 
           // Refresh counts after marking read
@@ -131,23 +175,50 @@ export function useUnreadCounts(userId) {
 
       markReadTimeoutRef.current[tabId] = setTimeout(async () => {
         try {
-          const existing = await base44.entities.CommsReadState.filter({
-            user_id: userId,
-            scope_type: 'TAB',
-            scope_id: tabId,
-          });
+          let existing = [];
+          try {
+            existing = await base44.entities.CommsReadState.filter({
+              member_profile_id: userId,
+              scope_type: 'TAB',
+              scope_id: tabId,
+            });
+          } catch {
+            existing = [];
+          }
+
+          if (!existing || existing.length === 0) {
+            try {
+              existing = await base44.entities.CommsReadState.filter({
+                user_id: userId,
+                scope_type: 'TAB',
+                scope_id: tabId,
+              });
+            } catch {
+              existing = [];
+            }
+          }
 
           if (existing[0]) {
             await base44.entities.CommsReadState.update(existing[0].id, {
               last_read_at: new Date().toISOString(),
             });
           } else {
-            await base44.entities.CommsReadState.create({
-              user_id: userId,
-              scope_type: 'TAB',
-              scope_id: tabId,
-              last_read_at: new Date().toISOString(),
-            });
+            try {
+              await base44.entities.CommsReadState.create({
+                member_profile_id: userId,
+                user_id: userId,
+                scope_type: 'TAB',
+                scope_id: tabId,
+                last_read_at: new Date().toISOString(),
+              });
+            } catch {
+              await base44.entities.CommsReadState.create({
+                user_id: userId,
+                scope_type: 'TAB',
+                scope_id: tabId,
+                last_read_at: new Date().toISOString(),
+              });
+            }
           }
           
           setUnreadByTab((prev) => ({ ...prev, [tabId]: 0 }));

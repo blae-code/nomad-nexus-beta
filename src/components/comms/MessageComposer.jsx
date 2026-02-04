@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, Bold, Italic, Code, Smile, X } from 'lucide-react';
+import { Send, Paperclip, Bold, Italic, Code, Smile, Mic, Square, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
 
@@ -34,9 +34,14 @@ export default function MessageComposer({
   const [uploading, setUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showCommandHelp, setShowCommandHelp] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const draftTimeoutRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
 
   useEffect(() => {
     if (!draftKey) return;
@@ -74,6 +79,21 @@ export default function MessageComposer({
     const trimmed = body.trim();
     setShowCommandHelp(trimmed.startsWith('/'));
   }, [body]);
+
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   const handleSend = async () => {
     if (disabled || uploading) return;
@@ -128,6 +148,78 @@ export default function MessageComposer({
 
   const removeAttachment = (url) => {
     setAttachments(prev => prev.filter(a => a !== url));
+  };
+
+  const startRecording = async () => {
+    if (disabled || uploading || isRecording) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      console.warn('Audio recording not supported in this browser.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data?.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const chunks = recordingChunksRef.current;
+        recordingChunksRef.current = [];
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+        }
+        setIsRecording(false);
+        setRecordingSeconds(0);
+
+        if (!chunks.length) return;
+        setUploading(true);
+        try {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+          const result = await base44.integrations.Core.UploadFile({ file });
+          if (result?.file_url) {
+            setAttachments((prev) => [...prev, result.file_url]);
+          }
+        } catch (error) {
+          console.error('Failed to upload recording:', error);
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    try {
+      mediaRecorderRef.current.stop();
+      const tracks = mediaRecorderRef.current.stream?.getTracks?.() || [];
+      tracks.forEach((track) => track.stop());
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+    } finally {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
   };
 
   const insertTextAtCursor = (text) => {
@@ -280,7 +372,24 @@ export default function MessageComposer({
         >
           <Paperclip className="w-3 h-3" />
         </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => (isRecording ? stopRecording() : startRecording())}
+          disabled={disabled || uploading}
+          className={`h-7 w-7 ${isRecording ? 'text-red-400' : ''}`}
+          title={isRecording ? 'Stop recording' : 'Record voice message'}
+        >
+          {isRecording ? <Square className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+        </Button>
       </div>
+
+      {isRecording && (
+        <div className="text-[10px] text-red-300 bg-red-500/10 border border-red-500/20 rounded px-2 py-1 flex items-center gap-2">
+          <span className="animate-pulse">●</span>
+          Recording… {recordingSeconds}s
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="flex gap-2 items-end">

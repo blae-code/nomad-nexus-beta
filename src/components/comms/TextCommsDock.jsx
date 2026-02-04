@@ -129,6 +129,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const rolesCacheRef = useRef(null);
   const squadsCacheRef = useRef(null);
   const membersCacheRef = useRef(null);
+  const readReceiptRef = useRef(new Set());
 
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
@@ -323,6 +324,75 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!user?.id || !selectedChannelId || !messages.length) return;
+
+    const toMark = messages
+      .filter((msg) => {
+        if (!msg?.id) return false;
+        if (msg.user_id === user.id) return false;
+        if (msg.is_deleted) return false;
+        const readBy = Array.isArray(msg.read_by_member_profile_ids)
+          ? msg.read_by_member_profile_ids
+          : Array.isArray(msg.read_by)
+          ? msg.read_by
+          : [];
+        if (readBy.includes(user.id)) return false;
+        if (readReceiptRef.current.has(msg.id)) return false;
+        return true;
+      })
+      .slice(-20);
+
+    if (!toMark.length) return;
+
+    const timer = setTimeout(async () => {
+      for (const msg of toMark) {
+        readReceiptRef.current.add(msg.id);
+        const readBy = Array.isArray(msg.read_by_member_profile_ids)
+          ? msg.read_by_member_profile_ids
+          : Array.isArray(msg.read_by)
+          ? msg.read_by
+          : [];
+        const nextReadBy = Array.from(new Set([...readBy, user.id]));
+
+        let updated = false;
+        try {
+          await base44.entities.Message.update(msg.id, {
+            read_by_member_profile_ids: nextReadBy,
+          });
+          updated = true;
+        } catch {
+          // ignore and fallback
+        }
+
+        if (!updated) {
+          try {
+            await base44.entities.Message.update(msg.id, {
+              read_by: nextReadBy,
+            });
+          } catch {
+            // ignore
+          }
+        }
+
+        setMessages((prev) =>
+          prev.map((item) => {
+            if (item.id !== msg.id) return item;
+            if (Array.isArray(item.read_by_member_profile_ids)) {
+              return { ...item, read_by_member_profile_ids: nextReadBy };
+            }
+            if (Array.isArray(item.read_by)) {
+              return { ...item, read_by: nextReadBy };
+            }
+            return { ...item, read_by_member_profile_ids: nextReadBy };
+          })
+        );
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [messages, selectedChannelId, user?.id]);
 
   const handleSendMessage = useCallback(async () => {
     if (!messageInput.trim() || !selectedChannelId || !user?.id) return;
