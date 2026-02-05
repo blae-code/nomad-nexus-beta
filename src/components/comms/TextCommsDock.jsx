@@ -41,6 +41,11 @@ import AIModerationIndicator from '@/components/comms/AIModerationIndicator';
 import CommsTemplateDialog from '@/components/comms/CommsTemplateDialog';
 import { useChannelPackRecommendations } from '@/components/hooks/useChannelPackRecommendations';
 
+const COMMAND_CORE_HEIGHT_KEY = 'nexus.comms.commandCoreHeight';
+const DEFAULT_COMMAND_CORE_HEIGHT = 240;
+const MIN_COMMAND_CORE_HEIGHT = 160;
+const MAX_COMMAND_CORE_HEIGHT = 380;
+
 const COMMAND_DEFS = [
   { id: 'help', usage: '/help', description: 'Show command list' },
   { id: 'whisper', usage: '/whisper role:Rangers <message>', description: 'Whisper to role/rank/squad/member' },
@@ -113,6 +118,16 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const [exporting, setExporting] = useState(false);
   const [showCommandHelp, setShowCommandHelp] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [commandCoreHeight, setCommandCoreHeight] = useState(() => {
+    try {
+      const stored = localStorage.getItem(COMMAND_CORE_HEIGHT_KEY);
+      const parsed = stored ? Number(stored) : null;
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    } catch {
+      // ignore storage errors
+    }
+    return DEFAULT_COMMAND_CORE_HEIGHT;
+  });
   const [autoLinkPreview, setAutoLinkPreview] = useState(() => {
     try {
       const stored = localStorage.getItem('nexus.comms.autoLinkPreview');
@@ -130,6 +145,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const squadsCacheRef = useRef(null);
   const membersCacheRef = useRef(null);
   const readReceiptRef = useRef(new Set());
+  const commandCoreResizingRef = useRef(false);
+  const commandCoreResizeStartRef = useRef({ y: 0, height: DEFAULT_COMMAND_CORE_HEIGHT });
 
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
@@ -210,6 +227,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
       // ignore storage errors
     }
   }, [autoLinkPreview]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COMMAND_CORE_HEIGHT_KEY, String(commandCoreHeight));
+    } catch {
+      // ignore storage errors
+    }
+  }, [commandCoreHeight]);
 
   useEffect(() => {
     if (!slowModeKey) {
@@ -1007,6 +1032,44 @@ Provide a helpful, concise response with tactical awareness.`,
     ? `${slowModeRemaining}s remaining`
     : null;
 
+  const clampCommandCoreHeight = useCallback((value) => {
+    return Math.max(MIN_COMMAND_CORE_HEIGHT, Math.min(MAX_COMMAND_CORE_HEIGHT, value));
+  }, []);
+
+  const handleCommandCoreResizeMove = useCallback((event) => {
+    if (!commandCoreResizingRef.current) return;
+    const delta = event.clientY - commandCoreResizeStartRef.current.y;
+    const nextHeight = clampCommandCoreHeight(commandCoreResizeStartRef.current.height + delta);
+    setCommandCoreHeight(nextHeight);
+  }, [clampCommandCoreHeight]);
+
+  const handleCommandCoreResizeEnd = useCallback(() => {
+    if (!commandCoreResizingRef.current) return;
+    commandCoreResizingRef.current = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    window.removeEventListener('mousemove', handleCommandCoreResizeMove);
+    window.removeEventListener('mouseup', handleCommandCoreResizeEnd);
+  }, [handleCommandCoreResizeMove]);
+
+  const handleCommandCoreResizeStart = useCallback((event) => {
+    event.preventDefault();
+    commandCoreResizingRef.current = true;
+    commandCoreResizeStartRef.current = { y: event.clientY, height: commandCoreHeight };
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'row-resize';
+    window.addEventListener('mousemove', handleCommandCoreResizeMove);
+    window.addEventListener('mouseup', handleCommandCoreResizeEnd);
+  }, [commandCoreHeight, handleCommandCoreResizeEnd, handleCommandCoreResizeMove]);
+
+  useEffect(() => {
+    return () => {
+      if (commandCoreResizingRef.current) {
+        handleCommandCoreResizeEnd();
+      }
+    };
+  }, [handleCommandCoreResizeEnd]);
+
   useEffect(() => {
     if (!slowModeSeconds || !lastSentAt || isAdmin) {
       setSlowModeRemaining(0);
@@ -1077,126 +1140,139 @@ Provide a helpful, concise response with tactical awareness.`,
       </div>
 
       {!isMinimized && (
-        <div className="border-b border-orange-500/10 bg-zinc-950/50">
-          <div className="px-4 py-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] uppercase tracking-widest text-zinc-500">Signal Overview</div>
-              <span className={`text-[9px] font-mono px-2 py-0.5 rounded border ${commsSignalTone}`}>
-                {commsSignalLabel}
-              </span>
-            </div>
+        <div
+          className="border-b border-orange-500/10 bg-zinc-950/50"
+          style={{ height: commandCoreHeight }}
+        >
+          <div className="flex flex-col h-full">
+            <div className="px-4 py-2 space-y-2 overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500">Signal Overview</div>
+                <span className={`text-[9px] font-mono px-2 py-0.5 rounded border ${commsSignalTone}`}>
+                  {commsSignalLabel}
+                </span>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-400">
-              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
-                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Active Channel</div>
-                <div className="text-zinc-200 font-semibold truncate">{channelDisplayName}</div>
-                <div className="text-[9px] text-zinc-500">{channelCategoryLabel}</div>
-              </div>
-              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
-                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Unread</div>
-                <div className="text-zinc-200 font-semibold">{unreadTotal}</div>
-                <div className="text-[9px] text-zinc-500">{viewMode === 'channels' ? 'Channel Ops' : 'Direct Lines'}</div>
-              </div>
-              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
-                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Mode</div>
-                <div className="text-zinc-200 font-semibold">{viewMode === 'channels' ? 'Channels' : 'DMs'}</div>
-                <div className="text-[9px] text-zinc-500">
-                  {activeTab === 'mentions' ? 'Mentions' : activeTab === 'polls' ? 'Polls' : activeTab === 'riggsy' ? 'Riggsy' : 'Comms'}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] text-zinc-400">
+                <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                  <div className="uppercase tracking-widest text-[9px] text-zinc-500">Active Channel</div>
+                  <div className="text-zinc-200 font-semibold truncate">{channelDisplayName}</div>
+                  <div className="text-[9px] text-zinc-500">{channelCategoryLabel}</div>
+                </div>
+                <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                  <div className="uppercase tracking-widest text-[9px] text-zinc-500">Unread</div>
+                  <div className="text-zinc-200 font-semibold">{unreadTotal}</div>
+                  <div className="text-[9px] text-zinc-500">{viewMode === 'channels' ? 'Channel Ops' : 'Direct Lines'}</div>
+                </div>
+                <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                  <div className="uppercase tracking-widest text-[9px] text-zinc-500">Mode</div>
+                  <div className="text-zinc-200 font-semibold">{viewMode === 'channels' ? 'Channels' : 'DMs'}</div>
+                  <div className="text-[9px] text-zinc-500">
+                    {activeTab === 'mentions' ? 'Mentions' : activeTab === 'polls' ? 'Polls' : activeTab === 'riggsy' ? 'Riggsy' : 'Comms'}
+                  </div>
+                </div>
+                <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                  <div className="uppercase tracking-widest text-[9px] text-zinc-500">Discipline</div>
+                  <div className="text-zinc-200 font-semibold">{disciplineLabel}</div>
+                  {disciplineDetail && <div className="text-[9px] text-zinc-500">{disciplineDetail}</div>}
                 </div>
               </div>
-              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
-                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Discipline</div>
-                <div className="text-zinc-200 font-semibold">{disciplineLabel}</div>
-                {disciplineDetail && <div className="text-[9px] text-zinc-500">{disciplineDetail}</div>}
-              </div>
-            </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowGlobalSearch(true)}
-                className="h-7 text-[10px] font-semibold"
-              >
-                <Search className="w-3 h-3 mr-1" />
-                Search
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowTemplateDialog(true)}
-                className="h-7 text-[10px] font-semibold"
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                Templates
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowCommandHelp(true)}
-                className="h-7 text-[10px] font-semibold"
-              >
-                <HelpCircle className="w-3 h-3 mr-1" />
-                Commands
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowNotificationSettings(true)}
-                disabled={!selectedChannelId}
-                className="h-7 text-[10px] font-semibold"
-              >
-                <Bell className="w-3 h-3 mr-1" />
-                Alerts
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowExportDialog(true)}
-                disabled={!selectedChannelId}
-                className="h-7 text-[10px] font-semibold"
-              >
-                <Download className="w-3 h-3 mr-1" />
-                Export
-              </Button>
-              <Button
-                size="sm"
-                variant={dndEnabled ? 'default' : 'outline'}
-                onClick={() => setDndEnabled((prev) => !prev)}
-                className="h-7 text-[10px] font-semibold"
-                title={dndEnabled ? 'Disable Do Not Disturb' : 'Enable Do Not Disturb'}
-              >
-                <Moon className="w-3 h-3 mr-1" />
-                {dndEnabled ? 'DND On' : 'DND Off'}
-              </Button>
-              {isAdmin && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setShowModerationPanel(true)}
+                  onClick={() => setShowGlobalSearch(true)}
+                  className="h-7 text-[10px] font-semibold"
+                >
+                  <Search className="w-3 h-3 mr-1" />
+                  Search
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowTemplateDialog(true)}
+                  className="h-7 text-[10px] font-semibold"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Templates
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowCommandHelp(true)}
+                  className="h-7 text-[10px] font-semibold"
+                >
+                  <HelpCircle className="w-3 h-3 mr-1" />
+                  Commands
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowNotificationSettings(true)}
                   disabled={!selectedChannelId}
                   className="h-7 text-[10px] font-semibold"
                 >
-                  <Shield className="w-3 h-3 mr-1" />
-                  Moderation
+                  <Bell className="w-3 h-3 mr-1" />
+                  Alerts
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowExportDialog(true)}
+                  disabled={!selectedChannelId}
+                  className="h-7 text-[10px] font-semibold"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  Export
+                </Button>
+                <Button
+                  size="sm"
+                  variant={dndEnabled ? 'default' : 'outline'}
+                  onClick={() => setDndEnabled((prev) => !prev)}
+                  className="h-7 text-[10px] font-semibold"
+                  title={dndEnabled ? 'Disable Do Not Disturb' : 'Enable Do Not Disturb'}
+                >
+                  <Moon className="w-3 h-3 mr-1" />
+                  {dndEnabled ? 'DND On' : 'DND Off'}
+                </Button>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowModerationPanel(true)}
+                    disabled={!selectedChannelId}
+                    className="h-7 text-[10px] font-semibold"
+                  >
+                    <Shield className="w-3 h-3 mr-1" />
+                    Moderation
+                  </Button>
+                )}
+              </div>
+
+              {boundCommsChannel && boundCommsChannel.id !== selectedChannelId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-[10px]"
+                  onClick={() => {
+                    setSelectedChannelId(boundCommsChannel.id);
+                    setActiveTab('comms');
+                    setViewMode(boundCommsChannel.is_dm ? 'dms' : 'channels');
+                  }}
+                >
+                  Sync to Bound Op Channel · {boundCommsChannel.is_dm ? boundCommsChannel.group_name || 'Direct Line' : `#${boundCommsChannel.name}`}
                 </Button>
               )}
             </div>
 
-            {boundCommsChannel && boundCommsChannel.id !== selectedChannelId && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full text-[10px]"
-                onClick={() => {
-                  setSelectedChannelId(boundCommsChannel.id);
-                  setActiveTab('comms');
-                  setViewMode(boundCommsChannel.is_dm ? 'dms' : 'channels');
-                }}
-              >
-                Sync to Bound Op Channel · {boundCommsChannel.is_dm ? boundCommsChannel.group_name || 'Direct Line' : `#${boundCommsChannel.name}`}
-              </Button>
-            )}
+            <div
+              className="h-2 border-t border-orange-500/10 bg-zinc-950/80 cursor-row-resize flex items-center justify-center"
+              onMouseDown={handleCommandCoreResizeStart}
+              title="Drag to resize command core"
+            >
+              <div className="h-1 w-10 rounded-full bg-zinc-800/80" />
+            </div>
           </div>
         </div>
       )}
