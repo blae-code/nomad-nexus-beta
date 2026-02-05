@@ -26,7 +26,6 @@ import VoiceControlsSection from '@/components/voice/VoiceControlPanel/VoiceCont
 import CommsDiscipline from '@/components/voice/VoiceControlPanel/CommsDiscipline';
 import VoiceParticipantIndicator from '@/components/voice/VoiceParticipantIndicator';
 import AIInsightsPanel from '@/components/ai/AIInsightsPanel';
-import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls

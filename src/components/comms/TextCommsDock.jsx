@@ -960,6 +960,25 @@ Provide a helpful, concise response with tactical awareness.`,
     () => channels.find((ch) => ch.id === selectedChannelId),
     [channels, selectedChannelId]
   );
+  const channelDisplayName = React.useMemo(() => {
+    if (!selectedChannel) return 'No channel selected';
+    if (selectedChannel.is_dm) {
+      return selectedChannel.group_name || 'Direct Line';
+    }
+    return `#${selectedChannel.name}`;
+  }, [selectedChannel]);
+  const channelCategoryLabel = React.useMemo(() => {
+    if (!selectedChannel) return 'CHANNEL';
+    if (selectedChannel.is_dm) {
+      return selectedChannel.is_group_chat ? 'GROUP DM' : 'DIRECT';
+    }
+    return selectedChannel.category ? selectedChannel.category.toUpperCase() : 'CHANNEL';
+  }, [selectedChannel]);
+  const unreadTotal = unreadByTab?.comms || 0;
+  const boundCommsChannel = React.useMemo(() => {
+    if (!activeOp?.binding?.commsChannelId) return null;
+    return channels.find((ch) => ch.id === activeOp.binding.commsChannelId) || null;
+  }, [channels, activeOp?.binding?.commsChannelId]);
   const slowModeSeconds = selectedChannel?.slow_mode_seconds ? Number(selectedChannel.slow_mode_seconds) : 0;
   const isReadOnly = Boolean(selectedChannel?.is_read_only) && !isAdmin;
   const isMuted = Boolean(muteInfo);
@@ -971,6 +990,22 @@ Provide a helpful, concise response with tactical awareness.`,
     : slowModeRemaining > 0
     ? `Slow mode: wait ${slowModeRemaining}s`
     : '';
+  const commsSignalLabel = dndEnabled ? 'DND' : 'ACTIVE';
+  const commsSignalTone = dndEnabled
+    ? 'text-orange-300 border-orange-500/40 bg-orange-500/10'
+    : 'text-green-300 border-green-500/40 bg-green-500/10';
+  const disciplineLabel = isReadOnly
+    ? 'Read-only'
+    : isMuted
+    ? 'Muted'
+    : slowModeSeconds > 0
+    ? `Slow ${slowModeSeconds}s`
+    : 'Open';
+  const disciplineDetail = isMuted && muteRemaining
+    ? `${muteRemaining}m remaining`
+    : slowModeRemaining > 0
+    ? `${slowModeRemaining}s remaining`
+    : null;
 
   useEffect(() => {
     if (!slowModeSeconds || !lastSentAt || isAdmin) {
@@ -1013,24 +1048,22 @@ Provide a helpful, concise response with tactical awareness.`,
 
   return (
     <div className={`bg-zinc-950 border-t border-orange-500/20 flex flex-col flex-shrink-0 shadow-2xl z-[600] relative transition-all duration-200 ${isMinimized ? 'h-12' : 'h-96'}`}>
-      {/* Header — Unified styling */}
-      <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center justify-between bg-zinc-950/80 flex-shrink-0">
-        <div className="flex items-center gap-2">
+      {/* Header — Comms Command Core */}
+      <div className="border-b border-orange-500/20 px-5 py-3 flex items-center justify-between bg-gradient-to-r from-zinc-950/80 to-transparent flex-shrink-0">
+        <div className="flex items-center gap-3">
           <Hash className="w-4 h-4 text-orange-500/70" />
-          <h3 className="text-[11px] font-black uppercase text-zinc-300 tracking-widest">{isMinimized ? 'COMMS' : 'Communications Terminal'}</h3>
+          {isMinimized ? (
+            <h3 className="text-[11px] font-black uppercase text-zinc-300 tracking-widest">COMMS</h3>
+          ) : (
+            <div>
+              <h3 className="text-xs font-black uppercase text-orange-400 tracking-widest">Comms Command Core</h3>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mt-0.5">
+                Signal Routing &amp; Text Ops
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex gap-1">
-          {!isMinimized && (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setShowGlobalSearch(true)}
-              className="h-7 w-7 text-zinc-500 hover:text-orange-400 transition-colors"
-              title="Search all messages"
-            >
-              <Search className="w-3.5 h-3.5" />
-            </Button>
-          )}
           <Button
             size="icon"
             variant="ghost"
@@ -1042,6 +1075,131 @@ Provide a helpful, concise response with tactical awareness.`,
           </Button>
         </div>
       </div>
+
+      {!isMinimized && (
+        <div className="border-b border-orange-500/10 bg-zinc-950/50">
+          <div className="px-4 py-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500">Signal Overview</div>
+              <span className={`text-[9px] font-mono px-2 py-0.5 rounded border ${commsSignalTone}`}>
+                {commsSignalLabel}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-400">
+              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Active Channel</div>
+                <div className="text-zinc-200 font-semibold truncate">{channelDisplayName}</div>
+                <div className="text-[9px] text-zinc-500">{channelCategoryLabel}</div>
+              </div>
+              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Unread</div>
+                <div className="text-zinc-200 font-semibold">{unreadTotal}</div>
+                <div className="text-[9px] text-zinc-500">{viewMode === 'channels' ? 'Channel Ops' : 'Direct Lines'}</div>
+              </div>
+              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Mode</div>
+                <div className="text-zinc-200 font-semibold">{viewMode === 'channels' ? 'Channels' : 'DMs'}</div>
+                <div className="text-[9px] text-zinc-500">
+                  {activeTab === 'mentions' ? 'Mentions' : activeTab === 'polls' ? 'Polls' : activeTab === 'riggsy' ? 'Riggsy' : 'Comms'}
+                </div>
+              </div>
+              <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+                <div className="uppercase tracking-widest text-[9px] text-zinc-500">Discipline</div>
+                <div className="text-zinc-200 font-semibold">{disciplineLabel}</div>
+                {disciplineDetail && <div className="text-[9px] text-zinc-500">{disciplineDetail}</div>}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowGlobalSearch(true)}
+                className="h-7 text-[10px] font-semibold"
+              >
+                <Search className="w-3 h-3 mr-1" />
+                Search
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowTemplateDialog(true)}
+                className="h-7 text-[10px] font-semibold"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Templates
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowCommandHelp(true)}
+                className="h-7 text-[10px] font-semibold"
+              >
+                <HelpCircle className="w-3 h-3 mr-1" />
+                Commands
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowNotificationSettings(true)}
+                disabled={!selectedChannelId}
+                className="h-7 text-[10px] font-semibold"
+              >
+                <Bell className="w-3 h-3 mr-1" />
+                Alerts
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowExportDialog(true)}
+                disabled={!selectedChannelId}
+                className="h-7 text-[10px] font-semibold"
+              >
+                <Download className="w-3 h-3 mr-1" />
+                Export
+              </Button>
+              <Button
+                size="sm"
+                variant={dndEnabled ? 'default' : 'outline'}
+                onClick={() => setDndEnabled((prev) => !prev)}
+                className="h-7 text-[10px] font-semibold"
+                title={dndEnabled ? 'Disable Do Not Disturb' : 'Enable Do Not Disturb'}
+              >
+                <Moon className="w-3 h-3 mr-1" />
+                {dndEnabled ? 'DND On' : 'DND Off'}
+              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowModerationPanel(true)}
+                  disabled={!selectedChannelId}
+                  className="h-7 text-[10px] font-semibold"
+                >
+                  <Shield className="w-3 h-3 mr-1" />
+                  Moderation
+                </Button>
+              )}
+            </div>
+
+            {boundCommsChannel && boundCommsChannel.id !== selectedChannelId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-[10px]"
+                onClick={() => {
+                  setSelectedChannelId(boundCommsChannel.id);
+                  setActiveTab('comms');
+                  setViewMode(boundCommsChannel.is_dm ? 'dms' : 'channels');
+                }}
+              >
+                Sync to Bound Op Channel · {boundCommsChannel.is_dm ? boundCommsChannel.group_name || 'Direct Line' : `#${boundCommsChannel.name}`}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tabs — Comms active, others disabled with "coming soon" */}
       {!isMinimized && (
@@ -1244,86 +1402,62 @@ Provide a helpful, concise response with tactical awareness.`,
                    <div className="flex-1 flex overflow-hidden">
                 <div className="flex-1 flex flex-col overflow-hidden">
                   {/* Channel Header */}
-                  {selectedChannel && (
-                   <div className="border-b border-orange-500/10 px-4 py-2.5 flex items-center gap-2 bg-zinc-900/40 flex-shrink-0">
-                     {!canAccessChannel(selectedChannel) && <Lock className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />}
-                     <span className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate flex-1">#{selectedChannel.name}</span>
-                     {selectedChannel?.is_read_only && (
-                       <span className="text-[9px] uppercase tracking-widest text-zinc-500 border border-zinc-700/60 px-2 py-0.5 rounded">
-                         Read-only
-                       </span>
-                     )}
-                     {slowModeSeconds > 0 && (
-                       <span className="text-[9px] uppercase tracking-widest text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded">
-                         Slow {slowModeSeconds}s
-                       </span>
-                     )}
-
-                     <Button
-                       size="icon"
-                       variant="ghost"
-                       onClick={() => setDndEnabled((prev) => !prev)}
-                       className={`h-6 w-6 ${dndEnabled ? 'text-orange-400' : ''}`}
-                       title={dndEnabled ? 'Disable Do Not Disturb' : 'Enable Do Not Disturb'}
-                     >
-                       <Moon className="w-3 h-3" />
-                     </Button>
-
-                     <Button
-                       size="icon"
-                       variant="ghost"
-                       onClick={() => setShowTemplateDialog(true)}
-                       className="h-6 w-6"
-                       title="Send structured template"
-                     >
-                       <Sparkles className="w-3 h-3" />
-                     </Button>
-
-                     <Button
-                       size="icon"
-                       variant="ghost"
-                       onClick={() => setShowNotificationSettings(true)}
-                       className="h-6 w-6"
-                       title="Notification settings"
-                     >
-                       <Bell className="w-3 h-3" />
-                     </Button>
-
-                     <Button
-                       size="icon"
-                       variant="ghost"
-                       onClick={() => setShowCommandHelp(true)}
-                       className="h-6 w-6"
-                       title="Command help"
-                     >
-                       <HelpCircle className="w-3 h-3" />
-                     </Button>
-
-                     <Button
-                       size="icon"
-                       variant="ghost"
-                       onClick={() => setShowExportDialog(true)}
-                       className="h-6 w-6"
-                       title="Export channel history"
-                     >
-                       <Download className="w-3 h-3" />
-                     </Button>
-
-                     {isAdmin && (
-                       <>
-                         <Button
-                           size="icon"
-                           variant="ghost"
-                           onClick={() => setShowModerationPanel(true)}
-                           className="h-6 w-6"
-                           title="Moderation tools"
-                         >
-                           <Shield className="w-3 h-3" />
-                         </Button>
-                         <AIModerationIndicator channelId={selectedChannel.id} isAdmin={true} />
-                       </>
-                     )}
-                   </div>
+                  {selectedChannel ? (
+                    <div className="border-b border-orange-500/10 px-4 py-3 bg-zinc-900/40 flex-shrink-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2 min-w-0">
+                          {!canAccessChannel(selectedChannel) ? (
+                            <Lock className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <Hash className="w-3.5 h-3.5 text-orange-500/70 flex-shrink-0 mt-0.5" />
+                          )}
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-black uppercase text-zinc-300 tracking-widest truncate">
+                              {channelDisplayName}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-widest text-zinc-500 mt-1">
+                              <span className="px-2 py-0.5 rounded border border-zinc-700/60 bg-zinc-950/40">
+                                {channelCategoryLabel}
+                              </span>
+                              {selectedChannel?.is_read_only && (
+                                <span className="px-2 py-0.5 rounded border border-zinc-700/60 text-zinc-400">
+                                  Read-only
+                                </span>
+                              )}
+                              {slowModeSeconds > 0 && (
+                                <span className="px-2 py-0.5 rounded border border-orange-500/30 text-orange-300">
+                                  Slow {slowModeSeconds}s
+                                </span>
+                              )}
+                              {isMuted && (
+                                <span className="px-2 py-0.5 rounded border border-orange-500/30 text-orange-300">
+                                  Muted{muteRemaining ? ` · ${muteRemaining}m` : ''}
+                                </span>
+                              )}
+                              {selectedChannel?.is_group_chat && (
+                                <span className="px-2 py-0.5 rounded border border-zinc-700/60 text-zinc-400">
+                                  {selectedChannel.dm_participants?.length || 0} members
+                                </span>
+                              )}
+                            </div>
+                            {selectedChannel?.description && (
+                              <div className="text-[10px] text-zinc-500 mt-2 truncate">
+                                {selectedChannel.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {isAdmin && selectedChannel && (
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <AIModerationIndicator channelId={selectedChannel.id} isAdmin={true} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-b border-orange-500/10 px-4 py-3 bg-zinc-900/40 text-[10px] text-zinc-500">
+                      Select a channel to begin.
+                    </div>
                   )}
 
                   {/* Pinned Messages */}
