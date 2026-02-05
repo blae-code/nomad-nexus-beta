@@ -394,53 +394,6 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     return () => clearTimeout(timer);
   }, [messages, selectedChannelId, user?.id]);
 
-  const handleSendMessage = useCallback(async () => {
-    if (!messageInput.trim() || !selectedChannelId || !user?.id) return;
-
-    try {
-      const handled = await executeCommand(messageInput);
-      if (handled) {
-        setMessageInput('');
-        return;
-      }
-
-      const newMsg = await base44.entities.Message.create({
-        channel_id: selectedChannelId,
-        user_id: user.id,
-        content: messageInput,
-      });
-
-      // Update channel's last_message_at
-      await base44.entities.Channel.update(selectedChannelId, {
-        last_message_at: new Date().toISOString(),
-      });
-
-      if (newMsg?.id && typeof messageInput === 'string' && messageInput.includes('@')) {
-        invokeMemberFunction('processMessageMentions', {
-          messageId: newMsg.id,
-          channelId: selectedChannelId,
-          content: messageInput,
-        }).catch(() => {});
-      }
-
-      if (newMsg?.id && typeof messageInput === 'string' && messageInput.includes('#')) {
-        invokeMemberFunction('routeChannelMessage', {
-          messageId: newMsg.id,
-          channelId: selectedChannelId,
-          content: messageInput,
-          isRouted: false,
-        }).catch(() => {});
-      }
-
-      setMessages((prev) => [...prev, newMsg]);
-      setMessageInput('');
-      clearTyping();
-      refreshUnreadCounts();
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    }
-  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts, clearTyping, executeCommand]);
-
   const handleCreateDM = async ({ userIds }) => {
     try {
       // Check if DM already exists
@@ -951,6 +904,53 @@ Provide a helpful, concise response with tactical awareness.`,
     notify('Unknown command', 'Use /help to view available commands.', 'warning');
     return true;
   }, [activeOp?.activeEventId, notify, resolveWhisperTargets, selectedChannelId, user?.id]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!messageInput.trim() || !selectedChannelId || !user?.id) return;
+
+    try {
+      const handled = await executeCommand(messageInput);
+      if (handled) {
+        setMessageInput('');
+        return;
+      }
+
+      const newMsg = await base44.entities.Message.create({
+        channel_id: selectedChannelId,
+        user_id: user.id,
+        content: messageInput,
+      });
+
+      // Update channel's last_message_at
+      await base44.entities.Channel.update(selectedChannelId, {
+        last_message_at: new Date().toISOString(),
+      });
+
+      if (newMsg?.id && typeof messageInput === 'string' && messageInput.includes('@')) {
+        invokeMemberFunction('processMessageMentions', {
+          messageId: newMsg.id,
+          channelId: selectedChannelId,
+          content: messageInput,
+        }).catch(() => {});
+      }
+
+      if (newMsg?.id && typeof messageInput === 'string' && messageInput.includes('#')) {
+        invokeMemberFunction('routeChannelMessage', {
+          messageId: newMsg.id,
+          channelId: selectedChannelId,
+          content: messageInput,
+          isRouted: false,
+        }).catch(() => {});
+      }
+
+      setMessages((prev) => [...prev, newMsg]);
+      setMessageInput('');
+      clearTyping();
+      refreshUnreadCounts();
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  }, [messageInput, selectedChannelId, user?.id, refreshUnreadCounts, clearTyping, executeCommand]);
 
   const filteredChannels = Object.entries(groupedChannels)
     .flatMap(([, chans]) => chans)
