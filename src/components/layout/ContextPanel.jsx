@@ -26,6 +26,7 @@ import VoiceControlsSection from '@/components/voice/VoiceControlPanel/VoiceCont
 import CommsDiscipline from '@/components/voice/VoiceControlPanel/CommsDiscipline';
 import VoiceParticipantIndicator from '@/components/voice/VoiceParticipantIndicator';
 import AIInsightsPanel from '@/components/ai/AIInsightsPanel';
+import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 
 /**
  * ContextPanel — Right sidebar with systems, contacts, voice controls
@@ -41,7 +42,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
         voice: true,
         health: false,
         contacts: true,
-        aiInsights: true,
+        aiInsights: false,
         riggsy: false,
         diagnostics: false,
       };
@@ -52,7 +53,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
         voice: true,
         health: false,
         contacts: true,
-        aiInsights: true,
+        aiInsights: false,
         riggsy: false,
         diagnostics: false,
       };
@@ -72,6 +73,10 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
   const shellUI = useShellUI();
   const { addNotification } = useNotification();
   const { unreadByTab } = useUnreadCounts(user?.id);
+  const activeNet = voiceNet.voiceNets?.find((net) => net.id === voiceNet.activeNetId);
+  const boundNet = activeOp?.binding?.voiceNetId
+    ? voiceNet.voiceNets?.find((net) => net.id === activeOp.binding.voiceNetId)
+    : null;
   
   // Wire notifications
   useVoiceNotifications(voiceNet);
@@ -120,14 +125,26 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
     return null;
   }
 
+  const connectionLabel = voiceNet.connectionState || VOICE_CONNECTION_STATE.IDLE;
+  const connectionTone = {
+    [VOICE_CONNECTION_STATE.CONNECTED]: 'text-green-300 border-green-500/40 bg-green-500/10',
+    [VOICE_CONNECTION_STATE.RECONNECTING]: 'text-orange-300 border-orange-500/40 bg-orange-500/10',
+    [VOICE_CONNECTION_STATE.JOINING]: 'text-orange-300 border-orange-500/40 bg-orange-500/10',
+    [VOICE_CONNECTION_STATE.ERROR]: 'text-red-300 border-red-500/40 bg-red-500/10',
+    [VOICE_CONNECTION_STATE.IDLE]: 'text-zinc-400 border-zinc-700/60 bg-zinc-900/60',
+  }[connectionLabel] || 'text-zinc-400 border-zinc-700/60 bg-zinc-900/60';
+
+  const micTone = voiceNet.micEnabled ? 'text-green-300 bg-green-500/10 border-green-500/30' : 'text-red-300 bg-red-500/10 border-red-500/30';
+  const pttTone = voiceNet.pttActive ? 'text-orange-300 bg-orange-500/10 border-orange-500/30' : 'text-zinc-400 bg-zinc-900/60 border-zinc-700/60';
+
   return (
     <div className={`${isMinimized ? 'w-12' : 'w-80'} bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden z-[900] relative transition-all duration-200`}>
       {/* Header */}
        <div className="h-16 border-b border-orange-500/20 flex items-center justify-between px-5 flex-shrink-0 bg-gradient-to-r from-zinc-900/50 to-transparent">
          {!isMinimized && (
            <div>
-             <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Operations</h2>
-             <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Tactical Comms Control</p>
+             <h2 className="text-xs font-black uppercase text-orange-400 tracking-widest">Voice Command Core</h2>
+             <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mt-0.5">Tactical Comms & Net Control</p>
            </div>
          )}
          <div className="flex items-center gap-1 ml-auto">
@@ -155,10 +172,73 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
 
       {/* Scrollable Content */}
        <div className={`flex-1 overflow-y-auto ${isMinimized ? 'hidden' : ''}`}>
+        {/* Voice Command Core */}
+        <div className="px-4 pt-4 pb-3 border-b border-orange-500/10 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] uppercase tracking-widest text-zinc-500">Signal Overview</div>
+            <span className={`text-[9px] font-mono px-2 py-0.5 rounded border ${connectionTone}`}>
+              {connectionLabel}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-400">
+            <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+              <div className="uppercase tracking-widest text-[9px] text-zinc-500">Active Net</div>
+              <div className="text-zinc-200 font-semibold truncate">
+                {activeNet?.name || activeNet?.label || activeNet?.code || 'No net'}
+              </div>
+            </div>
+            <div className="rounded border border-zinc-800/60 bg-zinc-950/40 px-2 py-1">
+              <div className="uppercase tracking-widest text-[9px] text-zinc-500">Participants</div>
+              <div className="text-zinc-200 font-semibold">{voiceNet.participants?.length || 0}</div>
+            </div>
+            <div className={`rounded border px-2 py-1 ${micTone}`}>
+              <div className="uppercase tracking-widest text-[9px] text-red-200/70">Mic</div>
+              <div className="font-semibold">{voiceNet.micEnabled ? 'Live' : 'Muted'}</div>
+            </div>
+            <div className={`rounded border px-2 py-1 ${pttTone}`}>
+              <div className="uppercase tracking-widest text-[9px] text-zinc-400">PTT</div>
+              <div className="font-semibold">{voiceNet.pttActive ? 'Active' : 'Ready'}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              variant={voiceNet.micEnabled ? 'outline' : 'destructive'}
+              className="text-[10px] font-semibold"
+              onClick={() => voiceNet.setMicEnabled(!voiceNet.micEnabled)}
+              disabled={!voiceNet.activeNetId}
+            >
+              {voiceNet.micEnabled ? 'Mute Mic' : 'Enable Mic'}
+            </Button>
+            <Button
+              size="sm"
+              variant={voiceNet.pttActive ? 'default' : 'outline'}
+              className="text-[10px] font-semibold"
+              onClick={() => voiceNet.togglePTT()}
+              disabled={!voiceNet.activeNetId}
+            >
+              {voiceNet.pttActive ? 'PTT Active' : 'Enable PTT'}
+            </Button>
+          </div>
+
+          {boundNet && voiceNet.activeNetId !== boundNet.id && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full text-[10px]"
+              onClick={() => voiceNet.joinNet(boundNet.id, user)}
+            >
+              Join Bound Net · {boundNet.name || boundNet.label || boundNet.code}
+            </Button>
+          )}
+        </div>
+
         {/* Active Operation Section */}
          <SectionHeader
            icon={<Activity className="w-4 h-4" />}
-           label="Active Operation"
+           label="Operation Link"
            sectionKey="activeOp"
            expanded={expandedSections.activeOp}
            onToggle={toggleSection}
@@ -230,10 +310,10 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
            </div>
          )}
 
-         {/* Active Nets Section */}
+         {/* Net Switchboard */}
          <SectionHeader
            icon={<Radio className="w-4 h-4" />}
-           label={`Active Nets (${voiceNet.participants.length})`}
+           label={`Net Switchboard (${voiceNet.voiceNets?.length || 0})`}
            sectionKey="nets"
            expanded={expandedSections.nets}
            onToggle={toggleSection}
@@ -257,7 +337,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
          {/* Voice Controls Section */}
          <SectionHeader
            icon={<Mic className="w-4 h-4" />}
-           label="Voice Controls"
+           label="Device & Controls"
            sectionKey="voice"
            expanded={expandedSections.voice}
            onToggle={toggleSection}
@@ -272,7 +352,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
          {/* Net Health Section */}
          <SectionHeader
            icon={<BarChart3 className="w-4 h-4" />}
-           label="Net Health"
+           label="Signal Health"
            sectionKey="health"
            expanded={expandedSections.health || false}
            onToggle={toggleSection}
@@ -282,7 +362,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
          {/* AI Insights Section */}
          <SectionHeader
            icon={<Activity className="w-4 h-4" />}
-           label="AI Insights"
+           label="Signal Intelligence"
            sectionKey="aiInsights"
            expanded={expandedSections.aiInsights}
            onToggle={toggleSection}
