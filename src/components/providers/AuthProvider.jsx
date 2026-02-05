@@ -93,10 +93,30 @@ export function AuthProvider({ children }) {
           try {
             const adminUser = await base44.auth.me();
             if (adminUser && adminUser.role === 'admin') {
+              const adminCallsign = adminUser.callsign || adminUser.full_name || adminUser.email || 'System Admin';
+              const adminRoles = Array.isArray(adminUser.roles)
+                ? adminUser.roles
+                : adminUser.roles
+                  ? [adminUser.roles]
+                  : ['admin'];
+              const adminProfile = {
+                id: adminUser.id,
+                callsign: adminCallsign,
+                display_callsign: adminCallsign,
+                login_callsign: adminCallsign,
+                rank: adminUser.rank || 'PIONEER',
+                roles: adminRoles,
+                membership: adminUser.membership || 'MEMBER',
+              };
+
               setUser({
                 ...adminUser,
                 is_admin: true,
-                callsign: adminUser.callsign || adminUser.full_name || adminUser.email || 'System Admin',
+                callsign: adminCallsign,
+                member_profile_id: adminUser.id,
+                member_profile_data: adminProfile,
+                rank: adminProfile.rank,
+                roles: adminRoles,
                 authType: 'admin'
               });
               setDisclaimersCompleted(true);
