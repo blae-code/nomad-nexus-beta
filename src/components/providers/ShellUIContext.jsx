@@ -30,6 +30,7 @@ export function ShellUIProvider({ children }) {
         setState({
           ...parsed,
           isCommsDockOpen: true, // Always force dock visible on load
+          isContextPanelOpen: true, // Ensure voice panel is visible on load
         });
       } else {
         setState(DEFAULT_STATE);
