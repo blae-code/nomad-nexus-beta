@@ -12,12 +12,14 @@ import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 import NexusLoadingOverlay from '@/components/common/NexusLoadingOverlay';
 import { useAuth } from '@/components/providers/AuthProvider';
 import RouteGuard from '@/components/auth/RouteGuard';
+import { useHubMetrics } from '@/components/hooks/useHubMetrics';
 
 export default function Hub() {
   const { user, loading: authLoading } = useAuth();
   const { isContextPanelOpen, isCommsDockOpen } = useShellUI();
   const voiceNet = useVoiceNet();
   const activeOp = useActiveOp();
+  const { metrics, loading: metricsLoading } = useHubMetrics();
 
   const getStatusColor = (percentage) => {
     if (percentage >= 70) return 'text-green-400';
@@ -54,6 +56,54 @@ export default function Hub() {
 
   const isAdmin = isAdminUser(user);
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+
+  const getLiveMeta = (path) => {
+    switch (path) {
+      case 'MissionControl':
+        return [
+          { label: 'Active Ops', value: metrics?.eventsActive },
+          { label: 'Upcoming', value: metrics?.eventsUpcoming },
+        ];
+      case 'CommandCenter':
+        return [
+          { label: 'Open Orders', value: metrics?.commandsOpen },
+          { label: 'Total Orders', value: metrics?.commandsTotal },
+        ];
+      case 'FleetTracking':
+        return [
+          { label: 'Fleet Assets', value: metrics?.fleetAssets },
+          { label: 'Live Status', value: metrics?.statuses },
+        ];
+      case 'UniverseMap':
+        return [
+          { label: 'Status Pings', value: metrics?.statuses },
+          { label: 'Active Ops', value: metrics?.eventsActive },
+        ];
+      case 'CommsConsole':
+        return [
+          { label: 'Channels', value: metrics?.channels },
+          { label: 'Voice Nets', value: metrics?.voiceNets },
+        ];
+      case 'MissionBoard':
+        return [
+          { label: 'Open Missions', value: metrics?.missionsOpen },
+          { label: 'Upcoming', value: metrics?.eventsUpcoming },
+        ];
+      case 'LogisticsHub':
+        return [
+          { label: 'Inventory', value: metrics?.inventory },
+          { label: 'Fleet Assets', value: metrics?.fleetAssets },
+        ];
+      case 'UserDirectory':
+      case 'MemberProgression':
+        return [
+          { label: 'Members', value: metrics?.members },
+          { label: 'Active Ops', value: metrics?.eventsActive },
+        ];
+      default:
+        return [];
+    }
+  };
 
   // Organize modules by completion status (dynamically calculated from features)
   const organizedItems = {
@@ -109,7 +159,7 @@ export default function Hub() {
               </div>
               <div className="grid grid-cols-4 gap-3 auto-rows-min">
                 {organizedItems.complete.map((item, index) => (
-                  <ModuleCard key={item.path} item={item} index={index} />
+                  <ModuleCard key={item.path} item={item} index={index} liveMeta={getLiveMeta(item.path)} />
                 ))}
               </div>
             </div>
@@ -124,7 +174,7 @@ export default function Hub() {
               </div>
               <div className="grid grid-cols-4 gap-3 auto-rows-min">
                 {organizedItems.inProgress.map((item, index) => (
-                  <ModuleCard key={item.path} item={item} index={index} />
+                  <ModuleCard key={item.path} item={item} index={index} liveMeta={getLiveMeta(item.path)} />
                 ))}
               </div>
             </div>
@@ -139,7 +189,7 @@ export default function Hub() {
               </div>
               <div className="grid grid-cols-4 gap-3 auto-rows-min">
                 {organizedItems.planned.map((item, index) => (
-                  <ModuleCard key={item.path} item={item} index={index} />
+                  <ModuleCard key={item.path} item={item} index={index} liveMeta={getLiveMeta(item.path)} />
                 ))}
               </div>
             </div>
@@ -148,7 +198,7 @@ export default function Hub() {
 
         {/* Right Column - Roadmap */}
         <div className="col-span-1 border-l border-zinc-800/40 pl-6 overflow-y-auto">
-          <DevelopmentRoadmap />
+          <DevelopmentRoadmap metrics={metrics} loading={metricsLoading} />
         </div>
       </div>
     </div>
@@ -156,7 +206,7 @@ export default function Hub() {
     );
     }
 
-    function ModuleCard({ item, index }) {
+    function ModuleCard({ item, index, liveMeta = [] }) {
             const Icon = item.icon;
           const status = MODULE_STATUS[item.path];
           const statusPercentage = calculateCompletion(item.path);
@@ -193,6 +243,16 @@ export default function Hub() {
                 <div className="mt-1 pt-1 border-t border-zinc-700/50 w-full flex items-center justify-center gap-1">
                   <span className={`text-[10px] font-mono font-bold ${getStatusColor(statusPercentage)}`}>{statusPercentage}%</span>
                   {statusPercentage === 100 && <Check className="w-3 h-3 text-green-400" />}
+                </div>
+              )}
+              {liveMeta.length > 0 && (
+                <div className="mt-2 w-full space-y-1 text-[10px] text-zinc-400">
+                  {liveMeta.slice(0, 2).map((row, idx) => (
+                    <div key={`${item.path}-live-${idx}`} className="flex items-center justify-between">
+                      <span className="uppercase tracking-widest text-[9px] text-zinc-500">{row.label}</span>
+                      <span className="font-mono text-[10px] text-orange-300">{row.value ?? '—'}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

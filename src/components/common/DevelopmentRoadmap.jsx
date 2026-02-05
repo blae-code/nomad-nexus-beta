@@ -1,9 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { CheckCircle2, AlertCircle, Clock, Target, Zap, ChevronDown } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import React, { useMemo, useState } from 'react';
+import { CheckCircle2, Clock, Target, Zap, ChevronDown, Activity, Database, Users } from 'lucide-react';
 import { MODULE_STATUS } from '@/components/constants/moduleStatus';
 
-export default function DevelopmentRoadmap() {
+const formatSyncTime = (value) => {
+  if (!value) return 'Syncing...';
+  try {
+    const date = new Date(value);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return 'Syncing...';
+  }
+};
+
+export default function DevelopmentRoadmap({ metrics, loading }) {
   const [expanded, setExpanded] = useState(true);
   
   // Calculate completion percentages dynamically based on features
@@ -61,6 +70,44 @@ export default function DevelopmentRoadmap() {
 
       {expanded && (
         <div className="space-y-3">
+          <div className="bg-zinc-900/60 border border-zinc-800/60 rounded p-3 space-y-2">
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-500">
+              <div className="flex items-center gap-2">
+                <Activity className="w-3 h-3 text-orange-400" />
+                Live Snapshot
+              </div>
+              <span className="font-mono text-[9px] text-zinc-500">
+                {loading ? 'Syncing...' : `Synced ${formatSyncTime(metrics?.lastSync)}`}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-300">
+              <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-800/60 rounded px-2 py-1">
+                <span className="flex items-center gap-1 text-zinc-500"><Users className="w-3 h-3" />Members</span>
+                <span className="font-mono text-orange-300">{metrics?.members ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-800/60 rounded px-2 py-1">
+                <span className="flex items-center gap-1 text-zinc-500"><Database className="w-3 h-3" />Assets</span>
+                <span className="font-mono text-orange-300">{metrics?.fleetAssets ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-800/60 rounded px-2 py-1">
+                <span className="text-zinc-500">Active Ops</span>
+                <span className="font-mono text-orange-300">{metrics?.eventsActive ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-800/60 rounded px-2 py-1">
+                <span className="text-zinc-500">Open Orders</span>
+                <span className="font-mono text-orange-300">{metrics?.commandsOpen ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-800/60 rounded px-2 py-1">
+                <span className="text-zinc-500">Channels</span>
+                <span className="font-mono text-orange-300">{metrics?.channels ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-800/60 rounded px-2 py-1">
+                <span className="text-zinc-500">Open Missions</span>
+                <span className="font-mono text-orange-300">{metrics?.missionsOpen ?? '—'}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Complete Modules */}
           {moduleGroups.complete.length > 0 && (
             <div className="space-y-1.5">
