@@ -115,18 +115,42 @@ export default function AccessGate() {
                 // Token already saved by redeemAccessKey, just wait for AuthProvider to pick it up
                 await new Promise(r => setTimeout(r, 500));
 
-                // Auth confirmed by backend, determine redirect based on rank
-                setMessage('Authorization confirmed. Redirecting...');
-                emitReadyBeacon('authenticated');
+              // Auth confirmed by backend, determine redirect based on profile completion
+              setMessage('Authorization confirmed. Resolving next step...');
+              emitReadyBeacon('authenticated');
 
-                // Redirect: Admins (Pioneer rank) go to Hub; everyone else goes to Disclaimers
-                const grantedRank = response?.data?.grants_rank;
-                const isAdmin = grantedRank === 'Pioneer';
-                const nextPage = isAdmin ? 'Hub' : 'Disclaimers';
+              const resolveNextPage = (member, fallbackRank) => {
+                const normalizedRank = (member?.rank || fallbackRank || '').toString().toUpperCase();
+                const roles = (member?.roles || []).map((r) => r.toString().toLowerCase());
+                const isAdmin = normalizedRank === 'PIONEER' || normalizedRank === 'FOUNDER' || roles.includes('admin');
+                if (isAdmin) return 'Hub';
+                if (!member?.accepted_pwa_disclaimer_at) return 'Disclaimers';
+                if (!member?.onboarding_completed) return 'Onboarding';
+                return 'Hub';
+              };
 
-                setTimeout(() => {
-                  window.location.href = createPageUrl(nextPage);
-                }, 1000);
+              let nextPage = 'Disclaimers';
+              const grantedRank = response?.data?.grants_rank;
+              try {
+                const verify = await base44.functions.invoke('verifyMemberSession', {
+                  code: trimmedCode,
+                  callsign: trimmedCallsign,
+                });
+                if (verify?.data?.success && verify?.data?.member) {
+                  nextPage = resolveNextPage(verify.data.member, grantedRank);
+                } else {
+                  const isAdmin = (grantedRank || '').toString().toUpperCase() === 'PIONEER';
+                  nextPage = isAdmin ? 'Hub' : 'Disclaimers';
+                }
+              } catch (verifyErr) {
+                console.warn('verifyMemberSession fallback:', verifyErr?.message);
+                const isAdmin = (grantedRank || '').toString().toUpperCase() === 'PIONEER';
+                nextPage = isAdmin ? 'Hub' : 'Disclaimers';
+              }
+
+              setTimeout(() => {
+                window.location.href = createPageUrl(nextPage);
+              }, 1000);
               } catch (authErr) {
                 setVerifyingAuth(false);
                 setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);
