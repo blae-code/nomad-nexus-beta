@@ -1131,6 +1131,7 @@ Provide a helpful, concise response with tactical awareness.`,
             size="icon"
             variant="ghost"
             onClick={() => onMinimize?.(!isMinimized)}
+            aria-label={isMinimized ? 'Expand comms dock' : 'Minimize comms dock'}
             className="h-7 w-7 text-zinc-500 hover:text-orange-400 transition-colors"
             title={isMinimized ? 'Expand' : 'Minimize'}
           >

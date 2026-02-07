@@ -317,6 +317,7 @@ export default function MessageComposer({
           size="icon"
           variant="ghost"
           onClick={() => insertFormatting('bold')}
+          aria-label="Bold"
           className="h-7 w-7"
           title="Bold (Ctrl+B)"
           disabled={disabled}
@@ -327,6 +328,7 @@ export default function MessageComposer({
           size="icon"
           variant="ghost"
           onClick={() => insertFormatting('italic')}
+          aria-label="Italic"
           className="h-7 w-7"
           title="Italic (Ctrl+I)"
           disabled={disabled}
@@ -337,6 +339,7 @@ export default function MessageComposer({
           size="icon"
           variant="ghost"
           onClick={() => insertFormatting('code')}
+          aria-label="Insert inline code"
           className="h-7 w-7"
           title="Code"
           disabled={disabled}
@@ -347,6 +350,7 @@ export default function MessageComposer({
           size="icon"
           variant="ghost"
           onClick={() => setShowEmojiPicker(true)}
+          aria-label="Insert emoji"
           className="h-7 w-7"
           title="Insert emoji"
           disabled={disabled}
@@ -366,6 +370,7 @@ export default function MessageComposer({
           size="icon"
           variant="ghost"
           onClick={() => fileInputRef.current?.click()}
+          aria-label="Attach file"
           disabled={uploading}
           className="h-7 w-7"
           title="Attach file"
@@ -376,6 +381,7 @@ export default function MessageComposer({
           size="icon"
           variant="ghost"
           onClick={() => (isRecording ? stopRecording() : startRecording())}
+          aria-label={isRecording ? 'Stop recording voice message' : 'Record voice message'}
           disabled={disabled || uploading}
           className={`h-7 w-7 ${isRecording ? 'text-red-400' : ''}`}
           title={isRecording ? 'Stop recording' : 'Record voice message'}
@@ -408,6 +414,7 @@ export default function MessageComposer({
         <Button
           size="icon"
           onClick={handleSend}
+          aria-label="Send message"
           disabled={(!body.trim() && attachments.length === 0) || disabled || uploading}
           className="h-9 w-9 flex-shrink-0 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed"
           title="Send message (Enter)"

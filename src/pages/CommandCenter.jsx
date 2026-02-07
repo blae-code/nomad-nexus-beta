@@ -37,6 +37,9 @@ export default function CommandCenter() {
     targetIds: [],
     requiresAck: true,
   });
+  const [escalatingCommandId, setEscalatingCommandId] = useState(null);
+  const [escalationReasonByCommand, setEscalationReasonByCommand] = useState({});
+  const [banner, setBanner] = useState(null);
 
   const commandAuthors = useMemo(
     () => commands.map((c) => c.issued_by_member_profile_id).filter(Boolean),
@@ -121,6 +124,29 @@ export default function CommandCenter() {
     }
   };
 
+  const handleEscalate = async (commandId) => {
+    const reason = escalationReasonByCommand[commandId]?.trim() || '';
+    try {
+      setEscalatingCommandId(commandId);
+      const response = await base44.functions.invoke('escalateTacticalOrder', {
+        commandId,
+        reason,
+        priority: 'CRITICAL',
+      });
+      if (response?.data?.success || response?.success) {
+        setBanner({ type: 'success', message: 'Command escalated and command staff notified.' });
+        setEscalationReasonByCommand((prev) => ({ ...prev, [commandId]: '' }));
+      } else {
+        setBanner({ type: 'error', message: response?.data?.error || 'Escalation failed.' });
+      }
+    } catch (error) {
+      console.error('Failed to escalate command:', error);
+      setBanner({ type: 'error', message: error?.message || 'Escalation failed.' });
+    } finally {
+      setEscalatingCommandId(null);
+    }
+  };
+
   const targetOptions = useMemo(() => {
     if (form.targetType === 'member') {
       return members.map((m) => ({ id: m.id, label: m.display_callsign || m.callsign || m.full_name || m.email || m.id }));
@@ -135,12 +161,26 @@ export default function CommandCenter() {
   }, [form.targetType, members, squads, voiceNets, events]);
 
   const activeEventLabel = activeOp?.activeEvent?.title || 'No active operation';
+  const currentRank = (member?.rank || '').toString().toUpperCase();
+  const isCommandStaff = ['COMMANDER', 'PIONEER', 'FOUNDER'].includes(currentRank);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-black uppercase tracking-wider text-white">Command Center</h1>
         <p className="text-zinc-400 text-sm">Issue orders, track acknowledgements, and maintain control</p>
+        {banner && (
+          <div
+            role={banner.type === 'error' ? 'alert' : 'status'}
+            className={`mt-3 inline-flex items-center gap-2 rounded border px-3 py-1 text-xs ${
+              banner.type === 'error'
+                ? 'border-red-500/40 text-red-300 bg-red-500/10'
+                : 'border-green-500/40 text-green-300 bg-green-500/10'
+            }`}
+          >
+            {banner.message}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -248,6 +288,11 @@ export default function CommandCenter() {
                 const targetCount = targets.length || command.target_ids?.length || 0;
                 const hasAcknowledged = acknowledgements.includes(member?.id);
                 const isRecipient = targets.length === 0 ? true : targets.includes(member?.id);
+                const isUnresolved = command.requires_ack && targetCount > 0 && ackCount < targetCount;
+                const canEscalate =
+                  isUnresolved &&
+                  command.status !== 'ESCALATED' &&
+                  (isCommandStaff || command.issued_by_member_profile_id === member?.id);
 
                 return (
                   <div key={command.id} className="bg-zinc-900/60 border border-zinc-800 rounded p-4 space-y-2">
@@ -269,6 +314,12 @@ export default function CommandCenter() {
                         ) : (
                           <span className="text-orange-300 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {ackCount}/{targetCount || '—'} acknowledged</span>
                         )}
+                        {command.status === 'ESCALATED' && (
+                          <span className="text-red-300 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Escalated
+                          </span>
+                        )}
                       </div>
                     )}
                     {command.requires_ack && isRecipient && !hasAcknowledged && (
@@ -278,6 +329,30 @@ export default function CommandCenter() {
                     )}
                     {hasAcknowledged && (
                       <div className="text-[10px] text-green-400">Acknowledged</div>
+                    )}
+                    {canEscalate && (
+                      <div className="border border-red-500/20 rounded p-2 bg-red-500/5 space-y-2">
+                        <div className="text-[10px] uppercase tracking-widest text-red-300">Escalation Hook</div>
+                        <Input
+                          value={escalationReasonByCommand[command.id] || ''}
+                          onChange={(e) =>
+                            setEscalationReasonByCommand((prev) => ({
+                              ...prev,
+                              [command.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="Escalation reason (optional)"
+                          className="h-8 text-xs"
+                        />
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleEscalate(command.id)}
+                          disabled={escalatingCommandId === command.id}
+                        >
+                          {escalatingCommandId === command.id ? 'Escalating...' : 'Escalate to Command Staff'}
+                        </Button>
+                      </div>
                     )}
                     {targets.length > 0 && (
                       <div className="flex flex-wrap gap-2 text-[10px] text-zinc-500">

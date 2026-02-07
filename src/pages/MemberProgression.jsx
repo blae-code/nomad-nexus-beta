@@ -8,12 +8,17 @@ import { getDisplayCallsign } from '@/utils';
 import SkillTree from '@/components/progression/SkillTree';
 import PromotionRecommendations from '@/components/progression/PromotionRecommendations';
 import MentorshipMatching from '@/components/progression/MentorshipMatching';
+import ProgressionAnalytics from '@/components/progression/ProgressionAnalytics';
+import CertificationTracker from '@/components/progression/CertificationTracker';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function MemberProgression() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { user: authUser } = useAuth();
+  const actorProfile = authUser?.member_profile_data || authUser || null;
 
   useEffect(() => {
     loadMembers();
@@ -117,6 +122,8 @@ export default function MemberProgression() {
                     Promotion Path
                   </TabsTrigger>
                   <TabsTrigger value="mentorship">Mentorship</TabsTrigger>
+                  <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                  <TabsTrigger value="certifications">Certifications</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="skills">
@@ -129,6 +136,18 @@ export default function MemberProgression() {
 
                 <TabsContent value="mentorship">
                   <MentorshipMatching currentMember={selectedMember} allMembers={members} />
+                </TabsContent>
+
+                <TabsContent value="analytics">
+                  <ProgressionAnalytics member={selectedMember} allMembers={members} />
+                </TabsContent>
+
+                <TabsContent value="certifications">
+                  <CertificationTracker
+                    member={selectedMember}
+                    actorProfile={actorProfile}
+                    onMemberUpdate={loadMembers}
+                  />
                 </TabsContent>
               </Tabs>
             </div>

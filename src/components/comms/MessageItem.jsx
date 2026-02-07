@@ -190,7 +190,11 @@ export default function MessageItem({
           {/* Message Header */}
           <div className="flex items-center gap-2 text-[10px] mb-1">
             {statusKey !== 'offline' && (
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" title="Online now" />
+              <div
+                aria-hidden="true"
+                className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"
+                title="Online now"
+              />
             )}
             {hasHoverData ? (
               <HoverCard>
@@ -417,10 +421,10 @@ export default function MessageItem({
         </div>
 
         {/* Actions Menu */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-6 w-6">
+              <Button size="icon" variant="ghost" className="h-6 w-6" aria-label="Message actions">
                 <MoreVertical className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -459,6 +463,7 @@ export default function MessageItem({
             <Button 
               size="icon" 
               variant="ghost" 
+              aria-label="Add reaction"
               className="h-6 w-6"
               onClick={() => setShowReactionPicker(!showReactionPicker)}
             >

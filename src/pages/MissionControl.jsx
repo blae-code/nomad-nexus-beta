@@ -8,6 +8,7 @@ import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCir
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { createPageUrl } from '@/utils';
 import EventCalendarView from '@/components/events/EventCalendarView';
 import EventTemplateManager from '@/components/events/EventTemplateManager';
 import EventRecurrenceManager from '@/components/events/EventRecurrenceManager';
@@ -19,10 +20,12 @@ import OperationPlanner from '@/components/missions/OperationPlanner';
 import EventRiskAssessment from '@/components/events/EventRiskAssessment';
 import ResourceManagement from '@/components/events/ResourceManagement';
 import PostEventAnalysis from '@/components/events/PostEventAnalysis';
+import MissionControlAdvancedPanel from '@/components/missions/MissionControlAdvancedPanel';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
+  const [operationModeFilter, setOperationModeFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateEvent, setShowCreateEvent] = useState(false);
@@ -260,10 +263,21 @@ export default function MissionControl() {
     return colors[priority] || 'text-zinc-400';
   };
 
+  const linkedMissions = Array.isArray(selectedEvent?.linked_missions)
+    ? selectedEvent.linked_missions
+    : Array.isArray(selectedEvent?.mission_catalog_entries)
+    ? selectedEvent.mission_catalog_entries
+    : [];
+
+  const filteredEvents = events.filter((event) => {
+    if (operationModeFilter === 'all') return true;
+    return String(event?.event_type || '').toLowerCase() === operationModeFilter;
+  });
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <LoadingState label="Loading Mission Control" />
+        <LoadingState label="Loading Operations Control" />
       </div>
     );
   }
@@ -272,10 +286,16 @@ export default function MissionControl() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-black uppercase tracking-wider text-white">Mission Control</h1>
-          <p className="text-zinc-400 text-sm">Operations planning, execution, and reporting</p>
+          <h1 className="text-3xl font-black uppercase tracking-wider text-white">Operations Control</h1>
+          <p className="text-zinc-400 text-sm">Plan and run player-led operations in Casual or Focused mode</p>
         </div>
         <div className="flex gap-2">
+           <a
+             href={createPageUrl('CommsConsole')}
+             className="inline-flex items-center rounded border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-200 hover:border-orange-500/50 hover:text-white transition"
+           >
+             🎙 Open Comms
+           </a>
            <Button onClick={() => setShowTemplates(true)} variant="outline">
              📋 Templates
            </Button>
@@ -289,9 +309,24 @@ export default function MissionControl() {
          </div>
       </div>
 
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <div className="p-3 border border-zinc-800 rounded bg-zinc-900/40">
+          <div className="text-[10px] uppercase tracking-widest text-zinc-500">Domain Model</div>
+          <div className="text-xs text-zinc-300 mt-1">Operations are player-led events. Missions are in-game activities.</div>
+        </div>
+        <div className="p-3 border border-zinc-800 rounded bg-zinc-900/40">
+          <div className="text-[10px] uppercase tracking-widest text-zinc-500">Operation Voice</div>
+          <div className="text-xs text-orange-300 mt-1">Real-time voice comms required for all active operations.</div>
+        </div>
+        <div className="p-3 border border-zinc-800 rounded bg-zinc-900/40">
+          <div className="text-[10px] uppercase tracking-widest text-zinc-500">Contract Work</div>
+          <div className="text-xs text-zinc-300 mt-1">Use Contract Exchange for async player jobs and commerce.</div>
+        </div>
+      </div>
+
       {/* Calendar View */}
       <div className="mb-6">
-        <EventCalendarView events={events} onEventClick={(event) => {
+        <EventCalendarView events={filteredEvents} onEventClick={(event) => {
           setSelectedEvent(event);
           loadEventDetails(event.id);
         }} />
@@ -300,15 +335,38 @@ export default function MissionControl() {
       <div className="grid grid-cols-3 gap-4">
         {/* Events List */}
         <div className="col-span-1 space-y-2">
-          <h2 className="text-sm font-bold text-zinc-400 uppercase mb-4">Operations</h2>
-          {events.length === 0 ? (
+          <h2 className="text-sm font-bold text-zinc-400 uppercase mb-2">Operations</h2>
+          <div className="flex gap-2 mb-4">
+            <Button
+              size="sm"
+              variant={operationModeFilter === 'all' ? 'default' : 'outline'}
+              onClick={() => setOperationModeFilter('all')}
+            >
+              All
+            </Button>
+            <Button
+              size="sm"
+              variant={operationModeFilter === 'casual' ? 'default' : 'outline'}
+              onClick={() => setOperationModeFilter('casual')}
+            >
+              Casual
+            </Button>
+            <Button
+              size="sm"
+              variant={operationModeFilter === 'focused' ? 'default' : 'outline'}
+              onClick={() => setOperationModeFilter('focused')}
+            >
+              Focused
+            </Button>
+          </div>
+          {filteredEvents.length === 0 ? (
             <EmptyState 
               icon={Calendar}
               title="No operations"
-              message="Create your first operation"
+              message="Create an operation or switch mode filter"
             />
           ) : (
-            events.map((event) => (
+            filteredEvents.map((event) => (
               <button
                 key={event.id}
                 onClick={() => {
@@ -333,6 +391,9 @@ export default function MissionControl() {
                 </div>
                 <div className={`mt-2 px-2 py-1 text-[10px] font-bold uppercase border inline-block ${getStatusColor(event.status)}`}>
                   {event.status}
+                </div>
+                <div className="mt-2 text-[10px] uppercase text-zinc-500">
+                  Mode: <span className="text-zinc-300">{event.event_type || 'casual'}</span>
                 </div>
               </button>
             ))
@@ -376,6 +437,31 @@ export default function MissionControl() {
                       Training prerequisites: {selectedEvent.training_prerequisites}
                     </div>
                   )}
+                  <div className="mt-3">
+                    <div className="text-[10px] uppercase text-zinc-500 tracking-widest">Linked Game Missions</div>
+                    {linkedMissions.length === 0 ? (
+                      <div className="text-xs text-zinc-500 mt-1">
+                        No missions linked yet.
+                        <a href={createPageUrl('MissionCatalog')} className="ml-1 text-orange-300 hover:text-orange-200 underline">
+                          Open Mission Catalog
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {linkedMissions.slice(0, 5).map((mission) => (
+                          <span
+                            key={mission.id || mission.title}
+                            className="text-[10px] text-cyan-300 border border-cyan-500/30 px-2 py-1 rounded uppercase"
+                          >
+                            {mission.title || mission.id}
+                          </span>
+                        ))}
+                        {linkedMissions.length > 5 && (
+                          <span className="text-[10px] text-zinc-500">+{linkedMissions.length - 5} more</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -438,12 +524,16 @@ export default function MissionControl() {
                     <FileText className="w-4 h-4 mr-2" />
                     Reports
                   </TabsTrigger>
+                  <TabsTrigger value="advanced">
+                    <Target className="w-4 h-4 mr-2" />
+                    Advanced Ops
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4 mt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
-                      <div className="text-xs text-zinc-400 mb-1">Type</div>
+                      <div className="text-xs text-zinc-400 mb-1">Mode</div>
                       <div className="text-sm font-bold text-white uppercase">{selectedEvent.event_type}</div>
                     </div>
                     <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded">
@@ -465,7 +555,7 @@ export default function MissionControl() {
 
                 <TabsContent value="objectives" className="space-y-4 mt-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-zinc-400 uppercase">Mission Objectives</h3>
+                    <h3 className="text-sm font-bold text-zinc-400 uppercase">Operation Objectives</h3>
                     <Button size="sm" onClick={() => setShowCreateObjective(true)}>
                       <Plus className="w-3 h-3 mr-1" />
                       Add Objective
@@ -706,6 +796,16 @@ export default function MissionControl() {
                     </div>
                   )}
                 </TabsContent>
+                <TabsContent value="advanced" className="space-y-4 mt-4">
+                  <MissionControlAdvancedPanel
+                    event={selectedEvent}
+                    allEvents={events}
+                    onRefresh={() => {
+                      loadEventDetails(selectedEvent.id);
+                      loadReports(selectedEvent.id);
+                    }}
+                  />
+                </TabsContent>
               </Tabs>
             </div>
           )}
@@ -732,7 +832,7 @@ export default function MissionControl() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000]">
           <div className="bg-zinc-900 border-2 border-purple-500/50 p-6 max-w-3xl w-full mx-4 rounded-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black text-white uppercase">AI Mission Planning</h2>
+            <h2 className="text-xl font-black text-white uppercase">AI Operations Planning</h2>
               <button
                 onClick={() => setShowPlanningTools(null)}
                 className="text-zinc-400 hover:text-white text-xl"
@@ -825,7 +925,7 @@ export default function MissionControl() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-400 mb-2 block">Type</label>
+                <label className="text-xs text-zinc-400 mb-2 block">Operation Mode</label>
                 <select
                   value={eventForm.event_type}
                   onChange={(e) => setEventForm({ ...eventForm, event_type: e.target.value })}

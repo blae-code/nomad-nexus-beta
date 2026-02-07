@@ -151,6 +151,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
              size="icon"
              variant="ghost"
              onClick={() => onMinimize(!isMinimized)}
+             aria-label={isMinimized ? 'Expand voice command core panel' : 'Minimize voice command core panel'}
              className="h-6 w-6 text-zinc-400 hover:text-orange-500"
              title={isMinimized ? "Expand" : "Minimize"}
            >
@@ -161,6 +162,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
                size="icon"
                variant="ghost"
                onClick={onClose}
+               aria-label="Close voice command core panel"
                className="h-6 w-6 text-zinc-400 hover:text-orange-500"
              >
                <X className="w-4 h-4" />

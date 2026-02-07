@@ -43,7 +43,7 @@ export default function CommandPaletteUI() {
     return null;
   }
 
-  const { isOpen, closePalette, search, setSearch, groupedActions, filteredActions } = context;
+  const { isOpen, openPalette, closePalette, search, setSearch, groupedActions, filteredActions } = context;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
@@ -64,17 +64,14 @@ export default function CommandPaletteUI() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         if (!isOpen) {
-          // Open palette is called via Provider
-          const palette = document.dispatchEvent(
-            new CustomEvent('openCommandPalette', { detail: {} })
-          );
+          openPalette();
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, openPalette]);
 
   if (!isOpen) return null;
 
@@ -84,6 +81,11 @@ export default function CommandPaletteUI() {
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
       closePalette();
+      return;
+    }
+
+    if (flatActions.length === 0) {
+      return;
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((i) => (i + 1) % flatActions.length);
@@ -103,6 +105,9 @@ export default function CommandPaletteUI() {
   return (
     <div
       className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center pt-24 z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="command-palette-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           closePalette();
@@ -115,6 +120,7 @@ export default function CommandPaletteUI() {
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b-2 border-zinc-800 bg-zinc-900/50">
+          <h2 id="command-palette-title" className="sr-only">Command palette</h2>
           <div className="w-1 h-6 bg-orange-500" />
           <input
             ref={inputRef}
@@ -126,10 +132,12 @@ export default function CommandPaletteUI() {
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-white text-base font-mono tracking-wide outline-none placeholder:text-zinc-600"
+            aria-label="Search commands"
+            className="flex-1 bg-transparent text-white text-base font-mono tracking-wide outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 rounded placeholder:text-zinc-600"
           />
           <button
             onClick={closePalette}
+            aria-label="Close command palette"
             className="text-zinc-600 hover:text-orange-400 transition-colors p-1"
             title="Close (Esc)"
           >

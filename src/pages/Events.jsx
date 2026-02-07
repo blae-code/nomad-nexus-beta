@@ -43,12 +43,12 @@ export default function Events() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-black uppercase tracking-wider text-white">Events</h1>
-          <p className="text-zinc-400 text-sm">Mission planning and operations</p>
+          <h1 className="text-3xl font-black uppercase tracking-wider text-white">Operations</h1>
+          <p className="text-zinc-400 text-sm">Player-led operation schedule and participation</p>
         </div>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
-          New Event
+          New Operation
         </Button>
       </div>
 
@@ -56,7 +56,7 @@ export default function Events() {
         {events.length === 0 ? (
           <EmptyState 
             icon={Calendar}
-            title="No events scheduled"
+            title="No operations scheduled"
             message="Create your first operation to get started"
           />
         ) : (

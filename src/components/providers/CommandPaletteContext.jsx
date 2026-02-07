@@ -3,6 +3,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
 import { isAdminUser } from '@/utils';
 import { COMMS_CHANNEL_TYPES } from '@/components/constants/channelTypes';
+import { pagesConfig } from '@/pages.config';
 
 /**
  * CommandPaletteContext — Global state for command palette
@@ -72,6 +73,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:hub',
       label: 'Hub',
       category: 'Navigate',
+      page: 'Hub',
       description: 'Go to main dashboard',
       icon: 'Home',
       shortcut: '⌘H',
@@ -80,9 +82,10 @@ const createActionRegistry = (user, callbacks) => {
     // Navigate: Events
     {
       id: 'nav:events',
-      label: 'Events',
+      label: 'Operations',
       category: 'Navigate',
-      description: 'View operations and events',
+      page: 'Events',
+      description: 'View player-led operations',
       icon: 'Calendar',
       shortcut: '⌘E',
       onExecute: () => callbacks.navigate('Events'),
@@ -92,6 +95,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:comms',
       label: 'Comms Console',
       category: 'Navigate',
+      page: 'CommsConsole',
       description: 'Open communication channels',
       icon: 'Radio',
       shortcut: '⌘C',
@@ -102,6 +106,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:directory',
       label: 'User Directory',
       category: 'Navigate',
+      page: 'UserDirectory',
       description: 'Browse member roster',
       icon: 'Users',
       shortcut: '⌘U',
@@ -112,6 +117,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:map',
       label: 'Universe Map',
       category: 'Navigate',
+      page: 'UniverseMap',
       description: 'Tactical overview and positioning',
       icon: 'Map',
       shortcut: '⌘M',
@@ -122,16 +128,88 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:command-center',
       label: 'Command Center',
       category: 'Navigate',
+      page: 'CommandCenter',
       description: 'Issue orders and track acknowledgements',
       icon: 'Target',
       onExecute: () => callbacks.navigate('CommandCenter'),
     },
-    // Navigate: Mission Board
+    // Navigate: Mission Catalog
+    {
+      id: 'nav:mission-catalog',
+      label: 'Mission Catalog',
+      category: 'Navigate',
+      page: 'MissionCatalog',
+      description: 'Game missions for operation planning',
+      icon: 'Target',
+      onExecute: () => callbacks.navigate('MissionCatalog'),
+    },
+    // Navigate: Intel Nexus
+    {
+      id: 'nav:intel-nexus',
+      label: 'Intel Nexus',
+      category: 'Navigate',
+      page: 'IntelNexus',
+      description: 'Threat tracking, intel reports, and predictive analysis',
+      icon: 'Database',
+      onExecute: () => callbacks.navigate('IntelNexus'),
+    },
+    // Navigate: War Academy
+    {
+      id: 'nav:war-academy',
+      label: 'War Academy',
+      category: 'Navigate',
+      page: 'WarAcademy',
+      description: 'Training scenarios, certifications, and simulation drills',
+      icon: 'GraduationCap',
+      onExecute: () => callbacks.navigate('WarAcademy'),
+    },
+    // Navigate: Nomad Registry
+    {
+      id: 'nav:nomad-registry',
+      label: 'Nomad Registry',
+      category: 'Navigate',
+      page: 'NomadRegistry',
+      description: 'Member profiles, reputation, achievements, and mentorship',
+      icon: 'Users',
+      onExecute: () => callbacks.navigate('NomadRegistry'),
+    },
+    // Navigate: High Command
+    {
+      id: 'nav:high-command',
+      label: 'High Command',
+      category: 'Navigate',
+      page: 'HighCommand',
+      description: 'Governance directives, council voting, diplomacy, and alliances',
+      icon: 'Gavel',
+      onExecute: () => callbacks.navigate('HighCommand'),
+    },
+    // Navigate: Data Vault
+    {
+      id: 'nav:data-vault',
+      label: 'Data Vault',
+      category: 'Navigate',
+      page: 'DataVault',
+      description: 'Knowledge archive, search, analytics, and exports',
+      icon: 'BookOpen',
+      onExecute: () => callbacks.navigate('DataVault'),
+    },
+    // Navigate: Nexus Training
+    {
+      id: 'nav:nexus-training',
+      label: 'Nexus Training',
+      category: 'Navigate',
+      page: 'NexusTraining',
+      description: 'Tutorials, guides, video resources, certifications, and feedback',
+      icon: 'HelpCircle',
+      onExecute: () => callbacks.navigate('NexusTraining'),
+    },
+    // Navigate: Contract Exchange
     {
       id: 'nav:mission-board',
-      label: 'Mission Board',
+      label: 'Contract Exchange',
       category: 'Navigate',
-      description: 'Bounties and in-universe contracts',
+      page: 'MissionBoard',
+      description: 'Async contracts, bounties, and orders',
       icon: 'ScrollText',
       onExecute: () => callbacks.navigate('MissionBoard'),
     },
@@ -140,6 +218,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:logistics',
       label: 'Logistics Hub',
       category: 'Navigate',
+      page: 'LogisticsHub',
       description: 'Inventory and resource tracking',
       icon: 'Boxes',
       onExecute: () => callbacks.navigate('LogisticsHub'),
@@ -149,6 +228,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:objectives',
       label: 'Strategic Objectives',
       category: 'Navigate',
+      page: 'StrategicObjectives',
       description: 'Long-term org goals',
       icon: 'Target',
       onExecute: () => callbacks.navigate('StrategicObjectives'),
@@ -158,6 +238,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:hud',
       label: 'HUD Mode',
       category: 'Navigate',
+      page: 'HudMode',
       description: 'Second-screen tactical HUD',
       icon: 'Monitor',
       onExecute: () => callbacks.navigate('HudMode'),
@@ -167,35 +248,39 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:onboarding-pipeline',
       label: 'Onboarding Pipeline',
       category: 'Navigate',
+      page: 'OnboardingPipeline',
       description: 'Recruit checklist and milestones',
       icon: 'ClipboardList',
       onExecute: () => callbacks.navigate('OnboardingPipeline'),
     },
-    // Navigate: Fleet Manager
+    // Navigate: Fleet Command
     {
       id: 'nav:fleet',
-      label: 'Fleet Manager',
+      label: 'Fleet Command',
       category: 'Navigate',
-      description: 'Asset management and logistics',
+      page: 'FleetCommand',
+      description: 'Asset control, scheduling, engineering, and analytics',
       icon: 'Box',
       shortcut: '⌘F',
-      onExecute: () => callbacks.navigate('FleetManager'),
+      onExecute: () => callbacks.navigate('FleetCommand'),
     },
-    // Navigate: Treasury
+    // Navigate: Trade Nexus
     {
-      id: 'nav:treasury',
-      label: 'Treasury',
+      id: 'nav:trade-nexus',
+      label: 'Trade Nexus',
       category: 'Navigate',
-      description: 'Financial tracking and coffers',
+      page: 'TradeNexus',
+      description: 'Marketplace, commerce contracts, and treasury analytics',
       icon: 'DollarSign',
       shortcut: '⌘T',
-      onExecute: () => callbacks.navigate('Treasury'),
+      onExecute: () => callbacks.navigate('TradeNexus'),
     },
     // Navigate: Recon/Archive
     {
       id: 'nav:recon',
       label: 'Recon',
       category: 'Navigate',
+      page: 'Recon',
       description: 'Intelligence reports and reputation tracking',
       icon: 'FileSearch',
       shortcut: '⌘R',
@@ -206,6 +291,7 @@ const createActionRegistry = (user, callbacks) => {
       id: 'nav:settings',
       label: 'System Admin',
       category: 'Navigate',
+      page: 'Settings',
       description: 'Administrator control panel',
       icon: 'Shield',
       shortcut: '⌘⇧A',
@@ -283,6 +369,7 @@ export function CommandPaletteProvider({
   const [search, setSearch] = useState('');
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
+  const availablePages = useMemo(() => new Set(Object.keys(pagesConfig?.Pages || {})), []);
 
   const callbacks = useMemo(
     () => ({
@@ -330,13 +417,16 @@ export function CommandPaletteProvider({
   const actions = useMemo(() => {
     const allActions = createActionRegistry(user, callbacks);
     return allActions.filter((action) => {
+      if (action.page && !availablePages.has(action.page)) {
+        return false;
+      }
       // Call isVisible predicate if it exists
       if (action.isVisible) {
         return action.isVisible(user);
       }
       return true;
     });
-  }, [user, callbacks]);
+  }, [user, callbacks, availablePages]);
 
   // Filter actions by search
   const filteredActions = useMemo(() => {

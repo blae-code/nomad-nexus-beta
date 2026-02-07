@@ -41,10 +41,16 @@ export default function NotificationCenter() {
   };
 
   return (
-    <div className="fixed top-20 right-4 z-50 space-y-3 max-w-md pointer-events-none">
+    <div
+      className="fixed top-20 right-4 z-50 space-y-3 max-w-md pointer-events-none"
+      aria-live="polite"
+      aria-atomic="false"
+    >
       {notifications.map((notif) => (
         <div
           key={notif.id}
+          role={notif.type === 'error' || notif.type === 'alert' ? 'alert' : 'status'}
+          aria-live={notif.type === 'error' || notif.type === 'alert' ? 'assertive' : 'polite'}
           className={cn(
             'p-4 rounded-lg border pointer-events-auto animate-in slide-in-from-top-2 fade-in',
             getStyles(notif.type)
@@ -61,6 +67,7 @@ export default function NotificationCenter() {
                   {notif.actions.map((action, idx) => (
                     <button
                       key={idx}
+                      aria-label={action.label}
                       onClick={() => {
                         action.onClick?.(notif.id);
                         removeNotification(notif.id);
@@ -79,6 +86,7 @@ export default function NotificationCenter() {
               )}
             </div>
             <button
+              aria-label="Dismiss notification"
               onClick={() => removeNotification(notif.id)}
               className="flex-shrink-0 text-inherit hover:opacity-70 transition-opacity"
             >

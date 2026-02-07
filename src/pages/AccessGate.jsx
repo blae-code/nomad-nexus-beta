@@ -257,14 +257,21 @@ export default function AccessGate() {
           </div>
 
           {/* Form Section */}
-          <div className="p-8 space-y-6">
+          <form
+            className="p-8 space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleRedeem();
+            }}
+          >
             {/* Access Code Field */}
             <div className="space-y-2.5 group">
-              <label className="text-[10px] font-bold text-amber-300 uppercase tracking-[0.15em] block">
+              <label htmlFor="accessCode" className="text-[10px] font-bold text-amber-300 uppercase tracking-[0.15em] block">
                 ◆ Access Code
               </label>
               <div className="relative">
                 <Input
+                  id="accessCode"
                   type="password"
                   placeholder="XXXX-XXXX-XXXX"
                   value={accessCode}
@@ -277,17 +284,17 @@ export default function AccessGate() {
 
             {/* Callsign Field */}
             <div className="space-y-2.5 group">
-              <label className="text-[10px] font-bold text-emerald-300 uppercase tracking-[0.15em] block">
+              <label htmlFor="callsign" className="text-[10px] font-bold text-emerald-300 uppercase tracking-[0.15em] block">
                 ◆ Callsign
               </label>
               <div className="relative">
                 <Input
+                  id="callsign"
                   type="text"
                   placeholder="Enter callsign"
                   value={callsign}
                   onChange={(e) => setCallsign(e.target.value)}
                   className="tracking-wider text-center h-12 bg-slate-900/60 border-2 border-white/30 group-focus-within:border-white/60 group-focus-within:bg-slate-900 focus:border-white/60 focus:bg-slate-900 text-white placeholder:text-slate-600 transition-all duration-200"
-                  onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
                   />
                   <div className="absolute -inset-1 border border-white/0 group-focus-within:border-white/20 rounded transition-all duration-200 pointer-events-none" />
               </div>
@@ -341,7 +348,7 @@ export default function AccessGate() {
 
             {/* Verify Button */}
             <Button
-              onClick={handleRedeem}
+              type="submit"
               disabled={loading || verifyingAuth || !accessCode.trim() || !callsign.trim()}
               className="w-full h-12 mt-8 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 relative overflow-hidden group"
             >
@@ -361,7 +368,7 @@ export default function AccessGate() {
 
             {/* Status Messages */}
             {message && (
-              <div className={`p-4 rounded border-2 text-center whitespace-pre-line font-mono text-xs animate-in fade-in duration-300 ${
+              <div role="status" aria-live="polite" className={`p-4 rounded border-2 text-center whitespace-pre-line font-mono text-xs animate-in fade-in duration-300 ${
                 message.includes('granted') 
                   ? 'bg-green-950/40 border-green-500/50 text-green-300 shadow-lg shadow-green-500/20' 
                   : message.includes('Revoked') 
@@ -371,7 +378,7 @@ export default function AccessGate() {
                 {message}
               </div>
             )}
-          </div>
+          </form>
 
           {/* Footer */}
           <div className="border-t border-red-700/40 bg-gradient-to-r from-red-700/5 to-transparent px-8 py-5">

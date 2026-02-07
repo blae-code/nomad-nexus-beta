@@ -160,6 +160,12 @@ function LayoutContent({ currentPageName, children }) {
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
       <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
+         <a
+           href="#main-content"
+           className="absolute left-2 top-2 z-[1200] -translate-y-16 rounded bg-zinc-900 px-3 py-2 text-xs text-orange-300 border border-orange-500/40 transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+         >
+           Skip to main content
+         </a>
          {/* CSS Debug Overlay */}
          <CSSDebugOverlay />
 
@@ -177,7 +183,11 @@ function LayoutContent({ currentPageName, children }) {
         {/* Main content area — offset for fixed header (pt-16) + dock spacer */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
           <div className="flex-1 overflow-hidden flex gap-0">
-            <main className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : isCommsDockOpen && dockMinimized ? 'pb-12' : 'pb-0'} transition-all duration-200`}>
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : isCommsDockOpen && dockMinimized ? 'pb-12' : 'pb-0'} transition-all duration-200`}
+            >
               <PermissionGuard>{children}</PermissionGuard>
             </main>
 

@@ -159,6 +159,7 @@ export default function Header() {
               size="icon"
               variant="ghost"
               onClick={toggleContextPanel}
+              aria-label="Toggle voice control panel"
               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 transition-all duration-200 rounded"
               title="Voice Control Panel (Right)"
             >
@@ -168,6 +169,7 @@ export default function Header() {
               size="icon"
               variant="ghost"
               onClick={toggleCommsDock}
+              aria-label="Toggle text comms dock"
               className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 relative transition-all duration-200 rounded"
               title="Text Comms Dock (Bottom)"
             >
