@@ -78,21 +78,21 @@ export default function VoiceCommsDock({ isOpen, onClose, isMinimized, onMinimiz
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  variant={voiceNet?.isMicEnabled ? 'default' : 'secondary'}
-                  onClick={() => voiceNet?.setMicEnabled?.(!voiceNet.isMicEnabled)}
+                  variant={voiceNet?.micEnabled ? 'default' : 'secondary'}
+                  onClick={() => voiceNet?.setMicEnabled?.(!voiceNet.micEnabled)}
                   className="flex-1 gap-2 text-xs"
                 >
-                  {voiceNet?.isMicEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
-                  {voiceNet?.isMicEnabled ? 'Mic On' : 'Mic Off'}
+                  {voiceNet?.micEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
+                  {voiceNet?.micEnabled ? 'Mic On' : 'Mic Off'}
                 </Button>
                 <Button
                   size="sm"
-                  variant={voiceNet?.isPTTActive ? 'default' : 'secondary'}
-                  onClick={() => voiceNet?.setPTTActive?.(!voiceNet.isPTTActive)}
+                  variant={voiceNet?.pttActive ? 'default' : 'secondary'}
+                  onClick={() => voiceNet?.togglePTT?.()}
                   className="flex-1 gap-2 text-xs"
                 >
                   <Radio className="w-3 h-3" />
-                  {voiceNet?.isPTTActive ? 'PTT On' : 'PTT Off'}
+                  {voiceNet?.pttActive ? 'PTT On' : 'PTT Off'}
                 </Button>
               </div>
             </div>
@@ -105,10 +105,10 @@ export default function VoiceCommsDock({ isOpen, onClose, isMinimized, onMinimiz
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg max-h-32 overflow-y-auto">
                 {participants.map((participant) => (
                   <div
-                    key={participant.id}
+                    key={participant.userId || participant.clientId || participant.callsign}
                     className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 last:border-b-0 text-sm"
                   >
-                    <span className="text-zinc-300">{participant.name || 'User'}</span>
+                    <span className="text-zinc-300">{participant.callsign || participant.userId || 'User'}</span>
                     <div className="flex items-center gap-1">
                       {participant.isMuted && <MicOff className="w-3 h-3 text-red-400" />}
                       {participant.isSpeaking && <Volume2 className="w-3 h-3 text-green-400 animate-pulse" />}

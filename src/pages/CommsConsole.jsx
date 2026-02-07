@@ -19,6 +19,7 @@ import ChannelManager from '@/components/comms/ChannelManager';
 import SpeechSettings from '@/components/comms/SpeechSettings';
 import CommsRosterPanel from '@/components/comms/CommsRosterPanel';
 import CommsQueryPanel from '@/components/comms/CommsQueryPanel';
+import OperationVoiceWorkbench from '@/components/comms/OperationVoiceWorkbench';
 
 const SHORTCUTS = [
   { combo: 'Shift+/', action: 'Open shortcuts' },
@@ -140,6 +141,7 @@ export default function CommsConsole() {
     if (command.includes('open bridge')) return setActiveTab('bridge');
     if (command.includes('open scheduler')) return setActiveTab('scheduler');
     if (command.includes('open sentiment')) return setActiveTab('sentiment');
+    if (command.includes('open operations')) return setActiveTab('operations');
     if (command.includes('open channels')) return setActiveTab('channels');
     if (command.includes('join hangout')) return joinHangout();
     if (command.includes('dispatch scheduled')) {
@@ -204,7 +206,7 @@ export default function CommsConsole() {
       }
       if (event.altKey && /^[1-9]$/.test(event.key)) {
         event.preventDefault();
-        const map = { 1: 'channels', 2: 'voice', 3: 'netops', 4: 'roster', 5: 'speech', 6: 'intel', 7: 'bridge', 8: 'scheduler', 9: 'sentiment' };
+        const map = { 1: 'channels', 2: 'voice', 3: 'operations', 4: 'netops', 5: 'roster', 6: 'speech', 7: 'intel', 8: 'bridge', 9: 'scheduler' };
         setActiveTab(map[event.key] || 'channels');
       }
     };
@@ -308,6 +310,7 @@ export default function CommsConsole() {
             <TabsList>
               <TabsTrigger value="channels"><Radio className="w-4 h-4 mr-1" />Channels</TabsTrigger>
               <TabsTrigger value="voice"><Radio className="w-4 h-4 mr-1" />Voice</TabsTrigger>
+              <TabsTrigger value="operations"><Mic className="w-4 h-4 mr-1" />Ops Voice</TabsTrigger>
               <TabsTrigger value="netops"><Shuffle className="w-4 h-4 mr-1" />Net Ops</TabsTrigger>
               <TabsTrigger value="roster"><Users className="w-4 h-4 mr-1" />Roster</TabsTrigger>
               <TabsTrigger value="speech"><Volume2 className="w-4 h-4 mr-1" />Speech</TabsTrigger>
@@ -319,6 +322,7 @@ export default function CommsConsole() {
 
             <TabsContent value="channels" className="mt-4"><ChannelManager /></TabsContent>
             <TabsContent value="voice" className="mt-4">{showVoiceNetCreator ? <VoiceNetCreator onSuccess={() => setShowVoiceNetCreator(false)} onCancel={() => setShowVoiceNetCreator(false)} /> : <VoiceNetBrowser onCreateNew={() => setShowVoiceNetCreator(true)} />}</TabsContent>
+            <TabsContent value="operations" className="mt-4"><OperationVoiceWorkbench channels={channels} /></TabsContent>
             <TabsContent value="netops" className="mt-4"><VoiceNetDirector /></TabsContent>
             <TabsContent value="roster" className="mt-4"><CommsRosterPanel /></TabsContent>
             <TabsContent value="speech" className="mt-4"><SpeechSettings settings={speechSettings} onUpdate={(next) => { setSpeechSettings(next); localStorage.setItem('nexus.speech.settings', JSON.stringify(next)); }} /></TabsContent>
@@ -415,7 +419,7 @@ export default function CommsConsole() {
               </div>
             ))}
             <div className="p-2 border border-zinc-800 rounded bg-zinc-900/40 text-zinc-400">
-              Voice command phrases: "open bridge", "open scheduler", "open sentiment", "open channels", "join hangout", "dispatch scheduled".
+              Voice command phrases: "open operations", "open bridge", "open scheduler", "open sentiment", "open channels", "join hangout", "dispatch scheduled".
             </div>
           </div>
           <DialogFooter>

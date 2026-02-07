@@ -7,6 +7,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { isAdminUser } from '@/utils';
+import { FocusedNetConfirmationSheet } from '@/components/voice/FocusedNetConfirmation';
 
 export default function VoiceNetBrowser({ onCreateNew }) {
   const [voiceNets, setVoiceNets] = useState([]);
@@ -86,7 +87,7 @@ export default function VoiceNetBrowser({ onCreateNew }) {
         <div className="grid gap-3">
           {voiceNets.map((net) => {
             const hasAccess = canJoinVoiceNet(user, net);
-            const isActive = voiceNet.activeNetId === net.code;
+            const isActive = voiceNet.activeNetId === net.id || voiceNet.activeNetId === net.code;
 
             return (
               <div
@@ -139,7 +140,7 @@ export default function VoiceNetBrowser({ onCreateNew }) {
                           if (isActive) {
                             voiceNet.leaveNet();
                           } else {
-                            voiceNet.joinNet(net.code, user);
+                            voiceNet.joinNet(net.id || net.code, user);
                           }
                         }}
                       >
@@ -169,6 +170,13 @@ export default function VoiceNetBrowser({ onCreateNew }) {
       <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3 text-xs text-blue-300">
         <strong>Voice Net Types:</strong> Command (priority comms), Squad (team channels), Support (medic/rescue), General (casual hangout)
       </div>
+
+      {voiceNet.focusedConfirmation?.needsConfirmation && (
+        <FocusedNetConfirmationSheet
+          onConfirm={() => voiceNet.confirmFocusedJoin?.()}
+          onCancel={() => voiceNet.cancelFocusedJoin?.()}
+        />
+      )}
     </div>
   );
 }

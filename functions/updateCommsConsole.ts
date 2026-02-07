@@ -2,6 +2,9 @@ import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts
 
 const COMMAND_RANKS = new Set(['COMMANDER', 'PIONEER', 'FOUNDER', 'VOYAGER']);
 const COMMAND_ROLES = new Set(['admin', 'command', 'officer', 'communications', 'comms']);
+const PRIORITY_LEVELS = new Set(['STANDARD', 'HIGH', 'CRITICAL']);
+const CAPTION_SEVERITY = new Set(['INFO', 'ALERT', 'CRITICAL']);
+const MODERATION_ACTIONS = new Set(['MUTE', 'UNMUTE', 'DEAFEN', 'UNDEAFEN', 'KICK', 'LOCK_CHANNEL', 'UNLOCK_CHANNEL']);
 
 type UpdateAttempt = Record<string, unknown>;
 
@@ -107,6 +110,97 @@ function buildScheduledMessages(eventLogs: any[]) {
   return Array.from(byId.values()).sort(
     (a, b) => new Date(a.send_at).getTime() - new Date(b.send_at).getTime()
   );
+}
+
+function eventIdFromEntry(entry: any) {
+  return text(entry?.details?.event_id || entry?.related_entity_id);
+}
+
+function buildPriorityCallouts(eventLogs: any[], eventId: string | null = null) {
+  return (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_PRIORITY_CALLOUT')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .map((entry) => {
+      const details = entry?.details || {};
+      return {
+        id: entry?.id,
+        event_id: text(details?.event_id),
+        channel_id: text(details?.channel_id),
+        lane: text(details?.lane || 'COMMAND'),
+        priority: text(details?.priority || 'STANDARD').toUpperCase(),
+        message: text(details?.message),
+        requires_ack: Boolean(details?.requires_ack),
+        issued_by_member_profile_id: text(details?.issued_by_member_profile_id || entry?.actor_member_profile_id),
+        created_date: entry?.created_date || null,
+      };
+    })
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+}
+
+function buildCaptionFeed(eventLogs: any[], options: { eventId?: string | null; netId?: string | null; limit?: number }) {
+  const { eventId = null, netId = null, limit = 120 } = options;
+  const rows = (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_VOICE_CAPTION')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+    .map((entry) => {
+      const details = entry?.details || {};
+      return {
+        id: entry?.id,
+        event_id: text(details?.event_id),
+        net_id: text(details?.net_id),
+        speaker: text(details?.speaker),
+        text: text(details?.text),
+        severity: text(details?.severity || 'INFO').toUpperCase(),
+        created_date: entry?.created_date || details?.captured_at || null,
+      };
+    })
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+  return rows.slice(0, Math.max(1, limit));
+}
+
+function buildModerationFeed(eventLogs: any[], eventId: string | null = null) {
+  return (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_VOICE_MODERATION')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .map((entry) => {
+      const details = entry?.details || {};
+      return {
+        id: entry?.id,
+        event_id: text(details?.event_id),
+        moderation_action: text(details?.moderation_action).toUpperCase(),
+        target_member_profile_id: text(details?.target_member_profile_id),
+        reason: text(details?.reason),
+        channel_id: text(details?.channel_id),
+        moderated_by_member_profile_id: text(details?.moderated_by_member_profile_id || entry?.actor_member_profile_id),
+        created_date: entry?.created_date || null,
+      };
+    })
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+}
+
+async function notifyMember(base44: any, memberId: string, title: string, message: string, relatedEntityId: string | null = null) {
+  if (!memberId) return;
+  try {
+    await createFirstSuccessful(base44.entities.Notification, [
+      {
+        user_id: memberId,
+        type: 'system',
+        title,
+        message,
+        related_entity_type: relatedEntityId ? 'event' : undefined,
+        related_entity_id: relatedEntityId || undefined,
+      },
+      {
+        user_id: memberId,
+        type: 'system',
+        title,
+        message,
+      },
+    ]);
+  } catch (error) {
+    console.error('[updateCommsConsole] Notification failed:', (error as Error).message);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -278,6 +372,237 @@ Deno.serve(async (req) => {
         action,
         dispatchedCount: dispatches.length,
         dispatches,
+      });
+    }
+
+    if (action === 'issue_priority_callout') {
+      const message = text(payload.message || payload.content);
+      if (!message) {
+        return Response.json({ error: 'message required' }, { status: 400 });
+      }
+      const priority = text(payload.priority || 'STANDARD').toUpperCase();
+      const normalizedPriority = PRIORITY_LEVELS.has(priority) ? priority : 'STANDARD';
+      if (normalizedPriority !== 'STANDARD' && !commandAccess) {
+        return Response.json({ error: 'Command privileges required for HIGH/CRITICAL callouts' }, { status: 403 });
+      }
+
+      const channelId = text(payload.channelId || payload.channel_id);
+      if (channelId) {
+        const channel = await base44.entities.Channel.get(channelId).catch(() => null);
+        if (!channel) {
+          return Response.json({ error: 'Channel not found' }, { status: 404 });
+        }
+      }
+
+      const eventId = text(payload.eventId || payload.event_id);
+      const lane = text(payload.lane || payload.voice_lane || 'COMMAND').toUpperCase();
+      const requiresAck = Boolean(payload.requiresAck || payload.requires_ack);
+
+      let relayedMessageId: string | null = null;
+      if (channelId) {
+        const relayed = await createFirstSuccessful(base44.entities.Message, [
+          {
+            channel_id: channelId,
+            user_id: actorMemberId,
+            content: `[${normalizedPriority}] ${message}`,
+          },
+          {
+            channel_id: channelId,
+            content: `[${normalizedPriority}] ${message}`,
+          },
+        ]);
+        relayedMessageId = relayed?.id || null;
+      }
+
+      const details = {
+        event_id: eventId || null,
+        channel_id: channelId || null,
+        lane,
+        priority: normalizedPriority,
+        message,
+        requires_ack: requiresAck,
+        issued_by_member_profile_id: actorMemberId,
+        issued_at: nowIso,
+        relayed_message_id: relayedMessageId,
+      };
+
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_PRIORITY_CALLOUT',
+        severity: normalizedPriority === 'CRITICAL' ? 'MEDIUM' : normalizedPriority === 'HIGH' ? 'LOW' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Priority callout (${normalizedPriority})`,
+        details,
+      });
+
+      if (normalizedPriority === 'CRITICAL' && eventId) {
+        const event = base44.entities.Event?.get
+          ? await base44.entities.Event.get(eventId).catch(() => null)
+          : null;
+        const targets = Array.isArray(event?.assigned_member_profile_ids)
+          ? event.assigned_member_profile_ids
+          : Array.isArray(event?.assigned_user_ids)
+            ? event.assigned_user_ids
+            : [];
+        for (const memberId of targets) {
+          await notifyMember(base44, text(memberId), 'Critical Comms Callout', message, eventId);
+        }
+      }
+
+      return Response.json({
+        success: true,
+        action,
+        callout: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_priority_callouts') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 900);
+      const callouts = buildPriorityCallouts(eventLogs || [], eventId);
+      return Response.json({
+        success: true,
+        action,
+        callouts,
+      });
+    }
+
+    if (action === 'record_voice_caption') {
+      const captionText = text(payload.text || payload.caption);
+      if (!captionText) {
+        return Response.json({ error: 'text required' }, { status: 400 });
+      }
+      const severity = text(payload.severity || 'INFO').toUpperCase();
+      const normalizedSeverity = CAPTION_SEVERITY.has(severity) ? severity : 'INFO';
+
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        channel_id: text(payload.channelId || payload.channel_id) || null,
+        speaker: text(payload.speaker || memberProfile?.display_callsign || memberProfile?.callsign || 'Unknown'),
+        text: captionText,
+        severity: normalizedSeverity,
+        captured_by_member_profile_id: actorMemberId,
+        captured_at: nowIso,
+      };
+
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_CAPTION',
+        severity: normalizedSeverity === 'CRITICAL' ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Voice caption (${normalizedSeverity})`,
+        details,
+      });
+
+      return Response.json({
+        success: true,
+        action,
+        caption: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_voice_captions') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const limitRaw = Number(payload.limit || 120);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, 300)) : 120;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 1200);
+      const captions = buildCaptionFeed(eventLogs || [], { eventId, netId, limit });
+      return Response.json({
+        success: true,
+        action,
+        captions,
+      });
+    }
+
+    if (action === 'set_voice_alert_preferences') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        member_profile_id: actorMemberId,
+        preferences: {
+          text_fallback: Boolean(payload?.preferences?.text_fallback ?? payload?.text_fallback ?? true),
+          show_visual_alerts: Boolean(payload?.preferences?.show_visual_alerts ?? payload?.show_visual_alerts ?? true),
+          play_audio_cues: Boolean(payload?.preferences?.play_audio_cues ?? payload?.play_audio_cues ?? true),
+          vibrate_alerts: Boolean(payload?.preferences?.vibrate_alerts ?? payload?.vibrate_alerts ?? false),
+          caption_font_scale: Number(payload?.preferences?.caption_font_scale ?? payload?.caption_font_scale ?? 1),
+        },
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_ALERT_PREFERENCES',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice accessibility preferences updated',
+        details,
+      });
+
+      return Response.json({
+        success: true,
+        action,
+        preferences: details.preferences,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'moderate_voice_user') {
+      if (!commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const moderationAction = text(payload.moderationAction || payload.moderation_action).toUpperCase();
+      if (!MODERATION_ACTIONS.has(moderationAction)) {
+        return Response.json({ error: 'Unsupported moderation action' }, { status: 400 });
+      }
+      const targetMemberProfileId = text(payload.targetMemberProfileId || payload.target_member_profile_id);
+      const needsTarget = moderationAction !== 'LOCK_CHANNEL' && moderationAction !== 'UNLOCK_CHANNEL';
+      if (needsTarget && !targetMemberProfileId) {
+        return Response.json({ error: 'targetMemberProfileId required for this moderation action' }, { status: 400 });
+      }
+
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        moderation_action: moderationAction,
+        target_member_profile_id: targetMemberProfileId || null,
+        channel_id: text(payload.channelId || payload.channel_id) || null,
+        reason: text(payload.reason || ''),
+        moderated_by_member_profile_id: actorMemberId,
+        moderated_at: nowIso,
+      };
+
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_MODERATION',
+        severity: moderationAction === 'KICK' ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Voice moderation: ${moderationAction}`,
+        details,
+      });
+
+      if (targetMemberProfileId && targetMemberProfileId !== actorMemberId) {
+        await notifyMember(
+          base44,
+          targetMemberProfileId,
+          'Voice Moderation Action',
+          `${moderationAction}${details.reason ? ` - ${details.reason}` : ''}`,
+          details.event_id ? String(details.event_id) : null
+        );
+      }
+
+      return Response.json({
+        success: true,
+        action,
+        moderation: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_voice_moderation') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 900);
+      const moderation = buildModerationFeed(eventLogs || [], eventId);
+      return Response.json({
+        success: true,
+        action,
+        moderation,
       });
     }
 

@@ -7,6 +7,25 @@
 import { VOICE_NET_TYPE } from '@/components/constants/voiceNet';
 import { MEMBERSHIP } from '@/components/constants/membership';
 
+function normalizeTier(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function normalizeDiscipline(net) {
+  const discipline = String(net?.discipline || '').trim().toLowerCase();
+  if (discipline === 'focused' || discipline === 'casual') return discipline;
+  const type = String(net?.type || '').trim().toLowerCase();
+  if (type === String(VOICE_NET_TYPE.FOCUSED).toLowerCase()) return 'focused';
+  if (type === String(VOICE_NET_TYPE.CASUAL).toLowerCase()) return 'casual';
+  return 'casual';
+}
+
+function hasCommandBypass(user) {
+  const rank = normalizeTier(user?.rank);
+  const roles = Array.isArray(user?.roles) ? user.roles.map((role) => String(role || '').toLowerCase()) : [];
+  return rank === 'COMMANDER' || rank === 'PIONEER' || rank === 'FOUNDER' || roles.includes('admin');
+}
+
 /**
  * Check if a user can join a voice net
  * @param {Object} user - { membership, ... }
@@ -16,18 +35,24 @@ import { MEMBERSHIP } from '@/components/constants/membership';
 export function canJoinVoiceNet(user, net) {
   if (!user || !net) return false;
 
-  const { membership } = user;
-  const { type, isTemporary } = net;
+  const membership = normalizeTier(user?.membership);
+  const isTemporary = Boolean(net?.isTemporary || net?.is_temporary || net?.temporary);
+  const discipline = normalizeDiscipline(net);
+  const type = String(net?.type || '').trim();
 
   // Casual: always accessible
-  if (type === VOICE_NET_TYPE.CASUAL) {
+  if (discipline === 'casual' || String(type).toUpperCase() === String(VOICE_NET_TYPE.CASUAL).toUpperCase()) {
     return true;
   }
 
   // Focused: check membership + temporary flag
-  if (type === VOICE_NET_TYPE.FOCUSED) {
+  if (discipline === 'focused' || String(type).toUpperCase() === String(VOICE_NET_TYPE.FOCUSED).toUpperCase()) {
     // Temporary Focused: all users can join
     if (isTemporary) {
+      return true;
+    }
+
+    if (hasCommandBypass(user)) {
       return true;
     }
 
@@ -36,7 +61,7 @@ export function canJoinVoiceNet(user, net) {
       MEMBERSHIP.MEMBER,
       MEMBERSHIP.AFFILIATE,
       MEMBERSHIP.PARTNER,
-    ];
+    ].map((entry) => normalizeTier(entry));
     return restrictedMemberships.includes(membership);
   }
 
@@ -49,9 +74,12 @@ export function canJoinVoiceNet(user, net) {
  * @returns {string}
  */
 export function getAccessDenialReason(net) {
-  const { type, isTemporary, name } = net;
+  const type = String(net?.type || '');
+  const isTemporary = Boolean(net?.isTemporary || net?.is_temporary || net?.temporary);
+  const name = net?.name || net?.label || net?.code || 'this net';
+  const discipline = normalizeDiscipline(net);
 
-  if (type === VOICE_NET_TYPE.FOCUSED && !isTemporary) {
+  if ((discipline === 'focused' || String(type).toUpperCase() === String(VOICE_NET_TYPE.FOCUSED).toUpperCase()) && !isTemporary) {
     return `${name} is restricted to Members and above`;
   }
 

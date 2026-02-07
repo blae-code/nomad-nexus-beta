@@ -78,13 +78,13 @@ export default function ActiveNets() {
             {groupedNets.casual.map((net) => {
               const canJoin = canJoinVoiceNet(user, net);
               const isJoining = joiningNetId === net.id;
-              const isConnected = voiceNet.activeNetId === net.id;
+              const isConnected = voiceNet.activeNetId === net.id || voiceNet.activeNetId === net.code;
 
               return (
                 <div key={net.id} className="p-2.5 bg-zinc-800/40 rounded border border-zinc-700/50">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 flex-1">
-                      <span className="font-mono text-sm text-zinc-200 font-semibold">{net.name}</span>
+                      <span className="font-mono text-sm text-zinc-200 font-semibold">{net.name || net.label || net.code}</span>
                       {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
                     </div>
                     {net.participants && (
@@ -116,7 +116,7 @@ export default function ActiveNets() {
             {groupedNets.focused.map((net) => {
               const canJoin = canJoinVoiceNet(user, net);
               const isJoining = joiningNetId === net.id;
-              const isConnected = voiceNet.activeNetId === net.id;
+              const isConnected = voiceNet.activeNetId === net.id || voiceNet.activeNetId === net.code;
 
               return (
                 <div key={net.id} className={`p-2.5 rounded border ${
@@ -128,7 +128,7 @@ export default function ActiveNets() {
                     <div className="flex items-center gap-2 flex-1">
                       <span className={`font-mono text-sm font-semibold ${
                         isConnected ? 'text-orange-300' : 'text-zinc-200'
-                      }`}>{net.name}</span>
+                      }`}>{net.name || net.label || net.code}</span>
                       {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
                     </div>
                     {net.participants && (

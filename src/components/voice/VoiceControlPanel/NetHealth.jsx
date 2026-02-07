@@ -10,8 +10,8 @@ export default function NetHealth() {
   const latency = useLatency();
   const voiceHealth = useVoiceHealth(voiceNet, latency);
 
-  const isDegraded = voiceHealth.connectionState === VOICE_CONNECTION_STATE.RECONNECTING || 
-    (latency?.latencyMs > 150 && !voiceNet.activeNetId === null);
+  const isDegraded = voiceHealth.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ||
+    (latency?.latencyMs > 150 && voiceNet.activeNetId !== null);
   const isError = voiceHealth.connectionState === VOICE_CONNECTION_STATE.ERROR;
 
   return (

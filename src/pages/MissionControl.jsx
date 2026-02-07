@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCircle, Circle, FileText, BarChart3, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Clock, Users, MapPin, Power, UserPlus, Target, CheckCircle, Circle, FileText, BarChart3, Edit, Trash2, Shield } from 'lucide-react';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -21,6 +21,7 @@ import EventRiskAssessment from '@/components/events/EventRiskAssessment';
 import ResourceManagement from '@/components/events/ResourceManagement';
 import PostEventAnalysis from '@/components/events/PostEventAnalysis';
 import MissionControlAdvancedPanel from '@/components/missions/MissionControlAdvancedPanel';
+import OperationExecutionPanel from '@/components/missions/OperationExecutionPanel';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
@@ -524,6 +525,10 @@ export default function MissionControl() {
                     <FileText className="w-4 h-4 mr-2" />
                     Reports
                   </TabsTrigger>
+                  <TabsTrigger value="execution">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Execution
+                  </TabsTrigger>
                   <TabsTrigger value="advanced">
                     <Target className="w-4 h-4 mr-2" />
                     Advanced Ops
@@ -795,6 +800,15 @@ export default function MissionControl() {
                       ))}
                     </div>
                   )}
+                </TabsContent>
+                <TabsContent value="execution" className="space-y-4 mt-4">
+                  <OperationExecutionPanel
+                    event={selectedEvent}
+                    onRefresh={() => {
+                      loadEventDetails(selectedEvent.id);
+                      loadReports(selectedEvent.id);
+                    }}
+                  />
                 </TabsContent>
                 <TabsContent value="advanced" className="space-y-4 mt-4">
                   <MissionControlAdvancedPanel

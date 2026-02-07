@@ -28,17 +28,30 @@ const createBase44Mock = ({
   targetProfiles = [],
   event,
   keyStatus = 'ACTIVE',
+  eventLogs = [],
 }: {
   actorProfile: any;
   targetProfiles?: any[];
   event: any;
   keyStatus?: string;
+  eventLogs?: any[];
 }) => {
   const profileStore = new Map<string, any>();
   profileStore.set(actorProfile.id, actorProfile);
   for (const profile of targetProfiles) {
     profileStore.set(profile.id, profile);
   }
+
+  const eventLogStore = [...eventLogs];
+  const voiceNetStore: any[] = [];
+  const eventParticipantStore: any[] = [
+    { id: 'part-1', eventId: event.id, userId: actorProfile.id, callsign: actorProfile.callsign || 'Nomad' },
+    { id: 'part-2', eventId: event.id, userId: 'member-2', callsign: 'Raven' },
+  ];
+  const eventReportStore: any[] = [];
+  const missionBoardPostStore = new Map<string, any>([
+    ['contract-1', { id: 'contract-1', title: 'Haul Med Supplies', type: 'hauling', status: 'open' }],
+  ]);
 
   const eventStore = new Map<string, any>([[event.id, event]]);
   const updateEventMock = vi.fn(async (eventId: string, payload: Record<string, unknown>) => {
@@ -67,11 +80,56 @@ const createBase44Mock = ({
         update: updateEventMock,
       },
       EventLog: {
-        create: vi.fn(async () => ({ id: 'log-1' })),
+        list: vi.fn(async () => [...eventLogStore]),
+        create: vi.fn(async (payload: any) => {
+          const row = {
+            id: `log-${eventLogStore.length + 1}`,
+            created_date: new Date().toISOString(),
+            ...payload,
+          };
+          eventLogStore.push(row);
+          return row;
+        }),
+      },
+      VoiceNet: {
+        create: vi.fn(async (payload: any) => {
+          const row = {
+            id: `net-${voiceNetStore.length + 1}`,
+            created_date: new Date().toISOString(),
+            ...payload,
+          };
+          voiceNetStore.push(row);
+          return row;
+        }),
+      },
+      EventParticipant: {
+        filter: vi.fn(async (query: Record<string, unknown>) => {
+          const eventId = String(query?.eventId || '');
+          return eventParticipantStore.filter((row) => row.eventId === eventId);
+        }),
+      },
+      EventReport: {
+        create: vi.fn(async (payload: any) => {
+          const row = {
+            id: `report-${eventReportStore.length + 1}`,
+            created_date: new Date().toISOString(),
+            ...payload,
+          };
+          eventReportStore.push(row);
+          return row;
+        }),
+      },
+      MissionBoardPost: {
+        get: vi.fn(async (id: string) => missionBoardPostStore.get(id) || null),
       },
       Notification: {
         create: vi.fn(async () => ({ id: 'notif-1' })),
       },
+    },
+    __stores: {
+      eventLogStore,
+      voiceNetStore,
+      eventReportStore,
     },
   };
 
@@ -384,5 +442,145 @@ describe('updateMissionControl', () => {
     });
     expect(base44.entities.EventLog.create).toHaveBeenCalledTimes(1);
     expect(base44.entities.Notification.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('provisions operation voice topology for command staff', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      event: operation,
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateMissionControl.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'provision_operation_voice_topology',
+        eventId: 'event-1',
+        mode: 'focused',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      success: true,
+      action: 'provision_operation_voice_topology',
+      topology: { mode: 'focused' },
+    });
+    expect(Array.isArray(payload.topology?.nets)).toBe(true);
+    expect(payload.topology.nets.length).toBeGreaterThanOrEqual(3);
+    expect(base44.entities.VoiceNet.create).toHaveBeenCalled();
+  });
+
+  it('links contract posts and returns operation execution state', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      event: operation,
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateMissionControl.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const linkResponse = await handler(
+      buildRequest({
+        action: 'link_contract_post',
+        eventId: 'event-1',
+        contractPostId: 'contract-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const linkPayload = await linkResponse.json();
+    expect(linkResponse.status).toBe(200);
+    expect(linkPayload).toMatchObject({
+      success: true,
+      action: 'link_contract_post',
+      contract: { contract_post_id: 'contract-1' },
+    });
+
+    const stateResponse = await handler(
+      buildRequest({
+        action: 'get_operation_execution_state',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const statePayload = await stateResponse.json();
+    expect(stateResponse.status).toBe(200);
+    expect(statePayload).toMatchObject({
+      success: true,
+      action: 'get_operation_execution_state',
+    });
+    expect(Array.isArray(statePayload.state?.contractLinks)).toBe(true);
+    expect(statePayload.state.contractLinks[0]).toMatchObject({
+      contract_post_id: 'contract-1',
+    });
+  });
+
+  it('generates automated operation debrief with metrics', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      event: {
+        ...operation,
+        objectives: [
+          { id: 'obj-1', text: 'Secure LZ', is_completed: true },
+          { id: 'obj-2', text: 'Extract cargo', is_completed: false },
+        ],
+      },
+      eventLogs: [
+        {
+          id: 'log-a',
+          created_date: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+          type: 'MISSION_CONTROL_TACTICAL_CALLOUT',
+          details: { event_id: 'event-1', message: 'Contact north ridge', priority: 'HIGH' },
+        },
+        {
+          id: 'log-b',
+          created_date: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
+          type: 'MISSION_CONTROL_BEACON',
+          details: { event_id: 'event-1', severity: 'CRITICAL', message: 'Medic needed' },
+        },
+      ],
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateMissionControl.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'generate_operation_debrief',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      success: true,
+      action: 'generate_operation_debrief',
+      metrics: {
+        attendance_count: 2,
+      },
+    });
+    expect(base44.entities.EventReport.create).toHaveBeenCalledTimes(1);
+    expect(base44.entities.EventLog.create).toHaveBeenCalled();
   });
 });

@@ -34,9 +34,13 @@ const createBase44Mock = ({
 }) => {
   const eventLogStore = [...eventLogs];
   const messageStore: any[] = [];
+  const notificationStore: any[] = [];
   const channels = new Map<string, any>([
     ['channel-1', { id: 'channel-1', name: 'general' }],
     ['channel-2', { id: 'channel-2', name: 'ops' }],
+  ]);
+  const events = new Map<string, any>([
+    ['event-1', { id: 'event-1', title: 'Operation Aegis', assigned_member_profile_ids: ['member-1', 'member-2'] }],
   ]);
 
   const base44 = {
@@ -59,6 +63,9 @@ const createBase44Mock = ({
       },
       Channel: {
         get: vi.fn(async (id: string) => channels.get(id) || null),
+      },
+      Event: {
+        get: vi.fn(async (id: string) => events.get(id) || null),
       },
       EventLog: {
         list: vi.fn(async () => [...eventLogStore]),
@@ -83,10 +90,22 @@ const createBase44Mock = ({
           return row;
         }),
       },
+      Notification: {
+        create: vi.fn(async (payload: any) => {
+          const row = {
+            id: `notif-${notificationStore.length + 1}`,
+            created_date: new Date().toISOString(),
+            ...payload,
+          };
+          notificationStore.push(row);
+          return row;
+        }),
+      },
     },
     __stores: {
       eventLogStore,
       messageStore,
+      notificationStore,
     },
   };
 
@@ -277,5 +296,172 @@ describe('updateCommsConsole', () => {
     });
     expect(base44.entities.Message.create).toHaveBeenCalledTimes(1);
     expect(base44.entities.EventLog.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('issues priority callouts and relays into text channel', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({ actorProfile });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'issue_priority_callout',
+        eventId: 'event-1',
+        channelId: 'channel-2',
+        lane: 'COMMAND',
+        priority: 'CRITICAL',
+        message: 'All wings scramble now.',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      success: true,
+      action: 'issue_priority_callout',
+      callout: {
+        event_id: 'event-1',
+        channel_id: 'channel-2',
+        priority: 'CRITICAL',
+      },
+    });
+    expect(base44.entities.Message.create).toHaveBeenCalledTimes(1);
+    expect(base44.entities.EventLog.create).toHaveBeenCalledTimes(1);
+    expect(base44.entities.Notification.create).toHaveBeenCalled();
+  });
+
+  it('records and lists voice captions', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER' };
+    const { base44 } = createBase44Mock({ actorProfile });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const createResponse = await handler(
+      buildRequest({
+        action: 'record_voice_caption',
+        eventId: 'event-1',
+        netId: 'net-cmd',
+        speaker: 'Nomad',
+        severity: 'ALERT',
+        text: 'Target acquired at grid C4.',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    expect(createResponse.status).toBe(200);
+
+    const listResponse = await handler(
+      buildRequest({
+        action: 'list_voice_captions',
+        eventId: 'event-1',
+        netId: 'net-cmd',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const listPayload = await listResponse.json();
+
+    expect(listResponse.status).toBe(200);
+    expect(listPayload).toMatchObject({
+      success: true,
+      action: 'list_voice_captions',
+    });
+    expect(Array.isArray(listPayload.captions)).toBe(true);
+    expect(listPayload.captions[0]).toMatchObject({
+      event_id: 'event-1',
+      net_id: 'net-cmd',
+      severity: 'ALERT',
+      text: 'Target acquired at grid C4.',
+    });
+  });
+
+  it('blocks voice moderation for non-command members', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER' };
+    const { base44 } = createBase44Mock({ actorProfile });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'moderate_voice_user',
+        eventId: 'event-1',
+        targetMemberProfileId: 'member-2',
+        moderationAction: 'MUTE',
+        reason: 'Noise discipline',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({ error: 'Command privileges required' });
+  });
+
+  it('moderates voice user and exposes moderation feed for command staff', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({ actorProfile });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const moderateResponse = await handler(
+      buildRequest({
+        action: 'moderate_voice_user',
+        eventId: 'event-1',
+        targetMemberProfileId: 'member-2',
+        moderationAction: 'KICK',
+        reason: 'Comms discipline violation',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const moderatePayload = await moderateResponse.json();
+    expect(moderateResponse.status).toBe(200);
+    expect(moderatePayload).toMatchObject({
+      success: true,
+      action: 'moderate_voice_user',
+      moderation: {
+        event_id: 'event-1',
+        moderation_action: 'KICK',
+        target_member_profile_id: 'member-2',
+      },
+    });
+
+    const listResponse = await handler(
+      buildRequest({
+        action: 'list_voice_moderation',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const listPayload = await listResponse.json();
+
+    expect(listResponse.status).toBe(200);
+    expect(listPayload).toMatchObject({ success: true, action: 'list_voice_moderation' });
+    expect(Array.isArray(listPayload.moderation)).toBe(true);
+    expect(listPayload.moderation[0]).toMatchObject({
+      moderation_action: 'KICK',
+      target_member_profile_id: 'member-2',
+    });
   });
 });

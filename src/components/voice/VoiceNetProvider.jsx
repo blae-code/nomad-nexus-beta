@@ -30,6 +30,7 @@ export function VoiceNetProvider({ children }) {
   const sessionIdRef = useRef(null);
   const speakingTimeoutRef = useRef(null);
   const liveKitTokenRef = useRef(null);
+  const pendingJoinRef = useRef(null);
   const [useRealTransport, setUseRealTransport] = useState(false);
   
   const focusedConfirmation = useFocusedConfirmation();
@@ -118,24 +119,37 @@ export function VoiceNetProvider({ children }) {
     return () => unsubscribe?.();
   }, []);
 
-  const joinNet = useCallback(async (netId, user) => {
+  const resolveNet = useCallback((rawNetId) => {
+    const match = String(rawNetId || '').trim().toLowerCase();
+    if (!match) return null;
+    const allNets = [...(Array.isArray(voiceNets) ? voiceNets : []), ...DEFAULT_VOICE_NETS];
+    return allNets.find((net) => {
+      const id = String(net?.id || '').trim().toLowerCase();
+      const code = String(net?.code || '').trim().toLowerCase();
+      return id === match || code === match;
+    }) || null;
+  }, [voiceNets]);
+
+  const joinNet = useCallback(async (netId, user, options = {}) => {
+    const { skipConfirmation = false } = options;
     // Find the net
-    const net = voiceNets.find((n) => n.id === netId) || DEFAULT_VOICE_NETS.find((n) => n.id === netId);
+    const net = resolveNet(netId);
     if (!net) {
       setError('Net not found');
-      return;
+      return { success: false, requiresConfirmation: false };
     }
 
     // Check if focused confirmation needed
-    if (focusedConfirmation.checkNeedConfirmation(net)) {
-      focusedConfirmation.requestConfirmation(netId);
-      return; // Wait for confirmation
+    if (!skipConfirmation && focusedConfirmation.checkNeedConfirmation(net)) {
+      pendingJoinRef.current = { netId: net.id || net.code || netId, user };
+      focusedConfirmation.requestConfirmation(net.id || net.code || netId);
+      return { success: false, requiresConfirmation: true }; // Wait for confirmation
     }
 
     // Check access
     if (!canJoinVoiceNet(user, net)) {
       setError('Access denied: insufficient membership');
-      return;
+      return { success: false, requiresConfirmation: false };
     }
 
     // Prevent double-join
@@ -153,7 +167,7 @@ export function VoiceNetProvider({ children }) {
       // Try to mint LiveKit token; fallback to mock if unavailable
       try {
         const tokenResp = await invokeMemberFunction('mintVoiceToken', {
-          netId,
+          netId: net.id || net.code || netId,
           userId: user.id,
           callsign: user.callsign || 'Unknown',
           clientId: `client-${user.id}-${Date.now()}`,
@@ -180,22 +194,23 @@ export function VoiceNetProvider({ children }) {
         ? {
             token: liveKitPayload.token,
             url: liveKitPayload.url,
-            netId,
+            netId: net.id || net.code || netId,
             user,
           }
         : {
             token: 'mock-token',
             url: 'mock://url',
-            netId,
+            netId: net.id || net.code || netId,
             user,
           };
 
       await transportRef.current.connect(connectOptions);
-      setActiveNetId(netId);
+      setActiveNetId(net.id || net.code || netId);
 
       // Create voice session
+      const sessionNetId = net.id || net.code || netId;
       const session = await voiceService.addVoiceSession(
-        netId,
+        sessionNetId,
         user.id,
         user.callsign || 'Unknown',
         `client-${user.id}-${Date.now()}`
@@ -211,7 +226,7 @@ export function VoiceNetProvider({ children }) {
       }, VOICE_SESSION_HEARTBEAT_MS);
 
       // Load initial participants
-      const sessions = await voiceService.getNetSessions(netId);
+      const sessions = await voiceService.getNetSessions(sessionNetId);
       setParticipants(
         sessions.map((s) => ({
           userId: s.userId,
@@ -220,11 +235,14 @@ export function VoiceNetProvider({ children }) {
           isSpeaking: s.isSpeaking,
         }))
       );
+      pendingJoinRef.current = null;
+      return { success: true, requiresConfirmation: false };
     } catch (err) {
       setError(err.message);
       setConnectionState(VOICE_CONNECTION_STATE.ERROR);
+      return { success: false, requiresConfirmation: false, error: err.message };
     }
-  }, [activeNetId, focusedConfirmation, voiceNets]);
+  }, [activeNetId, focusedConfirmation, resolveNet]);
 
   const leaveNet = useCallback(async () => {
     if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
@@ -241,7 +259,20 @@ export function VoiceNetProvider({ children }) {
     setParticipants([]);
     setError(null);
     setPTTActive(false);
+    pendingJoinRef.current = null;
   }, []);
+
+  const confirmFocusedJoin = useCallback(async () => {
+    const pending = pendingJoinRef.current;
+    if (!pending) return { success: false };
+    focusedConfirmation.confirm();
+    return joinNet(pending.netId, pending.user, { skipConfirmation: true });
+  }, [focusedConfirmation, joinNet]);
+
+  const cancelFocusedJoin = useCallback(() => {
+    pendingJoinRef.current = null;
+    focusedConfirmation.cancel();
+  }, [focusedConfirmation]);
 
   const togglePTT = useCallback(() => {
     const newActive = !pttActive;
@@ -273,6 +304,9 @@ export function VoiceNetProvider({ children }) {
     leaveNet,
     togglePTT,
     setMicEnabled: handleSetMicEnabled,
+    confirmFocusedJoin,
+    cancelFocusedJoin,
+    usingLiveKit: useRealTransport,
     voiceNets,
     focusedConfirmation,
   };
