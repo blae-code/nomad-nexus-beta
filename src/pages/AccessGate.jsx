@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Shield, Zap, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import DevelopmentRoadmap from '@/components/common/DevelopmentRoadmap';
 import RouteGuard from '@/components/auth/RouteGuard';
 import PageTransition from '@/components/transitions/PageTransition';
 import AsyncLoadingOverlay from '@/components/transitions/AsyncLoadingOverlay';
@@ -40,7 +39,9 @@ export default function AccessGate() {
 
   // Debug marker
   useEffect(() => {
-    console.log('CUSTOM ACCESSGATE LOADED', window.location.href);
+    if (import.meta.env.DEV) {
+      console.log('CUSTOM ACCESSGATE LOADED', window.location.href);
+    }
   }, []);
 
   // Check for saved login token to pre-fill form (don't auto-redirect)
@@ -184,8 +185,14 @@ export default function AccessGate() {
     window.dispatchEvent(new CustomEvent('nn:ready', { detail: { state } }));
   };
 
+  useEffect(() => {
+    if (error) {
+      setAuthState('error');
+      window.dispatchEvent(new CustomEvent('nn:ready', { detail: { state: 'error' } }));
+    }
+  }, [error]);
+
   if (error) {
-    emitReadyBeacon('error');
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4">
         {/* Hidden readiness beacon */}
@@ -402,9 +409,11 @@ export default function AccessGate() {
       {authState && <div id="nn-ready" data-state={authState} style={{ display: 'none' }} />}
 
       {/* Debug marker - bottom left corner */}
-      <div className="fixed bottom-3 left-3 text-[9px] px-2 py-1 bg-green-900/40 border border-green-500/30 text-green-400 rounded opacity-60 hover:opacity-100 transition-opacity font-mono z-50">
-        ✓ CUSTOM ACCESSGATE LOADED
-      </div>
+      {import.meta.env.DEV ? (
+        <div className="fixed bottom-3 left-3 text-[9px] px-2 py-1 bg-green-900/40 border border-green-500/30 text-green-400 rounded opacity-60 hover:opacity-100 transition-opacity font-mono z-50">
+          ✓ CUSTOM ACCESSGATE LOADED
+        </div>
+      ) : null}
       </div>
       </PageTransition>
       </RouteGuard>

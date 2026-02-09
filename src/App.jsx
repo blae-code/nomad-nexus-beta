@@ -12,7 +12,6 @@ import NexusOSWorkspace from '@/pages/NexusOSWorkspace';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 const isDevBuild = import.meta.env.DEV;
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
@@ -64,11 +63,7 @@ const RouteResolver = () => {
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={
-      <LayoutWrapper currentPageName={mainPageKey}>
-        <MainPage />
-      </LayoutWrapper>
-    } />
+    <Route path="/" element={<Navigate to="/Hub" replace />} />
     {Object.entries(Pages).map(([path, Page]) => (
       <Route
         key={path}

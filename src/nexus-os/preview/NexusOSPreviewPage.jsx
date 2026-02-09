@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/components/providers/AuthProvider';
 import {
   BridgeSwitcher,
   BRIDGE_DEFAULT_PRESET,
@@ -43,6 +44,14 @@ import { listShipSpecs } from '../services/referenceDataService';
 import { listFitProfiles } from '../services/fitProfileService';
 import { runNexusOSInvariantChecks, summarizeInvariantWarnings } from '../diagnostics';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
+
+function normalizeElementTag(raw) {
+  const normalized = String(raw || '')
+    .trim()
+    .toUpperCase();
+  if (normalized === 'CE' || normalized === 'GCE' || normalized === 'ACE') return normalized;
+  return null;
+}
 
 function SystemHealthPanel() {
   return (
@@ -278,14 +287,21 @@ function DiagnosticsPanel({ events, variantId, operations, focusOperationId, con
 }
 
 export default function NexusOSPreviewPage({ mode = 'dev' }) {
+  const { user } = useAuth();
   const vars = getNexusCssVars();
   const isWorkspaceMode = mode === 'workspace';
+  const workspaceActorId = user?.member_profile_id || user?.id || 'workspace-operator';
+  const workspaceDisplayCallsign =
+    user?.member_profile_data?.display_callsign ||
+    user?.member_profile_data?.callsign ||
+    user?.callsign ||
+    'Operator';
   const [bridgeId, setBridgeId] = useState('OPS');
   const [presetId, setPresetId] = useState(BRIDGE_DEFAULT_PRESET.OPS);
   const [variantId, setVariantId] = useState('CQB-01');
   const [opId, setOpId] = useState('');
   const [elementFilter, setElementFilter] = useState('ALL');
-  const [actorId, setActorId] = useState(DEV_CQB_ROSTER[0]?.id || 'ce-warden');
+  const [actorId, setActorId] = useState(() => (isWorkspaceMode ? workspaceActorId : DEV_CQB_ROSTER[0]?.id || 'ce-warden'));
   const [focusMode, setFocusMode] = useState(null);
   const [forceDesignOpId, setForceDesignOpId] = useState('');
   const [reportsOpId, setReportsOpId] = useState('');
@@ -319,6 +335,12 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (!isWorkspaceMode) return;
+    if (actorId === workspaceActorId) return;
+    setActorId(workspaceActorId);
+  }, [isWorkspaceMode, workspaceActorId, actorId]);
+
   const createMacroEvent = (eventType, payload = {}) => {
     const inferredChannelId = getActiveChannelId({ variantId });
     const channelIdFromPayload = typeof payload.channelId === 'string' ? payload.channelId : '';
@@ -344,25 +366,63 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const focusOperationId = useMemo(() => getFocusOperationId(actorId), [actorId, opsVersion]);
   const resolvedOpId = opId.trim() || focusOperationId || undefined;
 
+  const activeRoster = useMemo(() => {
+    if (!isWorkspaceMode) return DEV_CQB_ROSTER;
+
+    const latestByAuthor = new Map();
+    for (const event of events) {
+      if (!latestByAuthor.has(event.authorId)) {
+        latestByAuthor.set(event.authorId, event);
+      }
+    }
+
+    const participantIds = new Set([workspaceActorId]);
+    for (const event of events) {
+      if (event.authorId) participantIds.add(event.authorId);
+    }
+
+    return [...participantIds]
+      .filter(Boolean)
+      .map((id) => {
+        const latest = latestByAuthor.get(id);
+        const eventElement =
+          normalizeElementTag(latest?.payload?.elementTag) ||
+          normalizeElementTag(latest?.payload?.element) ||
+          normalizeElementTag(latest?.payload?.authorElement);
+
+        const isSelf = id === workspaceActorId;
+        return {
+          id,
+          callsign: isSelf ? workspaceDisplayCallsign : String(latest?.payload?.callsign || id),
+          element: eventElement || (isSelf ? 'CE' : 'GCE'),
+          role: isSelf ? 'Operator' : 'Roster TBD',
+        };
+      });
+  }, [isWorkspaceMode, events, workspaceActorId, workspaceDisplayCallsign]);
+
   const locationEstimates = useMemo(
     () =>
-      buildDevLocationEstimates({
-        events,
-        roster: DEV_CQB_ROSTER,
-        opId: resolvedOpId,
-      }),
-    [events, resolvedOpId]
+      isWorkspaceMode
+        ? []
+        : buildDevLocationEstimates({
+            events,
+            roster: activeRoster,
+            opId: resolvedOpId,
+          }),
+    [isWorkspaceMode, events, activeRoster, resolvedOpId]
   );
 
   const controlSignals = useMemo(
     () =>
-      buildDevControlSignals({
-        events,
-        roster: DEV_CQB_ROSTER,
-        opId: resolvedOpId,
-        locationEstimates,
-      }),
-    [events, resolvedOpId, locationEstimates]
+      isWorkspaceMode
+        ? []
+        : buildDevControlSignals({
+            events,
+            roster: activeRoster,
+            opId: resolvedOpId,
+            locationEstimates,
+          }),
+    [isWorkspaceMode, events, activeRoster, resolvedOpId, locationEstimates]
   );
   const controlZones = useMemo(() => computeControlZones(controlSignals, Date.now()), [controlSignals]);
 
@@ -370,7 +430,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     variantId,
     opId: resolvedOpId,
     elementFilter,
-    roster: DEV_CQB_ROSTER,
+    roster: activeRoster,
     actorId,
     events,
     locationEstimates,
@@ -469,7 +529,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     }
 
     if (bridgeId === 'COMMAND') {
-      return [
+      const commandPanels = [
         {
           id: 'panel-comms-peek',
           title: 'Comms Peek',
@@ -503,7 +563,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             COMMAND_LEFT: { colSpan: 2, rowSpan: 2 },
           },
         },
-        {
+      ];
+
+      if (!isWorkspaceMode) {
+        commandPanels.push({
           id: 'panel-diagnostics',
           title: 'Diagnostics',
           component: DiagnosticsPanel,
@@ -511,8 +574,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           statusTone: 'ok',
           live: true,
           defaultSize: { colSpan: 1, rowSpan: 1 },
-        },
-      ];
+        });
+      }
+
+      return commandPanels;
     }
 
     return [
@@ -544,7 +609,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         defaultSize: { colSpan: 1, rowSpan: 1 },
       },
     ];
-  }, [bridgeId, variantId]);
+  }, [bridgeId, variantId, isWorkspaceMode]);
 
   const handleBridgeSwitch = (nextBridgeId) => {
     setBridgeId(nextBridgeId);
@@ -573,17 +638,19 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV ONLY</NexusBadge>}
       </section>
 
-      <CqbContextSelector
-        variantId={variantId}
-        onVariantIdChange={setVariantId}
-        opId={opId}
-        onOpIdChange={setOpId}
-        elementFilter={elementFilter}
-        onElementFilterChange={setElementFilter}
-        actorId={actorId}
-        onActorIdChange={setActorId}
-        roster={DEV_CQB_ROSTER}
-      />
+      {!isWorkspaceMode ? (
+        <CqbContextSelector
+          variantId={variantId}
+          onVariantIdChange={setVariantId}
+          opId={opId}
+          onOpIdChange={setOpId}
+          elementFilter={elementFilter}
+          onElementFilterChange={setElementFilter}
+          actorId={actorId}
+          onActorIdChange={setActorId}
+          roster={activeRoster}
+        />
+      ) : null}
 
       <OpsStrip actorId={actorId} onOpenOperationFocus={() => setFocusMode('ops')} />
 
