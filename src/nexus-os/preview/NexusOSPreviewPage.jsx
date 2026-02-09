@@ -277,8 +277,9 @@ function DiagnosticsPanel({ events, variantId, operations, focusOperationId, con
   );
 }
 
-export default function NexusOSPreviewPage() {
+export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const vars = getNexusCssVars();
+  const isWorkspaceMode = mode === 'workspace';
   const [bridgeId, setBridgeId] = useState('OPS');
   const [presetId, setPresetId] = useState(BRIDGE_DEFAULT_PRESET.OPS);
   const [variantId, setVariantId] = useState('CQB-01');
@@ -560,10 +561,16 @@ export default function NexusOSPreviewPage() {
     >
       <section className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-4 py-3 flex items-center justify-between gap-3" style={{ borderColor: 'var(--nx-border)' }}>
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold uppercase tracking-wide text-zinc-100">Nexus OS Preview</h1>
-          <p className="text-xs text-zinc-500">Dev-only CQB Kernel UI v1.0 in shell preview. No production route impact.</p>
+          <h1 className="text-lg sm:text-xl font-semibold uppercase tracking-wide text-zinc-100">
+            {isWorkspaceMode ? 'Nexus OS Workspace' : 'Nexus OS Preview'}
+          </h1>
+          <p className="text-xs text-zinc-500">
+            {isWorkspaceMode
+              ? 'Event-sourced operational workspace. No fake telemetry, TTL/confidence enforced.'
+              : 'Dev-only CQB Kernel UI v1.0 in shell preview. No production route impact.'}
+          </p>
         </div>
-        <NexusBadge tone="warning">DEV ONLY</NexusBadge>
+        {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV ONLY</NexusBadge>}
       </section>
 
       <CqbContextSelector

@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import FittingDataOpsScheduler from '@/components/admin/FittingDataOpsScheduler';
 import { NexusOSPreviewPage } from '@/nexus-os';
+import NexusOSWorkspace from '@/pages/NexusOSWorkspace';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -36,6 +37,9 @@ const RouteResolver = () => {
     'system-admin': 'Settings',
     settings: 'Settings',
     hub: 'Hub',
+    nexusos: 'Hub',
+    'nexus-os': 'Hub',
+    workspace: 'Hub',
     accessgate: 'AccessGate',
     'access-gate': 'AccessGate',
     login: 'AccessGate',
@@ -71,11 +75,19 @@ const AppRoutes = () => (
         path={`/${path}`}
         element={
           <LayoutWrapper currentPageName={path}>
-            <Page />
+            {path === 'Hub' ? <NexusOSWorkspace /> : <Page />}
           </LayoutWrapper>
         }
       />
     ))}
+    <Route
+      path="/NexusOS"
+      element={
+        <LayoutWrapper currentPageName="Hub">
+          <NexusOSWorkspace />
+        </LayoutWrapper>
+      }
+    />
     {isDevBuild ? (
       <Route
         path="/dev/nexus-os"
