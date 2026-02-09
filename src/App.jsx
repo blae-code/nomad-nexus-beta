@@ -7,10 +7,12 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import FittingDataOpsScheduler from '@/components/admin/FittingDataOpsScheduler';
+import { NexusOSPreviewPage } from '@/nexus-os';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
+const isDevBuild = import.meta.env.DEV;
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
@@ -74,6 +76,16 @@ const AppRoutes = () => (
         }
       />
     ))}
+    {isDevBuild ? (
+      <Route
+        path="/dev/nexus-os"
+        element={
+          <LayoutWrapper currentPageName={mainPageKey}>
+            <NexusOSPreviewPage />
+          </LayoutWrapper>
+        }
+      />
+    ) : null}
     <Route path="*" element={<RouteResolver />} />
   </Routes>
 );
