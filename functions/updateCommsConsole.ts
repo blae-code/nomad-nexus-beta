@@ -179,6 +179,48 @@ function buildModerationFeed(eventLogs: any[], eventId: string | null = null) {
     .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
 }
 
+function resolvePresenceNet(presence: any, voiceNets: any[]) {
+  const netId = text(presence?.net_id || presence?.current_net?.id);
+  const netCode = text(presence?.current_net?.code || presence?.net_code);
+  if (netId) {
+    const match = voiceNets.find((net: any) => text(net?.id) === netId);
+    if (match) return match;
+  }
+  if (netCode) {
+    const match = voiceNets.find((net: any) => text(net?.code).toUpperCase() === netCode.toUpperCase());
+    if (match) return match;
+  }
+  return null;
+}
+
+function summarizeNetLoad(voiceNets: any[], memberships: any[], callouts: any[], captions: any[]) {
+  return voiceNets.map((net) => {
+    const netId = text(net?.id);
+    const netCode = text(net?.code).toUpperCase();
+    const netLabel = text(net?.label || net?.name).toUpperCase();
+    const memberCount = memberships.filter((entry) => text(entry?.net_id) === netId).length;
+    const calloutCount = callouts.filter((entry) => {
+      const calloutNetId = text(entry?.net_id);
+      if (calloutNetId && calloutNetId === netId) return true;
+      const lane = text(entry?.lane).toUpperCase();
+      if (!lane) return false;
+      return (
+        netCode.includes(lane) ||
+        netLabel.includes(lane) ||
+        lane.includes(netCode)
+      );
+    }).length;
+    const captionCount = captions.filter((entry) => text(entry?.net_id) === netId).length;
+    return {
+      net_id: netId,
+      participants: memberCount,
+      callouts: calloutCount,
+      captions: captionCount,
+      traffic_score: memberCount + (calloutCount * 2) + captionCount,
+    };
+  });
+}
+
 async function notifyMember(base44: any, memberId: string, title: string, message: string, relatedEntityId: string | null = null) {
   if (!memberId) return;
   try {
@@ -603,6 +645,81 @@ Deno.serve(async (req) => {
         success: true,
         action,
         moderation,
+      });
+    }
+
+    if (action === 'get_comms_topology_snapshot') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const includeGlobal = payload.includeGlobal !== false;
+      const limitRaw = Number(payload.limit || 120);
+      const limit = Number.isFinite(limitRaw) ? Math.max(20, Math.min(limitRaw, 300)) : 120;
+
+      const [voiceNetsRaw, presencesRaw, bridgesRaw, eventLogs] = await Promise.all([
+        base44.entities.VoiceNet?.list ? base44.entities.VoiceNet.list('-created_date', 250).catch(() => []) : [],
+        base44.entities.UserPresence?.list
+          ? base44.entities.UserPresence.list('-last_activity', 350).catch(() => [])
+          : base44.entities.UserPresence?.filter
+            ? base44.entities.UserPresence.filter({}, '-last_activity', 350).catch(() => [])
+            : [],
+        base44.entities.BridgeSession?.list ? base44.entities.BridgeSession.list('-created_date', 200).catch(() => []) : [],
+        base44.entities.EventLog?.list ? base44.entities.EventLog.list('-created_date', 1600).catch(() => []) : [],
+      ]);
+
+      const voiceNets = (voiceNetsRaw || []).filter((net: any) => {
+        if (!eventId) return true;
+        const netEventId = text(net?.event_id || net?.eventId);
+        if (netEventId === eventId) return true;
+        if (!includeGlobal && !netEventId) return false;
+        return includeGlobal && !netEventId;
+      });
+
+      const allowedNetIds = new Set(voiceNets.map((net: any) => text(net?.id)).filter(Boolean));
+      const memberships = (presencesRaw || [])
+        .map((presence: any) => {
+          const net = resolvePresenceNet(presence, voiceNets);
+          if (!net) return null;
+          const memberProfileId = text(presence?.member_profile_id || presence?.user_id);
+          if (!memberProfileId) return null;
+          return {
+            member_profile_id: memberProfileId,
+            net_id: text(net?.id),
+            net_code: text(net?.code),
+            net_label: text(net?.label || net?.name),
+            speaking: Boolean(presence?.is_speaking),
+            muted: Boolean(presence?.muted || presence?.is_muted),
+            last_activity: presence?.last_activity || presence?.updated_date || presence?.created_date || null,
+          };
+        })
+        .filter((entry: any) => entry && allowedNetIds.has(text(entry.net_id)));
+
+      const bridges = (bridgesRaw || []).filter((bridge: any) => {
+        const status = text(bridge?.status, 'active').toLowerCase();
+        if (status === 'ended' || status === 'closed') return false;
+        const bridgeEventId = text(bridge?.event_id || bridge?.eventId);
+        if (!eventId) return true;
+        if (bridgeEventId === eventId) return true;
+        return includeGlobal && !bridgeEventId;
+      });
+
+      const callouts = buildPriorityCallouts(eventLogs || [], eventId).slice(0, limit);
+      const captions = buildCaptionFeed(eventLogs || [], { eventId, limit });
+      const moderation = buildModerationFeed(eventLogs || [], eventId).slice(0, limit);
+      const netLoad = summarizeNetLoad(voiceNets, memberships, callouts, captions);
+
+      return Response.json({
+        success: true,
+        action,
+        topology: {
+          event_id: eventId,
+          nets: voiceNets,
+          memberships,
+          bridges,
+          callouts,
+          captions,
+          moderation,
+          netLoad,
+          generated_at: nowIso,
+        },
       });
     }
 

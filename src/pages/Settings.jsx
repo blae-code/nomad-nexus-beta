@@ -31,6 +31,7 @@ import AccessKeyManager from '@/components/admin/AccessKeyManager';
 import CommsRoutingRules from '@/components/admin/CommsRoutingRules';
 import ChannelPackManager from '@/components/admin/ChannelPackManager';
 import IntegrationSettings from '@/components/admin/IntegrationSettings';
+import DataOpsPanel from '@/components/admin/DataOpsPanel';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -70,6 +71,7 @@ export default function Settings() {
     { id: 'routing', label: 'Routing', icon: Target },
     { id: 'packs', label: 'Comms Packs', icon: Radio },
     { id: 'integrations', label: 'Integrations', icon: Plug },
+    { id: 'dataops', label: 'Fitting Data', icon: Clock },
     { id: 'validation', label: 'Data', icon: Database },
     { id: 'diagnostics', label: 'Diagnostics', icon: Zap },
     { id: 'seed', label: 'Seed', icon: Sparkles },
@@ -141,6 +143,7 @@ export default function Settings() {
                   {activeTab === 'routing' && <CommsRoutingRules />}
                   {activeTab === 'packs' && <ChannelPackManager />}
                   {activeTab === 'integrations' && <IntegrationSettings />}
+                  {activeTab === 'dataops' && <DataOpsPanel />}
                   {activeTab === 'validation' && <DataValidation />}
                 </div>
                 <div className="overflow-x-auto">
@@ -218,6 +221,20 @@ function OverviewTab({ user, setActiveTab }) {
         'Rank and membership targeting',
         'Squad pack support',
         'Local fallback if schema missing',
+      ],
+    },
+    {
+      id: 'dataops',
+      icon: Clock,
+      title: 'Fitting Data Ops',
+      description: 'Manage fit data freshness and source synchronization',
+      status: 'PROD',
+      color: 'cyan',
+      features: [
+        'Lane-based source configs (reference, market, live)',
+        'Manual sync controls with auto/seed modes',
+        'Freshness telemetry (age, cadence, TTL, stale state)',
+        'Recent sync run feed with fallback visibility',
       ],
     },
     {

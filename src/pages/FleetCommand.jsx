@@ -4,6 +4,7 @@ import { invokeMemberFunction } from '@/api/memberFunctions';
 import { createPageUrl } from '@/utils';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import TacticalMap from '@/components/tactical/TacticalMap';
+import FittingWorkbench from '@/components/fleet/FittingWorkbench';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -384,6 +385,42 @@ export default function FleetCommand() {
     setEngineeringForm(DEFAULT_ENGINEERING_FORM);
   };
 
+  const applyFittingPlanToAsset = async (fitPlan) => {
+    if (!selectedAsset?.id) {
+      return { ok: false, message: 'Select an active asset before applying a fitting plan.' };
+    }
+    const profile = {
+      fit_type: fitPlan?.fitType || 'ship',
+      template_id: fitPlan?.templateId || '',
+      role_tag: fitPlan?.roleTag || '',
+      slot_assignments: fitPlan?.slotAssignments || {},
+      stats: fitPlan?.stats || {},
+      adjusted_stats: fitPlan?.adjustedStats || fitPlan?.stats || {},
+      scenario_profile: fitPlan?.scenarioProfile || null,
+      score: Number(fitPlan?.score || 0),
+      scenario_score: Number(fitPlan?.scenarioScore || fitPlan?.score || 0),
+      scope_type: fitPlan?.scopeType || 'personal',
+      scope_id: fitPlan?.scopeId || null,
+      notes: fitPlan?.notes || '',
+    };
+    const tags = [fitPlan?.fitType, fitPlan?.roleTag, 'fitting_lab']
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean);
+
+    await runAssetAction(
+      {
+        action: 'save_loadout',
+        loadout: {
+          name: String(fitPlan?.title || `${selectedAsset?.name || 'Asset'} Fit`),
+          profile,
+          tags,
+        },
+      },
+      'Fitting plan saved to active asset loadout library.'
+    );
+    return { ok: true };
+  };
+
   const previewSoundscape = () => {
     const profile = SOUND_PROFILES[soundscape] || SOUND_PROFILES.quiet;
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
@@ -498,6 +535,7 @@ export default function FleetCommand() {
           <TabsTrigger value="database">Asset Database</TabsTrigger>
           <TabsTrigger value="scheduler">Scheduler</TabsTrigger>
           <TabsTrigger value="loadouts">Loadout Library</TabsTrigger>
+          <TabsTrigger value="fitting">Fitting Lab</TabsTrigger>
           <TabsTrigger value="engineering">Engineering Queue</TabsTrigger>
           <TabsTrigger value="analytics">Fleet Analytics</TabsTrigger>
           <TabsTrigger value="environment">Environment + Audio</TabsTrigger>
@@ -712,6 +750,22 @@ export default function FleetCommand() {
                 ))
               )}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fitting" className="space-y-4 mt-4">
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded p-4">
+            <div className="mb-3">
+              <div className="text-xs uppercase tracking-widest text-zinc-500">Ship, Vehicle, and FPS Fitting</div>
+              <div className="text-xs text-zinc-400 mt-1">
+                Build personal fits, publish squad/wing/fleet plans, and collaborate with threaded fit notes.
+              </div>
+            </div>
+            <FittingWorkbench
+              activeEventId={activeOp?.activeEventId || null}
+              activeEventTitle={activeEvent?.title || ''}
+              onApplyToActiveAsset={applyFittingPlanToAsset}
+            />
           </div>
         </TabsContent>
 

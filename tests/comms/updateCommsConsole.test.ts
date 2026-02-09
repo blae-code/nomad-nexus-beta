@@ -27,10 +27,16 @@ const createBase44Mock = ({
   actorProfile,
   keyStatus = 'ACTIVE',
   eventLogs = [],
+  voiceNets = [],
+  userPresences = [],
+  bridgeSessions = [],
 }: {
   actorProfile: any;
   keyStatus?: string;
   eventLogs?: any[];
+  voiceNets?: any[];
+  userPresences?: any[];
+  bridgeSessions?: any[];
 }) => {
   const eventLogStore = [...eventLogs];
   const messageStore: any[] = [];
@@ -63,6 +69,16 @@ const createBase44Mock = ({
       },
       Channel: {
         get: vi.fn(async (id: string) => channels.get(id) || null),
+      },
+      VoiceNet: {
+        list: vi.fn(async () => [...voiceNets]),
+      },
+      UserPresence: {
+        list: vi.fn(async () => [...userPresences]),
+        filter: vi.fn(async () => [...userPresences]),
+      },
+      BridgeSession: {
+        list: vi.fn(async () => [...bridgeSessions]),
       },
       Event: {
         get: vi.fn(async (id: string) => events.get(id) || null),
@@ -462,6 +478,62 @@ describe('updateCommsConsole', () => {
     expect(listPayload.moderation[0]).toMatchObject({
       moderation_action: 'KICK',
       target_member_profile_id: 'member-2',
+    });
+  });
+
+  it('returns comms topology snapshot for tactical map overlays', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      voiceNets: [
+        { id: 'net-1', code: 'OPS-CMD', label: 'Ops Command', discipline: 'focused', event_id: 'event-1' },
+        { id: 'net-2', code: 'HANG-1', label: 'Hangout', discipline: 'casual' },
+      ],
+      userPresences: [
+        { id: 'presence-1', member_profile_id: 'member-1', net_id: 'net-1', is_speaking: true },
+        { id: 'presence-2', member_profile_id: 'member-2', current_net: { id: 'net-1', code: 'OPS-CMD' } },
+      ],
+      bridgeSessions: [
+        { id: 'bridge-1', event_id: 'event-1', left_room: 'OPS-CMD', right_room: 'HANG-1', status: 'ACTIVE' },
+      ],
+      eventLogs: [
+        {
+          id: 'log-callout',
+          created_date: new Date(Date.now() - 30 * 1000).toISOString(),
+          type: 'COMMS_PRIORITY_CALLOUT',
+          details: { event_id: 'event-1', lane: 'COMMAND', priority: 'HIGH', message: 'Push north flank' },
+        },
+      ],
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'get_comms_topology_snapshot',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ success: true, action: 'get_comms_topology_snapshot' });
+    expect(payload.topology).toBeTruthy();
+    expect(Array.isArray(payload.topology.nets)).toBe(true);
+    expect(payload.topology.nets[0]).toMatchObject({ id: 'net-1' });
+    expect(payload.topology.memberships.length).toBe(2);
+    expect(payload.topology.bridges.length).toBe(1);
+    expect(payload.topology.callouts[0]).toMatchObject({ priority: 'HIGH' });
+    expect(payload.topology.netLoad[0]).toMatchObject({
+      net_id: 'net-1',
+      participants: 2,
+      callouts: 1,
     });
   });
 });
