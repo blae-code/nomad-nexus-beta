@@ -6,11 +6,23 @@ import {
   upsertRSVPEntry,
   validateRSVP,
   addAssetSlot,
+  createCrewSeatRequests,
+  joinCrewSeat,
+  listCrewSeatAssignments,
+  computeRosterSummary,
+  listOpenCrewSeats,
 } from '../../src/nexus-os/services/rsvpService';
 import {
   createOperation,
   appendOperationEvent,
+  getOperationById,
+  joinOperation,
+  listOperationEvents,
+  listOperationsForUser,
   resetOperationServiceState,
+  setFocusOperation,
+  setPosture,
+  updateStatus,
 } from '../../src/nexus-os/services/operationService';
 import {
   analyzeRoster,
@@ -36,6 +48,11 @@ import {
   resetReportServiceState,
 } from '../../src/nexus-os/services/reportService';
 import { resetFitProfileServiceState } from '../../src/nexus-os/services/fitProfileService';
+import {
+  createDraft,
+  confirmDraft,
+  resetIntentDraftServiceState,
+} from '../../src/nexus-os/services/intentDraftService';
 
 describe('Nexus OS hardening services', () => {
   beforeEach(() => {
@@ -46,6 +63,7 @@ describe('Nexus OS hardening services', () => {
     resetIntelServiceState();
     resetReportServiceState();
     resetFitProfileServiceState();
+    resetIntentDraftServiceState();
   });
 
   it('computeControlZones is deterministic for identical inputs', () => {
@@ -280,5 +298,114 @@ describe('Nexus OS hardening services', () => {
     expect(aar.evidence.length).toBeGreaterThan(0);
     expect(aar.evidence.some((block) => block.citations.length > 0)).toBe(true);
   });
-});
 
+  it('requires actorId for operation mutators and keeps joiners non-commander', () => {
+    const owner = 'ce-warden';
+    const op = createOperation({
+      name: 'Auth Guardrails',
+      createdBy: owner,
+      posture: 'FOCUSED',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+
+    expect(() => updateStatus(op.id, 'ACTIVE')).toThrow(/requires actorId/i);
+    expect(() => setPosture(op.id, 'CASUAL')).toThrow(/requires actorId/i);
+
+    const joined = joinOperation(op.id, 'gce-rifleman');
+    expect(joined.permissions.participantIds?.includes('gce-rifleman')).toBe(true);
+    expect(joined.permissions.commanderIds?.includes('gce-rifleman')).toBe(false);
+
+    const persisted = getOperationById(op.id);
+    expect(persisted?.permissions.participantIds?.includes('gce-rifleman')).toBe(true);
+
+    expect(() => updateStatus(op.id, 'ACTIVE', 'gce-rifleman')).toThrow(/owners\/commanders/i);
+    expect(() => setFocusOperation('intruder', op.id)).toThrow(/membership/i);
+
+    const visibleToJoiner = listOperationsForUser({ userId: 'gce-rifleman' });
+    expect(visibleToJoiner.some((entry) => entry.id === op.id)).toBe(true);
+  });
+
+  it('seat counts treat declined/withdrawn assignments as open capacity', () => {
+    const op = createOperation({
+      name: 'Seat Accounting',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+    const entry = upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'pilot-77',
+      mode: 'ASSET',
+      rolePrimary: 'Pilot',
+      notes: 'comms-ok',
+      exceptionReason: 'Seat test',
+    });
+    const slot = addAssetSlot({
+      opId: op.id,
+      rsvpEntryId: entry.id,
+      assetId: 'asset-valk',
+      assetName: 'Valkyrie',
+      capabilitySnapshot: { tags: ['transport'] },
+      crewProvided: 1,
+    });
+    createCrewSeatRequests(slot.id, [{ roleNeeded: 'Gunner', qty: 1 }]);
+    joinCrewSeat(slot.id, 'gunner-1', 'Gunner');
+
+    const assignments = listCrewSeatAssignments(op.id);
+    expect(assignments.length).toBe(1);
+
+    // Service exposes references; simulate external state transition for accounting guardrail test.
+    assignments[0].status = 'DECLINED';
+
+    const summary = computeRosterSummary(op.id);
+    const openSeats = listOpenCrewSeats(op.id);
+    expect(summary.openSeats[0].openQty).toBe(1);
+    expect(openSeats[0].openQty).toBe(1);
+  });
+
+  it('draft-confirmed events persist explicit scopeKind metadata', () => {
+    const op = createOperation({
+      name: 'Scope Metadata',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+
+    appendOperationEvent({
+      opId: op.id,
+      kind: 'DECLARE_HOLD',
+      createdBy: 'ce-warden',
+      payload: {},
+    });
+    appendOperationEvent({
+      kind: 'REQUEST_SITREP',
+      createdBy: 'ce-warden',
+      payload: {},
+    });
+
+    const opScoped = createDraft({
+      kind: 'DECLARE_DEPARTURE',
+      target: { nodeId: 'body-daymar' },
+      payload: { opId: op.id },
+      createdBy: 'ce-warden',
+    });
+    const personalScoped = createDraft({
+      kind: 'REQUEST_SITREP',
+      target: { nodeId: 'body-daymar' },
+      payload: {},
+      createdBy: 'ce-warden',
+    });
+
+    const opResult = confirmDraft(opScoped.id);
+    const personalResult = confirmDraft(personalScoped.id);
+    expect(opResult.createdEventStub?.scopeKind).toBe('OP');
+    expect(personalResult.createdEventStub?.scopeKind).toBe('PERSONAL');
+
+    const allEvents = listOperationEvents();
+    expect(allEvents.some((entry) => entry.scopeKind === 'OP' && entry.opId === op.id)).toBe(true);
+    expect(allEvents.some((entry) => entry.scopeKind === 'PERSONAL' && !entry.opId)).toBe(true);
+  });
+});

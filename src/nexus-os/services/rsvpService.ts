@@ -365,7 +365,7 @@ export function createCrewSeatRequests(
 
 function assignmentCountForRequest(requestId: string): number {
   return seatAssignmentStore.filter((entry) => {
-    if (entry.status === 'DECLINED' || entry.status === 'WITHDRAWN') return false;
+    if (entry.status !== 'REQUESTED' && entry.status !== 'ACCEPTED') return false;
     const request = assetSlotStore
       .flatMap((slot) => slot.crewNeeded)
       .find((seatRequest) => seatRequest.id === requestId);
@@ -412,7 +412,9 @@ export function listCrewSeatAssignments(opId: string): CrewSeatAssignment[] {
 export function computeRosterSummary(opId: string): RosterSummary {
   const entries = listRSVPEntries(opId).filter((entry) => entry.status === 'SUBMITTED');
   const slots = listAssetSlots(opId);
-  const assignments = listCrewSeatAssignments(opId).filter((entry) => entry.status !== 'WITHDRAWN');
+  const assignments = listCrewSeatAssignments(opId).filter(
+    (entry) => entry.status === 'REQUESTED' || entry.status === 'ACCEPTED'
+  );
   const openSeats: RosterSummary['openSeats'] = [];
 
   for (const slot of slots) {
@@ -443,7 +445,9 @@ export function computeRosterSummary(opId: string): RosterSummary {
 
 export function listOpenCrewSeats(opId: string): Array<{ assetSlot: AssetSlot; request: CrewSeatRequest; openQty: number }> {
   const slots = listAssetSlots(opId);
-  const assignments = listCrewSeatAssignments(opId).filter((entry) => entry.status !== 'WITHDRAWN');
+  const assignments = listCrewSeatAssignments(opId).filter(
+    (entry) => entry.status === 'REQUESTED' || entry.status === 'ACCEPTED'
+  );
   const open: Array<{ assetSlot: AssetSlot; request: CrewSeatRequest; openQty: number }> = [];
 
   for (const slot of slots) {

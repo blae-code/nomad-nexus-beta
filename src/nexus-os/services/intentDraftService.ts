@@ -36,6 +36,7 @@ export interface ConfirmedDraftEventStub {
   id: string;
   draftId: string;
   opId?: string;
+  scopeKind?: 'OP' | 'ORG' | 'PERSONAL';
   kind: IntentDraftKind;
   target: IntentDraftTarget;
   payload: Record<string, unknown>;
@@ -211,10 +212,14 @@ function confirmAsEventStub(draft: IntentDraft, nowMs: number): ConfirmedDraftEv
     .map((entry) => entry.trim())
     .find(Boolean);
   const opId = explicitOpId || fromOpIds || undefined;
+  const payloadScope = String(draft.payload?.scopeKind || '').toUpperCase();
+  const scopeKind: ConfirmedDraftEventStub['scopeKind'] =
+    opId ? 'OP' : payloadScope === 'ORG' ? 'ORG' : 'PERSONAL';
   return {
     id: createEventStubId(nowMs),
     draftId: draft.id,
     opId,
+    scopeKind,
     kind: draft.kind,
     target: { ...draft.target },
     payload: { ...draft.payload },
@@ -245,6 +250,7 @@ export function confirmDraft(id: string, nowMs = Date.now()): ConfirmDraftResult
     appendOperationEvent(
       {
         opId: createdEventStub.opId,
+        scopeKind: createdEventStub.scopeKind,
         kind: createdEventStub.kind,
         sourceDraftId: createdEventStub.draftId,
         nodeId: createdEventStub.target.nodeId,

@@ -97,12 +97,27 @@ function defaultFocusRulesByPosture(posture: OperationPosture): OperationFocusRu
   };
 }
 
-function hasManageRights(op: Operation, actorId: string): boolean {
+function hasManageRights(op: Operation, actorId: string | undefined): boolean {
   if (!actorId) return false;
   if (op.createdBy === actorId) return true;
   if (op.permissions.ownerIds?.includes(actorId)) return true;
   if (op.permissions.commanderIds?.includes(actorId)) return true;
   return false;
+}
+
+function hasOperationAccess(op: Operation, actorId: string | undefined): boolean {
+  if (!actorId) return false;
+  if (hasManageRights(op, actorId)) return true;
+  if (op.permissions.participantIds?.includes(actorId)) return true;
+  return false;
+}
+
+function requireActorId(actorId: string | undefined, actionLabel: string): string {
+  const trimmed = String(actorId || '').trim();
+  if (!trimmed) {
+    throw new Error(`${actionLabel} requires actorId`);
+  }
+  return trimmed;
 }
 
 function notifyListeners() {
@@ -151,6 +166,7 @@ export function createOperation(input: OperationCreateInput, nowMs = Date.now())
     permissions: {
       ownerIds: [...new Set([input.createdBy, ...(input.permissions?.ownerIds || [])])],
       commanderIds: [...new Set(input.permissions?.commanderIds || [])],
+      participantIds: [...new Set([input.createdBy, ...(input.permissions?.participantIds || [])])],
     },
   };
 
@@ -168,10 +184,7 @@ export function listOperationsForUser(viewContext: OperationViewContext = {}): O
 
   return sortOperations(operationsStore).filter((op) => {
     if (!includeArchived && op.status === 'ARCHIVED') return false;
-    if (op.createdBy === viewContext.userId) return true;
-    if (op.permissions.ownerIds?.includes(viewContext.userId)) return true;
-    if (op.permissions.commanderIds?.includes(viewContext.userId)) return true;
-    return false;
+    return hasOperationAccess(op, viewContext.userId);
   });
 }
 
@@ -180,33 +193,36 @@ export function getOperationById(opId: string): Operation | null {
 }
 
 export function joinOperation(opId: string, userId: string, nowMs = Date.now()): Operation {
-  if (!userId) throw new Error('userId is required');
+  const actorId = requireActorId(userId, 'joinOperation');
   const existing = getOperationById(opId);
   if (!existing) throw new Error(`Operation ${opId} not found`);
   const next: Operation = {
     ...existing,
     permissions: {
       ...existing.permissions,
-      commanderIds: [...new Set([...(existing.permissions.commanderIds || []), userId])],
+      participantIds: [...new Set([...(existing.permissions.participantIds || []), actorId])],
     },
     updatedAt: nowIso(nowMs),
   };
   operationsStore = sortOperations(operationsStore.map((entry) => (entry.id === opId ? next : entry)));
-  if (!focusByUser[userId]) focusByUser[userId] = next.id;
+  if (!focusByUser[actorId]) focusByUser[actorId] = next.id;
   notifyListeners();
   return next;
 }
 
 export function setFocusOperation(userId: string, opId: string | null): string | null {
-  if (!userId) throw new Error('userId is required');
+  const actorId = requireActorId(userId, 'setFocusOperation');
   if (!opId) {
-    delete focusByUser[userId];
+    delete focusByUser[actorId];
     notifyListeners();
     return null;
   }
   const op = getOperationById(opId);
   if (!op) throw new Error(`Operation ${opId} not found`);
-  focusByUser[userId] = opId;
+  if (!hasOperationAccess(op, actorId)) {
+    throw new Error('Cannot focus operation without membership');
+  }
+  focusByUser[actorId] = opId;
   notifyListeners();
   return opId;
 }
@@ -225,10 +241,9 @@ function patchOperation(opId: string, mutate: (operation: Operation) => Operatio
 }
 
 export function updateOperation(opId: string, input: OperationUpdateInput, actorId?: string, nowMs = Date.now()): Operation {
-  if (actorId) {
-    const permission = canManageOperation(opId, actorId);
-    if (!permission.allowed) throw new Error(permission.reason);
-  }
+  const operatorId = requireActorId(actorId, 'updateOperation');
+  const permission = canManageOperation(opId, operatorId);
+  if (!permission.allowed) throw new Error(permission.reason);
   return patchOperation(opId, (operation) => ({
     ...operation,
     name: input.name?.trim() || operation.name,
@@ -239,10 +254,9 @@ export function updateOperation(opId: string, input: OperationUpdateInput, actor
 }
 
 export function updateStatus(opId: string, status: OperationStatus, actorId?: string, nowMs = Date.now()): Operation {
-  if (actorId) {
-    const permission = canManageOperation(opId, actorId);
-    if (!permission.allowed) throw new Error(permission.reason);
-  }
+  const operatorId = requireActorId(actorId, 'updateStatus');
+  const permission = canManageOperation(opId, operatorId);
+  if (!permission.allowed) throw new Error(permission.reason);
   return patchOperation(opId, (operation) => ({
     ...operation,
     status,
@@ -251,10 +265,9 @@ export function updateStatus(opId: string, status: OperationStatus, actorId?: st
 }
 
 export function setPosture(opId: string, posture: OperationPosture, actorId?: string, nowMs = Date.now()): Operation {
-  if (actorId) {
-    const permission = canManageOperation(opId, actorId);
-    if (!permission.allowed) throw new Error(permission.reason);
-  }
+  const operatorId = requireActorId(actorId, 'setPosture');
+  const permission = canManageOperation(opId, operatorId);
+  if (!permission.allowed) throw new Error(permission.reason);
   return patchOperation(opId, (operation) => ({
     ...operation,
     posture,
@@ -271,10 +284,9 @@ export function applyCommsTemplate(
   actorId?: string,
   nowMs = Date.now()
 ): Operation {
-  if (actorId) {
-    const permission = canManageOperation(opId, actorId);
-    if (!permission.allowed) throw new Error(permission.reason);
-  }
+  const operatorId = requireActorId(actorId, 'applyCommsTemplate');
+  const permission = canManageOperation(opId, operatorId);
+  if (!permission.allowed) throw new Error(permission.reason);
   return patchOperation(opId, (operation) => ({
     ...operation,
     commsTemplateId: templateId,
@@ -286,9 +298,11 @@ export function appendOperationEvent(
   input: Omit<OperationEventStub, 'id' | 'createdAt'> & { id?: string; createdAt?: string },
   nowMs = Date.now()
 ): OperationEventStub {
+  const scopeKind = input.scopeKind || (input.opId ? 'OP' : 'PERSONAL');
   const record: OperationEventStub = {
     id: input.id || createOperationEventId(nowMs),
     opId: input.opId,
+    scopeKind,
     kind: input.kind,
     sourceDraftId: input.sourceDraftId,
     nodeId: input.nodeId,

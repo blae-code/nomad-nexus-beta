@@ -169,13 +169,24 @@ export function checkProvenancePresence(input: ProvenancePresenceInput): Invaria
 export function checkOpScoping(input: OpScopingInput): InvariantWarning[] {
   const warnings: InvariantWarning[] = [];
   for (const event of toArray(input.events)) {
-    if (isNonEmptyString(event.opId)) continue;
-    pushWarning(warnings, {
-      code: 'EVENT_UNSCOPED',
-      severity: 'warning',
-      message: 'Operation event stub is not scoped to an opId.',
-      details: event.id ? `id=${event.id}` : undefined,
-    });
+    const scopeKind = event.scopeKind || (event.opId ? 'OP' : '');
+    if (scopeKind === 'OP' && !isNonEmptyString(event.opId)) {
+      pushWarning(warnings, {
+        code: 'EVENT_UNSCOPED',
+        severity: 'critical',
+        message: 'OP-scoped event stub is missing opId.',
+        details: event.id ? `id=${event.id}` : undefined,
+      });
+      continue;
+    }
+    if (!scopeKind && !isNonEmptyString(event.opId)) {
+      pushWarning(warnings, {
+        code: 'EVENT_SCOPE_UNKNOWN',
+        severity: 'warning',
+        message: 'Event stub has no explicit scopeKind/opId.',
+        details: event.id ? `id=${event.id}` : undefined,
+      });
+    }
   }
 
   for (const intel of toArray(input.intelObjects)) {

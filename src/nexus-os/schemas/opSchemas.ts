@@ -26,6 +26,7 @@ export interface OperationFocusRules {
 export interface OperationPermissions {
   ownerIds?: string[];
   commanderIds?: string[];
+  participantIds?: string[];
 }
 
 export interface OperationAO {
@@ -231,6 +232,7 @@ export interface OpComment {
 export interface OperationEventStub {
   id: string;
   opId?: string;
+  scopeKind?: 'OP' | 'ORG' | 'PERSONAL';
   kind: string;
   sourceDraftId?: string;
   nodeId?: string;
