@@ -1,0 +1,38 @@
+{
+  "entities": [
+    {
+      "name": "CharacterProfile",
+      "description": "Roleplay persona linked to a member profile.",
+      "fields": {
+        "member_profile_id": { "type": "string", "required": true },
+        "character_name": { "type": "string", "required": true },
+        "biography": { "type": "string" },
+        "affiliation": { "type": "string" },
+        "specialties": { "type": "array", "items": "string" },
+        "in_character_by_default": { "type": "boolean", "default": false }
+      }
+    },
+    {
+      "name": "NarrativeEvent",
+      "description": "Scoped mission narrative record with provenance and IC/OOC mode.",
+      "fields": {
+        "op_id": { "type": "string" },
+        "campaign_id": { "type": "string" },
+        "author_id": { "type": "string", "required": true },
+        "author_label": { "type": "string" },
+        "event_type": { "type": "string", "required": true },
+        "tone": { "type": "string", "required": true },
+        "title": { "type": "string", "required": true },
+        "content": { "type": "string", "required": true },
+        "tags": { "type": "array", "items": "string" },
+        "in_character": { "type": "boolean", "default": false },
+        "visibility": { "type": "string", "default": "OP" },
+        "source_kind": { "type": "string", "default": "USER" },
+        "generated_by_ai": { "type": "boolean", "default": false },
+        "refs": { "type": "array", "items": "object" },
+        "meta": { "type": "object" }
+      }
+    }
+  ]
+}
+

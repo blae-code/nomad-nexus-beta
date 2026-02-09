@@ -19,3 +19,7 @@ export * from './forceDesignService';
 export * from './reportFormatting';
 export * from './reportGenerators';
 export * from './reportService';
+export * from './narrativeService';
+export * from './crossOrgService';
+export * from './trainingSimulationService';
+export * from './mobileCompanionService';

@@ -29,6 +29,7 @@ import { listAssetSlots, listRSVPEntries } from './rsvpService';
 import { listAllIntelObjectsForDev } from './intelService';
 import { getFitProfileById } from './fitProfileService';
 import { listRouteHypotheses } from './marketIntelService';
+import { appendNarrativeFromReport } from './narrativeService';
 
 export interface GenerateReportParams {
   generatedBy?: string;
@@ -219,6 +220,8 @@ export function generateReport(
   report.warnings = [...new Set([...(report.warnings || []), ...validation.warnings])];
 
   reportStore = sortReports([report, ...reportStore]);
+  // Bridge official reports into op-scoped narrative log when possible.
+  appendNarrativeFromReport(report, nowMs);
   notifyListeners();
   return report;
 }

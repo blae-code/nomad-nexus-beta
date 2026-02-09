@@ -7,3 +7,7 @@ export * from './marketIntelSchemas';
 export * from './packSchemas';
 export * from './fitForceSchemas';
 export * from './reportSchemas';
+export * from './narrativeSchemas';
+export * from './crossOrgSchemas';
+export * from './trainingSchemas';
+export * from './mobileSchemas';

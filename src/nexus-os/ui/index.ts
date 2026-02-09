@@ -13,3 +13,4 @@ export * from './comms';
 export * from './map';
 export * from './ops';
 export * from './reports';
+export * from './mobile';

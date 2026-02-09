@@ -7,6 +7,8 @@
  * - Async collaboration is artifact-scoped (no global chat assumptions).
  */
 
+import type { DataClassification } from './crossOrgSchemas';
+
 export type OperationPosture = 'FOCUSED' | 'CASUAL';
 export type OperationStatus = 'PLANNING' | 'ACTIVE' | 'WRAPPING' | 'ARCHIVED';
 
@@ -27,6 +29,7 @@ export interface OperationPermissions {
   ownerIds?: string[];
   commanderIds?: string[];
   participantIds?: string[];
+  guestOrgIds?: string[];
 }
 
 export interface OperationAO {
@@ -37,6 +40,9 @@ export interface OperationAO {
 export interface Operation {
   id: string;
   name: string;
+  hostOrgId?: string;
+  invitedOrgIds?: string[];
+  classification?: DataClassification;
   posture: OperationPosture;
   status: OperationStatus;
   domains: OperationDomains;
@@ -234,6 +240,9 @@ export interface OperationEventStub {
   opId?: string;
   scopeKind?: 'OP' | 'ORG' | 'PERSONAL';
   kind: string;
+  isSimulation?: boolean;
+  simulationSessionId?: string;
+  simulationScenarioId?: string;
   sourceDraftId?: string;
   nodeId?: string;
   intelId?: string;

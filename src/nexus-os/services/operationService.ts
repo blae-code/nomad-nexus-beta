@@ -14,9 +14,13 @@ import type {
   OperationDomains,
 } from '../schemas/opSchemas';
 import type { CommsTemplateId } from '../registries/commsTemplateRegistry';
+import type { DataClassification } from '../schemas/crossOrgSchemas';
 
 export interface OperationCreateInput {
   name: string;
+  hostOrgId?: string;
+  invitedOrgIds?: string[];
+  classification?: DataClassification;
   posture?: OperationPosture;
   status?: OperationStatus;
   domains?: Partial<OperationDomains>;
@@ -29,6 +33,7 @@ export interface OperationCreateInput {
 
 export interface OperationViewContext {
   userId?: string;
+  orgId?: string;
   includeArchived?: boolean;
 }
 
@@ -36,6 +41,8 @@ export interface OperationUpdateInput {
   name?: string;
   ao?: Operation['ao'];
   linkedIntelIds?: string[];
+  invitedOrgIds?: string[];
+  classification?: DataClassification;
 }
 
 export interface OperationPermissionResult {
@@ -147,6 +154,9 @@ export function createOperation(input: OperationCreateInput, nowMs = Date.now())
   const operation: Operation = {
     id: createOperationId(nowMs),
     name: input.name.trim() || 'Untitled Operation',
+    hostOrgId: input.hostOrgId || 'ORG-LOCAL',
+    invitedOrgIds: [...new Set(input.invitedOrgIds || [])],
+    classification: input.classification || 'INTERNAL',
     posture,
     status,
     domains: {
@@ -167,6 +177,7 @@ export function createOperation(input: OperationCreateInput, nowMs = Date.now())
       ownerIds: [...new Set([input.createdBy, ...(input.permissions?.ownerIds || [])])],
       commanderIds: [...new Set(input.permissions?.commanderIds || [])],
       participantIds: [...new Set([input.createdBy, ...(input.permissions?.participantIds || [])])],
+      guestOrgIds: [...new Set(input.permissions?.guestOrgIds || [])],
     },
   };
 
@@ -178,13 +189,35 @@ export function createOperation(input: OperationCreateInput, nowMs = Date.now())
 
 export function listOperationsForUser(viewContext: OperationViewContext = {}): Operation[] {
   const includeArchived = Boolean(viewContext.includeArchived);
+  const scopedByOrg = (op: Operation) => {
+    if (!viewContext.orgId) return true;
+    if (op.hostOrgId === viewContext.orgId) return true;
+    if ((op.invitedOrgIds || []).includes(viewContext.orgId)) return true;
+    if ((op.permissions.guestOrgIds || []).includes(viewContext.orgId)) return true;
+    return false;
+  };
   if (!viewContext.userId) {
-    return sortOperations(operationsStore).filter((op) => (includeArchived ? true : op.status !== 'ARCHIVED'));
+    return sortOperations(operationsStore).filter(
+      (op) => (includeArchived ? true : op.status !== 'ARCHIVED') && scopedByOrg(op)
+    );
   }
 
   return sortOperations(operationsStore).filter((op) => {
     if (!includeArchived && op.status === 'ARCHIVED') return false;
+    if (!scopedByOrg(op)) return false;
     return hasOperationAccess(op, viewContext.userId);
+  });
+}
+
+export function listOperationsForOrg(orgId: string, includeArchived = false): Operation[] {
+  const targetOrg = String(orgId || '').trim();
+  if (!targetOrg) return [];
+  return sortOperations(operationsStore).filter((op) => {
+    if (!includeArchived && op.status === 'ARCHIVED') return false;
+    if (op.hostOrgId === targetOrg) return true;
+    if ((op.invitedOrgIds || []).includes(targetOrg)) return true;
+    if ((op.permissions.guestOrgIds || []).includes(targetOrg)) return true;
+    return false;
   });
 }
 
@@ -249,6 +282,8 @@ export function updateOperation(opId: string, input: OperationUpdateInput, actor
     name: input.name?.trim() || operation.name,
     ao: input.ao || operation.ao,
     linkedIntelIds: input.linkedIntelIds ? [...new Set(input.linkedIntelIds)] : operation.linkedIntelIds,
+    invitedOrgIds: input.invitedOrgIds ? [...new Set(input.invitedOrgIds)] : operation.invitedOrgIds,
+    classification: input.classification || operation.classification,
     updatedAt: nowIso(nowMs),
   }));
 }
@@ -304,6 +339,9 @@ export function appendOperationEvent(
     opId: input.opId,
     scopeKind,
     kind: input.kind,
+    isSimulation: Boolean(input.isSimulation),
+    simulationSessionId: input.simulationSessionId,
+    simulationScenarioId: input.simulationScenarioId,
     sourceDraftId: input.sourceDraftId,
     nodeId: input.nodeId,
     intelId: input.intelId,
@@ -321,6 +359,18 @@ export function listOperationEvents(opId?: string): OperationEventStub[] {
   const events = sortOperationEvents(operationEventsStore);
   if (!opId) return events;
   return events.filter((entry) => entry.opId === opId);
+}
+
+export function listLiveOperationEvents(opId?: string): OperationEventStub[] {
+  return listOperationEvents(opId).filter((entry) => !entry.isSimulation);
+}
+
+export function listSimulationOperationEvents(opId?: string, sessionId?: string): OperationEventStub[] {
+  return listOperationEvents(opId).filter((entry) => {
+    if (!entry.isSimulation) return false;
+    if (sessionId && entry.simulationSessionId !== sessionId) return false;
+    return true;
+  });
 }
 
 export function subscribeOperations(listener: OperationListener): () => void {

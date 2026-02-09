@@ -66,7 +66,7 @@ export interface SpatialLocation {
 
 export interface LocationEstimateSource {
   sourceId: string;
-  sourceType: 'COMMS_CALL' | 'MANUAL_MARKER' | 'SENSOR_PROXY' | 'INTEL_REPORT' | 'COMMAND_NOTE';
+  sourceType: 'COMMS_CALL' | 'MANUAL_MARKER' | 'SENSOR_PROXY' | 'INTEL_REPORT' | 'COMMAND_NOTE' | 'MOBILE_GPS' | 'AR_ANCHOR';
   observedAt: string;
   confidence: number;
   notes?: string;

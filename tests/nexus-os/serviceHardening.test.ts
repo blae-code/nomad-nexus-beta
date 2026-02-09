@@ -17,8 +17,10 @@ import {
   appendOperationEvent,
   getOperationById,
   joinOperation,
+  listLiveOperationEvents,
   listOperationEvents,
   listOperationsForUser,
+  listSimulationOperationEvents,
   resetOperationServiceState,
   setFocusOperation,
   setPosture,
@@ -53,6 +55,39 @@ import {
   confirmDraft,
   resetIntentDraftServiceState,
 } from '../../src/nexus-os/services/intentDraftService';
+import {
+  createMissionBriefNarrative,
+  createNarrativeEvent,
+  createStorySoFarSummary,
+  getCharacterProfileByMember,
+  listNarrativeEvents,
+  resetNarrativeServiceState,
+  upsertCharacterProfile,
+} from '../../src/nexus-os/services/narrativeService';
+import {
+  canAccessOperationContext,
+  createAlliance,
+  createEmergencyBroadcast,
+  createPublicUpdate,
+  getPublicUpdateBySlug,
+  listEmergencyBroadcasts,
+  listOperationInvites,
+  registerOrganization,
+  resetCrossOrgServiceState,
+  respondAlliance,
+  respondOperationInvite,
+  sendOperationInvite,
+} from '../../src/nexus-os/services/crossOrgService';
+import {
+  createTrainingScenario,
+  injectSimulationEvent,
+  markSimulationObjective,
+  pauseSimulationSession,
+  resetTrainingSimulationState,
+  resumeSimulationSession,
+  startSimulationSession,
+  stopSimulationSession,
+} from '../../src/nexus-os/services/trainingSimulationService';
 
 describe('Nexus OS hardening services', () => {
   beforeEach(() => {
@@ -64,6 +99,9 @@ describe('Nexus OS hardening services', () => {
     resetReportServiceState();
     resetFitProfileServiceState();
     resetIntentDraftServiceState();
+    resetNarrativeServiceState();
+    resetCrossOrgServiceState();
+    resetTrainingSimulationState();
   });
 
   it('computeControlZones is deterministic for identical inputs', () => {
@@ -196,6 +234,100 @@ describe('Nexus OS hardening services', () => {
     expect(first.coverageMatrix).toEqual(second.coverageMatrix);
     expect(first.dependencyGraph).toEqual(second.dependencyGraph);
     expect(first.coverageMatrix.rows.length).toBeGreaterThan(0);
+  });
+
+  it('training simulation lifecycle stays deterministic and isolated from live event queries', () => {
+    const nowMs = 1_735_689_660_000;
+    const op = createOperation({
+      name: 'Simulation Guardrail Op',
+      createdBy: 'trainer-1',
+      posture: 'FOCUSED',
+      status: 'ACTIVE',
+      ao: { nodeId: 'body-daymar' },
+    }, nowMs - 10_000);
+
+    const scenario = createTrainingScenario({
+      title: 'Medical Extraction Drill',
+      description: 'Stabilize casualty and secure extraction lane.',
+      difficulty: 'STANDARD',
+      tags: ['training', 'rescue'],
+      createdBy: 'trainer-1',
+      objectives: [
+        { id: 'obj_rescue', title: 'Stabilize casualty', required: true, rescueWeighted: true },
+        { id: 'obj_security', title: 'Secure perimeter', required: true, rescueWeighted: false },
+      ],
+      triggers: [],
+    }, nowMs - 9_000);
+
+    const session = startSimulationSession({
+      scenarioId: scenario.id,
+      opId: op.id,
+      startedBy: 'trainer-1',
+    }, nowMs - 8_000);
+
+    injectSimulationEvent(session.id, {
+      eventType: 'MANUAL_INJECT',
+      title: 'Unexpected casualty',
+      message: 'Secondary casualty reported on east lane.',
+      severity: 'HIGH',
+    }, nowMs - 7_000);
+
+    pauseSimulationSession(session.id, nowMs - 6_500);
+    resumeSimulationSession(session.id, nowMs - 6_000);
+
+    markSimulationObjective({
+      sessionId: session.id,
+      objectiveId: 'obj_rescue',
+      completed: true,
+    }, nowMs - 5_000);
+    markSimulationObjective({
+      sessionId: session.id,
+      objectiveId: 'obj_security',
+      completed: true,
+    }, nowMs - 4_500);
+
+    const stopped = stopSimulationSession(session.id, { asCompleted: true }, nowMs - 4_000);
+    expect(stopped.session.status).toBe('COMPLETED');
+    expect(stopped.result.score).toBeGreaterThan(0);
+    expect(stopped.result.recommendations.length).toBeGreaterThan(0);
+    expect(stopped.result.objectiveSummary.filter((entry) => entry.completed).length).toBe(2);
+
+    const simEvents = listSimulationOperationEvents(op.id, session.id);
+    const liveEvents = listLiveOperationEvents(op.id);
+    expect(simEvents.length).toBeGreaterThan(0);
+    expect(liveEvents.length).toBe(0);
+
+    const scenarioRepeat = createTrainingScenario({
+      title: 'Medical Extraction Drill',
+      description: 'Stabilize casualty and secure extraction lane.',
+      difficulty: 'STANDARD',
+      tags: ['training', 'rescue'],
+      createdBy: 'trainer-1',
+      objectives: [
+        { id: 'obj_rescue', title: 'Stabilize casualty', required: true, rescueWeighted: true },
+        { id: 'obj_security', title: 'Secure perimeter', required: true, rescueWeighted: false },
+      ],
+      triggers: [],
+    }, nowMs - 3_900);
+    const sessionRepeat = startSimulationSession({
+      scenarioId: scenarioRepeat.id,
+      startedBy: 'trainer-1',
+    }, nowMs - 3_800);
+    markSimulationObjective({
+      sessionId: sessionRepeat.id,
+      objectiveId: 'obj_rescue',
+      completed: true,
+    }, nowMs - 3_700);
+    markSimulationObjective({
+      sessionId: sessionRepeat.id,
+      objectiveId: 'obj_security',
+      completed: true,
+    }, nowMs - 3_600);
+    const stoppedRepeat = stopSimulationSession(sessionRepeat.id, { asCompleted: true }, nowMs - 3_500);
+
+    expect(stoppedRepeat.result.score).toBe(stopped.result.score);
+    expect(stoppedRepeat.result.rescueScore).toBe(stopped.result.rescueScore);
+    expect(stoppedRepeat.result.outcome).toBe(stopped.result.outcome);
   });
 
   it('report generation stays deterministic and includes citations + snapshot refs', () => {
@@ -407,5 +539,190 @@ describe('Nexus OS hardening services', () => {
     const allEvents = listOperationEvents();
     expect(allEvents.some((entry) => entry.scopeKind === 'OP' && entry.opId === op.id)).toBe(true);
     expect(allEvents.some((entry) => entry.scopeKind === 'PERSONAL' && !entry.opId)).toBe(true);
+  });
+
+  it('narrative service supports personas, IC/OOC entries, and report bridge artifacts', () => {
+    const nowMs = 1_735_689_880_000;
+    const actorId = 'gce-doc';
+    const op = createOperation({
+      name: 'Narrative Readiness',
+      createdBy: actorId,
+      posture: 'FOCUSED',
+      status: 'ACTIVE',
+      ao: { nodeId: 'body-daymar' },
+    }, nowMs - 10_000);
+
+    upsertCharacterProfile({
+      memberProfileId: actorId,
+      characterName: 'Doc',
+      biography: 'Frontline medic',
+      affiliation: 'Redscar',
+      inCharacterByDefault: true,
+    }, nowMs - 9_000);
+
+    const profile = getCharacterProfileByMember(actorId);
+    expect(profile?.characterName).toBe('Doc');
+    expect(profile?.inCharacterByDefault).toBe(true);
+
+    createNarrativeEvent({
+      opId: op.id,
+      authorId: actorId,
+      authorLabel: 'Doc',
+      type: 'COMMENTARY',
+      tone: 'IC_COMMS',
+      title: 'Medical Channel',
+      body: 'IC: triage lane established near breach corridor.',
+      inCharacter: true,
+      visibility: 'OP',
+      sourceKind: 'USER',
+      tags: ['medical'],
+    }, nowMs - 8_000);
+
+    createNarrativeEvent({
+      opId: op.id,
+      authorId: actorId,
+      type: 'TIMELINE_BEAT',
+      tone: 'OOC',
+      title: 'OOC Coordination',
+      body: 'Need one additional escort on medevac route.',
+      inCharacter: false,
+      visibility: 'OP',
+      sourceKind: 'USER',
+      tags: ['coordination'],
+    }, nowMs - 7_000);
+
+    appendOperationEvent({
+      opId: op.id,
+      kind: 'DECLARE_HOLD',
+      payload: { lane: 'north' },
+      createdBy: actorId,
+    }, nowMs - 6_000);
+
+    const brief = createMissionBriefNarrative(op.id, actorId, {}, nowMs - 5_000);
+    const story = createStorySoFarSummary(op.id, actorId, nowMs - 4_000);
+    expect(brief.type).toBe('MISSION_BRIEF');
+    expect(story.type).toBe('SYSTEM_SUMMARY');
+
+    const icEntries = listNarrativeEvents({ opId: op.id, inCharacter: true });
+    const oocEntries = listNarrativeEvents({ opId: op.id, inCharacter: false });
+    expect(icEntries.length).toBeGreaterThan(0);
+    expect(oocEntries.length).toBeGreaterThan(0);
+
+    const report = generateReport('OP_BRIEF', { kind: 'OP', opId: op.id }, { generatedBy: actorId, opId: op.id }, nowMs);
+    expect(report.kind).toBe('OP_BRIEF');
+
+    const bridged = listNarrativeEvents({ opId: op.id, types: ['MISSION_BRIEF'] });
+    expect(bridged.length).toBeGreaterThan(0);
+  });
+
+  it('cross-org flow enforces alliance before invite, scopes access, and exposes public outreach safely', () => {
+    const nowMs = 1_735_690_000_000;
+    const actorId = 'ce-warden';
+    const hostOrg = registerOrganization({
+      name: 'Redscar Nomads',
+      shortTag: 'RSC',
+      kind: 'PRIMARY',
+      visibilityDefault: 'INTERNAL',
+    }, nowMs - 20_000);
+    const allyOrg = registerOrganization({
+      name: 'Aegis Relief',
+      shortTag: 'AGR',
+      kind: 'ALLY',
+      visibilityDefault: 'ALLIED',
+    }, nowMs - 19_000);
+
+    const op = createOperation({
+      name: 'Joint Rescue Net',
+      createdBy: actorId,
+      hostOrgId: hostOrg.id,
+      posture: 'FOCUSED',
+      status: 'ACTIVE',
+      classification: 'ALLIED',
+      ao: { nodeId: 'body-daymar' },
+    }, nowMs - 18_000);
+
+    expect(() =>
+      sendOperationInvite({
+        opId: op.id,
+        hostOrgId: hostOrg.id,
+        targetOrgId: allyOrg.id,
+        createdBy: actorId,
+      }, nowMs - 17_000)
+    ).toThrow(/No active alliance/i);
+
+    const alliance = createAlliance({
+      requesterOrgId: hostOrg.id,
+      partnerOrgId: allyOrg.id,
+      allianceName: 'Rescue Mutual Aid',
+      createdBy: actorId,
+    }, nowMs - 16_000);
+    respondAlliance(alliance.id, hostOrg.id, 'ACCEPT', nowMs - 15_000);
+
+    const invite = sendOperationInvite({
+      opId: op.id,
+      hostOrgId: hostOrg.id,
+      targetOrgId: allyOrg.id,
+      classification: 'ALLIED',
+      createdBy: actorId,
+    }, nowMs - 14_000);
+    expect(invite.status).toBe('PENDING');
+    respondOperationInvite(invite.id, allyOrg.id, 'ACCEPT', 'ally-admin', nowMs - 13_000);
+
+    const invites = listOperationInvites({ opId: op.id });
+    expect(invites.some((entry) => entry.status === 'ACCEPTED')).toBe(true);
+
+    const hostAccess = canAccessOperationContext({
+      opId: op.id,
+      requesterOrgId: hostOrg.id,
+      requesterUserId: actorId,
+      requiredClassification: 'ALLIED',
+    });
+    const allyAccess = canAccessOperationContext({
+      opId: op.id,
+      requesterOrgId: allyOrg.id,
+      requesterUserId: 'ally-user-1',
+      requiredClassification: 'ALLIED',
+    });
+    const outsider = registerOrganization({
+      name: 'Outer Ring',
+      shortTag: 'OUT',
+      kind: 'ALLY',
+      visibilityDefault: 'ALLIED',
+    }, nowMs - 12_000);
+    const outsiderAccess = canAccessOperationContext({
+      opId: op.id,
+      requesterOrgId: outsider.id,
+      requesterUserId: 'outsider-1',
+      requiredClassification: 'ALLIED',
+    });
+
+    expect(hostAccess.allowed).toBe(true);
+    expect(allyAccess.allowed).toBe(true);
+    expect(outsiderAccess.allowed).toBe(false);
+
+    const update = createPublicUpdate({
+      orgId: hostOrg.id,
+      opId: op.id,
+      title: 'Joint Rescue Complete',
+      body: 'Five civilians recovered. Last known point 12.3456, -44.9876.',
+      audience: 'PUBLIC',
+      classification: 'PUBLIC',
+      createdBy: actorId,
+      sourceRefs: [{ kind: 'operation', id: op.id }],
+    }, nowMs - 11_000);
+    expect(update.publishStatus).toBe('PUBLISHED');
+    expect(update.body).toContain('[REDACTED_COORDINATES]');
+    const publicView = getPublicUpdateBySlug(update.slug);
+    expect(publicView?.id).toBe(update.id);
+
+    createEmergencyBroadcast({
+      originOrgId: hostOrg.id,
+      opId: op.id,
+      title: 'Emergency Medevac Support',
+      message: 'Need additional ACE medevac lane support.',
+      createdBy: actorId,
+    }, nowMs - 10_000);
+    const broadcasts = listEmergencyBroadcasts(hostOrg.id);
+    expect(broadcasts.length).toBeGreaterThan(0);
   });
 });

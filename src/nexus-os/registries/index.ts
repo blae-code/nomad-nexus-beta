@@ -4,3 +4,4 @@ export * from './macroRegistry';
 export * from './ttlProfileRegistry';
 export * from './commsTemplateRegistry';
 export * from './reportTemplateRegistry';
+export * from './narrativeTemplateRegistry';

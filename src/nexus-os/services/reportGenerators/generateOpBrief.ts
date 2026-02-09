@@ -94,6 +94,11 @@ export function generateOpBrief(
   const assetSlots = listAssetSlots(operation.id);
   const rosterSummary = computeRosterSummary(operation.id);
   const opEvents = listOperationEvents(operation.id);
+  const rescueSignalCount = opEvents.filter((event) =>
+    ['RESCUE', 'MEDEVAC', 'EXTRACT', 'MEDICAL', 'CHECK_FIRE', 'CEASE_FIRE'].some((token) =>
+      String(event.kind || '').toUpperCase().includes(token)
+    )
+  ).length;
   const commsTemplate = getCommsTemplate(operation.commsTemplateId as any);
 
   if (!objectives.length) warnings.push('No objectives recorded.');
@@ -152,6 +157,18 @@ export function generateOpBrief(
         : 'Assumption state unknown (no assumptions recorded).',
       3,
       assumptions.slice(0, 4).map((assumption) => ({ kind: 'assumption', id: assumption.id }))
+    ),
+    createSection(
+      'rescue-priorities',
+      'Rescue Priorities',
+      [
+        'KISS: preserve life, stabilize casualties, and protect extraction lanes.',
+        rescueSignalCount
+          ? `Historical rescue markers in this op context: ${rescueSignalCount}.`
+          : 'Rescue marker history is unknown or empty; brief medical contingencies explicitly.',
+      ].join('\n'),
+      4,
+      opEvents.slice(0, 4).map((event) => ({ kind: 'op_event', id: event.id }))
     ),
   ];
 
@@ -233,6 +250,19 @@ export function generateOpBrief(
       confidenceBand: confidenceBandFromScore(decisions.length ? 0.74 : 0.28),
       ttlState: 'N_A',
       notes: decisions.length ? undefined : 'Record key decisions to improve after-action traceability.',
+    }),
+    createEvidence('claim-rescue-emphasis', {
+      claim: rescueSignalCount
+        ? `Operation context includes ${rescueSignalCount} rescue-related event markers.`
+        : 'Rescue emphasis requires explicit operator confirmation; event stream has no rescue markers yet.',
+      citations: opEvents.slice(0, 6).map((event) => ({
+        kind: 'OP_EVENT' as const,
+        refId: event.id,
+        occurredAt: event.createdAt,
+        source: 'operationService',
+      })),
+      confidenceBand: confidenceBandFromScore(rescueSignalCount > 0 ? 0.68 : 0.4),
+      ttlState: 'N_A',
     }),
   ];
 

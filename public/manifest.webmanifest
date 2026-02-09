@@ -1,0 +1,47 @@
+{
+  "name": "Nexus OS Command Grid",
+  "short_name": "NexusOS",
+  "description": "Nomad Nexus mobile and AR companion for rescue-first operations.",
+  "start_url": "/Hub",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0b0d",
+  "theme_color": "#a94f22",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/nexus-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/nexus-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Workspace",
+      "short_name": "Workspace",
+      "description": "Open Nexus OS workspace",
+      "url": "/Hub"
+    },
+    {
+      "name": "Open Comms",
+      "short_name": "Comms",
+      "description": "Open comms console",
+      "url": "/CommsConsole"
+    },
+    {
+      "name": "Open Ops",
+      "short_name": "Ops",
+      "description": "Open mission control",
+      "url": "/MissionControl"
+    }
+  ]
+}
+

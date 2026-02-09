@@ -25,6 +25,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import FatalAuthError from '@/components/auth/FatalAuthError';
 import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
 import { useRealtimeNotifications } from '@/components/hooks/useRealtimeNotifications';
+import OfflineStatusBanner from '@/components/mobile/OfflineStatusBanner';
+import MobileQuickActionBar from '@/components/mobile/MobileQuickActionBar';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -46,14 +48,6 @@ export default function Layout({ children, currentPageName }) {
     window.__NN_BOOTED__ = true;
     window.__NN_BOOT_TIME__ = Date.now();
     console.log('[NN] App booted at', new Date().toISOString());
-    
-    // Inject PWA manifest link
-    if (!document.querySelector('link[rel="manifest"]')) {
-      const manifestLink = document.createElement('link');
-      manifestLink.rel = 'manifest';
-      manifestLink.href = '/api/servePWA/manifest.json';
-      document.head.appendChild(manifestLink);
-    }
   }, []);
 
   // Full-screen pages that hide shell UI
@@ -147,6 +141,13 @@ function LayoutContent({ currentPageName, children }) {
     bootOverlay.replay();
   };
 
+  const mobileAwareMainPaddingClass =
+    isCommsDockOpen && !dockMinimized
+      ? 'pb-96'
+      : isCommsDockOpen && dockMinimized
+      ? 'pb-12'
+      : 'pb-16 md:pb-0';
+
   return (
     <CommandPaletteProvider
       onNavigate={handleNavigate}
@@ -182,11 +183,12 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Main content area — offset for fixed header (pt-16) + dock spacer */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+          <OfflineStatusBanner />
           <div className="flex-1 overflow-hidden flex gap-0">
             <main
               id="main-content"
               tabIndex={-1}
-              className={`flex-1 overflow-y-auto overflow-x-hidden ${isCommsDockOpen && !dockMinimized ? 'pb-96' : isCommsDockOpen && dockMinimized ? 'pb-12' : 'pb-0'} transition-all duration-200`}
+              className={`flex-1 overflow-y-auto overflow-x-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}
             >
               <PermissionGuard>{children}</PermissionGuard>
             </main>
@@ -209,6 +211,9 @@ function LayoutContent({ currentPageName, children }) {
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
+
+        {/* Mobile quick actions (touch-first nav + toggles) */}
+        <MobileQuickActionBar onToggleCommsDock={toggleCommsDock} onToggleContextPanel={toggleContextPanel} />
       </div>
       </CommandPaletteProvider>
         );

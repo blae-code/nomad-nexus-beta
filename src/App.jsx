@@ -9,6 +9,7 @@ import { AuthProvider } from '@/components/providers/AuthProvider';
 import FittingDataOpsScheduler from '@/components/admin/FittingDataOpsScheduler';
 import { NexusOSPreviewPage } from '@/nexus-os';
 import NexusOSWorkspace from '@/pages/NexusOSWorkspace';
+import PublicUpdate from '@/pages/PublicUpdate';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -64,6 +65,7 @@ const RouteResolver = () => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Navigate to="/Hub" replace />} />
+    <Route path="/public/updates/:slug" element={<PublicUpdate />} />
     {Object.entries(Pages).map(([path, Page]) => (
       <Route
         key={path}

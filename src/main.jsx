@@ -5,6 +5,7 @@ import '@/index.css';
 import { ensureTailwindCdn } from '@/components/hooks/useTailwindReady';
 import TailwindError from '@/components/tailwind/TailwindError';
 import TailwindReadyGate from '@/components/tailwind/TailwindReadyGate';
+import { registerNexusPwa } from '@/components/pwa/registerPwa';
 
 const rootElement = document.getElementById('root');
 const root = ReactDOM.createRoot(rootElement);
@@ -24,6 +25,7 @@ const mountTailwindError = (error) => {
 const bootstrap = async () => {
   try {
     await ensureTailwindCdn({ timeoutMs: 16000 });
+    registerNexusPwa();
     mountApp();
   } catch (error) {
     mountTailwindError(error);

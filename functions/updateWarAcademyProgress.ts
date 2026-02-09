@@ -17,6 +17,11 @@ function asTags(value: unknown) {
     .filter(Boolean);
 }
 
+function asJsonArray(value: unknown) {
+  if (Array.isArray(value)) return value;
+  return [];
+}
+
 function hasInstructorPrivileges(memberProfile: any, actorType: string | null) {
   if (actorType === 'admin') return true;
   if (isAdminMember(memberProfile)) return true;
@@ -111,6 +116,10 @@ Deno.serve(async (req) => {
       }
 
       const difficulty = text(scenario.difficulty || payload.difficulty || 'standard').toLowerCase();
+      const objectives = asJsonArray(scenario.objectives || payload.objectives);
+      const triggers = asJsonArray(scenario.triggers || payload.triggers);
+      const narrativeContext = text(scenario.narrative_context || scenario.narrativeContext || payload.narrative_context || payload.narrativeContext);
+      const testedSopIds = asTags(scenario.tested_sop_ids || scenario.testedSopIds || payload.tested_sop_ids || payload.testedSopIds);
       const tags = Array.from(
         new Set([
           ...asTags(scenario.tags || payload.tags),
@@ -133,6 +142,13 @@ Deno.serve(async (req) => {
               priority: text(scenario.priority || payload.priority || 'STANDARD').toUpperCase(),
               tags,
               training_prerequisites: text(scenario.prerequisites || payload.prerequisites),
+              training_scenario_data: {
+                objectives,
+                triggers,
+                narrative_context: narrativeContext || null,
+                tested_sop_ids: testedSopIds,
+                script_version: '1.0.0',
+              },
               updated_by_member_profile_id: actorMemberId,
             });
           } catch {
@@ -147,6 +163,13 @@ Deno.serve(async (req) => {
             priority: text(scenario.priority || payload.priority || 'STANDARD').toUpperCase(),
             tags,
             training_prerequisites: text(scenario.prerequisites || payload.prerequisites),
+            training_scenario_data: {
+              objectives,
+              triggers,
+              narrative_context: narrativeContext || null,
+              tested_sop_ids: testedSopIds,
+              script_version: '1.0.0',
+            },
             created_by_member_profile_id: actorMemberId,
           });
         }
@@ -164,6 +187,8 @@ Deno.serve(async (req) => {
             difficulty,
             template_id: template?.id || null,
             tags,
+            objectives_count: objectives.length,
+            triggers_count: triggers.length,
           },
         });
       } catch (error) {
@@ -178,6 +203,13 @@ Deno.serve(async (req) => {
           name,
           tags,
           description: text(scenario.description || payload.description),
+          training_scenario_data: {
+            objectives,
+            triggers,
+            narrative_context: narrativeContext || null,
+            tested_sop_ids: testedSopIds,
+            script_version: '1.0.0',
+          },
         },
         logId: log?.id || null,
       });
@@ -200,6 +232,9 @@ Deno.serve(async (req) => {
         phase: 'PLANNING',
         tags: Array.from(new Set([...asTags(payload.tags), 'training', 'simulation', 'war-academy'])),
         host_id: actorMemberId,
+        is_simulation: true,
+        simulation_scenario_id: text(payload.scenario_id || payload.scenarioId),
+        simulation_script_version: text(payload.simulation_script_version || payload.simulationScriptVersion || '1.0.0'),
         training_prerequisites: text(payload.training_prerequisites || ''),
       });
 
@@ -222,14 +257,91 @@ Deno.serve(async (req) => {
       });
     }
 
+    const memberTargetActions = new Set(['record_training_result', 'complete_scenario', 'issue_certification', 'instructor_note']);
     const targetMemberProfileId = text(payload.targetMemberProfileId || payload.memberProfileId || actorMemberId);
-    if (!targetMemberProfileId) {
+    if (memberTargetActions.has(action) && !targetMemberProfileId) {
       return Response.json({ error: 'targetMemberProfileId required' }, { status: 400 });
     }
 
-    const targetMember = await base44.entities.MemberProfile.get(targetMemberProfileId);
-    if (!targetMember) {
+    const targetMember = memberTargetActions.has(action)
+      ? await base44.entities.MemberProfile.get(targetMemberProfileId)
+      : null;
+    if (memberTargetActions.has(action) && !targetMember) {
       return Response.json({ error: 'Target member not found' }, { status: 404 });
+    }
+
+    if (action === 'record_training_result') {
+      const scenarioId = text(payload.scenarioId || payload.scenario_id, `scenario_${Date.now()}`);
+      const scenarioTitle = text(payload.scenarioTitle || payload.scenario_title || 'Simulation Run');
+      const score = Math.max(0, Math.min(100, Number(payload.score ?? 0)));
+      const rescueScore = Math.max(0, Math.min(100, Number(payload.rescueScore ?? payload.rescue_score ?? score)));
+      const outcome = text(payload.outcome || (score >= 80 ? 'PASS' : score >= 55 ? 'PARTIAL' : 'FAIL')).toUpperCase();
+      const recommendations = asJsonArray(payload.recommendations).map((entry) => text(entry)).filter(Boolean);
+      const objectiveSummary = asJsonArray(payload.objectiveSummary || payload.objective_summary);
+
+      const milestones = upsertMilestone(asMilestones(targetMember), {
+        id: scenarioId,
+        title: scenarioTitle,
+        status: outcome === 'PASS' ? 'complete' : outcome === 'PARTIAL' ? 'in_progress' : 'review',
+        score,
+        rescue_score: rescueScore,
+        outcome,
+        notes: text(payload.notes || ''),
+        recommendations,
+        objective_summary: objectiveSummary,
+        completed_at: nowIso,
+        completed_by_member_profile_id: actorMemberId,
+        is_simulation: true,
+      });
+      const pipeline = setTrainingTaskComplete(targetMember?.onboarding_pipeline);
+
+      const updated = await applyFirstSuccessfulMemberUpdate(base44, targetMemberProfileId, [
+        {
+          training_milestones: milestones,
+          onboarding_pipeline: pipeline,
+          training_points: Number(targetMember?.training_points || 0) + Math.max(1, Math.round(score / 20)),
+          last_training_activity_at: nowIso,
+        },
+        {
+          onboarding_training_milestones: milestones,
+          onboarding_pipeline: pipeline,
+          training_points: Number(targetMember?.training_points || 0) + Math.max(1, Math.round(score / 20)),
+          last_training_activity_at: nowIso,
+        },
+        {
+          onboarding_pipeline: pipeline,
+          last_training_activity_at: nowIso,
+        },
+      ]);
+
+      let log = null;
+      try {
+        log = await base44.entities.EventLog.create({
+          type: 'TRAINING_RESULT',
+          severity: outcome === 'PASS' ? 'LOW' : outcome === 'PARTIAL' ? 'MEDIUM' : 'HIGH',
+          actor_member_profile_id: actorMemberId,
+          summary: `Training result recorded: ${scenarioTitle} (${outcome})`,
+          details: {
+            target_member_profile_id: targetMemberProfileId,
+            scenario_id: scenarioId,
+            score,
+            rescue_score: rescueScore,
+            objective_summary_count: objectiveSummary.length,
+          },
+        });
+      } catch (error) {
+        console.error('[updateWarAcademyProgress] Result log failed:', error.message);
+      }
+
+      return Response.json({
+        success: true,
+        action,
+        profile: updated,
+        score,
+        rescueScore,
+        outcome,
+        logId: log?.id || null,
+      });
     }
 
     if (action === 'complete_scenario') {

@@ -105,6 +105,11 @@ export function generateAAR(
   const deviationEvents = events.filter((event) =>
     ['MARK_AVOID', 'REQUEST_PATROL', 'DECLARE_HOLD', 'REPORT_CONTACT'].includes(event.kind)
   );
+  const rescueOrRecoveryEvents = events.filter((event) =>
+    ['EXTRACT', 'RESCUE', 'MEDEVAC', 'RECOVERY', 'CHECK_FIRE', 'CEASE_FIRE'].some((token) =>
+      String(event.kind || '').toUpperCase().includes(token)
+    )
+  );
 
   if (!decisions.length) warnings.push('No decisions logged; command trace is incomplete.');
   if (!intelChanges.length) warnings.push('No intel promotion/retirement events found for this op.');
@@ -123,6 +128,9 @@ export function generateAAR(
         `Operation ${operation.name} closed in status ${operation.status}.`,
         `Recorded op events: ${events.length}.`,
         `Decisions captured: ${decisions.length}.`,
+        rescueOrRecoveryEvents.length
+          ? `Rescue/recovery markers logged: ${rescueOrRecoveryEvents.length}.`
+          : 'Rescue/recovery outcome: unknown (no explicit rescue markers logged).',
       ].join('\n'),
       0,
       [{ kind: 'operation', id: operation.id }]
@@ -172,6 +180,18 @@ export function generateAAR(
       challengedAssumptions.map((assumption) => ({ kind: 'assumption', id: assumption.id }))
     ),
     createSection(
+      'rescue-preservation',
+      'Rescue and Preservation of Life',
+      rescueOrRecoveryEvents.length
+        ? rescueOrRecoveryEvents
+            .slice(0, 6)
+            .map((event) => `- ${event.kind} at ${new Date(event.createdAt).toISOString()} by ${event.createdBy}`)
+            .join('\n')
+        : 'No explicit rescue events were recorded; treat rescue outcome as unknown, not absent.',
+      4,
+      rescueOrRecoveryEvents.slice(0, 6).map((event) => ({ kind: 'op_event', id: event.id }))
+    ),
+    createSection(
       'force-posture',
       'Force Posture Snapshot',
       [
@@ -179,7 +199,7 @@ export function generateAAR(
         `Detected gaps: ${force.gaps.length}.`,
         `Confidence: ${force.confidenceSummary.band}.`,
       ].join('\n'),
-      4,
+      5,
       slots.slice(0, 6).map((slot) => ({ kind: 'asset_slot', id: slot.id }))
     ),
   ];
@@ -252,6 +272,19 @@ export function generateAAR(
         source: 'intelService',
       })),
       confidenceBand: confidenceBandFromScore(intelChanges.length ? 0.74 : 0.3),
+      ttlState: 'N_A',
+    }),
+    createEvidence('claim-rescue-outcomes', {
+      claim: rescueOrRecoveryEvents.length
+        ? `Rescue/recovery stream recorded ${rescueOrRecoveryEvents.length} events.`
+        : 'Rescue/recovery outcomes are unknown: no explicit rescue markers found.',
+      citations: rescueOrRecoveryEvents.slice(0, 6).map((event) => ({
+        kind: 'OP_EVENT' as const,
+        refId: event.id,
+        occurredAt: event.createdAt,
+        source: 'operationService',
+      })),
+      confidenceBand: confidenceBandFromScore(rescueOrRecoveryEvents.length > 0 ? 0.79 : 0.28),
       ttlState: 'N_A',
     }),
     createEvidence('claim-force-posture', {

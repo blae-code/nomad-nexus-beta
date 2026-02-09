@@ -10,6 +10,7 @@ import {
   listReports,
   subscribeReports,
 } from '../../services';
+import { appendNarrativeFromReport } from '../../services/narrativeService';
 import { getFocusOperationId, listOperationsForUser, listOperationEvents, subscribeOperations } from '../../services/operationService';
 import { listAllIntelObjectsForDev } from '../../services/intelService';
 import {
@@ -299,6 +300,18 @@ export default function ReportsFocusApp({
                   <NexusButton size="sm" intent={viewerMode === 'NARRATIVE' ? 'primary' : 'subtle'} onClick={() => setViewerMode('NARRATIVE')}>Narrative</NexusButton>
                   <NexusButton size="sm" intent={viewerMode === 'EVIDENCE' ? 'primary' : 'subtle'} onClick={() => setViewerMode('EVIDENCE')}>Evidence</NexusButton>
                   <NexusButton size="sm" intent={viewerMode === 'SPLIT' ? 'primary' : 'subtle'} onClick={() => setViewerMode('SPLIT')}>Split</NexusButton>
+                  <NexusButton
+                    size="sm"
+                    intent="subtle"
+                    onClick={() =>
+                      runAction(() => {
+                        const appended = appendNarrativeFromReport(selectedReport, Date.now());
+                        if (!appended) throw new Error('This report scope cannot be published to op narrative.');
+                      })
+                    }
+                  >
+                    Publish Narrative
+                  </NexusButton>
                   <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => { deleteReport(selectedReport.id); setSelectedReportId(''); })}>Delete</NexusButton>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { determineChannelContext } from './channelContextService';
 import { getCommsTemplate } from '../registries/commsTemplateRegistry';
 import { listStoredCqbEvents } from './cqbEventService';
 import type { CqbRosterMember } from '../ui/cqb/cqbTypes';
+import { listSharedOperationChannels } from './crossOrgService';
 
 /**
  * Comms Graph Service (MVP)
@@ -173,7 +174,7 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
   const roster = Array.isArray(options.roster) ? options.roster : [];
 
   const baseChannels = await listChannelsFromBase44();
-  const channelRows = context.channelIds.map((id) => {
+  const templateRows = context.channelIds.map((id) => {
     const fromBase44 = baseChannels.find((entry: any) => normalizeChannelId(entry.id) === id || normalizeChannelId(entry.name) === id);
     const fromTemplate = template.channels.find((entry) => entry.id === id);
     return {
@@ -181,9 +182,17 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
       label: fromBase44?.name || fromTemplate?.label || id,
     };
   });
+  const sharedRows =
+    options.opId
+      ? listSharedOperationChannels(options.opId).map((channel) => ({
+          id: `shared:${channel.id}`,
+          label: channel.channelLabel,
+        }))
+      : [];
+  const channelRows = [...templateRows, ...sharedRows];
 
   const membershipsFromEntity = await listMembershipsFromBase44();
-  const memberships = membershipsFromEntity.length > 0 ? membershipsFromEntity : buildDevMemberships(context.channelIds, roster);
+  const memberships = membershipsFromEntity.length > 0 ? membershipsFromEntity : buildDevMemberships(templateRows.map((entry) => entry.id), roster);
 
   const channelMemberCounts = channelRows.reduce<Record<string, number>>((acc, channel) => {
     acc[channel.id] = memberships.filter((entry) => entry.channelId === channel.id).length;
@@ -268,6 +277,18 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
       intensity: Math.max(sourceIntensity, targetIntensity),
     };
   });
+
+  // Shared joint channels are linked to primary template net with dashed monitoring edge style.
+  for (const row of sharedRows) {
+    monitoringEdges.push({
+      id: `edge:monitor:primary->${row.id}`,
+      sourceId: `channel:${context.primaryChannelId}`,
+      targetId: `channel:${row.id}`,
+      type: 'monitoring',
+      dashed: true,
+      intensity: 0.22,
+    });
+  }
 
   const edges: CommsGraphEdge[] = [...membershipEdgesFromMembers, ...monitoringEdges];
   const graphNodes: CommsGraphNode[] = [...teamNodes, ...nodes, ...userNodes];

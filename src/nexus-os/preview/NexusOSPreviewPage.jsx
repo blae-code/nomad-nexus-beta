@@ -14,6 +14,8 @@ import {
   buildDevLocationEstimates,
   DEV_CQB_ROSTER,
   FittingForceDesignFocusApp,
+  MobileArCompanionFocusApp,
+  MobileCompanionPanel,
   OperationFocusApp,
   OpsStrip,
   ReportsFocusApp,
@@ -77,6 +79,7 @@ function CqbConsoleLauncherPanel({
   bridgeId,
   onOpenCommsNetwork,
   onOpenMapFocus,
+  onOpenMobileCompanion,
   onOpenOperationFocus,
   onOpenForceDesign,
   onOpenReports,
@@ -98,6 +101,9 @@ function CqbConsoleLauncherPanel({
         </NexusButton>
         <NexusButton size="sm" intent="subtle" onClick={onOpenMapFocus}>
           Open Tactical Map
+        </NexusButton>
+        <NexusButton size="sm" intent="subtle" onClick={() => onOpenMobileCompanion?.()}>
+          Open Mobile AR
         </NexusButton>
         <NexusButton size="sm" intent="subtle" onClick={onOpenOperationFocus}>
           Open Ops Focus
@@ -136,6 +142,7 @@ function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onCl
   const activeMode = mode || 'cqb';
   const modeComponent = {
     map: <TacticalMapFocusApp {...sharedPanelProps} onClose={onClose} />,
+    mobile: <MobileArCompanionFocusApp {...sharedPanelProps} onClose={onClose} />,
     comms: <CommsNetworkConsole {...sharedPanelProps} onClose={onClose} />,
     ops: <OperationFocusApp {...sharedPanelProps} onClose={onClose} />,
     force: <FittingForceDesignFocusApp {...sharedPanelProps} initialOpId={forceDesignOpId} onClose={onClose} />,
@@ -442,6 +449,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     onOpenCqbConsole: () => setFocusMode('cqb'),
     onOpenCommsNetwork: () => setFocusMode('comms'),
     onOpenMapFocus: () => setFocusMode('map'),
+    onOpenMobileCompanion: () => setFocusMode('mobile'),
     onOpenOperationFocus: () => setFocusMode('ops'),
     onOpenForceDesign: (nextOpId) => {
       if (nextOpId) setForceDesignOpId(nextOpId);
@@ -517,6 +525,15 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           defaultSize: { colSpan: 1, rowSpan: 1 },
         },
         {
+          id: 'panel-mobile-companion',
+          title: 'Mobile Companion',
+          component: MobileCompanionPanel,
+          status: 'PWA/AR',
+          statusTone: 'warning',
+          live: true,
+          defaultSize: { colSpan: 1, rowSpan: 1 },
+        },
+        {
           id: 'panel-system-health',
           title: 'System Health',
           component: SystemHealthPanel,
@@ -562,6 +579,15 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           defaultSizeByPreset: {
             COMMAND_LEFT: { colSpan: 2, rowSpan: 2 },
           },
+        },
+        {
+          id: 'panel-mobile-companion',
+          title: 'Mobile Companion',
+          component: MobileCompanionPanel,
+          status: 'PWA/AR',
+          statusTone: 'warning',
+          live: true,
+          defaultSize: { colSpan: 1, rowSpan: 1 },
         },
       ];
 

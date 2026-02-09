@@ -55,15 +55,17 @@ import {
 } from '../state';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
+import OperationNarrativePanel from './OperationNarrativePanel';
+import CoalitionOutreachPanel from './CoalitionOutreachPanel';
 
-type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'COMMS';
+type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'COMMS' | 'NARRATIVE' | 'COALITION';
 
 interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
   actorId: string;
   onClose?: () => void;
 }
 
-const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'COMMS'];
+const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'COMMS', 'NARRATIVE', 'COALITION'];
 
 function cycleStatus(status: Operation['status']): Operation['status'] {
   if (status === 'PLANNING') return 'ACTIVE';
@@ -456,6 +458,14 @@ export default function OperationFocusApp({
               <div className="space-y-1 max-h-24 overflow-auto pr-1">{decisions.map((d) => <div key={d.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">{d.title}</div>)}</div>
             </section>
           </div>
+        ) : null}
+
+        {tabId === 'NARRATIVE' ? (
+          <OperationNarrativePanel op={selectedOp} actorId={actorId} />
+        ) : null}
+
+        {tabId === 'COALITION' ? (
+          <CoalitionOutreachPanel op={selectedOp} actorId={actorId} />
         ) : null}
       </div>
     </div>

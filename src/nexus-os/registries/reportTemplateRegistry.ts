@@ -26,6 +26,7 @@ export const ReportTemplateRegistry: Readonly<Record<ReportTemplateId, ReportTem
       { id: 'plan-shape', heading: 'Plan Shape', requiredInputs: ['objectives', 'phases', 'tasks'] },
       { id: 'force-readiness', heading: 'Force Readiness', requiredInputs: ['roster', 'rsvp'] },
       { id: 'risk-assumptions', heading: 'Risk and Assumptions', requiredInputs: ['assumptions'] },
+      { id: 'rescue-priorities', heading: 'Rescue Priorities', requiredInputs: ['events'] },
     ],
   },
   REPORT_AAR_V1: {
@@ -38,6 +39,7 @@ export const ReportTemplateRegistry: Readonly<Record<ReportTemplateId, ReportTem
       { id: 'decision-trace', heading: 'Decision Trace', requiredInputs: ['decisions', 'thread'] },
       { id: 'intel-delta', heading: 'Intel Delta', requiredInputs: ['intel'] },
       { id: 'deviations-lessons', heading: 'Deviations and Lessons', requiredInputs: ['assumptions', 'tasks'] },
+      { id: 'rescue-preservation', heading: 'Rescue and Preservation of Life', requiredInputs: ['events'] },
       { id: 'force-posture', heading: 'Force Posture Snapshot', requiredInputs: ['roster', 'force_analysis'] },
     ],
   },
@@ -93,4 +95,3 @@ export function listReportTemplatesByKind(kind?: ReportKind): ReportTemplate[] {
   if (!kind) return all;
   return all.filter((template) => template.kind === kind);
 }
-

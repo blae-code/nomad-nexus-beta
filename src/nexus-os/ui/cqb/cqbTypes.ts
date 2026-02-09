@@ -27,6 +27,7 @@ export interface CqbPanelSharedProps {
   onOpenCqbConsole?: () => void;
   onOpenCommsNetwork?: () => void;
   onOpenMapFocus?: () => void;
+  onOpenMobileCompanion?: () => void;
   onOpenOperationFocus?: () => void;
   onOpenForceDesign?: (opId?: string) => void;
   onOpenReports?: (opId?: string) => void;
