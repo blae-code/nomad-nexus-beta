@@ -4,6 +4,7 @@ export * from './motion';
 export * from './loading';
 export * from './components';
 export * from './state';
+export * from './os';
 export * from './primitives';
 export * from './workbench';
 export * from './focus';

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import {
   BridgeSwitcher,
@@ -31,6 +31,15 @@ import {
   availabilityTone,
   resolveAvailabilityState,
   getNexusCssVars,
+  NexusBootOverlay,
+  NexusCommandDeck,
+  NexusTaskbar,
+  useNexusBackgroundPerformance,
+  useNexusAppLifecycle,
+  useNexusBootStateMachine,
+  useNexusTrayNotifications,
+  useNexusWorkspaceSession,
+  useReducedMotion,
 } from '../ui';
 import { getActiveChannelId } from '../services/channelContextService';
 import { getCqbEventDiagnostics, listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
@@ -127,6 +136,27 @@ function focusModeFromBridge(bridgeId) {
 function cqbpulseSummary(events) {
   const now = Date.now();
   return events.filter((event) => now - new Date(event.createdAt).getTime() <= 20000).length;
+}
+
+const FOCUS_APP_CATALOG = [
+  { id: 'cqb', label: 'CQB', hotkey: 'Alt+1' },
+  { id: 'comms', label: 'Comms', hotkey: 'Alt+2' },
+  { id: 'map', label: 'Map', hotkey: 'Alt+3' },
+  { id: 'mobile', label: 'Mobile', hotkey: 'Alt+4' },
+  { id: 'ops', label: 'Ops', hotkey: 'Alt+5' },
+  { id: 'force', label: 'Force', hotkey: 'Alt+6' },
+  { id: 'reports', label: 'Reports', hotkey: 'Alt+7' },
+];
+
+const FOCUS_APP_IDS = new Set(FOCUS_APP_CATALOG.map((entry) => entry.id));
+const HIGH_PRIORITY_CQB_EVENTS = new Set(['CEASE_FIRE', 'CHECK_FIRE', 'WEAPON_DRY', 'SELF_CHECK', 'CLEAR_COMMS']);
+
+function toEventLabel(eventType) {
+  return String(eventType || 'UNKNOWN')
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onClose }) {
@@ -303,17 +333,111 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     user?.member_profile_data?.callsign ||
     user?.callsign ||
     'Operator';
-  const [bridgeId, setBridgeId] = useState('OPS');
-  const [presetId, setPresetId] = useState(BRIDGE_DEFAULT_PRESET.OPS);
-  const [variantId, setVariantId] = useState('CQB-01');
-  const [opId, setOpId] = useState('');
-  const [elementFilter, setElementFilter] = useState('ALL');
-  const [actorId, setActorId] = useState(() => (isWorkspaceMode ? workspaceActorId : DEV_CQB_ROSTER[0]?.id || 'ce-warden'));
-  const [focusMode, setFocusMode] = useState(null);
-  const [forceDesignOpId, setForceDesignOpId] = useState('');
-  const [reportsOpId, setReportsOpId] = useState('');
+  const sessionScopeKey = `${isWorkspaceMode ? 'workspace' : 'dev'}:${workspaceActorId || 'anon'}`;
+  const { snapshot: osSession, hydrated, patchSnapshot, reset: resetSession } = useNexusWorkspaceSession(sessionScopeKey, {
+    bridgeId: 'OPS',
+    presetId: BRIDGE_DEFAULT_PRESET.OPS,
+    variantId: 'CQB-01',
+    opId: '',
+    elementFilter: 'ALL',
+    actorId: isWorkspaceMode ? workspaceActorId : DEV_CQB_ROSTER[0]?.id || 'ce-warden',
+    focusMode: null,
+    forceDesignOpId: '',
+    reportsOpId: '',
+    activePanelIds: [],
+  });
+
+  const bridgeId = osSession.bridgeId;
+  const presetId = osSession.presetId;
+  const variantId = osSession.variantId;
+  const opId = osSession.opId;
+  const elementFilter = osSession.elementFilter;
+  const actorId = osSession.actorId;
+  const focusMode = osSession.focusMode;
+  const forceDesignOpId = osSession.forceDesignOpId;
+  const reportsOpId = osSession.reportsOpId;
+  const activePanelIds = osSession.activePanelIds || [];
+
+  const [commandDeckOpen, setCommandDeckOpen] = useState(false);
+  const [commandFeedback, setCommandFeedback] = useState('');
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
+
+  const lifecycle = useNexusAppLifecycle(FOCUS_APP_CATALOG.map((entry) => entry.id));
+  const reducedMotion = useReducedMotion();
+  const [bootSessionUpdatedAt, setBootSessionUpdatedAt] = useState(null);
+  const previousOnlineRef = useRef(online);
+  const lastNotifiedEventIdRef = useRef(null);
+  const tray = useNexusTrayNotifications({ maxItems: 40 });
+
+  const backgroundPerformance = useNexusBackgroundPerformance({
+    entries: lifecycle.entries,
+    enabled: import.meta.env.DEV,
+    sampleLimit: 24,
+    slowThresholdMs: reducedMotion ? 24 : 18,
+    onSlowSample: (sample) => {
+      if (!import.meta.env.DEV) return;
+      console.info('[NexusOS][Perf][SlowSample]', sample);
+      tray.pushNotification({
+        title: 'UI workload spike',
+        detail: `${sample.label} · ${sample.durationMs}ms · ${sample.state}`,
+        source: 'profiler',
+        level: 'warning',
+      });
+    },
+  });
+  const { getThrottleMs, shouldRunWork, profileSync, recentSamples } = backgroundPerformance;
+
+  const bootState = useNexusBootStateMachine({
+    enabled: true,
+    hydrated,
+    reducedMotion,
+    lastSessionUpdatedAt: bootSessionUpdatedAt,
+  });
+
+  const setBridgeId = (nextBridgeId) => patchSnapshot({ bridgeId: nextBridgeId });
+  const setPresetId = (nextPresetId) => patchSnapshot({ presetId: nextPresetId });
+  const setVariantId = (nextVariantId) => patchSnapshot({ variantId: nextVariantId });
+  const setOpId = (nextOpId) => patchSnapshot({ opId: nextOpId });
+  const setElementFilter = (nextFilter) => patchSnapshot({ elementFilter: nextFilter });
+  const setActorId = (nextActorId) => patchSnapshot({ actorId: nextActorId });
+  const setForceDesignOpId = (nextOpId) => patchSnapshot({ forceDesignOpId: nextOpId });
+  const setReportsOpId = (nextOpId) => patchSnapshot({ reportsOpId: nextOpId });
+
+  const openFocusApp = (appId) => {
+    if (!FOCUS_APP_IDS.has(appId)) return;
+    profileSync('focus.open', appId, () => {
+      patchSnapshot({ focusMode: appId });
+      lifecycle.markForeground(appId);
+    });
+    tray.pushNotification({
+      title: `Opened ${appId.toUpperCase()}`,
+      detail: 'Focus app moved to foreground.',
+      source: 'taskbar',
+      level: 'info',
+    });
+  };
+
+  const closeFocusApp = () => {
+    if (focusMode && FOCUS_APP_IDS.has(focusMode)) {
+      lifecycle.markBackground(focusMode);
+    }
+    patchSnapshot({ focusMode: null });
+  };
+
+  const suspendFocusApp = (appId = focusMode) => {
+    if (!appId || !FOCUS_APP_IDS.has(appId)) return;
+    lifecycle.markSuspended(appId);
+    if (focusMode === appId) patchSnapshot({ focusMode: null });
+    tray.pushNotification({
+      title: `${appId.toUpperCase()} suspended`,
+      detail: 'Background throttling is now active for this app.',
+      source: 'scheduler',
+      level: 'info',
+    });
+  };
 
   useEffect(() => {
     runNexusRegistryValidatorsDevOnly();
@@ -327,6 +451,11 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   }, []);
 
   useEffect(() => {
+    if (!hydrated || bootSessionUpdatedAt !== null) return;
+    setBootSessionUpdatedAt(osSession.updatedAt || null);
+  }, [hydrated, bootSessionUpdatedAt, osSession.updatedAt]);
+
+  useEffect(() => {
     const unsubscribe = subscribeOperations(() => {
       setOpsVersion((prev) => prev + 1);
     });
@@ -335,18 +464,146 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   useEffect(() => {
     if (!import.meta.env.DEV) return undefined;
-    const timer = setInterval(() => {
-      const diagnostics = getCqbEventDiagnostics(60000);
-      console.info('[NexusOS][CQB][Diagnostics]', diagnostics);
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
+    let cancelled = false;
+    let timerId = 0;
+
+    const runTick = () => {
+      if (cancelled) return;
+      const activeAppId = focusMode || lifecycle.foregroundAppId || 'cqb';
+
+      if (shouldRunWork(activeAppId)) {
+        profileSync('diagnostics.cqb.window', activeAppId, () => {
+          const diagnostics = getCqbEventDiagnostics(60000);
+          console.info('[NexusOS][CQB][Diagnostics]', diagnostics);
+        });
+      }
+
+      const nextDelayMs = getThrottleMs(activeAppId, 60000);
+      timerId = window.setTimeout(runTick, nextDelayMs);
+    };
+
+    runTick();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
+  }, [
+    focusMode,
+    lifecycle.foregroundAppId,
+    getThrottleMs,
+    profileSync,
+    shouldRunWork,
+  ]);
+
+  useEffect(() => {
+    if (previousOnlineRef.current === online) return;
+
+    tray.pushNotification({
+      title: online ? 'Network link restored' : 'Network link degraded',
+      detail: online
+        ? 'Taskbar services and sync resumed.'
+        : 'Operating in degraded mode until link restores.',
+      source: 'network',
+      level: online ? 'success' : 'warning',
+    });
+    previousOnlineRef.current = online;
+  }, [online]);
+
+  useEffect(() => {
+    if (!events.length) return;
+    const newestEventId = events[0]?.id;
+    const previousEventId = lastNotifiedEventIdRef.current;
+
+    if (!previousEventId) {
+      lastNotifiedEventIdRef.current = newestEventId;
+      return;
+    }
+
+    if (previousEventId === newestEventId) return;
+
+    const freshEvents = [];
+    for (const event of events) {
+      if (event.id === previousEventId) break;
+      freshEvents.push(event);
+      if (freshEvents.length >= 6) break;
+    }
+
+    freshEvents.reverse().forEach((event) => {
+      if (!HIGH_PRIORITY_CQB_EVENTS.has(event.eventType)) return;
+      tray.pushNotification({
+        title: `${toEventLabel(event.eventType)} · ${event.authorId}`,
+        detail: event.channelId ? `Channel ${event.channelId}` : 'Unscoped CQB event',
+        source: 'cqb',
+        level: event.eventType === 'CEASE_FIRE' || event.eventType === 'CHECK_FIRE' ? 'critical' : 'warning',
+      });
+    });
+
+    lastNotifiedEventIdRef.current = newestEventId;
+  }, [events]);
 
   useEffect(() => {
     if (!isWorkspaceMode) return;
     if (actorId === workspaceActorId) return;
-    setActorId(workspaceActorId);
+    patchSnapshot({ actorId: workspaceActorId });
   }, [isWorkspaceMode, workspaceActorId, actorId]);
+
+  useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!focusMode || !FOCUS_APP_IDS.has(focusMode)) return;
+    lifecycle.markForeground(focusMode);
+  }, [focusMode]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const isCmd = event.ctrlKey || event.metaKey;
+      if (isCmd && event.shiftKey && event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        setCommandDeckOpen((prev) => !prev);
+        return;
+      }
+
+      if (isCmd && event.shiftKey && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        suspendFocusApp();
+        setCommandFeedback('Foreground app suspended.');
+        return;
+      }
+
+      if (event.altKey && /^[1-7]$/.test(event.key)) {
+        event.preventDefault();
+        const index = Number(event.key) - 1;
+        const appId = FOCUS_APP_CATALOG[index]?.id;
+        if (appId) {
+          openFocusApp(appId);
+          setCommandFeedback(`Opened ${appId.toUpperCase()} app.`);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [focusMode]);
 
   const createMacroEvent = (eventType, payload = {}) => {
     const inferredChannelId = getActiveChannelId({ variantId });
@@ -446,18 +703,18 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     operations,
     focusOperationId,
     onCreateMacroEvent: createMacroEvent,
-    onOpenCqbConsole: () => setFocusMode('cqb'),
-    onOpenCommsNetwork: () => setFocusMode('comms'),
-    onOpenMapFocus: () => setFocusMode('map'),
-    onOpenMobileCompanion: () => setFocusMode('mobile'),
-    onOpenOperationFocus: () => setFocusMode('ops'),
+    onOpenCqbConsole: () => openFocusApp('cqb'),
+    onOpenCommsNetwork: () => openFocusApp('comms'),
+    onOpenMapFocus: () => openFocusApp('map'),
+    onOpenMobileCompanion: () => openFocusApp('mobile'),
+    onOpenOperationFocus: () => openFocusApp('ops'),
     onOpenForceDesign: (nextOpId) => {
       if (nextOpId) setForceDesignOpId(nextOpId);
-      setFocusMode('force');
+      openFocusApp('force');
     },
     onOpenReports: (nextOpId) => {
       if (nextOpId) setReportsOpId(nextOpId);
-      setFocusMode('reports');
+      openFocusApp('reports');
     },
   };
 
@@ -640,14 +897,78 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const handleBridgeSwitch = (nextBridgeId) => {
     setBridgeId(nextBridgeId);
     setPresetId(BRIDGE_DEFAULT_PRESET[nextBridgeId] || presetId);
-    if (focusMode === 'cqb' || focusMode === 'comms') {
-      setFocusMode(focusModeFromBridge(nextBridgeId));
+    if (focusMode === 'cqb' || focusMode === 'comms' || focusMode === 'map') {
+      openFocusApp(focusModeFromBridge(nextBridgeId));
     }
+  };
+
+  const runNexusCommand = (rawCommand) => {
+    const input = String(rawCommand || '').trim();
+    if (!input) return 'No command provided.';
+    const [command, ...rest] = input.split(/\s+/);
+    const keyword = command.toLowerCase();
+    const arg = rest.join(' ').trim();
+
+    if (keyword === 'help') {
+      return 'Commands: open <app>, bridge <id>, preset <id>, variant <id>, op <id>, close, suspend, reset-session.';
+    }
+
+    if (keyword === 'open') {
+      const appId = arg.toLowerCase();
+      if (!FOCUS_APP_IDS.has(appId)) return `Unknown app "${arg}".`;
+      openFocusApp(appId);
+      return `Opened ${appId.toUpperCase()}.`;
+    }
+
+    if (keyword === 'bridge') {
+      const nextBridge = arg.toUpperCase();
+      if (!BRIDGE_DEFAULT_PRESET[nextBridge]) return `Unknown bridge "${arg}".`;
+      handleBridgeSwitch(nextBridge);
+      return `Bridge switched to ${nextBridge}.`;
+    }
+
+    if (keyword === 'preset') {
+      const nextPreset = arg.toUpperCase();
+      if (!['GRID_2X2', 'GRID_3_COLUMN', 'COMMAND_LEFT'].includes(nextPreset)) {
+        return `Unknown preset "${arg}".`;
+      }
+      setPresetId(nextPreset);
+      return `Preset switched to ${nextPreset}.`;
+    }
+
+    if (keyword === 'variant') {
+      if (!/^CQB-\d{2}$/i.test(arg)) return 'Variant format: CQB-01..CQB-08.';
+      setVariantId(arg.toUpperCase());
+      return `Variant set to ${arg.toUpperCase()}.`;
+    }
+
+    if (keyword === 'op') {
+      setOpId(arg);
+      return arg ? `Active operation context set: ${arg}.` : 'Operation context cleared.';
+    }
+
+    if (keyword === 'close') {
+      closeFocusApp();
+      return 'Focus overlay closed.';
+    }
+
+    if (keyword === 'suspend') {
+      suspendFocusApp();
+      return 'Foreground app suspended.';
+    }
+
+    if (keyword === 'reset-session') {
+      resetSession();
+      closeFocusApp();
+      return 'Workspace session reset to defaults.';
+    }
+
+    return `Unknown command "${input}".`;
   };
 
   return (
     <div
-      className="w-full h-[calc(100vh-8.5rem)] min-h-0 overflow-hidden px-4 py-4 flex flex-col gap-3"
+      className="relative w-full h-[calc(100vh-8.5rem)] min-h-0 overflow-hidden px-4 py-4 flex flex-col gap-3"
       style={{ ...vars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
       <section className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-4 py-3 flex items-center justify-between gap-3" style={{ borderColor: 'var(--nx-border)' }}>
@@ -678,9 +999,30 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         />
       ) : null}
 
-      <OpsStrip actorId={actorId} onOpenOperationFocus={() => setFocusMode('ops')} />
+      <OpsStrip actorId={actorId} onOpenOperationFocus={() => openFocusApp('ops')} />
 
       <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
+
+      <section className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 flex items-center justify-between gap-2 text-xs">
+        <div className="text-zinc-400">
+          OS Session: <span className="text-zinc-200">{sessionScopeKey}</span>
+          {' · '}
+          Active app: <span className="text-zinc-200">{focusMode || lifecycle.foregroundAppId || 'none'}</span>
+          {' · '}
+          Boot: <span className="text-zinc-200">{bootState.visible ? bootState.phase : 'ready'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <NexusBadge tone={online ? 'ok' : 'danger'}>{online ? 'ONLINE' : 'OFFLINE'}</NexusBadge>
+          <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
+          <NexusBadge tone={recentSamples.length > 0 ? 'warning' : 'neutral'}>
+            PERF {recentSamples.length}
+          </NexusBadge>
+        </div>
+      </section>
+
+      {commandFeedback ? (
+        <section className="rounded border border-zinc-800 bg-zinc-900/45 px-3 py-1.5 text-xs text-zinc-300">{commandFeedback}</section>
+      ) : null}
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <WorkbenchGrid
@@ -688,22 +1030,60 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           panels={panelDescriptors}
           presetId={presetId}
           onPresetChange={setPresetId}
+          layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
+          enableLayoutPersistence
+          initialActivePanelIds={activePanelIds}
+          onActivePanelIdsChange={(next) => patchSnapshot({ activePanelIds: next })}
           panelComponentProps={sharedPanelProps}
         />
       </div>
 
+      <NexusTaskbar
+        bridgeId={bridgeId}
+        activeAppId={focusMode || lifecycle.foregroundAppId}
+        appEntries={lifecycle.entries}
+        appCatalog={FOCUS_APP_CATALOG}
+        online={online}
+        eventPulseCount={cqbpulseSummary(events)}
+        notifications={tray.notifications}
+        unreadNotifications={tray.unreadCount}
+        onActivateApp={openFocusApp}
+        onSuspendApp={suspendFocusApp}
+        onOpenCommandDeck={() => setCommandDeckOpen(true)}
+        onMarkNotificationRead={tray.markNotificationRead}
+        onMarkAllNotificationsRead={tray.markAllNotificationsRead}
+        onClearNotifications={tray.clearNotifications}
+      />
+
       <CommandFocus
         open={Boolean(focusMode)}
-        onClose={() => setFocusMode(null)}
+        onClose={closeFocusApp}
         FocusApp={() => (
           <FocusShell
             mode={focusMode}
             sharedPanelProps={sharedPanelProps}
             forceDesignOpId={forceDesignOpId}
             reportsOpId={reportsOpId}
-            onClose={() => setFocusMode(null)}
+            onClose={closeFocusApp}
           />
         )}
+      />
+
+      <NexusCommandDeck
+        open={commandDeckOpen}
+        onClose={() => setCommandDeckOpen(false)}
+        onRunCommand={(command) => {
+          const result = runNexusCommand(command);
+          setCommandFeedback(result);
+          return result;
+        }}
+      />
+
+      <NexusBootOverlay
+        visible={bootState.visible}
+        mode={bootState.mode}
+        phaseLabel={bootState.label}
+        progress={bootState.progress}
       />
     </div>
   );

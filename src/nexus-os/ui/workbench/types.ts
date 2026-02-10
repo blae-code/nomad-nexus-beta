@@ -40,3 +40,48 @@ export interface WorkbenchLayoutSnapshot {
   panelOrder: string[];
   panelSizes: Record<string, PanelSize>;
 }
+
+export interface WorkbenchLayoutSnapshotV2 {
+  version: 2;
+  schema: 'nexus-os-workbench';
+  presetId: WorkbenchPresetId;
+  panelOrder: string[];
+  activePanelIds: string[];
+  panelSizes: Record<string, PanelSize>;
+  updatedAt: string;
+}
+
+export type AnyWorkbenchLayoutSnapshot = WorkbenchLayoutSnapshot | WorkbenchLayoutSnapshotV2;
+
+export interface PanelPlacement {
+  panelId: string;
+  colStart: number;
+  rowStart: number;
+  colSpan: number;
+  rowSpan: number;
+}
+
+export interface WorkbenchLayoutEngineState {
+  presetId: WorkbenchPresetId;
+  panelOrder: string[];
+  activePanelIds: string[];
+  panelSizes: Record<string, PanelSize>;
+}
+
+export interface WorkbenchA11yWarning {
+  code: string;
+  severity: 'warning' | 'critical';
+  message: string;
+}
+
+export interface WorkbenchPerfSample {
+  label: string;
+  iterationCount: number;
+  elapsedMs: number;
+  avgMs: number;
+}
+
+export interface WorkbenchHarnessReport {
+  a11yWarnings: WorkbenchA11yWarning[];
+  perf: WorkbenchPerfSample;
+}
