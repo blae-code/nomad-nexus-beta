@@ -130,6 +130,7 @@ export default function WorkbenchGrid({
   const activePanels = useMemo(() => {
     return activePanelIds.map((id) => panelMap[id]).filter(Boolean);
   }, [activePanelIds, panelMap]);
+  const hasVisiblePanels = activePanels.length > 0;
 
   const inactivePanels = useMemo(() => {
     return allPanels.filter((panel) => !activePanelIds.includes(panel.id));
@@ -428,7 +429,18 @@ export default function WorkbenchGrid({
   }, [allPanels, activePanelIds.join('|'), JSON.stringify(panelSizes), preset.id, preset.columns]);
 
   return (
-    <div className="h-full min-h-0 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col nexus-panel-glow relative" style={{ ...vars, backgroundColor: 'var(--nx-shell-bg-elevated)', borderColor: 'var(--nx-border)' }}>
+    <div
+      className="h-full min-h-[28rem] md:min-h-[34rem] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col nexus-panel-glow relative"
+      style={{ ...vars, backgroundColor: 'var(--nx-shell-bg-elevated)', borderColor: 'var(--nx-border)' }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-95"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 14% 12%, rgba(255,126,66,0.12), transparent 40%), radial-gradient(circle at 86% 82%, rgba(181,82,38,0.12), transparent 46%), repeating-linear-gradient(0deg, rgba(255,139,72,0.05) 0px, rgba(255,139,72,0.05) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, rgba(255,139,72,0.03) 0px, rgba(255,139,72,0.03) 1px, transparent 1px, transparent 52px)',
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,rgba(0,0,0,0.45)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
       <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2 bg-[linear-gradient(180deg,rgba(255,132,66,0.08),rgba(0,0,0,0))]" style={{ borderColor: 'var(--nx-border)' }}>
         <div className="flex items-center gap-2 min-w-0">
@@ -488,9 +500,35 @@ export default function WorkbenchGrid({
                     gridTemplateColumns: `repeat(${preset.columns}, minmax(0, 1fr))`,
                     gridAutoRows: `${preset.minRowHeightPx}px`,
                     alignContent: 'start',
+                    minHeight: '100%',
                   }}
                   aria-label="Workbench panel layout"
                 >
+                  {!hasVisiblePanels ? (
+                    <div
+                      className="rounded-lg border border-zinc-800/90 bg-[linear-gradient(180deg,rgba(34,22,16,0.78),rgba(14,11,10,0.88))] p-5 text-zinc-200 flex flex-col items-start justify-between gap-3 shadow-[inset_0_0_0_1px_rgba(255,125,60,0.06)]"
+                      style={{ gridColumn: `1 / span ${preset.columns}`, minHeight: Math.max(260, preset.minRowHeightPx * 4) }}
+                    >
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">NexusOS Desktop</div>
+                        <h3 className="text-sm sm:text-base font-semibold uppercase tracking-[0.1em] text-orange-100">
+                          Workspace Standby
+                        </h3>
+                        <p className="text-xs text-zinc-400 max-w-2xl">
+                          No visible widgets are mounted. Keep this deck hot by restoring panel visibility or loading custom widgets.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <NexusButton size="sm" intent="primary" onClick={() => setActivePanelIds(allPanels.map((panel) => panel.id))}>
+                          Restore All Panels
+                        </NexusButton>
+                        <NexusButton size="sm" intent="subtle" onClick={() => setIsPanelDrawerOpen(true)}>
+                          Open Panel Drawer
+                        </NexusButton>
+                        <span className="text-[11px] text-zinc-500">Use drag handles to stage panels like an OS desktop surface.</span>
+                      </div>
+                    </div>
+                  ) : null}
                   {activePanels.map((panel, index) => {
                     const PanelComponent = panel.component;
                     const size = resolvePanelSizeForLayout(

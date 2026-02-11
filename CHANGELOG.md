@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-02-11 - Workbench Desktop Canvas + Empty-State Polish
+
+- Improved workspace visual continuity so the deck remains authoritative even with zero visible widgets:
+  - Updated `src/nexus-os/ui/workbench/WorkbenchGrid.jsx` with a persistent tactical desktop canvas background layer (industrial gradients + scanline/grid texture + vignette).
+  - Added minimum Workbench shell height guardrails (`min-h-[28rem]` / `md:min-h-[34rem]`) to prevent perceived shrink/collapse when the panel set is empty.
+  - Added explicit empty-workspace command state card with one-click `Restore All Panels` and `Open Panel Drawer` actions.
+  - Ensured the panel grid maintains full-area behavior by applying `minHeight: 100%` in the grid container.
+- Validation:
+  - `npm run typecheck` passed.
+  - `npm run test:unit` passed (`46` files, `224` tests).
+  - `npm run lint` passed.
+  - `npm run build` passed.
+
 ## 2026-02-11 - Workbench Custom Widget + Resize Ergonomics Pass
 
 - Expanded Workbench customization to support richer operator-owned layouts:
