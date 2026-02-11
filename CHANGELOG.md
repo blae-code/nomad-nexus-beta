@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-11 - CQB Hands-Free + Radial Access Pass
+
+- Reworked CQB command ergonomics for faster, lower-friction execution:
+  - Added `src/nexus-os/ui/cqb/CqbHandsFreeControl.tsx` with hold-to-PTT command capture, speech parsing, and direct CQB macro dispatch.
+  - Added focused-op voice discipline enforcement hook (auto-PTT discipline when posture is focused/active).
+  - Added background comms-agent sync path for high-priority CQB voice events (radio-log append + STATUS draft refresh).
+- Added quick-access radial control layer:
+  - Added `src/nexus-os/ui/cqb/CqbQuickRadialMenu.tsx` for single-action macro dispatch with Alt+1..Alt+8 shortcuts.
+- Added deterministic CQB voice parser service:
+  - Added `src/nexus-os/services/cqbVoiceCommandService.ts` to map spoken brevity to canonical event types and payloads, including direction/count extraction and fallback suggestions.
+  - Exported parser via `src/nexus-os/services/index.ts`.
+- Integrated new hands-free/radial layer into CQB console layout:
+  - Updated `src/nexus-os/ui/cqb/CqbCommandConsole.tsx` to include `CqbHandsFreeControl` and route all macro dispatches through a unified dispatch function.
+  - Updated `src/nexus-os/ui/cqb/index.ts` exports.
+- Added test coverage:
+  - `tests/nexus-os/cqbVoiceCommandService.test.ts`.
+- Validation:
+  - `npm run typecheck` passed.
+  - `npm run test:unit` passed (`45` files, `220` tests).
+  - `npm run lint` passed.
+  - `npm run build` passed.
+
 ## 2026-02-11 - Final TODO/In-Progress Closure Pass
 
 - Closed remaining in-progress issues from the prior hardening cycle:

@@ -352,3 +352,40 @@
 
 - **Build – OK**
   - `npm run build` passed.
+
+---
+
+## Pass 8 (CQB Accessibility + Hands-Free Control)
+
+### CQB UX / Control Surface
+
+- **Hands-Free CQB Command Layer – FIXED**
+  - Added `src/nexus-os/ui/cqb/CqbHandsFreeControl.tsx` to support press-and-hold PTT command capture with speech parsing and direct CQB macro emission.
+  - Added focused-operation voice-discipline enforcement in the hands-free layer (PTT lock when op posture is focused and active).
+  - Added radio-log write-through and high-priority STATUS draft refresh for background comms-agent synchronization.
+
+- **Quick Radial Macro Access – FIXED**
+  - Added `src/nexus-os/ui/cqb/CqbQuickRadialMenu.tsx` with prioritized one-tap CQB macros and keyboard shortcuts (`Alt+1..Alt+8`).
+
+- **Deterministic CQB Voice Parser – FIXED**
+  - Added `src/nexus-os/services/cqbVoiceCommandService.ts` to map spoken brevity phrases to canonical CQB event types and payloads.
+  - Added payload extraction for direction/lane/destination/contact-count and deterministic fallback suggestions.
+
+- **CQB Console Layout Rework – FIXED**
+  - Updated `src/nexus-os/ui/cqb/CqbCommandConsole.tsx` to prioritize hands-free/radial control at the top of the command workflow.
+  - Unified command dispatch path between order strip, radial menu, macro pad, and voice parser events.
+
+### Validation (Pass 8)
+
+- **Typecheck – OK**
+  - `npm run typecheck` passed.
+
+- **Unit Tests – OK**
+  - `npm run test:unit` passed (`45` files, `220` tests).
+  - Added and passed `tests/nexus-os/cqbVoiceCommandService.test.ts`.
+
+- **Lint – OK**
+  - `npm run lint` passed.
+
+- **Build – OK**
+  - `npm run build` passed.

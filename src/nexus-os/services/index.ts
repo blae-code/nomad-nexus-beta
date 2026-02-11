@@ -1,5 +1,6 @@
 export * from './cqbEventService';
 export * from './cqbTTLService';
+export * from './cqbVoiceCommandService';
 export * from './channelContextService';
 export * from './locationEstimateService';
 export * from './commandIntentService';
