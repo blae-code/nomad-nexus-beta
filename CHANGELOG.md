@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-11 - Workbench Custom Widget + Resize Ergonomics Pass
+
+- Expanded Workbench customization to support richer operator-owned layouts:
+  - Upgraded `src/nexus-os/ui/workbench/WorkbenchGrid.jsx` with:
+    - panel drag reorder + explicit width/height resize controls,
+    - pointer drag-corner resizing,
+    - integrated custom widget create/edit/delete flow in the Add Panel drawer,
+    - widget share/import actions (share code copy + paste import),
+    - first-class rendering of custom widget panels alongside built-in panels.
+  - Added `src/nexus-os/ui/workbench/CustomWorkbenchWidgetPanel.jsx` for custom widget presentation with inline edit/delete actions and link rendering.
+- Added custom widget persistence/share service:
+  - Added `src/nexus-os/services/customWorkbenchWidgetService.ts` with scoped storage, panel-id helpers, share-code export/import, and reset utilities.
+  - Exported service APIs via `src/nexus-os/services/index.ts`.
+  - Hardened stored timestamp normalization to preserve stable `createdAt` and deterministic update semantics.
+- Added unit coverage:
+  - `tests/nexus-os/customWorkbenchWidgetService.test.ts`.
+- Validation:
+  - `npm run typecheck` passed.
+  - `npm run test:unit` passed (`46` files, `224` tests).
+  - `npm run lint` passed.
+  - `npm run build` passed.
+
 ## 2026-02-11 - CQB Hands-Free + Radial Access Pass
 
 - Reworked CQB command ergonomics for faster, lower-friction execution:
