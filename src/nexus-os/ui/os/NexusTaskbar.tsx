@@ -64,7 +64,7 @@ export default function NexusTaskbar({
   const shownNotifications = notifications.slice(0, 8);
 
   return (
-    <section className="relative rounded-lg border border-zinc-800 bg-zinc-950/85 px-2 py-2 flex items-center gap-2 overflow-visible">
+    <section className="relative rounded-xl border border-zinc-700 bg-[linear-gradient(180deg,rgba(47,31,24,0.9),rgba(14,11,10,0.95))] px-2 py-2 flex items-center gap-2 overflow-visible nexus-panel-glow">
       <NexusButton size="sm" intent="subtle" onClick={onOpenCommandDeck} className="shrink-0">
         <AppWindow className="w-3.5 h-3.5 mr-1" />
         Nexus
@@ -125,7 +125,7 @@ export default function NexusTaskbar({
       </div>
 
       {trayOpen ? (
-        <div className="absolute right-2 bottom-full mb-2 w-[min(420px,92vw)] rounded-lg border border-zinc-700 bg-zinc-950/96 shadow-2xl p-2 z-[1200]">
+        <div className="absolute right-2 bottom-full mb-2 w-[min(420px,92vw)] rounded-xl border border-zinc-700 bg-[linear-gradient(180deg,rgba(44,28,21,0.94),rgba(13,10,9,0.97))] shadow-2xl p-2 z-[1200] nexus-panel-glow">
           <div className="flex items-center justify-between gap-2 px-1 py-1">
             <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Taskbar Tray</div>
             <div className="flex items-center gap-1">

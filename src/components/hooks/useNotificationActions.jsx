@@ -39,7 +39,7 @@ export function useNotificationActions() {
   const investigateEvent = useCallback(
     (eventId) => {
       // Trigger navigation to event details
-      window.location.href = `/pages/Events?id=${eventId}`;
+      window.location.href = `/Events?id=${eventId}`;
     },
     []
   );

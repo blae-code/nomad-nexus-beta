@@ -19,7 +19,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-  try {
     switch (action) {
       case 'summarize_logs':
         return await summarizeLogs(base44, data);
@@ -33,8 +32,8 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
-    console.error("AI Error:", error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('AI Error:', error);
+    return Response.json({ error: error?.message || 'Internal error' }, { status: 500 });
   }
 });
 

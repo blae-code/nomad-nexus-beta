@@ -7,15 +7,48 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 const ShellUIContext = createContext(null);
 
 const STORAGE_PREFIX = 'nexus.shell.ui.';
+const SHELL_UI_STATE_KEY = `${STORAGE_PREFIX}state`;
 
 const DEFAULT_STATE = {
   isSidePanelOpen: true,
   isContextPanelOpen: true,
-  isCommsDockOpen: true,
+  // Keep the legacy dock available, but avoid forcing it on top of workspace surfaces.
+  isCommsDockOpen: false,
   dockMode: 'voice', // 'voice' or 'text'
   dockMinimized: false,
   contextPanelMinimized: false,
 };
+
+export function normalizeShellUIState(rawState = {}) {
+  if (!rawState || typeof rawState !== 'object') {
+    return { ...DEFAULT_STATE };
+  }
+
+  const dockMode = rawState.dockMode === 'text' ? 'text' : 'voice';
+
+  return {
+    ...DEFAULT_STATE,
+    ...rawState,
+    dockMode,
+    isSidePanelOpen: Boolean(rawState.isSidePanelOpen ?? DEFAULT_STATE.isSidePanelOpen),
+    isContextPanelOpen: Boolean(rawState.isContextPanelOpen ?? DEFAULT_STATE.isContextPanelOpen),
+    isCommsDockOpen: Boolean(rawState.isCommsDockOpen ?? DEFAULT_STATE.isCommsDockOpen),
+    dockMinimized: Boolean(rawState.dockMinimized ?? DEFAULT_STATE.dockMinimized),
+    contextPanelMinimized: Boolean(rawState.contextPanelMinimized ?? DEFAULT_STATE.contextPanelMinimized),
+  };
+}
+
+export function readShellUIState(storage = globalThis?.localStorage) {
+  if (!storage) return { ...DEFAULT_STATE };
+  try {
+    const stored = storage.getItem(SHELL_UI_STATE_KEY);
+    if (!stored) return { ...DEFAULT_STATE };
+    return normalizeShellUIState(JSON.parse(stored));
+  } catch (err) {
+    console.warn('Failed to load shell UI state:', err);
+    return { ...DEFAULT_STATE };
+  }
+}
 
 export function ShellUIProvider({ children }) {
   const [state, setState] = useState(DEFAULT_STATE);
@@ -23,22 +56,7 @@ export function ShellUIProvider({ children }) {
 
   // Load from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}state`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setState({
-          ...parsed,
-          isCommsDockOpen: true, // Always force dock visible on load
-          isContextPanelOpen: true, // Ensure voice panel is visible on load
-        });
-      } else {
-        setState(DEFAULT_STATE);
-      }
-    } catch (err) {
-      console.warn('Failed to load shell UI state:', err);
-      setState(DEFAULT_STATE);
-    }
+    setState(readShellUIState(localStorage));
     setLoaded(true);
   }, []);
 
@@ -46,7 +64,7 @@ export function ShellUIProvider({ children }) {
   useEffect(() => {
     if (loaded) {
       try {
-        localStorage.setItem(`${STORAGE_PREFIX}state`, JSON.stringify(state));
+        localStorage.setItem(SHELL_UI_STATE_KEY, JSON.stringify(normalizeShellUIState(state)));
       } catch (err) {
         console.warn('Failed to persist shell UI state:', err);
       }

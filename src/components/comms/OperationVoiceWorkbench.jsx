@@ -75,12 +75,19 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
   const [priorityFeed, setPriorityFeed] = useState([]);
   const [captionFeed, setCaptionFeed] = useState([]);
   const [moderationFeed, setModerationFeed] = useState([]);
+  const [telemetryFeed, setTelemetryFeed] = useState([]);
+  const [radioLog, setRadioLog] = useState([]);
+  const [voiceClips, setVoiceClips] = useState([]);
+  const [commandWhispers, setCommandWhispers] = useState([]);
+  const [disciplineState, setDisciplineState] = useState({ mode: 'PTT', speakRequests: [] });
   const [members, setMembers] = useState([]);
   const [latencyHistory, setLatencyHistory] = useState([]);
 
   const [priorityForm, setPriorityForm] = useState({ message: '', priority: 'STANDARD', lane: 'COMMAND', channelId: '' });
   const [captionForm, setCaptionForm] = useState({ speaker: '', text: '', severity: 'INFO' });
-  const [moderationForm, setModerationForm] = useState({ targetMemberProfileId: '', moderationAction: 'MUTE', channelId: '', reason: '' });
+  const [moderationForm, setModerationForm] = useState({ targetMemberProfileId: '', moderationAction: 'MUTE', channelId: '', reason: '', durationSeconds: 120 });
+  const [radioSearch, setRadioSearch] = useState('');
+  const [whisperForm, setWhisperForm] = useState({ targetMemberProfileId: '', voiceInstruction: '', textSummary: '' });
   const [prefs, setPrefs] = useState(() => {
     const saved = localStorage.getItem('nexus.voice.accessibility');
     return saved
@@ -130,7 +137,7 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
 
   const loadSignals = useCallback(async () => {
     try {
-      const [readyResp, calloutsResp, captionsResp, moderationResp, membersResp] = await Promise.all([
+      const [readyResp, calloutsResp, captionsResp, moderationResp, telemetryResp, radioResp, clipsResp, whispersResp, disciplineResp, membersResp] = await Promise.all([
         invokeMemberFunction('verifyCommsReadiness', {}),
         invokeMemberFunction('updateCommsConsole', {
           action: 'list_priority_callouts',
@@ -145,6 +152,34 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
         invokeMemberFunction('updateCommsConsole', {
           action: 'list_voice_moderation',
           eventId: activeOp?.activeEventId || undefined,
+        }),
+        invokeMemberFunction('updateCommsConsole', {
+          action: 'list_voice_telemetry',
+          eventId: activeOp?.activeEventId || undefined,
+          netId: voiceNet?.transmitNetId || voiceNet?.activeNetId || undefined,
+          limit: 60,
+        }),
+        invokeMemberFunction('updateCommsConsole', {
+          action: 'list_radio_log',
+          eventId: activeOp?.activeEventId || undefined,
+          netId: voiceNet?.transmitNetId || voiceNet?.activeNetId || undefined,
+          limit: 120,
+        }),
+        invokeMemberFunction('updateCommsConsole', {
+          action: 'list_voice_clips',
+          eventId: activeOp?.activeEventId || undefined,
+          netId: voiceNet?.transmitNetId || voiceNet?.activeNetId || undefined,
+          limit: 40,
+        }),
+        invokeMemberFunction('updateCommsConsole', {
+          action: 'list_command_whispers',
+          eventId: activeOp?.activeEventId || undefined,
+        }),
+        invokeMemberFunction('updateCommsConsole', {
+          action: 'get_voice_discipline_state',
+          eventId: activeOp?.activeEventId || undefined,
+          netId: voiceNet?.transmitNetId || voiceNet?.activeNetId || undefined,
+          includeResolved: true,
         }),
         base44.entities.MemberProfile.list('-created_date', 200).catch(() => []),
       ]);
@@ -166,6 +201,24 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
       const moderationPayload = moderationResp?.data || {};
       setModerationFeed(Array.isArray(moderationPayload.moderation) ? moderationPayload.moderation : []);
 
+      const telemetryPayload = telemetryResp?.data || {};
+      setTelemetryFeed(Array.isArray(telemetryPayload.telemetry) ? telemetryPayload.telemetry : []);
+
+      const radioPayload = radioResp?.data || {};
+      setRadioLog(Array.isArray(radioPayload.entries) ? radioPayload.entries : []);
+
+      const clipsPayload = clipsResp?.data || {};
+      setVoiceClips(Array.isArray(clipsPayload.clips) ? clipsPayload.clips : []);
+
+      const whispersPayload = whispersResp?.data || {};
+      setCommandWhispers(Array.isArray(whispersPayload.whispers) ? whispersPayload.whispers : []);
+
+      const disciplinePayload = disciplineResp?.data || {};
+      setDisciplineState({
+        mode: disciplinePayload?.discipline?.mode || 'PTT',
+        speakRequests: Array.isArray(disciplinePayload?.speakRequests) ? disciplinePayload.speakRequests : [],
+      });
+
       setMembers(Array.isArray(membersResp) ? membersResp : []);
 
       const rooms = nets
@@ -183,7 +236,7 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
     } catch (error) {
       setBanner({ type: 'error', message: error?.message || 'Failed to load voice operations context.' });
     }
-  }, [activeOp?.activeEventId, nets, voiceNet?.activeNetId]);
+  }, [activeOp?.activeEventId, nets, voiceNet?.activeNetId, voiceNet?.transmitNetId]);
 
   useEffect(() => {
     loadSignals();
@@ -476,6 +529,14 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
               {channels.map((channel) => <option key={channel.id} value={channel.id}>#{channel.name || channel.id}</option>)}
             </select>
             <Input value={moderationForm.reason} onChange={(e) => setModerationForm((prev) => ({ ...prev, reason: e.target.value }))} placeholder="Reason" aria-label="Moderation reason" />
+            <Input
+              type="number"
+              min="0"
+              value={moderationForm.durationSeconds}
+              onChange={(e) => setModerationForm((prev) => ({ ...prev, durationSeconds: Number(e.target.value) || 0 }))}
+              placeholder="Duration (s)"
+              aria-label="Penalty duration seconds"
+            />
           </div>
           <Button
             size="sm"
@@ -489,6 +550,7 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
                 moderationAction: moderationForm.moderationAction,
                 channelId: moderationForm.channelId || undefined,
                 reason: moderationForm.reason,
+                durationSeconds: moderationForm.durationSeconds || 0,
               },
               'Moderation action logged.'
             )}
@@ -498,7 +560,10 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
           <div className="space-y-1 max-h-28 overflow-y-auto">
             {moderationFeed.slice(0, 6).map((entry) => (
               <div key={entry.id} className="text-[11px] border border-zinc-800 rounded p-2 bg-zinc-900/50 text-zinc-300 flex items-center justify-between gap-2">
-                <span>{entry.moderation_action} {entry.target_member_profile_id ? `-> ${memberMap[entry.target_member_profile_id] || entry.target_member_profile_id}` : ''}</span>
+                <span>
+                  {entry.moderation_action} {entry.target_member_profile_id ? `-> ${memberMap[entry.target_member_profile_id] || entry.target_member_profile_id}` : ''}
+                  {entry.duration_seconds ? ` (${entry.duration_seconds}s)` : ''}
+                </span>
                 <span className="text-zinc-500">{formatDate(entry.created_date)}</span>
               </div>
             ))}
@@ -516,6 +581,167 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
           <div className="text-[11px] text-zinc-500 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
             Critical callouts trigger visual escalation in this panel.
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="border border-zinc-800 rounded p-4 bg-zinc-900/40 space-y-3">
+          <div className="text-xs uppercase tracking-widest text-zinc-500">Discipline + Telemetry</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={() => voiceNet.setDisciplineMode?.('OPEN')}>OPEN</Button>
+            <Button size="sm" variant="outline" onClick={() => voiceNet.setDisciplineMode?.('PTT')}>PTT</Button>
+            <Button size="sm" variant="outline" onClick={() => voiceNet.setDisciplineMode?.('REQUEST_TO_SPEAK')}>RTS</Button>
+            <Button size="sm" variant="outline" onClick={() => voiceNet.setDisciplineMode?.('COMMAND_ONLY')}>CMD ONLY</Button>
+          </div>
+          <div className="text-[11px] text-zinc-400">
+            Active mode: <span className="text-orange-300 font-semibold">{disciplineState.mode || 'PTT'}</span>
+          </div>
+          <div className="space-y-1 max-h-28 overflow-y-auto">
+            {(disciplineState.speakRequests || []).slice(0, 6).map((entry) => (
+              <div key={entry.request_id} className="text-[11px] border border-zinc-800 rounded p-2 bg-zinc-900/50 text-zinc-300 flex items-center justify-between gap-2">
+                <span>{memberMap[entry.requester_member_profile_id] || entry.requester_member_profile_id} • {entry.status}</span>
+                {entry.status === 'PENDING' && (
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => voiceNet.resolveSpeakRequest?.({ requestId: entry.request_id, state: 'APPROVED', netId: entry.net_id || voiceNet.transmitNetId })}>Approve</Button>
+                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => voiceNet.resolveSpeakRequest?.({ requestId: entry.request_id, state: 'DENIED', netId: entry.net_id || voiceNet.transmitNetId })}>Deny</Button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {(disciplineState.speakRequests || []).length === 0 && <div className="text-[11px] text-zinc-500">No speak requests.</div>}
+          </div>
+          <div className="space-y-1 max-h-28 overflow-y-auto">
+            {telemetryFeed.slice(0, 6).map((entry) => (
+              <div key={entry.id} className="text-[11px] border border-zinc-800 rounded p-2 bg-zinc-900/50 text-zinc-300">
+                {entry.net_id || 'net'} • RTT {entry.rtt_ms}ms • Jitter {entry.jitter_ms}ms • Loss {entry.packet_loss_pct}%
+              </div>
+            ))}
+            {telemetryFeed.length === 0 && <div className="text-[11px] text-zinc-500">Telemetry not yet sampled.</div>}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={() => voiceNet.setHotkeyProfile?.({
+              id: 'pilot',
+              label: 'Pilot',
+              bindings: { ptt: ['Space'], whisper: ['CapsLock'], monitorCycle: ['Backquote'] },
+              sideTone: true,
+            })}>
+              Pilot Hotkeys
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => voiceNet.setLoadout?.({
+              name: 'cockpit-rig',
+              codec: 'opus',
+              bitrateKbps: 20,
+              noiseSuppression: true,
+              agc: true,
+              environmentHint: 'cockpit',
+              roleHint: 'flight',
+            })}>
+              Cockpit Loadout
+            </Button>
+          </div>
+        </div>
+
+        <div className="border border-zinc-800 rounded p-4 bg-zinc-900/40 space-y-3">
+          <div className="text-xs uppercase tracking-widest text-zinc-500">Radio Log + Command Whisper</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input value={radioSearch} onChange={(e) => setRadioSearch(e.target.value)} placeholder="Search radio log" />
+            <Button size="sm" variant="outline" onClick={async () => {
+              const entries = await voiceNet.listRadioLog?.({ query: radioSearch, eventId: activeOp?.activeEventId || undefined, netId: voiceNet?.transmitNetId || undefined, limit: 120 });
+              if (Array.isArray(entries)) setRadioLog(entries);
+            }}>Search</Button>
+          </div>
+          <div className="space-y-1 max-h-28 overflow-y-auto">
+            {radioLog.slice(0, 6).map((entry) => (
+              <div key={entry.id} className="text-[11px] border border-zinc-800 rounded p-2 bg-zinc-900/50 text-zinc-300 space-y-1">
+                <div>
+                  <span className="text-zinc-500">{formatDate(entry.started_at)} </span>
+                  <span className="text-orange-300">{entry.speaker}</span>: {entry.transcript}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 text-[10px] px-1.5"
+                  onClick={() => voiceNet.linkVoiceThread?.({
+                    eventId: activeOp?.activeEventId || undefined,
+                    netId: voiceNet?.transmitNetId || undefined,
+                    radioLogId: entry.id,
+                    anchorExcerpt: entry.transcript?.slice(0, 120) || '',
+                  })}
+                >
+                  Thread This
+                </Button>
+              </div>
+            ))}
+            {radioLog.length === 0 && <div className="text-[11px] text-zinc-500">No radio log entries.</div>}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={async () => {
+              await voiceNet.captureVoiceClip?.({ eventId: activeOp?.activeEventId || undefined, netId: voiceNet?.transmitNetId || undefined, clipSeconds: 60, ttlHours: 24, visibility: 'COMMAND' });
+              await loadSignals();
+            }}>Capture 60s Clip</Button>
+            <Button size="sm" variant="outline" onClick={async () => {
+              const draft = await voiceNet.generateVoiceStructuredDraft?.({ eventId: activeOp?.activeEventId || undefined, netId: voiceNet?.transmitNetId || undefined, draftType: 'SITREP' });
+              if (draft?.draft?.summary) setBanner({ type: 'success', message: `AI draft ready: ${draft.draft.summary}` });
+            }}>AI SITREP Draft</Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={async () => {
+              await voiceNet.setSecureMode?.({
+                eventId: activeOp?.activeEventId || undefined,
+                netId: voiceNet?.transmitNetId || undefined,
+                enabled: true,
+                keyVersion: `kv-${Date.now()}`,
+                recordingsDisabled: true,
+                allowedRoles: ['command', 'officer'],
+              });
+              await loadSignals();
+            }}>Enable Secure Mode</Button>
+            <Button size="sm" variant="outline" onClick={async () => {
+              await voiceNet.setSecureMode?.({
+                eventId: activeOp?.activeEventId || undefined,
+                netId: voiceNet?.transmitNetId || undefined,
+                enabled: false,
+                recordingsDisabled: false,
+              });
+              await loadSignals();
+            }}>Disable Secure Mode</Button>
+          </div>
+          <div className="space-y-1 max-h-20 overflow-y-auto">
+            {voiceClips.slice(0, 4).map((clip) => (
+              <div key={clip.id} className="text-[11px] border border-zinc-800 rounded p-2 bg-zinc-900/50 text-zinc-300">
+                {clip.title} • {clip.clip_seconds}s • TTL {clip.ttl_hours}h
+              </div>
+            ))}
+            {voiceClips.length === 0 && <div className="text-[11px] text-zinc-500">No clips captured.</div>}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <select value={whisperForm.targetMemberProfileId} onChange={(e) => setWhisperForm((prev) => ({ ...prev, targetMemberProfileId: e.target.value }))} className="w-full bg-zinc-900 border border-zinc-700 text-white p-2 rounded text-sm">
+              <option value="">Whisper target...</option>
+              {members.map((member) => <option key={member.id} value={member.id}>{memberMap[member.id] || member.id}</option>)}
+            </select>
+            <Input value={whisperForm.voiceInstruction} onChange={(e) => setWhisperForm((prev) => ({ ...prev, voiceInstruction: e.target.value }))} placeholder="Voice instruction" />
+            <Input value={whisperForm.textSummary} onChange={(e) => setWhisperForm((prev) => ({ ...prev, textSummary: e.target.value }))} placeholder="Text summary" />
+          </div>
+          <Button size="sm" variant="outline" disabled={!whisperForm.targetMemberProfileId || !whisperForm.voiceInstruction.trim()} onClick={async () => {
+            await voiceNet.sendCommandWhisper?.({
+              eventId: activeOp?.activeEventId || undefined,
+              targetMemberProfileId: whisperForm.targetMemberProfileId,
+              voiceInstruction: whisperForm.voiceInstruction,
+              textSummary: whisperForm.textSummary || whisperForm.voiceInstruction,
+              targetType: 'member',
+            });
+            setWhisperForm((prev) => ({ ...prev, voiceInstruction: '', textSummary: '' }));
+            await loadSignals();
+          }}>Dispatch Command Whisper</Button>
+          <div className="space-y-1 max-h-24 overflow-y-auto">
+            {commandWhispers.slice(0, 4).map((entry) => (
+              <div key={entry.whisper_id} className="text-[11px] border border-zinc-800 rounded p-2 bg-zinc-900/50 text-zinc-300">
+                <div>{entry.text_summary || entry.voice_instruction}</div>
+                <div className="text-zinc-500">Target: {memberMap[entry.target_member_profile_id] || entry.target_member_profile_id} • {entry.status}</div>
+              </div>
+            ))}
+            {commandWhispers.length === 0 && <div className="text-[11px] text-zinc-500">No command whispers logged.</div>}
           </div>
         </div>
       </div>

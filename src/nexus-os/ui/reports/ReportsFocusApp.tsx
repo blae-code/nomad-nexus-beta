@@ -312,7 +312,7 @@ export default function ReportsFocusApp({
                   >
                     Publish Narrative
                   </NexusButton>
-                  <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => { deleteReport(selectedReport.id); setSelectedReportId(''); })}>Delete</NexusButton>
+                  <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => { deleteReport(selectedReport.id, actorId); setSelectedReportId(''); })}>Delete</NexusButton>
                 </div>
               </div>
 

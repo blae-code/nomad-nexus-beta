@@ -81,17 +81,19 @@ The `package.json` file includes several scripts for common development tasks:
 - `npm run lint`: Lints the codebase for style and syntax errors using ESLint.
 - `npm run lint:fix`: Automatically fixes linting issues where possible.
 - `npm run typecheck`: Runs the TypeScript compiler to check for type errors.
-- `npm run test:comms`: Executes the test suite for the communications features using Vitest.
+- `npm run test:unit`: Executes the unit test suite using Vitest.
 
 ---
 
 ## Project Structure
 
-- **Root-level app directories**: Base44 keeps the app at the repository root.
-  - **`components/`**: Shared and reusable React components.
-  - **`pages/`**: Top-level page components that correspond to application routes.
-  - **`lib/`**: Core utilities, contexts, and application-wide helpers.
-  - **`api/`**: Modules for interacting with external APIs, including the Base44 SDK.
+- **`src/`**: Frontend application source.
+  - **`src/nexus-os/`**: NexusOS shell, services, schemas, validators, and preview workbench.
+  - **`src/nexus-os/ui/theme/`**: Shared Nexus design foundations and shell theme layers (global Redscar styling).
+  - **`src/pages/`**: Route-level page modules (including AccessGate and onboarding flow).
+  - **`src/components/`**: Shared React UI and feature components.
+  - **`src/lib/`**: Core utilities, contexts, and app-wide helpers.
+  - **`src/api/`**: Base44 integration and frontend function invocation helpers.
 - **`functions/`**: Contains backend serverless functions deployed on the Base44 platform. These handle logic like token generation, data validation, and API integrations.
 - **`tests/`**: Contains automated tests for the application.
 - **`docs/`**: Project documentation, including the detailed test plan.

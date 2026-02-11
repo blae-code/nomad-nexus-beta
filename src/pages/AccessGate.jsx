@@ -3,28 +3,11 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, Zap, Trash2 } from 'lucide-react';
+import { Zap, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import RouteGuard from '@/components/auth/RouteGuard';
 import PageTransition from '@/components/transitions/PageTransition';
 import AsyncLoadingOverlay from '@/components/transitions/AsyncLoadingOverlay';
-
-const scanlineStyle = `
-  @keyframes scan {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100%); }
-  }
-  @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), inset 0 0 20px rgba(239, 68, 68, 0.05); }
-    50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.15); }
-  }
-  .scanline-overlay {
-    animation: scan 8s linear infinite;
-  }
-  .glow-box {
-    animation: glow-pulse 4s ease-in-out infinite;
-  }
-`;
 
 export default function AccessGate() {
   const [accessCode, setAccessCode] = useState('');
@@ -173,13 +156,6 @@ export default function AccessGate() {
           }
   };
 
-  const confirmAuthEstablished = async () => {
-    // verifyMemberSession was already called by redeemAccessKey
-    // Just a short delay to ensure token is written to localStorage
-    await new Promise(r => setTimeout(r, 500));
-    return true;
-  };
-
   const emitReadyBeacon = (state) => {
     setAuthState(state);
     window.dispatchEvent(new CustomEvent('nn:ready', { detail: { state } }));
@@ -194,11 +170,11 @@ export default function AccessGate() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 flex items-center justify-center px-4">
+      <div className="nexus-immersive-screen min-h-screen flex items-center justify-center px-4">
         {/* Hidden readiness beacon */}
         <div id="nn-ready" data-state="error" style={{ display: 'none' }} />
         
-        <div className="max-w-md w-full bg-black/80 border-2 border-red-700/70 p-8 rounded shadow-2xl shadow-red-700/30">
+        <div className="nexus-immersive-panel max-w-md w-full p-8 rounded">
           <div className="text-center space-y-6">
             <div className="text-red-400 text-lg font-bold">⚠ Initialization Error</div>
             <div className="text-red-300 text-sm">{error}</div>
@@ -218,30 +194,10 @@ export default function AccessGate() {
     <RouteGuard requiredAuth="none">
       <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
       <PageTransition>
-        <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center px-4 overflow-hidden relative">
-        <style>{scanlineStyle}</style>
-      
-      {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
-
-      {/* Dynamic grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
-      
-      {/* Animated scanline effect */}
-      <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
-
-      {/* Corner accents */}
-      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-red-500/40 opacity-50" />
-      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-red-500/40 opacity-50" />
-      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-red-500/40 opacity-50" />
-      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
-
-      {/* Subtle background glow */}
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
+        <div className="nexus-immersive-screen w-screen h-screen flex items-center justify-center px-4 overflow-hidden relative">
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-0 overflow-hidden shadow-2xl shadow-red-700/30 glow-box">
+        <div className="nexus-immersive-panel p-0 overflow-hidden">
           {/* Header Section */}
           <div className="border-b border-red-700/50 bg-gradient-to-r from-red-700/15 via-transparent to-transparent p-8 relative overflow-hidden">
             <div className="flex items-center justify-center mb-6">
@@ -253,7 +209,7 @@ export default function AccessGate() {
             </div>
 
             <div className="text-center space-y-2.5">
-              <h1 className="text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
+              <h1 className="nexus-section-title text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
                 Nexus <span className="text-red-600">Gate</span>
               </h1>
               <div className="h-px bg-gradient-to-r from-transparent via-red-700/40 to-transparent" />
@@ -273,7 +229,7 @@ export default function AccessGate() {
           >
             {/* Access Code Field */}
             <div className="space-y-2.5 group">
-              <label htmlFor="accessCode" className="text-[10px] font-bold text-amber-300 uppercase tracking-[0.15em] block">
+              <label htmlFor="accessCode" className="nexus-label text-amber-300 block">
                 ◆ Access Code
               </label>
               <div className="relative">
@@ -283,15 +239,14 @@ export default function AccessGate() {
                   placeholder="XXXX-XXXX-XXXX"
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                  className="font-mono tracking-widest text-center h-12 bg-slate-900/60 border-2 border-yellow-500/30 group-focus-within:border-yellow-500/60 group-focus-within:bg-slate-900 focus:border-yellow-500/60 focus:bg-slate-900 text-yellow-300 placeholder:text-slate-600 transition-all duration-200"
+                  className="font-mono tracking-widest text-center h-12 text-yellow-300 border-yellow-500/35"
                   />
-                  <div className="absolute -inset-1 border border-yellow-500/0 group-focus-within:border-yellow-500/20 rounded transition-all duration-200 pointer-events-none" />
               </div>
             </div>
 
             {/* Callsign Field */}
             <div className="space-y-2.5 group">
-              <label htmlFor="callsign" className="text-[10px] font-bold text-emerald-300 uppercase tracking-[0.15em] block">
+              <label htmlFor="callsign" className="nexus-label text-emerald-300 block">
                 ◆ Callsign
               </label>
               <div className="relative">
@@ -301,9 +256,8 @@ export default function AccessGate() {
                   placeholder="Enter callsign"
                   value={callsign}
                   onChange={(e) => setCallsign(e.target.value)}
-                  className="tracking-wider text-center h-12 bg-slate-900/60 border-2 border-white/30 group-focus-within:border-white/60 group-focus-within:bg-slate-900 focus:border-white/60 focus:bg-slate-900 text-white placeholder:text-slate-600 transition-all duration-200"
+                  className="tracking-wider text-center h-12 border-white/35"
                   />
-                  <div className="absolute -inset-1 border border-white/0 group-focus-within:border-white/20 rounded transition-all duration-200 pointer-events-none" />
               </div>
             </div>
 
@@ -313,7 +267,7 @@ export default function AccessGate() {
                 id="rememberMe"
                 checked={rememberMe}
                 onCheckedChange={setRememberMe}
-                className="border-2 border-cyan-500/40 bg-slate-900 data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-500"
+                className="border-cyan-500/50 data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-500"
               />
               <label htmlFor="rememberMe" className="text-xs text-cyan-300 cursor-pointer">
                 Remember me on this device

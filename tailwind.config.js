@@ -3,11 +3,9 @@ module.exports = {
     darkMode: ["class"],
     content: [
       "./index.html",
-      "./src/App.jsx",
-      "./Layout.js",
-      "./src/main.jsx",
-      "./{src,components,pages,lib,hooks,utils,api,assets,styles}/**/*.{ts,tsx,js,jsx}",
-    ],  theme: {
+      "./src/**/*.{ts,tsx,js,jsx}",
+    ],
+  theme: {
   	extend: {
   		borderRadius: {
   			lg: 'var(--radius)',

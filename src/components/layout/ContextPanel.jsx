@@ -125,6 +125,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
   }
 
   const connectionLabel = voiceNet.connectionState || VOICE_CONNECTION_STATE.IDLE;
+  const transportLabel = voiceNet.transportMode === 'livekit' ? 'LiveKit' : 'Mock Fallback';
   const connectionTone = {
     [VOICE_CONNECTION_STATE.CONNECTED]: 'text-green-300 border-green-500/40 bg-green-500/10',
     [VOICE_CONNECTION_STATE.RECONNECTING]: 'text-orange-300 border-orange-500/40 bg-orange-500/10',
@@ -135,6 +136,14 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
 
   const micTone = voiceNet.micEnabled ? 'text-green-300 bg-green-500/10 border-green-500/30' : 'text-red-300 bg-red-500/10 border-red-500/30';
   const pttTone = voiceNet.pttActive ? 'text-orange-300 bg-orange-500/10 border-orange-500/30' : 'text-zinc-400 bg-zinc-900/60 border-zinc-700/60';
+  const startPTT = (event) => {
+    event?.preventDefault?.();
+    voiceNet.startPTT?.();
+  };
+  const stopPTT = (event) => {
+    event?.preventDefault?.();
+    voiceNet.stopPTT?.();
+  };
 
   return (
     <div className={`${isMinimized ? 'w-12' : 'w-80'} bg-zinc-900/95 border-l border-orange-500/20 flex flex-col overflow-hidden z-[900] relative transition-all duration-200`}>
@@ -202,6 +211,9 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
               <div className="font-semibold">{voiceNet.pttActive ? 'Active' : 'Ready'}</div>
             </div>
           </div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">
+            Transport: <span className={voiceNet.transportMode === 'livekit' ? 'text-green-300' : 'text-orange-300'}>{transportLabel}</span>
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <Button
@@ -217,10 +229,15 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
               size="sm"
               variant={voiceNet.pttActive ? 'default' : 'outline'}
               className="text-[10px] font-semibold"
-              onClick={() => voiceNet.togglePTT()}
-              disabled={!voiceNet.activeNetId}
+              onMouseDown={startPTT}
+              onMouseUp={stopPTT}
+              onMouseLeave={stopPTT}
+              onTouchStart={startPTT}
+              onTouchEnd={stopPTT}
+              onTouchCancel={stopPTT}
+              disabled={!voiceNet.activeNetId || connectionLabel !== VOICE_CONNECTION_STATE.CONNECTED}
             >
-              {voiceNet.pttActive ? 'PTT Active' : 'Enable PTT'}
+              {voiceNet.pttActive ? 'Transmit' : 'Hold PTT'}
             </Button>
           </div>
 

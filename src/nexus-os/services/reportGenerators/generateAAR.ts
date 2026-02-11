@@ -21,11 +21,76 @@ import {
 } from './common';
 import type { GeneratedReportPayload, ReportGenerationParams } from './types';
 
+function confidenceScoreFromBand(confidence: string | undefined): number {
+  const normalized = String(confidence || '').toUpperCase();
+  if (normalized === 'HIGH') return 3;
+  if (normalized === 'MED') return 2;
+  return 1;
+}
+
+function sortIntelChangesForAar<T extends { id: string; updatedAt: string; retiredAt?: string; promotionHistory: unknown[]; confidence?: string }>(
+  items: T[]
+): T[] {
+  return [...items].sort((a, b) => {
+    const aScore =
+      confidenceScoreFromBand(a.confidence) * 4 +
+      (a.promotionHistory.length || 0) * 3 +
+      (a.retiredAt ? 5 : 0);
+    const bScore =
+      confidenceScoreFromBand(b.confidence) * 4 +
+      (b.promotionHistory.length || 0) * 3 +
+      (b.retiredAt ? 5 : 0);
+    if (aScore !== bScore) return bScore - aScore;
+    const timeDelta = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    if (timeDelta !== 0) return timeDelta;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+const DEVIATION_EVENT_WEIGHT: Readonly<Record<string, number>> = Object.freeze({
+  REPORT_CONTACT: 6,
+  MARK_AVOID: 5,
+  DECLARE_HOLD: 4,
+  REQUEST_PATROL: 3,
+});
+
+function sortDeviationEventsForAar<T extends { id: string; kind: string; createdAt: string }>(events: T[]): T[] {
+  return [...events].sort((a, b) => {
+    const aWeight = DEVIATION_EVENT_WEIGHT[a.kind] || 1;
+    const bWeight = DEVIATION_EVENT_WEIGHT[b.kind] || 1;
+    if (aWeight !== bWeight) return bWeight - aWeight;
+    const timeDelta = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (timeDelta !== 0) return timeDelta;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function sortChallengedAssumptionsForAar<T extends { id: string; updatedAt: string; confidence: number; challengedBy?: unknown[] }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const aScore = (1 - Number(a.confidence || 0)) * 5 + ((a.challengedBy || []).length || 0);
+    const bScore = (1 - Number(b.confidence || 0)) * 5 + ((b.challengedBy || []).length || 0);
+    if (aScore !== bScore) return bScore - aScore;
+    const timeDelta = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    if (timeDelta !== 0) return timeDelta;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function sortBlockedTasksForAar<T extends { id: string; status: string; updatedAt: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const aWeight = a.status === 'BLOCKED' ? 2 : 1;
+    const bWeight = b.status === 'BLOCKED' ? 2 : 1;
+    if (aWeight !== bWeight) return bWeight - aWeight;
+    const timeDelta = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    if (timeDelta !== 0) return timeDelta;
+    return a.id.localeCompare(b.id);
+  });
+}
+
 export function generateAAR(
   params: ReportGenerationParams,
   nowMs = Date.now()
 ): GeneratedReportPayload {
-  // TODO(Package 7): add deterministic ranking weights for deviation and intel-delta ordering.
   const opId = params.opId || params.scope.opId || '';
   const templateId = getDefaultReportTemplateIdForKind('AAR');
   const warnings: string[] = [];
@@ -98,13 +163,15 @@ export function generateAAR(
     (intel) => intel.promotionHistory.length > 0 || Boolean(intel.retiredAt)
   );
 
-  const challengedAssumptions = assumptions.filter((assumption) => assumption.status === 'CHALLENGED');
-  const blockedOrDeferredTasks = tasks.filter(
+  const challengedAssumptions = sortChallengedAssumptionsForAar(
+    assumptions.filter((assumption) => assumption.status === 'CHALLENGED')
+  );
+  const blockedOrDeferredTasks = sortBlockedTasksForAar(tasks.filter(
     (task) => task.status === 'BLOCKED' || task.status === 'DEFERRED'
-  );
-  const deviationEvents = events.filter((event) =>
+  ));
+  const deviationEvents = sortDeviationEventsForAar(events.filter((event) =>
     ['MARK_AVOID', 'REQUEST_PATROL', 'DECLARE_HOLD', 'REPORT_CONTACT'].includes(event.kind)
-  );
+  ));
   const rescueOrRecoveryEvents = events.filter((event) =>
     ['EXTRACT', 'RESCUE', 'MEDEVAC', 'RECOVERY', 'CHECK_FIRE', 'CEASE_FIRE'].some((token) =>
       String(event.kind || '').toUpperCase().includes(token)
@@ -151,7 +218,7 @@ export function generateAAR(
       'intel-delta',
       'Intel Delta',
       intelChanges.length
-        ? intelChanges
+        ? sortIntelChangesForAar(intelChanges)
             .slice(0, 6)
             .map((intel) => {
               const action = intel.retiredAt ? 'retired' : 'updated';
@@ -160,7 +227,7 @@ export function generateAAR(
             .join('\n')
         : 'No op-scoped intel promotions/retirements were recorded.',
       2,
-      intelChanges.slice(0, 6).map((intel) => ({ kind: 'intel', id: intel.id }))
+      sortIntelChangesForAar(intelChanges).slice(0, 6).map((intel) => ({ kind: 'intel', id: intel.id }))
     ),
     createSection(
       'deviations-lessons',
@@ -265,7 +332,7 @@ export function generateAAR(
       claim: intelChanges.length
         ? `Intel change log contains ${intelChanges.length} promoted/retired items.`
         : 'Intel delta is unknown for this operation scope.',
-      citations: intelChanges.slice(0, 6).map((intel) => ({
+      citations: sortIntelChangesForAar(intelChanges).slice(0, 6).map((intel) => ({
         kind: 'INTEL' as const,
         refId: intel.id,
         occurredAt: intel.updatedAt,
@@ -318,7 +385,7 @@ export function generateAAR(
     ...assumptions.map((assumption) => ({ kind: 'assumption', id: assumption.id })),
     ...decisions.map((decision) => ({ kind: 'decision', id: decision.id })),
     ...events.map((event) => ({ kind: 'op_event', id: event.id })),
-    ...intelChanges.map((intel) => ({ kind: 'intel', id: intel.id })),
+    ...sortIntelChangesForAar(intelChanges).map((intel) => ({ kind: 'intel', id: intel.id })),
     ...entries.map((entry) => ({ kind: 'rsvp', id: entry.id })),
     ...slots.map((slot) => ({ kind: 'asset_slot', id: slot.id }))
   );

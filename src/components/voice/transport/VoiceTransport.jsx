@@ -45,6 +45,31 @@ export class VoiceTransport {
   }
 
   /**
+   * Publish a low-latency command/control packet.
+   * @param {Object} packet
+   */
+  publishControlPacket(packet) {
+    throw new Error('publishControlPacket() not implemented');
+  }
+
+  /**
+   * Configure output playback device when supported.
+   * @param {string|null} deviceId
+   */
+  async setOutputDevice(deviceId) {
+    throw new Error('setOutputDevice() not implemented');
+  }
+
+  /**
+   * Configure per-participant gain trim.
+   * @param {string} participantId
+   * @param {number} gainDb
+   */
+  setParticipantGain(participantId, gainDb) {
+    throw new Error('setParticipantGain() not implemented');
+  }
+
+  /**
    * Register event listener
    * Supported events:
    *   - connected: session established

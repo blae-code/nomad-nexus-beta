@@ -77,10 +77,19 @@ export interface MapNode {
   id: string;
   label: string;
   kind: MapNodeKind;
+  category?:
+    | 'system'
+    | 'planet'
+    | 'moon'
+    | 'station'
+    | 'lagrange'
+    | 'orbital-marker'
+    | 'jump-point';
   systemTag: string;
   x: number;
   y: number;
   radius: number;
+  importance?: 'primary' | 'secondary' | 'tertiary';
   parentId?: string;
 }
 

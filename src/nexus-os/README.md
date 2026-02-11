@@ -27,3 +27,7 @@ This folder is the non-UI foundation for Nexus OS. It is intentionally isolated 
 - `ui/`: Nexus OS shell primitives, workbench grid, focus overlay, and bridge switcher.
 - `preview/`: dev-only shell surface for immediate iteration.
 - `validators/`: dev-only registry integrity checks (warnings only).
+
+## Migration Backlog
+
+- TODO: Move legacy domain services from `src/components/services/` into `src/nexus-os/services/` with staged adoption to avoid runtime regressions.

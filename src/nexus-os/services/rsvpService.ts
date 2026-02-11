@@ -16,6 +16,7 @@ import type {
   RSVPMode,
   RuleEnforcement,
 } from '../schemas/opSchemas';
+import { appendOperationEvent } from './operationService';
 
 export interface RSVPEntryInput {
   opId: string;
@@ -61,6 +62,29 @@ let entryStore: RSVPEntry[] = [];
 let assetSlotStore: AssetSlot[] = [];
 let seatAssignmentStore: CrewSeatAssignment[] = [];
 const listeners = new Set<RsvpListener>();
+
+function appendRsvpAuditEvent(
+  opId: string,
+  kind: string,
+  createdBy: string,
+  payload: Record<string, unknown>,
+  nowMs = Date.now()
+) {
+  try {
+    appendOperationEvent(
+      {
+        opId,
+        kind,
+        createdBy,
+        scopeKind: 'OP',
+        payload,
+      },
+      nowMs
+    );
+  } catch {
+    // Keep RSVP flow resilient if event logging fails.
+  }
+}
 
 function nowIso(nowMs = Date.now()): string {
   return new Date(nowMs).toISOString();
@@ -277,12 +301,118 @@ export function upsertRSVPEntry(
   entryStore = existing
     ? entryStore.map((entry) => (entry.id === existing.id ? record : entry))
     : [record, ...entryStore];
+
+  appendRsvpAuditEvent(
+    opId,
+    existing ? 'RSVP_UPDATED' : 'RSVP_SUBMITTED',
+    input.userId,
+    {
+      rsvpEntryId: record.id,
+      mode: record.mode,
+      rolePrimary: record.rolePrimary,
+      status: record.status,
+      hardViolations: record.compliance.hardViolations.length,
+      softFlags: record.compliance.softFlags.length,
+      advisory: record.compliance.advisory.length,
+    },
+    nowMs
+  );
+
   notifyListeners();
   return record;
 }
 
 export function listRSVPEntries(opId: string): RSVPEntry[] {
   return entryStore.filter((entry) => entry.opId === opId);
+}
+
+export interface WithdrawRSVPResult {
+  entry: RSVPEntry;
+  removedAssetSlotIds: string[];
+  removedSeatAssignmentIds: string[];
+}
+
+/**
+ * Withdraw an RSVP entry and cascade cleanup:
+ * - Removes asset slots owned by that RSVP entry.
+ * - Removes seat assignments linked to removed slots.
+ * - Removes seat assignments created by the withdrawing user.
+ */
+export function withdrawRSVPEntry(
+  opId: string,
+  userId: string,
+  actorId = userId,
+  nowMs = Date.now()
+): WithdrawRSVPResult {
+  const existing = entryStore.find(
+    (entry) => entry.opId === opId && entry.userId === userId && entry.status !== 'WITHDRAWN'
+  );
+  if (!existing) throw new Error(`Active RSVP entry not found for ${userId} in ${opId}`);
+
+  const withdrawnEntry: RSVPEntry = {
+    ...existing,
+    status: 'WITHDRAWN',
+    updatedAt: nowIso(nowMs),
+  };
+  entryStore = entryStore.map((entry) => (entry.id === existing.id ? withdrawnEntry : entry));
+
+  const removedAssetSlotIds = assetSlotStore
+    .filter((slot) => slot.opId === opId && slot.rsvpEntryId === existing.id)
+    .map((slot) => slot.id);
+  assetSlotStore = assetSlotStore.filter((slot) => !removedAssetSlotIds.includes(slot.id));
+
+  const removedSeatAssignments = seatAssignmentStore.filter((assignment) => {
+    if (assignment.opId !== opId) return false;
+    if (removedAssetSlotIds.includes(assignment.assetSlotId)) return true;
+    if (assignment.userId === userId) return true;
+    return false;
+  });
+  const removedSeatAssignmentIds = removedSeatAssignments.map((entry) => entry.id);
+  seatAssignmentStore = seatAssignmentStore.filter((entry) => !removedSeatAssignmentIds.includes(entry.id));
+
+  appendRsvpAuditEvent(
+    opId,
+    'RSVP_WITHDRAWN',
+    actorId,
+    {
+      rsvpEntryId: existing.id,
+      userId,
+      removedAssetSlotCount: removedAssetSlotIds.length,
+      removedSeatAssignmentCount: removedSeatAssignmentIds.length,
+    },
+    nowMs
+  );
+  if (removedAssetSlotIds.length > 0) {
+    appendRsvpAuditEvent(
+      opId,
+      'RSVP_ASSET_SLOT_REMOVED',
+      actorId,
+      {
+        rsvpEntryId: existing.id,
+        assetSlotIds: removedAssetSlotIds,
+      },
+      nowMs
+    );
+  }
+  if (removedSeatAssignmentIds.length > 0) {
+    appendRsvpAuditEvent(
+      opId,
+      'RSVP_CREW_ASSIGNMENT_WITHDRAWN',
+      actorId,
+      {
+        rsvpEntryId: existing.id,
+        seatAssignmentIds: removedSeatAssignmentIds,
+      },
+      nowMs
+    );
+  }
+
+  notifyListeners();
+  return {
+    entry: withdrawnEntry,
+    removedAssetSlotIds,
+    removedSeatAssignmentIds,
+  };
 }
 
 export function addAssetSlot(input: AssetSlotInput, nowMs = Date.now()): AssetSlot {
@@ -313,6 +443,19 @@ export function addAssetSlot(input: AssetSlotInput, nowMs = Date.now()): AssetSl
   };
 
   assetSlotStore = [slot, ...assetSlotStore];
+  appendRsvpAuditEvent(
+    input.opId,
+    'RSVP_ASSET_SLOT_ADDED',
+    entry.userId,
+    {
+      rsvpEntryId: input.rsvpEntryId,
+      assetSlotId: slot.id,
+      assetId: slot.assetId,
+      assetName: slot.assetName,
+      crewProvided: slot.crewProvided,
+    },
+    nowMs
+  );
   notifyListeners();
   return slot;
 }
@@ -358,7 +501,19 @@ export function createCrewSeatRequests(
     crewNeeded: [...slot.crewNeeded, ...created],
     updatedAt: nowIso(nowMs),
   };
+  const slotOwnerId = entryStore.find((entry) => entry.id === slot.rsvpEntryId)?.userId || 'system';
   assetSlotStore = assetSlotStore.map((entry) => (entry.id === assetSlotId ? next : entry));
+  appendRsvpAuditEvent(
+    slot.opId,
+    'RSVP_CREW_SEAT_REQUESTED',
+    slotOwnerId,
+    {
+      assetSlotId: slot.id,
+      requestCount: created.length,
+      requests: created.map((request) => ({ roleNeeded: request.roleNeeded, qty: request.qty })),
+    },
+    nowMs
+  );
   notifyListeners();
   return created;
 }
@@ -397,6 +552,18 @@ export function joinCrewSeat(
     createdAt: nowIso(nowMs),
   };
   seatAssignmentStore = [assignment, ...seatAssignmentStore];
+  appendRsvpAuditEvent(
+    slot.opId,
+    'RSVP_CREW_SEAT_JOINED',
+    userId,
+    {
+      assetSlotId,
+      role: assignment.role,
+      assignmentId: assignment.id,
+      assetOwnerRsvpEntryId: slot.rsvpEntryId,
+    },
+    nowMs
+  );
   notifyListeners();
   return assignment;
 }

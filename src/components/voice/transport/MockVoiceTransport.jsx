@@ -16,6 +16,10 @@ export class MockVoiceTransport extends VoiceTransport {
     this.netId = null;
     this.micEnabled = true;
     this.pttActive = false;
+    this.outputDeviceId = null;
+    this.participantGainDb = new Map();
+    this.normalizationEnabled = true;
+    this.controlPackets = [];
   }
 
   async connect({ token, url, netId, user }) {
@@ -36,6 +40,14 @@ export class MockVoiceTransport extends VoiceTransport {
 
         // Emit connected event
         this._emit('connected', { netId });
+        this._emit('telemetry', {
+          netId,
+          rttMs: 32,
+          jitterMs: 4,
+          packetLossPct: 0,
+          mosProxy: 4.4,
+          sampledAt: new Date().toISOString(),
+        });
         resolve();
       }, 500);
     });
@@ -61,6 +73,47 @@ export class MockVoiceTransport extends VoiceTransport {
         isSpeaking: active,
       });
     }
+  }
+
+  publishControlPacket(packet) {
+    const row = {
+      ...packet,
+      id: packet?.id || `mock-control-${Date.now()}`,
+      netId: packet?.netId || this.netId,
+      sentAt: packet?.sentAt || new Date().toISOString(),
+    };
+    this.controlPackets.push(row);
+    this._emit('control-packet', row);
+  }
+
+  async setOutputDevice(deviceId) {
+    this.outputDeviceId = deviceId || null;
+    this._emit('output-device-changed', {
+      deviceId: this.outputDeviceId,
+    });
+  }
+
+  setParticipantGain(participantId, gainDb) {
+    if (!participantId) return;
+    this.participantGainDb.set(participantId, gainDb);
+    this._emit('participant-gain-changed', { participantId, gainDb });
+  }
+
+  setNormalizationEnabled(enabled) {
+    this.normalizationEnabled = Boolean(enabled);
+    this._emit('normalization-changed', { enabled: this.normalizationEnabled });
+  }
+
+  emitTelemetry(snapshot = {}) {
+    this._emit('telemetry', {
+      netId: this.netId,
+      rttMs: 40,
+      jitterMs: 6,
+      packetLossPct: 0,
+      mosProxy: 4.2,
+      sampledAt: new Date().toISOString(),
+      ...snapshot,
+    });
   }
 
   on(event, handler) {

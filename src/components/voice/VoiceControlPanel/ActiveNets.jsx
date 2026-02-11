@@ -1,31 +1,53 @@
-import React, { useState } from 'react';
-import { Lock, Radio, Users } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Lock, Radio, Users, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
-import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
+
+const norm = (value) => String(value || '').trim().toLowerCase();
 
 export default function ActiveNets() {
   const voiceNet = useVoiceNet();
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
-  const [joiningNetId, setJoiningNetId] = useState(null);
+  const [busyNetId, setBusyNetId] = useState(null);
 
-  const groupedNets = {
-    casual: voiceNet.voiceNets.filter((n) => n.discipline === 'casual'),
-    focused: voiceNet.voiceNets.filter((n) => n.discipline === 'focused'),
-    temporary: voiceNet.voiceNets.filter((n) => n.type === 'temporary'),
+  const grouped = useMemo(() => {
+    const nets = Array.isArray(voiceNet.voiceNets) ? voiceNet.voiceNets : [];
+    return {
+      focused: nets.filter((n) => norm(n.discipline || n.type) === 'focused'),
+      casual: nets.filter((n) => norm(n.discipline || n.type) !== 'focused'),
+    };
+  }, [voiceNet.voiceNets]);
+
+  const joinAsPrimary = async (net) => {
+    if (!user) return;
+    setBusyNetId(net.id);
+    try {
+      await voiceNet.joinNet(net.id || net.code, user);
+    } finally {
+      setBusyNetId(null);
+    }
   };
 
-  const handleJoinNet = async (net) => {
-    if (!canJoinVoiceNet(user, net)) return;
-    
-    setJoiningNetId(net.id);
+  const monitorOnly = async (net) => {
+    if (!user) return;
+    setBusyNetId(net.id);
     try {
-      await voiceNet.joinNet(net.id, user);
+      await voiceNet.monitorNet?.(net.id || net.code, user);
     } finally {
-      setJoiningNetId(null);
+      setBusyNetId(null);
+    }
+  };
+
+  const switchTx = async (net) => {
+    if (!user) return;
+    setBusyNetId(net.id);
+    try {
+      await voiceNet.setTransmitNet?.(net.id || net.code, user);
+    } finally {
+      setBusyNetId(null);
     }
   };
 
@@ -40,119 +62,91 @@ export default function ActiveNets() {
 
   return (
     <div className="px-4 py-3 space-y-3 animate-in fade-in duration-200">
-      {/* Currently Connected */}
-      {voiceNet.activeNetId && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Active</h3>
-          <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-md">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="font-mono text-zinc-200 font-semibold">
-                  {voiceNet.voiceNets.find((n) => n.id === voiceNet.activeNetId)?.name || 'Unknown'}
-                </span>
-              </div>
-              <span className="text-xs text-green-400 font-semibold">CONNECTED</span>
-            </div>
-            <div className="text-xs text-zinc-400 mb-3 flex items-center gap-2">
-              <Users className="w-3 h-3" />
-              <span>{voiceNet.participants?.length || 0} participant{(voiceNet.participants?.length || 0) !== 1 ? 's' : ''}</span>
-            </div>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="w-full text-xs"
-              onClick={() => voiceNet.leaveNet()}
-            >
-              Leave Net
-            </Button>
+      {voiceNet.transmitNetId && (
+        <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-md space-y-1">
+          <div className="text-[10px] uppercase tracking-widest text-orange-300">Transmit Bus</div>
+          <div className="text-xs text-zinc-200 font-mono">{voiceNet.transmitNetId}</div>
+          <div className="text-[10px] text-zinc-500">
+            Monitoring {voiceNet.monitoredNetIds?.length || 0} net{(voiceNet.monitoredNetIds?.length || 0) === 1 ? '' : 's'}
           </div>
         </div>
       )}
 
-      {/* Casual Nets */}
-      {groupedNets.casual.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Casual</h3>
+      {['focused', 'casual'].map((bucket) => (
+        <div key={bucket} className="space-y-2">
+          <h3 className={`text-xs font-semibold uppercase tracking-wider ${bucket === 'focused' ? 'text-orange-400' : 'text-zinc-400'}`}>
+            {bucket}
+          </h3>
           <div className="space-y-2">
-            {groupedNets.casual.map((net) => {
+            {grouped[bucket].map((net) => {
               const canJoin = canJoinVoiceNet(user, net);
-              const isJoining = joiningNetId === net.id;
-              const isConnected = voiceNet.activeNetId === net.id || voiceNet.activeNetId === net.code;
+              const isMonitored = (voiceNet.monitoredNetIds || []).includes(net.id) || (voiceNet.monitoredNetIds || []).includes(net.code);
+              const isTransmit = voiceNet.transmitNetId === net.id || voiceNet.transmitNetId === net.code;
+              const isBusy = busyNetId === net.id;
+              const participantCount = (voiceNet.participantsByNet?.[net.id] || []).length;
 
               return (
-                <div key={net.id} className="p-2.5 bg-zinc-800/40 rounded border border-zinc-700/50">
+                <div key={net.id} className={`p-2.5 rounded border ${isTransmit ? 'bg-orange-500/10 border-orange-500/30' : 'bg-zinc-800/40 border-zinc-700/50'}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="font-mono text-sm text-zinc-200 font-semibold">{net.name || net.label || net.code}</span>
-                      {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
-                    </div>
-                    {net.participants && (
-                      <span className="text-xs text-zinc-500 font-mono">{net.participants}</span>
-                    )}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs"
-                    disabled={!canJoin || isJoining || isConnected}
-                    onClick={() => handleJoinNet(net)}
-                    title={!canJoin ? 'Insufficient membership' : isConnected ? 'Already connected' : ''}
-                  >
-                    {isJoining ? 'Joining...' : isConnected ? 'Connected' : canJoin ? 'Join' : 'Locked'}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Focused Nets */}
-      {groupedNets.focused.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Focused</h3>
-          <div className="space-y-2">
-            {groupedNets.focused.map((net) => {
-              const canJoin = canJoinVoiceNet(user, net);
-              const isJoining = joiningNetId === net.id;
-              const isConnected = voiceNet.activeNetId === net.id || voiceNet.activeNetId === net.code;
-
-              return (
-                <div key={net.id} className={`p-2.5 rounded border ${
-                  isConnected 
-                    ? 'bg-orange-500/10 border-orange-500/30' 
-                    : 'bg-zinc-800/40 border-zinc-700/50'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className={`font-mono text-sm font-semibold ${
-                        isConnected ? 'text-orange-300' : 'text-zinc-200'
-                      }`}>{net.name || net.label || net.code}</span>
-                      {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
-                    </div>
-                    {net.participants && (
-                      <span className={`text-xs font-mono ${isConnected ? 'text-orange-400' : 'text-zinc-500'}`}>
-                        {net.participants}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className={`font-mono text-sm font-semibold truncate ${isTransmit ? 'text-orange-300' : 'text-zinc-200'}`}>
+                        {net.name || net.label || net.code}
                       </span>
-                    )}
+                      {!canJoin && <Lock className="w-3 h-3 text-zinc-500" />}
+                      {isMonitored && <Headphones className="w-3 h-3 text-cyan-400" />}
+                    </div>
+                    <span className="text-xs text-zinc-500 flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {participantCount}
+                    </span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={isConnected ? 'default' : 'outline'}
-                    className="w-full text-xs"
-                    disabled={!canJoin || isJoining || isConnected}
-                    onClick={() => handleJoinNet(net)}
-                    title={!canJoin ? 'Insufficient membership' : isConnected ? 'Already connected' : 'Requires discipline'}
-                  >
-                    {isJoining ? 'Joining...' : isConnected ? 'Connected' : canJoin ? 'Join' : 'Locked'}
-                  </Button>
+
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Button
+                      size="sm"
+                      variant={isTransmit ? 'default' : 'outline'}
+                      className="text-[10px]"
+                      disabled={!canJoin || isBusy || isTransmit}
+                      onClick={() => joinAsPrimary(net)}
+                    >
+                      {isTransmit ? 'TX' : 'Join'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-[10px]"
+                      disabled={!canJoin || isBusy || isMonitored}
+                      onClick={() => monitorOnly(net)}
+                    >
+                      Monitor
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-[10px]"
+                      disabled={!canJoin || isBusy || !isMonitored || isTransmit}
+                      onClick={() => switchTx(net)}
+                    >
+                      TX Bus
+                    </Button>
+                  </div>
+
+                  {isMonitored && !isTransmit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="mt-1.5 w-full text-[10px] text-zinc-400"
+                      onClick={() => voiceNet.unmonitorNet?.(net.id || net.code)}
+                    >
+                      Stop Monitoring
+                    </Button>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }

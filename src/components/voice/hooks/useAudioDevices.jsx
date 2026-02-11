@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSavedInputDeviceId, saveMicDeviceId } from '@/components/voice/utils/devicePersistence';
+import { getSavedInputDeviceId, getSavedOutputDeviceId, saveMicDeviceId, saveOutputDeviceId } from '@/components/voice/utils/devicePersistence';
 
 /**
  * Hook to manage audio input devices
@@ -7,7 +7,9 @@ import { getSavedInputDeviceId, saveMicDeviceId } from '@/components/voice/utils
  */
 export function useAudioDevices() {
   const [inputDevices, setInputDevices] = useState([]);
+  const [outputDevices, setOutputDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [selectedOutputDeviceId, setSelectedOutputDeviceId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -20,7 +22,9 @@ export function useAudioDevices() {
 
         // Filter to audio input devices only
         const audioInputs = devices.filter((d) => d.kind === 'audioinput');
+        const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
         setInputDevices(audioInputs);
+        setOutputDevices(audioOutputs);
 
         // Load saved preference
         const savedId = getSavedInputDeviceId();
@@ -29,6 +33,13 @@ export function useAudioDevices() {
         } else if (audioInputs.length > 0) {
           // Use first device if no saved preference
           setSelectedDeviceId(audioInputs[0].deviceId);
+        }
+
+        const savedOutputId = getSavedOutputDeviceId();
+        if (savedOutputId && audioOutputs.some((d) => d.deviceId === savedOutputId)) {
+          setSelectedOutputDeviceId(savedOutputId);
+        } else if (audioOutputs.length > 0) {
+          setSelectedOutputDeviceId(audioOutputs[0].deviceId);
         }
 
         setError(null);
@@ -59,10 +70,18 @@ export function useAudioDevices() {
     saveMicDeviceId(deviceId);
   };
 
+  const selectOutputDevice = (deviceId) => {
+    setSelectedOutputDeviceId(deviceId);
+    saveOutputDeviceId(deviceId);
+  };
+
   return {
     inputDevices,
+    outputDevices,
     selectedDeviceId,
+    selectedOutputDeviceId,
     selectDevice,
+    selectOutputDevice,
     loading,
     error,
   };

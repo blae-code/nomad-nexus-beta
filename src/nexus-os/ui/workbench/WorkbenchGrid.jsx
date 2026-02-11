@@ -206,10 +206,11 @@ export default function WorkbenchGrid({
   }, [panels, activePanelIds.join('|'), JSON.stringify(panelSizes), preset.id, preset.columns]);
 
   return (
-    <div className="h-full min-h-0 w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/70 flex flex-col" style={{ ...vars, backgroundColor: 'var(--nx-shell-bg-elevated)', borderColor: 'var(--nx-border)' }}>
-      <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2" style={{ borderColor: 'var(--nx-border)' }}>
+    <div className="h-full min-h-0 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col nexus-panel-glow relative" style={{ ...vars, backgroundColor: 'var(--nx-shell-bg-elevated)', borderColor: 'var(--nx-border)' }}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+      <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2 bg-[linear-gradient(180deg,rgba(255,132,66,0.08),rgba(0,0,0,0))]" style={{ borderColor: 'var(--nx-border)' }}>
         <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Workbench</h2>
+          <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 truncate">Workbench</h2>
           {bridgeId ? <NexusBadge tone="active">{bridgeId}</NexusBadge> : null}
           <span className="hidden sm:inline text-[11px] text-zinc-500 truncate">{preset.description}</span>
         </div>
@@ -242,7 +243,7 @@ export default function WorkbenchGrid({
         <div className="px-3 py-1.5 text-[11px] text-zinc-400 border-b border-zinc-800 bg-zinc-900/40">{migrationNotice}</div>
       ) : null}
 
-      <div className="flex-1 min-h-0 overflow-hidden p-3">
+      <div className="flex-1 min-h-0 overflow-hidden p-3 bg-[radial-gradient(circle_at_top,rgba(255,129,67,0.05),transparent_36%)]">
         <AnimatedMount show={gridVisible} durationMs={reducedMotion ? 0 : motionTokens.duration.fast} fromOpacity={0.92} toOpacity={1} fromY={3} toY={0} className="h-full min-h-0">
           <DragDropContext
             onDragEnd={(result) => {

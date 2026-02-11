@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/App.jsx';
 import '@/index.css';
+import '@/nexus-os/ui/theme/nexus-foundation.css';
 import { ensureTailwindCdn } from '@/components/hooks/useTailwindReady';
 import TailwindError from '@/components/tailwind/TailwindError';
 import TailwindReadyGate from '@/components/tailwind/TailwindReadyGate';

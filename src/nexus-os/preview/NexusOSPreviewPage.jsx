@@ -55,6 +55,8 @@ import { listShipSpecs } from '../services/referenceDataService';
 import { listFitProfiles } from '../services/fitProfileService';
 import { runNexusOSInvariantChecks, summarizeInvariantWarnings } from '../diagnostics';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
+import { Radar, Shield, Signal, Swords, UserRound } from 'lucide-react';
+import '../ui/theme/nexus-shell.css';
 
 function normalizeElementTag(raw) {
   const normalized = String(raw || '')
@@ -159,7 +161,7 @@ function toEventLabel(eventType) {
     .join(' ');
 }
 
-function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onClose }) {
+function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onClose, reducedMotion }) {
   const [mountedModes, setMountedModes] = useState(() =>
     mode ? { [mode]: true } : { cqb: true }
   );
@@ -192,8 +194,10 @@ function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onCl
             style={{
               opacity: active ? 1 : 0,
               pointerEvents: active ? 'auto' : 'none',
-              transform: active ? 'translateY(0px)' : 'translateY(4px)',
-              transition: 'opacity 140ms ease, transform 140ms ease',
+              transform: reducedMotion ? 'none' : active ? 'translateY(0px) scale(1)' : 'translateY(10px) scale(0.996)',
+              transition: reducedMotion
+                ? 'opacity 90ms linear'
+                : 'opacity 220ms cubic-bezier(0.18, 0.67, 0.25, 1), transform 220ms cubic-bezier(0.18, 0.67, 0.25, 1)',
             }}
           >
             {component}
@@ -966,65 +970,140 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     return `Unknown command "${input}".`;
   };
 
+  const pulseCount = cqbpulseSummary(events);
+  const activeAppId = focusMode || lifecycle.foregroundAppId || 'none';
+  const activeLifecycleState = activeAppId !== 'none' ? lifecycle.entries?.[activeAppId]?.state || 'foreground' : 'idle';
+  const focusedOperation = operations.find((operation) => operation.id === focusOperationId);
+  const focusOperationLabel = focusedOperation?.name || (focusOperationId ? focusOperationId : 'No focused operation');
+  const operationalPostureLabel = online ? 'Care-First Active' : 'Rescue Priority';
+
+  useEffect(() => {
+    if (!commandFeedback) return undefined;
+    const timerId = window.setTimeout(() => {
+      setCommandFeedback('');
+    }, 4200);
+
+    return () => window.clearTimeout(timerId);
+  }, [commandFeedback]);
+
   return (
     <div
-      className="relative w-full h-[calc(100vh-8.5rem)] min-h-0 overflow-hidden px-4 py-4 flex flex-col gap-3"
+      className="nexus-shell-root relative w-full h-full min-h-0 overflow-hidden p-3 md:p-4 flex flex-col gap-3"
       style={{ ...vars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
-      <section className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-4 py-3 flex items-center justify-between gap-3" style={{ borderColor: 'var(--nx-border)' }}>
-        <div>
-          <h1 className="text-lg sm:text-xl font-semibold uppercase tracking-wide text-zinc-100">
-            {isWorkspaceMode ? 'Nexus OS Workspace' : 'Nexus OS Preview'}
-          </h1>
-          <p className="text-xs text-zinc-500">
-            {isWorkspaceMode
-              ? 'Event-sourced operational workspace. No fake telemetry, TTL/confidence enforced.'
-              : 'Dev-only CQB Kernel UI v1.0 in shell preview. No production route impact.'}
-          </p>
+      <div className="nexus-shell-sweep" />
+      <div className="nexus-shell-grid" />
+      <div className="nexus-shell-vignette" />
+
+      <section className="nexus-top-rail nexus-panel-glow rounded-xl px-4 py-3 md:px-5 md:py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-orange-200/90 nexus-console-text">
+              <Shield className="w-3.5 h-3.5 text-orange-300" />
+              Redscar Nomads Command Intranet
+            </div>
+            <h1 className="mt-1 text-lg md:text-2xl font-semibold uppercase text-zinc-100 truncate">
+              {isWorkspaceMode ? 'NexusOS Tactical Workspace' : 'NexusOS CQB Sandbox'}
+            </h1>
+            <p className="text-xs text-zinc-400 max-w-3xl">
+              Mission-scoped command surface with TTL-bound intelligence, degraded mode continuity, and narrative-first operational context.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV ONLY</NexusBadge>}
+            <span className={`nexus-chip inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest ${online ? '' : 'nexus-chip-critical'}`}>
+              <Signal className="w-3 h-3" />
+              {online ? 'Network Nominal' : 'Network Degraded'}
+            </span>
+            <span className="nexus-chip inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest">
+              <Radar className="w-3 h-3" />
+              Pulse {pulseCount}
+            </span>
+            <span className={`nexus-chip inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest ${online ? '' : 'nexus-chip-critical'}`}>
+              {operationalPostureLabel}
+            </span>
+          </div>
         </div>
-        {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV ONLY</NexusBadge>}
+        <div className="mt-3 grid grid-cols-1 lg:grid-cols-5 gap-2 text-[11px] nexus-console-text">
+          <div className="nexus-surface px-2.5 py-1.5">
+            <span className="text-zinc-500 uppercase tracking-widest">Operator</span>{' '}
+            <span className="text-zinc-200">{workspaceDisplayCallsign}</span>
+          </div>
+          <div className="nexus-surface px-2.5 py-1.5">
+            <span className="text-zinc-500 uppercase tracking-widest">Bridge</span>{' '}
+            <span className="text-zinc-200">{bridgeId}</span>
+          </div>
+          <div className="nexus-surface px-2.5 py-1.5 truncate">
+            <span className="text-zinc-500 uppercase tracking-widest">Focus Op</span>{' '}
+            <span className="text-zinc-200">{focusOperationLabel}</span>
+          </div>
+          <div className="nexus-surface px-2.5 py-1.5">
+            <span className="text-zinc-500 uppercase tracking-widest">Foreground</span>{' '}
+            <span className="text-zinc-200">{activeAppId}</span>
+          </div>
+          <div className="nexus-surface px-2.5 py-1.5">
+            <span className="text-zinc-500 uppercase tracking-widest">Scheduler</span>{' '}
+            <span className="text-zinc-200">{activeLifecycleState}</span>
+          </div>
+        </div>
       </section>
 
       {!isWorkspaceMode ? (
-        <CqbContextSelector
-          variantId={variantId}
-          onVariantIdChange={setVariantId}
-          opId={opId}
-          onOpIdChange={setOpId}
-          elementFilter={elementFilter}
-          onElementFilterChange={setElementFilter}
-          actorId={actorId}
-          onActorIdChange={setActorId}
-          roster={activeRoster}
-        />
+        <div className="nexus-surface p-1.5">
+          <CqbContextSelector
+            variantId={variantId}
+            onVariantIdChange={setVariantId}
+            opId={opId}
+            onOpIdChange={setOpId}
+            elementFilter={elementFilter}
+            onElementFilterChange={setElementFilter}
+            actorId={actorId}
+            onActorIdChange={setActorId}
+            roster={activeRoster}
+          />
+        </div>
       ) : null}
 
-      <OpsStrip actorId={actorId} onOpenOperationFocus={() => openFocusApp('ops')} />
+      <div className="nexus-surface p-1.5">
+        <OpsStrip actorId={actorId} onOpenOperationFocus={() => openFocusApp('ops')} />
+      </div>
 
-      <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
+      <div className="nexus-surface p-1.5">
+        <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
+      </div>
 
-      <section className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 flex items-center justify-between gap-2 text-xs">
-        <div className="text-zinc-400">
-          OS Session: <span className="text-zinc-200">{sessionScopeKey}</span>
+      <section className="nexus-surface px-3 py-2 flex items-center justify-between gap-2 text-xs nexus-console-text">
+        <div className="text-zinc-400 truncate">
+          Session <span className="text-zinc-200">{sessionScopeKey}</span>
           {' · '}
-          Active app: <span className="text-zinc-200">{focusMode || lifecycle.foregroundAppId || 'none'}</span>
+          Boot <span className="text-zinc-200">{bootState.visible ? bootState.phase : 'ready'}</span>
           {' · '}
-          Boot: <span className="text-zinc-200">{bootState.visible ? bootState.phase : 'ready'}</span>
+          Reduced Motion <span className="text-zinc-200">{reducedMotion ? 'on' : 'off'}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <NexusBadge tone={online ? 'ok' : 'danger'}>{online ? 'ONLINE' : 'OFFLINE'}</NexusBadge>
-          <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
+        <div className="flex items-center gap-2 shrink-0">
+          <NexusBadge tone="active">
+            <UserRound className="w-3 h-3 mr-1" />
+            {workspaceDisplayCallsign}
+          </NexusBadge>
           <NexusBadge tone={recentSamples.length > 0 ? 'warning' : 'neutral'}>
             PERF {recentSamples.length}
           </NexusBadge>
+          <NexusBadge tone={focusedOperation ? 'ok' : 'warning'}>
+            <Swords className="w-3 h-3 mr-1" />
+            {focusedOperation ? 'Operation Linked' : 'No Linked Op'}
+          </NexusBadge>
+          <div className="hidden xl:flex items-center gap-1.5">
+            <span className="nexus-hotkey">Ctrl+Shift+P Deck</span>
+            <span className="nexus-hotkey">Ctrl+Shift+S Suspend</span>
+          </div>
         </div>
       </section>
 
       {commandFeedback ? (
-        <section className="rounded border border-zinc-800 bg-zinc-900/45 px-3 py-1.5 text-xs text-zinc-300">{commandFeedback}</section>
+        <section aria-live="polite" className="nexus-surface px-3 py-1.5 text-xs text-zinc-300 nexus-console-text">{commandFeedback}</section>
       ) : null}
 
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden nexus-panel-glow rounded-xl">
         <WorkbenchGrid
           bridgeId={bridgeId}
           panels={panelDescriptors}
@@ -1044,7 +1123,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         appEntries={lifecycle.entries}
         appCatalog={FOCUS_APP_CATALOG}
         online={online}
-        eventPulseCount={cqbpulseSummary(events)}
+        eventPulseCount={pulseCount}
         notifications={tray.notifications}
         unreadNotifications={tray.unreadCount}
         onActivateApp={openFocusApp}
@@ -1065,6 +1144,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             forceDesignOpId={forceDesignOpId}
             reportsOpId={reportsOpId}
             onClose={closeFocusApp}
+            reducedMotion={reducedMotion}
           />
         )}
       />

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*", "./*"]
     },
     "jsx": "react-jsx",
     "module": "esnext",
@@ -16,6 +16,10 @@
     "resolveJsonModule": true,
     "types": []
   },
-  "include": ["components/**/*.js", "pages/**/*.jsx"],
-  "exclude": ["node_modules", "dist", "vite-plugins", "components/ui", "api", "lib", "Layout.js"]
+  "include": [
+    "vite.config.js",
+    "vitest.config.js",
+    "playwright.config.js"
+  ],
+  "exclude": ["node_modules", "dist", "vite-plugins", "api"]
 }

@@ -232,6 +232,7 @@ export interface OpComment {
   by: string;
   at: string;
   body: string;
+  parentCommentId?: string;
   linkedArtifactRefs?: ArtifactRef[];
 }
 

@@ -42,7 +42,7 @@ export function useAlertSimulator() {
           label: 'Investigate',
           variant: 'primary',
           onClick: () => {
-            window.location.href = '/pages/CommsConsole';
+            window.location.href = '/CommsConsole';
           },
         },
         {

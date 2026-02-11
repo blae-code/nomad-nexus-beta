@@ -4,26 +4,9 @@ import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Shield, Compass, Flame, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
+import { Shield, Compass, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import RouteGuard from '@/components/auth/RouteGuard';
-
-const glowStyle = `
-  @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), inset 0 0 20px rgba(239, 68, 68, 0.05); }
-    50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.15); }
-  }
-  .glow-box {
-    animation: glow-pulse 4s ease-in-out infinite;
-  }
-  @keyframes scan {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100%); }
-  }
-  .scanline-overlay {
-    animation: scan 8s linear infinite;
-  }
-`;
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -115,28 +98,7 @@ export default function Onboarding() {
 
   return (
     <RouteGuard requiredAuth="authenticated">
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
-      <style>{glowStyle}</style>
-      
-      {/* Animated radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
-      
-      {/* Dynamic grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
-      
-      {/* Animated scanline effect */}
-      <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
-      
-      {/* Corner accents */}
-      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-red-500/40 opacity-50" />
-      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-red-500/40 opacity-50" />
-      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-red-500/40 opacity-50" />
-      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
-      
-      {/* Subtle background glow */}
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
-      
+    <div className="nexus-immersive-screen min-h-screen relative overflow-hidden">
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
           {/* Progress Bar */}
@@ -156,7 +118,7 @@ export default function Onboarding() {
 
           {/* Step 1: Welcome */}
           {step === 1 && (
-           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
+           <div className="nexus-immersive-panel p-8">
              <div className="flex items-center justify-center mb-6">
                <img 
                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
@@ -164,7 +126,7 @@ export default function Onboarding() {
                  className="w-20 h-20 drop-shadow-lg"
                />
               </div>
-              <h1 className="text-4xl font-black uppercase tracking-widest text-center text-white mb-4">
+              <h1 className="nexus-section-title text-4xl font-black uppercase tracking-widest text-center text-white mb-4">
                 Welcome, Wanderer
               </h1>
               <p className="text-center text-slate-400 text-sm mb-8 leading-relaxed">
@@ -186,36 +148,36 @@ export default function Onboarding() {
 
           {/* Step 2: Identity */}
           {step === 2 && (
-           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
+           <div className="nexus-immersive-panel p-8">
               <div className="flex items-center gap-3 mb-6">
                 <Compass className="w-8 h-8 text-red-600" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
+                <h2 className="nexus-section-title text-2xl font-black uppercase tracking-widest text-white">
                   Establish Identity
                 </h2>
               </div>
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-xs font-bold text-red-300 uppercase tracking-[0.15em] mb-2">
+                  <label className="nexus-label block text-red-300 mb-2">
                     ◆ RSI Callsign (Verified)
                   </label>
                   <Input
                     value={formData.rsiCallsign}
                     disabled
-                    className="bg-slate-900/60 border-2 border-red-500/30 text-slate-400 cursor-not-allowed"
+                    className="border-red-500/35 text-slate-400 cursor-not-allowed"
                   />
                   <p className="text-xs text-slate-600 mt-1">This is your verified Star Citizen identity</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-red-300 uppercase tracking-[0.15em] mb-2">
+                  <label className="nexus-label block text-red-300 mb-2">
                     ◆ Nomad Nexus Callsign (Display Name)
                   </label>
                   <Input
                     placeholder="Choose your display name..."
                     value={formData.nomadCallsign}
                     onChange={(e) => setFormData({ ...formData, nomadCallsign: e.target.value })}
-                    className="bg-slate-900/60 border-2 border-red-500/30 focus:border-red-500/60 focus:bg-slate-900 text-white placeholder:text-slate-600 transition-all duration-200"
+                    className="border-red-500/35"
                   />
                   <p className="text-xs text-slate-600 mt-1">
                     This is how you'll appear to other Nomads. Can be changed anytime.
@@ -223,14 +185,14 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-red-300 uppercase tracking-[0.15em] mb-2">
+                  <label className="nexus-label block text-red-300 mb-2">
                     ◆ Bio (Optional)
                   </label>
                   <Textarea
                     placeholder="Tell us your story, wanderer..."
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    className="bg-slate-900/60 border-2 border-red-500/30 focus:border-red-500/60 focus:bg-slate-900 text-white placeholder:text-slate-600 h-24 transition-all duration-200"
+                    className="h-24 border-red-500/35"
                   />
                 </div>
               </div>
@@ -248,10 +210,10 @@ export default function Onboarding() {
 
           {/* Step 3: The Code */}
           {step === 3 && (
-           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
+           <div className="nexus-immersive-panel p-8">
               <div className="flex items-center gap-3 mb-6">
                 <Shield className="w-8 h-8 text-red-600" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
+                <h2 className="nexus-section-title text-2xl font-black uppercase tracking-widest text-white">
                   The Redscar Code
                 </h2>
               </div>
@@ -303,10 +265,10 @@ export default function Onboarding() {
 
           {/* Step 4: AI Consent */}
           {step === 4 && (
-           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
+           <div className="nexus-immersive-panel p-8">
              <div className="flex items-center gap-3 mb-6">
                <Brain className="w-8 h-8 text-red-600" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
+                <h2 className="nexus-section-title text-2xl font-black uppercase tracking-widest text-white">
                   AI Capabilities & Preferences
                 </h2>
               </div>
@@ -418,7 +380,7 @@ export default function Onboarding() {
 
           {/* Step 5: Confirmation */}
           {step === 5 && (
-           <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
+           <div className="nexus-immersive-panel p-8">
              <div className="flex items-center justify-center mb-6">
                <img 
                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
@@ -427,7 +389,7 @@ export default function Onboarding() {
                />
              </div>
               
-              <h2 className="text-3xl font-black uppercase tracking-widest text-center text-white mb-4">
+              <h2 className="nexus-section-title text-3xl font-black uppercase tracking-widest text-center text-white mb-4">
                 Welcome to the Bonfire
               </h2>
               

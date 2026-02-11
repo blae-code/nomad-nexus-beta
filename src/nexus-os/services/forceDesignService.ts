@@ -7,6 +7,7 @@
 
 import type {
   CoverageCellStatus,
+  CoverageSourceRef,
   CoverageMatrix,
   FitElement,
   FitProfile,
@@ -30,6 +31,7 @@ interface AnalysisElement {
   countPlanned: number;
   roleTags: string[];
   capabilityTags: string[];
+  sourceRefs: CoverageSourceRef[];
   dependencyRefs: Array<{ dependsOn: string; reason: string }>;
 }
 
@@ -77,6 +79,7 @@ function elementFromFitProfile(fit: FitProfile): AnalysisElement[] {
       countPlanned: 1,
       roleTags: dedupeTags(fit.roleTags || []),
       capabilityTags: dedupeTags(fit.capabilityTags || []),
+      sourceRefs: [{ kind: 'fit_profile', id: fit.id }, { kind: 'element', id: platform.id }],
       dependencyRefs: (fit.dependencies || []).map((dependency) => ({
         dependsOn: dependency.dependsOn,
         reason: dependency.reason,
@@ -90,6 +93,7 @@ function elementFromFitProfile(fit: FitProfile): AnalysisElement[] {
     countPlanned: Math.max(1, Number(element.countPlanned || 1)),
     roleTags: dedupeTags([...(fit.roleTags || []), ...(element.roleTags || [])]),
     capabilityTags: dedupeTags([...(fit.capabilityTags || []), ...(element.capabilityTags || [])]),
+    sourceRefs: [{ kind: 'fit_profile', id: fit.id }, { kind: 'element', id: element.id }],
     dependencyRefs: (fit.dependencies || []).map((dependency) => ({
       dependsOn: dependency.dependsOn,
       reason: dependency.reason,
@@ -190,6 +194,9 @@ export function computeCoverageMatrix(
     });
     const matchedCount = matchingElements.reduce((sum, element) => sum + Math.max(1, element.countPlanned), 0);
     const overallStatus = coverageStatus(matchedCount, target.requiredCount);
+    const sourceRefs = dedupeCoverageSourceRefs(
+      matchingElements.flatMap((element) => element.sourceRefs || [{ kind: 'element', id: element.id }])
+    );
 
     return {
       id: target.id,
@@ -198,6 +205,12 @@ export function computeCoverageMatrix(
       requiredCount: target.requiredCount,
       matchedCount,
       overallStatus,
+      sourceRefs,
+      ruleTrace: {
+        normalizedTag,
+        matchedElementIds: matchingElements.map((entry) => entry.id),
+        targetId: target.id,
+      },
       cells: elements.map((element) => {
         const candidateTags =
           target.kind === 'ROLE'
@@ -213,6 +226,18 @@ export function computeCoverageMatrix(
   });
 
   return { columns, rows };
+}
+
+function dedupeCoverageSourceRefs(refs: CoverageSourceRef[]): CoverageSourceRef[] {
+  const seen = new Set<string>();
+  const deduped: CoverageSourceRef[] = [];
+  for (const ref of refs) {
+    const key = `${ref.kind}:${ref.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(ref);
+  }
+  return deduped.sort((a, b) => `${a.kind}:${a.id}`.localeCompare(`${b.kind}:${b.id}`));
 }
 
 export function computeDependencyGraph(elements: AnalysisElement[]) {
@@ -374,8 +399,6 @@ export function analyzeFitProfile(fitProfileId: string, nowMs = Date.now()): For
 }
 
 export function analyzeRoster(opId: string, nowMs = Date.now()): ForceAnalysis {
-  // TODO(Package 6): attach source citations per coverage row for reporting exports.
-  // TODO(Package 7): add memoization and stricter rule trace diagnostics for large rosters.
   const slots = listAssetSlots(opId);
   const entries = listRSVPEntries(opId);
   const cacheKey = buildRosterAnalysisCacheKey(
@@ -426,6 +449,11 @@ export function analyzeRoster(opId: string, nowMs = Date.now()): ForceAnalysis {
       countPlanned: 1,
       roleTags: dedupeTags([entry?.rolePrimary || '', ...fitRoleTags]),
       capabilityTags: dedupeTags([...slotCaps, ...fitCaps]),
+      sourceRefs: dedupeCoverageSourceRefs([
+        { kind: 'asset_slot', id: slot.id },
+        { kind: 'rsvp_entry', id: slot.rsvpEntryId },
+        ...(slot.fitProfileId ? [{ kind: 'fit_profile' as const, id: slot.fitProfileId }] : []),
+      ]),
       dependencyRefs: fit ? fit.dependencies.map((dependency) => ({ dependsOn: dependency.dependsOn, reason: dependency.reason })) : [],
     });
   }
@@ -439,6 +467,7 @@ export function analyzeRoster(opId: string, nowMs = Date.now()): ForceAnalysis {
         countPlanned: 1,
         roleTags: dedupeTags([entry.rolePrimary, ...(entry.roleSecondary || [])]),
         capabilityTags: [],
+        sourceRefs: [{ kind: 'rsvp_entry', id: entry.id }],
         dependencyRefs: [],
       });
     }
@@ -456,6 +485,14 @@ export function analyzeRoster(opId: string, nowMs = Date.now()): ForceAnalysis {
       severity: 'LOW',
       message: 'No explicit dependencies declared; coordination assumptions may be incomplete.',
       suggestedActions: ['Declare fit dependencies for critical elements.'],
+    });
+  }
+  if (elements.length >= 40) {
+    gaps.push({
+      kind: 'SUSTAINMENT',
+      severity: 'LOW',
+      message: `Large roster (${elements.length} elements): review coverage row trace metadata for deterministic diagnostics.`,
+      suggestedActions: ['Use coverage row ruleTrace/sourceRefs to inspect matching provenance by requirement.'],
     });
   }
 

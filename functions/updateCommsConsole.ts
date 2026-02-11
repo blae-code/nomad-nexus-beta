@@ -5,6 +5,9 @@ const COMMAND_ROLES = new Set(['admin', 'command', 'officer', 'communications', 
 const PRIORITY_LEVELS = new Set(['STANDARD', 'HIGH', 'CRITICAL']);
 const CAPTION_SEVERITY = new Set(['INFO', 'ALERT', 'CRITICAL']);
 const MODERATION_ACTIONS = new Set(['MUTE', 'UNMUTE', 'DEAFEN', 'UNDEAFEN', 'KICK', 'LOCK_CHANNEL', 'UNLOCK_CHANNEL']);
+const DISCIPLINE_MODES = new Set(['OPEN', 'PTT', 'REQUEST_TO_SPEAK', 'COMMAND_ONLY']);
+const COMMAND_BUS_ACTIONS = new Set(['SILENCE_UNTIL_CLEARED', 'CLEAR_TO_TRANSMIT', 'PRIORITY_OVERRIDE', 'REQUEST_TO_SPEAK', 'REQUEST_APPROVED', 'REQUEST_DENIED']);
+const SUBMIX_CHANNELS = new Set(['COMMAND', 'SQUAD', 'LOCAL']);
 
 type UpdateAttempt = Record<string, unknown>;
 
@@ -172,11 +175,234 @@ function buildModerationFeed(eventLogs: any[], eventId: string | null = null) {
         target_member_profile_id: text(details?.target_member_profile_id),
         reason: text(details?.reason),
         channel_id: text(details?.channel_id),
+        duration_seconds: safeNumber(details?.duration_seconds, 0),
+        penalty_expires_at: text(details?.penalty_expires_at),
+        radio_check: Boolean(details?.radio_check),
         moderated_by_member_profile_id: text(details?.moderated_by_member_profile_id || entry?.actor_member_profile_id),
         created_date: entry?.created_date || null,
       };
     })
     .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+}
+
+function safeNumber(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function buildDisciplineState(eventLogs: any[], options: { eventId?: string | null; netId?: string | null }) {
+  const { eventId = null, netId = null } = options;
+  const filtered = (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_DISCIPLINE_MODE')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+    .sort((a, b) => new Date(b?.created_date || 0).getTime() - new Date(a?.created_date || 0).getTime());
+  const latest = filtered[0];
+  if (!latest) return null;
+  return {
+    mode: text(latest?.details?.mode || 'PTT').toUpperCase(),
+    net_id: text(latest?.details?.net_id),
+    event_id: text(latest?.details?.event_id),
+    actor_member_profile_id: text(latest?.actor_member_profile_id || latest?.details?.actor_member_profile_id),
+    updated_at: latest?.created_date || null,
+  };
+}
+
+function buildSpeakRequestFeed(eventLogs: any[], options: { eventId?: string | null; netId?: string | null; includeResolved?: boolean }) {
+  const { eventId = null, netId = null, includeResolved = true } = options;
+  const ordered = [...(eventLogs || [])].sort(
+    (a, b) => new Date(a?.created_date || 0).getTime() - new Date(b?.created_date || 0).getTime()
+  );
+  const requests = new Map<string, any>();
+
+  for (const entry of ordered) {
+    const type = text(entry?.type).toUpperCase();
+    const details = entry?.details || {};
+    if (type === 'COMMS_SPEAK_REQUEST') {
+      const requestId = text(details?.request_id || details?.id || entry?.id);
+      if (!requestId) continue;
+      if (eventId && eventIdFromEntry(entry) !== eventId) continue;
+      if (netId && text(details?.net_id) !== netId) continue;
+      requests.set(requestId, {
+        request_id: requestId,
+        event_id: text(details?.event_id),
+        net_id: text(details?.net_id),
+        requester_member_profile_id: text(details?.requester_member_profile_id || entry?.actor_member_profile_id),
+        status: 'PENDING',
+        reason: text(details?.reason),
+        created_date: entry?.created_date || null,
+        resolved_at: null,
+        resolved_by_member_profile_id: null,
+      });
+      continue;
+    }
+
+    if (type === 'COMMS_SPEAK_REQUEST_STATE') {
+      const requestId = text(details?.request_id || details?.id);
+      if (!requestId || !requests.has(requestId)) continue;
+      const current = requests.get(requestId)!;
+      requests.set(requestId, {
+        ...current,
+        status: text(details?.status || 'PENDING').toUpperCase(),
+        resolved_at: entry?.created_date || null,
+        resolved_by_member_profile_id: text(details?.resolved_by_member_profile_id || entry?.actor_member_profile_id),
+      });
+    }
+  }
+
+  let rows = Array.from(requests.values()).sort(
+    (a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime()
+  );
+  if (!includeResolved) {
+    rows = rows.filter((entry) => entry.status === 'PENDING');
+  }
+  return rows;
+}
+
+function buildTelemetryFeed(eventLogs: any[], options: { eventId?: string | null; netId?: string | null; limit?: number }) {
+  const { eventId = null, netId = null, limit = 120 } = options;
+  const rows = (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_VOICE_TELEMETRY')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+    .map((entry) => ({
+      id: entry?.id,
+      event_id: text(entry?.details?.event_id),
+      net_id: text(entry?.details?.net_id),
+      member_profile_id: text(entry?.details?.member_profile_id || entry?.actor_member_profile_id),
+      rtt_ms: safeNumber(entry?.details?.rtt_ms),
+      jitter_ms: safeNumber(entry?.details?.jitter_ms),
+      packet_loss_pct: safeNumber(entry?.details?.packet_loss_pct),
+      mos_proxy: safeNumber(entry?.details?.mos_proxy),
+      created_date: entry?.created_date || null,
+    }))
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+  return rows.slice(0, Math.max(1, limit));
+}
+
+function buildRadioLog(eventLogs: any[], options: { eventId?: string | null; netId?: string | null; limit?: number; query?: string | null }) {
+  const { eventId = null, netId = null, limit = 200, query = null } = options;
+  const normalizedQuery = text(query).toLowerCase();
+  let rows = (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_RADIO_LOG')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+    .map((entry) => ({
+      id: entry?.id,
+      event_id: text(entry?.details?.event_id),
+      net_id: text(entry?.details?.net_id),
+      speaker_member_profile_id: text(entry?.details?.speaker_member_profile_id),
+      speaker: text(entry?.details?.speaker),
+      transcript: text(entry?.details?.transcript),
+      transcript_confidence: safeNumber(entry?.details?.transcript_confidence, 0),
+      started_at: text(entry?.details?.started_at || entry?.created_date),
+      ended_at: text(entry?.details?.ended_at || entry?.created_date),
+      source_clip_id: text(entry?.details?.source_clip_id),
+      created_date: entry?.created_date || null,
+    }))
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+
+  if (normalizedQuery) {
+    rows = rows.filter((entry) =>
+      entry.transcript.toLowerCase().includes(normalizedQuery) ||
+      entry.speaker.toLowerCase().includes(normalizedQuery)
+    );
+  }
+  return rows.slice(0, Math.max(1, limit));
+}
+
+function buildVoiceClipFeed(eventLogs: any[], options: { eventId?: string | null; netId?: string | null; limit?: number }) {
+  const { eventId = null, netId = null, limit = 120 } = options;
+  return (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_VOICE_CLIP')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+    .map((entry) => ({
+      id: entry?.id,
+      event_id: text(entry?.details?.event_id),
+      net_id: text(entry?.details?.net_id),
+      clip_seconds: safeNumber(entry?.details?.clip_seconds, 60),
+      ttl_hours: safeNumber(entry?.details?.ttl_hours, 24),
+      visibility: text(entry?.details?.visibility || 'COMMAND').toUpperCase(),
+      title: text(entry?.details?.title || 'Voice Clip'),
+      captured_by_member_profile_id: text(entry?.details?.captured_by_member_profile_id || entry?.actor_member_profile_id),
+      retention_expires_at: text(entry?.details?.retention_expires_at),
+      created_date: entry?.created_date || null,
+    }))
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
+    .slice(0, Math.max(1, limit));
+}
+
+function buildCommandWhisperFeed(eventLogs: any[], options: { eventId?: string | null; includeReceipts?: boolean }) {
+  const { eventId = null, includeReceipts = true } = options;
+  const ordered = [...(eventLogs || [])].sort(
+    (a, b) => new Date(a?.created_date || 0).getTime() - new Date(b?.created_date || 0).getTime()
+  );
+  const whispers = new Map<string, any>();
+  for (const entry of ordered) {
+    const type = text(entry?.type).toUpperCase();
+    const details = entry?.details || {};
+    if (type === 'COMMS_COMMAND_WHISPER') {
+      if (eventId && eventIdFromEntry(entry) !== eventId) continue;
+      const whisperId = text(details?.whisper_id || details?.id || entry?.id);
+      if (!whisperId) continue;
+      whispers.set(whisperId, {
+        whisper_id: whisperId,
+        event_id: text(details?.event_id),
+        sender_member_profile_id: text(details?.sender_member_profile_id || entry?.actor_member_profile_id),
+        target_member_profile_id: text(details?.target_member_profile_id),
+        target_type: text(details?.target_type),
+        voice_instruction: text(details?.voice_instruction),
+        text_summary: text(details?.text_summary),
+        status: 'SENT',
+        receipts: [] as Array<Record<string, unknown>>,
+        created_date: entry?.created_date || null,
+      });
+      continue;
+    }
+    if (type === 'COMMS_COMMAND_WHISPER_RECEIPT') {
+      const whisperId = text(details?.whisper_id);
+      if (!whisperId || !whispers.has(whisperId)) continue;
+      const current = whispers.get(whisperId)!;
+      const receipt = {
+        member_profile_id: text(details?.member_profile_id || entry?.actor_member_profile_id),
+        state: text(details?.state || 'ACK').toUpperCase(),
+        note: text(details?.note),
+        created_date: entry?.created_date || null,
+      };
+      whispers.set(whisperId, {
+        ...current,
+        status: receipt.state === 'NAK' ? 'NAK' : 'ACK',
+        receipts: [...current.receipts, receipt],
+      });
+    }
+  }
+
+  return Array.from(whispers.values())
+    .map((row) => ({
+      ...row,
+      receipts: includeReceipts ? row.receipts : [],
+    }))
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+}
+
+function buildCommandBusFeed(eventLogs: any[], options: { eventId?: string | null; netId?: string | null; limit?: number }) {
+  const { eventId = null, netId = null, limit = 200 } = options;
+  return (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_COMMAND_BUS')
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+    .map((entry) => ({
+      id: entry?.id,
+      event_id: text(entry?.details?.event_id),
+      net_id: text(entry?.details?.net_id),
+      action: text(entry?.details?.action).toUpperCase(),
+      payload: entry?.details?.payload || {},
+      actor_member_profile_id: text(entry?.details?.actor_member_profile_id || entry?.actor_member_profile_id),
+      created_date: entry?.created_date || null,
+    }))
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
+    .slice(0, Math.max(1, limit));
 }
 
 function resolvePresenceNet(presence: any, voiceNets: any[]) {
@@ -600,6 +826,11 @@ Deno.serve(async (req) => {
       if (needsTarget && !targetMemberProfileId) {
         return Response.json({ error: 'targetMemberProfileId required for this moderation action' }, { status: 400 });
       }
+      const durationSeconds = Math.max(0, Math.floor(safeNumber(payload.durationSeconds || payload.duration_seconds, 0)));
+      const radioCheck = Boolean(payload.radioCheck || payload.radio_check);
+      const penaltyExpiresAt = durationSeconds > 0
+        ? new Date(Date.now() + durationSeconds * 1000).toISOString()
+        : null;
 
       const details = {
         event_id: text(payload.eventId || payload.event_id) || null,
@@ -607,6 +838,9 @@ Deno.serve(async (req) => {
         target_member_profile_id: targetMemberProfileId || null,
         channel_id: text(payload.channelId || payload.channel_id) || null,
         reason: text(payload.reason || ''),
+        duration_seconds: durationSeconds || null,
+        penalty_expires_at: penaltyExpiresAt,
+        radio_check: radioCheck,
         moderated_by_member_profile_id: actorMemberId,
         moderated_at: nowIso,
       };
@@ -645,6 +879,726 @@ Deno.serve(async (req) => {
         success: true,
         action,
         moderation,
+      });
+    }
+
+    if (action === 'set_voice_discipline_mode') {
+      if (!commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const mode = text(payload.mode || payload.discipline_mode || 'PTT').toUpperCase();
+      if (!DISCIPLINE_MODES.has(mode)) {
+        return Response.json({ error: 'Unsupported discipline mode' }, { status: 400 });
+      }
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        mode,
+        actor_member_profile_id: actorMemberId,
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_DISCIPLINE_MODE',
+        severity: mode === 'COMMAND_ONLY' ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Voice discipline mode -> ${mode}`,
+        details,
+      });
+
+      return Response.json({
+        success: true,
+        action,
+        discipline: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'get_voice_discipline_state') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const includeResolved = payload.includeResolved === true;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 1400);
+      const discipline = buildDisciplineState(eventLogs || [], { eventId, netId });
+      const speakRequests = buildSpeakRequestFeed(eventLogs || [], { eventId, netId, includeResolved });
+      return Response.json({
+        success: true,
+        action,
+        discipline: discipline || { mode: 'PTT', event_id: eventId, net_id: netId, updated_at: null },
+        speakRequests,
+      });
+    }
+
+    if (action === 'request_to_speak') {
+      const netId = text(payload.netId || payload.net_id);
+      if (!netId) {
+        return Response.json({ error: 'netId required' }, { status: 400 });
+      }
+      const requestId = text(payload.requestId || payload.request_id, `rts_${Date.now()}`);
+      const details = {
+        request_id: requestId,
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: netId,
+        requester_member_profile_id: actorMemberId,
+        reason: text(payload.reason || ''),
+        requested_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_SPEAK_REQUEST',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Speak request on ${netId}`,
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        request: {
+          ...details,
+          status: 'PENDING',
+        },
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'resolve_speak_request') {
+      if (!commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const requestId = text(payload.requestId || payload.request_id);
+      if (!requestId) {
+        return Response.json({ error: 'requestId required' }, { status: 400 });
+      }
+      const state = text(payload.state || payload.decision || 'APPROVED').toUpperCase();
+      if (!['APPROVED', 'DENIED', 'CANCELLED'].includes(state)) {
+        return Response.json({ error: 'Invalid state' }, { status: 400 });
+      }
+      const details = {
+        request_id: requestId,
+        status: state,
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        resolved_by_member_profile_id: actorMemberId,
+        resolved_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_SPEAK_REQUEST_STATE',
+        severity: state === 'DENIED' ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Speak request ${requestId} -> ${state}`,
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        resolution: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'record_voice_telemetry') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        rtt_ms: safeNumber(payload.rttMs || payload.rtt_ms, 0),
+        jitter_ms: safeNumber(payload.jitterMs || payload.jitter_ms, 0),
+        packet_loss_pct: safeNumber(payload.packetLossPct || payload.packet_loss_pct, 0),
+        mos_proxy: safeNumber(payload.mosProxy || payload.mos_proxy, 5),
+        profile_hint: text(payload.profileHint || payload.profile_hint),
+        recorded_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_TELEMETRY',
+        severity: details.packet_loss_pct >= 10 ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice telemetry snapshot',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        telemetry: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_voice_telemetry') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const limitRaw = Number(payload.limit || 120);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, 400)) : 120;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 1800);
+      const telemetry = buildTelemetryFeed(eventLogs || [], { eventId, netId, limit });
+      return Response.json({
+        success: true,
+        action,
+        telemetry,
+      });
+    }
+
+    if (action === 'set_voice_output_profile') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        output_device_id: text(payload.outputDeviceId || payload.output_device_id),
+        normalize_enabled: Boolean(payload.normalizeEnabled ?? payload.normalize_enabled ?? true),
+        per_user_gain_db: payload.perUserGainDb || payload.per_user_gain_db || {},
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_OUTPUT_PROFILE',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice output profile updated',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        profile: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'set_voice_submix_profile') {
+      const monitors = Array.isArray(payload.monitorSubmixes || payload.monitor_submixes)
+        ? (payload.monitorSubmixes || payload.monitor_submixes)
+        : [];
+      const normalizedMonitors = Array.from(new Set(monitors.map((entry: unknown) => text(entry).toUpperCase())))
+        .filter((entry) => SUBMIX_CHANNELS.has(entry));
+      const txSubmix = text(payload.txSubmix || payload.tx_submix || 'SQUAD').toUpperCase();
+      const normalizedTxSubmix = SUBMIX_CHANNELS.has(txSubmix) ? txSubmix : 'SQUAD';
+
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        monitor_submixes: normalizedMonitors,
+        tx_submix: normalizedTxSubmix,
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_SUBMIX_PROFILE',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice submix profile updated',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        submix: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'sync_op_voice_text_presence') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        channel_id: text(payload.channelId || payload.channel_id) || null,
+        member_profile_id: actorMemberId,
+        status: text(payload.status || 'in-call'),
+        preset: text(payload.preset || 'operation-default'),
+        synced_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_OP_SYNC',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Operation comms topology synced',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        sync: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'append_radio_log_entry') {
+      const transcript = text(payload.transcript || payload.text);
+      if (!transcript) {
+        return Response.json({ error: 'transcript required' }, { status: 400 });
+      }
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        speaker_member_profile_id: text(payload.speakerMemberProfileId || payload.speaker_member_profile_id || actorMemberId),
+        speaker: text(payload.speaker || memberProfile?.display_callsign || memberProfile?.callsign || 'Unknown'),
+        transcript,
+        transcript_confidence: safeNumber(payload.transcriptConfidence || payload.transcript_confidence, 0.82),
+        started_at: text(payload.startedAt || payload.started_at || nowIso),
+        ended_at: text(payload.endedAt || payload.ended_at || nowIso),
+        source_clip_id: text(payload.sourceClipId || payload.source_clip_id),
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_RADIO_LOG',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Radio log entry captured',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        entry: { id: log?.id || null, ...details, created_date: nowIso },
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_radio_log') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const query = text(payload.query || payload.search) || null;
+      const limitRaw = Number(payload.limit || 200);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, 500)) : 200;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 2400);
+      const entries = buildRadioLog(eventLogs || [], { eventId, netId, limit, query });
+      return Response.json({
+        success: true,
+        action,
+        entries,
+      });
+    }
+
+    if (action === 'capture_voice_clip') {
+      const clipSeconds = Math.max(10, Math.min(600, Math.floor(safeNumber(payload.clipSeconds || payload.clip_seconds, 60))));
+      const ttlHours = Math.max(1, Math.min(72, Math.floor(safeNumber(payload.ttlHours || payload.ttl_hours, 24))));
+      const retentionExpiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString();
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        clip_seconds: clipSeconds,
+        ttl_hours: ttlHours,
+        visibility: text(payload.visibility || 'COMMAND').toUpperCase(),
+        title: text(payload.title || `Clip ${new Date().toLocaleTimeString()}`),
+        captured_by_member_profile_id: actorMemberId,
+        retention_expires_at: retentionExpiresAt,
+        created_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_CLIP',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Voice clip captured (${clipSeconds}s)`,
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        clip: { id: log?.id || null, ...details },
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_voice_clips') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const limitRaw = Number(payload.limit || 120);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, 300)) : 120;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 2200);
+      const clips = buildVoiceClipFeed(eventLogs || [], { eventId, netId, limit });
+      return Response.json({
+        success: true,
+        action,
+        clips,
+      });
+    }
+
+    if (action === 'generate_voice_structured_draft') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const draftTypeRaw = text(payload.draftType || payload.draft_type || 'SITREP').toUpperCase();
+      const draftType = ['SITREP', 'ORDERS', 'STATUS'].includes(draftTypeRaw) ? draftTypeRaw : 'SITREP';
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 2200);
+      const entries = buildRadioLog(eventLogs || [], { eventId, netId, limit: 40 });
+      const transcriptSnippet = entries
+        .slice(0, 15)
+        .map((entry) => `${entry.started_at} ${entry.speaker}: ${entry.transcript}`)
+        .join('\n');
+
+      const aiResp = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a Comms Officer assistant. Build a ${draftType} from radio log evidence. Use only provided transcript lines. If evidence is missing, mark unknown.
+
+RADIO LOG:
+${transcriptSnippet || '(no entries)'}`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            draft_type: { type: 'string' },
+            summary: { type: 'string' },
+            sections: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  heading: { type: 'string' },
+                  content: { type: 'string' },
+                  citations: { type: 'array', items: { type: 'string' } },
+                },
+              },
+            },
+            confidence: { type: 'number' },
+          },
+        },
+      });
+
+      const details = {
+        event_id: eventId,
+        net_id: netId,
+        draft_type: draftType,
+        generated_by_member_profile_id: actorMemberId,
+        source_entries: entries.slice(0, 15).map((entry) => entry.id),
+        draft: aiResp,
+        generated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_AI_DRAFT',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `AI ${draftType} draft generated`,
+        details,
+      });
+
+      return Response.json({
+        success: true,
+        action,
+        draft: {
+          ...aiResp,
+          is_ai_draft: true,
+          requires_confirmation: true,
+          source_entry_ids: details.source_entries,
+        },
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'set_voice_hotkey_profile') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        profile_name: text(payload.profileName || payload.profile_name || 'default'),
+        bindings: payload.bindings || {},
+        side_tone: Boolean(payload.sideTone ?? payload.side_tone ?? false),
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_HOTKEY_PROFILE',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice hotkey profile updated',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        profile: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'set_voice_loadout') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        loadout_name: text(payload.loadoutName || payload.loadout_name || 'default'),
+        role_hint: text(payload.roleHint || payload.role_hint),
+        environment_hint: text(payload.environmentHint || payload.environment_hint),
+        codec: text(payload.codec || 'opus'),
+        bitrate_kbps: safeNumber(payload.bitrateKbps || payload.bitrate_kbps, 24),
+        noise_suppression: Boolean(payload.noiseSuppression ?? payload.noise_suppression ?? true),
+        agc: Boolean(payload.agc ?? true),
+        eq_profile: payload.eqProfile || payload.eq_profile || {},
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_LOADOUT',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice comms loadout updated',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        loadout: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'claim_tx_device') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        client_id: text(payload.clientId || payload.client_id),
+        status: 'CLAIMED',
+        claimed_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_TX_DEVICE',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Transmit device claimed',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        authority: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'release_tx_device') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        member_profile_id: actorMemberId,
+        client_id: text(payload.clientId || payload.client_id),
+        status: 'RELEASED',
+        released_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_TX_DEVICE',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Transmit device released',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        authority: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'send_command_whisper') {
+      if (!commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const targetMemberProfileId = text(payload.targetMemberProfileId || payload.target_member_profile_id);
+      if (!targetMemberProfileId) {
+        return Response.json({ error: 'targetMemberProfileId required' }, { status: 400 });
+      }
+      const voiceInstruction = text(payload.voiceInstruction || payload.voice_instruction);
+      const textSummary = text(payload.textSummary || payload.text_summary || voiceInstruction);
+      if (!voiceInstruction) {
+        return Response.json({ error: 'voiceInstruction required' }, { status: 400 });
+      }
+      const whisperId = text(payload.whisperId || payload.whisper_id, `cmdw_${Date.now()}`);
+      const details = {
+        whisper_id: whisperId,
+        event_id: text(payload.eventId || payload.event_id) || null,
+        sender_member_profile_id: actorMemberId,
+        target_member_profile_id: targetMemberProfileId,
+        target_type: text(payload.targetType || payload.target_type || 'member'),
+        voice_instruction: voiceInstruction,
+        text_summary: textSummary,
+        requires_receipt: payload.requiresReceipt !== false,
+        sent_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_COMMAND_WHISPER',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Command whisper dispatched',
+        details,
+      });
+
+      await notifyMember(
+        base44,
+        targetMemberProfileId,
+        'Command Whisper',
+        textSummary,
+        details.event_id ? String(details.event_id) : null
+      );
+
+      return Response.json({
+        success: true,
+        action,
+        whisper: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'acknowledge_command_whisper') {
+      const whisperId = text(payload.whisperId || payload.whisper_id);
+      if (!whisperId) {
+        return Response.json({ error: 'whisperId required' }, { status: 400 });
+      }
+      const state = text(payload.state || 'ACK').toUpperCase();
+      if (!['ACK', 'NAK', 'READ'].includes(state)) {
+        return Response.json({ error: 'Invalid state' }, { status: 400 });
+      }
+      const details = {
+        whisper_id: whisperId,
+        event_id: text(payload.eventId || payload.event_id) || null,
+        member_profile_id: actorMemberId,
+        state,
+        note: text(payload.note || ''),
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_COMMAND_WHISPER_RECEIPT',
+        severity: state === 'NAK' ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Command whisper receipt ${state}`,
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        receipt: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_command_whispers') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const includeReceipts = payload.includeReceipts !== false;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 2500);
+      const whispers = buildCommandWhisperFeed(eventLogs || [], { eventId, includeReceipts });
+      return Response.json({
+        success: true,
+        action,
+        whispers,
+      });
+    }
+
+    if (action === 'set_voice_secure_mode') {
+      if (!commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const enabled = Boolean(payload.enabled ?? true);
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        enabled,
+        key_version: text(payload.keyVersion || payload.key_version, `kv-${Date.now()}`),
+        rotate_on_op_start: Boolean(payload.rotateOnOpStart ?? payload.rotate_on_op_start ?? true),
+        recordings_disabled: Boolean(payload.recordingsDisabled ?? payload.recordings_disabled ?? true),
+        allowed_roles: Array.isArray(payload.allowedRoles || payload.allowed_roles)
+          ? (payload.allowedRoles || payload.allowed_roles)
+          : [],
+        updated_by_member_profile_id: actorMemberId,
+        updated_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_SECURE_MODE',
+        severity: enabled ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Secure comms ${enabled ? 'enabled' : 'disabled'}`,
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        secureMode: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'link_voice_thread') {
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        radio_log_id: text(payload.radioLogId || payload.radio_log_id),
+        message_id: text(payload.messageId || payload.message_id),
+        thread_id: text(payload.threadId || payload.thread_id),
+        anchor_excerpt: text(payload.anchorExcerpt || payload.anchor_excerpt),
+        linked_by_member_profile_id: actorMemberId,
+        linked_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_VOICE_THREAD_LINK',
+        severity: 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: 'Voice-linked thread anchor created',
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        link: { id: log?.id || null, ...details },
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_voice_thread_links') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 1800);
+      const links = (eventLogs || [])
+        .filter((entry) => text(entry?.type).toUpperCase() === 'COMMS_VOICE_THREAD_LINK')
+        .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+        .filter((entry) => !netId || text(entry?.details?.net_id) === netId)
+        .map((entry) => ({
+          id: entry?.id,
+          event_id: text(entry?.details?.event_id),
+          net_id: text(entry?.details?.net_id),
+          radio_log_id: text(entry?.details?.radio_log_id),
+          message_id: text(entry?.details?.message_id),
+          thread_id: text(entry?.details?.thread_id),
+          anchor_excerpt: text(entry?.details?.anchor_excerpt),
+          linked_at: text(entry?.details?.linked_at || entry?.created_date),
+        }))
+        .sort((a, b) => new Date(b.linked_at || 0).getTime() - new Date(a.linked_at || 0).getTime());
+      return Response.json({
+        success: true,
+        action,
+        links,
+      });
+    }
+
+    if (action === 'publish_command_bus_action') {
+      const busAction = text(payload.busAction || payload.actionType || payload.command_bus_action).toUpperCase();
+      if (!COMMAND_BUS_ACTIONS.has(busAction)) {
+        return Response.json({ error: 'Unsupported command bus action' }, { status: 400 });
+      }
+      if (busAction !== 'REQUEST_TO_SPEAK' && !commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const details = {
+        event_id: text(payload.eventId || payload.event_id) || null,
+        net_id: text(payload.netId || payload.net_id) || null,
+        action: busAction,
+        payload: payload.payload && typeof payload.payload === 'object' ? payload.payload : {},
+        actor_member_profile_id: actorMemberId,
+        published_at: nowIso,
+      };
+      const log = await writeCommsLog(base44, {
+        type: 'COMMS_COMMAND_BUS',
+        severity: busAction === 'PRIORITY_OVERRIDE' ? 'MEDIUM' : 'LOW',
+        actor_member_profile_id: actorMemberId,
+        summary: `Command bus action ${busAction}`,
+        details,
+      });
+      return Response.json({
+        success: true,
+        action,
+        bus: details,
+        logId: log?.id || null,
+      });
+    }
+
+    if (action === 'list_command_bus_actions') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const limitRaw = Number(payload.limit || 200);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, 500)) : 200;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 2800);
+      const actionsFeed = buildCommandBusFeed(eventLogs || [], { eventId, netId, limit });
+      return Response.json({
+        success: true,
+        action,
+        actions: actionsFeed,
       });
     }
 
@@ -704,6 +1658,10 @@ Deno.serve(async (req) => {
       const callouts = buildPriorityCallouts(eventLogs || [], eventId).slice(0, limit);
       const captions = buildCaptionFeed(eventLogs || [], { eventId, limit });
       const moderation = buildModerationFeed(eventLogs || [], eventId).slice(0, limit);
+      const telemetry = buildTelemetryFeed(eventLogs || [], { eventId, limit });
+      const discipline = buildDisciplineState(eventLogs || [], { eventId, netId: null });
+      const speakRequests = buildSpeakRequestFeed(eventLogs || [], { eventId, netId: null, includeResolved: false });
+      const commandBus = buildCommandBusFeed(eventLogs || [], { eventId, netId: null, limit: Math.min(limit, 200) });
       const netLoad = summarizeNetLoad(voiceNets, memberships, callouts, captions);
 
       return Response.json({
@@ -717,6 +1675,10 @@ Deno.serve(async (req) => {
           callouts,
           captions,
           moderation,
+          telemetry,
+          discipline,
+          speakRequests,
+          commandBus,
           netLoad,
           generated_at: nowIso,
         },

@@ -80,7 +80,7 @@ OPERATION EVENTS SUMMARY:
 - Critical events: ${logSummary.critical_events.length}
 
 KEY EVENTS (reverse chronological):
-${logSummary.timeline_summary.map(e => \`- [\${e.severity}] \${e.type}: \${e.summary}\`).join('\n')}
+${logSummary.timeline_summary.map(e => `- [${e.severity}] ${e.type}: ${e.summary}`).join('\n')}
 
 MEMBER SUBMISSIONS:
 ${aarEntries.map(entry => `- ${entry.summary || 'No summary'} | Successes: ${entry.successes || 'n/a'} | Challenges: ${entry.challenges || 'n/a'} | Lessons: ${entry.lessons_learned || 'n/a'} | Feedback: ${entry.feedback || 'n/a'} | Tags: ${(entry.tags || []).join(', ')}`).join('\n')}

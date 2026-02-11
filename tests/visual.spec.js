@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test';
 const pages = [
   { name: 'hub', path: '/hub' },
   { name: 'events', path: '/events' },
-  { name: 'academy', path: '/academy' },
+  { name: 'war-academy', path: '/war-academy' },
   { name: 'comms-console', path: '/comms-console' },
-  { name: 'intelligence', path: '/intelligence' },
+  { name: 'intel-nexus', path: '/intel-nexus' },
 ];
 
 test.beforeEach(async ({ page }) => {

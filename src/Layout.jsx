@@ -53,6 +53,7 @@ export default function Layout({ children, currentPageName }) {
   // Full-screen pages that hide shell UI
   const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
   const isFullScreen = fullScreenPages.includes(currentPageName);
+  const isNexusWorkspace = currentPageName === 'Hub';
 
   return (
     <>
@@ -63,14 +64,19 @@ export default function Layout({ children, currentPageName }) {
       ) : (
         <>
           <AuthDebugOverlay />
-          <LayoutWithAuth currentPageName={currentPageName} children={children} isFullScreen={isFullScreen} />
+          <LayoutWithAuth
+            currentPageName={currentPageName}
+            children={children}
+            isFullScreen={isFullScreen}
+            isNexusWorkspace={isNexusWorkspace}
+          />
         </>
       )}
     </>
   );
 }
 
-function LayoutWithAuth({ children, currentPageName, isFullScreen }) {
+function LayoutWithAuth({ children, currentPageName, isFullScreen, isNexusWorkspace }) {
   const { error: authError, initialized } = useAuth();
 
   // Never block rendering - let AccessGate handle unauth routing
@@ -85,11 +91,11 @@ function LayoutWithAuth({ children, currentPageName, isFullScreen }) {
         <ActiveOpProvider>
           <VoiceNetProvider>
             {isFullScreen ? (
-              <div className="min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
+              <div className="nexus-immersive-screen min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
                 {children}
               </div>
             ) : (
-              <LayoutContent currentPageName={currentPageName} children={children} />
+              <LayoutContent currentPageName={currentPageName} children={children} isNexusWorkspace={isNexusWorkspace} />
             )}
           </VoiceNetProvider>
         </ActiveOpProvider>
@@ -98,7 +104,7 @@ function LayoutWithAuth({ children, currentPageName, isFullScreen }) {
   );
 }
 
-function LayoutContent({ currentPageName, children }) {
+function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
   useRealtimeNotifications();
@@ -141,6 +147,23 @@ function LayoutContent({ currentPageName, children }) {
     bootOverlay.replay();
   };
 
+  if (isNexusWorkspace) {
+    return (
+      <>
+        <div className="nexus-shell-standard min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
+          <CSSDebugOverlay />
+          <NotificationCenter />
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <OfflineStatusBanner />
+            <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-hidden">
+              <PermissionGuard>{children}</PermissionGuard>
+            </main>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   const mobileAwareMainPaddingClass =
     isCommsDockOpen && !dockMinimized
       ? 'pb-96'
@@ -160,7 +183,7 @@ function LayoutContent({ currentPageName, children }) {
     >
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
-      <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
+      <div className="nexus-shell-standard min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
          <a
            href="#main-content"
            className="absolute left-2 top-2 z-[1200] -translate-y-16 rounded bg-zinc-900 px-3 py-2 text-xs text-orange-300 border border-orange-500/40 transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
@@ -188,7 +211,7 @@ function LayoutContent({ currentPageName, children }) {
             <main
               id="main-content"
               tabIndex={-1}
-              className={`flex-1 overflow-y-auto overflow-x-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}
+              className={`nexus-page-main flex-1 overflow-y-auto overflow-x-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}
             >
               <PermissionGuard>{children}</PermissionGuard>
             </main>

@@ -23,7 +23,7 @@ import { isAdminUser } from '@/utils';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { base44 } from '@/api/base44Client';
 import { invokeMemberFunction } from '@/api/memberFunctions';
-import { canAccessFocusedComms } from '@/components/utils/commsAccessPolicy';
+import { canAccessCommsChannel } from '@/components/utils/commsAccessPolicy';
 import { useTypingIndicator } from '@/components/hooks/useTypingIndicator';
 import TypingIndicator from '@/components/comms/TypingIndicator';
 import { usePresenceMap } from '@/components/hooks/usePresenceMap';
@@ -191,6 +191,10 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     addNotification?.({ title, message, type, duration: 6000 });
   }, [addNotification]);
 
+  const canAccessChannel = useCallback((channel) => {
+    return canAccessCommsChannel(user, channel);
+  }, [user]);
+
   // Load channels
   useEffect(() => {
     const loadChannels = async () => {
@@ -198,11 +202,18 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
         const channelList = await base44.entities.Channel.list();
         setChannels(channelList);
 
-        // Auto-select bound channel if active op has one
+        const accessible = (channelList || []).filter((channel) => canAccessChannel(channel));
+
+        // Auto-select bound channel if active op has one and user can access it
         if (activeOp?.binding?.commsChannelId) {
-          setSelectedChannelId(activeOp.binding.commsChannelId);
-        } else if (!selectedChannelId && channelList.length > 0) {
-          setSelectedChannelId(channelList[0].id);
+          const bound = (channelList || []).find((channel) => channel.id === activeOp.binding.commsChannelId);
+          if (bound && canAccessChannel(bound)) {
+            setSelectedChannelId(activeOp.binding.commsChannelId);
+          } else if (accessible.length > 0 && !selectedChannelId) {
+            setSelectedChannelId(accessible[0].id);
+          }
+        } else if (!selectedChannelId && accessible.length > 0) {
+          setSelectedChannelId(accessible[0].id);
         }
       } catch (error) {
         console.error('Failed to load channels:', error);
@@ -210,7 +221,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     };
 
     loadChannels();
-  }, [activeOp?.binding?.commsChannelId, selectedChannelId]);
+  }, [activeOp?.binding?.commsChannelId, canAccessChannel, selectedChannelId]);
 
   useEffect(() => {
     try {
@@ -318,6 +329,14 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     const loadMessages = async () => {
       setLoadingMessages(true);
       try {
+        const selected = channels.find((channel) => channel.id === selectedChannelId);
+        if (selected && !canAccessChannel(selected)) {
+          setMessages([]);
+          setLoadingMessages(false);
+          notify('Access Denied', 'You no longer have scope access to this channel.', 'warning');
+          return;
+        }
+
         const msgs = await base44.entities.Message.filter({ channel_id: selectedChannelId });
         const visible = (msgs || []).filter(canViewMessage);
         setMessages(visible.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
@@ -335,6 +354,8 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     // Subscribe to real-time message updates
     const unsubscribe = base44.entities.Message.subscribe((event) => {
       if (event.type === 'create' && event.data?.channel_id === selectedChannelId) {
+        const selected = channels.find((channel) => channel.id === selectedChannelId);
+        if (selected && !canAccessChannel(selected)) return;
         if (!canViewMessage(event.data)) return;
         setMessages((prev) => [...prev, event.data]);
       }
@@ -343,7 +364,22 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
     return () => {
       unsubscribe();
     };
-  }, [selectedChannelId, markChannelRead]);
+  }, [canAccessChannel, canViewMessage, channels, markChannelRead, notify, selectedChannelId]);
+
+  useEffect(() => {
+    if (!selectedChannelId) return;
+    const selected = channels.find((channel) => channel.id === selectedChannelId);
+    if (!selected) return;
+    if (canAccessChannel(selected)) return;
+
+    const fallback = channels.find((channel) => canAccessChannel(channel));
+    if (fallback) {
+      setSelectedChannelId(fallback.id);
+    } else {
+      setSelectedChannelId(null);
+      setMessages([]);
+    }
+  }, [canAccessChannel, channels, selectedChannelId]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -685,24 +721,6 @@ Provide a helpful, concise response with tactical awareness.`,
      focused: channels.filter((ch) => ch.category === 'focused'),
      temporary: channels.filter((ch) => ch.category === 'temporary'),
    };
-
-  const canAccessChannel = (channel) => {
-    if (channel.category === 'focused') {
-      return canAccessFocusedComms(user);
-    }
-    if (Array.isArray(channel.allowed_role_tags) && channel.allowed_role_tags.length > 0) {
-      const roles = (user?.roles || []).map((r) => r.toString().toLowerCase());
-      const allowed = channel.allowed_role_tags.map((r) => r.toString().toLowerCase());
-      if (!allowed.some((role) => roles.includes(role))) return false;
-    }
-    if (channel.min_rank_required) {
-      const rank = (user?.rank || '').toString().toUpperCase();
-      const min = channel.min_rank_required.toString().toUpperCase();
-      const order = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
-      if (order.indexOf(rank) < order.indexOf(min)) return false;
-    }
-    return true;
-  };
 
   const ensureRoles = useCallback(async () => {
     if (rolesCacheRef.current) return rolesCacheRef.current;
@@ -1583,16 +1601,16 @@ Provide a helpful, concise response with tactical awareness.`,
                               loadMessages();
                             }}
                             onDelete={async (msgToDelete) => {
-                              if (confirm('Delete this message?')) {
-                                try {
-                                  await base44.entities.Message.update(msgToDelete.id, {
-                                    is_deleted: true,
-                                    deleted_by: user.id,
-                                    deleted_at: new Date().toISOString(),
-                                  });
-                                } catch (error) {
-                                  console.error('Failed to delete message:', error);
-                                }
+                              try {
+                                await base44.entities.Message.update(msgToDelete.id, {
+                                  is_deleted: true,
+                                  deleted_by: user.id,
+                                  deleted_at: new Date().toISOString(),
+                                });
+                                notify('Message Removed', 'Message was removed from the channel.', 'success');
+                              } catch (error) {
+                                console.error('Failed to delete message:', error);
+                                notify('Delete Failed', error?.message || 'Unable to remove message.', 'error');
                               }
                             }}
                             onReply={(msg) => setThreadPanelMessage(msg)}
@@ -1605,7 +1623,7 @@ Provide a helpful, concise response with tactical awareness.`,
                                 });
 
                                 if (existing.length > 0) {
-                                  alert('Message already pinned');
+                                  notify('Pin Skipped', 'Message is already pinned.', 'warning');
                                   return;
                                 }
 

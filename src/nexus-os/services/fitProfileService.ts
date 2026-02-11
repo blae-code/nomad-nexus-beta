@@ -18,7 +18,8 @@ import type {
 } from '../schemas/fitForceSchemas';
 import type { ShipSpec } from '../schemas/referenceDataSchemas';
 import { getDefaultReferenceGameVersion, getShipSpec } from './referenceDataService';
-import { listAssetSlots, updateAssetSlot } from './rsvpService';
+import { canManageOperation } from './operationService';
+import { listAssetSlots, listRSVPEntries, updateAssetSlot } from './rsvpService';
 
 export interface FitProfileCreateInput {
   scope: FitScope;
@@ -66,6 +67,17 @@ export interface DerivedTagResult {
 }
 
 type FitProfileListener = (profiles: FitProfile[]) => void;
+
+export interface FitAttachmentCitation {
+  kind: 'fit_profile' | 'asset_slot' | 'rsvp_entry';
+  id: string;
+}
+
+export interface FitAttachmentResult {
+  updatedSlots: ReturnType<typeof updateAssetSlot>[];
+  warnings: string[];
+  citations: FitAttachmentCitation[];
+}
 
 let fitProfileStore: FitProfile[] = [];
 const fitProfileListeners = new Set<FitProfileListener>();
@@ -335,7 +347,7 @@ export function attachFitProfileToRSVP(
   rsvpEntryId: string,
   fitProfileId: string,
   nowMs = Date.now()
-) {
+): FitAttachmentResult {
   const fit = getFitProfileById(fitProfileId);
   if (!fit) throw new Error(`FitProfile ${fitProfileId} not found`);
   const derived = deriveCapabilityTags(fit);
@@ -359,6 +371,11 @@ export function attachFitProfileToRSVP(
   return {
     updatedSlots,
     warnings: [...derived.warnings, ...fit.validation.patchMismatchWarnings],
+    citations: [
+      { kind: 'fit_profile', id: fitProfileId },
+      { kind: 'rsvp_entry', id: rsvpEntryId },
+      ...updatedSlots.map((slot) => ({ kind: 'asset_slot' as const, id: slot.id })),
+    ],
   };
 }
 
@@ -366,12 +383,19 @@ export function attachFitProfileToAssetSlot(
   opId: string,
   assetSlotId: string,
   fitProfileId: string,
+  actorId: string,
   nowMs = Date.now()
-) {
-  // TODO(Package 6): emit attachment citation metadata for report generation.
-  // TODO(Package 7): enforce permission checks before mutating roster-linked slots.
+): FitAttachmentResult {
+  const normalizedActor = String(actorId || '').trim();
+  if (!normalizedActor) throw new Error('attachFitProfileToAssetSlot requires actorId');
   const slot = listAssetSlots(opId).find((entry) => entry.id === assetSlotId);
   if (!slot) throw new Error(`Asset slot ${assetSlotId} not found for op ${opId}`);
+  const ownerRsvp = listRSVPEntries(opId).find((entry) => entry.id === slot.rsvpEntryId) || null;
+  const isOwner = ownerRsvp?.userId === normalizedActor;
+  const managePermission = canManageOperation(opId, normalizedActor);
+  if (!isOwner && !managePermission.allowed) {
+    throw new Error('Fit attachment denied: requires slot ownership or operation command permission.');
+  }
   return attachFitProfileToRSVP(opId, slot.rsvpEntryId, fitProfileId, nowMs);
 }
 

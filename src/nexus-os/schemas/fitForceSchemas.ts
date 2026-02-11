@@ -121,6 +121,11 @@ export interface CoverageCell {
   status: CoverageCellStatus;
 }
 
+export interface CoverageSourceRef {
+  kind: 'element' | 'rsvp_entry' | 'asset_slot' | 'fit_profile';
+  id: string;
+}
+
 export interface CoverageRow {
   id: string;
   label: string;
@@ -129,6 +134,12 @@ export interface CoverageRow {
   matchedCount: number;
   overallStatus: CoverageCellStatus;
   cells: CoverageCell[];
+  sourceRefs?: CoverageSourceRef[];
+  ruleTrace?: {
+    normalizedTag: string;
+    matchedElementIds: string[];
+    targetId: string;
+  };
 }
 
 export interface CoverageMatrix {
@@ -178,4 +189,3 @@ export interface ForceAnalysis {
     note: string;
   };
 }
-

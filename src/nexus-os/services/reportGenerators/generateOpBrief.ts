@@ -28,12 +28,71 @@ function ttlRemainingSeconds(updatedAt: string, ttlSeconds: number, nowMs: numbe
   return Math.max(0, Math.floor((updatedAtMs + ttlSeconds * 1000 - nowMs) / 1000));
 }
 
+interface OpBriefPhrasePreset {
+  missionContextLead: string;
+  areaLabel: string;
+  commsLabel: string;
+  planShapeLead: string;
+  rescueDoctrineLine: string;
+  rescueKnownLead: string;
+  rescueUnknownLine: string;
+}
+
+const OP_BRIEF_PHRASE_PRESETS: Readonly<Record<string, OpBriefPhrasePreset>> = Object.freeze({
+  'default': {
+    missionContextLead: 'Operation',
+    areaLabel: 'Area of operations anchor',
+    commsLabel: 'Comms doctrine',
+    planShapeLead: 'Planning inventory',
+    rescueDoctrineLine: 'Preserve life first: stabilize casualties and secure extraction lanes.',
+    rescueKnownLead: 'Rescue markers in scope',
+    rescueUnknownLine: 'Rescue marker history is unknown or empty; brief medical contingencies explicitly.',
+  },
+  'en-us:redscar_doctrine': {
+    missionContextLead: 'Command posture',
+    areaLabel: 'AO anchor',
+    commsLabel: 'Net discipline',
+    planShapeLead: 'Planning posture',
+    rescueDoctrineLine: 'Redscar doctrine: care-first and no one left behind.',
+    rescueKnownLead: 'Recorded rescue signals',
+    rescueUnknownLine: 'No rescue markers on record; assume uncertainty and brief medevac contingencies.',
+  },
+  'en-us:field_terse': {
+    missionContextLead: 'Op',
+    areaLabel: 'AO',
+    commsLabel: 'Comms',
+    planShapeLead: 'Plan',
+    rescueDoctrineLine: 'Life safety priority; protect extract lane.',
+    rescueKnownLead: 'Rescue signals',
+    rescueUnknownLine: 'Rescue signal state unknown; verify med support before launch.',
+  },
+});
+
+function normalizeLocale(locale: string | undefined): string {
+  return String(locale || 'en-US').trim().toLowerCase() || 'en-us';
+}
+
+function normalizeVoicePack(voicePack: string | undefined): string {
+  return String(voicePack || 'default').trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_') || 'default';
+}
+
+function resolveOpBriefPhrasePreset(params: ReportGenerationParams): OpBriefPhrasePreset {
+  const locale = normalizeLocale(params.locale);
+  const voicePack = normalizeVoicePack(params.voicePack);
+  const byLocaleAndVoice = OP_BRIEF_PHRASE_PRESETS[`${locale}:${voicePack}`];
+  if (byLocaleAndVoice) return byLocaleAndVoice;
+  const byVoiceOnly = OP_BRIEF_PHRASE_PRESETS[voicePack];
+  if (byVoiceOnly) return byVoiceOnly;
+  if (locale.startsWith('en-us')) return OP_BRIEF_PHRASE_PRESETS.default;
+  return OP_BRIEF_PHRASE_PRESETS.default;
+}
+
 export function generateOpBrief(
   params: ReportGenerationParams,
   nowMs = Date.now()
 ): GeneratedReportPayload {
-  // TODO(Package 7): stabilize narrative phrasing presets by template locale/voice pack.
   const opId = params.opId || params.scope.opId || '';
+  const phrasing = resolveOpBriefPhrasePreset(params);
   const templateId = getDefaultReportTemplateIdForKind('OP_BRIEF');
   const warnings: string[] = [];
   const refs: ReportRef[] = [];
@@ -116,9 +175,9 @@ export function generateOpBrief(
       'mission-context',
       'Mission Context',
       [
-        `Operation ${operation.name} is ${operation.status} with ${operation.posture} posture.`,
-        `Area of operations anchor: ${operation.ao.nodeId}.`,
-        `Comms doctrine: ${operation.commsTemplateId} (${commsTemplate?.channels.length || 0} channels).`,
+        `${phrasing.missionContextLead} ${operation.name} is ${operation.status} with ${operation.posture} posture.`,
+        `${phrasing.areaLabel}: ${operation.ao.nodeId}.`,
+        `${phrasing.commsLabel}: ${operation.commsTemplateId} (${commsTemplate?.channels.length || 0} channels).`,
       ].join('\n'),
       0,
       [{ kind: 'operation', id: operation.id }]
@@ -127,7 +186,7 @@ export function generateOpBrief(
       'plan-shape',
       'Plan Shape',
       [
-        `Objectives: ${objectives.length}. Phases: ${phases.length}. Tasks: ${tasks.length}.`,
+        `${phrasing.planShapeLead}: objectives ${objectives.length}, phases ${phases.length}, tasks ${tasks.length}.`,
         objectives.length
           ? `Primary objective: ${objectives[0].title}.`
           : 'Primary objective is unknown (none recorded).',
@@ -162,10 +221,10 @@ export function generateOpBrief(
       'rescue-priorities',
       'Rescue Priorities',
       [
-        'KISS: preserve life, stabilize casualties, and protect extraction lanes.',
+        phrasing.rescueDoctrineLine,
         rescueSignalCount
-          ? `Historical rescue markers in this op context: ${rescueSignalCount}.`
-          : 'Rescue marker history is unknown or empty; brief medical contingencies explicitly.',
+          ? `${phrasing.rescueKnownLead}: ${rescueSignalCount}.`
+          : phrasing.rescueUnknownLine,
       ].join('\n'),
       4,
       opEvents.slice(0, 4).map((event) => ({ kind: 'op_event', id: event.id }))

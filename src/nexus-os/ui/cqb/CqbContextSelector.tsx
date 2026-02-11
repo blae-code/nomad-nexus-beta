@@ -27,9 +27,9 @@ export default function CqbContextSelector({
   roster,
 }: CqbContextSelectorProps) {
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
+    <section className="rounded-xl border border-zinc-800 bg-zinc-950/75 p-3 nexus-panel-glow">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h2 className="text-xs sm:text-sm text-zinc-100 font-semibold uppercase tracking-wide">CQB Context</h2>
+        <h2 className="text-xs sm:text-sm text-zinc-100 font-semibold uppercase tracking-[0.14em]">CQB Context</h2>
         <NexusBadge tone="warning">Dev Only</NexusBadge>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -90,4 +90,3 @@ export default function CqbContextSelector({
     </section>
   );
 }
-

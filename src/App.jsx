@@ -4,7 +4,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
+import PageNotFound from '@/pages/PageNotFound';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import FittingDataOpsScheduler from '@/components/admin/FittingDataOpsScheduler';
 import { NexusOSPreviewPage } from '@/nexus-os';

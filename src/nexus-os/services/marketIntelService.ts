@@ -1,14 +1,11 @@
 /**
- * Market Intel Service (MVP repository stub)
+ * Market Intel Service
  *
  * Doctrine:
  * - Prices are observations, not authoritative live values.
  * - All outputs include recency/confidence context and stale warnings.
  * - Missing or stale data should degrade gracefully instead of guessing.
- *
- * TODO(adapter):
- * - Connect ingestion adapters for external feeds (UEX, org reports, manual imports).
- * - Preserve source + gameVersion + importedAt metadata in adapter payloads.
+ * - Adapter ingestion must preserve source + gameVersion + importedAt metadata.
  */
 
 import type {
@@ -22,8 +19,15 @@ import type {
 } from '../schemas/marketIntelSchemas';
 import { clampConfidence } from '../schemas/coreSchemas';
 
+export interface ObservationIngestMetadata {
+  gameVersion?: string;
+  importedAt?: string;
+  adapterId?: string;
+}
+
 export interface PriceObservationInput extends Omit<PriceObservation, 'id'> {
   id?: string;
+  metadata?: ObservationIngestMetadata;
 }
 
 export interface PriceObservationFilters {
@@ -37,6 +41,7 @@ export interface PriceObservationView extends PriceObservation {
   ageSeconds: number;
   stale: boolean;
   staleWarning?: string;
+  metadata?: ObservationIngestMetadata;
 }
 
 export interface RecommendationCriteria {
@@ -58,6 +63,49 @@ export interface BuySellRecommendation {
   warning?: string;
 }
 
+export interface MarketIntelAdapterContext {
+  nowMs: number;
+}
+
+export interface MarketIntelAdapterPayload {
+  source?: string;
+  gameVersion?: string;
+  importedAt?: string;
+  observations?: PriceObservationInput[];
+  routeHypotheses?: RouteHypothesis[];
+}
+
+export interface MarketIntelAdapter {
+  id: string;
+  priority?: number;
+  ingest:
+    | ((context: MarketIntelAdapterContext) => MarketIntelAdapterPayload | Promise<MarketIntelAdapterPayload>);
+}
+
+export interface MarketIntelAdapterStatus {
+  adapterId: string;
+  importedObservations: number;
+  importedRoutes: number;
+  warnings: string[];
+  error?: string;
+}
+
+export interface MarketIntelAdapterRefreshResult {
+  refreshedAt: string;
+  observationCount: number;
+  routeCount: number;
+  warnings: string[];
+  adapters: MarketIntelAdapterStatus[];
+}
+
+export interface MarketIntelAdapterHealth {
+  lastRefreshedAt: string | null;
+  warnings: string[];
+  adapters: MarketIntelAdapterStatus[];
+  observationCount: number;
+  routeCount: number;
+}
+
 const TTL_PROFILE_SECONDS: Record<string, number> = {
   'TTL-MARKET-FAST': 15 * 60,
   'TTL-MARKET-STANDARD': 60 * 60,
@@ -66,6 +114,11 @@ const TTL_PROFILE_SECONDS: Record<string, number> = {
 
 let observationStore: PriceObservation[] = [];
 let routeHypothesisStore: RouteHypothesis[] = [];
+const observationMetadataStore = new Map<string, ObservationIngestMetadata>();
+const marketIntelAdapterStore = new Map<string, MarketIntelAdapter>();
+let marketIntelAdapterStatuses: MarketIntelAdapterStatus[] = [];
+let marketIntelLastRefreshAt: string | null = null;
+let marketIntelRefreshWarnings: string[] = [];
 
 const TERMINALS: Terminal[] = [
   { id: 'term-a18-trade', name: 'Area18 Trade Terminal', nodeId: 'body-arccorp', kind: 'commodity' },
@@ -107,6 +160,34 @@ function median(values: number[]): number | undefined {
   return Number(((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2));
 }
 
+function normalizeIso(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const ms = new Date(value).getTime();
+  if (!Number.isFinite(ms)) return undefined;
+  return new Date(ms).toISOString();
+}
+
+function normalizeObservationMetadata(
+  metadata: ObservationIngestMetadata | undefined,
+  defaults: ObservationIngestMetadata
+): ObservationIngestMetadata | undefined {
+  const merged: ObservationIngestMetadata = {
+    gameVersion: metadata?.gameVersion || defaults.gameVersion,
+    importedAt: normalizeIso(metadata?.importedAt || defaults.importedAt),
+    adapterId: metadata?.adapterId || defaults.adapterId,
+  };
+  const hasAny = Boolean(merged.gameVersion || merged.importedAt || merged.adapterId);
+  return hasAny ? merged : undefined;
+}
+
+function sortAdapters(adapters: MarketIntelAdapter[]): MarketIntelAdapter[] {
+  return [...adapters].sort((a, b) => {
+    const priorityDelta = (b.priority || 0) - (a.priority || 0);
+    if (priorityDelta !== 0) return priorityDelta;
+    return a.id.localeCompare(b.id);
+  });
+}
+
 function normalizeRecords(nowMs: number): PriceObservationView[] {
   return observationStore
     .map((record) => {
@@ -119,9 +200,19 @@ function normalizeRecords(nowMs: number): PriceObservationView[] {
         ageSeconds,
         stale,
         staleWarning: stale ? 'Observation is stale by TTL profile.' : undefined,
+        metadata: observationMetadataStore.get(record.id),
       };
     })
     .sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime());
+}
+
+function validateObservationInput(input: PriceObservationInput): void {
+  if (!input.terminalId) throw new Error('Price observation requires terminalId.');
+  if (!input.commodityId) throw new Error('Price observation requires commodityId.');
+  if (input.buyOrSell !== 'BUY' && input.buyOrSell !== 'SELL') {
+    throw new Error('Price observation requires buyOrSell as BUY or SELL.');
+  }
+  if (!Number.isFinite(Number(input.price))) throw new Error('Price observation price must be numeric.');
 }
 
 export function listTerminals(): Terminal[] {
@@ -133,6 +224,7 @@ export function listCommodities(): Commodity[] {
 }
 
 export function recordPriceObservation(input: PriceObservationInput, nowMs = Date.now()): PriceObservation {
+  validateObservationInput(input);
   const record: PriceObservation = {
     id: input.id || createObservationId(nowMs),
     terminalId: input.terminalId,
@@ -144,9 +236,19 @@ export function recordPriceObservation(input: PriceObservationInput, nowMs = Dat
     confidence: clampConfidence(input.confidence),
     ttlProfileId: input.ttlProfileId || 'TTL-MARKET-STANDARD',
   };
-  observationStore = [record, ...observationStore].sort(
+
+  const existingIndex = observationStore.findIndex((entry) => entry.id === record.id);
+  if (existingIndex >= 0) {
+    observationStore[existingIndex] = record;
+  } else {
+    observationStore = [record, ...observationStore];
+  }
+  observationStore = observationStore.sort(
     (a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime()
   );
+
+  const metadata = normalizeObservationMetadata(input.metadata, {});
+  if (metadata) observationMetadataStore.set(record.id, metadata);
   return record;
 }
 
@@ -269,8 +371,112 @@ export function listRouteHypotheses(): RouteHypothesis[] {
   return [...routeHypothesisStore];
 }
 
+export function getPriceObservationMetadata(observationId: string): ObservationIngestMetadata | null {
+  return observationMetadataStore.get(observationId) || null;
+}
+
+export function registerMarketIntelAdapter(adapter: MarketIntelAdapter): void {
+  const id = String(adapter.id || '').trim();
+  if (!id) throw new Error('MarketIntelAdapter id is required.');
+  if (typeof adapter.ingest !== 'function') throw new Error(`MarketIntelAdapter ${id} must provide ingest(context).`);
+  marketIntelAdapterStore.set(id, { ...adapter, id });
+}
+
+export function unregisterMarketIntelAdapter(adapterId: string): boolean {
+  return marketIntelAdapterStore.delete(String(adapterId || '').trim());
+}
+
+export function listMarketIntelAdapters(): MarketIntelAdapter[] {
+  return sortAdapters([...marketIntelAdapterStore.values()]);
+}
+
+export function getMarketIntelAdapterHealth(): MarketIntelAdapterHealth {
+  return {
+    lastRefreshedAt: marketIntelLastRefreshAt,
+    warnings: [...marketIntelRefreshWarnings],
+    adapters: marketIntelAdapterStatuses.map((status) => ({
+      ...status,
+      warnings: [...status.warnings],
+    })),
+    observationCount: observationStore.length,
+    routeCount: routeHypothesisStore.length,
+  };
+}
+
+export async function refreshMarketIntelFromAdapters(nowMs = Date.now()): Promise<MarketIntelAdapterRefreshResult> {
+  const refreshedAt = new Date(nowMs).toISOString();
+  const adapters = listMarketIntelAdapters();
+  const statuses: MarketIntelAdapterStatus[] = [];
+  const warnings: string[] = [];
+
+  for (const adapter of adapters) {
+    const adapterWarnings: string[] = [];
+    let importedObservations = 0;
+    let importedRoutes = 0;
+    try {
+      const payload = await adapter.ingest({ nowMs });
+      const defaults: ObservationIngestMetadata = {
+        gameVersion: payload.gameVersion,
+        importedAt: payload.importedAt || refreshedAt,
+        adapterId: adapter.id,
+      };
+      for (const observation of payload.observations || []) {
+        try {
+          recordPriceObservation(
+            {
+              ...observation,
+              source: observation.source || payload.source || `adapter:${adapter.id}`,
+              metadata: normalizeObservationMetadata(observation.metadata, defaults),
+            },
+            nowMs
+          );
+          importedObservations += 1;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          adapterWarnings.push(`observation rejected: ${message}`);
+        }
+      }
+      for (const route of payload.routeHypotheses || []) {
+        upsertRouteHypothesis(route);
+        importedRoutes += 1;
+      }
+      statuses.push({
+        adapterId: adapter.id,
+        importedObservations,
+        importedRoutes,
+        warnings: adapterWarnings,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      statuses.push({
+        adapterId: adapter.id,
+        importedObservations,
+        importedRoutes,
+        warnings: adapterWarnings,
+        error: message,
+      });
+      warnings.push(`${adapter.id} ingestion failed: ${message}`);
+    }
+  }
+
+  marketIntelAdapterStatuses = statuses;
+  marketIntelLastRefreshAt = refreshedAt;
+  marketIntelRefreshWarnings = [...warnings];
+  return {
+    refreshedAt,
+    observationCount: observationStore.length,
+    routeCount: routeHypothesisStore.length,
+    warnings,
+    adapters: statuses,
+  };
+}
+
 export function resetMarketIntelServiceState() {
   observationStore = [];
   routeHypothesisStore = [];
+  observationMetadataStore.clear();
+  marketIntelAdapterStore.clear();
+  marketIntelAdapterStatuses = [];
+  marketIntelLastRefreshAt = null;
+  marketIntelRefreshWarnings = [];
 }
-

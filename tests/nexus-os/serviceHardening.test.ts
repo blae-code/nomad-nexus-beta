@@ -8,6 +8,9 @@ import {
   addAssetSlot,
   createCrewSeatRequests,
   joinCrewSeat,
+  withdrawRSVPEntry,
+  listAssetSlots,
+  listRSVPEntries,
   listCrewSeatAssignments,
   computeRosterSummary,
   listOpenCrewSeats,
@@ -47,9 +50,17 @@ import {
 import {
   generateReport,
   generateReportPreview,
+  deleteReport,
+  getReportInputSnapshot,
+  listReportInputSnapshots,
+  validateReport,
   resetReportServiceState,
 } from '../../src/nexus-os/services/reportService';
-import { resetFitProfileServiceState } from '../../src/nexus-os/services/fitProfileService';
+import {
+  attachFitProfileToAssetSlot,
+  createFitProfile,
+  resetFitProfileServiceState,
+} from '../../src/nexus-os/services/fitProfileService';
 import {
   createDraft,
   confirmDraft,
@@ -431,6 +442,170 @@ describe('Nexus OS hardening services', () => {
     expect(aar.evidence.some((block) => block.citations.length > 0)).toBe(true);
   });
 
+  it('enforces OP-scope report permissions and report deletion ownership', () => {
+    const nowMs = 1_735_689_710_000;
+    const owner = 'ce-owner';
+    const outsider = 'gce-outsider';
+    const op = createOperation({
+      name: 'Report Access Guard',
+      createdBy: owner,
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'body-daymar' },
+    }, nowMs - 10_000);
+
+    expect(() =>
+      generateReport('OP_BRIEF', { kind: 'OP', opId: op.id }, { generatedBy: outsider, opId: op.id }, nowMs - 9_000)
+    ).toThrow(/lacks OP scope access/i);
+
+    joinOperation(op.id, outsider, nowMs - 8_000);
+    const report = generateReport(
+      'OP_BRIEF',
+      { kind: 'OP', opId: op.id },
+      { generatedBy: outsider, opId: op.id },
+      nowMs - 7_000
+    );
+
+    expect(() => deleteReport(report.id, 'intruder-1')).toThrow(/Delete denied/i);
+    expect(deleteReport(report.id, outsider)).toBe(true);
+  });
+
+  it('stores reproducible report input snapshots and validates unsafe markdown warnings', () => {
+    const nowMs = 1_735_689_720_000;
+    const actorId = 'ce-warden';
+    const op = createOperation({
+      name: 'Snapshot Guard',
+      createdBy: actorId,
+      posture: 'FOCUSED',
+      status: 'ACTIVE',
+      ao: { nodeId: 'body-daymar' },
+    }, nowMs - 10_000);
+
+    const report = generateReport(
+      'OP_BRIEF',
+      { kind: 'OP', opId: op.id },
+      { generatedBy: actorId, opId: op.id },
+      nowMs - 9_000
+    );
+
+    const snapshot = getReportInputSnapshot(report.id);
+    expect(snapshot?.reportId).toBe(report.id);
+    expect(snapshot?.inputs.snapshotRefs.length).toBeGreaterThanOrEqual(report.inputs.snapshotRefs?.length || 0);
+    expect(listReportInputSnapshots().some((entry) => entry.reportId === report.id)).toBe(true);
+
+    const validation = validateReport({
+      ...report,
+      title: '<script>alert(1)</script>',
+      narrative: report.narrative.map((section, index) =>
+        index === 0 ? { ...section, body: `${section.body}\n[x](javascript:alert(1))` } : section
+      ),
+    });
+    expect(validation.warnings.some((warning) => /unsafe markdown\/html/i.test(warning))).toBe(true);
+  });
+
+  it('enforces fit attachment permissions and emits citation metadata', () => {
+    const nowMs = 1_735_689_730_000;
+    const op = createOperation({
+      name: 'Fit Attachment Guard',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    }, nowMs - 10_000);
+    const entry = upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'pilot-attach',
+      mode: 'ASSET',
+      rolePrimary: 'Pilot',
+      notes: 'comms-ok',
+      exceptionReason: 'attachment-test',
+    }, nowMs - 9_000);
+    const slot = addAssetSlot({
+      opId: op.id,
+      rsvpEntryId: entry.id,
+      assetId: 'asset-cutlass',
+      assetName: 'Cutlass',
+      capabilitySnapshot: { tags: ['escort'] },
+      crewProvided: 1,
+    }, nowMs - 8_000);
+    const fit = createFitProfile({
+      scope: 'INDIVIDUAL',
+      name: 'Escort Fit',
+      createdBy: 'pilot-attach',
+      gameVersion: '4.1.0-live',
+      platforms: [{ id: 'p-1', shipNameSnapshot: 'Cutlass Black', components: [] }],
+      roleTags: ['Pilot'],
+      capabilityTags: ['escort'],
+    }, nowMs - 7_000);
+
+    expect(() =>
+      attachFitProfileToAssetSlot(op.id, slot.id, fit.id, 'intruder-1', nowMs - 6_000)
+    ).toThrow(/denied/i);
+
+    const attached = attachFitProfileToAssetSlot(op.id, slot.id, fit.id, 'pilot-attach', nowMs - 5_000);
+    expect(attached.updatedSlots.length).toBeGreaterThan(0);
+    expect(attached.citations.some((entryRef) => entryRef.kind === 'fit_profile' && entryRef.id === fit.id)).toBe(true);
+    expect(attached.citations.some((entryRef) => entryRef.kind === 'asset_slot' && entryRef.id === slot.id)).toBe(true);
+  });
+
+  it('adds source refs and trace diagnostics to roster coverage rows', () => {
+    const nowMs = 1_735_689_740_000;
+    const op = createOperation({
+      name: 'Force Trace',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    }, nowMs - 20_000);
+
+    const entry = upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'pilot-trace',
+      mode: 'ASSET',
+      rolePrimary: 'Lead',
+      notes: 'comms-ok',
+      exceptionReason: 'trace',
+    }, nowMs - 19_000);
+    addAssetSlot({
+      opId: op.id,
+      rsvpEntryId: entry.id,
+      assetId: 'asset-trace',
+      assetName: 'Tracebird',
+      capabilitySnapshot: { tags: ['transport', 'logistics'] },
+      crewProvided: 2,
+    }, nowMs - 18_000);
+
+    const analysis = analyzeRoster(op.id, nowMs - 17_000);
+    expect(analysis.coverageMatrix.rows.length).toBeGreaterThan(0);
+    expect(analysis.coverageMatrix.rows[0].ruleTrace?.targetId).toBeTruthy();
+    expect(analysis.coverageMatrix.rows.some((row) => (row.sourceRefs || []).length > 0)).toBe(true);
+
+    const largeOp = createOperation({
+      name: 'Large Trace',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    }, nowMs - 16_000);
+    for (let index = 0; index < 40; index += 1) {
+      upsertRSVPEntry(largeOp.id, {
+        opId: largeOp.id,
+        userId: `member-${index}`,
+        mode: 'INDIVIDUAL',
+        rolePrimary: 'Lead',
+        notes: 'comms-ok',
+        exceptionReason: `bulk-${index}`,
+      }, nowMs - 15_000 + index);
+    }
+
+    const largeAnalysis = analyzeRoster(largeOp.id, nowMs - 14_000);
+    expect(
+      largeAnalysis.gaps.some((gap) =>
+        gap.kind === 'SUSTAINMENT' && /Large roster/i.test(gap.message)
+      )
+    ).toBe(true);
+  });
+
   it('requires actorId for operation mutators and keeps joiners non-commander', () => {
     const owner = 'ce-warden';
     const op = createOperation({
@@ -495,6 +670,136 @@ describe('Nexus OS hardening services', () => {
     const openSeats = listOpenCrewSeats(op.id);
     expect(summary.openSeats[0].openQty).toBe(1);
     expect(openSeats[0].openQty).toBe(1);
+  });
+
+  it('withdrawRSVPEntry cascades asset slot and seat cleanup for asset owners', () => {
+    const op = createOperation({
+      name: 'RSVP Withdrawal Cascade',
+      createdBy: 'ce-warden',
+      posture: 'FOCUSED',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+
+    const ownerEntry = upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'pilot-owner',
+      mode: 'ASSET',
+      rolePrimary: 'Pilot',
+      notes: 'comms-ok',
+      exceptionReason: 'Asset owner',
+    });
+    upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'crew-1',
+      mode: 'INDIVIDUAL',
+      rolePrimary: 'Gunner',
+      notes: 'comms-ok',
+      exceptionReason: 'Seat join',
+    });
+    const slot = addAssetSlot({
+      opId: op.id,
+      rsvpEntryId: ownerEntry.id,
+      assetId: 'asset-c2',
+      assetName: 'C2',
+      capabilitySnapshot: { tags: ['transport'] },
+      crewProvided: 1,
+    });
+    createCrewSeatRequests(slot.id, [{ roleNeeded: 'Gunner', qty: 1 }]);
+    const assignment = joinCrewSeat(slot.id, 'crew-1', 'Gunner');
+
+    const result = withdrawRSVPEntry(op.id, 'pilot-owner', 'pilot-owner');
+    expect(result.removedAssetSlotIds).toEqual([slot.id]);
+    expect(result.removedSeatAssignmentIds).toContain(assignment.id);
+    expect(listOpenCrewSeats(op.id).length).toBe(0);
+    expect(listCrewSeatAssignments(op.id).length).toBe(0);
+
+    const ownerRecord = listRSVPEntries(op.id).find((entry) => entry.userId === 'pilot-owner');
+    expect(ownerRecord?.status).toBe('WITHDRAWN');
+
+    const opEvents = listOperationEvents(op.id).map((event) => event.kind);
+    expect(opEvents).toContain('RSVP_WITHDRAWN');
+    expect(opEvents).toContain('RSVP_ASSET_SLOT_REMOVED');
+    expect(opEvents).toContain('RSVP_CREW_ASSIGNMENT_WITHDRAWN');
+  });
+
+  it('withdrawRSVPEntry removes the withdrawing user from crew seats without deleting the asset slot', () => {
+    const op = createOperation({
+      name: 'RSVP Withdrawal Seat Exit',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+
+    const ownerEntry = upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'pilot-owner',
+      mode: 'ASSET',
+      rolePrimary: 'Pilot',
+      notes: 'comms-ok',
+      exceptionReason: 'Owner',
+    });
+    upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'crew-2',
+      mode: 'INDIVIDUAL',
+      rolePrimary: 'Support',
+      notes: 'comms-ok',
+      exceptionReason: 'Crew seat',
+    });
+
+    const slot = addAssetSlot({
+      opId: op.id,
+      rsvpEntryId: ownerEntry.id,
+      assetId: 'asset-m2',
+      assetName: 'M2',
+      capabilitySnapshot: { tags: ['logistics'] },
+      crewProvided: 2,
+    });
+    createCrewSeatRequests(slot.id, [{ roleNeeded: 'Loader', qty: 1 }]);
+    joinCrewSeat(slot.id, 'crew-2', 'Loader');
+
+    const result = withdrawRSVPEntry(op.id, 'crew-2', 'crew-2');
+    expect(result.removedAssetSlotIds.length).toBe(0);
+    expect(result.removedSeatAssignmentIds.length).toBe(1);
+    expect(listAssetSlots(op.id).length).toBe(1);
+    expect(listCrewSeatAssignments(op.id).length).toBe(0);
+  });
+
+  it('appends operation audit events for RSVP, asset slots, and seat joins', () => {
+    const op = createOperation({
+      name: 'RSVP Audit Trail',
+      createdBy: 'ce-warden',
+      posture: 'FOCUSED',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+
+    const entry = upsertRSVPEntry(op.id, {
+      opId: op.id,
+      userId: 'pilot-77',
+      mode: 'ASSET',
+      rolePrimary: 'Pilot',
+      notes: 'comms-ok',
+      exceptionReason: 'Audit coverage',
+    });
+    const slot = addAssetSlot({
+      opId: op.id,
+      rsvpEntryId: entry.id,
+      assetId: 'asset-retaliator',
+      assetName: 'Retaliator',
+      capabilitySnapshot: { tags: ['combat'] },
+      crewProvided: 1,
+    });
+    createCrewSeatRequests(slot.id, [{ roleNeeded: 'Gunner', qty: 1 }]);
+    joinCrewSeat(slot.id, 'gunner-1', 'Gunner');
+
+    const opEvents = listOperationEvents(op.id).map((event) => event.kind);
+    expect(opEvents).toContain('RSVP_SUBMITTED');
+    expect(opEvents).toContain('RSVP_ASSET_SLOT_ADDED');
+    expect(opEvents).toContain('RSVP_CREW_SEAT_REQUESTED');
+    expect(opEvents).toContain('RSVP_CREW_SEAT_JOINED');
   });
 
   it('draft-confirmed events persist explicit scopeKind metadata', () => {

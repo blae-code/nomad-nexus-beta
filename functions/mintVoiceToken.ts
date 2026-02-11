@@ -19,6 +19,16 @@ Deno.serve(async (req) => {
     }
 
     const { netId, userId, callsign, clientId, netType } = payload;
+    const disciplineMode = String(payload?.disciplineMode || payload?.discipline_mode || 'PTT').toUpperCase();
+    const requestToSpeakApproved = Boolean(payload?.requestToSpeakApproved || payload?.request_to_speak_approved);
+    const secureMode = Boolean(payload?.secureMode || payload?.secure_mode);
+    const secureKeyVersion = String(payload?.secureKeyVersion || payload?.secure_key_version || '').trim();
+    const whisperTarget = payload?.whisperTarget || payload?.whisper_target || null;
+    const monitorSubmixes = Array.isArray(payload?.monitorSubmixes || payload?.monitor_submixes)
+      ? (payload?.monitorSubmixes || payload?.monitor_submixes)
+      : [];
+    const txSubmix = String(payload?.txSubmix || payload?.tx_submix || 'SQUAD').toUpperCase();
+    const disableRecordings = payload?.disableRecordings !== false;
 
     if (!netId || !userId) {
       return Response.json({ error: 'Missing netId or userId' }, { status: 400 });
@@ -27,6 +37,12 @@ Deno.serve(async (req) => {
     if (actorType === 'member' && memberProfile?.id && userId !== memberProfile.id) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const rank = String(memberProfile?.rank || '').toUpperCase();
+    const roles = Array.isArray(memberProfile?.roles)
+      ? memberProfile.roles.map((entry: unknown) => String(entry || '').toLowerCase())
+      : [];
+    const commandPrivileges = actorType === 'admin' || isAdminMember(memberProfile) || rank === 'COMMANDER' || roles.includes('command') || roles.includes('officer');
 
     // Enforce policy: Focused nets require Member/Affiliate/Partner membership
     if (netType === 'FOCUSED' && !netId.includes('briefing-temp')) {
@@ -85,6 +101,15 @@ Deno.serve(async (req) => {
     // Generate room name from netId (deterministic)
     const roomName = `nexus-net-${netId}`;
 
+    const canPublishByDiscipline = (() => {
+      if (disciplineMode === 'COMMAND_ONLY') return commandPrivileges;
+      if (disciplineMode === 'REQUEST_TO_SPEAK') return commandPrivileges || requestToSpeakApproved;
+      return true;
+    })();
+    const canPublish = payload?.canPublish === false ? false : canPublishByDiscipline;
+    const canSubscribe = payload?.canSubscribe === false ? false : true;
+    const canPublishData = payload?.canPublishData === false ? false : true;
+
     const token = new AccessToken(liveKitApiKey, liveKitApiSecret);
     token.identity = userId;
     token.name =
@@ -97,20 +122,35 @@ Deno.serve(async (req) => {
       callsign: callsign || memberProfile?.display_callsign || memberProfile?.callsign || adminUser?.full_name || 'Unknown',
       clientId: clientId || '',
       netId: netId,
+      disciplineMode,
+      commandPrivileges,
+      secureMode,
+      secureKeyVersion: secureKeyVersion || null,
+      whisperTarget,
+      monitorSubmixes,
+      txSubmix,
+      disableRecordings,
     });
 
     token.addGrant({
       room: roomName,
       roomJoin: true,
-      canPublish: true,
-      canPublishData: true,
-      canSubscribe: true,
+      canPublish,
+      canPublishData,
+      canSubscribe,
     });
 
     return Response.json({
       url: normalizedUrl,
       token: token.toJwt(),
       roomName,
+      policy: {
+        disciplineMode,
+        canPublish,
+        canSubscribe,
+        secureMode,
+        secureKeyVersion: secureKeyVersion || null,
+      },
     });
   } catch (error) {
     console.error('[mintVoiceToken]', error.message);

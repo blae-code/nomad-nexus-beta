@@ -1,8 +1,8 @@
 /**
- * Channel Context Service (scaffold)
+ * Channel Context Service
  *
- * Determines the comms template/channel context for CQB/comms workflows.
- * TODO: integrate runtime membership and permission checks from auth graph.
+ * Determines the comms template/channel context for CQB/comms workflows and
+ * supports pluggable membership/permission resolution from auth graphs.
  */
 
 import { getCqbVariant } from '../registries/cqbVariantRegistry';
@@ -13,6 +13,8 @@ export interface ChannelContextRequest {
   variantId?: string;
   commsTemplateId?: CommsTemplateId;
   preferredChannelId?: string;
+  userId?: string;
+  roleTags?: string[];
 }
 
 export interface ChannelContextResult {
@@ -23,6 +25,24 @@ export interface ChannelContextResult {
   monitoringLinks: CommsTemplateDefinition['monitoringLinks'];
   authorityExpectations: string[];
 }
+
+export interface ChannelAccessResolution {
+  allowedChannelIds?: string[];
+  defaultMembership?: string[];
+  authorityExpectations?: string[];
+}
+
+export interface ChannelAccessResolverContext {
+  templateId: CommsTemplateId;
+  request: ChannelContextRequest;
+  template: CommsTemplateDefinition;
+  channelIds: string[];
+}
+
+export type ChannelAccessResolver =
+  (context: ChannelAccessResolverContext) => ChannelAccessResolution | null | undefined;
+
+let channelAccessResolver: ChannelAccessResolver | null = null;
 
 function resolveTemplateId(input: ChannelContextRequest): CommsTemplateId {
   if (input.commsTemplateId) return input.commsTemplateId;
@@ -38,23 +58,54 @@ function resolveTemplateId(input: ChannelContextRequest): CommsTemplateId {
   return 'FIRETEAM_PRIMARY';
 }
 
+function normalizeTokens(values: string[] | undefined): string[] {
+  return [...new Set((values || []).map((value) => String(value || '').trim()).filter(Boolean))];
+}
+
+export function setChannelAccessResolver(resolver: ChannelAccessResolver | null): void {
+  channelAccessResolver = resolver;
+}
+
+export function getChannelAccessResolver(): ChannelAccessResolver | null {
+  return channelAccessResolver;
+}
+
 export function determineChannelContext(input: ChannelContextRequest): ChannelContextResult {
   const templateId = resolveTemplateId(input);
   const template = getCommsTemplate(templateId);
-  const channelIds = template.channels.map((channel) => channel.id);
+  const baseChannelIds = template.channels.map((channel) => channel.id);
+  const resolved = channelAccessResolver
+    ? channelAccessResolver({
+        templateId,
+        request: input,
+        template,
+        channelIds: [...baseChannelIds],
+      })
+    : null;
+
+  const channelIds = normalizeTokens(
+    resolved?.allowedChannelIds?.length ? resolved.allowedChannelIds : baseChannelIds
+  );
+  const fallbackPrimary = channelIds[0] || baseChannelIds[0] || '';
 
   const primaryChannelId =
     input.preferredChannelId && channelIds.includes(input.preferredChannelId)
       ? input.preferredChannelId
-      : channelIds[0];
+      : fallbackPrimary;
 
   return {
     templateId,
     primaryChannelId,
     channelIds,
-    defaultMembership: [...template.defaultMembership],
+    defaultMembership: normalizeTokens(
+      resolved?.defaultMembership?.length ? resolved.defaultMembership : [...template.defaultMembership]
+    ),
     monitoringLinks: [...template.monitoringLinks],
-    authorityExpectations: [...template.authorityExpectations],
+    authorityExpectations: normalizeTokens(
+      resolved?.authorityExpectations?.length
+        ? resolved.authorityExpectations
+        : [...template.authorityExpectations]
+    ),
   };
 }
 

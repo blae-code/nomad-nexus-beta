@@ -75,10 +75,10 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
   };
 
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/65 px-3 py-2.5 space-y-2">
+    <section className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2.5 space-y-2 nexus-panel-glow">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-zinc-100">Ops Strip</h3>
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100">Ops Strip</h3>
           <NexusBadge tone="neutral">{operations.length} ops</NexusBadge>
         </div>
         <div className="flex items-center gap-2">

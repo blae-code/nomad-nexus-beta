@@ -1,9 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
 import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
 import type { ControlSignal, ControlZone, MapLayerState, TacticalLayerId } from '../../schemas/mapSchemas';
 import type { Operation } from '../../schemas/opSchemas';
 import { getRenderableLocationEstimates } from '../../services/locationEstimateService';
+import {
+  buildMapCommsOverlay,
+  createEmptyMapCommsOverlay,
+  extractCommsTopologySnapshot,
+  type CommsPriority,
+  type MapCommsOverlay,
+  type MapCommsOverlayNet,
+} from '../../services/mapCommsOverlayService';
+import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
 import {
   addComment,
@@ -30,7 +40,10 @@ import {
   resolveAvailabilityState,
 } from '../state';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
-import { getCommsOverlayStub, getLogisticsOverlayStub } from './devMapData';
+import {
+  buildMapLogisticsOverlay,
+  type MapLogisticsLane,
+} from '../../services/mapLogisticsOverlayService';
 import IntelDetailPanel from './IntelDetailPanel';
 import IntentDraftPanel from './IntentDraftPanel';
 import RadialMenu, { type RadialMenuItem } from './RadialMenu';
@@ -72,6 +85,12 @@ interface OpsOverlayNode {
   isFocus: boolean;
   posture: Operation['posture'];
   status: Operation['status'];
+}
+
+interface CommsOverlayState {
+  loading: boolean;
+  error: string | null;
+  overlay: MapCommsOverlay;
 }
 
 const DEFAULT_LAYER_STATE: Readonly<MapLayerState[]> = Object.freeze([
@@ -185,6 +204,66 @@ function keyForIntel(intel: IntelRenderable): string {
   return `${intel.id}:${intel.updatedAt}`;
 }
 
+function commsPriorityRank(priority: CommsPriority): number {
+  if (priority === 'CRITICAL') return 3;
+  if (priority === 'HIGH') return 2;
+  return 1;
+}
+
+function commsPriorityColor(priority: CommsPriority): string {
+  if (priority === 'CRITICAL') return 'rgba(214, 83, 64, 0.92)';
+  if (priority === 'HIGH') return 'rgba(216, 146, 87, 0.9)';
+  return 'rgba(118, 172, 214, 0.84)';
+}
+
+function commsPriorityTone(priority: CommsPriority): 'danger' | 'warning' | 'active' {
+  if (priority === 'CRITICAL') return 'danger';
+  if (priority === 'HIGH') return 'warning';
+  return 'active';
+}
+
+function commsQualityTone(quality: MapCommsOverlayNet['quality']): 'ok' | 'warning' | 'danger' {
+  if (quality === 'CONTESTED') return 'danger';
+  if (quality === 'DEGRADED') return 'warning';
+  return 'ok';
+}
+
+function logisticsLaneColor(lane: MapLogisticsLane): string {
+  if (lane.stale) return 'rgba(126, 119, 112, 0.45)';
+  if (lane.laneKind === 'EXTRACT') return 'rgba(118, 201, 140, 0.88)';
+  if (lane.laneKind === 'HOLD') return 'rgba(201, 161, 94, 0.86)';
+  if (lane.laneKind === 'AVOID') return 'rgba(214, 83, 64, 0.9)';
+  if (lane.laneKind === 'ROUTE_HYPOTHESIS') return 'rgba(94, 158, 178, 0.82)';
+  return 'rgba(216, 146, 87, 0.88)';
+}
+
+function logisticsLaneTone(lane: MapLogisticsLane): 'ok' | 'warning' | 'neutral' {
+  if (lane.stale) return 'neutral';
+  if (lane.laneKind === 'AVOID') return 'warning';
+  if (lane.laneKind === 'EXTRACT') return 'ok';
+  return 'warning';
+}
+
+function nodeStrokeColor(category: string | undefined, isSystem: boolean): string {
+  if (isSystem) return 'rgba(179,90,47,0.72)';
+  if (category === 'planet') return 'rgba(163,132,106,0.75)';
+  if (category === 'moon') return 'rgba(140,122,108,0.72)';
+  if (category === 'station') return 'rgba(94,158,178,0.8)';
+  if (category === 'lagrange') return 'rgba(176,140,93,0.72)';
+  if (category === 'orbital-marker') return 'rgba(125,132,147,0.6)';
+  return 'rgba(133,116,103,0.64)';
+}
+
+function nodeFillColor(category: string | undefined, isSystem: boolean): string {
+  if (isSystem) return 'rgba(179,90,47,0.18)';
+  if (category === 'planet') return 'rgba(114,98,84,0.28)';
+  if (category === 'moon') return 'rgba(95,84,76,0.24)';
+  if (category === 'station') return 'rgba(65,92,103,0.32)';
+  if (category === 'lagrange') return 'rgba(110,92,72,0.2)';
+  if (category === 'orbital-marker') return 'rgba(90,95,106,0.14)';
+  return 'rgba(107,91,80,0.2)';
+}
+
 export default function TacticalMapPanel({
   locationEstimates = [],
   controlSignals = [],
@@ -207,6 +286,19 @@ export default function TacticalMapPanel({
   const [draftVersion, setDraftVersion] = useState(0);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [commsPriorityFloor, setCommsPriorityFloor] = useState<CommsPriority>('STANDARD');
+  const [showCommsLinks, setShowCommsLinks] = useState(true);
+  const [showStations, setShowStations] = useState(true);
+  const [showLagrange, setShowLagrange] = useState(false);
+  const [showOmMarkers, setShowOmMarkers] = useState(false);
+  const [aiInferenceLoading, setAiInferenceLoading] = useState(false);
+  const [aiInferenceText, setAiInferenceText] = useState<string>('');
+  const [aiInferenceError, setAiInferenceError] = useState<string | null>(null);
+  const [commsState, setCommsState] = useState<CommsOverlayState>(() => ({
+    loading: true,
+    error: null,
+    overlay: createEmptyMapCommsOverlay(focusOperationId || opId || ''),
+  }));
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 2000);
@@ -225,6 +317,62 @@ export default function TacticalMapPanel({
       unsubscribeDrafts();
     };
   }, []);
+
+  const scopedCommsOpId = focusOperationId || opId || '';
+  const operationMapSignature = useMemo(
+    () => (operations || [])
+      .map((entry) => `${entry.id}:${entry.ao?.nodeId || ''}:${entry.updatedAt || ''}`)
+      .sort()
+      .join('|'),
+    [operations]
+  );
+
+  useEffect(() => {
+    let active = true;
+    const loadCommsOverlay = async () => {
+      setCommsState((prev) => {
+        const scopeChanged = prev.overlay.scopedOpId !== scopedCommsOpId;
+        return {
+          loading: true,
+          error: null,
+          overlay: scopeChanged ? createEmptyMapCommsOverlay(scopedCommsOpId) : prev.overlay,
+        };
+      });
+      try {
+        const response: any = await invokeMemberFunction('updateCommsConsole', {
+          action: 'get_comms_topology_snapshot',
+          eventId: scopedCommsOpId || undefined,
+          includeGlobal: !scopedCommsOpId,
+          limit: 160,
+        });
+        if (!active) return;
+        const topology = extractCommsTopologySnapshot(response);
+        const overlay = buildMapCommsOverlay({
+          topology,
+          opId,
+          focusOperationId,
+          operations,
+          mapNodes: TACTICAL_MAP_NODES,
+          nowMs: Date.now(),
+        });
+        setCommsState({ loading: false, error: null, overlay });
+      } catch (error: any) {
+        if (!active) return;
+        setCommsState((prev) => ({
+          loading: false,
+          error: error?.message || 'Comms topology unavailable.',
+          overlay: prev.overlay.nets.length > 0 ? prev.overlay : createEmptyMapCommsOverlay(scopedCommsOpId),
+        }));
+      }
+    };
+
+    loadCommsOverlay();
+    const timer = setInterval(loadCommsOverlay, 20_000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [scopedCommsOpId, opId, focusOperationId, operationMapSignature]);
 
   const presence = useMemo(() => mapPresence(locationEstimates, viewerScope), [locationEstimates, viewerScope]);
 
@@ -286,23 +434,89 @@ export default function TacticalMapPanel({
       }))
       .filter((entry) => Boolean(entry.nodeId && TACTICAL_MAP_NODE_BY_ID[entry.nodeId]));
   }, [operations, focusOperationId]);
-  const commsOverlay = useMemo(() => getCommsOverlayStub(), []);
-  const logisticsOverlay = useMemo(() => getLogisticsOverlayStub(), []);
+  const commsOverlay = commsState.overlay;
+  const logisticsOverlay = useMemo(
+    () =>
+      buildMapLogisticsOverlay({
+        opId,
+        focusOperationId,
+        operations,
+        mapNodes: TACTICAL_MAP_NODES,
+        nowMs,
+      }),
+    [opId, focusOperationId, operations, nowMs]
+  );
+
+  const visibleCommsCallouts = useMemo(
+    () => commsOverlay.callouts.filter((callout) => commsPriorityRank(callout.priority) >= commsPriorityRank(commsPriorityFloor)),
+    [commsOverlay.callouts, commsPriorityFloor]
+  );
+
+  const visibleCommsLinks = useMemo(
+    () => (showCommsLinks ? commsOverlay.links : []),
+    [showCommsLinks, commsOverlay.links]
+  );
+
+  const commsAnchors = useMemo(() => {
+    const byNetId: Record<string, { x: number; y: number; nodeId: string }> = {};
+    const netsByNode = commsOverlay.nets.reduce<Record<string, MapCommsOverlayNet[]>>((acc, net) => {
+      if (!acc[net.nodeId]) acc[net.nodeId] = [];
+      acc[net.nodeId].push(net);
+      return acc;
+    }, {});
+    for (const [nodeId, netsAtNode] of Object.entries(netsByNode)) {
+      const anchorNode = TACTICAL_MAP_NODE_BY_ID[nodeId];
+      if (!anchorNode) continue;
+      netsAtNode.forEach((net, index) => {
+        const orbitRadius = anchorNode.radius + 2.4 + Math.min(3.2, netsAtNode.length * 0.5);
+        const angle = (Math.PI * 2 * index) / Math.max(1, netsAtNode.length);
+        byNetId[net.id] = {
+          x: anchorNode.x + Math.cos(angle) * orbitRadius,
+          y: anchorNode.y + Math.sin(angle) * orbitRadius,
+          nodeId,
+        };
+      });
+    }
+    return byNetId;
+  }, [commsOverlay.nets]);
+
+  const visibleMapNodes = useMemo(
+    () => TACTICAL_MAP_NODES.filter((node) => {
+      if (node.category === 'station') return showStations;
+      if (node.category === 'lagrange') return showLagrange;
+      if (node.category === 'orbital-marker') return showOmMarkers;
+      return true;
+    }),
+    [showStations, showLagrange, showOmMarkers]
+  );
 
   const visibleIntel = useMemo(() => {
     if (!layerEnabled('intel')) return [] as IntelRenderable[];
     return intelObjects.filter((intel) => visibleStrata[intel.stratum]);
   }, [intelObjects, visibleStrata, layers]);
 
+  const mapInference = useMemo(
+    () => computeMapInference({
+      controlZones,
+      commsOverlay,
+      intelObjects: visibleIntel,
+      operations,
+      focusOperationId: focusOperationId || opId || '',
+      nowMs,
+    }),
+    [controlZones, commsOverlay, visibleIntel, operations, focusOperationId, opId, nowMs]
+  );
+
   const hasPresence = layerEnabled('presence') && presence.length > 0;
   const hasControl = layerEnabled('controlZones') && controlZones.length > 0;
   const hasIntel = layerEnabled('intel') && visibleIntel.length > 0;
   const hasOps = layerEnabled('ops') && opsOverlay.length > 0;
-  const hasComms = layerEnabled('comms') && commsOverlay.length > 0;
-  const hasLogistics = layerEnabled('logistics') && logisticsOverlay.length > 0;
+  const hasComms = layerEnabled('comms') && (commsOverlay.nets.length > 0 || visibleCommsCallouts.length > 0 || visibleCommsLinks.length > 0);
+  const hasLogistics = layerEnabled('logistics') && logisticsOverlay.lanes.length > 0;
   const hasAnyOverlay = hasPresence || hasControl || hasIntel || hasOps || hasComms || hasLogistics;
   const presenceStaleCount = presence.filter((entry) => entry.displayState === 'STALE').length;
   const intelStaleCount = visibleIntel.filter((entry) => entry.ttl.stale).length;
+  const commsStaleCount = visibleCommsCallouts.filter((entry) => entry.stale).length;
   const contestedZones = controlZones.filter((zone) => zone.contestationLevel >= 0.45).length;
   const presenceAvailability = resolveAvailabilityState({
     count: layerEnabled('presence') ? presence.length : undefined,
@@ -316,6 +530,16 @@ export default function TacticalMapPanel({
     count: layerEnabled('controlZones') ? controlZones.length : undefined,
     hasConflict: contestedZones > 0,
   });
+  const commsAvailability = resolveAvailabilityState({
+    loading: commsState.loading,
+    error: commsState.error,
+    count: commsOverlay.nets.length + visibleCommsCallouts.length,
+    staleCount: commsStaleCount,
+  });
+  const logisticsAvailability = resolveAvailabilityState({
+    count: layerEnabled('logistics') ? logisticsOverlay.lanes.length : undefined,
+    staleCount: logisticsOverlay.lanes.filter((lane) => lane.stale).length,
+  });
 
   const toggleLayer = (id: TacticalLayerId) => {
     setLayers((prev) => prev.map((layer) => (layer.id === id ? { ...layer, enabled: !layer.enabled } : layer)));
@@ -323,6 +547,31 @@ export default function TacticalMapPanel({
 
   const toggleStratum = (stratum: IntelStratum) => {
     setVisibleStrata((prev) => ({ ...prev, [stratum]: !prev[stratum] }));
+  };
+
+  const requestAiInference = async () => {
+    setAiInferenceError(null);
+    setAiInferenceLoading(true);
+    try {
+      const response: any = await invokeMemberFunction('commsAssistant', {
+        action: 'ask_comms',
+        data: {
+          eventId: scopedCommsOpId || null,
+          query: buildMapAiPrompt(mapInference),
+        },
+      });
+      const answer =
+        response?.data?.answer ||
+        response?.data?.response?.answer ||
+        response?.data?.summary ||
+        response?.data?.response ||
+        '';
+      setAiInferenceText(String(answer || '').trim() || 'No AI estimate returned for current scoped records.');
+    } catch (error: any) {
+      setAiInferenceError(error?.message || 'AI estimate unavailable.');
+    } finally {
+      setAiInferenceLoading(false);
+    }
   };
 
   const createDraftFromMap = (
@@ -532,6 +781,16 @@ export default function TacticalMapPanel({
               {layerLabel(layer.id)}
             </NexusButton>
           ))}
+          <div className="h-5 w-px bg-zinc-700/70" />
+          <NexusButton size="sm" intent={showStations ? 'primary' : 'subtle'} onClick={() => setShowStations((prev) => !prev)} title="Toggle stations">
+            Stations
+          </NexusButton>
+          <NexusButton size="sm" intent={showLagrange ? 'primary' : 'subtle'} onClick={() => setShowLagrange((prev) => !prev)} title="Toggle Lagrange points">
+            Lagrange
+          </NexusButton>
+          <NexusButton size="sm" intent={showOmMarkers ? 'primary' : 'subtle'} onClick={() => setShowOmMarkers((prev) => !prev)} title="Toggle orbital marker ring">
+            OM
+          </NexusButton>
         </div>
         {onOpenMapFocus ? (
           <NexusButton size="sm" intent="subtle" onClick={onOpenMapFocus}>
@@ -676,8 +935,129 @@ export default function TacticalMapPanel({
                   })
                 : null}
 
-              {TACTICAL_MAP_NODES.map((node) => {
+              {layerEnabled('comms')
+                ? visibleCommsLinks.map((link) => {
+                    const source = commsAnchors[link.fromNetId];
+                    const target = commsAnchors[link.toNetId];
+                    if (!source || !target) return null;
+                    const isDegraded = link.status === 'degraded';
+                    return (
+                      <line
+                        key={`comms-link:${link.id}`}
+                        x1={source.x}
+                        y1={source.y}
+                        x2={target.x}
+                        y2={target.y}
+                        stroke={isDegraded ? 'rgba(216,146,87,0.78)' : 'rgba(89,172,198,0.74)'}
+                        strokeWidth={isDegraded ? 1.05 : 0.95}
+                        strokeDasharray={isDegraded ? '2 2' : '4 2'}
+                        strokeDashoffset={isDegraded ? `${Math.floor(nowMs / 220) % 6}` : `${-Math.floor(nowMs / 280) % 8}`}
+                        opacity={isDegraded ? 0.74 : 0.62}
+                      />
+                    );
+                  })
+                : null}
+
+              {layerEnabled('comms')
+                ? commsOverlay.nets.map((net) => {
+                    const anchor = commsAnchors[net.id];
+                    if (!anchor) return null;
+                    const color = net.quality === 'CONTESTED'
+                      ? 'rgba(214,83,64,0.94)'
+                      : net.quality === 'DEGRADED'
+                        ? 'rgba(216,146,87,0.9)'
+                        : 'rgba(94,172,118,0.88)';
+                    return (
+                      <g key={`comms-net:${net.id}`}>
+                        <circle
+                          cx={anchor.x}
+                          cy={anchor.y}
+                          r={Math.max(0.95, Math.min(2.1, 0.9 + net.participants * 0.16))}
+                          fill={color}
+                          fillOpacity={net.speaking > 0 ? 0.42 : 0.22}
+                          stroke={color}
+                          strokeWidth={net.speaking > 0 ? 1.2 : 0.75}
+                          opacity={net.participants > 0 ? 0.95 : 0.55}
+                        />
+                        <text
+                          x={anchor.x}
+                          y={anchor.y - 2.35}
+                          textAnchor="middle"
+                          style={{
+                            fill: 'rgba(221,214,206,0.86)',
+                            fontSize: '1.25px',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {net.label.slice(0, 8)}
+                        </text>
+                      </g>
+                    );
+                  })
+                : null}
+
+              {layerEnabled('comms')
+                ? visibleCommsCallouts.map((callout, index) => {
+                    const anchorNet = callout.netId ? commsAnchors[callout.netId] : null;
+                    const node = TACTICAL_MAP_NODE_BY_ID[callout.nodeId];
+                    if (!node) return null;
+                    const x = anchorNet ? anchorNet.x + (((index % 2) * 2) - 1) * 1.15 : node.x + (((index % 3) - 1) * 1.2);
+                    const y = anchorNet ? anchorNet.y - 2.35 : node.y - node.radius - 2.4 - (index % 2);
+                    const color = commsPriorityColor(callout.priority);
+                    const opacity = callout.stale ? 0.44 : 0.92;
+                    return (
+                      <g key={`comms-callout:${callout.id}`} opacity={opacity}>
+                        <polygon
+                          points={`${x},${y - 1.25} ${x + 1.2},${y + 1.05} ${x - 1.2},${y + 1.05}`}
+                          fill="rgba(17,13,11,0.9)"
+                          stroke={color}
+                          strokeWidth={0.68}
+                        />
+                        <circle cx={x} cy={y + 0.25} r={0.32} fill={color} />
+                      </g>
+                    );
+                  })
+                : null}
+
+              {layerEnabled('logistics')
+                ? logisticsOverlay.lanes.map((lane, index) => {
+                    const fromNode = TACTICAL_MAP_NODE_BY_ID[lane.fromNodeId];
+                    const toNode = TACTICAL_MAP_NODE_BY_ID[lane.toNodeId];
+                    if (!fromNode || !toNode) return null;
+                    const color = logisticsLaneColor(lane);
+                    const offset = ((index % 3) - 1) * 0.45;
+                    const x1 = fromNode.x + offset;
+                    const y1 = fromNode.y + offset;
+                    const x2 = toNode.x + offset;
+                    const y2 = toNode.y + offset;
+                    return (
+                      <g key={lane.id} opacity={lane.stale ? 0.45 : 0.92}>
+                        <line
+                          x1={x1}
+                          y1={y1}
+                          x2={x2}
+                          y2={y2}
+                          stroke={color}
+                          strokeWidth={lane.laneKind === 'EXTRACT' ? 1.25 : 1}
+                          strokeDasharray={lane.laneKind === 'HOLD' ? '2 2' : lane.laneKind === 'ROUTE_HYPOTHESIS' ? '4 2' : '5 2'}
+                          strokeDashoffset={`${-Math.floor(nowMs / 230) % 8}`}
+                        />
+                        <circle cx={x2} cy={y2} r={0.62} fill={color} />
+                      </g>
+                    );
+                  })
+                : null}
+
+              {visibleMapNodes.map((node) => {
                 const isSystem = node.kind === 'system';
+                const isOm = node.category === 'orbital-marker';
+                const isStation = node.category === 'station';
+                const isLagrange = node.category === 'lagrange';
+                const labelText = isOm
+                  ? node.label.split(' ').slice(-1)[0]
+                  : isLagrange
+                    ? node.label.replace(/^.*\sL/, 'L')
+                    : node.label;
                 return (
                   <g
                     key={node.id}
@@ -708,22 +1088,23 @@ export default function TacticalMapPanel({
                       cx={node.x}
                       cy={node.y}
                       r={node.radius}
-                      fill={isSystem ? 'rgba(179,90,47,0.18)' : 'rgba(107,91,80,0.2)'}
-                      stroke={isSystem ? 'rgba(179,90,47,0.72)' : 'rgba(133,116,103,0.64)'}
-                      strokeWidth={isSystem ? 1.8 : 1.1}
+                      fill={nodeFillColor(node.category, isSystem)}
+                      stroke={nodeStrokeColor(node.category, isSystem)}
+                      strokeWidth={isSystem ? 1.8 : isOm ? 0.45 : isStation ? 0.8 : 1.05}
+                      opacity={isOm ? 0.7 : 1}
                     />
                     <text
                       x={node.x}
-                      y={node.y + node.radius + 2.6}
+                      y={node.y + node.radius + (isOm ? 1.4 : 2.6)}
                       textAnchor="middle"
                       style={{
-                        fill: 'rgba(225,213,203,0.9)',
-                        fontSize: isSystem ? '2.6px' : '2.1px',
-                        letterSpacing: '0.25px',
+                        fill: isOm ? 'rgba(193,186,180,0.72)' : 'rgba(225,213,203,0.9)',
+                        fontSize: isSystem ? '2.6px' : isOm ? '1.2px' : isLagrange ? '1.45px' : '1.95px',
+                        letterSpacing: isOm ? '0.16px' : '0.25px',
                         textTransform: 'uppercase',
                       }}
                     >
-                      {node.label}
+                      {labelText}
                     </text>
                   </g>
                 );
@@ -967,6 +1348,164 @@ export default function TacticalMapPanel({
                 : null}
             </section>
 
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Comms Layer</h4>
+                <div className="flex items-center gap-1">
+                  <NexusBadge tone={availabilityTone(commsAvailability)}>{availabilityLabel(commsAvailability)}</NexusBadge>
+                  <NexusBadge tone={hasComms ? 'active' : 'neutral'}>{commsOverlay.nets.length}</NexusBadge>
+                </div>
+              </div>
+              {commsAvailability !== 'OK' ? (
+                <div className="text-[11px] text-zinc-500">{availabilityCopy(commsAvailability, commsState.error || undefined)}</div>
+              ) : null}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
+                  <NexusButton
+                    key={entry}
+                    size="sm"
+                    intent={commsPriorityFloor === entry ? 'primary' : 'subtle'}
+                    className="text-[10px]"
+                    onClick={() => setCommsPriorityFloor(entry)}
+                    title={`Minimum callout priority ${entry}`}
+                  >
+                    {entry === 'STANDARD' ? 'STD+' : entry}
+                  </NexusButton>
+                ))}
+                <NexusButton
+                  size="sm"
+                  intent={showCommsLinks ? 'primary' : 'subtle'}
+                  className="text-[10px]"
+                  onClick={() => setShowCommsLinks((prev) => !prev)}
+                  title="Toggle comms bridge lines"
+                >
+                  Links
+                </NexusButton>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Nets <span className="text-zinc-200">{commsOverlay.nets.length}</span>
+                </div>
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Links <span className="text-zinc-200">{visibleCommsLinks.length}</span>
+                </div>
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Calls <span className="text-zinc-200">{visibleCommsCallouts.length}</span>
+                </div>
+              </div>
+              {commsOverlay.nets.slice(0, 4).map((net) => (
+                <div key={net.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-zinc-200 truncate">{net.label}</span>
+                    <NexusBadge tone={commsQualityTone(net.quality)}>{net.quality}</NexusBadge>
+                  </div>
+                  <div className="mt-1 text-zinc-500 flex items-center justify-between gap-2">
+                    <span>{net.discipline}</span>
+                    <span>P {net.participants} | TX {net.speaking}</span>
+                  </div>
+                </div>
+              ))}
+              {layerEnabled('comms') && commsOverlay.nets.length === 0 && !commsState.loading ? (
+                <div className="text-xs text-zinc-500">
+                  No scoped nets visible. {scopedCommsOpId ? 'Current operation has no exposed voice topology.' : 'Awaiting comms topology.'}
+                </div>
+              ) : null}
+              {visibleCommsCallouts.slice(0, 4).map((callout) => (
+                <div key={callout.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate" style={{ color: commsPriorityColor(callout.priority) }}>{callout.priority}</span>
+                    <NexusBadge tone={commsPriorityTone(callout.priority)}>
+                      {callout.stale ? 'STALE' : `${formatAge(callout.ageSeconds)} ago`}
+                    </NexusBadge>
+                  </div>
+                  <div className="mt-1 text-zinc-300 line-clamp-2">{callout.message || 'Priority callout'}</div>
+                </div>
+              ))}
+            </section>
+
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Logistics Layer</h4>
+                <div className="flex items-center gap-1">
+                  <NexusBadge tone={availabilityTone(logisticsAvailability)}>{availabilityLabel(logisticsAvailability)}</NexusBadge>
+                  <NexusBadge tone={hasLogistics ? 'warning' : 'neutral'}>{logisticsOverlay.lanes.length}</NexusBadge>
+                </div>
+              </div>
+              {logisticsAvailability !== 'OK' ? (
+                <div className="text-[11px] text-zinc-500">{availabilityCopy(logisticsAvailability)}</div>
+              ) : null}
+              {layerEnabled('logistics') && logisticsOverlay.lanes.length === 0 ? (
+                <div className="text-xs text-zinc-500">
+                  No scoped logistics corridors. Confirm movement drafts/events to surface active lanes.
+                </div>
+              ) : null}
+              {logisticsOverlay.lanes.slice(0, 5).map((lane) => (
+                <div key={lane.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-zinc-200 truncate">{lane.label}</span>
+                    <NexusBadge tone={logisticsLaneTone(lane)}>
+                      {lane.stale ? 'STALE' : lane.laneKind}
+                    </NexusBadge>
+                  </div>
+                  <div className="mt-1 text-zinc-500 flex items-center justify-between gap-2">
+                    <span>{lane.fromNodeId} → {lane.toNodeId}</span>
+                    <span>{lane.stale ? `${formatAge(lane.ageSeconds)} old` : `${Math.round(lane.confidence * 100)}% conf`}</span>
+                  </div>
+                </div>
+              ))}
+            </section>
+
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Command Estimate</h4>
+                <NexusBadge tone={mapInference.commandRiskScore >= 70 ? 'danger' : mapInference.commandRiskScore >= 45 ? 'warning' : 'ok'}>
+                  Risk {mapInference.commandRiskScore}
+                </NexusBadge>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Confidence <span className="text-zinc-200">{mapInference.confidenceScore}</span>
+                </div>
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Load <span className="text-zinc-200">{mapInference.projectedLoadBand}</span>
+                </div>
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Contested <span className="text-zinc-200">{mapInference.contestedZoneCount}</span>
+                </div>
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-400">
+                  Degraded Nets <span className="text-zinc-200">{mapInference.degradedNetCount}</span>
+                </div>
+              </div>
+              <div className="space-y-1 text-[11px]">
+                {mapInference.recommendations.slice(0, 3).map((entry, index) => (
+                  <div key={`${index}:${entry.slice(0, 12)}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-zinc-300">
+                    {entry}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={requestAiInference}
+                  disabled={aiInferenceLoading}
+                  title="Request AI estimate from scoped records"
+                >
+                  {aiInferenceLoading ? 'AI Sync...' : 'AI Context Sync'}
+                </NexusButton>
+                <span className="text-[10px] text-zinc-500">Evidence Z{mapInference.evidence.zoneSignals}/C{mapInference.evidence.commsSignals}/I{mapInference.evidence.intelSignals}</span>
+              </div>
+              {aiInferenceError ? (
+                <div className="rounded border border-red-900/70 bg-red-950/35 px-2 py-1 text-[11px] text-red-300">{aiInferenceError}</div>
+              ) : null}
+              {aiInferenceText ? (
+                <div className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5 text-[11px] text-zinc-300">
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">AI Estimate (Scoped Records Only)</div>
+                  <div className="whitespace-pre-wrap">{aiInferenceText}</div>
+                </div>
+              ) : null}
+            </section>
+
             <IntelDetailPanel
               intel={selectedIntel}
               comments={selectedIntelComments}
@@ -1000,11 +1539,19 @@ export default function TacticalMapPanel({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span>Comms overlay</span>
-                  <span>{commsOverlay.length || 'none'}</span>
+                  <span>{commsOverlay.nets.length || 'none'}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span>Logistics overlay</span>
-                  <span>{logisticsOverlay.length || 'none'}</span>
+                  <span>{logisticsOverlay.lanes.length || 'none'}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>Map nodes</span>
+                  <span>{visibleMapNodes.length}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>Station/Lagrange/OM</span>
+                  <span>{showStations ? 'S' : '-'} {showLagrange ? 'L' : '-'} {showOmMarkers ? 'OM' : '-'}</span>
                 </div>
               </div>
             </section>

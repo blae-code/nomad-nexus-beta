@@ -26,7 +26,7 @@ export default function PanelFrame({
   const vars = getNexusCssVars();
   return (
     <section
-      className={`h-full min-h-0 flex flex-col rounded-md border bg-zinc-950/70 border-zinc-800 shadow-lg ${className}`.trim()}
+      className={`h-full min-h-0 flex flex-col rounded-md border bg-zinc-950/80 border-zinc-800 shadow-lg relative overflow-hidden ${className}`.trim()}
       style={{
         ...vars,
         borderRadius: nexusUiTheme.panelRadius,
@@ -35,15 +35,16 @@ export default function PanelFrame({
         boxShadow: 'var(--nx-shadow-panel)',
       }}
     >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
       <header className={`px-3 py-2 flex items-center justify-between gap-2 ${nexusUiTheme.panelHeaderClassName}`} style={{ borderColor: 'var(--nx-border)' }}>
         <div className="flex min-w-0 items-center gap-2">
           <RustPulseIndicator active={live} />
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">{title}</h3>
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 truncate">{title}</h3>
           {status ? <NexusBadge tone={statusTone}>{status}</NexusBadge> : null}
         </div>
         {toolbar ? <div className="shrink-0 flex items-center gap-2">{toolbar}</div> : null}
       </header>
-      <div className={`flex-1 min-h-0 overflow-auto p-3 text-sm text-zinc-200 ${bodyClassName}`.trim()}>
+      <div className={`flex-1 min-h-0 overflow-auto p-3 text-sm text-zinc-200 bg-[linear-gradient(180deg,rgba(255,149,91,0.03),transparent_50%)] ${bodyClassName}`.trim()}>
         <AnimatedMount show={!loading} fromOpacity={0} toOpacity={1} fromY={4} toY={0} durationMs={160}>
           {loading ? <PanelLoadingState label={loadingLabel} /> : children}
         </AnimatedMount>

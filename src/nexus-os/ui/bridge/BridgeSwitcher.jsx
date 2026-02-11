@@ -13,12 +13,12 @@ export default function BridgeSwitcher({ activeBridgeId, onSwitch }) {
 
   return (
     <section
-      className="rounded-lg border border-zinc-800 bg-zinc-950/70 p-3 space-y-3"
+      className="rounded-xl border border-zinc-800 bg-zinc-950/75 p-3 space-y-3 nexus-panel-glow"
       style={{ ...vars, borderColor: 'var(--nx-border)', backgroundColor: 'var(--nx-panel-bg)' }}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-xs sm:text-sm text-zinc-100 font-semibold uppercase tracking-wide">Bridge Switcher</h2>
+          <h2 className="text-xs sm:text-sm text-zinc-100 font-semibold uppercase tracking-[0.14em]">Bridge Switcher</h2>
           <p className="text-xs text-zinc-500 truncate">{active.description}</p>
         </div>
         <NexusBadge tone="active">{active.id}</NexusBadge>
@@ -39,4 +39,3 @@ export default function BridgeSwitcher({ activeBridgeId, onSwitch }) {
     </section>
   );
 }
-
