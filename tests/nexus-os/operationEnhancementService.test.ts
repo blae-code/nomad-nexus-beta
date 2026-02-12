@@ -3,20 +3,26 @@ import {
   alignOperationEnhancementsToPosture,
   buildSeatDemands,
   computeOperationCandidateMatches,
+  createDoctrineDefinition,
+  deleteDoctrineDefinition,
   getOperationDoctrineProfile,
   getOperationMandateProfile,
   initializeOperationEnhancements,
+  listDoctrineLibrary,
   listOperationLeadAlerts,
   listUserOperationLeadAlerts,
   refreshOperationLeadAlerts,
   resetOperationEnhancementServiceState,
   setDoctrineSelection,
+  updateDoctrineDefinition,
   upsertRoleMandate,
   upsertUserOperationPreference,
 } from '../../src/nexus-os/services/operationEnhancementService';
+import { createOperation, resetOperationServiceState } from '../../src/nexus-os/services/operationService';
 
 describe('operationEnhancementService', () => {
   beforeEach(() => {
+    resetOperationServiceState();
     resetOperationEnhancementServiceState();
   });
 
@@ -177,6 +183,48 @@ describe('operationEnhancementService', () => {
 
     expect(second[0].id).toBe(first[0].id);
     expect(second[0].createdAt).toBe(first[0].createdAt);
+  });
+
+  it('supports leadership doctrine create/update/delete lifecycle', () => {
+    const op = createOperation({
+      name: 'Doctrine Admin',
+      createdBy: 'lead-admin',
+      posture: 'FOCUSED',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+    });
+
+    initializeOperationEnhancements(op.id, op.posture, 'lead-admin');
+    const created = createDoctrineDefinition(op.id, 'lead-admin', {
+      level: 'SQUAD',
+      label: 'Breach Discipline',
+      description: 'Structured breach callouts and spacing discipline.',
+      modifierText: '+Tempo, -crossfire risk',
+      defaultCasualWeight: 0.6,
+      defaultFocusedWeight: 0.95,
+      defaultCasualEnabled: true,
+      defaultFocusedEnabled: true,
+    });
+    expect(listDoctrineLibrary('SQUAD').some((entry) => entry.id === created.id)).toBe(true);
+
+    const updated = updateDoctrineDefinition(op.id, 'lead-admin', created.id, {
+      label: 'Breach Discipline Plus',
+      modifierText: '+Tempo, +clarity',
+    });
+    expect(updated.label).toBe('Breach Discipline Plus');
+
+    expect(() =>
+      createDoctrineDefinition(op.id, 'member-unauthorized', {
+        level: 'SQUAD',
+        label: 'Unauthorized Doctrine',
+        description: 'Should not pass.',
+        modifierText: 'none',
+      })
+    ).toThrow();
+
+    const deleted = deleteDoctrineDefinition(op.id, 'lead-admin', created.id);
+    expect(deleted).toBe(true);
+    expect(listDoctrineLibrary().some((entry) => entry.id === created.id)).toBe(false);
   });
 
   it('persists enhancement state into localStorage when available', () => {

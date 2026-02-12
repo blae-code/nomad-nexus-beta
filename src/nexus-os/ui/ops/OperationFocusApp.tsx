@@ -46,6 +46,8 @@ import {
   alignOperationEnhancementsToPosture,
   buildSeatDemands,
   computeOperationCandidateMatches,
+  createDoctrineDefinition,
+  deleteDoctrineDefinition,
   getOperationDoctrineProfile,
   getOperationMandateProfile,
   initializeOperationEnhancements,
@@ -58,6 +60,7 @@ import {
   setDoctrineSelection,
   subscribeOperationEnhancements,
   summarizeDoctrineImpact,
+  updateDoctrineDefinition,
   upsertAssetMandate,
   upsertLoadoutMandate,
   upsertRoleMandate,
@@ -156,6 +159,14 @@ export default function OperationFocusApp({
   const [ruleMessage, setRuleMessage] = useState('');
   const [rulePredicate, setRulePredicate] = useState('{"roleIn":["Lead","Medic"]}');
   const [doctrineLevel, setDoctrineLevel] = useState<DoctrineLevel>('INDIVIDUAL');
+  const [editingDoctrineId, setEditingDoctrineId] = useState('');
+  const [doctrineLabelInput, setDoctrineLabelInput] = useState('');
+  const [doctrineDescriptionInput, setDoctrineDescriptionInput] = useState('');
+  const [doctrineModifierInput, setDoctrineModifierInput] = useState('');
+  const [doctrineCasualWeightInput, setDoctrineCasualWeightInput] = useState(0.7);
+  const [doctrineFocusedWeightInput, setDoctrineFocusedWeightInput] = useState(0.9);
+  const [doctrineCasualEnabledInput, setDoctrineCasualEnabledInput] = useState(true);
+  const [doctrineFocusedEnabledInput, setDoctrineFocusedEnabledInput] = useState(true);
   const [roleMandateRole, setRoleMandateRole] = useState('Gunner');
   const [roleMandateMin, setRoleMandateMin] = useState(1);
   const [roleMandateEnforcement, setRoleMandateEnforcement] = useState<MandateEnforcement>('SOFT');
@@ -260,7 +271,7 @@ export default function OperationFocusApp({
     };
     for (const doctrine of listDoctrineLibrary()) grouped[doctrine.level].push(doctrine);
     return grouped;
-  }, []);
+  }, [enhancementVersion]);
   const candidatePool = useMemo(() => {
     const rosterPool = roster.map((member) => ({
       userId: member.id,
@@ -329,6 +340,7 @@ export default function OperationFocusApp({
   const requirementsLocked = stagePolicy ? !stagePolicy.canEditRequirements : true;
   const rosterLocked = stagePolicy ? !stagePolicy.canManageRoster : true;
   const commsLocked = stagePolicy ? !stagePolicy.canPostComms : true;
+  const doctrineRegistryLocked = stagePolicy ? !stagePolicy.isCommandRole : true;
   const actorEntry = entries.find((entry) => entry.userId === actorId && entry.status !== 'WITHDRAWN') || null;
   const activeThreadSummary =
     threadSummaries.find((entry) => entry.root.id === selectedThreadRootId) || threadSummaries[0] || null;
@@ -374,6 +386,59 @@ export default function OperationFocusApp({
     } catch (error: any) {
       setErrorText(error?.message || 'Action failed');
     }
+  };
+
+  const clearDoctrineDraft = () => {
+    setEditingDoctrineId('');
+    setDoctrineLabelInput('');
+    setDoctrineDescriptionInput('');
+    setDoctrineModifierInput('');
+    setDoctrineCasualWeightInput(0.7);
+    setDoctrineFocusedWeightInput(0.9);
+    setDoctrineCasualEnabledInput(true);
+    setDoctrineFocusedEnabledInput(true);
+  };
+
+  const loadDoctrineDraft = (doctrineId: string) => {
+    const doctrine = listDoctrineLibrary().find((entry) => entry.id === doctrineId);
+    if (!doctrine) return;
+    setEditingDoctrineId(doctrine.id);
+    setDoctrineLevel(doctrine.level);
+    setDoctrineLabelInput(doctrine.label || '');
+    setDoctrineDescriptionInput(doctrine.description || '');
+    setDoctrineModifierInput(doctrine.modifierText || '');
+    setDoctrineCasualWeightInput(
+      typeof doctrine.defaultCasualWeight === 'number' ? doctrine.defaultCasualWeight : 0.7
+    );
+    setDoctrineFocusedWeightInput(
+      typeof doctrine.defaultFocusedWeight === 'number' ? doctrine.defaultFocusedWeight : 0.9
+    );
+    setDoctrineCasualEnabledInput(
+      typeof doctrine.defaultCasualEnabled === 'boolean' ? doctrine.defaultCasualEnabled : true
+    );
+    setDoctrineFocusedEnabledInput(
+      typeof doctrine.defaultFocusedEnabled === 'boolean' ? doctrine.defaultFocusedEnabled : true
+    );
+  };
+
+  const saveDoctrineDraft = () => {
+    if (!selectedOp) return;
+    const payload = {
+      level: doctrineLevel,
+      label: doctrineLabelInput || 'Untitled Doctrine',
+      description: doctrineDescriptionInput,
+      modifierText: doctrineModifierInput,
+      defaultCasualWeight: doctrineCasualWeightInput,
+      defaultFocusedWeight: doctrineFocusedWeightInput,
+      defaultCasualEnabled: doctrineCasualEnabledInput,
+      defaultFocusedEnabled: doctrineFocusedEnabledInput,
+    };
+    if (editingDoctrineId) {
+      updateDoctrineDefinition(selectedOp.id, actorId, editingDoctrineId, payload);
+    } else {
+      createDoctrineDefinition(selectedOp.id, actorId, payload);
+    }
+    clearDoctrineDraft();
   };
 
   if (!selectedOp) {
@@ -743,14 +808,60 @@ export default function OperationFocusApp({
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Doctrine Stack</h4>
-                <NexusBadge tone="active">{selectedOp.posture}</NexusBadge>
+                <div className="flex items-center gap-2">
+                  <NexusBadge tone={doctrineRegistryLocked ? 'warning' : 'ok'}>
+                    {doctrineRegistryLocked ? 'Member View' : 'Leadership'}
+                  </NexusBadge>
+                  <NexusBadge tone="active">{selectedOp.posture}</NexusBadge>
+                </div>
               </div>
+              {doctrineRegistryLocked ? (
+                <div className="rounded border border-amber-900/50 bg-amber-950/20 px-2 py-1 text-[11px] text-amber-200">
+                  Doctrine registry edits are restricted to operation leadership.
+                </div>
+              ) : null}
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {(['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'] as DoctrineLevel[]).map((level) => (
                   <NexusButton key={level} size="sm" intent={doctrineLevel === level ? 'primary' : 'subtle'} onClick={() => setDoctrineLevel(level)}>
                     {level}
                   </NexusButton>
                 ))}
+              </div>
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+                <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                  {editingDoctrineId ? 'Edit Doctrine' : 'Create Doctrine'}
+                </div>
+                <input value={doctrineLabelInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineLabelInput(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Doctrine label" />
+                <textarea value={doctrineDescriptionInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineDescriptionInput(e.target.value)} className="h-14 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200" placeholder="Doctrine description" />
+                <input value={doctrineModifierInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineModifierInput(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Modifier text" />
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-[10px] text-zinc-500 flex flex-col gap-1">
+                    Casual weight
+                    <input type="number" step={0.05} min={0} max={1} value={doctrineCasualWeightInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineCasualWeightInput(Math.max(0, Math.min(1, Number(e.target.value) || 0)))} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" />
+                  </label>
+                  <label className="text-[10px] text-zinc-500 flex flex-col gap-1">
+                    Focused weight
+                    <input type="number" step={0.05} min={0} max={1} value={doctrineFocusedWeightInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineFocusedWeightInput(Math.max(0, Math.min(1, Number(e.target.value) || 0)))} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" />
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-[11px] text-zinc-500 flex items-center gap-2 rounded border border-zinc-800 bg-zinc-900/55 px-2 h-8">
+                    <input type="checkbox" checked={doctrineCasualEnabledInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineCasualEnabledInput(e.target.checked)} />
+                    Casual enabled
+                  </label>
+                  <label className="text-[11px] text-zinc-500 flex items-center gap-2 rounded border border-zinc-800 bg-zinc-900/55 px-2 h-8">
+                    <input type="checkbox" checked={doctrineFocusedEnabledInput} disabled={doctrineRegistryLocked} onChange={(e) => setDoctrineFocusedEnabledInput(e.target.checked)} />
+                    Focused enabled
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <NexusButton size="sm" intent="primary" disabled={doctrineRegistryLocked} onClick={() => runAction(() => saveDoctrineDraft())}>
+                    {editingDoctrineId ? 'Update Doctrine' : 'Create Doctrine'}
+                  </NexusButton>
+                  <NexusButton size="sm" intent="subtle" onClick={clearDoctrineDraft}>
+                    Clear
+                  </NexusButton>
+                </div>
               </div>
               <div className="space-y-2 max-h-80 overflow-auto pr-1">
                 {(doctrineCatalogByLevel[doctrineLevel] || []).map((doctrine) => {
@@ -781,6 +892,17 @@ export default function OperationFocusApp({
                         onChange={(e) => runAction(() => setDoctrineSelection(selectedOp.id, doctrineLevel, doctrine.id, { weight: Number(e.target.value) / 100 }, actorId))}
                         className="w-full"
                       />
+                      <div className="flex items-center gap-2">
+                        <NexusButton size="sm" intent="subtle" disabled={doctrineRegistryLocked} onClick={() => loadDoctrineDraft(doctrine.id)}>
+                          Edit
+                        </NexusButton>
+                        <NexusButton size="sm" intent="subtle" disabled={doctrineRegistryLocked} onClick={() => runAction(() => {
+                          const removed = deleteDoctrineDefinition(selectedOp.id, actorId, doctrine.id);
+                          if (removed && editingDoctrineId === doctrine.id) clearDoctrineDraft();
+                        })}>
+                          Delete
+                        </NexusButton>
+                      </div>
                     </div>
                   );
                 })}

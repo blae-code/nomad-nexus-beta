@@ -1,4 +1,5 @@
 import type { OperationPosture } from '../schemas/opSchemas';
+import { canManageOperation } from './operationService';
 
 export type DoctrineLevel = 'INDIVIDUAL' | 'SQUAD' | 'WING' | 'FLEET';
 export type MandateEnforcement = 'HARD' | 'SOFT' | 'ADVISORY';
@@ -9,6 +10,23 @@ export interface DoctrineDefinition {
   label: string;
   description: string;
   modifierText: string;
+  defaultCasualWeight?: number;
+  defaultFocusedWeight?: number;
+  defaultCasualEnabled?: boolean;
+  defaultFocusedEnabled?: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface DoctrineDefinitionInput {
+  level: DoctrineLevel;
+  label: string;
+  description: string;
+  modifierText: string;
+  defaultCasualWeight?: number;
+  defaultFocusedWeight?: number;
+  defaultCasualEnabled?: boolean;
+  defaultFocusedEnabled?: boolean;
 }
 
 export interface DoctrineSelection {
@@ -120,7 +138,8 @@ interface OperationEnhancementListenerState {
 
 interface PersistedOperationEnhancementState {
   schema: 'nexus-os-operation-enhancements';
-  version: 1;
+  version: 1 | 2;
+  doctrineLibrary?: DoctrineDefinition[];
   doctrines: OperationDoctrineProfile[];
   mandates: OperationMandateProfile[];
   preferences: UserOperationPreference[];
@@ -136,7 +155,7 @@ interface DoctrinePresetWeight {
   focusedEnabled?: boolean;
 }
 
-const DOCTRINE_LIBRARY: DoctrineDefinition[] = [
+const DEFAULT_DOCTRINE_LIBRARY: DoctrineDefinition[] = [
   {
     id: 'ind-prebrief-checklist',
     level: 'INDIVIDUAL',
@@ -241,6 +260,7 @@ const DOCTRINE_PRESET_WEIGHTS: Record<string, DoctrinePresetWeight> = {
 const LEVELS: DoctrineLevel[] = ['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'];
 const STORAGE_KEY = 'nexus.os.operationEnhancement.v1';
 const listeners = new Set<OperationEnhancementListener>();
+let doctrineLibraryStore: DoctrineDefinition[] = [...DEFAULT_DOCTRINE_LIBRARY];
 let doctrineStore: OperationDoctrineProfile[] = [];
 let mandateStore: OperationMandateProfile[] = [];
 let preferenceStore: UserOperationPreference[] = [];
@@ -279,7 +299,16 @@ function hydrateStore() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const parsed = JSON.parse(raw) as PersistedOperationEnhancementState;
-    if (!parsed || parsed.schema !== 'nexus-os-operation-enhancements' || parsed.version !== 1) return;
+    if (
+      !parsed ||
+      parsed.schema !== 'nexus-os-operation-enhancements' ||
+      (parsed.version !== 1 && parsed.version !== 2)
+    ) {
+      return;
+    }
+    doctrineLibraryStore = Array.isArray(parsed.doctrineLibrary) && parsed.doctrineLibrary.length > 0
+      ? parsed.doctrineLibrary
+      : [...DEFAULT_DOCTRINE_LIBRARY];
     doctrineStore = Array.isArray(parsed.doctrines) ? parsed.doctrines : [];
     mandateStore = Array.isArray(parsed.mandates) ? parsed.mandates : [];
     preferenceStore = Array.isArray(parsed.preferences) ? parsed.preferences : [];
@@ -295,7 +324,8 @@ function persistStore() {
   try {
     const payload: PersistedOperationEnhancementState = {
       schema: 'nexus-os-operation-enhancements',
-      version: 1,
+      version: 2,
+      doctrineLibrary: doctrineLibraryStore,
       doctrines: doctrineStore,
       mandates: mandateStore,
       preferences: preferenceStore,
@@ -327,8 +357,8 @@ function doctrineSelectionsByLevel(posture: OperationPosture): Record<DoctrineLe
     FLEET: [],
   };
 
-  for (const doctrine of DOCTRINE_LIBRARY) {
-    const preset = DOCTRINE_PRESET_WEIGHTS[doctrine.id] || { casual: 0.7, focused: 0.9 };
+  for (const doctrine of doctrineLibraryStore) {
+    const preset = doctrinePresetFor(doctrine);
     const isFocused = posture === 'FOCUSED';
     doctrineByLevel[doctrine.level].push({
       doctrineId: doctrine.id,
@@ -337,6 +367,34 @@ function doctrineSelectionsByLevel(posture: OperationPosture): Record<DoctrineLe
     });
   }
   return doctrineByLevel;
+}
+
+function doctrinePresetFor(doctrine: DoctrineDefinition): DoctrinePresetWeight {
+  const defaults = DOCTRINE_PRESET_WEIGHTS[doctrine.id] || { casual: 0.7, focused: 0.9 };
+  return {
+    casual:
+      typeof doctrine.defaultCasualWeight === 'number' && Number.isFinite(doctrine.defaultCasualWeight)
+        ? Math.max(0, Math.min(1, doctrine.defaultCasualWeight))
+        : defaults.casual,
+    focused:
+      typeof doctrine.defaultFocusedWeight === 'number' && Number.isFinite(doctrine.defaultFocusedWeight)
+        ? Math.max(0, Math.min(1, doctrine.defaultFocusedWeight))
+        : defaults.focused,
+    casualEnabled:
+      typeof doctrine.defaultCasualEnabled === 'boolean'
+        ? doctrine.defaultCasualEnabled
+        : defaults.casualEnabled,
+    focusedEnabled:
+      typeof doctrine.defaultFocusedEnabled === 'boolean'
+        ? doctrine.defaultFocusedEnabled
+        : defaults.focusedEnabled,
+  };
+}
+
+function resolveDoctrineById(doctrineId: string): DoctrineDefinition | null {
+  const token = normalizeToken(doctrineId, 96);
+  if (!token) return null;
+  return doctrineLibraryStore.find((entry) => entry.id === token) || null;
 }
 
 function defaultRoleMandates(posture: OperationPosture): RoleMandate[] {
@@ -469,9 +527,156 @@ function ensureDoctrineProfile(opId: string, posture: OperationPosture, nowMs = 
   return created;
 }
 
-export function listDoctrineLibrary(): DoctrineDefinition[] {
+export function listDoctrineLibrary(level?: DoctrineLevel): DoctrineDefinition[] {
   hydrateStore();
-  return [...DOCTRINE_LIBRARY];
+  if (!level) return [...doctrineLibraryStore];
+  return doctrineLibraryStore.filter((entry) => entry.level === level);
+}
+
+function requireDoctrineMutationRights(opId: string, actorId: string) {
+  const permission = canManageOperation(opId, actorId);
+  if (!permission.allowed) throw new Error(permission.reason || 'Leadership rights required.');
+}
+
+function sanitizeDoctrineDefinitionInput(input: Partial<DoctrineDefinitionInput>, fallback?: DoctrineDefinition): DoctrineDefinitionInput {
+  const levelToken = normalizeToken(input.level || fallback?.level || '', 16).toUpperCase();
+  const level: DoctrineLevel =
+    levelToken === 'SQUAD' || levelToken === 'WING' || levelToken === 'FLEET' ? levelToken : 'INDIVIDUAL';
+  const label = normalizeToken(input.label || fallback?.label || '', 72);
+  if (!label) throw new Error('Doctrine label is required.');
+  const description = normalizeToken(input.description || fallback?.description || '', 400);
+  const modifierText = normalizeToken(input.modifierText || fallback?.modifierText || '', 180);
+  return {
+    level,
+    label,
+    description: description || 'Doctrine description pending.',
+    modifierText: modifierText || 'No modifiers documented yet.',
+    defaultCasualWeight:
+      typeof input.defaultCasualWeight === 'number'
+        ? Math.max(0, Math.min(1, input.defaultCasualWeight))
+        : typeof fallback?.defaultCasualWeight === 'number'
+        ? fallback.defaultCasualWeight
+        : undefined,
+    defaultFocusedWeight:
+      typeof input.defaultFocusedWeight === 'number'
+        ? Math.max(0, Math.min(1, input.defaultFocusedWeight))
+        : typeof fallback?.defaultFocusedWeight === 'number'
+        ? fallback.defaultFocusedWeight
+        : undefined,
+    defaultCasualEnabled:
+      typeof input.defaultCasualEnabled === 'boolean'
+        ? input.defaultCasualEnabled
+        : typeof fallback?.defaultCasualEnabled === 'boolean'
+        ? fallback.defaultCasualEnabled
+        : undefined,
+    defaultFocusedEnabled:
+      typeof input.defaultFocusedEnabled === 'boolean'
+        ? input.defaultFocusedEnabled
+        : typeof fallback?.defaultFocusedEnabled === 'boolean'
+        ? fallback.defaultFocusedEnabled
+        : undefined,
+  };
+}
+
+export function createDoctrineDefinition(
+  opId: string,
+  actorId: string,
+  input: DoctrineDefinitionInput,
+  nowMs = Date.now()
+): DoctrineDefinition {
+  hydrateStore();
+  requireDoctrineMutationRights(opId, actorId);
+  const sanitized = sanitizeDoctrineDefinitionInput(input);
+  const normalizedLabel = sanitized.label.toLowerCase();
+  if (doctrineLibraryStore.some((entry) => entry.label.toLowerCase() === normalizedLabel)) {
+    throw new Error('Doctrine label already exists.');
+  }
+  const doctrine: DoctrineDefinition = {
+    id: createId('doctrine', nowMs),
+    ...sanitized,
+    updatedAt: nowIso(nowMs),
+    updatedBy: actorId,
+  };
+  doctrineLibraryStore = [doctrine, ...doctrineLibraryStore];
+  notifyListeners();
+  return doctrine;
+}
+
+export function updateDoctrineDefinition(
+  opId: string,
+  actorId: string,
+  doctrineId: string,
+  patch: Partial<DoctrineDefinitionInput>,
+  nowMs = Date.now()
+): DoctrineDefinition {
+  hydrateStore();
+  requireDoctrineMutationRights(opId, actorId);
+  const existing = resolveDoctrineById(doctrineId);
+  if (!existing) throw new Error(`Doctrine ${doctrineId} not found.`);
+  const sanitized = sanitizeDoctrineDefinitionInput(patch, existing);
+  const updated: DoctrineDefinition = {
+    ...existing,
+    ...sanitized,
+    updatedAt: nowIso(nowMs),
+    updatedBy: actorId,
+  };
+  doctrineLibraryStore = doctrineLibraryStore.map((entry) => (entry.id === existing.id ? updated : entry));
+
+  doctrineStore = doctrineStore.map((profile) => {
+    const hasSelection = (profile.doctrineByLevel[updated.level] || []).some((entry) => entry.doctrineId === updated.id);
+    if (hasSelection) return profile;
+    return {
+      ...profile,
+      doctrineByLevel: {
+        ...profile.doctrineByLevel,
+        [updated.level]: [
+          ...(profile.doctrineByLevel[updated.level] || []),
+          {
+            doctrineId: updated.id,
+            enabled: postureForProfile(profile, 'enabled', updated),
+            weight: postureForProfile(profile, 'weight', updated),
+          },
+        ],
+      },
+      updatedAt: nowIso(nowMs),
+      updatedBy: actorId,
+    };
+  });
+
+  notifyListeners();
+  return updated;
+}
+
+function postureForProfile(
+  profile: OperationDoctrineProfile,
+  mode: 'enabled' | 'weight',
+  doctrine: DoctrineDefinition
+) {
+  const preset = doctrinePresetFor(doctrine);
+  if (mode === 'enabled') return profile.posture === 'FOCUSED' ? preset.focusedEnabled !== false : preset.casualEnabled !== false;
+  return profile.posture === 'FOCUSED' ? preset.focused : preset.casual;
+}
+
+export function deleteDoctrineDefinition(opId: string, actorId: string, doctrineId: string, nowMs = Date.now()): boolean {
+  hydrateStore();
+  requireDoctrineMutationRights(opId, actorId);
+  const existing = resolveDoctrineById(doctrineId);
+  if (!existing) return false;
+  doctrineLibraryStore = doctrineLibraryStore.filter((entry) => entry.id !== existing.id);
+  doctrineStore = doctrineStore.map((profile) => {
+    const nextByLevel = LEVELS.reduce((acc, level) => {
+      acc[level] = (profile.doctrineByLevel[level] || []).filter((entry) => entry.doctrineId !== existing.id);
+      return acc;
+    }, {} as Record<DoctrineLevel, DoctrineSelection[]>);
+    return {
+      ...profile,
+      doctrineByLevel: nextByLevel,
+      updatedAt: nowIso(nowMs),
+      updatedBy: actorId,
+    };
+  });
+  notifyListeners();
+  return true;
 }
 
 export function initializeOperationEnhancements(
@@ -542,20 +747,33 @@ export function setDoctrineSelection(
   hydrateStore();
   const profile = doctrineStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Doctrine profile missing for ${opId}`);
+  const doctrine = resolveDoctrineById(doctrineId);
+  if (!doctrine) throw new Error(`Doctrine ${doctrineId} not found.`);
+  if (doctrine.level !== level) throw new Error(`Doctrine ${doctrineId} does not belong to ${level}.`);
   const selections = profile.doctrineByLevel[level] || [];
   const idx = selections.findIndex((entry) => entry.doctrineId === doctrineId);
-  if (idx < 0) throw new Error(`Doctrine ${doctrineId} is not registered at level ${level}`);
+  const preset = doctrinePresetFor(doctrine);
+  const baseSelection: DoctrineSelection =
+    idx >= 0
+      ? selections[idx]
+      : {
+          doctrineId: doctrine.id,
+          enabled: profile.posture === 'FOCUSED' ? preset.focusedEnabled !== false : preset.casualEnabled !== false,
+          weight: profile.posture === 'FOCUSED' ? preset.focused : preset.casual,
+        };
 
-  const target = selections[idx];
   const nextSelection: DoctrineSelection = {
-    ...target,
-    enabled: typeof patch.enabled === 'boolean' ? patch.enabled : target.enabled,
+    ...baseSelection,
+    enabled: typeof patch.enabled === 'boolean' ? patch.enabled : baseSelection.enabled,
     weight: Number.isFinite(patch.weight)
       ? Math.max(0, Math.min(1, Number(patch.weight)))
-      : target.weight,
+      : baseSelection.weight,
   };
 
-  const nextLevel = selections.map((entry, index) => (index === idx ? nextSelection : entry));
+  const nextLevel =
+    idx >= 0
+      ? selections.map((entry, index) => (index === idx ? nextSelection : entry))
+      : [nextSelection, ...selections];
   const updated: OperationDoctrineProfile = {
     ...profile,
     doctrineByLevel: {
@@ -1121,6 +1339,7 @@ export function subscribeOperationEnhancements(listener: OperationEnhancementLis
 
 export function resetOperationEnhancementServiceState() {
   hydrateStore();
+  doctrineLibraryStore = [...DEFAULT_DOCTRINE_LIBRARY];
   doctrineStore = [];
   mandateStore = [];
   preferenceStore = [];
