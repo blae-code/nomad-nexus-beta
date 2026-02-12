@@ -15,6 +15,7 @@ export interface NexusWorkspaceSessionSnapshot {
   forceDesignOpId: string;
   reportsOpId: string;
   activePanelIds: string[];
+  workspaceOnboardingCompleted: boolean;
   updatedAt: string;
 }
 
@@ -37,6 +38,7 @@ function defaultSnapshot(overrides: Partial<NexusWorkspaceSessionSnapshot> = {})
     forceDesignOpId: '',
     reportsOpId: '',
     activePanelIds: [],
+    workspaceOnboardingCompleted: false,
     updatedAt: new Date().toISOString(),
     ...overrides,
   };
@@ -44,6 +46,15 @@ function defaultSnapshot(overrides: Partial<NexusWorkspaceSessionSnapshot> = {})
 
 export function workspaceSessionStorageKey(sessionScopeKey: string): string {
   return `${STORAGE_PREFIX}:${sessionScopeKey}`;
+}
+
+export function workspaceSessionExists(sessionScopeKey: string): boolean {
+  if (!storageAvailable()) return false;
+  try {
+    return Boolean(localStorage.getItem(workspaceSessionStorageKey(sessionScopeKey)));
+  } catch {
+    return false;
+  }
 }
 
 export function loadWorkspaceSession(
@@ -57,9 +68,14 @@ export function loadWorkspaceSession(
     if (!raw) return fallback;
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.version !== 1) return fallback;
+    const onboardingCompleted =
+      typeof parsed.workspaceOnboardingCompleted === 'boolean'
+        ? parsed.workspaceOnboardingCompleted
+        : true;
     return {
       ...fallback,
       ...parsed,
+      workspaceOnboardingCompleted: onboardingCompleted,
       version: 1,
     };
   } catch {
@@ -91,4 +107,3 @@ export function resetWorkspaceSession(sessionScopeKey: string): void {
     // Best-effort reset.
   }
 }
-

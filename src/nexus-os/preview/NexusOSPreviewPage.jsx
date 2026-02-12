@@ -377,6 +377,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     forceDesignOpId: '',
     reportsOpId: '',
     activePanelIds: [],
+    workspaceOnboardingCompleted: !isWorkspaceMode,
   });
 
   const bridgeId = osSession.bridgeId;
@@ -390,6 +391,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const forceDesignOpId = osSession.forceDesignOpId;
   const reportsOpId = osSession.reportsOpId;
   const activePanelIds = osSession.activePanelIds || [];
+  const workspaceOnboardingCompleted = Boolean(osSession.workspaceOnboardingCompleted);
+  const needsWorkspaceOnboarding = Boolean(isWorkspaceMode && !workspaceOnboardingCompleted);
 
   const [commandDeckOpen, setCommandDeckOpen] = useState(false);
   const [commandFeedback, setCommandFeedback] = useState('');
@@ -1187,10 +1190,22 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           panels={panelDescriptors}
           presetId={presetId}
           onPresetChange={setPresetId}
+          defaultActivationMode={needsWorkspaceOnboarding ? 'empty' : 'all'}
+          enableOnboardingExperience={needsWorkspaceOnboarding}
+          workspaceUserDisplayName={workspaceDisplayCallsign}
+          onCompleteOnboarding={() => {
+            if (!needsWorkspaceOnboarding) return;
+            patchSnapshot({ workspaceOnboardingCompleted: true });
+          }}
           layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
           enableLayoutPersistence
           initialActivePanelIds={activePanelIds}
-          onActivePanelIdsChange={(next) => patchSnapshot({ activePanelIds: next })}
+          onActivePanelIdsChange={(next) =>
+            patchSnapshot({
+              activePanelIds: next,
+              workspaceOnboardingCompleted: workspaceOnboardingCompleted || next.length > 0,
+            })
+          }
           panelComponentProps={sharedPanelProps}
         />
       </div>

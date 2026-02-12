@@ -25,6 +25,7 @@ import {
   removeCustomWorkbenchWidget,
   upsertCustomWorkbenchWidget,
 } from '../../services/customWorkbenchWidgetService';
+import { getUserOperationPreference } from '../../services/operationEnhancementService';
 
 function clampRowSpan(value) {
   return Math.max(MIN_ROW_SPAN, Math.min(MAX_ROW_SPAN, value));
@@ -145,6 +146,74 @@ function createWidgetFormState(overrides = {}) {
   };
 }
 
+function parsePromptKeywords(value) {
+  return String(value || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function guessWidgetFromPrompt(prompt, actorPreference) {
+  const text = String(prompt || '').trim();
+  if (!text) throw new Error('Provide a short brief before generating.');
+  const keywords = parsePromptKeywords(text);
+  const hasMetricIntent = keywords.some((entry) => ['metric', 'kpi', 'trend', 'score', 'ratio', 'chart'].includes(entry));
+  const hasChecklistIntent = keywords.some((entry) => ['checklist', 'todo', 'tasks', 'steps', 'runbook'].includes(entry));
+  const hasTimelineIntent = keywords.some((entry) => ['timeline', 'history', 'log', 'events', 'handoff'].includes(entry));
+  const roleHints = actorPreference?.preferredRoles || [];
+  const activityHints = actorPreference?.activityTags || [];
+  const focusTokens = [...roleHints.slice(0, 2), ...activityHints.slice(0, 2)].filter(Boolean);
+  const titleSeed = text.length > 46 ? `${text.slice(0, 43)}...` : text;
+
+  if (hasMetricIntent) {
+    return {
+      title: `Metric: ${titleSeed}`,
+      description: `Generated from your brief${focusTokens.length ? ` (${focusTokens.join(', ')})` : ''}.`,
+      body: 'Readiness: 74\nCoverage: 61\nRisk Delta: -8\nSignal Quality: 82',
+      kind: 'METRIC',
+      visualStyle: 'CONSOLE',
+      tone: 'active',
+      colSpan: 2,
+      rowSpan: 2,
+    };
+  }
+  if (hasChecklistIntent) {
+    return {
+      title: `Checklist: ${titleSeed}`,
+      description: `Generated checklist for ${focusTokens[0] || 'operation prep'}.`,
+      body: '- Confirm objective scope\n- Confirm role assignments\n- Validate comms + fallback\n- Post launch checkpoint',
+      kind: 'CHECKLIST',
+      visualStyle: 'SURFACE',
+      tone: 'ok',
+      colSpan: 2,
+      rowSpan: 2,
+    };
+  }
+  if (hasTimelineIntent) {
+    return {
+      title: `Timeline: ${titleSeed}`,
+      description: 'Generated event timeline template.',
+      body: '- Phase 1: Setup\n- Phase 2: Execute\n- Phase 3: Recover\n- Phase 4: Debrief',
+      kind: 'TIMELINE',
+      visualStyle: 'AURORA',
+      tone: 'warning',
+      colSpan: 2,
+      rowSpan: 2,
+    };
+  }
+  return {
+    title: `Brief: ${titleSeed}`,
+    description: `Generated workspace note${focusTokens.length ? ` aligned to ${focusTokens.join(', ')}` : ''}.`,
+    body: text,
+    kind: 'NOTE',
+    visualStyle: 'STANDARD',
+    tone: 'experimental',
+    colSpan: 2,
+    rowSpan: 2,
+  };
+}
+
 export default function WorkbenchGrid({
   panels,
   presetId = DEFAULT_WORKBENCH_PRESET_ID,
@@ -156,6 +225,10 @@ export default function WorkbenchGrid({
   onActivePanelIdsChange,
   layoutPersistenceScopeKey,
   enableLayoutPersistence = true,
+  defaultActivationMode = 'all',
+  enableOnboardingExperience = false,
+  workspaceUserDisplayName = 'Operator',
+  onCompleteOnboarding,
 }) {
   const vars = getNexusCssVars();
   const reducedMotion = useReducedMotion();
@@ -170,17 +243,20 @@ export default function WorkbenchGrid({
   const [workspaceImportCode, setWorkspaceImportCode] = useState('');
   const [selectedShareWidgetId, setSelectedShareWidgetId] = useState('');
   const [panelSearchQuery, setPanelSearchQuery] = useState('');
+  const [widgetPrompt, setWidgetPrompt] = useState('');
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [resizeSession, setResizeSession] = useState(null);
   const resizeRafRef = useRef(0);
   const widgetScopeKey = useMemo(() => {
     if (layoutPersistenceScopeKey) return `${layoutPersistenceScopeKey}:custom`;
     return `bridge:${String(bridgeId || 'global').toLowerCase()}`;
   }, [bridgeId, layoutPersistenceScopeKey]);
+  const hasExplicitInitialPanels = Array.isArray(initialActivePanelIds);
   const [activePanelIds, setActivePanelIds] = useState(() => {
-    if (Array.isArray(initialActivePanelIds) && initialActivePanelIds.length > 0) {
-      return initialActivePanelIds;
+    if (Array.isArray(initialActivePanelIds)) {
+      return [...initialActivePanelIds];
     }
-    return panels.map((panel) => panel.id);
+    return defaultActivationMode === 'empty' ? [] : panels.map((panel) => panel.id);
   });
 
   const preset = WORKBENCH_PRESETS[presetId] || WORKBENCH_PRESETS[DEFAULT_WORKBENCH_PRESET_ID];
@@ -232,6 +308,51 @@ export default function WorkbenchGrid({
       return title.includes(token) || id.includes(token);
     });
   }, [allPanels, panelSearchQuery]);
+  const actorId = String(panelComponentProps?.actorId || '').trim();
+  const actorPreference = useMemo(
+    () => (actorId ? getUserOperationPreference(actorId) : null),
+    [actorId]
+  );
+  const recommendedTemplates = useMemo(() => {
+    if (!actorPreference) return WIDGET_TEMPLATES;
+    const roleToken = String(actorPreference.preferredRoles?.[0] || '').toLowerCase();
+    const activityToken = String(actorPreference.activityTags?.[0] || '').toLowerCase();
+    const roleTemplate = {
+      id: 'role-focus',
+      label: 'Role Focus',
+      title: `${actorPreference.preferredRoles?.[0] || 'Role'} Focus`,
+      description: 'Preference-aligned role activity panel.',
+      body: `- Preferred role: ${actorPreference.preferredRoles?.join(', ') || 'none'}\n- Activities: ${actorPreference.activityTags?.join(', ') || 'none'}\n- Availability: ${actorPreference.availability || 'AUTO'}`,
+      tone: roleToken.includes('lead') ? 'active' : 'ok',
+      kind: activityToken.includes('metric') ? 'METRIC' : 'NOTE',
+      visualStyle: activityToken.includes('ship') ? 'CONSOLE' : 'AURORA',
+      colSpan: 2,
+      rowSpan: 2,
+    };
+    return [roleTemplate, ...WIDGET_TEMPLATES];
+  }, [actorPreference]);
+  const onboardingVisible = enableOnboardingExperience && !onboardingDismissed && !hasVisiblePanels;
+  const starterPanelIds = useMemo(() => {
+    if (allPanels.length === 0) return [];
+    const preferred = allPanels.filter((panel) => {
+      const token = `${panel.id} ${panel.title}`.toLowerCase();
+      return (
+        token.includes('command') ||
+        token.includes('map') ||
+        token.includes('team') ||
+        token.includes('feed') ||
+        token.includes('comms')
+      );
+    });
+    const pool = preferred.length >= 3 ? preferred : allPanels;
+    return pool.slice(0, Math.min(3, pool.length)).map((panel) => panel.id);
+  }, [allPanels]);
+
+  const completeOnboarding = useCallback(() => {
+    if (onboardingDismissed) return;
+    setOnboardingDismissed(true);
+    onCompleteOnboarding?.();
+  }, [onboardingDismissed, onCompleteOnboarding]);
 
   useEffect(() => {
     setCustomWidgets(listCustomWorkbenchWidgets(widgetScopeKey));
@@ -325,10 +446,11 @@ export default function WorkbenchGrid({
           : `Created widget "${created.title}".`
       );
       clearWidgetForm();
+      completeOnboarding();
     } catch (error) {
       setWidgetNotice(error instanceof Error ? error.message : 'Unable to save widget.');
     }
-  }, [clearWidgetForm, preset.columns, widgetForm, widgetScopeKey]);
+  }, [clearWidgetForm, completeOnboarding, preset.columns, widgetForm, widgetScopeKey]);
 
   const copyWidgetShareCode = useCallback(
     (widgetId) => {
@@ -344,7 +466,7 @@ export default function WorkbenchGrid({
 
   const applyWidgetTemplate = useCallback(
     (templateId) => {
-      const template = WIDGET_TEMPLATES.find((entry) => entry.id === templateId);
+      const template = recommendedTemplates.find((entry) => entry.id === templateId);
       if (!template) return;
       applyWidgetFormUpdate({
         title: template.title,
@@ -358,8 +480,21 @@ export default function WorkbenchGrid({
       });
       setWidgetNotice(`Template "${template.label}" applied.`);
     },
-    [applyWidgetFormUpdate]
+    [applyWidgetFormUpdate, recommendedTemplates]
   );
+
+  const generateWidgetDraftFromPrompt = useCallback(() => {
+    try {
+      const generated = guessWidgetFromPrompt(widgetPrompt, actorPreference);
+      applyWidgetFormUpdate({
+        editingWidgetId: '',
+        ...generated,
+      });
+      setWidgetNotice('Generated widget draft from brief.');
+    } catch (error) {
+      setWidgetNotice(error instanceof Error ? error.message : 'Unable to generate widget draft.');
+    }
+  }, [actorPreference, applyWidgetFormUpdate, widgetPrompt]);
 
   const duplicateWidget = useCallback(
     (widgetId) => {
@@ -410,10 +545,11 @@ export default function WorkbenchGrid({
       });
       setWidgetImportCode('');
       setWidgetNotice(`Imported widget "${imported.title}".`);
+      completeOnboarding();
     } catch (error) {
       setWidgetNotice(error instanceof Error ? error.message : 'Invalid widget share code.');
     }
-  }, [widgetImportCode, widgetScopeKey]);
+  }, [completeOnboarding, widgetImportCode, widgetScopeKey]);
 
   const exportWorkspaceCapsule = useCallback(() => {
     const payload = {
@@ -501,14 +637,36 @@ export default function WorkbenchGrid({
       setPanelSizes(nextPanelSizes);
       setWorkspaceImportCode('');
       setWidgetNotice('Workspace capsule imported and synchronized.');
+      completeOnboarding();
     } catch (error) {
       setWidgetNotice(error instanceof Error ? error.message : 'Invalid workspace capsule.');
     }
-  }, [onPresetChange, panels, preset.columns, widgetScopeKey, workspaceImportCode]);
+  }, [completeOnboarding, onPresetChange, panels, preset.columns, widgetScopeKey, workspaceImportCode]);
 
-  const addPanel = (panelId) => {
-    setActivePanelIds((prev) => (prev.includes(panelId) ? prev : [...prev, panelId]));
-  };
+  const addPanel = useCallback(
+    (panelId) => {
+      setActivePanelIds((prev) => (prev.includes(panelId) ? prev : [...prev, panelId]));
+      completeOnboarding();
+    },
+    [completeOnboarding]
+  );
+
+  const activateStarterPack = useCallback(() => {
+    if (starterPanelIds.length === 0) {
+      setWidgetNotice('No starter panels registered yet.');
+      setIsPanelDrawerOpen(true);
+      return;
+    }
+    setActivePanelIds((prev) => {
+      const next = [...prev];
+      for (const panelId of starterPanelIds) {
+        if (!next.includes(panelId)) next.push(panelId);
+      }
+      return next;
+    });
+    setWidgetNotice('Starter workspace activated.');
+    completeOnboarding();
+  }, [completeOnboarding, starterPanelIds]);
 
   const removePanel = (panelId) => {
     setActivePanelIds((prev) => prev.filter((id) => id !== panelId));
@@ -559,7 +717,7 @@ export default function WorkbenchGrid({
 
   const resetLayout = () => {
     setPanelSizes({});
-    setActivePanelIds(allPanels.map((panel) => panel.id));
+    setActivePanelIds(onboardingVisible ? [] : allPanels.map((panel) => panel.id));
     if (persistenceEnabled && layoutPersistenceScopeKey) {
       resetWorkbenchLayout(layoutPersistenceScopeKey);
       setMigrationNotice('Layout reset to defaults.');
@@ -621,20 +779,21 @@ export default function WorkbenchGrid({
     const valid = new Set(allPanels.map((panel) => panel.id));
     setActivePanelIds((prev) => {
       const next = prev.filter((id) => valid.has(id));
-      for (const panel of allPanels) {
-        if (!next.includes(panel.id)) next.push(panel.id);
-      }
-      return next;
+      return next.length === prev.length ? prev : next;
     });
   }, [allPanels, panelSignature]);
 
   useEffect(() => {
-    if (!Array.isArray(initialActivePanelIds) || initialActivePanelIds.length === 0) return;
+    if (!hasExplicitInitialPanels) return;
     const valid = new Set(allPanels.map((panel) => panel.id));
     const filtered = initialActivePanelIds.filter((id) => valid.has(id));
-    if (filtered.length === 0) return;
     setActivePanelIds((prev) => (prev.join('|') === filtered.join('|') ? prev : filtered));
-  }, [Array.isArray(initialActivePanelIds) ? initialActivePanelIds.join('|') : '', allPanels, panelSignature]);
+  }, [allPanels, hasExplicitInitialPanels, initialActivePanelIds, panelSignature]);
+
+  useEffect(() => {
+    if (!enableOnboardingExperience || onboardingDismissed || !hasVisiblePanels) return;
+    completeOnboarding();
+  }, [completeOnboarding, enableOnboardingExperience, hasVisiblePanels, onboardingDismissed]);
 
   useEffect(() => {
     if (!persistenceEnabled || !layoutPersistenceScopeKey) {
@@ -804,25 +963,97 @@ export default function WorkbenchGrid({
                       className="rounded-lg border border-zinc-800/90 bg-[linear-gradient(180deg,rgba(34,22,16,0.78),rgba(14,11,10,0.88))] p-5 text-zinc-200 flex flex-col items-start justify-between gap-3 shadow-[inset_0_0_0_1px_rgba(255,125,60,0.06)]"
                       style={{ gridColumn: `1 / span ${preset.columns}`, minHeight: Math.max(260, preset.minRowHeightPx * 4) }}
                     >
-                      <div className="space-y-1">
-                        <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">NexusOS Desktop</div>
+                      <div className="space-y-1 w-full">
+                        <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                          {onboardingVisible ? 'NexusOS Guided Workspace' : 'NexusOS Desktop'}
+                        </div>
                         <h3
                           className="text-sm sm:text-base font-semibold uppercase tracking-[0.1em]"
                           style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.96)' }}
                         >
-                          Workspace Standby
+                          {onboardingVisible ? `Welcome, ${workspaceUserDisplayName}` : 'Workspace Standby'}
                         </h3>
                         <p className="text-xs text-zinc-400 max-w-2xl">
-                          No visible widgets are mounted. Keep this deck hot by restoring panel visibility or loading custom widgets.
+                          {onboardingVisible
+                            ? 'Start from an empty desk, then stage only what you need. Use starter packs, templates, or a custom brief to generate bespoke widgets and visualizations.'
+                            : 'No visible widgets are mounted. Restore panel visibility or open Workspace Studio to curate a cleaner layout.'}
                         </p>
                       </div>
+                      {onboardingVisible ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 w-full">
+                          <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[11px] text-zinc-400">
+                            <div className="text-zinc-300 uppercase tracking-[0.16em] text-[10px]">Step 1</div>
+                            Activate a starter pack aligned to common planning workflows.
+                          </div>
+                          <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[11px] text-zinc-400">
+                            <div className="text-zinc-300 uppercase tracking-[0.16em] text-[10px]">Step 2</div>
+                            Apply a template tuned to your preferred role and activity profile.
+                          </div>
+                          <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[11px] text-zinc-400">
+                            <div className="text-zinc-300 uppercase tracking-[0.16em] text-[10px]">Step 3</div>
+                            Generate custom widgets from a short brief, then resize and reorder.
+                          </div>
+                        </div>
+                      ) : null}
+                      {onboardingVisible ? (
+                        <div className="rounded border border-zinc-800 bg-zinc-950/60 px-3 py-3 space-y-2 w-full">
+                          <div className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Custom Widget Brief</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              value={widgetPrompt}
+                              onChange={(event) => setWidgetPrompt(event.target.value)}
+                              placeholder="Example: Ship gunner readiness chart with risk trend"
+                              className="h-8 flex-1 min-w-[14rem] rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                            />
+                            <NexusButton
+                              size="sm"
+                              intent="subtle"
+                              onClick={() => {
+                                generateWidgetDraftFromPrompt();
+                                setIsPanelDrawerOpen(true);
+                              }}
+                            >
+                              Generate Draft
+                            </NexusButton>
+                          </div>
+                          <div className="text-[11px] text-zinc-500">
+                            {actorPreference
+                              ? `Aligned to preferences: roles ${actorPreference.preferredRoles.join(', ') || 'none'}; activities ${actorPreference.activityTags.join(', ') || 'none'}.`
+                              : 'Set role and activity preferences to get auto-tailored templates and prompts.'}
+                          </div>
+                        </div>
+                      ) : null}
                       <div className="flex flex-wrap items-center gap-2">
-                        <NexusButton size="sm" intent="primary" onClick={() => setActivePanelIds(allPanels.map((panel) => panel.id))}>
-                          Restore All Panels
+                        {onboardingVisible ? (
+                          <NexusButton size="sm" intent="primary" onClick={activateStarterPack}>
+                            Launch Starter Pack
+                          </NexusButton>
+                        ) : (
+                          <NexusButton
+                            size="sm"
+                            intent="primary"
+                            onClick={() => setActivePanelIds(allPanels.map((panel) => panel.id))}
+                          >
+                            Restore All Panels
+                          </NexusButton>
+                        )}
+                        <NexusButton
+                          size="sm"
+                          intent="subtle"
+                          onClick={() => {
+                            if (onboardingVisible && recommendedTemplates[0]) {
+                              applyWidgetTemplate(recommendedTemplates[0].id);
+                            }
+                            setIsPanelDrawerOpen(true);
+                          }}
+                        >
+                          {onboardingVisible ? 'Open Guided Studio' : 'Open Panel Drawer'}
                         </NexusButton>
-                        <NexusButton size="sm" intent="subtle" onClick={() => setIsPanelDrawerOpen(true)}>
-                          Open Panel Drawer
-                        </NexusButton>
+                        {onboardingVisible ? (
+                          <NexusButton size="sm" intent="subtle" onClick={completeOnboarding}>
+                            Skip Tour
+                          </NexusButton>
+                        ) : null}
                         <span className="text-[11px] text-zinc-500">Use drag handles to stage panels like an OS desktop surface.</span>
                       </div>
                     </div>
@@ -982,11 +1213,31 @@ export default function WorkbenchGrid({
                 {widgetForm.editingWidgetId ? <NexusBadge tone="warning">Editing</NexusBadge> : <NexusBadge tone="active">New</NexusBadge>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {WIDGET_TEMPLATES.map((template) => (
+                {recommendedTemplates.map((template) => (
                   <NexusButton key={template.id} size="sm" intent="subtle" onClick={() => applyWidgetTemplate(template.id)}>
                     {template.label}
                   </NexusButton>
                 ))}
+              </div>
+              <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-2 space-y-2">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500">Generate from brief</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    value={widgetPrompt}
+                    onChange={(event) => setWidgetPrompt(event.target.value)}
+                    placeholder="Describe the widget or visualization you need"
+                    className="h-8 flex-1 min-w-[12rem] rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  />
+                  <NexusButton size="sm" intent="subtle" onClick={generateWidgetDraftFromPrompt}>
+                    Generate Draft
+                  </NexusButton>
+                </div>
+                {actorPreference ? (
+                  <div className="text-[10px] text-zinc-500">
+                    Role alignment: {actorPreference.preferredRoles.join(', ') || 'none'} | Activity alignment:{' '}
+                    {actorPreference.activityTags.join(', ') || 'none'}
+                  </div>
+                ) : null}
               </div>
               <input
                 value={widgetForm.title}
