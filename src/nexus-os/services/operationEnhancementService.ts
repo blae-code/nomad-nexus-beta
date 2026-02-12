@@ -118,6 +118,15 @@ interface OperationEnhancementListenerState {
   alerts: LeadAlert[];
 }
 
+interface PersistedOperationEnhancementState {
+  schema: 'nexus-os-operation-enhancements';
+  version: 1;
+  doctrines: OperationDoctrineProfile[];
+  mandates: OperationMandateProfile[];
+  preferences: UserOperationPreference[];
+  alerts: LeadAlert[];
+}
+
 type OperationEnhancementListener = (state: OperationEnhancementListenerState) => void;
 
 interface DoctrinePresetWeight {
@@ -230,11 +239,13 @@ const DOCTRINE_PRESET_WEIGHTS: Record<string, DoctrinePresetWeight> = {
 };
 
 const LEVELS: DoctrineLevel[] = ['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'];
+const STORAGE_KEY = 'nexus.os.operationEnhancement.v1';
 const listeners = new Set<OperationEnhancementListener>();
 let doctrineStore: OperationDoctrineProfile[] = [];
 let mandateStore: OperationMandateProfile[] = [];
 let preferenceStore: UserOperationPreference[] = [];
 let leadAlertStore: LeadAlert[] = [];
+let storeHydrated = false;
 
 function nowIso(nowMs = Date.now()): string {
   return new Date(nowMs).toISOString();
@@ -256,13 +267,55 @@ function normalizeTokenList(value: unknown, maxItemLength = 44): string[] {
   return [...new Set(normalized)];
 }
 
+function storageAvailable(): boolean {
+  return typeof localStorage !== 'undefined';
+}
+
+function hydrateStore() {
+  if (storeHydrated) return;
+  storeHydrated = true;
+  if (!storageAvailable()) return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as PersistedOperationEnhancementState;
+    if (!parsed || parsed.schema !== 'nexus-os-operation-enhancements' || parsed.version !== 1) return;
+    doctrineStore = Array.isArray(parsed.doctrines) ? parsed.doctrines : [];
+    mandateStore = Array.isArray(parsed.mandates) ? parsed.mandates : [];
+    preferenceStore = Array.isArray(parsed.preferences) ? parsed.preferences : [];
+    leadAlertStore = Array.isArray(parsed.alerts) ? parsed.alerts : [];
+  } catch {
+    // best effort
+  }
+}
+
+function persistStore() {
+  if (!storeHydrated) return;
+  if (!storageAvailable()) return;
+  try {
+    const payload: PersistedOperationEnhancementState = {
+      schema: 'nexus-os-operation-enhancements',
+      version: 1,
+      doctrines: doctrineStore,
+      mandates: mandateStore,
+      preferences: preferenceStore,
+      alerts: leadAlertStore,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // best effort
+  }
+}
+
 function notifyListeners() {
+  hydrateStore();
   const snapshot: OperationEnhancementListenerState = {
     doctrines: [...doctrineStore],
     mandates: [...mandateStore],
     preferences: [...preferenceStore],
     alerts: [...leadAlertStore],
   };
+  persistStore();
   for (const listener of listeners) listener(snapshot);
 }
 
@@ -388,6 +441,7 @@ function defaultAssetMandates(posture: OperationPosture): AssetMandate[] {
 }
 
 function ensureMandateProfile(opId: string, posture: OperationPosture, nowMs = Date.now()): OperationMandateProfile {
+  hydrateStore();
   const existing = mandateStore.find((entry) => entry.opId === opId);
   if (existing) return existing;
   const created: OperationMandateProfile = {
@@ -402,6 +456,7 @@ function ensureMandateProfile(opId: string, posture: OperationPosture, nowMs = D
 }
 
 function ensureDoctrineProfile(opId: string, posture: OperationPosture, nowMs = Date.now()): OperationDoctrineProfile {
+  hydrateStore();
   const existing = doctrineStore.find((entry) => entry.opId === opId);
   if (existing) return existing;
   const created: OperationDoctrineProfile = {
@@ -415,6 +470,7 @@ function ensureDoctrineProfile(opId: string, posture: OperationPosture, nowMs = 
 }
 
 export function listDoctrineLibrary(): DoctrineDefinition[] {
+  hydrateStore();
   return [...DOCTRINE_LIBRARY];
 }
 
@@ -466,10 +522,12 @@ export function alignOperationEnhancementsToPosture(
 }
 
 export function getOperationDoctrineProfile(opId: string): OperationDoctrineProfile | null {
+  hydrateStore();
   return doctrineStore.find((entry) => entry.opId === opId) || null;
 }
 
 export function getOperationMandateProfile(opId: string): OperationMandateProfile | null {
+  hydrateStore();
   return mandateStore.find((entry) => entry.opId === opId) || null;
 }
 
@@ -481,6 +539,7 @@ export function setDoctrineSelection(
   actorId?: string,
   nowMs = Date.now()
 ): OperationDoctrineProfile {
+  hydrateStore();
   const profile = doctrineStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Doctrine profile missing for ${opId}`);
   const selections = profile.doctrineByLevel[level] || [];
@@ -523,6 +582,7 @@ export function upsertRoleMandate(
   actorId?: string,
   nowMs = Date.now()
 ): OperationMandateProfile {
+  hydrateStore();
   const profile = mandateStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Mandate profile missing for ${opId}`);
   const id = normalizeToken(input.id || '', 80) || createId('role_mandate', nowMs);
@@ -562,6 +622,7 @@ export function removeRoleMandate(
   actorId?: string,
   nowMs = Date.now()
 ): OperationMandateProfile {
+  hydrateStore();
   const profile = mandateStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Mandate profile missing for ${opId}`);
   const roleMandates = profile.roleMandates.filter((entry) => entry.id !== mandateId);
@@ -582,6 +643,7 @@ export function upsertLoadoutMandate(
   actorId?: string,
   nowMs = Date.now()
 ): OperationMandateProfile {
+  hydrateStore();
   const profile = mandateStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Mandate profile missing for ${opId}`);
   const id = normalizeToken(input.id || '', 80) || createId('loadout_mandate', nowMs);
@@ -618,6 +680,7 @@ export function removeLoadoutMandate(
   actorId?: string,
   nowMs = Date.now()
 ): OperationMandateProfile {
+  hydrateStore();
   const profile = mandateStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Mandate profile missing for ${opId}`);
   const loadoutMandates = profile.loadoutMandates.filter((entry) => entry.id !== mandateId);
@@ -638,6 +701,7 @@ export function upsertAssetMandate(
   actorId?: string,
   nowMs = Date.now()
 ): OperationMandateProfile {
+  hydrateStore();
   const profile = mandateStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Mandate profile missing for ${opId}`);
   const id = normalizeToken(input.id || '', 80) || createId('asset_mandate', nowMs);
@@ -675,6 +739,7 @@ export function removeAssetMandate(
   actorId?: string,
   nowMs = Date.now()
 ): OperationMandateProfile {
+  hydrateStore();
   const profile = mandateStore.find((entry) => entry.opId === opId);
   if (!profile) throw new Error(`Mandate profile missing for ${opId}`);
   const assetMandates = profile.assetMandates.filter((entry) => entry.id !== mandateId);
@@ -701,6 +766,7 @@ export function upsertUserOperationPreference(
   input: Partial<UserOperationPreference> & Pick<UserOperationPreference, 'userId'>,
   nowMs = Date.now()
 ): UserOperationPreference {
+  hydrateStore();
   const userId = normalizeToken(input.userId, 120);
   if (!userId) throw new Error('Preference requires userId');
   const existing = preferenceStore.find((entry) => entry.userId === userId);
@@ -734,10 +800,12 @@ export function upsertUserOperationPreference(
 }
 
 export function getUserOperationPreference(userId: string): UserOperationPreference | null {
+  hydrateStore();
   return preferenceStore.find((entry) => entry.userId === userId) || null;
 }
 
 export function listUserOperationPreferences(): UserOperationPreference[] {
+  hydrateStore();
   return [...preferenceStore];
 }
 
@@ -919,6 +987,7 @@ export function computeOperationCandidateMatches(input: {
   candidates: CandidatePoolEntry[];
   demands: SeatDemand[];
 }): CandidateMatch[] {
+  hydrateStore();
   const profile = getOperationMandateProfile(input.opId);
   const result: CandidateMatch[] = [];
   for (const demand of input.demands) {
@@ -945,6 +1014,7 @@ export function refreshOperationLeadAlerts(input: {
   demands: SeatDemand[];
   nowMs?: number;
 }): LeadAlert[] {
+  hydrateStore();
   const nowMs = input.nowMs || Date.now();
   const matches = computeOperationCandidateMatches({
     opId: input.opId,
@@ -952,6 +1022,11 @@ export function refreshOperationLeadAlerts(input: {
     candidates: input.candidates,
     demands: input.demands,
   });
+
+  const existingByDemand = new Map<string, LeadAlert>();
+  for (const existing of leadAlertStore.filter((entry) => entry.opId === input.opId)) {
+    existingByDemand.set(normalizeRoleToken(existing.demandRole), existing);
+  }
 
   const alerts: LeadAlert[] = [];
   for (const demand of input.demands) {
@@ -967,18 +1042,30 @@ export function refreshOperationLeadAlerts(input: {
         return preference?.notifyOptIn !== false;
       })
       .map((entry) => entry.userId);
+    const alertId = `lead_alert:${input.opId}:${normalizeRoleToken(demand.role)}`;
+    const sortedNotify = [...new Set(notifyIds)].sort();
+    const severity = severityFromDemand(demand.qty, highScore);
+    const title = `${demand.role} demand: ${demand.qty}`;
+    const summary =
+      highScore > 0
+        ? `${highScore} strong matches found for ${demand.role}.`
+        : `No strong matches for ${demand.role}; broaden role or loadout mandates.`;
+    const existing = existingByDemand.get(normalizeRoleToken(demand.role));
+    const unchanged =
+      Boolean(existing) &&
+      existing?.severity === severity &&
+      existing?.title === title &&
+      existing?.summary === summary &&
+      existing?.notifiedUserIds.join('|') === sortedNotify.join('|');
     alerts.push({
-      id: createId('lead_alert', nowMs),
+      id: alertId,
       opId: input.opId,
-      severity: severityFromDemand(demand.qty, highScore),
+      severity,
       demandRole: demand.role,
-      title: `${demand.role} demand: ${demand.qty}`,
-      summary:
-        highScore > 0
-          ? `${highScore} strong matches found for ${demand.role}.`
-          : `No strong matches for ${demand.role}; broaden role or loadout mandates.`,
-      notifiedUserIds: [...new Set(notifyIds)],
-      createdAt: nowIso(nowMs),
+      title,
+      summary,
+      notifiedUserIds: sortedNotify,
+      createdAt: unchanged ? String(existing?.createdAt) : nowIso(nowMs),
     });
   }
 
@@ -991,12 +1078,24 @@ export function refreshOperationLeadAlerts(input: {
 }
 
 export function listOperationLeadAlerts(opId: string): LeadAlert[] {
+  hydrateStore();
   return leadAlertStore
     .filter((entry) => entry.opId === opId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+export function listUserOperationLeadAlerts(userId: string, limit = 20): LeadAlert[] {
+  hydrateStore();
+  const token = normalizeToken(userId, 120);
+  if (!token) return [];
+  return leadAlertStore
+    .filter((entry) => entry.notifiedUserIds.includes(token))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, Math.max(1, limit));
+}
+
 export function summarizeDoctrineImpact(opId: string): Array<{ level: DoctrineLevel; enabled: number; avgWeight: number }> {
+  hydrateStore();
   const profile = doctrineStore.find((entry) => entry.opId === opId);
   if (!profile) return [];
   return LEVELS.map((level) => {
@@ -1015,15 +1114,24 @@ export function summarizeDoctrineImpact(opId: string): Array<{ level: DoctrineLe
 }
 
 export function subscribeOperationEnhancements(listener: OperationEnhancementListener): () => void {
+  hydrateStore();
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
 export function resetOperationEnhancementServiceState() {
+  hydrateStore();
   doctrineStore = [];
   mandateStore = [];
   preferenceStore = [];
   leadAlertStore = [];
+  if (storageAvailable()) {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // best effort
+    }
+  }
+  storeHydrated = true;
   notifyListeners();
 }
-

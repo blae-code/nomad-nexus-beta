@@ -49,6 +49,7 @@ import { getIntelObjectTTLState, listAllIntelObjectsForDev } from '../services/i
 import { listDrafts } from '../services/intentDraftService';
 import { listPriceObservations } from '../services/marketIntelService';
 import { getFocusOperationId, listOperationsForUser, subscribeOperations } from '../services/operationService';
+import { subscribeOperationEnhancements } from '../services/operationEnhancementService';
 import { listComments } from '../services/opThreadService';
 import { listAssumptions } from '../services/planningService';
 import { listReports } from '../services/reportService';
@@ -179,6 +180,13 @@ function toEventLabel(eventType) {
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function notificationLevelForLeadAlertSeverity(severity) {
+  if (severity === 'CRITICAL') return 'critical';
+  if (severity === 'HIGH') return 'warning';
+  if (severity === 'MED') return 'info';
+  return 'success';
 }
 
 function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onClose, reducedMotion }) {
@@ -395,6 +403,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [bootSessionUpdatedAt, setBootSessionUpdatedAt] = useState(null);
   const previousOnlineRef = useRef(online);
   const lastNotifiedEventIdRef = useRef(null);
+  const seenLeadAlertNotificationKeysRef = useRef(new Set());
+  const leadAlertNotificationOrderRef = useRef([]);
   const tray = useNexusTrayNotifications({ maxItems: 40 });
 
   const backgroundPerformance = useNexusBackgroundPerformance({
@@ -488,6 +498,42 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    seenLeadAlertNotificationKeysRef.current = new Set();
+    leadAlertNotificationOrderRef.current = [];
+  }, [actorId]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeOperationEnhancements((state) => {
+      const relevantAlerts = (state.alerts || [])
+        .filter((alert) => (alert.notifiedUserIds || []).includes(actorId))
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      for (const alert of relevantAlerts) {
+        const alertKey = `${actorId}:${alert.id}:${alert.createdAt}`;
+        if (seenLeadAlertNotificationKeysRef.current.has(alertKey)) continue;
+
+        tray.pushNotification({
+          id: `lead_alert_notice:${alertKey}`,
+          title: alert.title,
+          detail: alert.summary,
+          source: `operation:${alert.opId}`,
+          level: notificationLevelForLeadAlertSeverity(alert.severity),
+        });
+
+        seenLeadAlertNotificationKeysRef.current.add(alertKey);
+        leadAlertNotificationOrderRef.current.push(alertKey);
+      }
+
+      while (leadAlertNotificationOrderRef.current.length > 120) {
+        const removed = leadAlertNotificationOrderRef.current.shift();
+        if (!removed) break;
+        seenLeadAlertNotificationKeysRef.current.delete(removed);
+      }
+    });
+    return unsubscribe;
+  }, [actorId, tray.pushNotification]);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return undefined;
