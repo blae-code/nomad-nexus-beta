@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRenderProfiler } from '../../diagnostics';
 import { alignRSVPPolicyToPosture, computeRosterSummary, getOrCreateRSVPPolicy } from '../../services/rsvpService';
 import {
+  alignOperationEnhancementsToPosture,
+  initializeOperationEnhancements,
+} from '../../services/operationEnhancementService';
+import {
   createOperation,
   getFocusOperationId,
   joinOperation,
@@ -67,6 +71,7 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
         ao: { nodeId: 'system-stanton' },
       });
       getOrCreateRSVPPolicy(op.id, op.posture);
+      initializeOperationEnhancements(op.id, op.posture, actorId);
       setFocusOperation(actorId, op.id);
       setNameInput('');
     } catch (error: any) {
@@ -95,6 +100,7 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
           className="h-8 w-44 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
           placeholder="New operation name"
         />
+        <span className="text-[11px] text-zinc-500 uppercase tracking-wide">Event Mode</span>
         <select
           value={postureInput}
           onChange={(event) => setPostureInput(event.target.value as Operation['posture'])}
@@ -193,6 +199,7 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
                     const nextPosture = op.posture === 'FOCUSED' ? 'CASUAL' : 'FOCUSED';
                     setPosture(op.id, nextPosture, actorId);
                     alignRSVPPolicyToPosture(op.id, nextPosture);
+                    alignOperationEnhancementsToPosture(op.id, nextPosture, actorId);
                   }}
                 >
                   Toggle Posture

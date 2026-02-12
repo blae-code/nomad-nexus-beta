@@ -28,3 +28,4 @@ export * from './crossOrgService';
 export * from './trainingSimulationService';
 export * from './mobileCompanionService';
 export * from './customWorkbenchWidgetService';
+export * from './operationEnhancementService';

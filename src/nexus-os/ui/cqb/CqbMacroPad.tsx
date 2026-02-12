@@ -8,6 +8,7 @@ import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { BREVITY_GROUP_BY_EVENT, type MacroGroup } from './brevity';
 import type { CqbPanelSharedProps } from './cqbTypes';
+import { formatGameplayLoopVariantId } from './gameplayLoopLanguage';
 
 const GROUP_ORDER: MacroGroup[] = ['CONTROL', 'ACK', 'MOVEMENT', 'SECURITY', 'WEAPONS', 'SAFETY', 'TACTICAL'];
 
@@ -19,6 +20,7 @@ export default function CqbMacroPad({
   actorId,
   onCreateMacroEvent,
 }: CqbMacroPadProps) {
+  const displayLoopId = formatGameplayLoopVariantId(variantId);
   const [destinationTag, setDestinationTag] = useState('');
   const [crossingDirection, setCrossingDirection] = useState('');
   const [crossingLane, setCrossingLane] = useState('');
@@ -33,7 +35,7 @@ export default function CqbMacroPad({
     return (
       <DegradedStateCard
         state="LOCKED"
-        reason={`MacroPad unavailable: missing variant or TTL profile for ${variantId}.`}
+        reason={`MacroPad unavailable: missing variant or TTL profile for ${displayLoopId}.`}
       />
     );
   }
@@ -42,7 +44,7 @@ export default function CqbMacroPad({
     return (
       <DegradedStateCard
         state="OFFLINE"
-        reason={`No macro set found for ${variantId}. Check MacroRegistry defaults.`}
+        reason={`No macro set found for ${displayLoopId}. Check MacroRegistry defaults.`}
       />
     );
   }
@@ -91,7 +93,7 @@ export default function CqbMacroPad({
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
-      <div className="text-xs text-zinc-500 uppercase tracking-wide">Canon MacroPad · {variantId}</div>
+      <div className="text-xs text-zinc-500 uppercase tracking-wide">Canon MacroPad · {displayLoopId}</div>
 
       <div className="rounded border border-zinc-800 bg-zinc-900/40 p-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
         <label className="text-[11px] text-zinc-500 flex flex-col gap-1">

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRenderProfiler } from '../../diagnostics';
 import { CommsTemplateRegistry, type CommsTemplateId } from '../../registries/commsTemplateRegistry';
 import type { Operation, RequirementKind, RuleEnforcement } from '../../schemas/opSchemas';
+import type { DoctrineLevel, MandateEnforcement } from '../../services/operationEnhancementService';
 import {
   applyCommsTemplate,
   getFocusOperationId,
@@ -42,6 +43,27 @@ import {
   withdrawRSVPEntry,
 } from '../../services/rsvpService';
 import {
+  alignOperationEnhancementsToPosture,
+  buildSeatDemands,
+  computeOperationCandidateMatches,
+  getOperationDoctrineProfile,
+  getOperationMandateProfile,
+  initializeOperationEnhancements,
+  listDoctrineLibrary,
+  listOperationLeadAlerts,
+  refreshOperationLeadAlerts,
+  removeAssetMandate,
+  removeLoadoutMandate,
+  removeRoleMandate,
+  setDoctrineSelection,
+  subscribeOperationEnhancements,
+  summarizeDoctrineImpact,
+  upsertAssetMandate,
+  upsertLoadoutMandate,
+  upsertRoleMandate,
+  upsertUserOperationPreference,
+} from '../../services/operationEnhancementService';
+import {
   addComment,
   listComments,
   listThreadSummaries,
@@ -66,14 +88,14 @@ import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
 import { deriveOperationStagePolicy } from './stagePolicy';
 
-type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'COMMS' | 'NARRATIVE' | 'COALITION';
+type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'NARRATIVE' | 'COALITION';
 
 interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
   actorId: string;
   onClose?: () => void;
 }
 
-const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'COMMS', 'NARRATIVE', 'COALITION'];
+const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'NARRATIVE', 'COALITION'];
 
 function cycleStatus(status: Operation['status']): Operation['status'] {
   if (status === 'PLANNING') return 'ACTIVE';
@@ -86,6 +108,13 @@ function toneForStatus(status: Operation['status']): 'ok' | 'warning' | 'neutral
   if (status === 'ACTIVE') return 'ok';
   if (status === 'PLANNING') return 'warning';
   return 'neutral';
+}
+
+function parseTokenList(value: string): string[] {
+  return [...new Set(String(value || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean))];
 }
 
 export default function OperationFocusApp({
@@ -101,6 +130,7 @@ export default function OperationFocusApp({
   const [rsvpVersion, setRsvpVersion] = useState(0);
   const [fitVersion, setFitVersion] = useState(0);
   const [threadVersion, setThreadVersion] = useState(0);
+  const [enhancementVersion, setEnhancementVersion] = useState(0);
   const [errorText, setErrorText] = useState('');
   const [tabId, setTabId] = useState<TabId>('PLAN');
   const [selectedOpId, setSelectedOpId] = useState('');
@@ -125,6 +155,23 @@ export default function OperationFocusApp({
   const [ruleKind, setRuleKind] = useState<RequirementKind>('ROLE');
   const [ruleMessage, setRuleMessage] = useState('');
   const [rulePredicate, setRulePredicate] = useState('{"roleIn":["Lead","Medic"]}');
+  const [doctrineLevel, setDoctrineLevel] = useState<DoctrineLevel>('INDIVIDUAL');
+  const [roleMandateRole, setRoleMandateRole] = useState('Gunner');
+  const [roleMandateMin, setRoleMandateMin] = useState(1);
+  const [roleMandateEnforcement, setRoleMandateEnforcement] = useState<MandateEnforcement>('SOFT');
+  const [roleMandateRequiredTags, setRoleMandateRequiredTags] = useState('ship-combat,comms');
+  const [loadoutMandateLabel, setLoadoutMandateLabel] = useState('Turret Ops Baseline');
+  const [loadoutMandateTagsAny, setLoadoutMandateTagsAny] = useState('ship-combat,turret');
+  const [loadoutMandateRoles, setLoadoutMandateRoles] = useState('Gunner');
+  const [loadoutMandateEnforcement, setLoadoutMandateEnforcement] = useState<MandateEnforcement>('SOFT');
+  const [assetMandateTag, setAssetMandateTag] = useState('combat');
+  const [assetMandateMin, setAssetMandateMin] = useState(1);
+  const [assetMandateEnforcement, setAssetMandateEnforcement] = useState<MandateEnforcement>('SOFT');
+  const [preferenceUserId, setPreferenceUserId] = useState('');
+  const [preferenceRoles, setPreferenceRoles] = useState('Gunner,Pilot');
+  const [preferenceActivities, setPreferenceActivities] = useState('ship-combat,turret');
+  const [preferencePosture, setPreferencePosture] = useState<Operation['posture'] | 'ANY'>('ANY');
+  const [preferenceNotifyOptIn, setPreferenceNotifyOptIn] = useState(true);
 
   const [threadBody, setThreadBody] = useState('');
   const [threadParentId, setThreadParentId] = useState('');
@@ -138,12 +185,14 @@ export default function OperationFocusApp({
     const unsubRsvp = subscribeRsvp(() => setRsvpVersion((v) => v + 1));
     const unsubFits = subscribeFitProfiles(() => setFitVersion((v) => v + 1));
     const unsubThread = subscribeOpThread(() => setThreadVersion((v) => v + 1));
+    const unsubEnhancements = subscribeOperationEnhancements(() => setEnhancementVersion((v) => v + 1));
     return () => {
       unsubOps();
       unsubPlan();
       unsubRsvp();
       unsubFits();
       unsubThread();
+      unsubEnhancements();
     };
   }, []);
 
@@ -153,6 +202,10 @@ export default function OperationFocusApp({
   useEffect(() => {
     if (!joinUserId) setJoinUserId(roster[0]?.id || actorId);
   }, [joinUserId, roster, actorId]);
+
+  useEffect(() => {
+    if (!preferenceUserId) setPreferenceUserId(actorId);
+  }, [preferenceUserId, actorId]);
 
   useEffect(() => {
     if (!operations.length) {
@@ -166,8 +219,10 @@ export default function OperationFocusApp({
   const selectedOp = useMemo(() => operations.find((op) => op.id === selectedOpId) || null, [operations, selectedOpId]);
 
   useEffect(() => {
-    if (selectedOp) getOrCreateRSVPPolicy(selectedOp.id, selectedOp.posture);
-  }, [selectedOp?.id, selectedOp?.posture]);
+    if (!selectedOp) return;
+    getOrCreateRSVPPolicy(selectedOp.id, selectedOp.posture);
+    initializeOperationEnhancements(selectedOp.id, selectedOp.posture, actorId);
+  }, [selectedOp?.id, selectedOp?.posture, actorId]);
 
   const objectives = useMemo(() => (selectedOp ? listObjectives(selectedOp.id) : []), [selectedOp?.id, planVersion]);
   const phases = useMemo(() => (selectedOp ? listPhases(selectedOp.id) : []), [selectedOp?.id, planVersion]);
@@ -180,6 +235,84 @@ export default function OperationFocusApp({
   const entries = useMemo(() => (selectedOp ? listRSVPEntries(selectedOp.id) : []), [selectedOp?.id, rsvpVersion]);
   const slots = useMemo(() => (selectedOp ? listAssetSlots(selectedOp.id) : []), [selectedOp?.id, rsvpVersion]);
   const openSeats = useMemo(() => (selectedOp ? listOpenCrewSeats(selectedOp.id) : []), [selectedOp?.id, rsvpVersion]);
+  const doctrineProfile = useMemo(
+    () => (selectedOp ? getOperationDoctrineProfile(selectedOp.id) : null),
+    [selectedOp?.id, enhancementVersion]
+  );
+  const mandateProfile = useMemo(
+    () => (selectedOp ? getOperationMandateProfile(selectedOp.id) : null),
+    [selectedOp?.id, enhancementVersion]
+  );
+  const doctrineImpactSummary = useMemo(
+    () => (selectedOp ? summarizeDoctrineImpact(selectedOp.id) : []),
+    [selectedOp?.id, enhancementVersion]
+  );
+  const leadAlerts = useMemo(
+    () => (selectedOp ? listOperationLeadAlerts(selectedOp.id) : []),
+    [selectedOp?.id, enhancementVersion]
+  );
+  const doctrineCatalogByLevel = useMemo(() => {
+    const grouped: Record<DoctrineLevel, ReturnType<typeof listDoctrineLibrary>> = {
+      INDIVIDUAL: [],
+      SQUAD: [],
+      WING: [],
+      FLEET: [],
+    };
+    for (const doctrine of listDoctrineLibrary()) grouped[doctrine.level].push(doctrine);
+    return grouped;
+  }, []);
+  const candidatePool = useMemo(() => {
+    const rosterPool = roster.map((member) => ({
+      userId: member.id,
+      callsign: member.callsign,
+      role: member.role,
+      element: member.element,
+      loadoutTags: [member.role, member.element, 'comms'].filter(Boolean),
+      activityTags: [member.role, member.element].filter(Boolean),
+      availability: 'READY' as const,
+    }));
+    const entryPool = entries.map((entry) => ({
+      userId: entry.userId,
+      role: entry.rolePrimary,
+      loadoutTags: [entry.rolePrimary, ...(entry.roleSecondary || []), 'comms'],
+      activityTags: [entry.rolePrimary, ...(entry.roleSecondary || [])],
+      availability: entry.status === 'WITHDRAWN' ? ('OFFLINE' as const) : ('READY' as const),
+    }));
+    const merged = [...rosterPool, ...entryPool];
+    const byUser = new Map<string, typeof merged[number]>();
+    for (const candidate of merged) {
+      const current = byUser.get(candidate.userId);
+      if (!current) {
+        byUser.set(candidate.userId, candidate);
+        continue;
+      }
+      byUser.set(candidate.userId, {
+        ...current,
+        role: current.role || candidate.role,
+        loadoutTags: [...new Set([...(current.loadoutTags || []), ...(candidate.loadoutTags || [])])],
+        activityTags: [...new Set([...(current.activityTags || []), ...(candidate.activityTags || [])])],
+      });
+    }
+    return Array.from(byUser.values());
+  }, [entries, roster]);
+  const seatDemands = useMemo(
+    () =>
+      buildSeatDemands({
+        openSeats: openSeats.map((entry) => ({ roleNeeded: entry.request.roleNeeded, openQty: entry.openQty })),
+        mandates: mandateProfile,
+      }),
+    [openSeats, mandateProfile?.updatedAt]
+  );
+  const candidateMatches = useMemo(() => {
+    if (!selectedOp) return [];
+    if (seatDemands.length === 0) return [];
+    return computeOperationCandidateMatches({
+      opId: selectedOp.id,
+      posture: selectedOp.posture,
+      candidates: candidatePool,
+      demands: seatDemands,
+    }).slice(0, 16);
+  }, [selectedOp?.id, selectedOp?.posture, candidatePool, seatDemands, enhancementVersion]);
   const fitProfiles = useMemo(() => listFitProfiles(), [fitVersion]);
   const tagAvailability = useMemo(
     () => (selectedOp ? getOperationTagAvailability(selectedOp.id) : { roleTags: [], capabilityTags: [] }),
@@ -211,6 +344,18 @@ export default function OperationFocusApp({
     if (selectedThreadRootId && threadSummaries.some((entry) => entry.root.id === selectedThreadRootId)) return;
     setSelectedThreadRootId(threadSummaries[0].root.id);
   }, [threadSummaries, selectedThreadRootId]);
+
+  useEffect(() => {
+    if (!selectedOp) return;
+    if (seatDemands.length === 0 || candidatePool.length === 0) return;
+    refreshOperationLeadAlerts({
+      opId: selectedOp.id,
+      posture: selectedOp.posture,
+      candidates: candidatePool,
+      demands: seatDemands,
+    });
+  }, [selectedOp?.id, selectedOp?.posture, seatDemands, candidatePool, mandateProfile?.updatedAt]);
+
   const rosterAvailability = resolveAvailabilityState({
     count: selectedOp ? entries.length : undefined,
     staleCount: (summary?.hardViolations || 0) + (summary?.softFlags || 0),
@@ -275,6 +420,7 @@ export default function OperationFocusApp({
                 const nextPosture = selectedOp.posture === 'FOCUSED' ? 'CASUAL' : 'FOCUSED';
                 setPosture(selectedOp.id, nextPosture, actorId);
                 alignRSVPPolicyToPosture(selectedOp.id, nextPosture);
+                alignOperationEnhancementsToPosture(selectedOp.id, nextPosture, actorId);
               })
             }
           >
@@ -339,7 +485,7 @@ export default function OperationFocusApp({
         ) : null}
 
         {tabId === 'ROSTER' ? (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">RSVP</h4>
@@ -406,6 +552,101 @@ export default function OperationFocusApp({
                   </div>
                 ))}
                 {openSeats.length === 0 ? <div className="text-xs text-zinc-500">No open seats.</div> : null}
+              </div>
+            </section>
+
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Talent Matching + Alerts</h4>
+                <NexusBadge tone={leadAlerts.some((alert) => alert.severity === 'HIGH' || alert.severity === 'CRITICAL') ? 'warning' : 'neutral'}>
+                  {leadAlerts.length} alerts
+                </NexusBadge>
+              </div>
+              <div className="text-[11px] text-zinc-500">
+                Capture role/activity preferences and push dynamic recruiting alerts when operation demands match.
+              </div>
+              <select
+                value={preferenceUserId}
+                onChange={(e) => setPreferenceUserId(e.target.value)}
+                className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+              >
+                {[actorId, ...roster.map((member) => member.id), ...entries.map((entry) => entry.userId)]
+                  .filter((value, index, array) => array.indexOf(value) === index)
+                  .map((userId) => (
+                    <option key={userId} value={userId}>{userId}</option>
+                  ))}
+              </select>
+              <input value={preferenceRoles} onChange={(e) => setPreferenceRoles(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Preferred roles (comma-separated)" />
+              <input value={preferenceActivities} onChange={(e) => setPreferenceActivities(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Activity tags (comma-separated)" />
+              <div className="grid grid-cols-2 gap-2">
+                <select value={preferencePosture} onChange={(e) => setPreferencePosture(e.target.value as Operation['posture'] | 'ANY')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                  <option value="ANY">ANY</option>
+                  <option value="CASUAL">CASUAL</option>
+                  <option value="FOCUSED">FOCUSED</option>
+                </select>
+                <label className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 flex items-center gap-2">
+                  <input type="checkbox" checked={preferenceNotifyOptIn} onChange={(e) => setPreferenceNotifyOptIn(e.target.checked)} />
+                  Notify
+                </label>
+              </div>
+              <NexusButton
+                size="sm"
+                intent="primary"
+                onClick={() =>
+                  runAction(() =>
+                    upsertUserOperationPreference({
+                      userId: preferenceUserId || actorId,
+                      preferredRoles: parseTokenList(preferenceRoles),
+                      activityTags: parseTokenList(preferenceActivities),
+                      postureAffinity: preferencePosture,
+                      notifyOptIn: preferenceNotifyOptIn,
+                    })
+                  )
+                }
+              >
+                Save Preference
+              </NexusButton>
+              <NexusButton
+                size="sm"
+                intent="subtle"
+                onClick={() =>
+                  runAction(() => {
+                    refreshOperationLeadAlerts({
+                      opId: selectedOp.id,
+                      posture: selectedOp.posture,
+                      candidates: candidatePool,
+                      demands: seatDemands,
+                    });
+                  })
+                }
+              >
+                Refresh Matching Alerts
+              </NexusButton>
+
+              <div className="space-y-1 max-h-32 overflow-auto pr-1">
+                {candidateMatches.slice(0, 6).map((match) => (
+                  <div key={`${match.userId}:${match.matchedRole}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
+                    <div className="text-zinc-200">{match.callsign || match.userId} {'->'} {match.matchedRole}</div>
+                    <div className="text-zinc-500">score {match.score}{match.blockedByHardMandate ? ' · blocked by hard mandate' : ''}</div>
+                  </div>
+                ))}
+                {candidateMatches.length === 0 ? <div className="text-xs text-zinc-500">No role demand detected yet.</div> : null}
+              </div>
+
+              <div className="space-y-1 max-h-28 overflow-auto pr-1">
+                {leadAlerts.map((alert) => (
+                  <div key={alert.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-zinc-200">{alert.title}</span>
+                      <NexusBadge tone={alert.severity === 'CRITICAL' || alert.severity === 'HIGH' ? 'warning' : 'neutral'}>
+                        {alert.severity}
+                      </NexusBadge>
+                    </div>
+                    <div className="text-zinc-500">{alert.summary}</div>
+                    <div className="text-zinc-600 truncate">Notify: {alert.notifiedUserIds.join(', ') || 'none'}</div>
+                  </div>
+                ))}
+                {leadAlerts.length === 0 ? <div className="text-xs text-zinc-500">No active lead alerts.</div> : null}
               </div>
             </section>
 
@@ -492,6 +733,120 @@ export default function OperationFocusApp({
                 <div className="text-[11px] text-zinc-500">
                   Caps: {tagAvailability.capabilityTags.slice(0, 6).map((entry) => `${entry.tag}(${entry.count})`).join(', ') || 'none'}
                 </div>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {tabId === 'DOCTRINE' ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Doctrine Stack</h4>
+                <NexusBadge tone="active">{selectedOp.posture}</NexusBadge>
+              </div>
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+                {(['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'] as DoctrineLevel[]).map((level) => (
+                  <NexusButton key={level} size="sm" intent={doctrineLevel === level ? 'primary' : 'subtle'} onClick={() => setDoctrineLevel(level)}>
+                    {level}
+                  </NexusButton>
+                ))}
+              </div>
+              <div className="space-y-2 max-h-80 overflow-auto pr-1">
+                {(doctrineCatalogByLevel[doctrineLevel] || []).map((doctrine) => {
+                  const selection = doctrineProfile?.doctrineByLevel[doctrineLevel]?.find((entry) => entry.doctrineId === doctrine.id) || null;
+                  return (
+                    <div key={doctrine.id} className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-zinc-200 text-[11px]">{doctrine.label}</div>
+                        <label className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(selection?.enabled)}
+                            disabled={requirementsLocked}
+                            onChange={(e) => runAction(() => setDoctrineSelection(selectedOp.id, doctrineLevel, doctrine.id, { enabled: e.target.checked }, actorId))}
+                          />
+                          Enabled
+                        </label>
+                      </div>
+                      <div className="text-[10px] text-zinc-500">{doctrine.description}</div>
+                      <div className="text-[10px] text-zinc-600">{doctrine.modifierText}</div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={5}
+                        value={Math.round((selection?.weight || 0) * 100)}
+                        disabled={requirementsLocked}
+                        onChange={(e) => runAction(() => setDoctrineSelection(selectedOp.id, doctrineLevel, doctrine.id, { weight: Number(e.target.value) / 100 }, actorId))}
+                        className="w-full"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1 text-[11px]">
+                <div className="text-zinc-400 uppercase tracking-wide">Impact Snapshot</div>
+                {doctrineImpactSummary.map((entry) => (
+                  <div key={entry.level} className="flex items-center justify-between gap-2 text-zinc-500">
+                    <span>{entry.level}</span>
+                    <span>enabled {entry.enabled} / avg {entry.avgWeight}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Mandates + Restrictions</h4>
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+                <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Role Mandate</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={roleMandateRole} disabled={requirementsLocked} onChange={(e) => setRoleMandateRole(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Role" />
+                  <input type="number" min={0} value={roleMandateMin} disabled={requirementsLocked} onChange={(e) => setRoleMandateMin(Number(e.target.value))} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Min" />
+                </div>
+                <input value={roleMandateRequiredTags} disabled={requirementsLocked} onChange={(e) => setRoleMandateRequiredTags(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Required loadout tags (csv)" />
+                <select value={roleMandateEnforcement} disabled={requirementsLocked} onChange={(e) => setRoleMandateEnforcement(e.target.value as MandateEnforcement)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="HARD">HARD</option><option value="SOFT">SOFT</option><option value="ADVISORY">ADVISORY</option></select>
+                <NexusButton size="sm" intent="primary" disabled={requirementsLocked} onClick={() => runAction(() => upsertRoleMandate(selectedOp.id, { role: roleMandateRole || 'Crew', minCount: Math.max(0, roleMandateMin), enforcement: roleMandateEnforcement, requiredLoadoutTags: parseTokenList(roleMandateRequiredTags) }, actorId))}>Add Role Mandate</NexusButton>
+              </div>
+
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+                <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Loadout Mandate</div>
+                <input value={loadoutMandateLabel} disabled={requirementsLocked} onChange={(e) => setLoadoutMandateLabel(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Mandate label" />
+                <input value={loadoutMandateTagsAny} disabled={requirementsLocked} onChange={(e) => setLoadoutMandateTagsAny(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Any tags (csv)" />
+                <input value={loadoutMandateRoles} disabled={requirementsLocked} onChange={(e) => setLoadoutMandateRoles(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Roles (csv, optional)" />
+                <select value={loadoutMandateEnforcement} disabled={requirementsLocked} onChange={(e) => setLoadoutMandateEnforcement(e.target.value as MandateEnforcement)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="HARD">HARD</option><option value="SOFT">SOFT</option><option value="ADVISORY">ADVISORY</option></select>
+                <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => upsertLoadoutMandate(selectedOp.id, { label: loadoutMandateLabel || 'Loadout Mandate', tagsAny: parseTokenList(loadoutMandateTagsAny), appliesToRoles: parseTokenList(loadoutMandateRoles), enforcement: loadoutMandateEnforcement }, actorId))}>Add Loadout Mandate</NexusButton>
+              </div>
+
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+                <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Asset Mandate</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={assetMandateTag} disabled={requirementsLocked} onChange={(e) => setAssetMandateTag(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Asset tag" />
+                  <input type="number" min={0} value={assetMandateMin} disabled={requirementsLocked} onChange={(e) => setAssetMandateMin(Number(e.target.value))} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Min" />
+                </div>
+                <select value={assetMandateEnforcement} disabled={requirementsLocked} onChange={(e) => setAssetMandateEnforcement(e.target.value as MandateEnforcement)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="HARD">HARD</option><option value="SOFT">SOFT</option><option value="ADVISORY">ADVISORY</option></select>
+                <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => upsertAssetMandate(selectedOp.id, { assetTag: assetMandateTag || 'support', minCount: Math.max(0, assetMandateMin), enforcement: assetMandateEnforcement }, actorId))}>Add Asset Mandate</NexusButton>
+              </div>
+
+              <div className="space-y-1 max-h-40 overflow-auto pr-1">
+                {(mandateProfile?.roleMandates || []).map((mandate) => (
+                  <div key={mandate.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
+                    <div className="text-zinc-300 truncate">{mandate.role} min {mandate.minCount} ({mandate.enforcement})</div>
+                    <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => removeRoleMandate(selectedOp.id, mandate.id, actorId))}>Remove</NexusButton>
+                  </div>
+                ))}
+                {(mandateProfile?.loadoutMandates || []).map((mandate) => (
+                  <div key={mandate.id} className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
+                    <div className="text-zinc-400 truncate">Loadout: {mandate.label} ({mandate.enforcement})</div>
+                    <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => removeLoadoutMandate(selectedOp.id, mandate.id, actorId))}>Remove</NexusButton>
+                  </div>
+                ))}
+                {(mandateProfile?.assetMandates || []).map((mandate) => (
+                  <div key={mandate.id} className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
+                    <div className="text-zinc-400 truncate">Asset {mandate.assetTag} min {mandate.minCount} ({mandate.enforcement})</div>
+                    <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => removeAssetMandate(selectedOp.id, mandate.id, actorId))}>Remove</NexusButton>
+                  </div>
+                ))}
               </div>
             </section>
           </div>

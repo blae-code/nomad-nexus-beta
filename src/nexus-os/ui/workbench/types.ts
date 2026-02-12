@@ -1,6 +1,6 @@
 import type React from 'react';
 
-export type WorkbenchPresetId = 'GRID_2X2' | 'GRID_3_COLUMN' | 'COMMAND_LEFT';
+export type WorkbenchPresetId = 'GRID_2X2' | 'GRID_3_COLUMN' | 'COMMAND_LEFT' | 'OPERATIONS_HUB' | 'WIDE_MESH';
 
 export interface PanelSize {
   colSpan?: number;

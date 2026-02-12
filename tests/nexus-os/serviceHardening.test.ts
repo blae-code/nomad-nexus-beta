@@ -99,6 +99,7 @@ import {
   startSimulationSession,
   stopSimulationSession,
 } from '../../src/nexus-os/services/trainingSimulationService';
+import { resetOperationEnhancementServiceState } from '../../src/nexus-os/services/operationEnhancementService';
 
 describe('Nexus OS hardening services', () => {
   beforeEach(() => {
@@ -113,6 +114,7 @@ describe('Nexus OS hardening services', () => {
     resetNarrativeServiceState();
     resetCrossOrgServiceState();
     resetTrainingSimulationState();
+    resetOperationEnhancementServiceState();
   });
 
   it('computeControlZones is deterministic for identical inputs', () => {

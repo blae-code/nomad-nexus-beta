@@ -3,6 +3,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import {
   BridgeSwitcher,
   BRIDGE_DEFAULT_PRESET,
+  getBridgeThemeCssVars,
   CommandFocus,
   CommsNetworkConsole,
   CommsPeekPanel,
@@ -56,6 +57,11 @@ import { listFitProfiles } from '../services/fitProfileService';
 import { runNexusOSInvariantChecks, summarizeInvariantWarnings } from '../diagnostics';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
 import { Radar, Shield, Signal, Swords, UserRound } from 'lucide-react';
+import {
+  formatGameplayLoopVariantId,
+  isGameplayLoopVariantToken,
+  normalizeGameplayLoopVariantId,
+} from '../ui/cqb/gameplayLoopLanguage';
 import '../ui/theme/nexus-shell.css';
 
 function normalizeElementTag(raw) {
@@ -78,7 +84,7 @@ function SystemHealthPanel() {
         <RustPulseIndicator active={false} label="Idle" />
       </div>
       <div className="flex items-center justify-between rounded border border-zinc-700 bg-zinc-900/60 px-3 py-2">
-        <span className="text-xs text-zinc-400">CQB Event Stream</span>
+        <span className="text-xs text-zinc-400">Gameplay Event Stream</span>
         <RustPulseIndicator active label="Listening" />
       </div>
     </div>
@@ -101,11 +107,11 @@ function CqbConsoleLauncherPanel({
         Bridge: <span className="text-zinc-200 font-semibold">{bridgeId}</span>
       </p>
       <p className="text-sm text-zinc-300 leading-relaxed">
-        Open CQB Command Focus for large team tiles, macro control, and feed monitoring. Open Comms Network for live channel topology and Tactical Map for fading spatial claims.
+        Open Action Command Focus for large team tiles, macro control, and feed monitoring. Open Comms Network for live channel topology and Tactical Map for fading spatial claims.
       </p>
       <div className="flex items-center gap-2 flex-wrap">
         <NexusButton size="sm" intent="primary" onClick={onOpenCqbConsole}>
-          Open CQB Console
+          Open Action Console
         </NexusButton>
         <NexusButton size="sm" intent="subtle" onClick={onOpenCommsNetwork}>
           Open Comms Network
@@ -126,7 +132,7 @@ function CqbConsoleLauncherPanel({
           Open Reports
         </NexusButton>
       </div>
-      <p className="text-[11px] text-zinc-500">No fake telemetry: graph pulses only from recent CQB events.</p>
+      <p className="text-[11px] text-zinc-500">No fake telemetry: graph pulses only from recent gameplay events.</p>
     </div>
   );
 }
@@ -135,13 +141,13 @@ function focusModeFromBridge(bridgeId) {
   return bridgeId === 'COMMAND' ? 'comms' : 'cqb';
 }
 
-function cqbpulseSummary(events) {
+function gameplayPulseSummary(events) {
   const now = Date.now();
   return events.filter((event) => now - new Date(event.createdAt).getTime() <= 20000).length;
 }
 
 const FOCUS_APP_CATALOG = [
-  { id: 'cqb', label: 'CQB', hotkey: 'Alt+1' },
+  { id: 'cqb', label: 'Action', hotkey: 'Alt+1' },
   { id: 'comms', label: 'Comms', hotkey: 'Alt+2' },
   { id: 'map', label: 'Map', hotkey: 'Alt+3' },
   { id: 'mobile', label: 'Mobile', hotkey: 'Alt+4' },
@@ -151,7 +157,21 @@ const FOCUS_APP_CATALOG = [
 ];
 
 const FOCUS_APP_IDS = new Set(FOCUS_APP_CATALOG.map((entry) => entry.id));
-const HIGH_PRIORITY_CQB_EVENTS = new Set(['CEASE_FIRE', 'CHECK_FIRE', 'WEAPON_DRY', 'SELF_CHECK', 'CLEAR_COMMS']);
+const FOCUS_APP_LABEL_BY_ID = Object.fromEntries(FOCUS_APP_CATALOG.map((entry) => [entry.id, entry.label]));
+const FOCUS_APP_ALIASES = {
+  action: 'cqb',
+  gameplay: 'cqb',
+  loop: 'cqb',
+};
+const HIGH_PRIORITY_GAMEPLAY_EVENTS = new Set(['CEASE_FIRE', 'CHECK_FIRE', 'WEAPON_DRY', 'SELF_CHECK', 'CLEAR_COMMS']);
+
+function resolveFocusAppId(input) {
+  const token = String(input || '').trim().toLowerCase();
+  if (!token) return null;
+  if (FOCUS_APP_IDS.has(token)) return token;
+  const aliasMatch = FOCUS_APP_ALIASES[token];
+  return aliasMatch && FOCUS_APP_IDS.has(aliasMatch) ? aliasMatch : null;
+}
 
 function toEventLabel(eventType) {
   return String(eventType || 'UNKNOWN')
@@ -209,7 +229,7 @@ function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onCl
 }
 
 function DiagnosticsPanel({ events, variantId, operations, focusOperationId, controlZones }) {
-  const pulses = cqbpulseSummary(events);
+  const pulses = gameplayPulseSummary(events);
   const eventDiagnostics = getCqbEventDiagnostics(60000);
   const intelObjects = listAllIntelObjectsForDev();
   const drafts = listDrafts();
@@ -261,10 +281,10 @@ function DiagnosticsPanel({ events, variantId, operations, focusOperationId, con
     <div className="space-y-2 text-xs">
       <div className="flex items-center justify-between rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1">
         <span className="text-zinc-400">Variant</span>
-        <span className="text-zinc-200">{variantId}</span>
+        <span className="text-zinc-200">{formatGameplayLoopVariantId(variantId)}</span>
       </div>
       <div className="flex items-center justify-between rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1">
-        <span className="text-zinc-400">CQB pulses (20s)</span>
+        <span className="text-zinc-400">Gameplay pulses (20s)</span>
         <span className="text-zinc-200">{pulses}</span>
       </div>
       <div className="flex items-center justify-between rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1">
@@ -303,7 +323,7 @@ function DiagnosticsPanel({ events, variantId, operations, focusOperationId, con
       <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-[11px] text-zinc-400 space-y-0.5">
         <div>Stale intel: {staleIntelCount}</div>
         <div>Stale market observations: {staleMarketCount}</div>
-        <div>Unscoped CQB %: {eventDiagnostics.unscopedPercent}</div>
+        <div>Unscoped gameplay %: {eventDiagnostics.unscopedPercent}</div>
         <div>
           Top brevity:{' '}
           {eventDiagnostics.mostUsedBrevityMacros[0]
@@ -352,6 +372,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   });
 
   const bridgeId = osSession.bridgeId;
+  const bridgeThemeVars = useMemo(() => getBridgeThemeCssVars(bridgeId), [bridgeId]);
   const presetId = osSession.presetId;
   const variantId = osSession.variantId;
   const opId = osSession.opId;
@@ -403,7 +424,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const setBridgeId = (nextBridgeId) => patchSnapshot({ bridgeId: nextBridgeId });
   const setPresetId = (nextPresetId) => patchSnapshot({ presetId: nextPresetId });
-  const setVariantId = (nextVariantId) => patchSnapshot({ variantId: nextVariantId });
+  const setVariantId = (nextVariantId) => patchSnapshot({ variantId: normalizeGameplayLoopVariantId(nextVariantId) || 'CQB-01' });
   const setOpId = (nextOpId) => patchSnapshot({ opId: nextOpId });
   const setElementFilter = (nextFilter) => patchSnapshot({ elementFilter: nextFilter });
   const setActorId = (nextActorId) => patchSnapshot({ actorId: nextActorId });
@@ -412,12 +433,13 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const openFocusApp = (appId) => {
     if (!FOCUS_APP_IDS.has(appId)) return;
+    const label = FOCUS_APP_LABEL_BY_ID[appId] || String(appId || '').toUpperCase();
     profileSync('focus.open', appId, () => {
       patchSnapshot({ focusMode: appId });
       lifecycle.markForeground(appId);
     });
     tray.pushNotification({
-      title: `Opened ${appId.toUpperCase()}`,
+      title: `Opened ${label}`,
       detail: 'Focus app moved to foreground.',
       source: 'taskbar',
       level: 'info',
@@ -433,10 +455,11 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const suspendFocusApp = (appId = focusMode) => {
     if (!appId || !FOCUS_APP_IDS.has(appId)) return;
+    const label = FOCUS_APP_LABEL_BY_ID[appId] || String(appId || '').toUpperCase();
     lifecycle.markSuspended(appId);
     if (focusMode === appId) patchSnapshot({ focusMode: null });
     tray.pushNotification({
-      title: `${appId.toUpperCase()} suspended`,
+      title: `${label} suspended`,
       detail: 'Background throttling is now active for this app.',
       source: 'scheduler',
       level: 'info',
@@ -476,9 +499,9 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       const activeAppId = focusMode || lifecycle.foregroundAppId || 'cqb';
 
       if (shouldRunWork(activeAppId)) {
-        profileSync('diagnostics.cqb.window', activeAppId, () => {
+        profileSync('diagnostics.gameplay.window', activeAppId, () => {
           const diagnostics = getCqbEventDiagnostics(60000);
-          console.info('[NexusOS][CQB][Diagnostics]', diagnostics);
+          console.info('[NexusOS][Gameplay][Diagnostics]', diagnostics);
         });
       }
 
@@ -534,11 +557,11 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     }
 
     freshEvents.reverse().forEach((event) => {
-      if (!HIGH_PRIORITY_CQB_EVENTS.has(event.eventType)) return;
+      if (!HIGH_PRIORITY_GAMEPLAY_EVENTS.has(event.eventType)) return;
       tray.pushNotification({
         title: `${toEventLabel(event.eventType)} · ${event.authorId}`,
-        detail: event.channelId ? `Channel ${event.channelId}` : 'Unscoped CQB event',
-        source: 'cqb',
+        detail: event.channelId ? `Channel ${event.channelId}` : 'Unscoped gameplay event',
+        source: 'events',
         level: event.eventType === 'CEASE_FIRE' || event.eventType === 'CHECK_FIRE' ? 'critical' : 'warning',
       });
     });
@@ -600,7 +623,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         const appId = FOCUS_APP_CATALOG[index]?.id;
         if (appId) {
           openFocusApp(appId);
-          setCommandFeedback(`Opened ${appId.toUpperCase()} app.`);
+          setCommandFeedback(`Opened ${FOCUS_APP_LABEL_BY_ID[appId] || String(appId).toUpperCase()} app.`);
         }
       }
     };
@@ -726,8 +749,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     if (bridgeId === 'OPS') {
       return [
         {
-          id: 'panel-cqb-teamtiles',
-          title: 'TeamTiles CQB Mode',
+          id: 'panel-loop-teamtiles',
+          title: 'TeamTiles Loop Mode',
           component: TeamTilesCqbMode,
           status: 'Live',
           statusTone: 'ok',
@@ -738,8 +761,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           },
         },
         {
-          id: 'panel-cqb-feed',
-          title: 'CQB Feed',
+          id: 'panel-loop-feed',
+          title: 'Loop Feed',
           component: CqbFeedPanel,
           status: 'Live',
           statusTone: 'ok',
@@ -747,10 +770,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           defaultSize: { colSpan: 1, rowSpan: 2 },
         },
         {
-          id: 'panel-cqb-macropad',
-          title: 'CQB MacroPad',
+          id: 'panel-loop-macropad',
+          title: 'Gameplay MacroPad',
           component: CqbMacroPad,
-          status: variantId,
+          status: formatGameplayLoopVariantId(variantId),
           statusTone: 'warning',
           live: false,
           defaultSize: { colSpan: 1, rowSpan: 2 },
@@ -768,7 +791,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           },
         },
         {
-          id: 'panel-cqb-console',
+          id: 'panel-action-console',
           title: 'Command Focus',
           component: CqbConsoleLauncherPanel,
           status: 'Ready',
@@ -914,14 +937,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     const arg = rest.join(' ').trim();
 
     if (keyword === 'help') {
-      return 'Commands: open <app>, bridge <id>, preset <id>, variant <id>, op <id>, close, suspend, reset-session.';
+      return 'Commands: open <app>, bridge <id>, preset <id>, variant <loop-id>, op <id>, close, suspend, reset-session.';
     }
 
     if (keyword === 'open') {
-      const appId = arg.toLowerCase();
-      if (!FOCUS_APP_IDS.has(appId)) return `Unknown app "${arg}".`;
+      const appId = resolveFocusAppId(arg);
+      if (!appId) return `Unknown app "${arg}".`;
       openFocusApp(appId);
-      return `Opened ${appId.toUpperCase()}.`;
+      return `Opened ${FOCUS_APP_LABEL_BY_ID[appId] || appId.toUpperCase()}.`;
     }
 
     if (keyword === 'bridge') {
@@ -933,7 +956,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
     if (keyword === 'preset') {
       const nextPreset = arg.toUpperCase();
-      if (!['GRID_2X2', 'GRID_3_COLUMN', 'COMMAND_LEFT'].includes(nextPreset)) {
+      if (!['GRID_2X2', 'GRID_3_COLUMN', 'COMMAND_LEFT', 'OPERATIONS_HUB', 'WIDE_MESH'].includes(nextPreset)) {
         return `Unknown preset "${arg}".`;
       }
       setPresetId(nextPreset);
@@ -941,9 +964,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     }
 
     if (keyword === 'variant') {
-      if (!/^CQB-\d{2}$/i.test(arg)) return 'Variant format: CQB-01..CQB-08.';
-      setVariantId(arg.toUpperCase());
-      return `Variant set to ${arg.toUpperCase()}.`;
+      if (!isGameplayLoopVariantToken(arg)) return 'Variant format: LOOP-01..LOOP-08.';
+      const normalizedVariantId = normalizeGameplayLoopVariantId(arg) || 'CQB-01';
+      setVariantId(normalizedVariantId);
+      return `Variant set to ${formatGameplayLoopVariantId(normalizedVariantId)}.`;
     }
 
     if (keyword === 'op') {
@@ -970,8 +994,9 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     return `Unknown command "${input}".`;
   };
 
-  const pulseCount = cqbpulseSummary(events);
+  const pulseCount = gameplayPulseSummary(events);
   const activeAppId = focusMode || lifecycle.foregroundAppId || 'none';
+  const activeAppLabel = activeAppId === 'none' ? 'none' : FOCUS_APP_LABEL_BY_ID[activeAppId] || activeAppId;
   const activeLifecycleState = activeAppId !== 'none' ? lifecycle.entries?.[activeAppId]?.state || 'foreground' : 'idle';
   const focusedOperation = operations.find((operation) => operation.id === focusOperationId);
   const focusOperationLabel = focusedOperation?.name || (focusOperationId ? focusOperationId : 'No focused operation');
@@ -989,7 +1014,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   return (
     <div
       className="nexus-shell-root relative w-full h-full min-h-0 overflow-hidden p-3 md:p-4 flex flex-col gap-3"
-      style={{ ...vars, backgroundColor: 'var(--nx-shell-bg)' }}
+      data-bridge-id={bridgeId}
+      style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
       <div className="nexus-shell-sweep" />
       <div className="nexus-shell-grid" />
@@ -998,12 +1024,18 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <section className="nexus-top-rail nexus-panel-glow rounded-xl px-4 py-3 md:px-5 md:py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-orange-200/90 nexus-console-text">
-              <Shield className="w-3.5 h-3.5 text-orange-300" />
+            <div
+              className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] nexus-console-text"
+              style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.9)' }}
+            >
+              <Shield
+                className="w-3.5 h-3.5"
+                style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.9)' }}
+              />
               Redscar Nomads Command Intranet
             </div>
             <h1 className="mt-1 text-lg md:text-2xl font-semibold uppercase text-zinc-100 truncate">
-              {isWorkspaceMode ? 'NexusOS Tactical Workspace' : 'NexusOS CQB Sandbox'}
+              {isWorkspaceMode ? 'NexusOS Tactical Workspace' : 'NexusOS Gameplay Sandbox'}
             </h1>
             <p className="text-xs text-zinc-400 max-w-3xl">
               Mission-scoped command surface with TTL-bound intelligence, degraded mode continuity, and narrative-first operational context.
@@ -1039,7 +1071,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           </div>
           <div className="nexus-surface px-2.5 py-1.5">
             <span className="text-zinc-500 uppercase tracking-widest">Foreground</span>{' '}
-            <span className="text-zinc-200">{activeAppId}</span>
+            <span className="text-zinc-200">{activeAppLabel}</span>
           </div>
           <div className="nexus-surface px-2.5 py-1.5">
             <span className="text-zinc-500 uppercase tracking-widest">Scheduler</span>{' '}

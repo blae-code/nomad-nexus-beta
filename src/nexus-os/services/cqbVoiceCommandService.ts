@@ -233,7 +233,7 @@ export function parseCqbVoiceCommand(variantId: string, transcript: string): Cqb
       status: 'UNRECOGNIZED',
       payload: {},
       confidence: 0.32,
-      reason: 'No known CQB brevity phrase matched this command.',
+      reason: 'No known gameplay brevity phrase matched this command.',
       suggestions: buildSuggestions(normalized, macros),
     };
   }

@@ -7,6 +7,7 @@ import CqbHandsFreeControl from './CqbHandsFreeControl';
 import CqbMacroPad from './CqbMacroPad';
 import TeamTilesCqbMode from './TeamTilesCqbMode';
 import type { CqbPanelSharedProps } from './cqbTypes';
+import { formatGameplayLoopVariantId } from './gameplayLoopLanguage';
 
 interface CqbCommandConsoleProps extends CqbPanelSharedProps {}
 
@@ -84,21 +85,21 @@ export default function CqbCommandConsole(props: CqbCommandConsoleProps) {
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-3">
         <div className="xl:col-span-5 min-h-0">
           <PanelErrorBoundary panelId="focus-team-tiles">
-            <PanelFrame title="Team Tiles" status="CQB" statusTone="active" live>
+            <PanelFrame title="Team Tiles" status="Loop Ops" statusTone="active" live>
               <TeamTilesCqbMode {...props} />
             </PanelFrame>
           </PanelErrorBoundary>
         </div>
         <div className="xl:col-span-3 min-h-0">
-          <PanelErrorBoundary panelId="focus-cqb-feed">
-            <PanelFrame title="CQB Feed" status="Live" statusTone="ok" live>
+          <PanelErrorBoundary panelId="focus-loop-feed">
+            <PanelFrame title="Event Feed" status="Live" statusTone="ok" live>
               <CqbFeedPanel {...props} />
             </PanelFrame>
           </PanelErrorBoundary>
         </div>
         <div className="xl:col-span-4 min-h-0">
-          <PanelErrorBoundary panelId="focus-cqb-macropad">
-            <PanelFrame title="MacroPad" status={props.variantId} statusTone="warning">
+          <PanelErrorBoundary panelId="focus-loop-macropad">
+            <PanelFrame title="MacroPad" status={formatGameplayLoopVariantId(props.variantId)} statusTone="warning">
               <CqbMacroPad {...props} onCreateMacroEvent={dispatchMacroEvent} />
             </PanelFrame>
           </PanelErrorBoundary>

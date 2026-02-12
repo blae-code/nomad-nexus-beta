@@ -13,7 +13,7 @@ export function generateSITREP(
   const operation = opId ? getOperationById(opId) : null;
   const events = opId ? listOperationEvents(opId).slice(0, 8) : [];
   const warnings = [
-    'SITREP generator is scaffolded. Expand with richer CQB/intel/comms synthesis in later package.',
+    'SITREP generator is scaffolded. Expand with richer gameplay/intel/comms synthesis in later package.',
   ];
 
   return {
@@ -58,4 +58,3 @@ export function generateSITREP(
     },
   };
 }
-

@@ -7,6 +7,9 @@ export type CustomWorkbenchWidgetTone =
   | 'locked'
   | 'experimental';
 
+export type CustomWorkbenchWidgetKind = 'NOTE' | 'CHECKLIST' | 'METRIC' | 'TIMELINE';
+export type CustomWorkbenchWidgetVisualStyle = 'STANDARD' | 'CONSOLE' | 'AURORA' | 'SURFACE';
+
 export interface CustomWorkbenchWidgetLink {
   id: string;
   label: string;
@@ -19,6 +22,8 @@ export interface CustomWorkbenchWidget {
   description?: string;
   body: string;
   tone: CustomWorkbenchWidgetTone;
+  kind: CustomWorkbenchWidgetKind;
+  visualStyle: CustomWorkbenchWidgetVisualStyle;
   links: CustomWorkbenchWidgetLink[];
   createdBy?: string;
   createdAt: string;
@@ -31,6 +36,8 @@ export interface CustomWorkbenchWidgetInput {
   description?: string;
   body?: string;
   tone?: CustomWorkbenchWidgetTone;
+  kind?: CustomWorkbenchWidgetKind;
+  visualStyle?: CustomWorkbenchWidgetVisualStyle;
   links?: Array<Pick<CustomWorkbenchWidgetLink, 'label' | 'url'>>;
   createdBy?: string;
 }
@@ -85,6 +92,18 @@ function normalizeTone(value: unknown): CustomWorkbenchWidgetTone {
     return token;
   }
   return 'experimental';
+}
+
+function normalizeWidgetKind(value: unknown): CustomWorkbenchWidgetKind {
+  const token = String(value || '').trim().toUpperCase();
+  if (token === 'CHECKLIST' || token === 'METRIC' || token === 'TIMELINE') return token;
+  return 'NOTE';
+}
+
+function normalizeWidgetVisualStyle(value: unknown): CustomWorkbenchWidgetVisualStyle {
+  const token = String(value || '').trim().toUpperCase();
+  if (token === 'CONSOLE' || token === 'AURORA' || token === 'SURFACE') return token;
+  return 'STANDARD';
 }
 
 function validUrl(url: string): boolean {
@@ -166,6 +185,8 @@ function sanitizeWidget(
     description: description || undefined,
     body,
     tone: normalizeTone(input.tone || existing?.tone || 'experimental'),
+    kind: normalizeWidgetKind(input.kind || existing?.kind || 'NOTE'),
+    visualStyle: normalizeWidgetVisualStyle(input.visualStyle || existing?.visualStyle || 'STANDARD'),
     links: normalizeLinks(input.links || existing?.links || []),
     createdBy: trimText(input.createdBy || existing?.createdBy || '', 120) || undefined,
     createdAt,
@@ -258,6 +279,8 @@ export function exportCustomWorkbenchWidgetShareCode(widget: CustomWorkbenchWidg
       description: widget.description,
       body: widget.body,
       tone: widget.tone,
+      kind: widget.kind,
+      visualStyle: widget.visualStyle,
       links: widget.links,
       createdBy: widget.createdBy,
     },
@@ -289,6 +312,8 @@ export function importCustomWorkbenchWidgetFromShareCode(
       description: payload.widget.description,
       body: payload.widget.body,
       tone: payload.widget.tone,
+      kind: payload.widget.kind,
+      visualStyle: payload.widget.visualStyle,
       links: payload.widget.links,
       createdBy: payload.widget.createdBy,
     },

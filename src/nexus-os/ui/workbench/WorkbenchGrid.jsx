@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ArrowDown, ArrowDownRight, ArrowUp, Copy, GripVertical, Minus, Plus, RotateCcw } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -37,6 +37,60 @@ function clampColSpan(value, columns) {
 const DEFAULT_WIDGET_TONE = 'experimental';
 const MAX_ROW_SPAN = 8;
 const MIN_ROW_SPAN = 1;
+const DEFAULT_WIDGET_COL_SPAN = 1;
+const DEFAULT_WIDGET_ROW_SPAN = 2;
+const WORKSPACE_CAPSULE_PREFIX = 'NXWS1';
+const PRESET_ATMOSPHERE = {
+  GRID_2X2:
+    'radial-gradient(circle at 20% 18%, rgba(255, 135, 72, 0.14), transparent 34%)',
+  GRID_3_COLUMN:
+    'radial-gradient(circle at 74% 26%, rgba(98, 182, 255, 0.14), transparent 36%)',
+  COMMAND_LEFT:
+    'radial-gradient(circle at 16% 50%, rgba(255, 194, 109, 0.14), transparent 38%)',
+  OPERATIONS_HUB:
+    'radial-gradient(circle at 52% 40%, rgba(87, 189, 228, 0.16), transparent 44%)',
+  WIDE_MESH:
+    'radial-gradient(circle at 62% 60%, rgba(77, 184, 141, 0.14), transparent 42%)',
+};
+
+const WIDGET_TEMPLATES = [
+  {
+    id: 'status-brief',
+    label: 'Status Brief',
+    title: 'Status Brief',
+    description: 'Concise checkpoint for cross-team synchronization.',
+    body: '- Situation\n- Risks\n- Decisions needed\n- Next checkpoint',
+    tone: 'active',
+    kind: 'NOTE',
+    visualStyle: 'AURORA',
+    colSpan: 2,
+    rowSpan: 2,
+  },
+  {
+    id: 'decision-log',
+    label: 'Decision Log',
+    title: 'Decision Log',
+    description: 'Capture decisions with owners and timestamps.',
+    body: '- Decision\n- Owner\n- Why now\n- Follow-up trigger',
+    tone: 'warning',
+    kind: 'TIMELINE',
+    visualStyle: 'CONSOLE',
+    colSpan: 1,
+    rowSpan: 2,
+  },
+  {
+    id: 'handoff',
+    label: 'Handoff Card',
+    title: 'Handoff Card',
+    description: 'Shift-change handoff and continuity checklist.',
+    body: '- Outgoing summary\n- Open blockers\n- Assigned responders\n- Next update window',
+    tone: 'ok',
+    kind: 'CHECKLIST',
+    visualStyle: 'SURFACE',
+    colSpan: 1,
+    rowSpan: 2,
+  },
+];
 
 function copyToClipboard(value) {
   if (!String(value || '').trim()) return false;
@@ -47,6 +101,33 @@ function copyToClipboard(value) {
   return false;
 }
 
+function encodeBase64Url(value) {
+  if (typeof btoa === 'function') {
+    const bytes = encodeURIComponent(value).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+      String.fromCharCode(parseInt(p1, 16))
+    );
+    return btoa(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+  return Buffer.from(value, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function decodeBase64Url(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '==='.slice((normalized.length + 3) % 4);
+  if (typeof atob === 'function') {
+    const bytes = atob(padded);
+    const encoded = Array.from(bytes)
+      .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+      .join('');
+    return decodeURIComponent(encoded);
+  }
+  return Buffer.from(padded, 'base64').toString('utf8');
+}
+
 function createWidgetFormState(overrides = {}) {
   return {
     editingWidgetId: '',
@@ -54,8 +135,12 @@ function createWidgetFormState(overrides = {}) {
     description: '',
     body: '',
     tone: DEFAULT_WIDGET_TONE,
+    kind: 'NOTE',
+    visualStyle: 'STANDARD',
     linkLabel: '',
     linkUrl: '',
+    colSpan: DEFAULT_WIDGET_COL_SPAN,
+    rowSpan: DEFAULT_WIDGET_ROW_SPAN,
     ...overrides,
   };
 }
@@ -75,7 +160,6 @@ export default function WorkbenchGrid({
   const vars = getNexusCssVars();
   const reducedMotion = useReducedMotion();
   const [isPanelDrawerOpen, setIsPanelDrawerOpen] = useState(false);
-  const [gridVisible, setGridVisible] = useState(true);
   const [panelSizes, setPanelSizes] = useState({});
   const [layoutHydrated, setLayoutHydrated] = useState(false);
   const [migrationNotice, setMigrationNotice] = useState('');
@@ -83,7 +167,11 @@ export default function WorkbenchGrid({
   const [customWidgets, setCustomWidgets] = useState([]);
   const [widgetForm, setWidgetForm] = useState(() => createWidgetFormState());
   const [widgetImportCode, setWidgetImportCode] = useState('');
+  const [workspaceImportCode, setWorkspaceImportCode] = useState('');
+  const [selectedShareWidgetId, setSelectedShareWidgetId] = useState('');
+  const [panelSearchQuery, setPanelSearchQuery] = useState('');
   const [resizeSession, setResizeSession] = useState(null);
+  const resizeRafRef = useRef(0);
   const widgetScopeKey = useMemo(() => {
     if (layoutPersistenceScopeKey) return `${layoutPersistenceScopeKey}:custom`;
     return `bridge:${String(bridgeId || 'global').toLowerCase()}`;
@@ -135,10 +223,27 @@ export default function WorkbenchGrid({
   const inactivePanels = useMemo(() => {
     return allPanels.filter((panel) => !activePanelIds.includes(panel.id));
   }, [allPanels, activePanelIds]);
+  const filteredPanels = useMemo(() => {
+    const token = String(panelSearchQuery || '').trim().toLowerCase();
+    if (!token) return allPanels;
+    return allPanels.filter((panel) => {
+      const title = String(panel.title || '').toLowerCase();
+      const id = String(panel.id || '').toLowerCase();
+      return title.includes(token) || id.includes(token);
+    });
+  }, [allPanels, panelSearchQuery]);
 
   useEffect(() => {
     setCustomWidgets(listCustomWorkbenchWidgets(widgetScopeKey));
   }, [widgetScopeKey]);
+
+  useEffect(() => {
+    if (customWidgets.length === 0) {
+      setSelectedShareWidgetId('');
+      return;
+    }
+    setSelectedShareWidgetId((prev) => (prev && customWidgets.some((widget) => widget.id === prev) ? prev : customWidgets[0].id));
+  }, [customWidgets]);
 
   const applyWidgetFormUpdate = useCallback((patch) => {
     setWidgetForm((prev) => ({ ...prev, ...patch }));
@@ -152,19 +257,24 @@ export default function WorkbenchGrid({
     (widgetId) => {
       const widget = customWidgetMap[widgetId];
       if (!widget) return;
+      const currentSize = panelSizes[customWorkbenchWidgetPanelId(widget.id)] || {};
       applyWidgetFormUpdate({
         editingWidgetId: widget.id,
         title: widget.title || '',
         description: widget.description || '',
         body: widget.body || '',
         tone: widget.tone || DEFAULT_WIDGET_TONE,
+        kind: widget.kind || 'NOTE',
+        visualStyle: widget.visualStyle || 'STANDARD',
         linkLabel: widget.links?.[0]?.label || '',
         linkUrl: widget.links?.[0]?.url || '',
+        colSpan: clampColSpan(Number(currentSize.colSpan) || DEFAULT_WIDGET_COL_SPAN, preset.columns),
+        rowSpan: clampRowSpan(Number(currentSize.rowSpan) || DEFAULT_WIDGET_ROW_SPAN),
       });
       setWidgetNotice(`Editing widget "${widget.title}".`);
       setIsPanelDrawerOpen(true);
     },
-    [applyWidgetFormUpdate, customWidgetMap]
+    [applyWidgetFormUpdate, customWidgetMap, panelSizes, preset.columns]
   );
 
   const deleteWidget = useCallback(
@@ -189,6 +299,8 @@ export default function WorkbenchGrid({
         description: widgetForm.description,
         body: widgetForm.body,
         tone: widgetForm.tone,
+        kind: widgetForm.kind,
+        visualStyle: widgetForm.visualStyle,
         links:
           widgetForm.linkLabel && widgetForm.linkUrl
             ? [{ label: widgetForm.linkLabel, url: widgetForm.linkUrl }]
@@ -199,6 +311,14 @@ export default function WorkbenchGrid({
         const panelId = customWorkbenchWidgetPanelId(created.id);
         return prev.includes(panelId) ? prev : [...prev, panelId];
       });
+      const panelId = customWorkbenchWidgetPanelId(created.id);
+      setPanelSizes((prev) => ({
+        ...prev,
+        [panelId]: {
+          colSpan: clampColSpan(Number(widgetForm.colSpan) || DEFAULT_WIDGET_COL_SPAN, preset.columns),
+          rowSpan: clampRowSpan(Number(widgetForm.rowSpan) || DEFAULT_WIDGET_ROW_SPAN),
+        },
+      }));
       setWidgetNotice(
         widgetForm.editingWidgetId
           ? `Updated widget "${created.title}".`
@@ -208,7 +328,7 @@ export default function WorkbenchGrid({
     } catch (error) {
       setWidgetNotice(error instanceof Error ? error.message : 'Unable to save widget.');
     }
-  }, [clearWidgetForm, widgetForm, widgetScopeKey]);
+  }, [clearWidgetForm, preset.columns, widgetForm, widgetScopeKey]);
 
   const copyWidgetShareCode = useCallback(
     (widgetId) => {
@@ -220,6 +340,60 @@ export default function WorkbenchGrid({
       if (!copied) setWidgetImportCode(shareCode);
     },
     [customWidgetMap]
+  );
+
+  const applyWidgetTemplate = useCallback(
+    (templateId) => {
+      const template = WIDGET_TEMPLATES.find((entry) => entry.id === templateId);
+      if (!template) return;
+      applyWidgetFormUpdate({
+        title: template.title,
+        description: template.description,
+        body: template.body,
+        tone: template.tone,
+        kind: template.kind,
+        visualStyle: template.visualStyle,
+        colSpan: template.colSpan,
+        rowSpan: template.rowSpan,
+      });
+      setWidgetNotice(`Template "${template.label}" applied.`);
+    },
+    [applyWidgetFormUpdate]
+  );
+
+  const duplicateWidget = useCallback(
+    (widgetId) => {
+      const widget = customWidgetMap[widgetId];
+      if (!widget) return;
+      try {
+        const duplicated = upsertCustomWorkbenchWidget(widgetScopeKey, {
+          title: `${widget.title} Copy`,
+          description: widget.description,
+          body: widget.body,
+          tone: widget.tone,
+          kind: widget.kind,
+          visualStyle: widget.visualStyle,
+          links: widget.links?.map((entry) => ({ label: entry.label, url: entry.url })) || [],
+          createdBy: widget.createdBy,
+        });
+        const sourcePanelId = customWorkbenchWidgetPanelId(widget.id);
+        const duplicatedPanelId = customWorkbenchWidgetPanelId(duplicated.id);
+        setCustomWidgets(listCustomWorkbenchWidgets(widgetScopeKey));
+        setActivePanelIds((prev) => (prev.includes(duplicatedPanelId) ? prev : [...prev, duplicatedPanelId]));
+        setPanelSizes((prev) => {
+          const sourceSize = prev[sourcePanelId];
+          if (!sourceSize) return prev;
+          return {
+            ...prev,
+            [duplicatedPanelId]: sourceSize,
+          };
+        });
+        setWidgetNotice(`Duplicated widget "${widget.title}".`);
+      } catch (error) {
+        setWidgetNotice(error instanceof Error ? error.message : 'Unable to duplicate widget.');
+      }
+    },
+    [customWidgetMap, widgetScopeKey]
   );
 
   const importWidget = useCallback(() => {
@@ -240,6 +414,97 @@ export default function WorkbenchGrid({
       setWidgetNotice(error instanceof Error ? error.message : 'Invalid widget share code.');
     }
   }, [widgetImportCode, widgetScopeKey]);
+
+  const exportWorkspaceCapsule = useCallback(() => {
+    const payload = {
+      schema: 'nexus-os-workspace-capsule',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      presetId: preset.id,
+      activePanelIds,
+      panelSizes,
+      widgets: customWidgets.map((widget) => ({
+        id: widget.id,
+        title: widget.title,
+        description: widget.description,
+        body: widget.body,
+        tone: widget.tone,
+        kind: widget.kind,
+        visualStyle: widget.visualStyle,
+        links: widget.links?.map((entry) => ({ label: entry.label, url: entry.url })) || [],
+        createdBy: widget.createdBy,
+      })),
+    };
+    const capsule = `${WORKSPACE_CAPSULE_PREFIX}.${encodeBase64Url(JSON.stringify(payload))}`;
+    const copied = copyToClipboard(capsule);
+    setWidgetNotice(copied ? 'Workspace capsule copied to clipboard.' : 'Workspace capsule generated.');
+    if (!copied) setWorkspaceImportCode(capsule);
+  }, [activePanelIds, customWidgets, panelSizes, preset.id]);
+
+  const importWorkspaceCapsule = useCallback(() => {
+    const raw = String(workspaceImportCode || '').trim();
+    if (!raw) {
+      setWidgetNotice('Paste a workspace capsule first.');
+      return;
+    }
+    try {
+      const encoded = raw.startsWith(`${WORKSPACE_CAPSULE_PREFIX}.`) ? raw.slice(`${WORKSPACE_CAPSULE_PREFIX}.`.length) : raw;
+      const parsed = JSON.parse(decodeBase64Url(encoded));
+      if (!parsed || parsed.schema !== 'nexus-os-workspace-capsule' || parsed.version !== 1) {
+        throw new Error('Invalid workspace capsule.');
+      }
+
+      if (typeof parsed.presetId === 'string' && WORKBENCH_PRESETS[parsed.presetId]) {
+        onPresetChange?.(parsed.presetId);
+      }
+
+      if (Array.isArray(parsed.widgets)) {
+        for (const widget of parsed.widgets) {
+          upsertCustomWorkbenchWidget(widgetScopeKey, {
+            id: widget.id,
+            title: widget.title,
+            description: widget.description,
+            body: widget.body,
+            tone: widget.tone,
+            kind: widget.kind,
+            visualStyle: widget.visualStyle,
+            links: Array.isArray(widget.links)
+              ? widget.links.map((entry) => ({ label: entry?.label, url: entry?.url }))
+              : [],
+            createdBy: widget.createdBy,
+          });
+        }
+      }
+
+      const refreshedWidgets = listCustomWorkbenchWidgets(widgetScopeKey);
+      const validPanelIds = new Set([
+        ...panels.map((panel) => panel.id),
+        ...refreshedWidgets.map((widget) => customWorkbenchWidgetPanelId(widget.id)),
+      ]);
+
+      const nextActivePanelIds = Array.isArray(parsed.activePanelIds)
+        ? parsed.activePanelIds.filter((panelId) => validPanelIds.has(panelId))
+        : [];
+      const nextPanelSizes = {};
+      if (parsed.panelSizes && typeof parsed.panelSizes === 'object') {
+        for (const [panelId, size] of Object.entries(parsed.panelSizes)) {
+          if (!validPanelIds.has(panelId)) continue;
+          nextPanelSizes[panelId] = {
+            colSpan: clampColSpan(Number(size?.colSpan) || DEFAULT_WIDGET_COL_SPAN, preset.columns),
+            rowSpan: clampRowSpan(Number(size?.rowSpan) || DEFAULT_WIDGET_ROW_SPAN),
+          };
+        }
+      }
+
+      setCustomWidgets(refreshedWidgets);
+      if (Array.isArray(parsed.activePanelIds)) setActivePanelIds(nextActivePanelIds);
+      setPanelSizes(nextPanelSizes);
+      setWorkspaceImportCode('');
+      setWidgetNotice('Workspace capsule imported and synchronized.');
+    } catch (error) {
+      setWidgetNotice(error instanceof Error ? error.message : 'Invalid workspace capsule.');
+    }
+  }, [onPresetChange, panels, preset.columns, widgetScopeKey, workspaceImportCode]);
 
   const addPanel = (panelId) => {
     setActivePanelIds((prev) => (prev.includes(panelId) ? prev : [...prev, panelId]));
@@ -304,10 +569,13 @@ export default function WorkbenchGrid({
 
   useEffect(() => {
     if (!resizeSession) return undefined;
+    let latestX = resizeSession.startX;
+    let latestY = resizeSession.startY;
 
-    const handlePointerMove = (event) => {
-      const deltaX = event.clientX - resizeSession.startX;
-      const deltaY = event.clientY - resizeSession.startY;
+    const applyResize = () => {
+      resizeRafRef.current = 0;
+      const deltaX = latestX - resizeSession.startX;
+      const deltaY = latestY - resizeSession.startY;
       const colDelta = Math.round(deltaX / 140);
       const rowDelta = Math.round(deltaY / 110);
       const nextSize = {
@@ -320,7 +588,18 @@ export default function WorkbenchGrid({
       }));
     };
 
+    const handlePointerMove = (event) => {
+      latestX = event.clientX;
+      latestY = event.clientY;
+      if (resizeRafRef.current) return;
+      resizeRafRef.current = requestAnimationFrame(applyResize);
+    };
+
     const handlePointerUp = () => {
+      if (resizeRafRef.current) {
+        cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = 0;
+      }
       setResizeSession(null);
     };
 
@@ -328,6 +607,10 @@ export default function WorkbenchGrid({
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
     return () => {
+      if (resizeRafRef.current) {
+        cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = 0;
+      }
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
@@ -401,16 +684,6 @@ export default function WorkbenchGrid({
   ]);
 
   useEffect(() => {
-    if (reducedMotion) {
-      setGridVisible(true);
-      return;
-    }
-    setGridVisible(false);
-    const id = requestAnimationFrame(() => setGridVisible(true));
-    return () => cancelAnimationFrame(id);
-  }, [panelSignature, presetId, reducedMotion]);
-
-  useEffect(() => {
     if (!import.meta.env.DEV) return;
     const report = runWorkbenchHarness({
       panels: allPanels,
@@ -431,18 +704,39 @@ export default function WorkbenchGrid({
   return (
     <div
       className="h-full min-h-[28rem] md:min-h-[34rem] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col nexus-panel-glow relative"
-      style={{ ...vars, backgroundColor: 'var(--nx-shell-bg-elevated)', borderColor: 'var(--nx-border)' }}
+      style={{
+        ...vars,
+        backgroundColor: 'var(--nx-shell-bg-elevated)',
+        borderColor: 'var(--nx-border)',
+        contain: 'layout paint style',
+        overflow: 'clip',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+      }}
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-95"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 14% 12%, rgba(255,126,66,0.12), transparent 40%), radial-gradient(circle at 86% 82%, rgba(181,82,38,0.12), transparent 46%), repeating-linear-gradient(0deg, rgba(255,139,72,0.05) 0px, rgba(255,139,72,0.05) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, rgba(255,139,72,0.03) 0px, rgba(255,139,72,0.03) 1px, transparent 1px, transparent 52px)',
+            `${PRESET_ATMOSPHERE[preset.id] || PRESET_ATMOSPHERE.GRID_2X2}, radial-gradient(circle at 14% 12%, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.18), transparent 40%), radial-gradient(circle at 86% 82%, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)),0.16), transparent 46%), repeating-linear-gradient(0deg, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)),0.055) 0px, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)),0.055) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.04) 0px, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.04) 1px, transparent 1px, transparent 52px)`,
         }}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,rgba(0,0,0,0.45)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-      <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2 bg-[linear-gradient(180deg,rgba(255,132,66,0.08),rgba(0,0,0,0))]" style={{ borderColor: 'var(--nx-border)' }}>
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{
+          backgroundImage:
+            'linear-gradient(90deg, transparent, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.42), transparent)',
+        }}
+      />
+      <div
+        className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2"
+        style={{
+          borderColor: 'var(--nx-border)',
+          backgroundImage:
+            'linear-gradient(180deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.13), rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.05) 42%, rgba(0,0,0,0))',
+        }}
+      >
         <div className="flex items-center gap-2 min-w-0">
           <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 truncate">Workbench</h2>
           {bridgeId ? <NexusBadge tone="active">{bridgeId}</NexusBadge> : null}
@@ -481,7 +775,7 @@ export default function WorkbenchGrid({
       ) : null}
 
       <div className="flex-1 min-h-0 overflow-hidden p-3 bg-[radial-gradient(circle_at_top,rgba(255,129,67,0.05),transparent_36%)]">
-        <AnimatedMount show={gridVisible} durationMs={reducedMotion ? 0 : motionTokens.duration.fast} fromOpacity={0.92} toOpacity={1} fromY={3} toY={0} className="h-full min-h-0">
+        <AnimatedMount show durationMs={reducedMotion ? 0 : motionTokens.duration.fast} fromOpacity={0.92} toOpacity={1} fromY={3} toY={0} className="h-full min-h-0">
           <DragDropContext
             onDragEnd={(result) => {
               if (!result.destination) return;
@@ -495,12 +789,13 @@ export default function WorkbenchGrid({
                 <div
                   ref={dropProvided.innerRef}
                   {...dropProvided.droppableProps}
-                  className={`h-full min-h-0 grid gap-3 overflow-auto ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-orange-500/40' : ''}`}
+                  className={`h-full min-h-0 grid gap-3 overflow-auto overflow-x-hidden overscroll-contain ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-orange-500/40' : ''}`}
                   style={{
                     gridTemplateColumns: `repeat(${preset.columns}, minmax(0, 1fr))`,
                     gridAutoRows: `${preset.minRowHeightPx}px`,
                     alignContent: 'start',
                     minHeight: '100%',
+                    scrollbarGutter: 'stable',
                   }}
                   aria-label="Workbench panel layout"
                 >
@@ -511,7 +806,10 @@ export default function WorkbenchGrid({
                     >
                       <div className="space-y-1">
                         <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">NexusOS Desktop</div>
-                        <h3 className="text-sm sm:text-base font-semibold uppercase tracking-[0.1em] text-orange-100">
+                        <h3
+                          className="text-sm sm:text-base font-semibold uppercase tracking-[0.1em]"
+                          style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.96)' }}
+                        >
                           Workspace Standby
                         </h3>
                         <p className="text-xs text-zinc-400 max-w-2xl">
@@ -548,7 +846,7 @@ export default function WorkbenchGrid({
                           <div
                             ref={dragProvided.innerRef}
                             {...dragProvided.draggableProps}
-                            className={`min-h-0 relative ${dragSnapshot.isDragging ? 'opacity-95 ring-1 ring-orange-500/50 rounded-md' : ''}`}
+                            className={`min-h-0 min-w-0 relative ${dragSnapshot.isDragging ? 'opacity-95 ring-1 ring-orange-500/50 rounded-md' : ''}`}
                             style={{
                               ...dragProvided.draggableProps.style,
                               gridColumn: `span ${size.colSpan} / span ${size.colSpan}`,
@@ -564,7 +862,7 @@ export default function WorkbenchGrid({
                                 loading={Boolean(panel.loading)}
                                 loadingLabel={panel.loadingLabel}
                                 toolbar={
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-1.5 max-w-full overflow-x-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
                                     <button
                                       type="button"
                                       {...dragProvided.dragHandleProps}
@@ -639,6 +937,8 @@ export default function WorkbenchGrid({
                                   customWorkbenchWidgetMap={customWidgetMap}
                                   onEditCustomWorkbenchWidget={editWidget}
                                   onDeleteCustomWorkbenchWidget={deleteWidget}
+                                  onDuplicateCustomWorkbenchWidget={duplicateWidget}
+                                  onShareCustomWorkbenchWidget={copyWidgetShareCode}
                                   {...panelComponentProps}
                                 />
                               </PanelFrame>
@@ -666,18 +966,27 @@ export default function WorkbenchGrid({
       </div>
 
       <Sheet open={isPanelDrawerOpen} onOpenChange={setIsPanelDrawerOpen}>
-        <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-100">
+        <SheetContent side="right" className="w-[min(36rem,100vw)] bg-zinc-950 border-zinc-800 text-zinc-100">
           <SheetHeader>
-            <SheetTitle className="uppercase tracking-wide text-orange-300">Add Panel</SheetTitle>
+            <SheetTitle className="uppercase tracking-wide" style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.92)' }}>
+              Workspace Studio
+            </SheetTitle>
             <SheetDescription className="text-zinc-500">
-              Drag by header handle, resize by edge grip or +/- controls, and create/share custom widgets.
+              Build custom widgets, share full workspace capsules, and curate panel staging for collaborative loops.
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-5 space-y-4 overflow-y-auto max-h-[calc(100vh-6rem)] pr-1">
+          <div className="mt-5 space-y-4 overflow-y-auto overscroll-contain max-h-[calc(100vh-6rem)] pr-1" style={{ scrollbarGutter: 'stable' }}>
             <section className="rounded border border-zinc-800 bg-zinc-900/55 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-xs uppercase tracking-widest text-zinc-300">Create Custom Widget</h3>
+                <h3 className="text-xs uppercase tracking-widest text-zinc-300">Widget Studio</h3>
                 {widgetForm.editingWidgetId ? <NexusBadge tone="warning">Editing</NexusBadge> : <NexusBadge tone="active">New</NexusBadge>}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {WIDGET_TEMPLATES.map((template) => (
+                  <NexusButton key={template.id} size="sm" intent="subtle" onClick={() => applyWidgetTemplate(template.id)}>
+                    {template.label}
+                  </NexusButton>
+                ))}
               </div>
               <input
                 value={widgetForm.title}
@@ -697,7 +1006,7 @@ export default function WorkbenchGrid({
                 placeholder="Widget body (notes, checklist hints, links summary)"
                 className="h-24 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200"
               />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <select
                   value={widgetForm.tone}
                   onChange={(event) => applyWidgetFormUpdate({ tone: event.target.value })}
@@ -710,6 +1019,28 @@ export default function WorkbenchGrid({
                   <option value="warning">Warning</option>
                   <option value="danger">Danger</option>
                   <option value="neutral">Neutral</option>
+                </select>
+                <select
+                  value={widgetForm.kind}
+                  onChange={(event) => applyWidgetFormUpdate({ kind: event.target.value })}
+                  className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  aria-label="Widget kind"
+                >
+                  <option value="NOTE">Note</option>
+                  <option value="CHECKLIST">Checklist</option>
+                  <option value="METRIC">Metric</option>
+                  <option value="TIMELINE">Timeline</option>
+                </select>
+                <select
+                  value={widgetForm.visualStyle}
+                  onChange={(event) => applyWidgetFormUpdate({ visualStyle: event.target.value })}
+                  className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  aria-label="Widget visual style"
+                >
+                  <option value="STANDARD">Standard</option>
+                  <option value="CONSOLE">Console</option>
+                  <option value="AURORA">Aurora</option>
+                  <option value="SURFACE">Surface</option>
                 </select>
                 <input
                   value={widgetForm.linkLabel}
@@ -724,6 +1055,45 @@ export default function WorkbenchGrid({
                   className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-[11px] text-zinc-500 flex flex-col gap-1">
+                  Width span
+                  <input
+                    type="number"
+                    min={1}
+                    max={preset.columns}
+                    value={widgetForm.colSpan}
+                    onChange={(event) =>
+                      applyWidgetFormUpdate({
+                        colSpan: clampColSpan(Number(event.target.value) || DEFAULT_WIDGET_COL_SPAN, preset.columns),
+                      })
+                    }
+                    className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  />
+                </label>
+                <label className="text-[11px] text-zinc-500 flex flex-col gap-1">
+                  Height span
+                  <input
+                    type="number"
+                    min={MIN_ROW_SPAN}
+                    max={MAX_ROW_SPAN}
+                    value={widgetForm.rowSpan}
+                    onChange={(event) =>
+                      applyWidgetFormUpdate({
+                        rowSpan: clampRowSpan(Number(event.target.value) || DEFAULT_WIDGET_ROW_SPAN),
+                      })
+                    }
+                    className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  />
+                </label>
+              </div>
+              <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-2 space-y-1">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500">Preview</div>
+                <div className="text-sm text-zinc-200 truncate">{widgetForm.title || 'Untitled widget'}</div>
+                <div className="text-[11px] text-zinc-500 line-clamp-2">{widgetForm.description || 'No description yet.'}</div>
+                <div className="text-[10px] text-zinc-500">{widgetForm.kind} · {widgetForm.visualStyle}</div>
+                <div className="text-[10px] text-zinc-600">Span {widgetForm.colSpan}x{widgetForm.rowSpan}</div>
+              </div>
               <div className="flex items-center gap-2">
                 <NexusButton size="sm" intent="primary" onClick={saveWidget}>
                   {widgetForm.editingWidgetId ? 'Update Widget' : 'Create Widget'}
@@ -736,6 +1106,20 @@ export default function WorkbenchGrid({
 
             <section className="rounded border border-zinc-800 bg-zinc-900/55 p-3 space-y-2">
               <h3 className="text-xs uppercase tracking-widest text-zinc-300">Share / Import Widget</h3>
+              {customWidgets.length > 0 ? (
+                <select
+                  value={selectedShareWidgetId}
+                  onChange={(event) => setSelectedShareWidgetId(event.target.value)}
+                  className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  aria-label="Widget to share"
+                >
+                  {customWidgets.map((widget) => (
+                    <option key={widget.id} value={widget.id}>
+                      {widget.title}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
               <textarea
                 value={widgetImportCode}
                 onChange={(event) => setWidgetImportCode(event.target.value)}
@@ -750,23 +1134,50 @@ export default function WorkbenchGrid({
                   size="sm"
                   intent="subtle"
                   onClick={() => {
-                    const firstWidget = customWidgets[0];
-                    if (!firstWidget) {
+                    if (!selectedShareWidgetId) {
                       setWidgetNotice('Create a widget first to export.');
                       return;
                     }
-                    copyWidgetShareCode(firstWidget.id);
+                    copyWidgetShareCode(selectedShareWidgetId);
                   }}
                 >
                   <Copy className="w-3.5 h-3.5 mr-1" />
-                  Copy First Widget Code
+                  Copy Widget Code
+                </NexusButton>
+              </div>
+            </section>
+
+            <section className="rounded border border-zinc-800 bg-zinc-900/55 p-3 space-y-2">
+              <h3 className="text-xs uppercase tracking-widest text-zinc-300">Workspace Capsule</h3>
+              <textarea
+                value={workspaceImportCode}
+                onChange={(event) => setWorkspaceImportCode(event.target.value)}
+                placeholder="Paste NXWS1 workspace capsule here"
+                className="h-16 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200"
+              />
+              <div className="flex items-center gap-2">
+                <NexusButton size="sm" intent="primary" onClick={importWorkspaceCapsule}>
+                  Import Capsule
+                </NexusButton>
+                <NexusButton size="sm" intent="subtle" onClick={exportWorkspaceCapsule}>
+                  <Copy className="w-3.5 h-3.5 mr-1" />
+                  Copy Capsule
                 </NexusButton>
               </div>
             </section>
 
             <section className="space-y-3">
-              <h3 className="text-xs uppercase tracking-widest text-zinc-300">Registered Panels</h3>
-            {allPanels.map((panel) => {
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs uppercase tracking-widest text-zinc-300">Registered Panels</h3>
+                <NexusBadge tone="neutral">{filteredPanels.length}</NexusBadge>
+              </div>
+              <input
+                value={panelSearchQuery}
+                onChange={(event) => setPanelSearchQuery(event.target.value)}
+                placeholder="Filter panels by title or id"
+                className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+              />
+            {filteredPanels.map((panel) => {
               const isActive = activePanelIds.includes(panel.id);
               const customWidgetId = parseCustomWorkbenchWidgetPanelId(panel.id);
               return (
@@ -791,6 +1202,9 @@ export default function WorkbenchGrid({
                         <NexusButton size="sm" intent="subtle" onClick={() => copyWidgetShareCode(customWidgetId)}>
                           Share
                         </NexusButton>
+                        <NexusButton size="sm" intent="subtle" onClick={() => duplicateWidget(customWidgetId)}>
+                          Duplicate
+                        </NexusButton>
                         <NexusButton size="sm" intent="subtle" onClick={() => deleteWidget(customWidgetId)}>
                           Delete
                         </NexusButton>
@@ -800,7 +1214,12 @@ export default function WorkbenchGrid({
                 </div>
               );
             })}
-            {inactivePanels.length === 0 ? (
+            {filteredPanels.length === 0 ? (
+              <div className="text-xs text-zinc-500 rounded border border-zinc-800 bg-zinc-900/50 p-3">
+                No panels match this filter.
+              </div>
+            ) : null}
+            {inactivePanels.length === 0 && filteredPanels.length > 0 ? (
               <div className="text-xs text-zinc-500 rounded border border-zinc-800 bg-zinc-900/50 p-3">
                 All registered panels are currently active.
               </div>

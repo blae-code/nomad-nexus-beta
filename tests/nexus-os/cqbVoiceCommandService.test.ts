@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCqbVoiceCommand } from '../../src/nexus-os/services/cqbVoiceCommandService';
 
 describe('cqbVoiceCommandService', () => {
-  it('maps canonical brevity phrase to CQB macro event', () => {
+  it('maps canonical brevity phrase to gameplay macro event', () => {
     const result = parseCqbVoiceCommand('CQB-01', 'Set security 360 now');
     expect(result.status).toBe('MATCHED');
     expect(result.eventType).toBe('SET_SECURITY');
@@ -22,6 +22,6 @@ describe('cqbVoiceCommandService', () => {
     const result = parseCqbVoiceCommand('CQB-03', 'blueberry pancake protocol');
     expect(result.status).toBe('UNRECOGNIZED');
     expect(result.suggestions.length).toBeGreaterThanOrEqual(0);
-    expect(result.reason).toContain('No known CQB brevity phrase');
+    expect(result.reason).toContain('No known gameplay brevity phrase');
   });
 });

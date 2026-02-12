@@ -64,7 +64,7 @@ export function buildDevLocationEstimates(input: MapDataInput): LocationEstimate
             sourceType: 'COMMS_CALL',
             observedAt: latestEvent.createdAt,
             confidence: latestEvent.confidence,
-            notes: `Derived from CQB event ${latestEvent.eventType}`,
+            notes: `Derived from gameplay event ${latestEvent.eventType}`,
           },
         ],
         mode: latestEvent.eventType === 'MOVE_OUT' || latestEvent.eventType === 'ON_ME' ? 'DECLARED' : 'INFERRED',

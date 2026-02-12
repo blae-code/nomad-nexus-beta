@@ -23,6 +23,13 @@ export const nexusThemeTokens = Object.freeze({
     warning: '#b98a3d',
     danger: '#a85244',
     info: '#8a7868',
+    auroraCyan: '#57bde4',
+    signalGold: '#d6ad56',
+    meshTeal: '#4db88d',
+    bridgeARGBBase: '221, 109, 60',
+    bridgeBRGBBase: '95, 171, 255',
+    bridgeCRGBBase: '255, 182, 125',
+    bridgeChipTextBase: '#ffe0cf',
   },
   radii: {
     shell: '14px',
@@ -62,6 +69,13 @@ export function getNexusCssVars() {
     '--nx-warning': nexusThemeTokens.colors.warning,
     '--nx-danger': nexusThemeTokens.colors.danger,
     '--nx-info': nexusThemeTokens.colors.info,
+    '--nx-aurora-cyan': nexusThemeTokens.colors.auroraCyan,
+    '--nx-signal-gold': nexusThemeTokens.colors.signalGold,
+    '--nx-mesh-teal': nexusThemeTokens.colors.meshTeal,
+    '--nx-bridge-a-rgb-base': nexusThemeTokens.colors.bridgeARGBBase,
+    '--nx-bridge-b-rgb-base': nexusThemeTokens.colors.bridgeBRGBBase,
+    '--nx-bridge-c-rgb-base': nexusThemeTokens.colors.bridgeCRGBBase,
+    '--nx-bridge-chip-text-base': nexusThemeTokens.colors.bridgeChipTextBase,
     '--nx-radius-shell': nexusThemeTokens.radii.shell,
     '--nx-radius-panel': nexusThemeTokens.radii.panel,
     '--nx-radius-chip': nexusThemeTokens.radii.chip,
@@ -70,4 +84,3 @@ export function getNexusCssVars() {
     '--nx-shadow-pulse': nexusThemeTokens.shadows.pulse,
   };
 }
-

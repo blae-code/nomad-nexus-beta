@@ -251,7 +251,7 @@ export default function CqbHandsFreeControl({
     (event?: React.MouseEvent | React.TouchEvent) => {
       event?.preventDefault();
       if (voiceMandatory && !voiceReady) {
-        setStatusMessage('Voice discipline active: connect voice net + mic before CQB command entry.');
+        setStatusMessage('Voice discipline active: connect voice net + mic before gameplay command entry.');
         return;
       }
       setHoldingPTT(true);
@@ -293,7 +293,7 @@ export default function CqbHandsFreeControl({
     const currentMode = String(voiceNet.disciplineModeByNet?.[connectedNetId] || '').toUpperCase();
     if (currentMode !== 'PTT') {
       void voiceNet.setDisciplineMode?.('PTT', connectedNetId);
-      setStatusMessage('Focused posture detected: enforcing PTT discipline for CQB.');
+      setStatusMessage('Focused posture detected: enforcing PTT discipline for gameplay loop control.');
     }
   }, [connectedNetId, voiceMandatory, voiceNet]);
 
@@ -315,7 +315,7 @@ export default function CqbHandsFreeControl({
   return (
     <section className="rounded-xl border border-zinc-700 bg-zinc-950/70 p-3 nexus-panel-glow">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-100">Hands-Free CQB</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-100">Hands-Free Loop Control</h3>
         <div className="flex items-center gap-1.5">
           <NexusBadge tone={voiceMandatory ? 'warning' : 'neutral'}>
             {voiceMandatory ? 'PTT Mandatory' : 'Voice Optional'}
@@ -326,7 +326,7 @@ export default function CqbHandsFreeControl({
         </div>
       </div>
       <p className="mt-1 text-[11px] text-zinc-500">
-        Hold PTT, speak CQB brevity, and dispatch via parser. Radial actions remain available for single-tap control.
+        Hold PTT, speak brevity callouts, and dispatch via parser. Radial actions remain available for single-tap control.
       </p>
 
       <div className="mt-3 grid grid-cols-1 xl:grid-cols-12 gap-3">
@@ -345,7 +345,7 @@ export default function CqbHandsFreeControl({
                 ? 'border-orange-400 bg-orange-500/20 text-orange-100'
                 : 'border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-orange-500/60'
             } ${voiceMandatory && !voiceReady ? 'opacity-60 cursor-not-allowed' : ''}`}
-            aria-label="Press and hold PTT for CQB voice command"
+            aria-label="Press and hold PTT for gameplay loop voice command"
           >
             {holdingPTT || listening ? 'Listening.. release to dispatch' : 'Hold PTT + Speak'}
           </button>

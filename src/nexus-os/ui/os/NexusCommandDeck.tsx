@@ -44,7 +44,7 @@ export default function NexusCommandDeck({ open, onClose, onRunCommand }: NexusC
             }
             if (event.key === 'Escape') onClose();
           }}
-          placeholder="Command: open cqb | bridge COMMAND | preset GRID_3_COLUMN | variant CQB-03 | op op_123 | close | suspend"
+          placeholder="Command: open action | bridge COMMAND | preset GRID_3_COLUMN | variant LOOP-03 | op op_123 | close | suspend"
           className="h-9 flex-1 rounded border border-zinc-700 bg-zinc-900/90 px-3 text-xs text-zinc-100 nexus-console-text"
         />
         <NexusButton size="sm" intent="primary" onClick={submit}>

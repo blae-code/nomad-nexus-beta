@@ -19,11 +19,11 @@ export const BRIDGE_CATALOG: Readonly<BridgeDefinition[]> = [
 ];
 
 export const BRIDGE_DEFAULT_PRESET: Readonly<Record<ShellBridgeId, WorkbenchPresetId>> = {
-  OPS: 'COMMAND_LEFT',
-  INTEL: 'GRID_3_COLUMN',
+  OPS: 'OPERATIONS_HUB',
+  INTEL: 'WIDE_MESH',
   INDUSTRY: 'GRID_2X2',
   COMMERCE: 'GRID_3_COLUMN',
   FITTING: 'GRID_2X2',
-  CRAFTING: 'GRID_2X2',
+  CRAFTING: 'OPERATIONS_HUB',
   COMMAND: 'COMMAND_LEFT',
 };

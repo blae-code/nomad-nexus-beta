@@ -71,7 +71,7 @@ export default function CqbFeedPanel({
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {
-      console.info('[NexusOS][CQB] SITREP copy fallback output:\n' + sitrep);
+      console.info('[NexusOS][Gameplay] SITREP copy fallback output:\n' + sitrep);
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     }
@@ -80,7 +80,7 @@ export default function CqbFeedPanel({
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-xs text-zinc-500 uppercase tracking-wide">Latest CQB Events</div>
+        <div className="text-xs text-zinc-500 uppercase tracking-wide">Latest Loop Events</div>
         <NexusButton size="sm" intent="subtle" onClick={copySitrep} title="Copy KISS-formatted SITREP">
           {copied ? 'Copied' : 'Copy SITREP'}
         </NexusButton>
@@ -89,7 +89,7 @@ export default function CqbFeedPanel({
       <div className="flex-1 min-h-0 overflow-auto space-y-2 pr-1">
         {visibleEvents.length === 0 ? (
           <div className="text-xs text-zinc-500 rounded border border-zinc-800 bg-zinc-900/40 p-3">
-            No CQB events yet. Use MacroPad to emit canon brevity events.
+            No loop events yet. Use MacroPad to emit canonical brevity events.
           </div>
         ) : null}
 

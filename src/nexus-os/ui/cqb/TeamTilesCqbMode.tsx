@@ -79,7 +79,7 @@ export default function TeamTilesCqbMode({
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
-      <div className="text-xs text-zinc-500 uppercase tracking-wide">Team Tiles · CQB Mode</div>
+      <div className="text-xs text-zinc-500 uppercase tracking-wide">Team Tiles · Loop Mode</div>
       <div className="flex-1 min-h-0 overflow-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1">
         {visibleRoster.map((member) => {
           const lastEvent = latestEventFor(member.id, relevantEvents);
@@ -118,4 +118,3 @@ export default function TeamTilesCqbMode({
     </div>
   );
 }
-
