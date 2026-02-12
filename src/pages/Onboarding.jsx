@@ -7,15 +7,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Shield, Compass, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import RouteGuard from '@/components/auth/RouteGuard';
+import { upsertUserOperationPreference } from '@/nexus-os/services/operationEnhancementService';
+import {
+  WORKSPACE_ACTIVITY_OPTIONS,
+  deriveWorkspacePreferenceFromOnboarding,
+} from '@/nexus-os/services/workspaceConfigurationService';
 
 export default function Onboarding() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [activityNotice, setActivityNotice] = useState('');
   const [formData, setFormData] = useState({
     rsiCallsign: '',
     nomadCallsign: '',
     bio: '',
+    preferredActivities: [],
     acceptedCode: false,
     aiConsent: false,
     aiUseHistory: true,
@@ -45,6 +52,26 @@ export default function Onboarding() {
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
+  const toggleActivity = (activityId) => {
+    setFormData((prev) => {
+      const current = Array.isArray(prev.preferredActivities) ? prev.preferredActivities : [];
+      if (current.includes(activityId)) {
+        return {
+          ...prev,
+          preferredActivities: current.filter((entry) => entry !== activityId),
+        };
+      }
+      if (current.length >= 3) {
+        setActivityNotice('Select up to 3 activity themes for your initial workspace packs.');
+        return prev;
+      }
+      setActivityNotice('');
+      return {
+        ...prev,
+        preferredActivities: [...current, activityId],
+      };
+    });
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -85,6 +112,19 @@ export default function Onboarding() {
 
       if (trimmedDisplay) {
         localStorage.setItem(`nexus.display_callsign.${profile.id}`, trimmedDisplay);
+      }
+      const derivedPreference = deriveWorkspacePreferenceFromOnboarding(formData.preferredActivities);
+      try {
+        upsertUserOperationPreference({
+          userId: profile.id,
+          activityTags: derivedPreference.activityTags,
+          preferredRoles: derivedPreference.preferredRoles,
+          postureAffinity: 'ANY',
+          availability: 'AUTO',
+          notifyOptIn: true,
+        });
+      } catch (prefErr) {
+        console.warn('Unable to save workspace activity preference:', prefErr);
       }
 
       window.location.href = createPageUrl('Hub');
@@ -194,6 +234,36 @@ export default function Onboarding() {
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                     className="h-24 border-red-500/35"
                   />
+                </div>
+
+                <div>
+                  <label className="nexus-label block text-red-300 mb-2">
+                    ◆ Preferred Activity Themes (Up to 3)
+                  </label>
+                  <p className="text-xs text-slate-500 mb-2">
+                    Your selections drive preconfigured NexusOS workspace packs when you first enter the app.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {WORKSPACE_ACTIVITY_OPTIONS.map((option) => {
+                      const selected = formData.preferredActivities.includes(option.id);
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => toggleActivity(option.id)}
+                          className={`text-left rounded border px-3 py-2 transition ${
+                            selected
+                              ? 'border-red-500/60 bg-red-500/10'
+                              : 'border-slate-700 bg-slate-900/40 hover:border-slate-600'
+                          }`}
+                        >
+                          <div className="text-sm font-semibold text-white">{option.label}</div>
+                          <div className="text-[11px] text-slate-400">{option.description}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {activityNotice ? <p className="text-xs text-amber-400 mt-2">{activityNotice}</p> : null}
                 </div>
               </div>
 
@@ -414,6 +484,16 @@ export default function Onboarding() {
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 font-bold uppercase tracking-wide">Code Accepted:</span>
                   <span className="text-green-400 font-bold">YES</span>
+                </div>
+                <div className="flex justify-between text-sm gap-2">
+                  <span className="text-slate-500 font-bold uppercase tracking-wide">Activity Packs:</span>
+                  <span className="text-white font-mono text-right">
+                    {formData.preferredActivities.length > 0
+                      ? WORKSPACE_ACTIVITY_OPTIONS.filter((entry) => formData.preferredActivities.includes(entry.id))
+                          .map((entry) => entry.label)
+                          .join(', ')
+                      : 'General'}
+                  </span>
                 </div>
               </div>
 

@@ -26,6 +26,7 @@ import {
   upsertCustomWorkbenchWidget,
 } from '../../services/customWorkbenchWidgetService';
 import { getUserOperationPreference } from '../../services/operationEnhancementService';
+import { recommendWorkspaceActivityPacks } from '../../services/workspaceConfigurationService';
 
 function clampRowSpan(value) {
   return Math.max(MIN_ROW_SPAN, Math.min(MAX_ROW_SPAN, value));
@@ -242,6 +243,7 @@ export default function WorkbenchGrid({
   const [widgetImportCode, setWidgetImportCode] = useState('');
   const [workspaceImportCode, setWorkspaceImportCode] = useState('');
   const [selectedShareWidgetId, setSelectedShareWidgetId] = useState('');
+  const [selectedActivityPackId, setSelectedActivityPackId] = useState('');
   const [panelSearchQuery, setPanelSearchQuery] = useState('');
   const [widgetPrompt, setWidgetPrompt] = useState('');
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
@@ -331,8 +333,21 @@ export default function WorkbenchGrid({
     };
     return [roleTemplate, ...WIDGET_TEMPLATES];
   }, [actorPreference]);
+  const activityPacks = useMemo(
+    () =>
+      recommendWorkspaceActivityPacks({
+        activityTags: actorPreference?.activityTags || [],
+        availablePanelIds: allPanels.map((panel) => panel.id),
+        maxPacks: 4,
+      }),
+    [actorPreference, allPanels]
+  );
+  const selectedActivityPack = useMemo(() => {
+    if (activityPacks.length === 0) return null;
+    return activityPacks.find((pack) => pack.id === selectedActivityPackId) || activityPacks[0];
+  }, [activityPacks, selectedActivityPackId]);
   const onboardingVisible = enableOnboardingExperience && !onboardingDismissed && !hasVisiblePanels;
-  const starterPanelIds = useMemo(() => {
+  const fallbackStarterPanelIds = useMemo(() => {
     if (allPanels.length === 0) return [];
     const preferred = allPanels.filter((panel) => {
       const token = `${panel.id} ${panel.title}`.toLowerCase();
@@ -347,6 +362,10 @@ export default function WorkbenchGrid({
     const pool = preferred.length >= 3 ? preferred : allPanels;
     return pool.slice(0, Math.min(3, pool.length)).map((panel) => panel.id);
   }, [allPanels]);
+  const starterPanelIds = useMemo(
+    () => (selectedActivityPack?.panelIds?.length ? selectedActivityPack.panelIds : fallbackStarterPanelIds),
+    [fallbackStarterPanelIds, selectedActivityPack]
+  );
 
   const completeOnboarding = useCallback(() => {
     if (onboardingDismissed) return;
@@ -365,6 +384,14 @@ export default function WorkbenchGrid({
     }
     setSelectedShareWidgetId((prev) => (prev && customWidgets.some((widget) => widget.id === prev) ? prev : customWidgets[0].id));
   }, [customWidgets]);
+
+  useEffect(() => {
+    if (activityPacks.length === 0) {
+      setSelectedActivityPackId('');
+      return;
+    }
+    setSelectedActivityPackId((prev) => (prev && activityPacks.some((pack) => pack.id === prev) ? prev : activityPacks[0].id));
+  }, [activityPacks]);
 
   const applyWidgetFormUpdate = useCallback((patch) => {
     setWidgetForm((prev) => ({ ...prev, ...patch }));
@@ -651,7 +678,28 @@ export default function WorkbenchGrid({
     [completeOnboarding]
   );
 
+  const applyActivityPack = useCallback(
+    (packId) => {
+      const pack = activityPacks.find((entry) => entry.id === packId);
+      if (!pack) return false;
+      if (pack.presetId && WORKBENCH_PRESETS[pack.presetId] && pack.presetId !== preset.id) {
+        onPresetChange?.(pack.presetId);
+      }
+      setActivePanelIds(pack.panelIds);
+      setPanelSizes(pack.panelSizes || {});
+      setSelectedActivityPackId(pack.id);
+      setWidgetNotice(`Applied "${pack.label}" workspace pack.`);
+      completeOnboarding();
+      return true;
+    },
+    [activityPacks, completeOnboarding, onPresetChange, preset.id]
+  );
+
   const activateStarterPack = useCallback(() => {
+    if (selectedActivityPack?.id) {
+      const applied = applyActivityPack(selectedActivityPack.id);
+      if (applied) return;
+    }
     if (starterPanelIds.length === 0) {
       setWidgetNotice('No starter panels registered yet.');
       setIsPanelDrawerOpen(true);
@@ -666,7 +714,7 @@ export default function WorkbenchGrid({
     });
     setWidgetNotice('Starter workspace activated.');
     completeOnboarding();
-  }, [completeOnboarding, starterPanelIds]);
+  }, [applyActivityPack, completeOnboarding, selectedActivityPack?.id, starterPanelIds]);
 
   const removePanel = (panelId) => {
     setActivePanelIds((prev) => prev.filter((id) => id !== panelId));
@@ -983,7 +1031,7 @@ export default function WorkbenchGrid({
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 w-full">
                           <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[11px] text-zinc-400">
                             <div className="text-zinc-300 uppercase tracking-[0.16em] text-[10px]">Step 1</div>
-                            Activate a starter pack aligned to common planning workflows.
+                            Choose a preconfigured activity pack based on your onboarding preferences.
                           </div>
                           <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[11px] text-zinc-400">
                             <div className="text-zinc-300 uppercase tracking-[0.16em] text-[10px]">Step 2</div>
@@ -992,6 +1040,32 @@ export default function WorkbenchGrid({
                           <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-[11px] text-zinc-400">
                             <div className="text-zinc-300 uppercase tracking-[0.16em] text-[10px]">Step 3</div>
                             Generate custom widgets from a short brief, then resize and reorder.
+                          </div>
+                        </div>
+                      ) : null}
+                      {onboardingVisible && activityPacks.length > 0 ? (
+                        <div className="rounded border border-zinc-800 bg-zinc-950/60 px-3 py-3 space-y-2 w-full">
+                          <div className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Recommended Activity Packs</div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {activityPacks.slice(0, 4).map((pack) => {
+                              const selected = selectedActivityPack?.id === pack.id;
+                              return (
+                                <button
+                                  key={pack.id}
+                                  type="button"
+                                  onClick={() => setSelectedActivityPackId(pack.id)}
+                                  className={`text-left rounded border px-3 py-2 transition ${
+                                    selected
+                                      ? 'border-orange-500/60 bg-orange-500/10'
+                                      : 'border-zinc-800 bg-zinc-900/45 hover:border-zinc-600'
+                                  }`}
+                                >
+                                  <div className="text-xs text-zinc-100">{pack.label}</div>
+                                  <div className="text-[11px] text-zinc-500">{pack.description}</div>
+                                  <div className="text-[10px] text-zinc-600 mt-1">{pack.panelIds.length} panels · {pack.presetId}</div>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       ) : null}
@@ -1026,7 +1100,7 @@ export default function WorkbenchGrid({
                       <div className="flex flex-wrap items-center gap-2">
                         {onboardingVisible ? (
                           <NexusButton size="sm" intent="primary" onClick={activateStarterPack}>
-                            Launch Starter Pack
+                            Launch {selectedActivityPack?.label || 'Starter Pack'}
                           </NexusButton>
                         ) : (
                           <NexusButton
@@ -1207,6 +1281,48 @@ export default function WorkbenchGrid({
             </SheetDescription>
           </SheetHeader>
           <div className="mt-5 space-y-4 overflow-y-auto overscroll-contain max-h-[calc(100vh-6rem)] pr-1" style={{ scrollbarGutter: 'stable' }}>
+            <section className="rounded border border-zinc-800 bg-zinc-900/55 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs uppercase tracking-widest text-zinc-300">Activity Packs</h3>
+                <NexusBadge tone="neutral">{activityPacks.length}</NexusBadge>
+              </div>
+              {activityPacks.length > 0 ? (
+                <div className="space-y-2">
+                  {activityPacks.map((pack) => {
+                    const selected = selectedActivityPack?.id === pack.id;
+                    return (
+                      <div
+                        key={pack.id}
+                        className={`rounded border px-2 py-2 ${selected ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55'}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-xs text-zinc-100 truncate">{pack.label}</div>
+                            <div className="text-[10px] text-zinc-500 truncate">{pack.description}</div>
+                          </div>
+                          <NexusButton
+                            size="sm"
+                            intent={selected ? 'primary' : 'subtle'}
+                            onClick={() => applyActivityPack(pack.id)}
+                          >
+                            Apply
+                          </NexusButton>
+                        </div>
+                        <div className="text-[10px] text-zinc-600 mt-1">
+                          {pack.panelIds.length} panels · {pack.presetId}
+                          {pack.matchedTags.length > 0 ? ` · tags: ${pack.matchedTags.join(', ')}` : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-xs text-zinc-500 rounded border border-zinc-800 bg-zinc-950/55 p-2">
+                  No themed packs available for the current panel registry.
+                </div>
+              )}
+            </section>
+
             <section className="rounded border border-zinc-800 bg-zinc-900/55 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-xs uppercase tracking-widest text-zinc-300">Widget Studio</h3>
