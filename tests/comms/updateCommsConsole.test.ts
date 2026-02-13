@@ -429,6 +429,33 @@ describe('updateCommsConsole', () => {
     expect(payload).toMatchObject({ error: 'Command privileges required' });
   });
 
+  it('returns stable permission error code for map macro execution without command access', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER' };
+    const { base44 } = createBase44Mock({ actorProfile });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'execute_map_command_macro',
+        macroId: 'ISSUE_CRITICAL_CALLOUT',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({
+      error_code: 'COMMS_PERMISSION_DENIED',
+    });
+  });
+
   it('moderates voice user and exposes moderation feed for command staff', async () => {
     const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
     const { base44 } = createBase44Mock({ actorProfile });
@@ -535,5 +562,102 @@ describe('updateCommsConsole', () => {
       participants: 2,
       callouts: 1,
     });
+  });
+
+  it('returns map command surface with actionable alerts', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      voiceNets: [
+        { id: 'net-1', code: 'OPS-CMD', label: 'Ops Command', discipline: 'focused', event_id: 'event-1' },
+      ],
+      userPresences: [
+        { id: 'presence-1', member_profile_id: 'member-1', net_id: 'net-1', is_speaking: true },
+      ],
+      eventLogs: [
+        {
+          id: 'log-callout',
+          created_date: new Date(Date.now() - 20 * 1000).toISOString(),
+          type: 'COMMS_PRIORITY_CALLOUT',
+          details: { event_id: 'event-1', net_id: 'net-1', lane: 'COMMAND', priority: 'CRITICAL', message: 'Immediate push' },
+        },
+        {
+          id: 'log-discipline',
+          created_date: new Date(Date.now() - 15 * 1000).toISOString(),
+          type: 'COMMS_DISCIPLINE_MODE',
+          details: { event_id: 'event-1', net_id: 'net-1', mode: 'REQUEST_TO_SPEAK' },
+        },
+        {
+          id: 'log-speak',
+          created_date: new Date(Date.now() - 10 * 1000).toISOString(),
+          type: 'COMMS_SPEAK_REQUEST',
+          details: { request_id: 'sr-1', event_id: 'event-1', net_id: 'net-1', requester_member_profile_id: 'member-2' },
+        },
+      ],
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'get_map_command_surface',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ success: true, action: 'get_map_command_surface' });
+    expect(Array.isArray(payload.actionable_alerts)).toBe(true);
+    expect(payload.actionable_alerts[0]).toMatchObject({ id: 'critical-callouts' });
+    expect(payload.topology.discipline).toMatchObject({ mode: 'REQUEST_TO_SPEAK' });
+    expect(payload.topology.speakRequests.length).toBe(1);
+  });
+
+  it('returns degraded but valid map command surface payload when backing entities fail', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({ actorProfile });
+    base44.entities.VoiceNet.list = vi.fn(async () => {
+      throw new Error('voice-nets unavailable');
+    });
+    base44.entities.UserPresence.list = vi.fn(async () => {
+      throw new Error('presence unavailable');
+    });
+    base44.entities.BridgeSession.list = vi.fn(async () => {
+      throw new Error('bridge unavailable');
+    });
+    base44.entities.EventLog.list = vi.fn(async () => {
+      throw new Error('event logs unavailable');
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'get_map_command_surface',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ success: true, action: 'get_map_command_surface' });
+    expect(payload.topology).toBeTruthy();
+    expect(payload.topology.nets).toEqual([]);
+    expect(payload.topology.memberships).toEqual([]);
+    expect(payload.topology.callouts).toEqual([]);
+    expect(payload.actionable_alerts).toEqual([]);
   });
 });

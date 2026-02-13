@@ -55,14 +55,24 @@ export default function CqbFeedPanel({
   limit = 16,
 }: CqbFeedPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [eventPage, setEventPage] = useState(0);
   const nowMs = Date.now();
 
-  const visibleEvents = useMemo(() => {
+  const filteredEvents = useMemo(() => {
     return events
       .filter((event) => (opId ? event.opId === opId : true))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, limit);
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [events, opId, limit]);
+  const eventsPerPage = Math.max(1, Math.min(7, limit));
+  const pageCount = Math.max(1, Math.ceil(filteredEvents.length / eventsPerPage));
+  const visibleEvents = filteredEvents.slice(eventPage * eventsPerPage, eventPage * eventsPerPage + eventsPerPage);
+
+  React.useEffect(() => {
+    setEventPage(0);
+  }, [opId, events.length]);
+  React.useEffect(() => {
+    setEventPage((prev) => Math.min(prev, pageCount - 1));
+  }, [pageCount]);
 
   const copySitrep = async () => {
     const sitrep = formatSitrep(visibleEvents, roster);
@@ -86,7 +96,7 @@ export default function CqbFeedPanel({
         </NexusButton>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto space-y-2 pr-1">
+      <div className="flex-1 min-h-0 overflow-hidden space-y-2">
         {visibleEvents.length === 0 ? (
           <div className="text-xs text-zinc-500 rounded border border-zinc-800 bg-zinc-900/40 p-3">
             No loop events yet. Use MacroPad to emit canonical brevity events.
@@ -124,6 +134,22 @@ export default function CqbFeedPanel({
             </div>
           );
         })}
+      </div>
+      <div className="flex items-center justify-end gap-1.5">
+        <NexusButton size="sm" intent="subtle" onClick={() => setEventPage((prev) => Math.max(0, prev - 1))} disabled={eventPage === 0}>
+          Prev
+        </NexusButton>
+        <NexusBadge tone="neutral">
+          {eventPage + 1}/{pageCount}
+        </NexusBadge>
+        <NexusButton
+          size="sm"
+          intent="subtle"
+          onClick={() => setEventPage((prev) => Math.min(pageCount - 1, prev + 1))}
+          disabled={eventPage >= pageCount - 1}
+        >
+          Next
+        </NexusButton>
       </div>
     </div>
   );

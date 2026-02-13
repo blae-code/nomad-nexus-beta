@@ -26,6 +26,7 @@ export default function CqbMacroPad({
   const [crossingLane, setCrossingLane] = useState('');
   const [setSecurity360, setSetSecurity360] = useState(true);
   const [lastSentMacroId, setLastSentMacroId] = useState<string | null>(null);
+  const [groupPage, setGroupPage] = useState(0);
 
   const variant = getCqbVariant(variantId);
   const macros = useMemo(() => getMacrosForVariant(variantId), [variantId]);
@@ -53,6 +54,14 @@ export default function CqbMacroPad({
     acc[group] = macros.filter((macro) => (BREVITY_GROUP_BY_EVENT[macro.eventType] || 'TACTICAL') === group);
     return acc;
   }, {} as Record<MacroGroup, typeof macros>);
+  const populatedGroups = GROUP_ORDER.filter((group) => (grouped[group] || []).length > 0);
+  const groupsPerPage = 3;
+  const groupPageCount = Math.max(1, Math.ceil(populatedGroups.length / groupsPerPage));
+  const visibleGroups = populatedGroups.slice(groupPage * groupsPerPage, groupPage * groupsPerPage + groupsPerPage);
+
+  React.useEffect(() => {
+    setGroupPage((prev) => Math.min(prev, groupPageCount - 1));
+  }, [groupPageCount]);
 
   const emitMacro = (eventType: CqbEventType, payload: Record<string, unknown>) => {
     const channelId = getActiveChannelId({ variantId });
@@ -130,8 +139,8 @@ export default function CqbMacroPad({
         Set security defaults to 360 coverage
       </label>
 
-      <div className="flex-1 min-h-0 overflow-auto space-y-3 pr-1">
-        {GROUP_ORDER.map((group) => {
+      <div className="flex-1 min-h-0 overflow-hidden space-y-3">
+        {visibleGroups.map((group) => {
           const entries = grouped[group];
           if (!entries || entries.length === 0) return null;
 
@@ -158,6 +167,22 @@ export default function CqbMacroPad({
             </div>
           );
         })}
+      </div>
+      <div className="flex items-center justify-end gap-1.5">
+        <NexusButton size="sm" intent="subtle" onClick={() => setGroupPage((prev) => Math.max(0, prev - 1))} disabled={groupPage === 0}>
+          Prev
+        </NexusButton>
+        <NexusBadge tone="neutral">
+          {groupPage + 1}/{groupPageCount}
+        </NexusBadge>
+        <NexusButton
+          size="sm"
+          intent="subtle"
+          onClick={() => setGroupPage((prev) => Math.min(groupPageCount - 1, prev + 1))}
+          disabled={groupPage >= groupPageCount - 1}
+        >
+          Next
+        </NexusButton>
       </div>
     </div>
   );

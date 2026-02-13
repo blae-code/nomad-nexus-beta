@@ -46,6 +46,35 @@ interface CommsTopologyNetLoad {
   trafficScore: number;
 }
 
+interface CommsTopologyDiscipline {
+  mode: string;
+  netId: string;
+  eventId: string;
+  updatedAt: string | null;
+}
+
+interface CommsTopologySpeakRequest {
+  requestId: string;
+  eventId: string;
+  netId: string;
+  requesterMemberProfileId: string;
+  status: string;
+  reason: string;
+  createdDate: string | null;
+  resolvedAt: string | null;
+  resolvedByMemberProfileId: string;
+}
+
+interface CommsTopologyCommandBusEntry {
+  id: string;
+  eventId: string;
+  netId: string;
+  action: string;
+  payload: Record<string, unknown>;
+  actorMemberProfileId: string;
+  createdDate: string | null;
+}
+
 export interface CommsTopologySnapshot {
   eventId: string;
   generatedAt: string | null;
@@ -54,6 +83,9 @@ export interface CommsTopologySnapshot {
   bridges: CommsTopologyBridge[];
   callouts: CommsTopologyCallout[];
   netLoad: CommsTopologyNetLoad[];
+  discipline: CommsTopologyDiscipline | null;
+  speakRequests: CommsTopologySpeakRequest[];
+  commandBus: CommsTopologyCommandBusEntry[];
 }
 
 export interface MapCommsOverlayNet {
@@ -92,12 +124,39 @@ export interface MapCommsOverlayCallout {
   stale: boolean;
 }
 
+export interface MapCommsOverlaySpeakRequest {
+  requestId: string;
+  eventId: string;
+  netId: string;
+  nodeId: string;
+  requesterMemberProfileId: string;
+  status: string;
+  reason: string;
+  createdDate: string | null;
+  resolvedAt: string | null;
+  resolvedByMemberProfileId: string;
+}
+
+export interface MapCommsOverlayCommandBusEntry {
+  id: string;
+  eventId: string;
+  netId: string;
+  nodeId: string;
+  action: string;
+  payload: Record<string, unknown>;
+  actorMemberProfileId: string;
+  createdDate: string | null;
+}
+
 export interface MapCommsOverlay {
   generatedAt: string | null;
   scopedOpId: string;
   nets: MapCommsOverlayNet[];
   links: MapCommsOverlayLink[];
   callouts: MapCommsOverlayCallout[];
+  discipline: CommsTopologyDiscipline | null;
+  speakRequests: MapCommsOverlaySpeakRequest[];
+  commandBus: MapCommsOverlayCommandBusEntry[];
 }
 
 interface BuildMapCommsOverlayInput {
@@ -269,6 +328,9 @@ export function createEmptyMapCommsOverlay(scopedOpId = ''): MapCommsOverlay {
     nets: [],
     links: [],
     callouts: [],
+    discipline: null,
+    speakRequests: [],
+    commandBus: [],
   };
 }
 
@@ -323,6 +385,38 @@ export function extractCommsTopologySnapshot(payload: unknown): CommsTopologySna
     trafficScore: Number(entry?.traffic_score || entry?.trafficScore || 0),
   })).filter((entry) => Boolean(entry.netId));
 
+  const disciplineRaw = topology.discipline || null;
+  const discipline = disciplineRaw
+    ? {
+        mode: toText(disciplineRaw.mode || 'PTT').toUpperCase(),
+        netId: toText(disciplineRaw.net_id || disciplineRaw.netId),
+        eventId: toText(disciplineRaw.event_id || disciplineRaw.eventId),
+        updatedAt: toIso(disciplineRaw.updated_at || disciplineRaw.updatedAt),
+      }
+    : null;
+
+  const speakRequests = asArray(topology.speakRequests || topology.speak_requests).map((entry: any) => ({
+    requestId: toText(entry?.request_id || entry?.requestId || entry?.id),
+    eventId: toText(entry?.event_id || entry?.eventId),
+    netId: toText(entry?.net_id || entry?.netId),
+    requesterMemberProfileId: toText(entry?.requester_member_profile_id || entry?.requesterMemberProfileId),
+    status: toText(entry?.status || 'PENDING').toUpperCase(),
+    reason: toText(entry?.reason),
+    createdDate: toIso(entry?.created_date || entry?.createdDate || entry?.created_at),
+    resolvedAt: toIso(entry?.resolved_at || entry?.resolvedAt),
+    resolvedByMemberProfileId: toText(entry?.resolved_by_member_profile_id || entry?.resolvedByMemberProfileId),
+  })).filter((entry) => Boolean(entry.requestId));
+
+  const commandBus = asArray(topology.commandBus || topology.command_bus).map((entry: any) => ({
+    id: toText(entry?.id || entry?.command_id || entry?.commandId),
+    eventId: toText(entry?.event_id || entry?.eventId),
+    netId: toText(entry?.net_id || entry?.netId),
+    action: toText(entry?.action || entry?.bus_action || entry?.busAction).toUpperCase(),
+    payload: entry?.payload && typeof entry.payload === 'object' ? entry.payload : {},
+    actorMemberProfileId: toText(entry?.actor_member_profile_id || entry?.actorMemberProfileId),
+    createdDate: toIso(entry?.created_date || entry?.createdDate || entry?.published_at || entry?.publishedAt),
+  })).filter((entry) => Boolean(entry.id));
+
   return {
     eventId: toText(topology.event_id || topology.eventId),
     generatedAt: toIso(topology.generated_at || topology.generatedAt),
@@ -331,6 +425,9 @@ export function extractCommsTopologySnapshot(payload: unknown): CommsTopologySna
     bridges,
     callouts,
     netLoad,
+    discipline,
+    speakRequests,
+    commandBus,
   };
 }
 
@@ -422,12 +519,66 @@ export function buildMapCommsOverlay(input: BuildMapCommsOverlayInput): MapComms
     })
     .filter((callout) => mapNodeById.has(callout.nodeId));
 
+  const resolveNodeForNet = (netId: string): string => {
+    const direct = netId ? netById.get(netId)?.nodeId : '';
+    if (direct && mapNodeById.has(direct)) return direct;
+    const scoped = scopedOpId ? opNodeLookup.get(scopedOpId) : '';
+    if (scoped && mapNodeById.has(scoped)) return scoped;
+    return input.mapNodes[0]?.id || 'system-stanton';
+  };
+
+  const speakRequests = topology.speakRequests
+    .filter((entry) => {
+      if (!scopedOpId) return true;
+      if (entry.eventId && entry.eventId === scopedOpId) return true;
+      return Boolean(entry.netId && scopedNetIds.has(entry.netId));
+    })
+    .map((entry) => ({
+      requestId: entry.requestId,
+      eventId: entry.eventId,
+      netId: entry.netId,
+      nodeId: resolveNodeForNet(entry.netId),
+      requesterMemberProfileId: entry.requesterMemberProfileId,
+      status: entry.status,
+      reason: entry.reason,
+      createdDate: entry.createdDate,
+      resolvedAt: entry.resolvedAt,
+      resolvedByMemberProfileId: entry.resolvedByMemberProfileId,
+    }));
+
+  const commandBus = topology.commandBus
+    .filter((entry) => {
+      if (!scopedOpId) return true;
+      if (entry.eventId && entry.eventId === scopedOpId) return true;
+      return Boolean(entry.netId && scopedNetIds.has(entry.netId));
+    })
+    .map((entry) => ({
+      id: entry.id,
+      eventId: entry.eventId,
+      netId: entry.netId,
+      nodeId: resolveNodeForNet(entry.netId),
+      action: entry.action,
+      payload: entry.payload,
+      actorMemberProfileId: entry.actorMemberProfileId,
+      createdDate: entry.createdDate,
+    }));
+  const discipline =
+    topology.discipline &&
+    (!scopedOpId ||
+      topology.discipline.eventId === scopedOpId ||
+      (topology.discipline.netId && scopedNetIds.has(topology.discipline.netId)))
+      ? topology.discipline
+      : null;
+
   return {
     generatedAt: topology.generatedAt,
     scopedOpId,
     nets,
     links,
     callouts,
+    discipline,
+    speakRequests,
+    commandBus,
   };
 }
 

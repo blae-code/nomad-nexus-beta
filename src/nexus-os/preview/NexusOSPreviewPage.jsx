@@ -8,7 +8,6 @@ import {
   CommsNetworkConsole,
   CommsPeekPanel,
   CqbCommandConsole,
-  CqbContextSelector,
   CqbFeedPanel,
   CqbMacroPad,
   buildDevControlSignals,
@@ -18,7 +17,6 @@ import {
   MobileArCompanionFocusApp,
   MobileCompanionPanel,
   OperationFocusApp,
-  OpsStrip,
   ReportsFocusApp,
   NexusBadge,
   NexusButton,
@@ -57,7 +55,21 @@ import { listShipSpecs } from '../services/referenceDataService';
 import { listFitProfiles } from '../services/fitProfileService';
 import { runNexusOSInvariantChecks, summarizeInvariantWarnings } from '../diagnostics';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
-import { Radar, Shield, Signal } from 'lucide-react';
+import {
+  AlertTriangle,
+  ClipboardList,
+  Clock3,
+  Compass,
+  Crosshair,
+  FileText,
+  Radio,
+  Radar,
+  Search,
+  Shield,
+  Signal,
+  Smartphone,
+  Wrench,
+} from 'lucide-react';
 import {
   formatGameplayLoopVariantId,
   isGameplayLoopVariantToken,
@@ -159,6 +171,16 @@ const FOCUS_APP_CATALOG = [
 
 const FOCUS_APP_IDS = new Set(FOCUS_APP_CATALOG.map((entry) => entry.id));
 const FOCUS_APP_LABEL_BY_ID = Object.fromEntries(FOCUS_APP_CATALOG.map((entry) => [entry.id, entry.label]));
+const FOCUS_APP_ICON_BY_ID = {
+  cqb: Crosshair,
+  comms: Radio,
+  map: Compass,
+  mobile: Smartphone,
+  ops: ClipboardList,
+  force: Wrench,
+  reports: FileText,
+};
+const MOBILE_NAV_APP_IDS = ['cqb', 'comms', 'map', 'ops'];
 const FOCUS_APP_ALIASES = {
   action: 'cqb',
   gameplay: 'cqb',
@@ -398,7 +420,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [commandFeedback, setCommandFeedback] = useState('');
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [statusCapsuleOpen, setStatusCapsuleOpen] = useState(false);
-  const [showCommandModules, setShowCommandModules] = useState(false);
+  const [contextPanelOpen, setContextPanelOpen] = useState(true);
+  const [contextTab, setContextTab] = useState('SUMMARY');
+  const [compactShell, setCompactShell] = useState(() => (typeof window === 'undefined' ? false : window.innerWidth < 1480));
+  const [clockNowMs, setClockNowMs] = useState(() => Date.now());
 
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
@@ -770,6 +795,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const sharedPanelProps = {
     variantId,
+    bridgeId,
     opId: resolvedOpId,
     elementFilter,
     roster: activeRoster,
@@ -783,6 +809,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     onCreateMacroEvent: createMacroEvent,
     onOpenCqbConsole: () => openFocusApp('cqb'),
     onOpenCommsNetwork: () => openFocusApp('comms'),
+    onOpenCommsWorkspace: ({ opId: nextOpId, view } = {}) => {
+      if (nextOpId) setOpId(nextOpId);
+      openFocusApp(view === 'voice' ? 'comms' : 'comms');
+    },
     onOpenMapFocus: () => openFocusApp('map'),
     onOpenMobileCompanion: () => openFocusApp('mobile'),
     onOpenOperationFocus: () => openFocusApp('ops'),
@@ -1062,9 +1092,40 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     return () => window.clearTimeout(timerId);
   }, [commandFeedback]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onResize = () => setCompactShell(window.innerWidth < 1480);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!compactShell) return;
+    setContextPanelOpen(false);
+  }, [compactShell]);
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setClockNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, []);
+
+  const systemTimeLabel = useMemo(
+    () =>
+      new Date(clockNowMs).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }),
+    [clockNowMs]
+  );
+  const contextVisible = !compactShell || contextPanelOpen;
+
   return (
     <div
-      className="nexus-shell-root nexus-layout-quiet relative w-full h-full min-h-0 overflow-hidden p-3 pb-24 md:p-4 md:pb-28 flex flex-col gap-2.5"
+      className="nexus-shell-root nexus-layout-quiet nx-app-shell"
       data-bridge-id={bridgeId}
       style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
@@ -1072,169 +1133,164 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <div className="nexus-shell-grid" />
       <div className="nexus-shell-vignette" />
 
-      <section className="nexus-top-rail nexus-panel-glow rounded-xl px-4 py-3 md:px-5 md:py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div
-              className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] nexus-console-text"
-              style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.9)' }}
-            >
-              <Shield
-                className="w-3.5 h-3.5"
-                style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.9)' }}
-              />
-              Redscar Nomads Command Intranet
-            </div>
-            <h1 className="mt-1 text-lg md:text-2xl font-semibold uppercase text-zinc-100 truncate">
-              {isWorkspaceMode ? 'NexusOS Tactical Workspace' : 'NexusOS Gameplay Sandbox'}
-            </h1>
-            <p className="text-xs text-zinc-400 max-w-3xl">
-              Mission-scoped command surface with TTL-bound intelligence, degraded mode continuity, and narrative-first operational context.
-            </p>
+      <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow">
+        <div className="nx-topbar-left">
+          <div className="nx-topbar-mark">
+            <Shield className="w-3.5 h-3.5" />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV ONLY</NexusBadge>}
-            <button
-              type="button"
-              onClick={() => setStatusCapsuleOpen((prev) => !prev)}
-              className="h-8 rounded px-2.5 inline-flex items-center gap-2 text-[11px] nexus-console-text nexus-command-capsule"
-              data-open={statusCapsuleOpen ? 'true' : 'false'}
-              aria-expanded={statusCapsuleOpen}
-              aria-controls="nx-status-capsule-grid"
-              title="Toggle status capsule"
-            >
-              <Signal className={`w-3.5 h-3.5 ${online ? 'text-emerald-300' : 'text-amber-300'}`} />
-              <span>{online ? 'NET NOMINAL' : 'NET DEGRADED'}</span>
-              <span className="text-zinc-500">PULSE {pulseCount}</span>
-              <span className="text-zinc-500">{statusCapsuleOpen ? 'COLLAPSE' : 'STATUS'}</span>
-            </button>
-            <NexusButton size="sm" intent={showCommandModules ? 'primary' : 'subtle'} onClick={() => setShowCommandModules((prev) => !prev)}>
-              Controls {showCommandModules ? 'Hide' : 'Show'}
-            </NexusButton>
+          <div className="min-w-0">
+            <div className="nx-topbar-kicker">Redscar Nomads Command Intranet</div>
+            <h1 className="nx-topbar-title">{isWorkspaceMode ? 'NexusOS Tactical Workspace' : 'NexusOS Gameplay Sandbox'}</h1>
           </div>
         </div>
-        {statusCapsuleOpen ? (
-          <div id="nx-status-capsule-grid" className="nexus-command-capsule-grid mt-3 grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-2 text-[11px] nexus-console-text">
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Operator</span>{' '}
-              <span className="text-zinc-200">{workspaceDisplayCallsign}</span>
+        <button
+          type="button"
+          className="nx-command-entry"
+          onClick={() => setCommandDeckOpen(true)}
+          title="Open command palette"
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span>Command Palette</span>
+          <span className="nx-hotkey">Ctrl+Shift+P</span>
+        </button>
+        <div className="nx-topbar-right">
+          {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV</NexusBadge>}
+          <NexusBadge tone={online ? 'ok' : 'danger'}>
+            <Signal className="w-3 h-3 mr-1" />
+            {online ? 'LINK' : 'DEGRADED'}
+          </NexusBadge>
+          <NexusBadge tone={tray.unreadCount > 0 ? 'warning' : 'neutral'}>
+            <AlertTriangle className="w-3 h-3 mr-1" />
+            {tray.unreadCount > 0 ? `${tray.unreadCount} ALERTS` : 'CLEAR'}
+          </NexusBadge>
+          <NexusBadge tone="neutral">{workspaceDisplayCallsign}</NexusBadge>
+          <div className="nx-topbar-time">
+            <Clock3 className="w-3.5 h-3.5" />
+            <span>{systemTimeLabel}</span>
+          </div>
+          <NexusButton size="sm" intent={contextVisible ? 'primary' : 'subtle'} onClick={() => setContextPanelOpen((prev) => !prev)}>
+            Context
+          </NexusButton>
+        </div>
+      </header>
+
+      <aside className="nx-shell-rail nexus-surface">
+        <div className="nx-rail-kicker">Modules</div>
+        <div className="nx-rail-stack">
+          {FOCUS_APP_CATALOG.map((entry) => {
+            const Icon = FOCUS_APP_ICON_BY_ID[entry.id] || Radar;
+            const active = focusMode === entry.id;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                className={`nx-rail-button ${active ? 'is-active' : ''}`}
+                onClick={() => openFocusApp(entry.id)}
+                title={entry.hotkey ? `${entry.label} (${entry.hotkey})` : entry.label}
+                aria-label={entry.label}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="nx-rail-label">{entry.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <main className="nx-shell-main">
+        {commandFeedback ? (
+          <section aria-live="polite" className="nx-inline-feedback nexus-console-text">
+            {commandFeedback}
+          </section>
+        ) : null}
+        <div className="nx-workbench-wrap nexus-panel-glow">
+          <WorkbenchGrid
+            bridgeId={bridgeId}
+            panels={panelDescriptors}
+            presetId={presetId}
+            onPresetChange={setPresetId}
+            defaultActivationMode={needsWorkspaceOnboarding ? 'empty' : 'all'}
+            enableOnboardingExperience={needsWorkspaceOnboarding}
+            workspaceUserDisplayName={workspaceDisplayCallsign}
+            onCompleteOnboarding={() => {
+              if (!needsWorkspaceOnboarding) return;
+              patchSnapshot({ workspaceOnboardingCompleted: true });
+            }}
+            layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
+            enableLayoutPersistence
+            atmosphereMode="minimal"
+            initialActivePanelIds={activePanelIds}
+            onActivePanelIdsChange={(next) =>
+              patchSnapshot({
+                activePanelIds: next,
+                workspaceOnboardingCompleted: workspaceOnboardingCompleted || next.length > 0,
+              })
+            }
+            panelComponentProps={sharedPanelProps}
+          />
+        </div>
+      </main>
+
+      <aside className={`nx-shell-context nexus-surface ${contextVisible ? 'is-open' : 'is-collapsed'}`}>
+        {contextVisible ? (
+          <div className="nx-context-inner">
+            <div className="nx-context-tabs">
+              <NexusButton size="sm" intent={contextTab === 'SUMMARY' ? 'primary' : 'subtle'} onClick={() => setContextTab('SUMMARY')}>
+                Summary
+              </NexusButton>
+              <NexusButton size="sm" intent={contextTab === 'ACTIONS' ? 'primary' : 'subtle'} onClick={() => setContextTab('ACTIONS')}>
+                Actions
+              </NexusButton>
             </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Bridge</span>{' '}
-              <span className="text-zinc-200">{bridgeId}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5 truncate">
-              <span className="text-zinc-500 uppercase tracking-widest">Focus Op</span>{' '}
-              <span className="text-zinc-200">{focusOperationLabel}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Foreground</span>{' '}
-              <span className="text-zinc-200">{activeAppLabel}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Pulse</span>{' '}
-              <span className="text-zinc-200">{pulseCount}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Scheduler</span>{' '}
-              <span className="text-zinc-200">{activeLifecycleState}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Session</span>{' '}
-              <span className="text-zinc-200">{sessionScopeKey}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Boot</span>{' '}
-              <span className="text-zinc-200">{bootState.visible ? bootState.phase : 'ready'}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Reduced Motion</span>{' '}
-              <span className="text-zinc-200">{reducedMotion ? 'on' : 'off'}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Performance Samples</span>{' '}
-              <span className="text-zinc-200">{recentSamples.length}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Operation Link</span>{' '}
-              <span className={focusedOperation ? 'text-emerald-200' : 'text-amber-200'}>
-                {focusedOperation ? 'linked' : 'unlinked'}
-              </span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5">
-              <span className="text-zinc-500 uppercase tracking-widest">Posture</span>{' '}
-              <span className="text-zinc-200">{operationalPostureLabel}</span>
-            </div>
-            <div className="nexus-surface px-2.5 py-1.5 flex items-center gap-1.5">
-              <span className="nexus-hotkey">Ctrl+Shift+P Deck</span>
-              <span className="nexus-hotkey">Ctrl+Shift+S Suspend</span>
-            </div>
+
+            {contextTab === 'SUMMARY' ? (
+              <div className="nx-context-stack">
+                <div className="nx-context-grid">
+                  <div className="nx-context-kv"><span>Bridge</span><strong>{bridgeId}</strong></div>
+                  <div className="nx-context-kv"><span>Foreground</span><strong>{activeAppLabel}</strong></div>
+                  <div className="nx-context-kv"><span>Focus Op</span><strong className="truncate">{focusOperationLabel}</strong></div>
+                  <div className="nx-context-kv"><span>Pulse</span><strong>{pulseCount}</strong></div>
+                  <div className="nx-context-kv"><span>Scheduler</span><strong>{activeLifecycleState}</strong></div>
+                  <div className="nx-context-kv"><span>Boot</span><strong>{bootState.visible ? bootState.phase : 'ready'}</strong></div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStatusCapsuleOpen((prev) => !prev)}
+                  className="nx-context-toggle"
+                  aria-expanded={statusCapsuleOpen}
+                >
+                  {statusCapsuleOpen ? 'Collapse Diagnostics' : 'Expand Diagnostics'}
+                </button>
+                {statusCapsuleOpen ? (
+                  <div className="nx-context-grid">
+                    <div className="nx-context-kv"><span>Session</span><strong className="truncate">{sessionScopeKey}</strong></div>
+                    <div className="nx-context-kv"><span>Posture</span><strong>{operationalPostureLabel}</strong></div>
+                    <div className="nx-context-kv"><span>Samples</span><strong>{recentSamples.length}</strong></div>
+                    <div className="nx-context-kv"><span>Op Link</span><strong>{focusedOperation ? 'linked' : 'unlinked'}</strong></div>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="nx-context-stack">
+                <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
+                <div className="nx-context-actions">
+                  {FOCUS_APP_CATALOG.map((entry) => (
+                    <NexusButton key={`ctx:${entry.id}`} size="sm" intent={focusMode === entry.id ? 'primary' : 'subtle'} onClick={() => openFocusApp(entry.id)}>
+                      {entry.label}
+                    </NexusButton>
+                  ))}
+                </div>
+                <div className="nx-context-note">
+                  <Radar className="inline w-3.5 h-3.5 mr-1.5 align-[-1px]" />
+                  {operationalPostureLabel} · Reduced motion {reducedMotion ? 'on' : 'off'}
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
-      </section>
+      </aside>
 
-      {showCommandModules ? (
-        <section className="nexus-surface p-2 space-y-2">
-          {!isWorkspaceMode ? (
-            <CqbContextSelector
-              variantId={variantId}
-              onVariantIdChange={setVariantId}
-              opId={opId}
-              onOpIdChange={setOpId}
-              elementFilter={elementFilter}
-              onElementFilterChange={setElementFilter}
-              actorId={actorId}
-              onActorIdChange={setActorId}
-              roster={activeRoster}
-            />
-          ) : null}
-          <div className="grid grid-cols-1 2xl:grid-cols-2 gap-2">
-            <OpsStrip actorId={actorId} onOpenOperationFocus={() => openFocusApp('ops')} />
-            <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
-          </div>
-          <div className="rounded border border-zinc-800 bg-zinc-950/45 px-2.5 py-1.5 text-[11px] text-zinc-500 nexus-console-text">
-            <Radar className="inline w-3.5 h-3.5 mr-1.5 align-[-1px]" />
-            {operationalPostureLabel}
-            {' · '}
-            Reduced Motion {reducedMotion ? 'on' : 'off'}
-            {' · '}
-            Boot {bootState.visible ? bootState.phase : 'ready'}
-          </div>
-        </section>
-      ) : null}
-
-      {commandFeedback ? (
-        <section aria-live="polite" className="nexus-surface px-3 py-1.5 text-xs text-zinc-300 nexus-console-text">{commandFeedback}</section>
-      ) : null}
-
-      <div className="flex-1 min-h-0 overflow-hidden nexus-panel-glow rounded-xl">
-        <WorkbenchGrid
-          bridgeId={bridgeId}
-          panels={panelDescriptors}
-          presetId={presetId}
-          onPresetChange={setPresetId}
-          defaultActivationMode={needsWorkspaceOnboarding ? 'empty' : 'all'}
-          enableOnboardingExperience={needsWorkspaceOnboarding}
-          workspaceUserDisplayName={workspaceDisplayCallsign}
-          onCompleteOnboarding={() => {
-            if (!needsWorkspaceOnboarding) return;
-            patchSnapshot({ workspaceOnboardingCompleted: true });
-          }}
-          layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
-          enableLayoutPersistence
-          atmosphereMode="minimal"
-          initialActivePanelIds={activePanelIds}
-          onActivePanelIdsChange={(next) =>
-            patchSnapshot({
-              activePanelIds: next,
-              workspaceOnboardingCompleted: workspaceOnboardingCompleted || next.length > 0,
-            })
-          }
-          panelComponentProps={sharedPanelProps}
-        />
-      </div>
-
-      <div className="fixed left-3 right-3 bottom-3 md:left-4 md:right-4 md:bottom-4 z-[1100]">
+      <footer className="nx-shell-bottom">
         <NexusTaskbar
           bridgeId={bridgeId}
           activeAppId={focusMode || lifecycle.foregroundAppId}
@@ -1251,7 +1307,31 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           onMarkAllNotificationsRead={tray.markAllNotificationsRead}
           onClearNotifications={tray.clearNotifications}
         />
-      </div>
+        <nav className="nx-mobile-nav">
+          {MOBILE_NAV_APP_IDS.map((appId) => {
+            const entry = FOCUS_APP_CATALOG.find((candidate) => candidate.id === appId);
+            if (!entry) return null;
+            const Icon = FOCUS_APP_ICON_BY_ID[entry.id] || Radar;
+            const active = focusMode === appId;
+            return (
+              <button
+                key={`mobile:${entry.id}`}
+                type="button"
+                className={`nx-mobile-nav-button ${active ? 'is-active' : ''}`}
+                onClick={() => openFocusApp(entry.id)}
+                aria-label={entry.label}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{entry.label}</span>
+              </button>
+            );
+          })}
+          <button type="button" className="nx-mobile-nav-button" onClick={() => setCommandDeckOpen(true)}>
+            <Search className="w-4 h-4" />
+            <span>More</span>
+          </button>
+        </nav>
+      </footer>
 
       <CommandFocus
         open={Boolean(focusMode)}

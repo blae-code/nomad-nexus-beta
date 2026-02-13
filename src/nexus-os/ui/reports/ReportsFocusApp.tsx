@@ -128,6 +128,9 @@ export default function ReportsFocusApp({
   const [selectedOpId, setSelectedOpId] = useState(initialOpId || '');
   const [citationDetail, setCitationDetail] = useState('');
   const [errorText, setErrorText] = useState('');
+  const [reportPage, setReportPage] = useState(0);
+  const [narrativePage, setNarrativePage] = useState(0);
+  const [evidencePage, setEvidencePage] = useState(0);
 
   useEffect(() => {
     const unsubReports = subscribeReports(() => setReportsVersion((value) => value + 1));
@@ -179,6 +182,43 @@ export default function ReportsFocusApp({
     () => reports.find((report) => report.id === selectedReportId) || null,
     [reports, selectedReportId]
   );
+  const reportsPerPage = 6;
+  const reportPageCount = Math.max(1, Math.ceil(reports.length / reportsPerPage));
+  const visibleReports = reports.slice(reportPage * reportsPerPage, reportPage * reportsPerPage + reportsPerPage);
+  const orderedNarrative = useMemo(
+    () =>
+      selectedReport?.narrative
+        .slice()
+        .sort((a, b) => a.orderIndex - b.orderIndex) || [],
+    [selectedReport]
+  );
+  const narrativePerPage = 5;
+  const narrativePageCount = Math.max(1, Math.ceil(orderedNarrative.length / narrativePerPage));
+  const visibleNarrative = orderedNarrative.slice(
+    narrativePage * narrativePerPage,
+    narrativePage * narrativePerPage + narrativePerPage
+  );
+  const evidencePerPage = 5;
+  const selectedEvidence = selectedReport?.evidence || [];
+  const evidencePageCount = Math.max(1, Math.ceil(selectedEvidence.length / evidencePerPage));
+  const visibleEvidence = selectedEvidence.slice(
+    evidencePage * evidencePerPage,
+    evidencePage * evidencePerPage + evidencePerPage
+  );
+
+  useEffect(() => {
+    setReportPage((prev) => Math.min(prev, reportPageCount - 1));
+  }, [reportPageCount]);
+  useEffect(() => {
+    setNarrativePage(0);
+    setEvidencePage(0);
+  }, [selectedReportId]);
+  useEffect(() => {
+    setNarrativePage((prev) => Math.min(prev, narrativePageCount - 1));
+  }, [narrativePageCount]);
+  useEffect(() => {
+    setEvidencePage((prev) => Math.min(prev, evidencePageCount - 1));
+  }, [evidencePageCount]);
 
   const runAction = (action: () => void) => {
     try {
@@ -258,7 +298,7 @@ export default function ReportsFocusApp({
       ) : null}
 
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-3">
-        <section className="xl:col-span-3 rounded border border-zinc-800 bg-zinc-900/45 p-2.5 min-h-0 overflow-auto pr-1 space-y-1.5">
+        <section className="xl:col-span-3 rounded border border-zinc-800 bg-zinc-900/45 p-2.5 min-h-0 overflow-hidden space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wide text-zinc-500">Report List</span>
             <NexusBadge tone={availabilityTone(reportsAvailability)}>{availabilityLabel(reportsAvailability)}</NexusBadge>
@@ -273,7 +313,7 @@ export default function ReportsFocusApp({
               <SkeletonText className="w-2/3" />
             </div>
           ) : null}
-          {!isListLoading ? reports.map((report) => (
+          {!isListLoading ? visibleReports.map((report) => (
             <button key={report.id} type="button" onClick={() => setSelectedReportId(report.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedReportId === report.id ? 'border-sky-500/60 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] text-zinc-200 truncate">{report.kind}</span>
@@ -283,6 +323,22 @@ export default function ReportsFocusApp({
               <div className="mt-1 text-[10px] text-zinc-600">{report.generatedAt}</div>
             </button>
           )) : null}
+          {!isListLoading && reports.length > reportsPerPage ? (
+            <div className="flex items-center justify-end gap-1.5">
+              <NexusButton size="sm" intent="subtle" onClick={() => setReportPage((prev) => Math.max(0, prev - 1))} disabled={reportPage === 0}>
+                Prev
+              </NexusButton>
+              <NexusBadge tone="neutral">{reportPage + 1}/{reportPageCount}</NexusBadge>
+              <NexusButton
+                size="sm"
+                intent="subtle"
+                onClick={() => setReportPage((prev) => Math.min(reportPageCount - 1, prev + 1))}
+                disabled={reportPage >= reportPageCount - 1}
+              >
+                Next
+              </NexusButton>
+            </div>
+          ) : null}
           {!isListLoading && reports.length === 0 ? <div className="text-xs text-zinc-500">No reports for selected filters.</div> : null}
         </section>
 
@@ -324,23 +380,36 @@ export default function ReportsFocusApp({
 
               <div className={`flex-1 min-h-0 grid gap-3 ${viewerMode === 'SPLIT' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
                 {viewerMode !== 'EVIDENCE' ? (
-                  <div className="min-h-0 overflow-auto pr-1 space-y-2">
-                    {selectedReport.narrative
-                      .slice()
-                      .sort((a, b) => a.orderIndex - b.orderIndex)
-                      .map((section) => (
+                  <div className="min-h-0 overflow-hidden space-y-2">
+                    {visibleNarrative.map((section) => (
                         <article key={section.id} className="rounded border border-zinc-800 bg-zinc-950/55 p-2">
                           <h5 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">{section.heading}</h5>
                           <p className="mt-1 text-xs text-zinc-300 whitespace-pre-wrap">{section.body}</p>
                         </article>
                       ))}
-                    {selectedReport.narrative.length === 0 ? <div className="text-xs text-zinc-500">Narrative track is empty.</div> : null}
+                    {orderedNarrative.length > narrativePerPage ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <NexusButton size="sm" intent="subtle" onClick={() => setNarrativePage((prev) => Math.max(0, prev - 1))} disabled={narrativePage === 0}>
+                          Prev
+                        </NexusButton>
+                        <NexusBadge tone="neutral">{narrativePage + 1}/{narrativePageCount}</NexusBadge>
+                        <NexusButton
+                          size="sm"
+                          intent="subtle"
+                          onClick={() => setNarrativePage((prev) => Math.min(narrativePageCount - 1, prev + 1))}
+                          disabled={narrativePage >= narrativePageCount - 1}
+                        >
+                          Next
+                        </NexusButton>
+                      </div>
+                    ) : null}
+                    {orderedNarrative.length === 0 ? <div className="text-xs text-zinc-500">Narrative track is empty.</div> : null}
                   </div>
                 ) : null}
 
                 {viewerMode !== 'NARRATIVE' ? (
-                  <div className="min-h-0 overflow-auto pr-1 space-y-2">
-                    {selectedReport.evidence.map((block) => {
+                  <div className="min-h-0 overflow-hidden space-y-2">
+                    {visibleEvidence.map((block) => {
                       const blockAvailability = resolveAvailabilityState({
                         count: block.citations.length,
                         hasConflict: block.ttlState === 'EXPIRED',
@@ -376,7 +445,23 @@ export default function ReportsFocusApp({
                         </article>
                       );
                     })}
-                    {selectedReport.evidence.length === 0 ? <div className="text-xs text-zinc-500">Evidence track is empty.</div> : null}
+                    {selectedEvidence.length > evidencePerPage ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <NexusButton size="sm" intent="subtle" onClick={() => setEvidencePage((prev) => Math.max(0, prev - 1))} disabled={evidencePage === 0}>
+                          Prev
+                        </NexusButton>
+                        <NexusBadge tone="neutral">{evidencePage + 1}/{evidencePageCount}</NexusBadge>
+                        <NexusButton
+                          size="sm"
+                          intent="subtle"
+                          onClick={() => setEvidencePage((prev) => Math.min(evidencePageCount - 1, prev + 1))}
+                          disabled={evidencePage >= evidencePageCount - 1}
+                        >
+                          Next
+                        </NexusButton>
+                      </div>
+                    ) : null}
+                    {selectedEvidence.length === 0 ? <div className="text-xs text-zinc-500">Evidence track is empty.</div> : null}
                   </div>
                 ) : null}
               </div>

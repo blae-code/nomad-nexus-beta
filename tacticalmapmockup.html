@@ -1,0 +1,1601 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stanton Tactical Operations Map</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&amp;family=Orbitron:wght@400;700;900&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    
+    :root {
+      --primary: #00ff00;
+      --secondary: #0a0e1a;
+      --accent: #ffff00;
+      --warning: #ff4444;
+      --danger: #ff0000;
+      --text: #ffffff;
+    }
+    
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: var(--secondary);
+      color: var(--text);
+    }
+    
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    
+    /* CRT scanline effect */
+    .crt-overlay {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 0, 0.05) 2px,
+        rgba(0, 255, 0, 0.05) 4px
+      );
+      z-index: 9999;
+    }
+    
+    .crt-flicker {
+      animation: flicker 0.15s infinite;
+    }
+    
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.98; }
+    }
+    
+    /* Glowing effects */
+    .glow-primary {
+      text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary), 0 0 30px var(--primary);
+    }
+    
+    .glow-box {
+      box-shadow: 0 0 10px var(--primary), inset 0 0 20px rgba(0, 255, 0, 0.1);
+    }
+    
+    .glow-accent {
+      box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+    }
+    
+    /* Terminal frame */
+    .terminal-frame {
+      border: 2px solid var(--primary);
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(5, 10, 20, 0.98) 100%);
+      position: relative;
+    }
+    
+    .terminal-frame::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px; right: -1px; bottom: -1px;
+      border: 1px solid rgba(0, 255, 0, 0.3);
+      pointer-events: none;
+    }
+    
+    /* Corner decorations */
+    .corner-tl::before, .corner-tr::before, .corner-bl::before, .corner-br::before {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--primary);
+    }
+    
+    .corner-tl::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+    .corner-tr::before { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+    .corner-bl::before { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+    .corner-br::before { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+    
+    /* Map container */
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+    }
+    
+    .map-container:active { cursor: grabbing; }
+    
+    .map-content {
+      position: absolute;
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
+    }
+    
+    /* Celestial bodies */
+    .celestial-body {
+      position: absolute;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      transform: translate(-50%, -50%);
+    }
+    
+    .celestial-body:hover {
+      filter: brightness(1.5);
+      z-index: 100;
+    }
+    
+    .celestial-body::after {
+      content: attr(data-name);
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      white-space: nowrap;
+      color: var(--text);
+      text-shadow: 0 0 5px var(--secondary);
+    }
+    
+    /* Stars */
+    .star {
+      background: radial-gradient(circle, #ffff99 0%, #ffff00 30%, #ffaa00 70%, #ff6600 100%);
+      box-shadow: 0 0 60px #ffff00, 0 0 100px #ffaa00, 0 0 150px rgba(255, 200, 0, 0.7);
+      animation: starPulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes starPulse {
+      0%, 100% { box-shadow: 0 0 60px #ffff00, 0 0 100px #ffaa00, 0 0 150px rgba(255, 200, 0, 0.7); }
+      50% { box-shadow: 0 0 80px #ffff00, 0 0 120px #ffaa00, 0 0 180px rgba(255, 200, 0, 0.9); }
+    }
+    
+    /* Planets */
+    .planet-crusader {
+      background: radial-gradient(circle at 30% 30%, #66ccff, #0066cc 50%, #003366);
+      box-shadow: 0 0 20px rgba(102, 204, 255, 0.8), inset -10px -10px 30px rgba(0,0,0,0.6);
+    }
+    
+    .planet-hurston {
+      background: radial-gradient(circle at 30% 30%, #ff9966, #cc6633 50%, #663300);
+      box-shadow: 0 0 20px rgba(255, 153, 102, 0.8), inset -10px -10px 30px rgba(0,0,0,0.6);
+    }
+    
+    .planet-arccorp {
+      background: radial-gradient(circle at 30% 30%, #88ff00, #66cc00 50%, #336600);
+      box-shadow: 0 0 20px rgba(136, 255, 0, 0.8), inset -10px -10px 30px rgba(0,0,0,0.6);
+    }
+    
+    .planet-microtech {
+      background: radial-gradient(circle at 30% 30%, #66ffff, #3399cc 50%, #003366);
+      box-shadow: 0 0 20px rgba(102, 255, 255, 0.8), inset -10px -10px 30px rgba(0,0,0,0.6);
+    }
+    
+    /* Moons */
+    .moon {
+      background: radial-gradient(circle at 30% 30%, #cccccc, #888888 50%, #444444);
+      box-shadow: 0 0 10px rgba(200, 200, 200, 0.5), inset -3px -3px 10px rgba(0,0,0,0.7);
+    }
+    
+    .moon::after {
+      font-size: 8px;
+      bottom: -15px;
+    }
+    
+    /* Orbital rings */
+    .orbit-ring {
+      position: absolute;
+      border: 1px dashed rgba(0, 255, 0, 0.4);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    
+    /* OM Markers */
+    .om-marker {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      border: 2px solid var(--primary);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .om-marker:hover {
+      background: var(--primary);
+      box-shadow: 0 0 15px var(--primary);
+    }
+    
+    .om-marker::after {
+      content: attr(data-name);
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-45deg);
+      font-size: 8px;
+      white-space: nowrap;
+      color: var(--primary);
+    }
+    
+    /* Lagrange Points */
+    .lagrange-point {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .lagrange-point svg {
+      width: 100%;
+      height: 100%;
+      fill: var(--accent);
+      filter: drop-shadow(0 0 8px var(--accent));
+    }
+    
+    .lagrange-point:hover svg {
+      filter: drop-shadow(0 0 15px var(--accent));
+      transform: scale(1.2);
+    }
+    
+    .lagrange-point::after {
+      content: attr(data-name);
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      white-space: nowrap;
+      color: var(--accent);
+    }
+    
+    /* Jump Points */
+    .jump-point {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      animation: jumpPulse 2s ease-in-out infinite;
+    }
+    
+    .jump-point::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid var(--warning);
+      border-radius: 50%;
+      animation: jumpRing 2s ease-in-out infinite;
+    }
+    
+    .jump-point::after {
+      content: attr(data-name);
+      position: absolute;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      white-space: nowrap;
+      color: var(--warning);
+    }
+    
+    @keyframes jumpPulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes jumpRing {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.4; }
+    }
+    
+    /* Unit markers */
+    .unit-marker {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      z-index: 50;
+      transition: all 0.2s;
+    }
+    
+    .unit-marker:hover { z-index: 200; }
+    
+    .unit-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      border: 2px solid;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    }
+    
+    .unit-friendly { border-color: var(--primary); background: rgba(0, 255, 0, 0.4); color: var(--primary); }
+    .unit-hostile { border-color: var(--danger); background: rgba(255, 0, 0, 0.4); color: var(--danger); }
+    .unit-neutral { border-color: var(--accent); background: rgba(255, 255, 0, 0.3); color: var(--accent); }
+    
+    .unit-marker::after {
+      content: attr(data-callsign);
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      white-space: nowrap;
+      padding: 1px 4px;
+      background: rgba(10, 14, 26, 0.9);
+      border: 1px solid currentColor;
+    }
+    
+    /* Radial Menu */
+    .radial-menu {
+      position: fixed;
+      width: 200px;
+      height: 200px;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .radial-menu.active {
+      pointer-events: auto;
+      opacity: 1;
+    }
+    
+    .radial-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(10, 14, 26, 0.95);
+      border: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      text-align: center;
+      z-index: 10;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+    }
+    
+    .radial-option {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(10, 14, 26, 0.95);
+      border: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+    }
+    
+    .radial-option:hover {
+      background: var(--primary);
+      color: var(--secondary);
+      transform: translate(-50%, -50%) scale(1.15);
+      box-shadow: 0 0 20px var(--primary);
+    }
+    
+    .radial-option.danger { border-color: var(--danger); }
+    .radial-option.danger:hover { background: var(--danger); box-shadow: 0 0 20px var(--danger); }
+    
+    .radial-option.warning { border-color: var(--accent); }
+    .radial-option.warning:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
+    
+    /* Status indicators */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    
+    .status-online { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+    .status-combat { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: pulse 1s infinite; }
+    .status-offline { background: #555; }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Grid overlay */
+    .grid-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: 
+        linear-gradient(rgba(0, 255, 0, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 0, 0.08) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+    
+    /* Data readouts */
+    .data-panel {
+      background: rgba(10, 14, 26, 0.95);
+      border: 1px solid var(--primary);
+      padding: 10px;
+      font-size: 11px;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+    }
+    
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+      padding-bottom: 4px;
+    }
+    
+    .data-label { color: rgba(0, 255, 0, 0.6); }
+    .data-value { color: var(--primary); font-weight: bold; }
+    
+    /* Layer buttons */
+    .layer-btn {
+      padding: 6px 12px;
+      background: rgba(10, 14, 26, 0.8);
+      border: 1px solid var(--primary);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    
+    .layer-btn:hover, .layer-btn.active {
+      background: var(--primary);
+      color: var(--secondary);
+      box-shadow: 0 0 15px var(--primary);
+    }
+    
+    /* Comms network lines */
+    .comms-line {
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      stroke-dasharray: 5, 5;
+      fill: none;
+      opacity: 0.7;
+      animation: commsPulse 2s linear infinite;
+    }
+    
+    @keyframes commsPulse {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -20; }
+    }
+    
+    /* Zoom controls */
+    .zoom-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .zoom-btn {
+      width: 30px;
+      height: 30px;
+      background: rgba(10, 14, 26, 0.95);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    
+    .zoom-btn:hover {
+      background: var(--primary);
+      color: var(--secondary);
+      box-shadow: 0 0 20px var(--primary);
+    }
+    
+    /* Minimap */
+    .minimap {
+      width: 150px;
+      height: 150px;
+      background: rgba(10, 14, 26, 0.95);
+      border: 1px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+    }
+    
+    .minimap-viewport {
+      position: absolute;
+      border: 1px solid var(--accent);
+      background: rgba(255, 255, 0, 0.15);
+      pointer-events: none;
+    }
+    
+    .minimap-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--primary); }
+    
+    /* Noise texture */
+    .noise-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="h-full flex flex-col"><!-- Header Bar -->
+   <header class="terminal-frame border-b-0 px-4 py-2 flex items-center justify-between relative z-50">
+    <div class="flex items-center gap-4">
+     <div class="flex items-center gap-2">
+      <svg width="24" height="24" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke="var(--primary)" /> <circle cx="12" cy="12" r="3" fill="var(--primary)" /> <line x1="12" y1="2" x2="12" y2="6" stroke="var(--primary)" /> <line x1="12" y1="18" x2="12" y2="22" stroke="var(--primary)" /> <line x1="2" y1="12" x2="6" y2="12" stroke="var(--primary)" /> <line x1="18" y1="12" x2="22" y2="12" stroke="var(--primary)" />
+      </svg><span class="orbitron font-bold text-lg glow-primary" id="operationName">STANTON TACTICAL OPS</span>
+     </div>
+     <div class="text-xs opacity-60"><span id="systemTime">2954.03.15 // 14:32:07 SET</span>
+     </div>
+    </div>
+    <div class="flex items-center gap-4">
+     <div class="flex items-center gap-2 text-xs"><span class="status-dot status-online"></span> <span id="fleetCallsign">VANGUARD ACTUAL</span>
+     </div>
+     <div class="text-xs px-2 py-1 border border-current" style="color: var(--accent); text-shadow: 0 0 10px var(--accent);">
+      DEFCON 3
+     </div>
+    </div>
+   </header><!-- Main Content -->
+   <div class="flex-1 flex overflow-hidden"><!-- Left Sidebar -->
+    <aside class="w-64 terminal-frame border-t-0 flex flex-col overflow-hidden">
+     <div class="p-3 border-b border-current opacity-50">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // LAYER CONTROLS
+      </div>
+      <div class="flex flex-wrap gap-2"><button class="layer-btn active" data-layer="celestial">CELESTIAL</button> <button class="layer-btn active" data-layer="markers">NAV MARKERS</button> <button class="layer-btn active" data-layer="units">UNITS</button> <button class="layer-btn" data-layer="comms">COMMS NET</button> <button class="layer-btn" data-layer="zones">AO ZONES</button>
+      </div>
+     </div>
+     <div class="p-3 border-b border-current opacity-50">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // VIEW MODE
+      </div>
+      <div class="flex gap-2"><button class="layer-btn active" data-view="system">SYSTEM</button> <button class="layer-btn" data-view="planet">PLANETARY</button> <button class="layer-btn" data-view="local">LOCAL</button>
+      </div>
+     </div>
+     <div class="flex-1 overflow-y-auto p-3">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // FLEET ROSTER
+      </div>
+      <div id="fleetRoster" class="space-y-2 text-xs"><!-- Populated by JS -->
+      </div>
+     </div>
+     <div class="p-3 border-t border-current opacity-50">
+      <div class="minimap" id="minimap">
+       <div class="minimap-viewport" id="minimapViewport"></div>
+      </div>
+     </div>
+    </aside><!-- Map Area -->
+    <main class="flex-1 relative overflow-hidden" style="background: radial-gradient(ellipse at center, #0a0e1a 0%, #050810 100%);">
+     <div class="grid-overlay"></div>
+     <div class="map-container" id="mapContainer">
+      <div class="map-content" id="mapContent">
+       <svg id="commsSvg" style="position: absolute; top: 0; left: 0; width: 3000px; height: 3000px; pointer-events: none; z-index: 5;"></svg>
+       <svg id="zonesSvg" style="position: absolute; top: 0; left: 0; width: 3000px; height: 3000px; pointer-events: none; z-index: 4;"></svg><!-- Celestial bodies and markers populated by JS -->
+      </div>
+     </div><!-- Zoom Controls -->
+     <div class="absolute top-4 right-4 zoom-controls"><button class="zoom-btn" id="zoomIn">+</button> <button class="zoom-btn" id="zoomOut">−</button> <button class="zoom-btn" id="zoomReset" style="font-size: 12px;">⟲</button>
+     </div><!-- Coordinates Display -->
+     <div class="absolute bottom-4 left-4 data-panel text-xs">
+      <div class="orbitron mb-1 opacity-70" style="color: var(--accent);">
+       // CURSOR POSITION
+      </div>
+      <div id="cursorCoords">
+       X: 0.00 | Y: 0.00 | Z: 0.00
+      </div>
+     </div><!-- Scale Indicator -->
+     <div class="absolute bottom-4 right-4 data-panel text-xs">
+      <div class="orbitron mb-1 opacity-70" style="color: var(--accent);">
+       // SCALE
+      </div>
+      <div class="flex items-center gap-2">
+       <div style="width: 100px; height: 2px; background: var(--primary);"></div><span id="scaleIndicator">500,000 km</span>
+      </div>
+     </div>
+    </main><!-- Right Sidebar -->
+    <aside class="w-72 terminal-frame border-t-0 flex flex-col overflow-hidden">
+     <div class="p-3 border-b border-current opacity-50">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // SELECTED OBJECT
+      </div>
+      <div id="selectedInfo" class="data-panel">
+       <div class="text-center opacity-50 py-4">
+        No selection
+       </div>
+      </div>
+     </div>
+     <div class="p-3 border-b border-current opacity-50">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // RECENT ORDERS
+      </div>
+      <div id="recentOrders" class="space-y-2 text-xs max-h-40 overflow-y-auto"><!-- Populated by JS -->
+      </div>
+     </div>
+     <div class="flex-1 overflow-y-auto p-3">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // COMMS LOG
+      </div>
+      <div id="commsLog" class="space-y-1 text-xs"><!-- Populated by JS -->
+      </div>
+     </div>
+     <div class="p-3 border-t border-current opacity-50">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // QUICK BROADCAST
+      </div>
+      <div class="flex gap-2"><input type="text" id="broadcastInput" class="flex-1 bg-transparent border border-current px-2 py-1 text-xs" placeholder="Message..."> <button class="layer-btn" id="broadcastBtn">TX</button>
+      </div>
+     </div>
+    </aside>
+   </div><!-- Radial Menu -->
+   <div class="radial-menu" id="radialMenu">
+    <div class="radial-center" id="radialCenter">
+     SELECT<br>
+     ACTION
+    </div><!-- Options populated dynamically -->
+   </div>
+  </div>
+  <div class="crt-overlay crt-flicker"></div>
+  <div class="noise-overlay"></div>
+  <script>
+// Default configuration
+const defaultConfig = {
+  map_title: 'STANTON TACTICAL OPS',
+  fleet_callsign: 'VANGUARD ACTUAL',
+  primary_color: '#00ff00',
+  secondary_color: '#0a0e1a',
+  accent_color: '#ffff00',
+  text_color: '#ffffff',
+  warning_color: '#ff4444'
+};
+
+let config = { ...defaultConfig };
+
+// Map state
+const mapState = {
+  zoom: 1,
+  minZoom: 0.3,
+  maxZoom: 3,
+  panX: 0,
+  panY: 0,
+  isDragging: false,
+  lastX: 0,
+  lastY: 0,
+  selectedObject: null,
+  layers: {
+    celestial: true,
+    markers: true,
+    units: true,
+    comms: false,
+    zones: false
+  },
+  viewMode: 'system'
+};
+
+// Stanton System Data
+const stantonSystem = {
+  star: {
+    id: 'stanton',
+    name: 'STANTON',
+    type: 'star',
+    x: 1500,
+    y: 1500,
+    size: 80
+  },
+  planets: [
+    {
+      id: 'crusader',
+      name: 'CRUSADER',
+      type: 'planet',
+      class: 'planet-crusader',
+      x: 1500,
+      y: 900,
+      size: 50,
+      orbitRadius: 600,
+      moons: [
+        { id: 'cellin', name: 'CELLIN', x: 40, y: 0, size: 12 },
+        { id: 'daymar', name: 'DAYMAR', x: -50, y: 30, size: 14 },
+        { id: 'yela', name: 'YELA', x: 0, y: -55, size: 13 }
+      ],
+      omMarkers: [
+        { id: 'cru-om1', name: 'CRU-OM1', angle: 0 },
+        { id: 'cru-om2', name: 'CRU-OM2', angle: 60 },
+        { id: 'cru-om3', name: 'CRU-OM3', angle: 120 },
+        { id: 'cru-om4', name: 'CRU-OM4', angle: 180 },
+        { id: 'cru-om5', name: 'CRU-OM5', angle: 240 },
+        { id: 'cru-om6', name: 'CRU-OM6', angle: 300 }
+      ]
+    },
+    {
+      id: 'hurston',
+      name: 'HURSTON',
+      type: 'planet',
+      class: 'planet-hurston',
+      x: 2100,
+      y: 1500,
+      size: 55,
+      orbitRadius: 600,
+      moons: [
+        { id: 'aberdeen', name: 'ABERDEEN', x: 50, y: -20, size: 12 },
+        { id: 'arial', name: 'ARIAL', x: -40, y: 40, size: 11 },
+        { id: 'ita', name: 'ITA', x: 30, y: 50, size: 10 },
+        { id: 'magda', name: 'MAGDA', x: -55, y: -15, size: 11 }
+      ],
+      omMarkers: [
+        { id: 'hur-om1', name: 'HUR-OM1', angle: 0 },
+        { id: 'hur-om2', name: 'HUR-OM2', angle: 60 },
+        { id: 'hur-om3', name: 'HUR-OM3', angle: 120 },
+        { id: 'hur-om4', name: 'HUR-OM4', angle: 180 },
+        { id: 'hur-om5', name: 'HUR-OM5', angle: 240 },
+        { id: 'hur-om6', name: 'HUR-OM6', angle: 300 }
+      ]
+    },
+    {
+      id: 'arccorp',
+      name: 'ARCCORP',
+      type: 'planet',
+      class: 'planet-arccorp',
+      x: 1500,
+      y: 2100,
+      size: 48,
+      orbitRadius: 600,
+      moons: [
+        { id: 'lyria', name: 'LYRIA', x: 45, y: 25, size: 11 },
+        { id: 'wala', name: 'WALA', x: -40, y: -30, size: 12 }
+      ],
+      omMarkers: [
+        { id: 'arc-om1', name: 'ARC-OM1', angle: 0 },
+        { id: 'arc-om2', name: 'ARC-OM2', angle: 60 },
+        { id: 'arc-om3', name: 'ARC-OM3', angle: 120 },
+        { id: 'arc-om4', name: 'ARC-OM4', angle: 180 },
+        { id: 'arc-om5', name: 'ARC-OM5', angle: 240 },
+        { id: 'arc-om6', name: 'ARC-OM6', angle: 300 }
+      ]
+    },
+    {
+      id: 'microtech',
+      name: 'MICROTECH',
+      type: 'planet',
+      class: 'planet-microtech',
+      x: 900,
+      y: 1500,
+      size: 52,
+      orbitRadius: 600,
+      moons: [
+        { id: 'calliope', name: 'CALLIOPE', x: -50, y: 20, size: 11 },
+        { id: 'clio', name: 'CLIO', x: 40, y: -35, size: 12 },
+        { id: 'euterpe', name: 'EUTERPE', x: 20, y: 50, size: 10 }
+      ],
+      omMarkers: [
+        { id: 'mic-om1', name: 'MIC-OM1', angle: 0 },
+        { id: 'mic-om2', name: 'MIC-OM2', angle: 60 },
+        { id: 'mic-om3', name: 'MIC-OM3', angle: 120 },
+        { id: 'mic-om4', name: 'MIC-OM4', angle: 180 },
+        { id: 'mic-om5', name: 'MIC-OM5', angle: 240 },
+        { id: 'mic-om6', name: 'MIC-OM6', angle: 300 }
+      ]
+    }
+  ],
+  lagrangePoints: [
+    { id: 'cru-l1', name: 'CRU-L1', x: 1500, y: 700, desc: 'Crusader L1' },
+    { id: 'cru-l2', name: 'CRU-L2', x: 1500, y: 1100, desc: 'Crusader L2' },
+    { id: 'cru-l4', name: 'CRU-L4', x: 1300, y: 750, desc: 'Crusader L4' },
+    { id: 'cru-l5', name: 'CRU-L5', x: 1700, y: 750, desc: 'Crusader L5' },
+    { id: 'hur-l1', name: 'HUR-L1', x: 2300, y: 1500, desc: 'Hurston L1' },
+    { id: 'hur-l2', name: 'HUR-L2', x: 1900, y: 1500, desc: 'Hurston L2' },
+    { id: 'hur-l4', name: 'HUR-L4', x: 2200, y: 1300, desc: 'Hurston L4' },
+    { id: 'hur-l5', name: 'HUR-L5', x: 2200, y: 1700, desc: 'Hurston L5' },
+    { id: 'arc-l1', name: 'ARC-L1', x: 1500, y: 2300, desc: 'ArcCorp L1' },
+    { id: 'arc-l2', name: 'ARC-L2', x: 1500, y: 1900, desc: 'ArcCorp L2' },
+    { id: 'mic-l1', name: 'MIC-L1', x: 700, y: 1500, desc: 'microTech L1' },
+    { id: 'mic-l2', name: 'MIC-L2', x: 1100, y: 1500, desc: 'microTech L2' }
+  ],
+  jumpPoints: [
+    { id: 'jp-pyro', name: 'PYRO GATE', x: 2600, y: 800, dest: 'Pyro System' },
+    { id: 'jp-terra', name: 'TERRA GATE', x: 400, y: 2200, dest: 'Terra System' }
+  ]
+};
+
+// Fleet units data
+const fleetUnits = [
+  { id: 'alpha-1', callsign: 'ALPHA-1', type: 'friendly', role: 'Command', ship: 'Carrack', x: 1450, y: 920, status: 'online' },
+  { id: 'alpha-2', callsign: 'ALPHA-2', type: 'friendly', role: 'Fighter', ship: 'Gladius', x: 1420, y: 890, status: 'online' },
+  { id: 'alpha-3', callsign: 'ALPHA-3', type: 'friendly', role: 'Fighter', ship: 'Arrow', x: 1480, y: 895, status: 'combat' },
+  { id: 'bravo-1', callsign: 'BRAVO-1', type: 'friendly', role: 'Support', ship: 'Hammerhead', x: 2080, y: 1520, status: 'online' },
+  { id: 'bravo-2', callsign: 'BRAVO-2', type: 'friendly', role: 'Fighter', ship: 'Sabre', x: 2060, y: 1480, status: 'online' },
+  { id: 'hostile-1', callsign: 'TANGO-1', type: 'hostile', role: 'Unknown', ship: 'Cutlass', x: 1530, y: 880, status: 'combat' },
+  { id: 'hostile-2', callsign: 'TANGO-2', type: 'hostile', role: 'Unknown', ship: 'Buccaneer', x: 1560, y: 910, status: 'combat' },
+  { id: 'neutral-1', callsign: 'TRADER-7', type: 'neutral', role: 'Cargo', ship: 'Caterpillar', x: 1520, y: 2080, status: 'online' }
+];
+
+// Comms log entries
+const commsLogEntries = [
+  { time: '14:31:42', sender: 'ALPHA-1', msg: 'Contact bearing 045, two hostiles' },
+  { time: '14:31:15', sender: 'BRAVO-1', msg: 'Station secure, awaiting orders' },
+  { time: '14:30:58', sender: 'COMMAND', msg: 'All units maintain position' },
+  { time: '14:30:22', sender: 'ALPHA-3', msg: 'Engaging hostile, request backup' },
+  { time: '14:29:45', sender: 'RECON-2', msg: 'Jump point clear, no activity' }
+];
+
+// Recent orders
+const recentOrders = [
+  { time: '14:30', target: 'ALPHA SQUAD', order: 'ENGAGE', status: 'active' },
+  { time: '14:28', target: 'BRAVO-1', order: 'HOLD POSITION', status: 'active' },
+  { time: '14:25', target: 'ALL UNITS', order: 'WEAPONS FREE', status: 'acknowledged' }
+];
+
+// DOM Elements
+const mapContainer = document.getElementById('mapContainer');
+const mapContent = document.getElementById('mapContent');
+const radialMenu = document.getElementById('radialMenu');
+const radialCenter = document.getElementById('radialCenter');
+
+// Initialize map
+function initMap() {
+  renderCelestialBodies();
+  renderLagrangePoints();
+  renderJumpPoints();
+  renderUnits();
+  renderFleetRoster();
+  renderCommsLog();
+  renderRecentOrders();
+  renderMinimap();
+  updateMapTransform();
+  setupEventListeners();
+  startClock();
+}
+
+// Render celestial bodies
+function renderCelestialBodies() {
+  const container = document.getElementById('mapContent');
+  
+  // Star
+  const star = stantonSystem.star;
+  const starEl = document.createElement('div');
+  starEl.className = 'celestial-body star';
+  starEl.style.cssText = `left: ${star.x}px; top: ${star.y}px; width: ${star.size}px; height: ${star.size}px;`;
+  starEl.dataset.name = star.name;
+  starEl.dataset.id = star.id;
+  starEl.dataset.type = 'star';
+  starEl.onclick = (e) => handleObjectClick(e, star);
+  container.appendChild(starEl);
+  
+  // Planets and their elements
+  stantonSystem.planets.forEach(planet => {
+    // Orbit ring
+    const orbitDist = Math.sqrt(Math.pow(planet.x - star.x, 2) + Math.pow(planet.y - star.y, 2));
+    const orbitEl = document.createElement('div');
+    orbitEl.className = 'orbit-ring';
+    orbitEl.style.cssText = `left: ${star.x}px; top: ${star.y}px; width: ${orbitDist * 2}px; height: ${orbitDist * 2}px;`;
+    container.appendChild(orbitEl);
+    
+    // Planet
+    const planetEl = document.createElement('div');
+    planetEl.className = `celestial-body ${planet.class}`;
+    planetEl.style.cssText = `left: ${planet.x}px; top: ${planet.y}px; width: ${planet.size}px; height: ${planet.size}px;`;
+    planetEl.dataset.name = planet.name;
+    planetEl.dataset.id = planet.id;
+    planetEl.dataset.type = 'planet';
+    planetEl.onclick = (e) => handleObjectClick(e, planet);
+    container.appendChild(planetEl);
+    
+    // Moons
+    planet.moons.forEach(moon => {
+      const moonEl = document.createElement('div');
+      moonEl.className = 'celestial-body moon';
+      moonEl.style.cssText = `left: ${planet.x + moon.x}px; top: ${planet.y + moon.y}px; width: ${moon.size}px; height: ${moon.size}px;`;
+      moonEl.dataset.name = moon.name;
+      moonEl.dataset.id = moon.id;
+      moonEl.dataset.type = 'moon';
+      moonEl.dataset.parent = planet.name;
+      moonEl.onclick = (e) => handleObjectClick(e, { ...moon, parent: planet.name, x: planet.x + moon.x, y: planet.y + moon.y });
+      container.appendChild(moonEl);
+    });
+    
+    // OM Markers
+    planet.omMarkers.forEach(om => {
+      const omRadius = planet.size + 35;
+      const angleRad = (om.angle * Math.PI) / 180;
+      const omX = planet.x + omRadius * Math.cos(angleRad);
+      const omY = planet.y + omRadius * Math.sin(angleRad);
+      
+      const omEl = document.createElement('div');
+      omEl.className = 'om-marker';
+      omEl.style.cssText = `left: ${omX}px; top: ${omY}px;`;
+      omEl.dataset.name = om.name;
+      omEl.dataset.id = om.id;
+      omEl.dataset.type = 'om-marker';
+      omEl.dataset.parent = planet.name;
+      omEl.onclick = (e) => handleObjectClick(e, { ...om, x: omX, y: omY, parent: planet.name, type: 'om-marker' });
+      container.appendChild(omEl);
+    });
+  });
+}
+
+// Render Lagrange points
+function renderLagrangePoints() {
+  const container = document.getElementById('mapContent');
+  
+  stantonSystem.lagrangePoints.forEach(lp => {
+    const lpEl = document.createElement('div');
+    lpEl.className = 'lagrange-point';
+    lpEl.style.cssText = `left: ${lp.x}px; top: ${lp.y}px;`;
+    lpEl.dataset.name = lp.name;
+    lpEl.dataset.id = lp.id;
+    lpEl.dataset.type = 'lagrange';
+    lpEl.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2L2 12l10 10 10-10L12 2zm0 4l6 6-6 6-6-6 6-6z"/></svg>`;
+    lpEl.onclick = (e) => handleObjectClick(e, { ...lp, type: 'lagrange' });
+    container.appendChild(lpEl);
+  });
+}
+
+// Render jump points
+function renderJumpPoints() {
+  const container = document.getElementById('mapContent');
+  
+  stantonSystem.jumpPoints.forEach(jp => {
+    const jpEl = document.createElement('div');
+    jpEl.className = 'jump-point';
+    jpEl.style.cssText = `left: ${jp.x}px; top: ${jp.y}px;`;
+    jpEl.dataset.name = jp.name;
+    jpEl.dataset.id = jp.id;
+    jpEl.dataset.type = 'jump-point';
+    jpEl.innerHTML = `<div style="width: 10px; height: 10px; background: var(--warning); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>`;
+    jpEl.onclick = (e) => handleObjectClick(e, { ...jp, type: 'jump-point' });
+    container.appendChild(jpEl);
+  });
+}
+
+// Render units
+function renderUnits() {
+  const container = document.getElementById('mapContent');
+  
+  fleetUnits.forEach(unit => {
+    const unitEl = document.createElement('div');
+    unitEl.className = 'unit-marker';
+    unitEl.style.cssText = `left: ${unit.x}px; top: ${unit.y}px; color: ${unit.type === 'friendly' ? 'var(--primary)' : unit.type === 'hostile' ? 'var(--danger)' : 'var(--accent)'};`;
+    unitEl.dataset.callsign = unit.callsign;
+    unitEl.dataset.id = unit.id;
+    unitEl.dataset.type = 'unit';
+    unitEl.dataset.unitType = unit.type;
+    unitEl.innerHTML = `<div class="unit-icon unit-${unit.type}">${unit.callsign.charAt(0)}</div>`;
+    unitEl.onclick = (e) => handleObjectClick(e, { ...unit, type: 'unit' });
+    container.appendChild(unitEl);
+  });
+}
+
+// Render fleet roster
+function renderFleetRoster() {
+  const roster = document.getElementById('fleetRoster');
+  roster.innerHTML = '';
+  
+  const friendlyUnits = fleetUnits.filter(u => u.type === 'friendly');
+  friendlyUnits.forEach(unit => {
+    const unitEl = document.createElement('div');
+    unitEl.className = 'flex items-center gap-2 p-2 border border-current opacity-50 cursor-pointer hover:opacity-100 transition-opacity';
+    unitEl.innerHTML = `
+      <span class="status-dot status-${unit.status}"></span>
+      <div class="flex-1">
+        <div class="font-bold" style="color: var(--primary);">${unit.callsign}</div>
+        <div class="opacity-60">${unit.ship} • ${unit.role}</div>
+      </div>
+    `;
+    unitEl.onclick = () => {
+      centerOnObject(unit);
+      updateSelectedInfo(unit);
+    };
+    roster.appendChild(unitEl);
+  });
+}
+
+// Render comms log
+function renderCommsLog() {
+  const log = document.getElementById('commsLog');
+  log.innerHTML = '';
+  
+  commsLogEntries.forEach(entry => {
+    const entryEl = document.createElement('div');
+    entryEl.className = 'p-1 border-l-2 pl-2 mb-1';
+    entryEl.style.borderColor = 'var(--primary)';
+    entryEl.innerHTML = `
+      <div class="opacity-50">${entry.time}</div>
+      <div><span style="color: var(--primary);">${entry.sender}:</span> ${entry.msg}</div>
+    `;
+    log.appendChild(entryEl);
+  });
+}
+
+// Render recent orders
+function renderRecentOrders() {
+  const orders = document.getElementById('recentOrders');
+  orders.innerHTML = '';
+  
+  recentOrders.forEach(order => {
+    const orderEl = document.createElement('div');
+    orderEl.className = 'p-2 border border-current opacity-50';
+    const statusColor = order.status === 'active' ? 'var(--accent)' : 'var(--primary)';
+    orderEl.innerHTML = `
+      <div class="flex justify-between">
+        <span style="color: ${statusColor};">${order.order}</span>
+        <span class="opacity-50">${order.time}</span>
+      </div>
+      <div class="opacity-60">→ ${order.target}</div>
+    `;
+    orders.appendChild(orderEl);
+  });
+}
+
+// Render minimap
+function renderMinimap() {
+  const minimap = document.getElementById('minimap');
+  const scale = 150 / 3000;
+  
+  // Star
+  const starDot = document.createElement('div');
+  starDot.className = 'minimap-dot';
+  starDot.style.cssText = `left: ${stantonSystem.star.x * scale}px; top: ${stantonSystem.star.y * scale}px; background: #ffff00; width: 6px; height: 6px; box-shadow: 0 0 8px #ffff00;`;
+  minimap.appendChild(starDot);
+  
+  // Planets
+  stantonSystem.planets.forEach(planet => {
+    const dot = document.createElement('div');
+    dot.className = 'minimap-dot';
+    dot.style.cssText = `left: ${planet.x * scale}px; top: ${planet.y * scale}px; background: var(--primary);`;
+    minimap.appendChild(dot);
+  });
+  
+  // Units
+  fleetUnits.forEach(unit => {
+    const dot = document.createElement('div');
+    dot.className = 'minimap-dot';
+    const color = unit.type === 'friendly' ? 'var(--primary)' : unit.type === 'hostile' ? 'var(--danger)' : 'var(--accent)';
+    dot.style.cssText = `left: ${unit.x * scale}px; top: ${unit.y * scale}px; background: ${color}; width: 3px; height: 3px;`;
+    minimap.appendChild(dot);
+  });
+}
+
+// Update minimap viewport
+function updateMinimapViewport() {
+  const viewport = document.getElementById('minimapViewport');
+  const containerRect = mapContainer.getBoundingClientRect();
+  const scale = 150 / 3000;
+  
+  const viewWidth = (containerRect.width / mapState.zoom) * scale;
+  const viewHeight = (containerRect.height / mapState.zoom) * scale;
+  const viewX = ((-mapState.panX / mapState.zoom) + containerRect.width / 2 / mapState.zoom) * scale - viewWidth / 2;
+  const viewY = ((-mapState.panY / mapState.zoom) + containerRect.height / 2 / mapState.zoom) * scale - viewHeight / 2;
+  
+  viewport.style.cssText = `left: ${viewX}px; top: ${viewY}px; width: ${viewWidth}px; height: ${viewHeight}px;`;
+}
+
+// Handle object click
+function handleObjectClick(e, obj) {
+  e.stopPropagation();
+  mapState.selectedObject = obj;
+  updateSelectedInfo(obj);
+  showRadialMenu(e.clientX, e.clientY, obj);
+}
+
+// Update selected info panel
+function updateSelectedInfo(obj) {
+  const info = document.getElementById('selectedInfo');
+  let content = '';
+  
+  if (obj.type === 'star') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">G-TYPE STAR</span></div>
+      <div class="data-row"><span class="data-label">NAME</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">STATUS</span><span class="data-value" style="color: var(--primary);">STABLE</span></div>
+    `;
+  } else if (obj.type === 'planet') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">PLANET</span></div>
+      <div class="data-row"><span class="data-label">NAME</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">MOONS</span><span class="data-value">${obj.moons?.length || 0}</span></div>
+      <div class="data-row"><span class="data-label">THREAT</span><span class="data-value" style="color: var(--warning);">MODERATE</span></div>
+    `;
+  } else if (obj.type === 'moon') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">MOON</span></div>
+      <div class="data-row"><span class="data-label">NAME</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">PARENT</span><span class="data-value">${obj.parent}</span></div>
+    `;
+  } else if (obj.type === 'om-marker') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">OM MARKER</span></div>
+      <div class="data-row"><span class="data-label">ID</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">BODY</span><span class="data-value">${obj.parent}</span></div>
+    `;
+  } else if (obj.type === 'lagrange') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">LAGRANGE PT</span></div>
+      <div class="data-row"><span class="data-label">ID</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">DESC</span><span class="data-value">${obj.desc}</span></div>
+    `;
+  } else if (obj.type === 'jump-point') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">JUMP POINT</span></div>
+      <div class="data-row"><span class="data-label">NAME</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">DEST</span><span class="data-value" style="color: var(--accent);">${obj.dest}</span></div>
+    `;
+  } else if (obj.type === 'unit') {
+    const statusColor = obj.status === 'online' ? 'var(--primary)' : obj.status === 'combat' ? 'var(--danger)' : '#555';
+    content = `
+      <div class="data-row"><span class="data-label">CALLSIGN</span><span class="data-value">${obj.callsign}</span></div>
+      <div class="data-row"><span class="data-label">SHIP</span><span class="data-value">${obj.ship}</span></div>
+      <div class="data-row"><span class="data-label">ROLE</span><span class="data-value">${obj.role}</span></div>
+      <div class="data-row"><span class="data-label">STATUS</span><span class="data-value" style="color: ${statusColor};">${obj.status.toUpperCase()}</span></div>
+      <div class="data-row"><span class="data-label">AFFIL</span><span class="data-value">${obj.type === 'hostile' ? 'HOSTILE' : obj.type === 'neutral' ? 'NEUTRAL' : 'FRIENDLY'}</span></div>
+    `;
+  }
+  
+  info.innerHTML = content || '<div class="text-center opacity-50 py-4">No selection</div>';
+}
+
+// Show radial menu
+function showRadialMenu(x, y, obj) {
+  const menu = document.getElementById('radialMenu');
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.classList.add('active');
+  
+  // Clear existing options
+  const existingOptions = menu.querySelectorAll('.radial-option');
+  existingOptions.forEach(opt => opt.remove());
+  
+  // Update center text
+  radialCenter.innerHTML = obj.name || obj.callsign || 'SELECT<br>ACTION';
+  
+  // Define options based on object type
+  let options = [];
+  
+  if (obj.type === 'unit') {
+    if (obj.unitType === 'friendly') {
+      options = [
+        { label: 'MOVE TO', angle: 0, action: 'move' },
+        { label: 'HOLD', angle: 45, action: 'hold' },
+        { label: 'ENGAGE', angle: 90, action: 'engage', class: 'warning' },
+        { label: 'ESCORT', angle: 135, action: 'escort' },
+        { label: 'RTB', angle: 180, action: 'rtb' },
+        { label: 'REGROUP', angle: 225, action: 'regroup' },
+        { label: 'STATUS', angle: 270, action: 'status' },
+        { label: 'COMMS', angle: 315, action: 'comms' }
+      ];
+    } else if (obj.unitType === 'hostile') {
+      options = [
+        { label: 'TRACK', angle: 0, action: 'track' },
+        { label: 'ENGAGE', angle: 90, action: 'engage', class: 'danger' },
+        { label: 'MARK', angle: 180, action: 'mark', class: 'warning' },
+        { label: 'INTEL', angle: 270, action: 'intel' }
+      ];
+    } else {
+      options = [
+        { label: 'HAIL', angle: 0, action: 'hail' },
+        { label: 'TRACK', angle: 120, action: 'track' },
+        { label: 'INTEL', angle: 240, action: 'intel' }
+      ];
+    }
+  } else if (obj.type === 'planet' || obj.type === 'moon') {
+    options = [
+      { label: 'RALLY PT', angle: 0, action: 'rally' },
+      { label: 'SCAN', angle: 72, action: 'scan' },
+      { label: 'PATROL', angle: 144, action: 'patrol' },
+      { label: 'MARK AO', angle: 216, action: 'markao', class: 'warning' },
+      { label: 'ZOOM', angle: 288, action: 'zoom' }
+    ];
+  } else if (obj.type === 'lagrange' || obj.type === 'om-marker') {
+    options = [
+      { label: 'RALLY', angle: 0, action: 'rally' },
+      { label: 'WAYPOINT', angle: 90, action: 'waypoint' },
+      { label: 'AMBUSH', angle: 180, action: 'ambush', class: 'warning' },
+      { label: 'PATROL', angle: 270, action: 'patrol' }
+    ];
+  } else if (obj.type === 'jump-point') {
+    options = [
+      { label: 'GUARD', angle: 0, action: 'guard' },
+      { label: 'BLOCKADE', angle: 120, action: 'blockade', class: 'danger' },
+      { label: 'SCOUT', angle: 240, action: 'scout' }
+    ];
+  } else {
+    options = [
+      { label: 'INFO', angle: 0, action: 'info' },
+      { label: 'MARK', angle: 180, action: 'mark' }
+    ];
+  }
+  
+  // Render options
+  const radius = 80;
+  options.forEach(opt => {
+    const optEl = document.createElement('div');
+    optEl.className = `radial-option ${opt.class || ''}`;
+    const angleRad = (opt.angle - 90) * Math.PI / 180;
+    const x = 100 + radius * Math.cos(angleRad);
+    const y = 100 + radius * Math.sin(angleRad);
+    optEl.style.left = x + 'px';
+    optEl.style.top = y + 'px';
+    optEl.textContent = opt.label;
+    optEl.onclick = (e) => {
+      e.stopPropagation();
+      executeOrder(opt.action, obj);
+      hideRadialMenu();
+    };
+    menu.appendChild(optEl);
+  });
+}
+
+// Hide radial menu
+function hideRadialMenu() {
+  radialMenu.classList.remove('active');
+}
+
+// Execute order
+function executeOrder(action, obj) {
+  const targetName = obj.callsign || obj.name;
+  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  
+  // Add to recent orders
+  const ordersEl = document.getElementById('recentOrders');
+  const newOrder = document.createElement('div');
+  newOrder.className = 'p-2 border border-current opacity-50';
+  newOrder.style.borderColor = 'var(--accent)';
+  newOrder.innerHTML = `
+    <div class="flex justify-between">
+      <span style="color: var(--accent);">${action.toUpperCase()}</span>
+      <span class="opacity-50">${timestamp}</span>
+    </div>
+    <div class="opacity-60">→ ${targetName}</div>
+  `;
+  ordersEl.insertBefore(newOrder, ordersEl.firstChild);
+  
+  // Add to comms log
+  addCommsEntry('COMMAND', `Order issued: ${action.toUpperCase()} to ${targetName}`);
+}
+
+// Add comms entry
+function addCommsEntry(sender, msg) {
+  const log = document.getElementById('commsLog');
+  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  
+  const entry = document.createElement('div');
+  entry.className = 'p-1 border-l-2 pl-2 mb-1';
+  entry.style.borderColor = sender === 'COMMAND' ? 'var(--accent)' : 'var(--primary)';
+  entry.innerHTML = `
+    <div class="opacity-50">${timestamp}</div>
+    <div><span style="color: ${sender === 'COMMAND' ? 'var(--accent)' : 'var(--primary)'};">${sender}:</span> ${msg}</div>
+  `;
+  log.insertBefore(entry, log.firstChild);
+}
+
+// Center on object
+function centerOnObject(obj) {
+  const containerRect = mapContainer.getBoundingClientRect();
+  mapState.panX = containerRect.width / 2 - obj.x * mapState.zoom;
+  mapState.panY = containerRect.height / 2 - obj.y * mapState.zoom;
+  updateMapTransform();
+}
+
+// Update map transform
+function updateMapTransform() {
+  mapContent.style.transform = `translate(${mapState.panX}px, ${mapState.panY}px) scale(${mapState.zoom})`;
+  updateMinimapViewport();
+  updateScaleIndicator();
+}
+
+// Update scale indicator
+function updateScaleIndicator() {
+  const baseScale = 500000; // 500,000 km at zoom 1
+  const currentScale = Math.round(baseScale / mapState.zoom);
+  const indicator = document.getElementById('scaleIndicator');
+  
+  if (currentScale >= 1000000) {
+    indicator.textContent = (currentScale / 1000000).toFixed(1) + 'M km';
+  } else {
+    indicator.textContent = currentScale.toLocaleString() + ' km';
+  }
+}
+
+// Setup event listeners
+function setupEventListeners() {
+  // Pan
+  mapContainer.addEventListener('mousedown', (e) => {
+    if (e.target === mapContainer || e.target.classList.contains('grid-overlay')) {
+      mapState.isDragging = true;
+      mapState.lastX = e.clientX;
+      mapState.lastY = e.clientY;
+      hideRadialMenu();
+    }
+  });
+  
+  document.addEventListener('mousemove', (e) => {
+    // Update cursor coords
+    if (mapContainer.contains(e.target)) {
+      const containerRect = mapContainer.getBoundingClientRect();
+      const mapX = (e.clientX - containerRect.left - mapState.panX) / mapState.zoom;
+      const mapY = (e.clientY - containerRect.top - mapState.panY) / mapState.zoom;
+      document.getElementById('cursorCoords').textContent = 
+        `X: ${mapX.toFixed(0)} | Y: ${mapY.toFixed(0)} | Z: 0.00`;
+    }
+    
+    if (mapState.isDragging) {
+      const dx = e.clientX - mapState.lastX;
+      const dy = e.clientY - mapState.lastY;
+      mapState.panX += dx;
+      mapState.panY += dy;
+      mapState.lastX = e.clientX;
+      mapState.lastY = e.clientY;
+      updateMapTransform();
+    }
+  });
+  
+  document.addEventListener('mouseup', () => {
+    mapState.isDragging = false;
+  });
+  
+  // Zoom
+  mapContainer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(mapState.minZoom, Math.min(mapState.maxZoom, mapState.zoom * delta));
+    
+    // Zoom toward cursor
+    const containerRect = mapContainer.getBoundingClientRect();
+    const mouseX = e.clientX - containerRect.left;
+    const mouseY = e.clientY - containerRect.top;
+    
+    const zoomRatio = newZoom / mapState.zoom;
+    mapState.panX = mouseX - (mouseX - mapState.panX) * zoomRatio;
+    mapState.panY = mouseY - (mouseY - mapState.panY) * zoomRatio;
+    mapState.zoom = newZoom;
+    
+    updateMapTransform();
+  });
+  
+  // Zoom buttons
+  document.getElementById('zoomIn').onclick = () => {
+    mapState.zoom = Math.min(mapState.maxZoom, mapState.zoom * 1.2);
+    updateMapTransform();
+  };
+  
+  document.getElementById('zoomOut').onclick = () => {
+    mapState.zoom = Math.max(mapState.minZoom, mapState.zoom / 1.2);
+    updateMapTransform();
+  };
+  
+  document.getElementById('zoomReset').onclick = () => {
+    mapState.zoom = 1;
+    mapState.panX = 0;
+    mapState.panY = 0;
+    updateMapTransform();
+  };
+  
+  // Layer toggles
+  document.querySelectorAll('.layer-btn[data-layer]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const layer = btn.dataset.layer;
+      mapState.layers[layer] = !mapState.layers[layer];
+      btn.classList.toggle('active', mapState.layers[layer]);
+      updateLayerVisibility();
+    });
+  });
+  
+  // View mode toggles
+  document.querySelectorAll('.layer-btn[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.layer-btn[data-view]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mapState.viewMode = btn.dataset.view;
+    });
+  });
+  
+  // Close radial menu on click outside
+  document.addEventListener('click', (e) => {
+    if (!radialMenu.contains(e.target) && !e.target.closest('.celestial-body, .om-marker, .lagrange-point, .jump-point, .unit-marker')) {
+      hideRadialMenu();
+    }
+  });
+  
+  // Broadcast
+  document.getElementById('broadcastBtn').onclick = () => {
+    const input = document.getElementById('broadcastInput');
+    if (input.value.trim()) {
+      addCommsEntry(config.fleet_callsign, input.value.trim());
+      input.value = '';
+    }
+  };
+  
+  document.getElementById('broadcastInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('broadcastBtn').click();
+    }
+  });
+}
+
+// Update layer visibility
+function updateLayerVisibility() {
+  const celestials = document.querySelectorAll('.celestial-body, .orbit-ring');
+  const markers = document.querySelectorAll('.om-marker, .lagrange-point, .jump-point');
+  const units = document.querySelectorAll('.unit-marker');
+  const commsSvg = document.getElementById('commsSvg');
+  const zonesSvg = document.getElementById('zonesSvg');
+  
+  celestials.forEach(el => el.style.display = mapState.layers.celestial ? '' : 'none');
+  markers.forEach(el => el.style.display = mapState.layers.markers ? '' : 'none');
+  units.forEach(el => el.style.display = mapState.layers.units ? '' : 'none');
+  
+  // Render comms network if enabled
+  if (mapState.layers.comms) {
+    renderCommsNetwork();
+    commsSvg.style.display = '';
+  } else {
+    commsSvg.style.display = 'none';
+  }
+  
+  // Render zones if enabled
+  if (mapState.layers.zones) {
+    renderZones();
+    zonesSvg.style.display = '';
+  } else {
+    zonesSvg.style.display = 'none';
+  }
+}
+
+// Render comms network
+function renderCommsNetwork() {
+  const svg = document.getElementById('commsSvg');
+  svg.innerHTML = '';
+  
+  const friendlyUnits = fleetUnits.filter(u => u.type === 'friendly');
+  
+  // Connect all friendly units
+  for (let i = 0; i < friendlyUnits.length; i++) {
+    for (let j = i + 1; j < friendlyUnits.length; j++) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', friendlyUnits[i].x);
+      line.setAttribute('y1', friendlyUnits[i].y);
+      line.setAttribute('x2', friendlyUnits[j].x);
+      line.setAttribute('y2', friendlyUnits[j].y);
+      line.setAttribute('class', 'comms-line');
+      svg.appendChild(line);
+    }
+  }
+}
+
+// Render zones
+function renderZones() {
+  const svg = document.getElementById('zonesSvg');
+  svg.innerHTML = '';
+  
+  // Example combat zone around Crusader
+  const zone = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  zone.setAttribute('cx', '1500');
+  zone.setAttribute('cy', '900');
+  zone.setAttribute('r', '150');
+  zone.setAttribute('fill', 'rgba(255, 0, 0, 0.15)');
+  zone.setAttribute('stroke', 'var(--danger)');
+  zone.setAttribute('stroke-width', '2');
+  zone.setAttribute('stroke-dasharray', '10, 5');
+  svg.appendChild(zone);
+  
+  // Zone label
+  const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  text.setAttribute('x', '1500');
+  text.setAttribute('y', '750');
+  text.setAttribute('text-anchor', 'middle');
+  text.setAttribute('fill', 'var(--danger)');
+  text.setAttribute('font-size', '12');
+  text.setAttribute('font-family', 'Share Tech Mono');
+  text.textContent = 'ACTIVE COMBAT ZONE';
+  svg.appendChild(text);
+}
+
+// Start clock
+function startClock() {
+  function updateClock() {
+    const now = new Date();
+    const year = 2954;
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const time = now.toLocaleTimeString('en-US', { hour12: false });
+    document.getElementById('systemTime').textContent = `${year}.${month}.${day} // ${time} SET`;
+  }
+  
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+// Apply config changes
+function applyConfig() {
+  document.getElementById('operationName').textContent = config.map_title;
+  document.getElementById('fleetCallsign').textContent = config.fleet_callsign;
+  
+  // Update CSS variables
+  document.documentElement.style.setProperty('--primary', config.primary_color);
+  document.documentElement.style.setProperty('--secondary', config.secondary_color);
+  document.documentElement.style.setProperty('--accent', config.accent_color);
+  document.documentElement.style.setProperty('--text', config.text_color);
+  document.documentElement.style.setProperty('--warning', config.warning_color);
+}
+
+// Element SDK Integration
+if (window.elementSdk) {
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (newConfig) => {
+      config = { ...defaultConfig, ...newConfig };
+      applyConfig();
+    },
+    mapToCapabilities: (cfg) => ({
+      recolorables: [
+        {
+          get: () => cfg.primary_color || defaultConfig.primary_color,
+          set: (v) => window.elementSdk.setConfig({ primary_color: v })
+        },
+        {
+          get: () => cfg.secondary_color || defaultConfig.secondary_color,
+          set: (v) => window.elementSdk.setConfig({ secondary_color: v })
+        },
+        {
+          get: () => cfg.accent_color || defaultConfig.accent_color,
+          set: (v) => window.elementSdk.setConfig({ accent_color: v })
+        },
+        {
+          get: () => cfg.text_color || defaultConfig.text_color,
+          set: (v) => window.elementSdk.setConfig({ text_color: v })
+        },
+        {
+          get: () => cfg.warning_color || defaultConfig.warning_color,
+          set: (v) => window.elementSdk.setConfig({ warning_color: v })
+        }
+      ],
+      borderables: [],
+      fontEditable: undefined,
+      fontSizeable: undefined
+    }),
+    mapToEditPanelValues: (cfg) => new Map([
+      ['map_title', cfg.map_title || defaultConfig.map_title],
+      ['fleet_callsign', cfg.fleet_callsign || defaultConfig.fleet_callsign]
+    ])
+  });
+} else {
+  applyConfig();
+}
+
+// Initialize
+initMap();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cd6d0ae652e2c71',t:'MTc3MTAxMTgxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

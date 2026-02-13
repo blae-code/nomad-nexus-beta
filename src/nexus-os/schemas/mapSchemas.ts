@@ -108,3 +108,25 @@ export interface MapLayerState {
   enabled: boolean;
   params?: Record<string, unknown>;
 }
+
+export type TacticalMapMode = 'ESSENTIAL' | 'COMMAND' | 'FULL';
+
+export type TacticalMapDockId =
+  | 'SUMMARY'
+  | 'INTEL'
+  | 'COMMS'
+  | 'LOGISTICS'
+  | 'TIMELINE'
+  | 'ACTIONS'
+  | 'EVIDENCE';
+
+export interface TacticalMapPreferences {
+  mode: TacticalMapMode;
+  dockId: TacticalMapDockId;
+  layerDefaults: Partial<Record<TacticalLayerId, boolean>>;
+  mapDetail: {
+    showStations: boolean;
+    showLagrange: boolean;
+    showOmMarkers: boolean;
+  };
+}

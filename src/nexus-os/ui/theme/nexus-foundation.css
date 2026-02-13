@@ -16,6 +16,14 @@
   --nx-bridge-b-rgb-base: 92, 126, 156;
   --nx-bridge-c-rgb-base: 157, 200, 229;
   --nx-bridge-chip-text-base: #dcecf7;
+  --nx-map-surface: rgba(11, 18, 27, 0.92);
+  --nx-map-panel: rgba(12, 19, 28, 0.86);
+  --nx-map-grid-rgb: 131, 174, 206;
+  --nx-map-border-rgb: 100, 143, 176;
+  --nx-map-info-rgb: 94, 150, 190;
+  --nx-map-warning-rgb: 201, 161, 94;
+  --nx-map-critical-rgb: 214, 83, 64;
+  --nx-map-ok-rgb: 118, 201, 140;
 
   --background: 211 40% 7%;
   --foreground: 210 42% 90%;
@@ -127,9 +135,9 @@ body {
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(circle at 20% 18%, rgba(204, 73, 42, 0.08), transparent 38%),
-    radial-gradient(circle at 82% 82%, rgba(166, 64, 33, 0.1), transparent 45%),
-    linear-gradient(145deg, #060505 0%, #0d0a08 45%, #120d0a 100%);
+    radial-gradient(circle at 20% 18%, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.08), transparent 38%),
+    radial-gradient(circle at 82% 82%, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.09), transparent 45%),
+    linear-gradient(145deg, #05090e 0%, #0b1017 45%, #0f161f 100%);
 }
 
 .nexus-immersive-screen::before {
@@ -139,10 +147,10 @@ body {
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(190, 73, 44, 0.05) 1px, transparent 1px),
-    linear-gradient(rgba(190, 73, 44, 0.05) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
-  opacity: 0.14;
+  opacity: 0.11;
 }
 
 .nexus-immersive-screen::after {
@@ -168,10 +176,10 @@ body {
 }
 
 .nexus-immersive-panel {
-  border: 1px solid rgba(180, 66, 36, 0.46);
-  background: rgba(14, 11, 10, 0.95);
+  border: 1px solid rgba(var(--nx-map-border-rgb), 0.4);
+  background: rgba(9, 14, 20, 0.95);
   box-shadow:
-    0 0 0 1px rgba(237, 122, 66, 0.08) inset,
+    0 0 0 1px rgba(var(--nx-map-info-rgb), 0.1) inset,
     0 8px 22px var(--nx-shadow);
   backdrop-filter: none;
   animation: none;
@@ -184,7 +192,7 @@ body {
 }
 
 .nexus-label {
-  color: #ffb58b;
+  color: #9fc3de;
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -236,15 +244,15 @@ body {
 @keyframes nexus-glow-pulse {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgba(237, 122, 66, 0.08) inset,
-      0 0 24px rgba(191, 76, 41, 0.22),
+  box-shadow:
+      0 0 0 1px rgba(var(--nx-map-info-rgb), 0.1) inset,
+      0 0 24px rgba(var(--nx-map-info-rgb), 0.22),
       0 18px 40px var(--nx-shadow);
   }
   50% {
     box-shadow:
-      0 0 0 1px rgba(237, 122, 66, 0.14) inset,
-      0 0 34px rgba(205, 89, 49, 0.32),
+      0 0 0 1px rgba(var(--nx-map-info-rgb), 0.15) inset,
+      0 0 34px rgba(var(--nx-map-info-rgb), 0.3),
       0 20px 44px var(--nx-shadow);
   }
 }

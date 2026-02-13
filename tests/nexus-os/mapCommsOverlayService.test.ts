@@ -15,11 +15,14 @@ describe('mapCommsOverlayService', () => {
           nets: [{ id: 'net-alpha', label: 'Alpha Command', code: 'ALPHA', event_id: 'op-1' }],
           memberships: [{ member_profile_id: 'm-1', net_id: 'net-alpha', speaking: true, muted: false }],
           bridges: [{ id: 'bridge-1', source_net_id: 'net-alpha', target_net_id: 'net-beta', status: 'degraded' }],
-          callouts: [{ id: 'call-1', net_id: 'net-alpha', priority: 'HIGH', message: 'Lane degraded' }],
-          netLoad: [{ net_id: 'net-alpha', participants: 3, traffic_score: 7 }],
-        },
+        callouts: [{ id: 'call-1', net_id: 'net-alpha', priority: 'HIGH', message: 'Lane degraded' }],
+        netLoad: [{ net_id: 'net-alpha', participants: 3, traffic_score: 7 }],
+        discipline: { mode: 'REQUEST_TO_SPEAK', net_id: 'net-alpha', event_id: 'op-1', updated_at: '2026-02-10T08:02:00.000Z' },
+        speakRequests: [{ request_id: 'sr-1', event_id: 'op-1', net_id: 'net-alpha', requester_member_profile_id: 'm-2', status: 'PENDING' }],
+        commandBus: [{ id: 'bus-1', event_id: 'op-1', net_id: 'net-alpha', action: 'PRIORITY_OVERRIDE', payload: { reason: 'load' } }],
       },
-    });
+    },
+  });
 
     expect(snapshot.nets[0]).toMatchObject({
       id: 'net-alpha',
@@ -28,6 +31,9 @@ describe('mapCommsOverlayService', () => {
     });
     expect(snapshot.memberships[0]).toMatchObject({ memberProfileId: 'm-1', netId: 'net-alpha' });
     expect(snapshot.callouts[0].priority).toBe('HIGH');
+    expect(snapshot.discipline?.mode).toBe('REQUEST_TO_SPEAK');
+    expect(snapshot.speakRequests[0].requestId).toBe('sr-1');
+    expect(snapshot.commandBus[0].action).toBe('PRIORITY_OVERRIDE');
   });
 
   it('keeps map comms data operation scoped when op context is provided', () => {
@@ -113,6 +119,9 @@ describe('mapCommsOverlayService', () => {
     const second = buildMapCommsOverlay({ topology, mapNodes: TACTICAL_MAP_NODES });
     expect(first.nets.map((entry) => entry.nodeId)).toEqual(second.nets.map((entry) => entry.nodeId));
     expect(first.nets.length).toBe(2);
+    expect(first.speakRequests).toEqual([]);
+    expect(first.commandBus).toEqual([]);
+    expect(first.discipline).toBeNull();
     expect(createEmptyMapCommsOverlay().nets.length).toBe(0);
   });
 });

@@ -9,7 +9,7 @@ import { PanelLoadingState } from '../loading';
 /**
  * PanelFrame
  * Industrial panel chrome with title, status badge, and toolbar slot.
- * The panel body is scrollable; the outer workbench should remain fixed.
+ * The panel body is bounded; overflow content should be summarized or paged.
  */
 export default function PanelFrame({
   title,
@@ -60,9 +60,8 @@ export default function PanelFrame({
         {toolbar ? <div className="min-w-0 flex-1 flex justify-end overflow-hidden">{toolbar}</div> : null}
       </header>
       <div
-        className={`flex-1 min-h-0 overflow-auto overscroll-contain p-3 text-sm text-zinc-200 ${bodyClassName}`.trim()}
+        className={`flex-1 min-h-0 overflow-hidden p-3 text-sm text-zinc-200 ${bodyClassName}`.trim()}
         style={{
-          scrollbarGutter: 'stable',
           backgroundImage:
             'linear-gradient(180deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.025), rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.015) 30%, transparent 58%)',
         }}

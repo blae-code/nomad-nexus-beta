@@ -75,6 +75,10 @@ describe('mapInferenceService', () => {
     expect(snapshot.commandRiskScore).toBeLessThanOrEqual(100);
     expect(snapshot.confidenceScore).toBeGreaterThan(0);
     expect(snapshot.recommendations.length).toBeGreaterThan(0);
+    expect(snapshot.factors.length).toBe(4);
+    expect(snapshot.factors.map((factor) => factor.id)).toEqual(['zones', 'comms', 'intel', 'tempo']);
+    expect(snapshot.prioritizedActions.length).toBeGreaterThan(0);
+    expect(snapshot.prioritizedActions[0].priority).toBe('NOW');
     expect(snapshot.projectedLoadBand).toBe('LOW');
   });
 
@@ -92,5 +96,6 @@ describe('mapInferenceService', () => {
     expect(promptA).toEqual(promptB);
     expect(promptA).toContain('Do not invent telemetry');
     expect(promptA).toContain('Risk score');
+    expect(promptA).toContain('Prioritized actions');
   });
 });

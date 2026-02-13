@@ -27,6 +27,7 @@ export default function CommsNetworkConsole({ variantId, opId, roster }: CommsNe
   const [error, setError] = useState<string | null>(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(false);
+  const [channelPage, setChannelPage] = useState(0);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -58,6 +59,13 @@ export default function CommsNetworkConsole({ variantId, opId, roster }: CommsNe
   }, {}), [nodes]);
 
   const channels = snapshot?.channels || [];
+  const channelsPerPage = 6;
+  const channelPageCount = Math.max(1, Math.ceil(channels.length / channelsPerPage));
+  const visibleChannels = channels.slice(channelPage * channelsPerPage, channelPage * channelsPerPage + channelsPerPage);
+
+  useEffect(() => {
+    setChannelPage((prev) => Math.min(prev, channelPageCount - 1));
+  }, [channelPageCount]);
 
   if (loading) {
     return <PanelLoadingState label="Loading comms graph..." />;
@@ -174,15 +182,37 @@ export default function CommsNetworkConsole({ variantId, opId, roster }: CommsNe
         })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 overflow-auto max-h-32 pr-1">
-        {channels.map((channel) => (
-          <div key={channel.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 flex items-center justify-between text-xs">
-            <span className="text-zinc-200 truncate mr-2">{channel.label}</span>
-            <span className="text-zinc-500">{channel.membershipCount} members</span>
-          </div>
-        ))}
+      <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {visibleChannels.map((channel) => (
+            <div key={channel.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 flex items-center justify-between text-xs">
+              <span className="text-zinc-200 truncate mr-2">{channel.label}</span>
+              <span className="text-zinc-500">{channel.membershipCount} members</span>
+            </div>
+          ))}
+          {visibleChannels.length === 0 ? (
+            <div className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-xs text-zinc-500 md:col-span-2">
+              No channels in snapshot.
+            </div>
+          ) : null}
+        </div>
+        <div className="flex items-center justify-end gap-1.5">
+          <NexusButton size="sm" intent="subtle" onClick={() => setChannelPage((prev) => Math.max(0, prev - 1))} disabled={channelPage === 0}>
+            Prev
+          </NexusButton>
+          <NexusBadge tone="neutral">
+            {channelPage + 1}/{channelPageCount}
+          </NexusBadge>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => setChannelPage((prev) => Math.min(channelPageCount - 1, prev + 1))}
+            disabled={channelPage >= channelPageCount - 1}
+          >
+            Next
+          </NexusButton>
+        </div>
       </div>
     </div>
   );
 }
-

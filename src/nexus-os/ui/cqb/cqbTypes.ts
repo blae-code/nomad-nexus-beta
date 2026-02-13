@@ -14,6 +14,7 @@ export interface CqbRosterMember {
 
 export interface CqbPanelSharedProps {
   variantId: string;
+  bridgeId?: string;
   opId?: string;
   elementFilter?: CqbElementFilter;
   roster: CqbRosterMember[];
@@ -26,6 +27,7 @@ export interface CqbPanelSharedProps {
   onCreateMacroEvent?: (macroEventType: string, payload: Record<string, unknown>) => void;
   onOpenCqbConsole?: () => void;
   onOpenCommsNetwork?: () => void;
+  onOpenCommsWorkspace?: (input: { opId?: string; netId?: string; view?: 'network' | 'voice' }) => void;
   onOpenMapFocus?: () => void;
   onOpenMobileCompanion?: () => void;
   onOpenOperationFocus?: () => void;

@@ -93,6 +93,10 @@ export default function FittingForceDesignFocusApp({
   const [notesInput, setNotesInput] = useState('');
   const [notesLog, setNotesLog] = useState<Array<{ id: string; at: string; body: string }>>([]);
   const [errorText, setErrorText] = useState('');
+  const [fitPage, setFitPage] = useState(0);
+  const [sustainmentPage, setSustainmentPage] = useState(0);
+  const [gapsPage, setGapsPage] = useState(0);
+  const [notesPage, setNotesPage] = useState(0);
 
   useEffect(() => {
     const unsubFits = subscribeFitProfiles(() => setFitVersion((value) => value + 1));
@@ -174,6 +178,36 @@ export default function FittingForceDesignFocusApp({
       return acc;
     }, {});
   }, [dependencyNodeLayout]);
+  const fitsPerPage = 6;
+  const fitPageCount = Math.max(1, Math.ceil(fits.length / fitsPerPage));
+  const visibleFits = fits.slice(fitPage * fitsPerPage, fitPage * fitsPerPage + fitsPerPage);
+  const sustainmentHints = activeAnalysis?.sustainmentHints || [];
+  const sustainmentPerPage = 4;
+  const sustainmentPageCount = Math.max(1, Math.ceil(sustainmentHints.length / sustainmentPerPage));
+  const visibleSustainmentHints = sustainmentHints.slice(
+    sustainmentPage * sustainmentPerPage,
+    sustainmentPage * sustainmentPerPage + sustainmentPerPage
+  );
+  const gaps = activeAnalysis?.gaps || [];
+  const gapsPerPage = 5;
+  const gapsPageCount = Math.max(1, Math.ceil(gaps.length / gapsPerPage));
+  const visibleGaps = gaps.slice(gapsPage * gapsPerPage, gapsPage * gapsPerPage + gapsPerPage);
+  const notesPerPage = 6;
+  const notesPageCount = Math.max(1, Math.ceil(notesLog.length / notesPerPage));
+  const visibleNotes = notesLog.slice(notesPage * notesPerPage, notesPage * notesPerPage + notesPerPage);
+
+  useEffect(() => {
+    setFitPage((prev) => Math.min(prev, fitPageCount - 1));
+  }, [fitPageCount]);
+  useEffect(() => {
+    setSustainmentPage((prev) => Math.min(prev, sustainmentPageCount - 1));
+  }, [sustainmentPageCount]);
+  useEffect(() => {
+    setGapsPage((prev) => Math.min(prev, gapsPageCount - 1));
+  }, [gapsPageCount]);
+  useEffect(() => {
+    setNotesPage((prev) => Math.min(prev, notesPageCount - 1));
+  }, [notesPageCount]);
 
   const runAction = (action: () => void) => {
     try {
@@ -240,7 +274,7 @@ export default function FittingForceDesignFocusApp({
         <div className="rounded border border-red-900/70 bg-red-950/35 px-2 py-1 text-xs text-red-300">{errorText}</div>
       ) : null}
 
-      <div className="flex-1 min-h-0 overflow-auto pr-1">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {tabId === 'FIT_PROFILES' ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
@@ -259,8 +293,8 @@ export default function FittingForceDesignFocusApp({
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Profiles</h4>
-              <div className="space-y-1.5 max-h-72 overflow-auto pr-1">
-                {fits.map((fit) => (
+              <div className="space-y-1.5">
+                {visibleFits.map((fit) => (
                   <button key={fit.id} type="button" onClick={() => setSelectedFitId(fit.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedFitId === fit.id ? 'border-sky-500/60 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] text-zinc-200 truncate">{fit.name}</span>
@@ -270,6 +304,22 @@ export default function FittingForceDesignFocusApp({
                   </button>
                 ))}
                 {fits.length === 0 ? <div className="text-xs text-zinc-500">No fit profiles yet.</div> : null}
+                {fits.length > fitsPerPage ? (
+                  <div className="flex items-center justify-end gap-1.5 pt-1">
+                    <NexusButton size="sm" intent="subtle" onClick={() => setFitPage((prev) => Math.max(0, prev - 1))} disabled={fitPage === 0}>
+                      Prev
+                    </NexusButton>
+                    <NexusBadge tone="neutral">{fitPage + 1}/{fitPageCount}</NexusBadge>
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setFitPage((prev) => Math.min(fitPageCount - 1, prev + 1))}
+                      disabled={fitPage >= fitPageCount - 1}
+                    >
+                      Next
+                    </NexusButton>
+                  </div>
+                ) : null}
               </div>
             </section>
 
@@ -327,7 +377,7 @@ export default function FittingForceDesignFocusApp({
               <DegradedStateCard state="OFFLINE" reason="Select an operation or fit profile to analyze." />
             ) : (
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-                <section className="xl:col-span-7 rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2 overflow-auto">
+                <section className="xl:col-span-7 rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2 overflow-hidden">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Coverage Matrix</h4>
                   <div className="space-y-1.5">
                     {activeAnalysis.coverageMatrix.rows.map((row) => (
@@ -363,25 +413,62 @@ export default function FittingForceDesignFocusApp({
                       ))}
                     </svg>
                   </div>
-                  <div className="space-y-1 max-h-28 overflow-auto pr-1">
-                    {activeAnalysis.sustainmentHints.map((hint) => (
+                  <div className="space-y-1">
+                    {visibleSustainmentHints.map((hint) => (
                       <div key={hint.label} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
                         <div className="flex items-center justify-between gap-2"><span className="text-zinc-200">{hint.label}</span><NexusBadge tone={bandTone(hint.band)}>{hint.band}</NexusBadge></div>
                         <div className="text-zinc-500 mt-0.5">{hint.note}</div>
                       </div>
                     ))}
+                    {sustainmentHints.length > sustainmentPerPage ? (
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
+                        <NexusButton
+                          size="sm"
+                          intent="subtle"
+                          onClick={() => setSustainmentPage((prev) => Math.max(0, prev - 1))}
+                          disabled={sustainmentPage === 0}
+                        >
+                          Prev
+                        </NexusButton>
+                        <NexusBadge tone="neutral">{sustainmentPage + 1}/{sustainmentPageCount}</NexusBadge>
+                        <NexusButton
+                          size="sm"
+                          intent="subtle"
+                          onClick={() => setSustainmentPage((prev) => Math.min(sustainmentPageCount - 1, prev + 1))}
+                          disabled={sustainmentPage >= sustainmentPageCount - 1}
+                        >
+                          Next
+                        </NexusButton>
+                      </div>
+                    ) : null}
                   </div>
                 </section>
 
                 <section className="xl:col-span-12 rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Gaps</h4>
-                  <div className="space-y-1.5 max-h-36 overflow-auto pr-1">
-                    {activeAnalysis.gaps.map((gap) => (
+                  <div className="space-y-1.5">
+                    {visibleGaps.map((gap) => (
                       <div key={`${gap.kind}:${gap.message}`} className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1 text-[11px]">
                         <div className="flex items-center justify-between gap-2"><span className="text-zinc-300">{gap.message}</span><NexusBadge tone={gap.severity === 'HIGH' ? 'danger' : gap.severity === 'MED' ? 'warning' : 'neutral'}>{gap.severity}</NexusBadge></div>
                       </div>
                     ))}
-                    {activeAnalysis.gaps.length === 0 ? <div className="text-xs text-zinc-500">No significant force gaps detected in this snapshot.</div> : null}
+                    {gaps.length > gapsPerPage ? (
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
+                        <NexusButton size="sm" intent="subtle" onClick={() => setGapsPage((prev) => Math.max(0, prev - 1))} disabled={gapsPage === 0}>
+                          Prev
+                        </NexusButton>
+                        <NexusBadge tone="neutral">{gapsPage + 1}/{gapsPageCount}</NexusBadge>
+                        <NexusButton
+                          size="sm"
+                          intent="subtle"
+                          onClick={() => setGapsPage((prev) => Math.min(gapsPageCount - 1, prev + 1))}
+                          disabled={gapsPage >= gapsPageCount - 1}
+                        >
+                          Next
+                        </NexusButton>
+                      </div>
+                    ) : null}
+                    {gaps.length === 0 ? <div className="text-xs text-zinc-500">No significant force gaps detected in this snapshot.</div> : null}
                   </div>
                 </section>
               </div>
@@ -419,8 +506,24 @@ export default function FittingForceDesignFocusApp({
               setNotesLog((prev) => [{ id: `note-${Date.now()}`, at: new Date().toISOString(), body: notesInput.trim() }, ...prev]);
               setNotesInput('');
             })}>Add Note</NexusButton>
-            <div className="space-y-1.5 max-h-64 overflow-auto pr-1">
-              {notesLog.map((entry) => <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]"><div className="text-zinc-300">{entry.body}</div><div className="text-zinc-500">{entry.at}</div></div>)}
+            <div className="space-y-1.5">
+              {visibleNotes.map((entry) => <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]"><div className="text-zinc-300">{entry.body}</div><div className="text-zinc-500">{entry.at}</div></div>)}
+              {notesLog.length > notesPerPage ? (
+                <div className="flex items-center justify-end gap-1.5 pt-1">
+                  <NexusButton size="sm" intent="subtle" onClick={() => setNotesPage((prev) => Math.max(0, prev - 1))} disabled={notesPage === 0}>
+                    Prev
+                  </NexusButton>
+                  <NexusBadge tone="neutral">{notesPage + 1}/{notesPageCount}</NexusBadge>
+                  <NexusButton
+                    size="sm"
+                    intent="subtle"
+                    onClick={() => setNotesPage((prev) => Math.min(notesPageCount - 1, prev + 1))}
+                    disabled={notesPage >= notesPageCount - 1}
+                  >
+                    Next
+                  </NexusButton>
+                </div>
+              ) : null}
               {notesLog.length === 0 ? <div className="text-xs text-zinc-500">No notes yet.</div> : null}
             </div>
           </section>

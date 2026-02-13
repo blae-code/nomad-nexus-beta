@@ -11,6 +11,7 @@ interface CommsPeekPanelProps extends CqbPanelSharedProps {
 export default function CommsPeekPanel({ variantId, opId, onOpenCommsNetwork }: CommsPeekPanelProps) {
   const context = useMemo(() => determineChannelContext({ variantId }), [variantId]);
   const [activity, setActivity] = useState(() => getCqbChannelTraffic({ variantId, opId, cqbWindowMs: 20000 }));
+  const [channelPage, setChannelPage] = useState(0);
 
   useEffect(() => {
     setActivity(getCqbChannelTraffic({ variantId, opId, cqbWindowMs: 20000 }));
@@ -35,6 +36,16 @@ export default function CommsPeekPanel({ variantId, opId, onOpenCommsNetwork }: 
     count: 0,
     intensity: 0,
   });
+  const channelsPerPage = 6;
+  const channelPageCount = Math.max(1, Math.ceil(activeChannels.length / channelsPerPage));
+  const visibleChannels = activeChannels.slice(
+    channelPage * channelsPerPage,
+    channelPage * channelsPerPage + channelsPerPage
+  );
+
+  useEffect(() => {
+    setChannelPage((prev) => Math.min(prev, channelPageCount - 1));
+  }, [channelPageCount]);
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
@@ -54,8 +65,8 @@ export default function CommsPeekPanel({ variantId, opId, onOpenCommsNetwork }: 
         </div>
       </div>
 
-      <div className="space-y-1 overflow-auto pr-1">
-        {activeChannels.map((entry) => (
+      <div className="space-y-1">
+        {visibleChannels.map((entry) => (
           <div key={entry.channelId} className="rounded border border-zinc-800 bg-zinc-900/40 px-2 py-1 flex items-center justify-between">
             <div className="text-xs text-zinc-200 truncate">{entry.channelId}</div>
             <div className="flex items-center gap-2">
@@ -65,6 +76,22 @@ export default function CommsPeekPanel({ variantId, opId, onOpenCommsNetwork }: 
           </div>
         ))}
       </div>
+      {activeChannels.length > channelsPerPage ? (
+        <div className="flex items-center justify-end gap-1.5">
+          <NexusButton size="sm" intent="subtle" onClick={() => setChannelPage((prev) => Math.max(0, prev - 1))} disabled={channelPage === 0}>
+            Prev
+          </NexusButton>
+          <NexusBadge tone="neutral">{channelPage + 1}/{channelPageCount}</NexusBadge>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => setChannelPage((prev) => Math.min(channelPageCount - 1, prev + 1))}
+            disabled={channelPage >= channelPageCount - 1}
+          >
+            Next
+          </NexusButton>
+        </div>
+      ) : null}
 
       <div className="pt-1">
         <NexusButton size="sm" intent="primary" onClick={onOpenCommsNetwork}>
@@ -74,4 +101,3 @@ export default function CommsPeekPanel({ variantId, opId, onOpenCommsNetwork }: 
     </div>
   );
 }
-

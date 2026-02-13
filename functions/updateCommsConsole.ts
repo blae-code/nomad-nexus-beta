@@ -8,6 +8,13 @@ const MODERATION_ACTIONS = new Set(['MUTE', 'UNMUTE', 'DEAFEN', 'UNDEAFEN', 'KIC
 const DISCIPLINE_MODES = new Set(['OPEN', 'PTT', 'REQUEST_TO_SPEAK', 'COMMAND_ONLY']);
 const COMMAND_BUS_ACTIONS = new Set(['SILENCE_UNTIL_CLEARED', 'CLEAR_TO_TRANSMIT', 'PRIORITY_OVERRIDE', 'REQUEST_TO_SPEAK', 'REQUEST_APPROVED', 'REQUEST_DENIED']);
 const SUBMIX_CHANNELS = new Set(['COMMAND', 'SQUAD', 'LOCAL']);
+const MAP_MACRO_IDS = new Set([
+  'ISSUE_CRITICAL_CALLOUT',
+  'PRIORITY_OVERRIDE',
+  'LOCK_COMMAND_DISCIPLINE',
+  'ENABLE_SECURE_NET',
+  'REQUEST_SITREP_BURST',
+]);
 
 type UpdateAttempt = Record<string, unknown>;
 
@@ -1599,6 +1606,298 @@ ${transcriptSnippet || '(no entries)'}`,
         success: true,
         action,
         actions: actionsFeed,
+      });
+    }
+
+    if (action === 'execute_map_command_macro') {
+      if (!commandAccess) {
+        return Response.json(
+          {
+            error: 'Command privileges required',
+            error_code: 'COMMS_PERMISSION_DENIED',
+          },
+          { status: 403 }
+        );
+      }
+      const macroId = text(payload.macroId || payload.macro_id).toUpperCase();
+      if (!MAP_MACRO_IDS.has(macroId)) {
+        return Response.json(
+          {
+            error: 'Unsupported macro id',
+            error_code: 'MAP_MACRO_UNSUPPORTED',
+          },
+          { status: 400 }
+        );
+      }
+
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const netId = text(payload.netId || payload.net_id) || null;
+      const lane = text(payload.lane || 'COMMAND').toUpperCase();
+      const effects: string[] = [];
+      const warnings: string[] = [];
+      const logIds: string[] = [];
+
+      if (macroId === 'ISSUE_CRITICAL_CALLOUT') {
+        const message = text(payload.message || payload.calloutMessage || 'Critical command synchronization now in effect.');
+        const callout = {
+          event_id: eventId,
+          channel_id: text(payload.channelId || payload.channel_id) || null,
+          net_id: netId,
+          lane,
+          priority: 'CRITICAL',
+          message,
+          requires_ack: true,
+          issued_by_member_profile_id: actorMemberId,
+          issued_at: nowIso,
+        };
+        const log = await writeCommsLog(base44, {
+          type: 'COMMS_PRIORITY_CALLOUT',
+          severity: 'HIGH',
+          actor_member_profile_id: actorMemberId,
+          related_entity_id: eventId || null,
+          summary: `Map macro: CRITICAL callout on ${lane}`,
+          details: callout,
+        });
+        if (log?.id) logIds.push(log.id);
+        effects.push(`Issued CRITICAL callout on lane ${lane}`);
+      }
+
+      if (macroId === 'PRIORITY_OVERRIDE') {
+        const details = {
+          event_id: eventId,
+          net_id: netId,
+          action: 'PRIORITY_OVERRIDE',
+          payload: payload.payload && typeof payload.payload === 'object' ? payload.payload : { source: 'tactical_map' },
+          actor_member_profile_id: actorMemberId,
+          published_at: nowIso,
+        };
+        const log = await writeCommsLog(base44, {
+          type: 'COMMS_COMMAND_BUS',
+          severity: 'MEDIUM',
+          actor_member_profile_id: actorMemberId,
+          related_entity_id: eventId || null,
+          summary: 'Map macro: PRIORITY_OVERRIDE',
+          details,
+        });
+        if (log?.id) logIds.push(log.id);
+        effects.push('Published PRIORITY_OVERRIDE on command bus');
+      }
+
+      if (macroId === 'LOCK_COMMAND_DISCIPLINE') {
+        const discipline = {
+          mode: 'COMMAND_ONLY',
+          event_id: eventId,
+          net_id: netId,
+          actor_member_profile_id: actorMemberId,
+          updated_at: nowIso,
+        };
+        const log = await writeCommsLog(base44, {
+          type: 'COMMS_DISCIPLINE_MODE',
+          severity: 'MEDIUM',
+          actor_member_profile_id: actorMemberId,
+          related_entity_id: eventId || null,
+          summary: 'Map macro: discipline -> COMMAND_ONLY',
+          details: discipline,
+        });
+        if (log?.id) logIds.push(log.id);
+        effects.push('Locked discipline mode to COMMAND_ONLY');
+      }
+
+      if (macroId === 'ENABLE_SECURE_NET') {
+        const secureMode = {
+          event_id: eventId,
+          net_id: netId,
+          enabled: true,
+          key_version: text(payload.keyVersion || payload.key_version || 'map-default'),
+          recordings_disabled: payload.recordingsDisabled !== false,
+          enabled_by_member_profile_id: actorMemberId,
+          updated_at: nowIso,
+        };
+        const log = await writeCommsLog(base44, {
+          type: 'COMMS_SECURE_MODE',
+          severity: 'LOW',
+          actor_member_profile_id: actorMemberId,
+          related_entity_id: eventId || null,
+          summary: 'Map macro: secure mode enabled',
+          details: secureMode,
+        });
+        if (log?.id) logIds.push(log.id);
+        effects.push('Enabled secure mode for scoped net');
+      }
+
+      if (macroId === 'REQUEST_SITREP_BURST') {
+        const burst = {
+          event_id: eventId,
+          net_id: netId,
+          action: 'REQUEST_SITREP_BURST',
+          payload: payload.payload && typeof payload.payload === 'object' ? payload.payload : { lane },
+          actor_member_profile_id: actorMemberId,
+          published_at: nowIso,
+        };
+        const busLog = await writeCommsLog(base44, {
+          type: 'COMMS_COMMAND_BUS',
+          severity: 'LOW',
+          actor_member_profile_id: actorMemberId,
+          related_entity_id: eventId || null,
+          summary: 'Map macro: REQUEST_SITREP_BURST',
+          details: burst,
+        });
+        if (busLog?.id) logIds.push(busLog.id);
+        effects.push('Requested synchronized SITREP burst');
+
+        const targetMemberIds = Array.isArray(payload.targetMemberProfileIds)
+          ? payload.targetMemberProfileIds.map((entry: unknown) => text(entry)).filter(Boolean)
+          : [];
+        if (targetMemberIds.length > 0) {
+          const whisperSummary = text(payload.whisperSummary || payload.textSummary || 'Provide SITREP now.');
+          const whisperInstruction = text(payload.voiceInstruction || 'Command requests immediate SITREP.');
+          for (const targetMemberId of targetMemberIds.slice(0, 12)) {
+            const whisper = {
+              whisper_id: `whisper_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+              event_id: eventId,
+              net_id: netId,
+              target_member_profile_id: targetMemberId,
+              voice_instruction: whisperInstruction,
+              text_summary: whisperSummary,
+              sender_member_profile_id: actorMemberId,
+              status: 'SENT',
+              sent_at: nowIso,
+            };
+            const whisperLog = await writeCommsLog(base44, {
+              type: 'COMMS_COMMAND_WHISPER',
+              severity: 'LOW',
+              actor_member_profile_id: actorMemberId,
+              related_entity_id: eventId || null,
+              summary: 'Map macro: SITREP whisper',
+              details: whisper,
+            });
+            if (whisperLog?.id) logIds.push(whisperLog.id);
+          }
+          effects.push(`Dispatched ${Math.min(targetMemberIds.length, 12)} SITREP whispers`);
+          if (targetMemberIds.length > 12) warnings.push('Whisper targets truncated to 12 recipients.');
+        }
+      }
+
+      return Response.json({
+        success: true,
+        action,
+        macroId,
+        executedAt: nowIso,
+        effects,
+        logIds,
+        warnings,
+      });
+    }
+
+    if (action === 'get_map_command_surface') {
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const includeGlobal = payload.includeGlobal !== false;
+      const limitRaw = Number(payload.limit || 120);
+      const limit = Number.isFinite(limitRaw) ? Math.max(20, Math.min(limitRaw, 300)) : 120;
+
+      const [voiceNetsRaw, presencesRaw, bridgesRaw, eventLogs] = await Promise.all([
+        base44.entities.VoiceNet?.list ? base44.entities.VoiceNet.list('-created_date', 250).catch(() => []) : [],
+        base44.entities.UserPresence?.list
+          ? base44.entities.UserPresence.list('-last_activity', 350).catch(() => [])
+          : base44.entities.UserPresence?.filter
+            ? base44.entities.UserPresence.filter({}, '-last_activity', 350).catch(() => [])
+            : [],
+        base44.entities.BridgeSession?.list ? base44.entities.BridgeSession.list('-created_date', 200).catch(() => []) : [],
+        base44.entities.EventLog?.list ? base44.entities.EventLog.list('-created_date', 1600).catch(() => []) : [],
+      ]);
+
+      const voiceNets = (voiceNetsRaw || []).filter((net: any) => {
+        if (!eventId) return true;
+        const netEventId = text(net?.event_id || net?.eventId);
+        if (netEventId === eventId) return true;
+        if (!includeGlobal && !netEventId) return false;
+        return includeGlobal && !netEventId;
+      });
+
+      const allowedNetIds = new Set(voiceNets.map((net: any) => text(net?.id)).filter(Boolean));
+      const memberships = (presencesRaw || [])
+        .map((presence: any) => {
+          const net = resolvePresenceNet(presence, voiceNets);
+          if (!net) return null;
+          const memberProfileId = text(presence?.member_profile_id || presence?.user_id);
+          if (!memberProfileId) return null;
+          return {
+            member_profile_id: memberProfileId,
+            net_id: text(net?.id),
+            net_code: text(net?.code),
+            net_label: text(net?.label || net?.name),
+            speaking: Boolean(presence?.is_speaking),
+            muted: Boolean(presence?.muted || presence?.is_muted),
+            last_activity: presence?.last_activity || presence?.updated_date || presence?.created_date || null,
+          };
+        })
+        .filter((entry: any) => entry && allowedNetIds.has(text(entry.net_id)));
+
+      const bridges = (bridgesRaw || []).filter((bridge: any) => {
+        const status = text(bridge?.status, 'active').toLowerCase();
+        if (status === 'ended' || status === 'closed') return false;
+        const bridgeEventId = text(bridge?.event_id || bridge?.eventId);
+        if (!eventId) return true;
+        if (bridgeEventId === eventId) return true;
+        return includeGlobal && !bridgeEventId;
+      });
+
+      const callouts = buildPriorityCallouts(eventLogs || [], eventId).slice(0, limit);
+      const captions = buildCaptionFeed(eventLogs || [], { eventId, limit });
+      const moderation = buildModerationFeed(eventLogs || [], eventId).slice(0, limit);
+      const telemetry = buildTelemetryFeed(eventLogs || [], { eventId, limit });
+      const discipline = buildDisciplineState(eventLogs || [], { eventId, netId: null });
+      const speakRequests = buildSpeakRequestFeed(eventLogs || [], { eventId, netId: null, includeResolved: false });
+      const commandBus = buildCommandBusFeed(eventLogs || [], { eventId, netId: null, limit: Math.min(limit, 200) });
+      const netLoad = summarizeNetLoad(voiceNets, memberships, callouts, captions);
+      const actionableAlerts: any[] = [];
+
+      const criticalCallouts = callouts.filter((entry: any) => text(entry?.priority).toUpperCase() === 'CRITICAL');
+      const degradedNets = netLoad.filter((entry: any) => safeNumber(entry?.traffic_score, safeNumber(entry?.trafficScore, 0)) >= 8);
+      if (criticalCallouts.length > 0) {
+        actionableAlerts.push({
+          id: 'critical-callouts',
+          level: 'HIGH',
+          title: 'Critical callouts active',
+          detail: `${criticalCallouts.length} critical callouts require immediate command attention.`,
+        });
+      }
+      if (degradedNets.length > 0) {
+        actionableAlerts.push({
+          id: 'degraded-nets',
+          level: degradedNets.length > 1 ? 'HIGH' : 'MED',
+          title: 'Degraded/contested nets',
+          detail: `${degradedNets.length} nets exceed healthy traffic thresholds.`,
+        });
+      }
+      if (speakRequests.length > 0) {
+        actionableAlerts.push({
+          id: 'pending-speak-requests',
+          level: speakRequests.length > 2 ? 'MED' : 'LOW',
+          title: 'Pending speak requests',
+          detail: `${speakRequests.length} pending transmit requests awaiting disposition.`,
+        });
+      }
+
+      return Response.json({
+        success: true,
+        action,
+        actionable_alerts: actionableAlerts,
+        topology: {
+          event_id: eventId,
+          nets: voiceNets,
+          memberships,
+          bridges,
+          callouts,
+          captions,
+          moderation,
+          telemetry,
+          discipline,
+          speakRequests,
+          commandBus,
+          netLoad,
+          generated_at: nowIso,
+        },
       });
     }
 

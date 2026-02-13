@@ -282,4 +282,33 @@ describe('updateCommsConsole advanced voice controls', () => {
     expect(Array.isArray(listPayload.actions)).toBe(true);
     expect(listPayload.actions[0].action).toBe('PRIORITY_OVERRIDE');
   });
+
+  it('executes map command macros and returns structured effects', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    mockState.base44 = createBase44Mock(actorProfile);
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(buildRequest({
+      action: 'execute_map_command_macro',
+      macroId: 'REQUEST_SITREP_BURST',
+      eventId: 'event-1',
+      netId: 'net-command',
+      lane: 'COMMAND',
+      targetMemberProfileIds: ['member-2', 'member-3'],
+      code: 'ACCESS-01',
+      callsign: 'Nomad',
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.success).toBe(true);
+    expect(payload.macroId).toBe('REQUEST_SITREP_BURST');
+    expect(Array.isArray(payload.effects)).toBe(true);
+    expect(payload.effects.some((entry: string) => entry.includes('SITREP'))).toBe(true);
+    expect(Array.isArray(payload.logIds)).toBe(true);
+  });
 });

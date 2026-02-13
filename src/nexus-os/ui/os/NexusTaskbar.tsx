@@ -1,5 +1,17 @@
 import React from 'react';
-import { AppWindow, Activity, Wifi, WifiOff, PauseCircle, Bell, BellRing, CheckCheck, Trash2 } from 'lucide-react';
+import {
+  AppWindow,
+  Activity,
+  Wifi,
+  WifiOff,
+  PauseCircle,
+  Bell,
+  BellRing,
+  CheckCheck,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
 import type { NexusAppLifecycleEntry } from './appLifecycle';
 import type { NexusTrayNotification } from './trayNotifications';
@@ -77,41 +89,76 @@ export default function NexusTaskbar({
 }: NexusTaskbarProps) {
   const [trayOpen, setTrayOpen] = React.useState(false);
   const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
+  const [appPage, setAppPage] = React.useState(0);
+  const [noticePage, setNoticePage] = React.useState(0);
+  const appsPerPage = 5;
+  const noticesPerPage = 5;
 
-  const shownNotifications = React.useMemo(
-    () =>
-      (trayFilter === 'UNREAD'
-        ? notifications.filter((entry) => !entry.read)
-        : notifications
-      ).slice(0, 8),
+  const filteredNotifications = React.useMemo(
+    () => (trayFilter === 'UNREAD' ? notifications.filter((entry) => !entry.read) : notifications),
     [notifications, trayFilter]
   );
+  const appPageCount = Math.max(1, Math.ceil(appCatalog.length / appsPerPage));
+  const shownApps = React.useMemo(
+    () => appCatalog.slice(appPage * appsPerPage, appPage * appsPerPage + appsPerPage),
+    [appCatalog, appPage, appsPerPage]
+  );
+  const noticePageCount = Math.max(1, Math.ceil(filteredNotifications.length / noticesPerPage));
+  const shownNotifications = React.useMemo(
+    () => filteredNotifications.slice(noticePage * noticesPerPage, noticePage * noticesPerPage + noticesPerPage),
+    [filteredNotifications, noticePage, noticesPerPage]
+  );
+
+  React.useEffect(() => {
+    setAppPage((prev) => Math.min(prev, appPageCount - 1));
+  }, [appPageCount]);
+  React.useEffect(() => {
+    setNoticePage(0);
+  }, [trayFilter]);
+  React.useEffect(() => {
+    setNoticePage((prev) => Math.min(prev, noticePageCount - 1));
+  }, [noticePageCount]);
+
   const activeAppState = activeAppId ? appEntries[activeAppId]?.state || 'closed' : 'closed';
   const activeAppLabel = activeAppId ? appCatalog.find((entry) => entry.id === activeAppId)?.label || activeAppId : 'None';
 
   return (
     <section
-      className="relative rounded-xl border border-zinc-700 px-2.5 py-1.5 flex items-center gap-2 overflow-visible nexus-panel-glow"
+      className="relative rounded-lg border border-zinc-700 px-2 py-1 flex items-center gap-2 overflow-visible nexus-panel-glow"
       style={{
-        borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.28)',
-        backgroundColor: 'rgba(10, 16, 23, 0.92)',
+        borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.34)',
+        backgroundColor: 'rgba(9, 14, 21, 0.95)',
       }}
     >
-      <div className="shrink-0 flex items-center gap-2">
-        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0">
+      <div className="shrink-0 flex items-center gap-1.5">
+        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 h-7 px-2.5">
           <AppWindow className="w-3.5 h-3.5 mr-1" />
-          Command Deck
+          Deck
         </NexusButton>
-        <div className="hidden lg:flex items-center gap-2 text-[10px] text-zinc-500 uppercase tracking-wide">
-          <span>Active:</span>
-          <NexusBadge tone={toneForState(activeAppState)}>{activeAppLabel} {labelForState(activeAppState)}</NexusBadge>
+        <div className="hidden md:flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase tracking-wide">
+          <NexusBadge tone={toneForState(activeAppState)}>
+            {activeAppLabel} {labelForState(activeAppState)}
+          </NexusBadge>
+          <NexusBadge tone={online ? 'ok' : 'danger'}>
+            {online ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
+            {online ? 'Link' : 'Degraded'}
+          </NexusBadge>
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1">
-        <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Applications</div>
-        <div className="mt-1 flex items-center gap-1 overflow-auto pr-1">
-          {appCatalog.map((app) => {
+      <div className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950/55 px-1.5 py-1 flex items-center gap-1.5">
+        <button
+          type="button"
+          className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
+          onClick={() => setAppPage((prev) => Math.max(0, prev - 1))}
+          disabled={appPage === 0}
+          aria-label="Previous app window"
+          title="Previous app window"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+        <div className="flex-1 min-w-0 grid grid-cols-5 gap-1">
+          {shownApps.map((app) => {
             const state = appEntries[app.id]?.state || 'closed';
             const active = activeAppId === app.id;
             return (
@@ -119,7 +166,7 @@ export default function NexusTaskbar({
                 key={app.id}
                 type="button"
                 onClick={() => onActivateApp(app.id)}
-                className={`h-8 shrink-0 rounded border px-2 inline-flex items-center gap-1.5 text-xs transition-colors ${
+                className={`h-7 min-w-0 rounded border px-2 inline-flex items-center gap-1.5 text-[11px] transition-colors ${
                   active
                     ? 'border-sky-500/55 bg-sky-950/25 text-sky-100'
                     : 'border-zinc-700 bg-zinc-900/55 text-zinc-300 hover:border-zinc-500'
@@ -127,12 +174,27 @@ export default function NexusTaskbar({
                 title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
               >
                 <span className={`h-2 w-2 rounded-full ${dotForState(state)}`} />
-                <span>{app.label}</span>
-                {active ? <span className="text-[10px] text-sky-300">ACTIVE</span> : null}
+                <span className="truncate">{app.label}</span>
               </button>
             );
           })}
+          {shownApps.length < appsPerPage
+            ? Array.from({ length: appsPerPage - shownApps.length }).map((_, index) => (
+                <div key={`empty-slot-${index}`} className="h-7 rounded border border-zinc-800/80 bg-zinc-900/25" />
+              ))
+            : null}
         </div>
+        <NexusBadge tone="neutral">{appPage + 1}/{appPageCount}</NexusBadge>
+        <button
+          type="button"
+          className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
+          onClick={() => setAppPage((prev) => Math.min(appPageCount - 1, prev + 1))}
+          disabled={appPage >= appPageCount - 1}
+          aria-label="Next app window"
+          title="Next app window"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       <div className="shrink-0 flex items-center gap-1.5">
@@ -159,13 +221,9 @@ export default function NexusTaskbar({
           <span className="text-[11px]">Alerts {unreadNotifications > 0 ? unreadNotifications : notifications.length}</span>
         </button>
         <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
-        <NexusBadge tone={eventPulseCount > 0 ? 'warning' : 'neutral'} className="hidden lg:inline-flex">
+        <NexusBadge tone={eventPulseCount > 0 ? 'warning' : 'neutral'} className="hidden xl:inline-flex">
           <Activity className="w-3 h-3 mr-1" />
           Pulse {eventPulseCount}
-        </NexusBadge>
-        <NexusBadge tone={online ? 'ok' : 'danger'} className="hidden lg:inline-flex">
-          {online ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
-          {online ? 'Online' : 'Offline'}
         </NexusBadge>
       </div>
 
@@ -205,12 +263,12 @@ export default function NexusTaskbar({
             </div>
           </div>
 
-          {shownNotifications.length === 0 ? (
+          {filteredNotifications.length === 0 ? (
             <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-500">
               No notifications yet.
             </div>
           ) : (
-            <div className="max-h-56 overflow-auto space-y-1 pr-1">
+            <div className="space-y-1">
               {shownNotifications.map((notice) => (
                 <button
                   key={notice.id}
@@ -231,6 +289,27 @@ export default function NexusTaskbar({
                   </div>
                 </button>
               ))}
+              <div className="pt-1 flex items-center justify-end gap-1.5">
+                <button
+                  type="button"
+                  className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
+                  onClick={() => setNoticePage((prev) => Math.max(0, prev - 1))}
+                  disabled={noticePage === 0}
+                  aria-label="Previous alert page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <NexusBadge tone="neutral">{noticePage + 1}/{noticePageCount}</NexusBadge>
+                <button
+                  type="button"
+                  className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
+                  onClick={() => setNoticePage((prev) => Math.min(noticePageCount - 1, prev + 1))}
+                  disabled={noticePage >= noticePageCount - 1}
+                  aria-label="Next alert page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </div>

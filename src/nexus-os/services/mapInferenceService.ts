@@ -23,6 +23,20 @@ export interface MapInferenceSnapshot {
   criticalCalloutCount: number;
   projectedLoadBand: 'LOW' | 'MED' | 'HIGH';
   recommendations: string[];
+  factors: Array<{
+    id: 'zones' | 'comms' | 'intel' | 'tempo';
+    score: number;
+    weight: number;
+    rationale: string;
+    evidenceRefs: string[];
+  }>;
+  prioritizedActions: Array<{
+    id: string;
+    priority: 'NOW' | 'NEXT' | 'WATCH';
+    title: string;
+    rationale: string;
+    expectedImpact: string;
+  }>;
   evidence: {
     zoneSignals: number;
     commsSignals: number;
@@ -50,6 +64,129 @@ function formatCalloutHint(input: MapInferenceInput): string | null {
   if (!highest) return null;
   const lane = highest.lane || highest.netId || 'UNKNOWN';
   return `Prioritize ${highest.priority} comms lane ${lane} and rebalance monitoring coverage.`;
+}
+
+function buildFactors(input: {
+  contestedZoneCount: number;
+  degradedNetCount: number;
+  staleIntelCount: number;
+  criticalCalloutCount: number;
+  highCallouts: number;
+  zoneSignalCount: number;
+  commsSignalCount: number;
+  intelSignalCount: number;
+  projectedLoadScore: number;
+}) {
+  const zoneFactorScore = clamp(Math.round(input.contestedZoneCount * 28 + Math.min(input.zoneSignalCount, 12) * 2), 0, 100);
+  const commsFactorScore = clamp(Math.round(input.degradedNetCount * 24 + input.criticalCalloutCount * 18 + input.highCallouts * 8), 0, 100);
+  const intelFactorScore = clamp(Math.round(input.staleIntelCount * 22 + Math.min(input.intelSignalCount, 8) * 2), 0, 100);
+  const tempoFactorScore = clamp(Math.round(Math.min(input.projectedLoadScore, 40) * 2.2), 0, 100);
+  return [
+    {
+      id: 'zones' as const,
+      score: zoneFactorScore,
+      weight: 0.3,
+      rationale: input.contestedZoneCount > 0
+        ? `${input.contestedZoneCount} contested zones are currently affecting control confidence.`
+        : 'No contested control zones detected in scoped records.',
+      evidenceRefs: [`zone-signals:${input.zoneSignalCount}`],
+    },
+    {
+      id: 'comms' as const,
+      score: commsFactorScore,
+      weight: 0.32,
+      rationale: input.degradedNetCount > 0 || input.criticalCalloutCount > 0
+        ? `Comms pressure is elevated with ${input.degradedNetCount} degraded nets and ${input.criticalCalloutCount} critical callouts.`
+        : 'Comms network quality is nominal for scoped lanes.',
+      evidenceRefs: [`comms-signals:${input.commsSignalCount}`],
+    },
+    {
+      id: 'intel' as const,
+      score: intelFactorScore,
+      weight: 0.18,
+      rationale: input.staleIntelCount > 0
+        ? `${input.staleIntelCount} stale intel records reduce confidence in current assumptions.`
+        : 'Intel freshness is within expected bounds.',
+      evidenceRefs: [`intel-signals:${input.intelSignalCount}`],
+    },
+    {
+      id: 'tempo' as const,
+      score: tempoFactorScore,
+      weight: 0.2,
+      rationale: projectedLoadBand(input.projectedLoadScore) === 'HIGH'
+        ? 'Projected comms load is high and likely to reduce command bandwidth.'
+        : projectedLoadBand(input.projectedLoadScore) === 'MED'
+          ? 'Projected comms load is moderate and should be monitored.'
+          : 'Projected command tempo remains manageable.',
+      evidenceRefs: [`load-score:${Math.round(input.projectedLoadScore)}`],
+    },
+  ];
+}
+
+function buildPrioritizedActions(input: {
+  contestedZoneCount: number;
+  degradedNetCount: number;
+  staleIntelCount: number;
+  criticalCalloutCount: number;
+  projectedLoadScore: number;
+  recommendations: string[];
+}) {
+  const actions: MapInferenceSnapshot['prioritizedActions'] = [];
+  if (input.criticalCalloutCount > 0) {
+    actions.push({
+      id: 'stabilize-speaking-lane',
+      priority: 'NOW',
+      title: 'Stabilize speaking authority',
+      rationale: 'Critical callouts are active and require command-lane discipline.',
+      expectedImpact: 'Reduces overlap and speeds command acknowledgement.',
+    });
+  }
+  if (input.degradedNetCount > 0) {
+    actions.push({
+      id: 'rebalance-bridges',
+      priority: 'NOW',
+      title: 'Rebalance degraded nets',
+      rationale: 'At least one net is degraded/contested and needs rerouting.',
+      expectedImpact: 'Improves relay clarity and lowers missed transmissions.',
+    });
+  }
+  if (input.contestedZoneCount > 0) {
+    actions.push({
+      id: 'refresh-zone-recon',
+      priority: 'NEXT',
+      title: 'Refresh contested zone recon',
+      rationale: 'Control claims are contested and need updated evidence.',
+      expectedImpact: 'Increases confidence before movement commitments.',
+    });
+  }
+  if (input.staleIntelCount > 0) {
+    actions.push({
+      id: 'revalidate-stale-intel',
+      priority: 'NEXT',
+      title: 'Revalidate stale intel',
+      rationale: 'Stale intel should not drive primary tasking decisions.',
+      expectedImpact: 'Reduces probability of acting on expired assumptions.',
+    });
+  }
+  if (projectedLoadBand(input.projectedLoadScore) !== 'LOW') {
+    actions.push({
+      id: 'prestage-command-overflow',
+      priority: 'WATCH',
+      title: 'Pre-stage overflow coordination',
+      rationale: 'Projected comms load may exceed current command capacity.',
+      expectedImpact: 'Protects command tempo during spike windows.',
+    });
+  }
+  if (actions.length === 0) {
+    actions.push({
+      id: 'maintain-cadence',
+      priority: 'WATCH',
+      title: 'Maintain current cadence',
+      rationale: input.recommendations[0] || 'No immediate escalations detected.',
+      expectedImpact: 'Keeps operations steady while continuing periodic validation.',
+    });
+  }
+  return actions.slice(0, 5);
 }
 
 export function computeMapInference(input: MapInferenceInput): MapInferenceSnapshot {
@@ -104,6 +241,25 @@ export function computeMapInference(input: MapInferenceInput): MapInferenceSnaps
   if (recommendations.length === 0) {
     recommendations.push('Maintain current command cadence and continue periodic intel/comms validation sweeps.');
   }
+  const factors = buildFactors({
+    contestedZoneCount,
+    degradedNetCount,
+    staleIntelCount,
+    criticalCalloutCount,
+    highCallouts,
+    zoneSignalCount,
+    commsSignalCount,
+    intelSignalCount,
+    projectedLoadScore,
+  });
+  const prioritizedActions = buildPrioritizedActions({
+    contestedZoneCount,
+    degradedNetCount,
+    staleIntelCount,
+    criticalCalloutCount,
+    projectedLoadScore,
+    recommendations,
+  });
 
   return {
     generatedAt: new Date(nowMs).toISOString(),
@@ -116,6 +272,8 @@ export function computeMapInference(input: MapInferenceInput): MapInferenceSnaps
     criticalCalloutCount,
     projectedLoadBand: projectedLoadBand(projectedLoadScore),
     recommendations,
+    factors,
+    prioritizedActions,
     evidence: {
       zoneSignals: zoneSignalCount,
       commsSignals: commsSignalCount,
@@ -136,6 +294,7 @@ export function buildMapAiPrompt(input: MapInferenceSnapshot): string {
     `Stale intel records: ${input.staleIntelCount}`,
     `Load band: ${input.projectedLoadBand}`,
     `Evidence counts - zone: ${input.evidence.zoneSignals}, comms: ${input.evidence.commsSignals}, intel: ${input.evidence.intelSignals}`,
+    `Prioritized actions: ${input.prioritizedActions.map((action) => `${action.priority}:${action.title}`).join(' | ')}`,
     `Recommended actions: ${input.recommendations.join(' | ')}`,
   ].join('\n');
 }

@@ -150,7 +150,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   if (isNexusWorkspace) {
     return (
       <>
-        <div className="nexus-shell-standard min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
+        <div className="nexus-shell-standard h-[100dvh] max-h-[100dvh] bg-zinc-950 flex flex-col overflow-hidden relative">
           <CSSDebugOverlay />
           <NotificationCenter />
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">

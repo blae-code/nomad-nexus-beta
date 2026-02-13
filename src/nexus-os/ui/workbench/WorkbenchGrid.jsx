@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { ArrowDown, ArrowDownRight, ArrowUp, Copy, GripVertical, Minus, Plus, RotateCcw } from 'lucide-react';
+import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp, Copy, GripVertical, Minus, Plus, RotateCcw } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNexusCssVars } from '../tokens';
 import { NexusBadge, NexusButton, PanelFrame } from '../primitives';
@@ -248,6 +248,11 @@ export default function WorkbenchGrid({
   const [panelSearchQuery, setPanelSearchQuery] = useState('');
   const [widgetPrompt, setWidgetPrompt] = useState('');
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [panelPage, setPanelPage] = useState(0);
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: typeof window === 'undefined' ? 1366 : window.innerWidth,
+    height: typeof window === 'undefined' ? 768 : window.innerHeight,
+  }));
   const [resizeSession, setResizeSession] = useState(null);
   const resizeRafRef = useRef(0);
   const widgetScopeKey = useMemo(() => {
@@ -299,6 +304,27 @@ export default function WorkbenchGrid({
     return activePanelIds.map((id) => panelMap[id]).filter(Boolean);
   }, [activePanelIds, panelMap]);
   const hasVisiblePanels = activePanels.length > 0;
+  const maxPanelsPerPage = useMemo(() => {
+    let base = 5;
+    if (viewportSize.height <= 800) base = 2;
+    else if (viewportSize.height <= 930) base = 3;
+    else if (viewportSize.height <= 1100) base = 4;
+    if (viewportSize.width >= 1800) base += 1;
+    if (viewportSize.width <= 1366) base -= 1;
+    return Math.max(2, Math.min(7, base));
+  }, [viewportSize.height, viewportSize.width]);
+  const totalPanelPages = Math.max(1, Math.ceil(activePanels.length / maxPanelsPerPage));
+  const pageStartIndex = panelPage * maxPanelsPerPage;
+  const pagedActivePanels = useMemo(
+    () => activePanels.slice(pageStartIndex, pageStartIndex + maxPanelsPerPage),
+    [activePanels, maxPanelsPerPage, pageStartIndex]
+  );
+  const maxRenderableRowSpan = viewportSize.height <= 980 ? 2 : 3;
+  const effectiveRowHeightPx = useMemo(() => {
+    const budget = Math.max(340, viewportSize.height - 280);
+    const floor = viewportSize.height <= 800 ? 132 : viewportSize.height <= 940 ? 148 : 164;
+    return Math.max(floor, Math.min(preset.minRowHeightPx, Math.floor(budget / maxRenderableRowSpan)));
+  }, [maxRenderableRowSpan, preset.minRowHeightPx, viewportSize.height]);
 
   const inactivePanels = useMemo(() => {
     return allPanels.filter((panel) => !activePanelIds.includes(panel.id));
@@ -768,6 +794,7 @@ export default function WorkbenchGrid({
   const resetLayout = () => {
     setPanelSizes({});
     setActivePanelIds(onboardingVisible ? [] : allPanels.map((panel) => panel.id));
+    setPanelPage(0);
     if (persistenceEnabled && layoutPersistenceScopeKey) {
       resetWorkbenchLayout(layoutPersistenceScopeKey);
       setMigrationNotice('Layout reset to defaults.');
@@ -824,6 +851,28 @@ export default function WorkbenchGrid({
       window.removeEventListener('pointercancel', handlePointerUp);
     };
   }, [preset.columns, resizeSession]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    let rafId = 0;
+    const syncViewport = () => {
+      rafId = 0;
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    const onResize = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(syncViewport);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    setPanelPage((prev) => Math.min(prev, totalPanelPages - 1));
+  }, [totalPanelPages]);
 
   useEffect(() => {
     const valid = new Set(allPanels.map((panel) => panel.id));
@@ -964,6 +1013,29 @@ export default function WorkbenchGrid({
           <span className="hidden sm:inline text-[11px] text-zinc-500 truncate">{preset.description}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {hasVisiblePanels ? (
+            <div className="inline-flex items-center gap-1.5 rounded border border-zinc-800 bg-zinc-950/65 px-1.5 py-1">
+              <button
+                type="button"
+                className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 hover:border-zinc-500 disabled:opacity-40"
+                onClick={() => setPanelPage((prev) => Math.max(0, prev - 1))}
+                disabled={panelPage === 0}
+                aria-label="Previous workbench page"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mx-auto" />
+              </button>
+              <NexusBadge tone="neutral">Page {panelPage + 1}/{totalPanelPages}</NexusBadge>
+              <button
+                type="button"
+                className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 hover:border-zinc-500 disabled:opacity-40"
+                onClick={() => setPanelPage((prev) => Math.min(totalPanelPages - 1, prev + 1))}
+                disabled={panelPage >= totalPanelPages - 1}
+                aria-label="Next workbench page"
+              >
+                <ArrowRight className="w-3.5 h-3.5 mx-auto" />
+              </button>
+            </div>
+          ) : null}
           {showPresetSwitcher ? (
             <select
               value={preset.id}
@@ -1001,7 +1073,7 @@ export default function WorkbenchGrid({
             onDragEnd={(result) => {
               if (!result.destination) return;
               setActivePanelIds((prev) =>
-                reorderPanelIds(prev, result.source.index, result.destination.index)
+                reorderPanelIds(prev, pageStartIndex + result.source.index, pageStartIndex + result.destination.index)
               );
             }}
           >
@@ -1010,13 +1082,12 @@ export default function WorkbenchGrid({
                 <div
                   ref={dropProvided.innerRef}
                   {...dropProvided.droppableProps}
-                  className={`h-full min-h-0 grid gap-3 overflow-auto overflow-x-hidden overscroll-contain ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-sky-500/40' : ''}`}
+                  className={`h-full min-h-0 grid gap-3 overflow-hidden ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-sky-500/40' : ''}`}
                   style={{
                     gridTemplateColumns: `repeat(${preset.columns}, minmax(0, 1fr))`,
-                    gridAutoRows: `${preset.minRowHeightPx}px`,
+                    gridAutoRows: `${effectiveRowHeightPx}px`,
                     alignContent: 'start',
                     minHeight: '100%',
-                    scrollbarGutter: 'stable',
                   }}
                   aria-label="Workbench panel layout"
                 >
@@ -1146,7 +1217,7 @@ export default function WorkbenchGrid({
                       </div>
                     </div>
                   ) : null}
-                  {activePanels.map((panel, index) => {
+                  {pagedActivePanels.map((panel, index) => {
                     const PanelComponent = panel.component;
                     const size = resolvePanelSizeForLayout(
                       panel,
@@ -1154,6 +1225,10 @@ export default function WorkbenchGrid({
                       preset.columns,
                       panelSizes[panel.id]
                     );
+                    const renderSize = {
+                      colSpan: size.colSpan,
+                      rowSpan: Math.min(size.rowSpan, maxRenderableRowSpan),
+                    };
                     const toolbar =
                       typeof panel.toolbar === 'function'
                         ? panel.toolbar({ panelId: panel.id, bridgeId })
@@ -1168,8 +1243,8 @@ export default function WorkbenchGrid({
                             className={`min-h-0 min-w-0 relative ${dragSnapshot.isDragging ? 'opacity-95 ring-1 ring-sky-500/50 rounded-md' : ''}`}
                             style={{
                               ...dragProvided.draggableProps.style,
-                              gridColumn: `span ${size.colSpan} / span ${size.colSpan}`,
-                              gridRow: `span ${size.rowSpan} / span ${size.rowSpan}`,
+                              gridColumn: `span ${renderSize.colSpan} / span ${renderSize.colSpan}`,
+                              gridRow: `span ${renderSize.rowSpan} / span ${renderSize.rowSpan}`,
                             }}
                           >
                             <PanelErrorBoundary panelId={panel.id}>
@@ -1181,7 +1256,7 @@ export default function WorkbenchGrid({
                                 loading={Boolean(panel.loading)}
                                 loadingLabel={panel.loadingLabel}
                                 toolbar={
-                                  <div className="flex items-center gap-1.5 max-w-full overflow-x-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                                  <div className="flex items-center gap-1.5 max-w-full overflow-hidden pr-1">
                                     <button
                                       type="button"
                                       {...dragProvided.dragHandleProps}
@@ -1294,7 +1369,7 @@ export default function WorkbenchGrid({
               Build custom widgets, share full workspace capsules, and curate panel staging for collaborative loops.
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-5 space-y-4 overflow-y-auto overscroll-contain max-h-[calc(100vh-6rem)] pr-1" style={{ scrollbarGutter: 'stable' }}>
+          <div className="mt-5 space-y-4 overflow-y-auto overscroll-contain max-h-[calc(100dvh-6rem)] pr-1" style={{ scrollbarGutter: 'stable' }}>
             <section className="rounded border border-zinc-800 bg-zinc-900/55 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-xs uppercase tracking-widest text-zinc-300">Activity Packs</h3>
