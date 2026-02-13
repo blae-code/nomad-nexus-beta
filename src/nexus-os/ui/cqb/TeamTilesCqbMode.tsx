@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { CqbEvent } from '../../schemas/coreSchemas';
 import { isStaleAt } from '../../schemas/coreSchemas';
 import { NexusBadge, RustPulseIndicator } from '../primitives';
@@ -74,14 +74,46 @@ export default function TeamTilesCqbMode({
     () => roster.filter((member) => (elementFilter === 'ALL' ? true : member.element === elementFilter)),
     [roster, elementFilter]
   );
+  const [tilePage, setTilePage] = useState(0);
+  const tilesPerPage = compact ? 4 : 6;
+  const tilePageCount = Math.max(1, Math.ceil(visibleRoster.length / tilesPerPage));
+  const pagedRoster = useMemo(
+    () => visibleRoster.slice(tilePage * tilesPerPage, tilePage * tilesPerPage + tilesPerPage),
+    [visibleRoster, tilePage, tilesPerPage]
+  );
+
+  useEffect(() => {
+    setTilePage((current) => Math.min(current, tilePageCount - 1));
+  }, [tilePageCount]);
 
   const tileClass = compact ? 'p-3' : 'p-4';
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
-      <div className="text-xs text-zinc-500 uppercase tracking-wide">Team Tiles · Loop Mode</div>
-      <div className="flex-1 min-h-0 overflow-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1">
-        {visibleRoster.map((member) => {
+      <div className="text-xs text-zinc-500 uppercase tracking-wide flex items-center justify-between gap-2">
+        <span>Team Tiles · Loop Mode</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="h-6 px-2 rounded border border-zinc-700 bg-zinc-900 text-[10px] text-zinc-300 disabled:opacity-50"
+            onClick={() => setTilePage((current) => Math.max(0, current - 1))}
+            disabled={tilePage === 0}
+          >
+            Prev
+          </button>
+          <NexusBadge tone="neutral">{tilePage + 1}/{tilePageCount}</NexusBadge>
+          <button
+            type="button"
+            className="h-6 px-2 rounded border border-zinc-700 bg-zinc-900 text-[10px] text-zinc-300 disabled:opacity-50"
+            onClick={() => setTilePage((current) => Math.min(tilePageCount - 1, current + 1))}
+            disabled={tilePage >= tilePageCount - 1}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1">
+        {pagedRoster.map((member) => {
           const lastEvent = latestEventFor(member.id, relevantEvents);
           const derived = deriveStatus(member, relevantEvents, nowMs);
           const age = lastEvent ? ageLabel(lastEvent.createdAt, nowMs) : 'n/a';

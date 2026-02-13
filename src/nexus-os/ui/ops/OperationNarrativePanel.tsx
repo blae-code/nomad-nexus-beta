@@ -39,6 +39,7 @@ export default function OperationNarrativePanel({ op, actorId }: OperationNarrat
   const [entryTagInput, setEntryTagInput] = useState('');
   const [entryIcMode, setEntryIcMode] = useState(false);
   const [narrativeFilter, setNarrativeFilter] = useState<NarrativeFilter>('ALL');
+  const [narrativePage, setNarrativePage] = useState(0);
 
   useEffect(() => {
     const unsubscribe = subscribeNarrative(() => setNarrativeVersion((value) => value + 1));
@@ -63,6 +64,16 @@ export default function OperationNarrativePanel({ op, actorId }: OperationNarrat
       visibilityEnvelope: ['OP', 'ORG', 'SQUAD'],
     });
   }, [op.id, narrativeVersion, narrativeFilter]);
+  const entriesPerPage = 6;
+  const narrativePageCount = Math.max(1, Math.ceil(entries.length / entriesPerPage));
+  const visibleEntries = useMemo(
+    () => entries.slice(narrativePage * entriesPerPage, narrativePage * entriesPerPage + entriesPerPage),
+    [entries, narrativePage]
+  );
+
+  useEffect(() => {
+    setNarrativePage((current) => Math.min(current, narrativePageCount - 1));
+  }, [narrativePageCount]);
 
   const runAction = async (action: () => Promise<void> | void) => {
     try {
@@ -276,8 +287,18 @@ export default function OperationNarrativePanel({ op, actorId }: OperationNarrat
           </div>
         ) : null}
 
-        <div className="flex-1 min-h-0 overflow-auto pr-1 space-y-1.5">
-          {entries.map((entry) => (
+        <div className="flex items-center justify-end gap-1">
+          <NexusButton size="sm" intent="subtle" onClick={() => setNarrativePage((current) => Math.max(0, current - 1))} disabled={narrativePage === 0}>
+            Prev
+          </NexusButton>
+          <NexusBadge tone="neutral">{narrativePage + 1}/{narrativePageCount}</NexusBadge>
+          <NexusButton size="sm" intent="subtle" onClick={() => setNarrativePage((current) => Math.min(narrativePageCount - 1, current + 1))} disabled={narrativePage >= narrativePageCount - 1}>
+            Next
+          </NexusButton>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-hidden pr-1 space-y-1.5">
+          {visibleEntries.map((entry) => (
             <article key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/55 p-2 text-[11px] space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-zinc-200 truncate">{entry.title}</div>

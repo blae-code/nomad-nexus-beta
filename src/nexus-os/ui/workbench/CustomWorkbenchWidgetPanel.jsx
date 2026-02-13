@@ -3,40 +3,57 @@ import { Copy, ExternalLink, PenLine, Trash2 } from 'lucide-react';
 import { NexusButton } from '../primitives';
 import { parseCustomWorkbenchWidgetPanelId } from '../../services/customWorkbenchWidgetService';
 
-function renderBody(widget) {
+function renderBody(widget, maxLines = 8) {
   const body = widget?.body || '';
   const lines = String(body || '')
     .split('\n')
     .map((line) => line.trimEnd());
   if (lines.length === 0) return null;
+  const visibleLines = lines.slice(0, maxLines);
+  const hasMore = lines.length > maxLines;
   if (widget?.kind === 'CHECKLIST') {
-    return lines.map((line, index) => {
-      const normalized = line.replace(/^[-*]\s*/, '');
-      return (
-        <label key={`${index}:${line}`} className="flex items-start gap-2 text-[12px] text-zinc-300 leading-relaxed">
-          <input type="checkbox" className="mt-0.5" />
-          <span className="break-words">{normalized || ' '}</span>
-        </label>
-      );
-    });
+    return (
+      <>
+        {visibleLines.map((line, index) => {
+          const normalized = line.replace(/^[-*]\s*/, '');
+          return (
+            <label key={`${index}:${line}`} className="flex items-start gap-2 text-[12px] text-zinc-300 leading-relaxed">
+              <input type="checkbox" className="mt-0.5" />
+              <span className="break-words">{normalized || ' '}</span>
+            </label>
+          );
+        })}
+        {hasMore ? <div className="text-[10px] text-zinc-500">Additional lines available in editor view.</div> : null}
+      </>
+    );
   }
   if (widget?.kind === 'METRIC') {
-    return lines.map((line, index) => {
-      const [label, ...rest] = line.split(':');
-      const value = rest.join(':').trim();
-      return (
-        <div key={`${index}:${line}`} className="rounded border border-zinc-800 bg-zinc-900/40 px-2 py-1">
-          <div className="text-[10px] uppercase tracking-widest text-zinc-500">{label || 'Metric'}</div>
-          <div className="text-sm text-zinc-200">{value || '--'}</div>
-        </div>
-      );
-    });
+    return (
+      <>
+        {visibleLines.map((line, index) => {
+          const [label, ...rest] = line.split(':');
+          const value = rest.join(':').trim();
+          return (
+            <div key={`${index}:${line}`} className="rounded border border-zinc-800 bg-zinc-900/40 px-2 py-1">
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500">{label || 'Metric'}</div>
+              <div className="text-sm text-zinc-200">{value || '--'}</div>
+            </div>
+          );
+        })}
+        {hasMore ? <div className="text-[10px] text-zinc-500">Additional metrics available in editor view.</div> : null}
+      </>
+    );
   }
-  return lines.map((line, index) => (
-    <div key={`${index}:${line}`} className="text-[12px] text-zinc-300 leading-relaxed break-words">
-      {line || <span className="text-zinc-600"> </span>}
-    </div>
-  ));
+  return (
+    <>
+      {visibleLines.map((line, index) => (
+        <div key={`${index}:${line}`} className="text-[12px] text-zinc-300 leading-relaxed break-words">
+          {line || <span className="text-zinc-600"> </span>}
+        </div>
+      ))}
+      {hasMore ? <div className="text-[10px] text-zinc-500">Additional lines available in editor view.</div> : null}
+    </>
+  );
 }
 
 function bodyStyleClasses(widget) {
@@ -83,7 +100,7 @@ export default function CustomWorkbenchWidgetPanel({
         <span>{widget.visualStyle || 'STANDARD'}</span>
       </div>
 
-      <div className={`rounded border p-2.5 space-y-1 overflow-auto min-h-[5rem] ${bodyStyleClasses(widget)}`}>
+      <div className={`rounded border p-2.5 space-y-1 overflow-hidden min-h-[5rem] ${bodyStyleClasses(widget)}`}>
         {widget.body ? renderBody(widget) : <div className="text-[12px] text-zinc-600">No widget body content.</div>}
       </div>
 

@@ -211,7 +211,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
             <main
               id="main-content"
               tabIndex={-1}
-              className={`nexus-page-main flex-1 overflow-y-auto overflow-x-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}
+              className={`nexus-page-main flex-1 overflow-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}
             >
               <PermissionGuard>{children}</PermissionGuard>
             </main>

@@ -362,7 +362,7 @@ function DiagnosticsPanel({ events, variantId, operations, focusOperationId, con
         </div>
       </div>
       {warnings.length > 0 ? (
-        <div className="space-y-1 max-h-28 overflow-auto pr-1">
+        <div className="space-y-1 max-h-28 overflow-hidden pr-1">
           {warnings.slice(0, 6).map((warning) => (
             <div key={`${warning.code}:${warning.message}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px]">
               <div className="text-zinc-300">

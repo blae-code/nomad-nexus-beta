@@ -45,11 +45,37 @@ export default function IntelDetailPanel({
 }: IntelDetailPanelProps) {
   const [commentText, setCommentText] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const [commentPage, setCommentPage] = useState(0);
+  const [promotionPage, setPromotionPage] = useState(0);
 
   const sortedComments = useMemo(
     () => [...comments].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()),
     [comments]
   );
+  const commentsPerPage = 4;
+  const commentPageCount = Math.max(1, Math.ceil(sortedComments.length / commentsPerPage));
+  const visibleComments = useMemo(
+    () => sortedComments.slice(commentPage * commentsPerPage, commentPage * commentsPerPage + commentsPerPage),
+    [sortedComments, commentPage]
+  );
+  const promotionPerPage = 4;
+  const promotionPageCount = Math.max(1, Math.ceil((intel?.promotionHistory.length || 0) / promotionPerPage));
+  const visiblePromotionHistory = useMemo(
+    () =>
+      (intel?.promotionHistory || []).slice(
+        promotionPage * promotionPerPage,
+        promotionPage * promotionPerPage + promotionPerPage
+      ),
+    [intel?.promotionHistory, promotionPage]
+  );
+
+  React.useEffect(() => {
+    setCommentPage((current) => Math.min(current, commentPageCount - 1));
+  }, [commentPageCount]);
+
+  React.useEffect(() => {
+    setPromotionPage((current) => Math.min(current, promotionPageCount - 1));
+  }, [promotionPageCount]);
 
   if (!intel) {
     return (
@@ -135,12 +161,25 @@ export default function IntelDetailPanel({
       </div>
 
       <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 space-y-1">
-        <div className="text-[11px] uppercase tracking-wide text-zinc-500">Discussion</div>
-        <div className="max-h-24 overflow-auto pr-1 space-y-1">
+        <div className="text-[11px] uppercase tracking-wide text-zinc-500 flex items-center justify-between gap-2">
+          <span>Discussion</span>
+          {commentPageCount > 1 ? (
+            <div className="flex items-center gap-1">
+              <NexusButton size="sm" intent="subtle" onClick={() => setCommentPage((current) => Math.max(0, current - 1))} disabled={commentPage === 0}>
+                Prev
+              </NexusButton>
+              <NexusBadge tone="neutral">{commentPage + 1}/{commentPageCount}</NexusBadge>
+              <NexusButton size="sm" intent="subtle" onClick={() => setCommentPage((current) => Math.min(commentPageCount - 1, current + 1))} disabled={commentPage >= commentPageCount - 1}>
+                Next
+              </NexusButton>
+            </div>
+          ) : null}
+        </div>
+        <div className="max-h-24 overflow-hidden pr-1 space-y-1">
           {sortedComments.length === 0 ? (
             <div className="text-[11px] text-zinc-500">No comments yet.</div>
           ) : (
-            sortedComments.map((comment) => (
+            visibleComments.map((comment) => (
               <div key={comment.id} className="rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1 text-[11px]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-zinc-300">{comment.by}</span>
@@ -165,12 +204,25 @@ export default function IntelDetailPanel({
       </div>
 
       <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 space-y-1">
-        <div className="text-[11px] uppercase tracking-wide text-zinc-500">Promotion Audit</div>
-        <div className="max-h-20 overflow-auto pr-1 space-y-1">
+        <div className="text-[11px] uppercase tracking-wide text-zinc-500 flex items-center justify-between gap-2">
+          <span>Promotion Audit</span>
+          {promotionPageCount > 1 ? (
+            <div className="flex items-center gap-1">
+              <NexusButton size="sm" intent="subtle" onClick={() => setPromotionPage((current) => Math.max(0, current - 1))} disabled={promotionPage === 0}>
+                Prev
+              </NexusButton>
+              <NexusBadge tone="neutral">{promotionPage + 1}/{promotionPageCount}</NexusBadge>
+              <NexusButton size="sm" intent="subtle" onClick={() => setPromotionPage((current) => Math.min(promotionPageCount - 1, current + 1))} disabled={promotionPage >= promotionPageCount - 1}>
+                Next
+              </NexusButton>
+            </div>
+          ) : null}
+        </div>
+        <div className="max-h-20 overflow-hidden pr-1 space-y-1">
           {intel.promotionHistory.length === 0 ? (
             <div className="text-[11px] text-zinc-500">No promotion actions recorded.</div>
           ) : (
-            intel.promotionHistory.map((entry, index) => (
+            visiblePromotionHistory.map((entry, index) => (
               <div key={`${entry.at}:${index}`} className="text-[11px] text-zinc-400 rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1">
                 {entry.by}: {entry.from} {'->'} {entry.to} ({formatAge(entry.at)})
                 {entry.reason ? <span className="text-zinc-500"> - {entry.reason}</span> : null}

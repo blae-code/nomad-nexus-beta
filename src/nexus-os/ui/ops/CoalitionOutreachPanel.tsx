@@ -29,6 +29,46 @@ interface CoalitionOutreachPanelProps {
   actorId: string;
 }
 
+function usePagedList<T>(items: T[], perPage: number) {
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(items.length / perPage));
+  const visible = useMemo(() => items.slice(page * perPage, page * perPage + perPage), [items, page, perPage]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount - 1));
+  }, [pageCount]);
+
+  return { page, setPage, pageCount, visible };
+}
+
+function Pager({
+  page,
+  setPage,
+  pageCount,
+}: {
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+  pageCount: number;
+}) {
+  if (pageCount <= 1) return null;
+  return (
+    <div className="flex items-center gap-1">
+      <NexusButton size="sm" intent="subtle" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0}>
+        Prev
+      </NexusButton>
+      <NexusBadge tone="neutral">{page + 1}/{pageCount}</NexusBadge>
+      <NexusButton
+        size="sm"
+        intent="subtle"
+        onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+        disabled={page >= pageCount - 1}
+      >
+        Next
+      </NexusButton>
+    </div>
+  );
+}
+
 export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreachPanelProps) {
   const [version, setVersion] = useState(0);
   const [errorText, setErrorText] = useState('');
@@ -61,6 +101,12 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
   const sharedChannels = useMemo(() => listSharedOperationChannels(op.id), [version, op.id]);
   const publicUpdates = useMemo(() => listPublicUpdates({ opId: op.id }), [version, op.id]);
   const broadcasts = useMemo(() => listEmergencyBroadcasts(hostOrgId), [version, hostOrgId]);
+  const pagedOrganizations = usePagedList(organizations, 5);
+  const pagedAlliances = usePagedList(alliances, 4);
+  const pagedInvites = usePagedList(invites, 4);
+  const pagedChannels = usePagedList(sharedChannels, 4);
+  const pagedPublicUpdates = usePagedList(publicUpdates, 4);
+  const pagedBroadcasts = usePagedList(broadcasts, 4);
 
   useEffect(() => {
     if (organizations.length > 0) {
@@ -144,8 +190,8 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
         >
           Register / Update Org
         </NexusButton>
-        <div className="max-h-28 overflow-auto pr-1 space-y-1">
-          {organizations.map((org) => (
+        <div className="max-h-28 overflow-hidden pr-1 space-y-1">
+          {pagedOrganizations.visible.map((org) => (
             <button
               key={org.id}
               type="button"
@@ -161,6 +207,7 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
             </button>
           ))}
         </div>
+        <Pager page={pagedOrganizations.page} pageCount={pagedOrganizations.pageCount} setPage={pagedOrganizations.setPage} />
 
         <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
           <div className="text-[11px] uppercase tracking-wide text-zinc-400">Alliance Flow</div>
@@ -200,8 +247,8 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
           >
             Send Alliance Request
           </NexusButton>
-          <div className="max-h-24 overflow-auto pr-1 space-y-1">
-            {alliances.map((alliance) => (
+          <div className="max-h-24 overflow-hidden pr-1 space-y-1">
+            {pagedAlliances.visible.map((alliance) => (
               <div key={alliance.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-zinc-200 truncate">{alliance.allianceName}</span>
@@ -218,6 +265,7 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
               </div>
             ))}
           </div>
+          <Pager page={pagedAlliances.page} pageCount={pagedAlliances.pageCount} setPage={pagedAlliances.setPage} />
         </div>
       </section>
 
@@ -296,8 +344,8 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
             </NexusButton>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div className="max-h-28 overflow-auto pr-1 space-y-1">
-              {invites.map((invite) => (
+            <div className="max-h-28 overflow-hidden pr-1 space-y-1">
+              {pagedInvites.visible.map((invite) => (
                 <div key={invite.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px]">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-zinc-200 truncate">
@@ -318,14 +366,18 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
                 </div>
               ))}
             </div>
-            <div className="max-h-28 overflow-auto pr-1 space-y-1">
-              {sharedChannels.map((channel) => (
+            <div className="max-h-28 overflow-hidden pr-1 space-y-1">
+              {pagedChannels.visible.map((channel) => (
                 <div key={channel.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px]">
                   <div className="text-zinc-200">{channel.channelLabel}</div>
                   <div className="text-zinc-500">{channel.partnerOrgIds.join(', ') || 'No partners'}</div>
                 </div>
               ))}
             </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            <Pager page={pagedInvites.page} pageCount={pagedInvites.pageCount} setPage={pagedInvites.setPage} />
+            <Pager page={pagedChannels.page} pageCount={pagedChannels.pageCount} setPage={pagedChannels.setPage} />
           </div>
         </div>
 
@@ -365,8 +417,8 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
           >
             Create Public Update
           </NexusButton>
-          <div className="max-h-24 overflow-auto pr-1 space-y-1">
-            {publicUpdates.map((update) => (
+          <div className="max-h-24 overflow-hidden pr-1 space-y-1">
+            {pagedPublicUpdates.visible.map((update) => (
               <div key={update.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-zinc-200 truncate">{update.title}</span>
@@ -383,6 +435,7 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
               </div>
             ))}
           </div>
+          <Pager page={pagedPublicUpdates.page} pageCount={pagedPublicUpdates.pageCount} setPage={pagedPublicUpdates.setPage} />
         </div>
 
         <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
@@ -418,8 +471,8 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
             className="h-14 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200"
             placeholder="Emergency details"
           />
-          <div className="max-h-24 overflow-auto pr-1 space-y-1">
-            {broadcasts.map((broadcast) => (
+          <div className="max-h-24 overflow-hidden pr-1 space-y-1">
+            {pagedBroadcasts.visible.map((broadcast) => (
               <div key={broadcast.id} className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-zinc-200 truncate">{broadcast.title}</span>
@@ -432,6 +485,7 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
               </div>
             ))}
           </div>
+          <Pager page={pagedBroadcasts.page} pageCount={pagedBroadcasts.pageCount} setPage={pagedBroadcasts.setPage} />
         </div>
 
         {errorText ? (

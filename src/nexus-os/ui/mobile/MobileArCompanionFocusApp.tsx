@@ -22,12 +22,23 @@ export default function MobileArCompanionFocusApp({
   const [arEnabled, setArEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [anchorLabel, setAnchorLabel] = useState('');
+  const [markerPage, setMarkerPage] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const sortedMarkers = useMemo(() => {
     return [...runtime.arMarkers].sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, 10);
   }, [runtime.arMarkers]);
+  const markersPerPage = 4;
+  const markerPageCount = Math.max(1, Math.ceil(sortedMarkers.length / markersPerPage));
+  const visibleMarkers = useMemo(
+    () => sortedMarkers.slice(markerPage * markersPerPage, markerPage * markersPerPage + markersPerPage),
+    [sortedMarkers, markerPage]
+  );
+
+  useEffect(() => {
+    setMarkerPage((current) => Math.min(current, markerPageCount - 1));
+  }, [markerPageCount]);
 
   useEffect(() => {
     if (!arEnabled) return;
@@ -167,8 +178,19 @@ export default function MobileArCompanionFocusApp({
           )}
         </div>
 
-        <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 overflow-auto space-y-2">
-          <div className="text-xs uppercase tracking-wide text-zinc-500">Marker List</div>
+        <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 overflow-hidden space-y-2">
+          <div className="text-xs uppercase tracking-wide text-zinc-500 flex items-center justify-between gap-2">
+            <span>Marker List</span>
+            <div className="flex items-center gap-1">
+              <NexusButton size="sm" intent="subtle" onClick={() => setMarkerPage((current) => Math.max(0, current - 1))} disabled={markerPage === 0}>
+                Prev
+              </NexusButton>
+              <NexusBadge tone="neutral">{markerPage + 1}/{markerPageCount}</NexusBadge>
+              <NexusButton size="sm" intent="subtle" onClick={() => setMarkerPage((current) => Math.min(markerPageCount - 1, current + 1))} disabled={markerPage >= markerPageCount - 1}>
+                Next
+              </NexusButton>
+            </div>
+          </div>
           {sortedMarkers.length === 0 ? (
             <DegradedStateCard
               state="OFFLINE"
@@ -176,7 +198,7 @@ export default function MobileArCompanionFocusApp({
               reason="Start GPS sharing or drop manual anchors to populate overlays."
             />
           ) : (
-            sortedMarkers.map((marker) => (
+            visibleMarkers.map((marker) => (
               <div key={marker.id} className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-xs space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-zinc-200">{marker.label}</span>

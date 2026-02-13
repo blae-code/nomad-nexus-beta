@@ -120,6 +120,62 @@ interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
 
 const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
 const TIMELINE_FILTERS: TimelineFilter[] = ['ALL', 'AUDIT', 'DECISION', 'EVENT'];
+const DEFAULT_PAGE_SIZE = 6;
+
+interface PagedItems<T> {
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+  pageCount: number;
+  visibleItems: T[];
+}
+
+function usePagedItems<T>(items: T[], pageSize: number = DEFAULT_PAGE_SIZE): PagedItems<T> {
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount - 1));
+  }, [pageCount]);
+
+  const visibleItems = useMemo(
+    () => items.slice(page * pageSize, page * pageSize + pageSize),
+    [items, page, pageSize]
+  );
+
+  return { page, setPage, pageCount, visibleItems };
+}
+
+function PaginationControls({
+  page,
+  pageCount,
+  setPage,
+  className = '',
+}: {
+  page: number;
+  pageCount: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+  className?: string;
+}) {
+  if (pageCount <= 1) return null;
+  return (
+    <div className={`flex items-center gap-1.5 ${className}`.trim()}>
+      <NexusButton size="sm" intent="subtle" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0}>
+        Prev
+      </NexusButton>
+      <NexusBadge tone="neutral">
+        {page + 1}/{pageCount}
+      </NexusBadge>
+      <NexusButton
+        size="sm"
+        intent="subtle"
+        onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+        disabled={page >= pageCount - 1}
+      >
+        Next
+      </NexusButton>
+    </div>
+  );
+}
 
 function cycleStatus(status: Operation['status']): Operation['status'] {
   if (status === 'PLANNING') return 'ACTIVE';
@@ -470,6 +526,21 @@ export default function OperationFocusApp({
     () => (selectedOp ? listThreadSummaries(selectedOp.id, actorId) : []),
     [selectedOp?.id, actorId, threadVersion]
   );
+  const phaseTaskRows = useMemo(
+    () => [
+      ...phases.map((item) => ({ id: `phase:${item.id}`, kind: 'PHASE' as const, label: `Phase ${item.orderIndex + 1}: ${item.title}` })),
+      ...tasks.map((item) => ({ id: `task:${item.id}`, kind: 'TASK' as const, label: `Task: ${item.title}` })),
+    ],
+    [phases, tasks]
+  );
+  const mandateRows = useMemo(
+    () => [
+      ...(mandateProfile?.roleMandates || []).map((mandate) => ({ id: mandate.id, kind: 'ROLE' as const, mandate })),
+      ...(mandateProfile?.loadoutMandates || []).map((mandate) => ({ id: mandate.id, kind: 'LOADOUT' as const, mandate })),
+      ...(mandateProfile?.assetMandates || []).map((mandate) => ({ id: mandate.id, kind: 'ASSET' as const, mandate })),
+    ],
+    [mandateProfile]
+  );
   const stagePolicy = selectedOp ? deriveOperationStagePolicy(selectedOp, actorId) : null;
   const planningLocked = stagePolicy ? !stagePolicy.canEditPlan : true;
   const requirementsLocked = stagePolicy ? !stagePolicy.canEditRequirements : true;
@@ -483,6 +554,20 @@ export default function OperationFocusApp({
   const activeThreadComments = activeThreadSummary
     ? [activeThreadSummary.root, ...activeThreadSummary.replies]
     : comments;
+  const pagedAuditEvents = usePagedItems(auditEvents, 4);
+  const pagedObjectives = usePagedItems(objectives, 5);
+  const pagedPhaseTaskRows = usePagedItems(phaseTaskRows, 6);
+  const pagedAssumptions = usePagedItems(assumptions, 6);
+  const pagedOpenSeats = usePagedItems(openSeats, 4);
+  const pagedLeadAlerts = usePagedItems(leadAlerts, 4);
+  const pagedAssetSlots = usePagedItems(slots, 4);
+  const pagedRules = usePagedItems(policy?.rules || [], 6);
+  const pagedDoctrine = usePagedItems(doctrineCatalogByLevel[doctrineLevel] || [], 5);
+  const pagedMandates = usePagedItems(mandateRows, 6);
+  const pagedThreadSummaries = usePagedItems(threadSummaries, 4);
+  const pagedThreadComments = usePagedItems(activeThreadComments, 5);
+  const pagedDecisions = usePagedItems(decisions, 4);
+  const pagedTimelineEntries = usePagedItems(filteredTimelineEntries, 7);
 
   useEffect(() => {
     if (!threadSummaries.length) {
@@ -811,8 +896,8 @@ export default function OperationFocusApp({
         {auditCapsuleOpen ? (
           <div id="op-focus-audit-capsule" className="nexus-command-capsule-grid">
             <div className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1">Audit Stream</div>
-            <div className="space-y-1 max-h-24 overflow-auto pr-1 nexus-terminal-feed">
-              {auditEvents.map((entry) => (
+            <div className="space-y-1 max-h-24 overflow-hidden pr-1 nexus-terminal-feed">
+              {pagedAuditEvents.visibleItems.map((entry) => (
                 <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1 text-[10px] text-zinc-400">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-zinc-200">{entry.action}</span>
@@ -823,6 +908,7 @@ export default function OperationFocusApp({
               ))}
               {auditEvents.length === 0 ? <div className="text-[11px] text-zinc-500">No audit entries yet.</div> : null}
             </div>
+            <PaginationControls page={pagedAuditEvents.page} pageCount={pagedAuditEvents.pageCount} setPage={pagedAuditEvents.setPage} />
           </div>
         ) : null}
 
@@ -833,7 +919,7 @@ export default function OperationFocusApp({
         {TABS.map((id) => <NexusButton key={id} size="sm" intent={tabId === id ? 'primary' : 'subtle'} onClick={() => setTabId(id)}>{id}</NexusButton>)}
       </section>
 
-      <div className="flex-1 min-h-0 overflow-auto pr-1">
+      <div className="flex-1 min-h-0 overflow-hidden pr-1">
         {tabId === 'PLAN' ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {planningLocked ? (
@@ -844,20 +930,47 @@ export default function OperationFocusApp({
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Objectives</h4>
               <div className="flex gap-2"><input value={objectiveInput} disabled={planningLocked} onChange={(e) => setObjectiveInput(e.target.value)} className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Objective" /><NexusButton size="sm" intent="primary" disabled={planningLocked} onClick={() => runAction(() => { if (!objectiveInput.trim()) return; createObjective({ opId: selectedOp.id, title: objectiveInput, priority: 'MED', status: 'OPEN', createdBy: actorId }); setObjectiveInput(''); })}>Add</NexusButton></div>
-              <div className="space-y-1 max-h-44 overflow-auto pr-1">{objectives.map((item) => <div key={item.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">{item.title}</div>)}</div>
+              <div className="space-y-1 max-h-44 overflow-hidden pr-1">
+                {pagedObjectives.visibleItems.map((item) => (
+                  <div key={item.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">
+                    {item.title}
+                  </div>
+                ))}
+              </div>
+              <PaginationControls page={pagedObjectives.page} pageCount={pagedObjectives.pageCount} setPage={pagedObjectives.setPage} />
             </section>
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Phases + Tasks</h4>
               <div className="flex gap-2"><input value={phaseInput} disabled={planningLocked} onChange={(e) => setPhaseInput(e.target.value)} className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Phase" /><NexusButton size="sm" intent="subtle" disabled={planningLocked} onClick={() => runAction(() => { if (!phaseInput.trim()) return; createPhase({ opId: selectedOp.id, title: phaseInput, orderIndex: phases.length, status: 'OPEN' }); setPhaseInput(''); })}>Add Phase</NexusButton></div>
               <div className="flex gap-2"><input value={taskInput} disabled={planningLocked} onChange={(e) => setTaskInput(e.target.value)} className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Task" /><NexusButton size="sm" intent="subtle" disabled={planningLocked} onClick={() => runAction(() => { if (!taskInput.trim()) return; createTask({ opId: selectedOp.id, domain: 'COMMAND', title: taskInput, status: 'OPEN', createdBy: actorId }); setTaskInput(''); })}>Add Task</NexusButton></div>
-              <div className="space-y-1 max-h-40 overflow-auto pr-1">{phases.map((item) => <div key={item.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">Phase {item.orderIndex + 1}: {item.title}</div>)}{tasks.map((item) => <div key={item.id} className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[11px] text-zinc-400">Task: {item.title}</div>)}</div>
+              <div className="space-y-1 max-h-40 overflow-hidden pr-1">
+                {pagedPhaseTaskRows.visibleItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`rounded border px-2 py-1 text-[11px] ${item.kind === 'PHASE' ? 'border-zinc-800 bg-zinc-950/55 text-zinc-300' : 'border-zinc-800 bg-zinc-950/45 text-zinc-400'}`}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+              <PaginationControls page={pagedPhaseTaskRows.page} pageCount={pagedPhaseTaskRows.pageCount} setPage={pagedPhaseTaskRows.setPage} />
             </section>
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2 xl:col-span-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Assumptions</h4>
               <div className="flex gap-2"><input value={assumptionInput} disabled={planningLocked} onChange={(e) => setAssumptionInput(e.target.value)} className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Assumption" /><NexusButton size="sm" intent="primary" disabled={planningLocked} onClick={() => runAction(() => { if (!assumptionInput.trim()) return; createAssumption({ opId: selectedOp.id, statement: assumptionInput, confidence: 0.6, ttlProfileId: selectedOp.ttlProfileId, createdBy: actorId, status: 'ACTIVE' }); setAssumptionInput(''); })}>Add</NexusButton></div>
-              <div className="space-y-1 max-h-44 overflow-auto pr-1">{assumptions.map((item) => <div key={item.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] flex items-center justify-between gap-2"><span className="text-zinc-300 truncate">{item.statement}</span><NexusButton size="sm" intent="subtle" onClick={() => runAction(() => challengeAssumption(item.id, actorId))}>{item.status}</NexusButton></div>)}</div>
+              <div className="space-y-1 max-h-44 overflow-hidden pr-1">
+                {pagedAssumptions.visibleItems.map((item) => (
+                  <div key={item.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
+                    <span className="text-zinc-300 truncate">{item.statement}</span>
+                    <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => challengeAssumption(item.id, actorId))}>
+                      {item.status}
+                    </NexusButton>
+                  </div>
+                ))}
+              </div>
+              <PaginationControls page={pagedAssumptions.page} pageCount={pagedAssumptions.pageCount} setPage={pagedAssumptions.setPage} />
             </section>
           </div>
         ) : null}
@@ -921,8 +1034,8 @@ export default function OperationFocusApp({
               <select value={joinUserId} onChange={(e) => setJoinUserId(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                 {[actorId, ...roster.map((m) => m.id)].filter((v, i, arr) => arr.indexOf(v) === i).map((userId) => <option key={userId} value={userId}>{userId}</option>)}
               </select>
-              <div className="space-y-1.5 max-h-56 overflow-auto pr-1">
-                {openSeats.map((entry) => (
+              <div className="space-y-1.5 max-h-56 overflow-hidden pr-1">
+                {pagedOpenSeats.visibleItems.map((entry) => (
                   <div key={`${entry.assetSlot.id}:${entry.request.id}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
                     <div className="text-zinc-300">{entry.assetSlot.assetName} - {entry.request.roleNeeded}</div>
                     <div className="text-zinc-500">open {entry.openQty}</div>
@@ -931,6 +1044,7 @@ export default function OperationFocusApp({
                 ))}
                 {openSeats.length === 0 ? <div className="text-xs text-zinc-500">No open seats.</div> : null}
               </div>
+              <PaginationControls page={pagedOpenSeats.page} pageCount={pagedOpenSeats.pageCount} setPage={pagedOpenSeats.setPage} />
             </section>
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
@@ -1001,7 +1115,7 @@ export default function OperationFocusApp({
                 Refresh Matching Alerts
               </NexusButton>
 
-              <div className="space-y-1 max-h-32 overflow-auto pr-1">
+              <div className="space-y-1 max-h-32 overflow-hidden pr-1">
                 {candidateMatches.slice(0, 6).map((match) => (
                   <div key={`${match.userId}:${match.matchedRole}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
                     <div className="text-zinc-200">{match.callsign || match.userId} {'->'} {match.matchedRole}</div>
@@ -1011,8 +1125,8 @@ export default function OperationFocusApp({
                 {candidateMatches.length === 0 ? <div className="text-xs text-zinc-500">No role demand detected yet.</div> : null}
               </div>
 
-              <div className="space-y-1 max-h-28 overflow-auto pr-1">
-                {leadAlerts.map((alert) => (
+              <div className="space-y-1 max-h-28 overflow-hidden pr-1">
+                {pagedLeadAlerts.visibleItems.map((alert) => (
                   <div key={alert.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-zinc-200">{alert.title}</span>
@@ -1026,12 +1140,13 @@ export default function OperationFocusApp({
                 ))}
                 {leadAlerts.length === 0 ? <div className="text-xs text-zinc-500">No active lead alerts.</div> : null}
               </div>
+              <PaginationControls page={pagedLeadAlerts.page} pageCount={pagedLeadAlerts.pageCount} setPage={pagedLeadAlerts.setPage} />
             </section>
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Asset Fit Linkage</h4>
-              <div className="space-y-2 max-h-72 overflow-auto pr-1">
-                {slots.map((slot) => {
+              <div className="space-y-2 max-h-72 overflow-hidden pr-1">
+                {pagedAssetSlots.visibleItems.map((slot) => {
                   const selectedFit = fitProfiles.find((fit) => fit.id === slot.fitProfileId) || null;
                   return (
                     <div key={slot.id} className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5 text-[11px]">
@@ -1063,6 +1178,7 @@ export default function OperationFocusApp({
                 })}
                 {slots.length === 0 ? <div className="text-xs text-zinc-500">No asset RSVP slots yet.</div> : null}
               </div>
+              <PaginationControls page={pagedAssetSlots.page} pageCount={pagedAssetSlots.pageCount} setPage={pagedAssetSlots.setPage} />
             </section>
           </div>
         ) : null}
@@ -1093,8 +1209,8 @@ export default function OperationFocusApp({
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Active Rules</h4>
-              <div className="space-y-1.5 max-h-64 overflow-auto pr-1">
-                {(policy?.rules || []).map((rule) => (
+              <div className="space-y-1.5 max-h-64 overflow-hidden pr-1">
+                {pagedRules.visibleItems.map((rule) => (
                   <div key={rule.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] space-y-1">
                     <div className="flex items-center justify-between gap-2"><NexusBadge tone={rule.enforcement === 'HARD' ? 'danger' : rule.enforcement === 'SOFT' ? 'warning' : 'neutral'}>{rule.enforcement}</NexusBadge><NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => updateRSVPPolicy(selectedOp.id, (policy?.rules || []).filter((r) => r.id !== rule.id)))}>Remove</NexusButton></div>
                     <div className="text-zinc-300">{rule.kind}</div>
@@ -1103,6 +1219,7 @@ export default function OperationFocusApp({
                 ))}
                 {!policy || policy.rules.length === 0 ? <div className="text-xs text-zinc-500">No rules configured.</div> : null}
               </div>
+              <PaginationControls page={pagedRules.page} pageCount={pagedRules.pageCount} setPage={pagedRules.setPage} />
               <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1">
                 <div className="text-[11px] uppercase tracking-wide text-zinc-400">Available Tags</div>
                 <div className="text-[11px] text-zinc-500">
@@ -1176,8 +1293,8 @@ export default function OperationFocusApp({
                   </NexusButton>
                 </div>
               </div>
-              <div className="space-y-2 max-h-80 overflow-auto pr-1">
-                {(doctrineCatalogByLevel[doctrineLevel] || []).map((doctrine) => {
+              <div className="space-y-2 max-h-80 overflow-hidden pr-1">
+                {pagedDoctrine.visibleItems.map((doctrine) => {
                   const selection = doctrineProfile?.doctrineByLevel[doctrineLevel]?.find((entry) => entry.doctrineId === doctrine.id) || null;
                   return (
                     <div key={doctrine.id} className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1">
@@ -1220,6 +1337,7 @@ export default function OperationFocusApp({
                   );
                 })}
               </div>
+              <PaginationControls page={pagedDoctrine.page} pageCount={pagedDoctrine.pageCount} setPage={pagedDoctrine.setPage} />
               <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1 text-[11px]">
                 <div className="text-zinc-400 uppercase tracking-wide">Impact Snapshot</div>
                 {doctrineImpactSummary.map((entry) => (
@@ -1263,26 +1381,40 @@ export default function OperationFocusApp({
                 <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => upsertAssetMandate(selectedOp.id, { assetTag: assetMandateTag || 'support', minCount: Math.max(0, assetMandateMin), enforcement: assetMandateEnforcement }, actorId))}>Add Asset Mandate</NexusButton>
               </div>
 
-              <div className="space-y-1 max-h-40 overflow-auto pr-1">
-                {(mandateProfile?.roleMandates || []).map((mandate) => (
-                  <div key={mandate.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
-                    <div className="text-zinc-300 truncate">{mandate.role} min {mandate.minCount} ({mandate.enforcement})</div>
-                    <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => removeRoleMandate(selectedOp.id, mandate.id, actorId))}>Remove</NexusButton>
-                  </div>
-                ))}
-                {(mandateProfile?.loadoutMandates || []).map((mandate) => (
-                  <div key={mandate.id} className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
-                    <div className="text-zinc-400 truncate">Loadout: {mandate.label} ({mandate.enforcement})</div>
-                    <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => removeLoadoutMandate(selectedOp.id, mandate.id, actorId))}>Remove</NexusButton>
-                  </div>
-                ))}
-                {(mandateProfile?.assetMandates || []).map((mandate) => (
-                  <div key={mandate.id} className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
-                    <div className="text-zinc-400 truncate">Asset {mandate.assetTag} min {mandate.minCount} ({mandate.enforcement})</div>
-                    <NexusButton size="sm" intent="subtle" disabled={requirementsLocked} onClick={() => runAction(() => removeAssetMandate(selectedOp.id, mandate.id, actorId))}>Remove</NexusButton>
+              <div className="space-y-1 max-h-40 overflow-hidden pr-1">
+                {pagedMandates.visibleItems.map((entry) => (
+                  <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[11px] flex items-center justify-between gap-2">
+                    <div className="truncate text-zinc-300">
+                      {entry.kind === 'ROLE'
+                        ? `${entry.mandate.role} min ${entry.mandate.minCount} (${entry.mandate.enforcement})`
+                        : entry.kind === 'LOADOUT'
+                          ? `Loadout: ${entry.mandate.label} (${entry.mandate.enforcement})`
+                          : `Asset ${entry.mandate.assetTag} min ${entry.mandate.minCount} (${entry.mandate.enforcement})`}
+                    </div>
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      disabled={requirementsLocked}
+                      onClick={() =>
+                        runAction(() => {
+                          if (entry.kind === 'ROLE') {
+                            removeRoleMandate(selectedOp.id, entry.mandate.id, actorId);
+                            return;
+                          }
+                          if (entry.kind === 'LOADOUT') {
+                            removeLoadoutMandate(selectedOp.id, entry.mandate.id, actorId);
+                            return;
+                          }
+                          removeAssetMandate(selectedOp.id, entry.mandate.id, actorId);
+                        })
+                      }
+                    >
+                      Remove
+                    </NexusButton>
                   </div>
                 ))}
               </div>
+              <PaginationControls page={pagedMandates.page} pageCount={pagedMandates.pageCount} setPage={pagedMandates.setPage} />
             </section>
           </div>
         ) : null}
@@ -1311,8 +1443,8 @@ export default function OperationFocusApp({
               <div className="text-[11px] text-zinc-500">
                 Thread inbox is scoped to this operation. Open a thread to mark replies as read and keep decision context anchored.
               </div>
-              <div className="space-y-1 max-h-24 overflow-auto pr-1">
-                {threadSummaries.map((summaryEntry) => (
+              <div className="space-y-1 max-h-24 overflow-hidden pr-1">
+                {pagedThreadSummaries.visibleItems.map((summaryEntry) => (
                   <button
                     key={summaryEntry.root.id}
                     type="button"
@@ -1336,6 +1468,7 @@ export default function OperationFocusApp({
                 ))}
                 {threadSummaries.length === 0 ? <div className="text-xs text-zinc-500">No scoped comments yet.</div> : null}
               </div>
+              <PaginationControls page={pagedThreadSummaries.page} pageCount={pagedThreadSummaries.pageCount} setPage={pagedThreadSummaries.setPage} />
               {threadParentId ? (
                 <div className="rounded border border-sky-900/50 bg-sky-950/25 px-2 py-1 text-[11px] text-sky-200 flex items-center justify-between gap-2">
                   <span>Replying in thread: {threadParentId}</span>
@@ -1359,8 +1492,8 @@ export default function OperationFocusApp({
               >
                 Post
               </NexusButton>
-              <div className="space-y-1 max-h-40 overflow-auto pr-1">
-                {activeThreadComments.map((entry) => {
+              <div className="space-y-1 max-h-40 overflow-hidden pr-1">
+                {pagedThreadComments.visibleItems.map((entry) => {
                   const rootId = activeThreadSummary?.root.id || entry.parentCommentId || entry.id;
                   return (
                     <div key={entry.id} className={`rounded border px-2 py-1 text-[11px] ${entry.parentCommentId ? 'ml-3 border-sky-900/40 bg-zinc-950/45' : 'border-zinc-800 bg-zinc-950/55'} ${decisionCommentId === entry.id ? 'ring-1 ring-sky-500/50' : ''}`}>
@@ -1386,8 +1519,16 @@ export default function OperationFocusApp({
                   );
                 })}
               </div>
+              <PaginationControls page={pagedThreadComments.page} pageCount={pagedThreadComments.pageCount} setPage={pagedThreadComments.setPage} />
               <div className="flex gap-2"><input value={decisionTitle} disabled={commsLocked} onChange={(e) => setDecisionTitle(e.target.value)} className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Decision title" /><NexusButton size="sm" intent="subtle" disabled={commsLocked} onClick={() => runAction(() => { if (!decisionCommentId || !decisionTitle.trim()) return; promoteCommentToDecision({ opId: selectedOp.id, sourceCommentId: decisionCommentId, title: decisionTitle, createdBy: actorId }); setDecisionTitle(''); setDecisionCommentId(''); })}>Promote</NexusButton></div>
-              <div className="space-y-1 max-h-24 overflow-auto pr-1">{decisions.map((d) => <div key={d.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">{d.title}</div>)}</div>
+              <div className="space-y-1 max-h-24 overflow-hidden pr-1">
+                {pagedDecisions.visibleItems.map((d) => (
+                  <div key={d.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">
+                    {d.title}
+                  </div>
+                ))}
+              </div>
+              <PaginationControls page={pagedDecisions.page} pageCount={pagedDecisions.pageCount} setPage={pagedDecisions.setPage} />
             </section>
           </div>
         ) : null}
@@ -1411,8 +1552,8 @@ export default function OperationFocusApp({
                   </NexusButton>
                 ))}
               </div>
-              <div className="space-y-1.5 max-h-[30rem] overflow-auto pr-1 nexus-terminal-feed">
-                {filteredTimelineEntries.map((entry) => (
+              <div className="space-y-1.5 max-h-[30rem] overflow-hidden pr-1 nexus-terminal-feed">
+                {pagedTimelineEntries.visibleItems.map((entry) => (
                   <div key={entry.id} className={`rounded border px-2 py-1.5 text-[11px] ${classesForTimelineSeverity(entry.severity)}`}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -1432,6 +1573,7 @@ export default function OperationFocusApp({
                   </div>
                 ) : null}
               </div>
+              <PaginationControls page={pagedTimelineEntries.page} pageCount={pagedTimelineEntries.pageCount} setPage={pagedTimelineEntries.setPage} />
             </section>
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">

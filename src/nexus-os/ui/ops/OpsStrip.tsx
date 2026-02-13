@@ -131,6 +131,8 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
   const [showManageConsole, setShowManageConsole] = useState(false);
   const [showTemplateBay, setShowTemplateBay] = useState(false);
   const [showAuditFeed, setShowAuditFeed] = useState(false);
+  const [operationPage, setOperationPage] = useState(0);
+  const [auditPage, setAuditPage] = useState(0);
 
   useEffect(() => {
     const unsubscribe = subscribeOperations(() => setOpsVersion((prev) => prev + 1));
@@ -163,6 +165,12 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
       );
     });
   }, [operations, postureFilter, queryInput, statusFilter]);
+  const operationsPerPage = 6;
+  const operationPageCount = Math.max(1, Math.ceil(visibleOperations.length / operationsPerPage));
+  const pagedOperations = useMemo(
+    () => visibleOperations.slice(operationPage * operationsPerPage, operationPage * operationsPerPage + operationsPerPage),
+    [visibleOperations, operationPage]
+  );
 
   const manageOperation = useMemo(
     () => operations.find((entry) => entry.id === manageOpId) || null,
@@ -179,6 +187,12 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
   const auditFeed = useMemo(
     () => listOperationAuditEvents(manageOperation?.id, 12),
     [manageOperation?.id, opsVersion]
+  );
+  const auditPerPage = 4;
+  const auditPageCount = Math.max(1, Math.ceil(auditFeed.length / auditPerPage));
+  const visibleAuditFeed = useMemo(
+    () => auditFeed.slice(auditPage * auditPerPage, auditPage * auditPerPage + auditPerPage),
+    [auditFeed, auditPage]
   );
 
   useEffect(() => {
@@ -217,6 +231,14 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
     if (selectedTemplateId && operationTemplates.some((entry) => entry.id === selectedTemplateId)) return;
     setSelectedTemplateId(operationTemplates[0].id);
   }, [operationTemplates, selectedTemplateId]);
+
+  useEffect(() => {
+    setOperationPage((prev) => Math.min(prev, operationPageCount - 1));
+  }, [operationPageCount]);
+
+  useEffect(() => {
+    setAuditPage((prev) => Math.min(prev, auditPageCount - 1));
+  }, [auditPageCount]);
 
   const createNewOperation = () => {
     try {
@@ -655,9 +677,22 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
 
       {showAuditFeed ? (
       <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2 space-y-2 nexus-terminal-panel">
-        <div className="text-[11px] text-zinc-500 uppercase tracking-wide">Audit Feed</div>
-        <div className="max-h-36 overflow-auto pr-1 space-y-1 nexus-terminal-feed">
-          {auditFeed.map((entry) => (
+        <div className="text-[11px] text-zinc-500 uppercase tracking-wide flex items-center justify-between gap-2">
+          <span>Audit Feed</span>
+          {auditPageCount > 1 ? (
+            <div className="flex items-center gap-1">
+              <NexusButton size="sm" intent="subtle" onClick={() => setAuditPage((prev) => Math.max(0, prev - 1))} disabled={auditPage === 0}>
+                Prev
+              </NexusButton>
+              <NexusBadge tone="neutral">{auditPage + 1}/{auditPageCount}</NexusBadge>
+              <NexusButton size="sm" intent="subtle" onClick={() => setAuditPage((prev) => Math.min(auditPageCount - 1, prev + 1))} disabled={auditPage >= auditPageCount - 1}>
+                Next
+              </NexusButton>
+            </div>
+          ) : null}
+        </div>
+        <div className="max-h-36 overflow-hidden pr-1 space-y-1 nexus-terminal-feed">
+          {visibleAuditFeed.map((entry) => (
             <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1 text-[10px] text-zinc-400">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-zinc-200">{entry.action}</span>
@@ -678,6 +713,16 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
         </div>
       ) : null}
 
+      <div className="flex items-center justify-end gap-1.5">
+        <NexusButton size="sm" intent="subtle" onClick={() => setOperationPage((prev) => Math.max(0, prev - 1))} disabled={operationPage === 0}>
+          Prev
+        </NexusButton>
+        <NexusBadge tone="neutral">{operationPage + 1}/{operationPageCount}</NexusBadge>
+        <NexusButton size="sm" intent="subtle" onClick={() => setOperationPage((prev) => Math.min(operationPageCount - 1, prev + 1))} disabled={operationPage >= operationPageCount - 1}>
+          Next
+        </NexusButton>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {isLoading ? (
           <>
@@ -692,7 +737,7 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
         ) : null}
 
         {!isLoading
-          ? visibleOperations.map((op) => {
+          ? pagedOperations.map((op) => {
               const roster = computeRosterSummary(op.id);
               const escalations = listAssumptions(op.id).filter((assumption) => assumption.status === 'CHALLENGED').length;
               const isFocus = focusOperationId === op.id;
