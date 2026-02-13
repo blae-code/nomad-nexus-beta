@@ -252,6 +252,55 @@
   padding: 8px;
 }
 
+.nexus-map-toolbar {
+  background:
+    linear-gradient(180deg, rgba(10, 18, 27, 0.92), rgba(8, 14, 22, 0.94)),
+    linear-gradient(120deg, rgba(var(--nx-bridge-a-rgb-effective), 0.06), transparent 36%);
+}
+
+.nexus-map-stage {
+  position: relative;
+  border-color: rgba(var(--nx-bridge-b-rgb-effective), 0.34);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(var(--nx-bridge-a-rgb-effective), 0.14), transparent 44%),
+    radial-gradient(circle at 84% 80%, rgba(var(--nx-bridge-b-rgb-effective), 0.12), transparent 48%),
+    linear-gradient(160deg, rgba(6, 11, 18, 0.96), rgba(8, 14, 22, 0.96));
+}
+
+.nexus-map-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(var(--nx-bridge-c-rgb-effective), 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--nx-bridge-a-rgb-effective), 0.03) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+  opacity: 0.18;
+}
+
+.nexus-map-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 56%, rgba(2, 6, 10, 0.44) 100%);
+}
+
+.nexus-map-sidebar > section {
+  border-color: rgba(var(--nx-bridge-b-rgb-effective), 0.24);
+  background:
+    linear-gradient(180deg, rgba(11, 17, 24, 0.82), rgba(8, 14, 21, 0.88)),
+    linear-gradient(120deg, rgba(var(--nx-bridge-a-rgb-effective), 0.035), transparent 34%);
+  box-shadow:
+    0 0 0 1px rgba(var(--nx-bridge-a-rgb-effective), 0.08) inset,
+    0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.nexus-map-sidebar > section h4 {
+  letter-spacing: 0.08em;
+}
+
 @keyframes nx-sweep {
   0% {
     transform: translateY(-100%);

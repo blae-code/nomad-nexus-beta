@@ -191,9 +191,9 @@ function confidenceBandToColor(confidence: IntelRenderable['confidence']): strin
 }
 
 function glyphFillForIntelType(type: IntelRenderable['type']): string {
-  if (type === 'PIN') return 'rgba(179, 90, 47, 0.26)';
-  if (type === 'MARKER') return 'rgba(166, 130, 98, 0.24)';
-  return 'rgba(130, 120, 112, 0.26)';
+  if (type === 'PIN') return 'rgba(84, 146, 196, 0.24)';
+  if (type === 'MARKER') return 'rgba(98, 162, 138, 0.22)';
+  return 'rgba(122, 142, 164, 0.22)';
 }
 
 function intelTooltip(intel: IntelRenderable): string {
@@ -245,23 +245,23 @@ function logisticsLaneTone(lane: MapLogisticsLane): 'ok' | 'warning' | 'neutral'
 }
 
 function nodeStrokeColor(category: string | undefined, isSystem: boolean): string {
-  if (isSystem) return 'rgba(179,90,47,0.72)';
-  if (category === 'planet') return 'rgba(163,132,106,0.75)';
-  if (category === 'moon') return 'rgba(140,122,108,0.72)';
-  if (category === 'station') return 'rgba(94,158,178,0.8)';
-  if (category === 'lagrange') return 'rgba(176,140,93,0.72)';
-  if (category === 'orbital-marker') return 'rgba(125,132,147,0.6)';
-  return 'rgba(133,116,103,0.64)';
+  if (isSystem) return 'rgba(110, 178, 224, 0.74)';
+  if (category === 'planet') return 'rgba(150, 172, 196, 0.72)';
+  if (category === 'moon') return 'rgba(134, 160, 182, 0.7)';
+  if (category === 'station') return 'rgba(98, 188, 218, 0.82)';
+  if (category === 'lagrange') return 'rgba(132, 176, 206, 0.72)';
+  if (category === 'orbital-marker') return 'rgba(118, 144, 172, 0.58)';
+  return 'rgba(126, 152, 178, 0.64)';
 }
 
 function nodeFillColor(category: string | undefined, isSystem: boolean): string {
-  if (isSystem) return 'rgba(179,90,47,0.18)';
-  if (category === 'planet') return 'rgba(114,98,84,0.28)';
-  if (category === 'moon') return 'rgba(95,84,76,0.24)';
-  if (category === 'station') return 'rgba(65,92,103,0.32)';
-  if (category === 'lagrange') return 'rgba(110,92,72,0.2)';
-  if (category === 'orbital-marker') return 'rgba(90,95,106,0.14)';
-  return 'rgba(107,91,80,0.2)';
+  if (isSystem) return 'rgba(78, 138, 188, 0.2)';
+  if (category === 'planet') return 'rgba(78, 98, 124, 0.28)';
+  if (category === 'moon') return 'rgba(70, 88, 108, 0.24)';
+  if (category === 'station') return 'rgba(58, 102, 124, 0.32)';
+  if (category === 'lagrange') return 'rgba(70, 96, 116, 0.2)';
+  if (category === 'orbital-marker') return 'rgba(80, 96, 116, 0.14)';
+  return 'rgba(72, 92, 112, 0.2)';
 }
 
 export default function TacticalMapPanel({
@@ -514,6 +514,7 @@ export default function TacticalMapPanel({
   const hasComms = layerEnabled('comms') && (commsOverlay.nets.length > 0 || visibleCommsCallouts.length > 0 || visibleCommsLinks.length > 0);
   const hasLogistics = layerEnabled('logistics') && logisticsOverlay.lanes.length > 0;
   const hasAnyOverlay = hasPresence || hasControl || hasIntel || hasOps || hasComms || hasLogistics;
+  const activeLayerCount = layers.filter((entry) => entry.enabled).length;
   const presenceStaleCount = presence.filter((entry) => entry.displayState === 'STALE').length;
   const intelStaleCount = visibleIntel.filter((entry) => entry.ttl.stale).length;
   const commsStaleCount = visibleCommsCallouts.filter((entry) => entry.stale).length;
@@ -762,14 +763,31 @@ export default function TacticalMapPanel({
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="h-full min-h-0 flex flex-col gap-2.5">
+      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-3 py-2.5 space-y-2 nexus-terminal-panel nexus-map-toolbar">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100">Tactical Map</h3>
+            <NexusBadge tone={hasAnyOverlay ? 'active' : 'neutral'}>{hasAnyOverlay ? 'LIVE OVERLAYS' : 'BASELINE'}</NexusBadge>
+            <NexusBadge tone="neutral">LAYERS {activeLayerCount}/{layers.length}</NexusBadge>
+            <NexusBadge tone={mapInference.commandRiskScore >= 70 ? 'danger' : mapInference.commandRiskScore >= 45 ? 'warning' : 'ok'}>
+              RISK {mapInference.commandRiskScore}
+            </NexusBadge>
+          </div>
+          {onOpenMapFocus ? (
+            <NexusButton size="sm" intent="subtle" onClick={onOpenMapFocus}>
+              Open Map Focus
+            </NexusButton>
+          ) : null}
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           {layers.map((layer) => (
             <NexusButton
               key={layer.id}
               size="sm"
               intent={layer.enabled ? 'primary' : 'subtle'}
+              className="nexus-command-capsule"
+              data-open={layer.enabled ? 'true' : 'false'}
               onClick={() => toggleLayer(layer.id)}
               title={`${layerLabel(layer.id)} layer toggle`}
               style={transitionStyle({
@@ -782,37 +800,32 @@ export default function TacticalMapPanel({
             </NexusButton>
           ))}
           <div className="h-5 w-px bg-zinc-700/70" />
-          <NexusButton size="sm" intent={showStations ? 'primary' : 'subtle'} onClick={() => setShowStations((prev) => !prev)} title="Toggle stations">
+          <NexusButton size="sm" intent={showStations ? 'primary' : 'subtle'} className="nexus-command-capsule" data-open={showStations ? 'true' : 'false'} onClick={() => setShowStations((prev) => !prev)} title="Toggle stations">
             Stations
           </NexusButton>
-          <NexusButton size="sm" intent={showLagrange ? 'primary' : 'subtle'} onClick={() => setShowLagrange((prev) => !prev)} title="Toggle Lagrange points">
+          <NexusButton size="sm" intent={showLagrange ? 'primary' : 'subtle'} className="nexus-command-capsule" data-open={showLagrange ? 'true' : 'false'} onClick={() => setShowLagrange((prev) => !prev)} title="Toggle Lagrange points">
             Lagrange
           </NexusButton>
-          <NexusButton size="sm" intent={showOmMarkers ? 'primary' : 'subtle'} onClick={() => setShowOmMarkers((prev) => !prev)} title="Toggle orbital marker ring">
+          <NexusButton size="sm" intent={showOmMarkers ? 'primary' : 'subtle'} className="nexus-command-capsule" data-open={showOmMarkers ? 'true' : 'false'} onClick={() => setShowOmMarkers((prev) => !prev)} title="Toggle orbital marker ring">
             OM
           </NexusButton>
         </div>
-        {onOpenMapFocus ? (
-          <NexusButton size="sm" intent="subtle" onClick={onOpenMapFocus}>
-            Open Map Focus
-          </NexusButton>
-        ) : null}
-      </div>
+      </section>
 
       <div className={`flex-1 min-h-0 grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 xl:grid-cols-12'}`}>
         <div className={compact ? 'min-h-0' : 'xl:col-span-8 min-h-0'}>
           <div
-            className="h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden"
+            className="h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage"
             onClick={() => setActiveRadial(null)}
           >
             <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 h-full w-full">
               <defs>
                 <pattern id="zone-contested-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(196,130,88,0.35)" strokeWidth="1" />
+                  <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(201,152,96,0.3)" strokeWidth="1" />
                 </pattern>
               </defs>
 
-              <rect x="0" y="0" width="100" height="100" fill="rgba(17, 13, 11, 0.86)" />
+              <rect x="0" y="0" width="100" height="100" fill="rgba(8, 14, 21, 0.9)" />
 
               {TACTICAL_MAP_EDGES.map((edge) => {
                 const source = TACTICAL_MAP_NODE_BY_ID[edge.fromNodeId];
@@ -825,7 +838,7 @@ export default function TacticalMapPanel({
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke={edge.risk === 'high' ? 'rgba(189,104,87,0.6)' : edge.risk === 'medium' ? 'rgba(179,138,82,0.52)' : 'rgba(135,128,122,0.42)'}
+                    stroke={edge.risk === 'high' ? 'rgba(214,83,64,0.56)' : edge.risk === 'medium' ? 'rgba(196,154,94,0.5)' : 'rgba(92,138,174,0.36)'}
                     strokeWidth={1.1}
                     strokeDasharray="3 2"
                   />
@@ -843,7 +856,7 @@ export default function TacticalMapPanel({
                           cy={anchorNode.y}
                           r={anchorNode.radius + (entry.isFocus ? 3.8 : 2.2)}
                           fill="none"
-                          stroke={entry.isFocus ? 'rgba(218, 147, 99, 0.9)' : 'rgba(143, 118, 96, 0.38)'}
+                          stroke={entry.isFocus ? 'rgba(106, 188, 236, 0.9)' : 'rgba(102, 136, 164, 0.38)'}
                           strokeWidth={entry.isFocus ? 1.3 : 0.9}
                           strokeDasharray={entry.isFocus ? '4 2' : '2 2'}
                           opacity={entry.isFocus ? 0.9 : 0.45}
@@ -853,7 +866,7 @@ export default function TacticalMapPanel({
                           y={anchorNode.y - anchorNode.radius - (entry.isFocus ? 2.9 : 1.9)}
                           textAnchor="middle"
                           style={{
-                            fill: entry.isFocus ? 'rgba(238,221,207,0.9)' : 'rgba(165,150,138,0.6)',
+                            fill: entry.isFocus ? 'rgba(220,236,248,0.9)' : 'rgba(146,170,188,0.64)',
                             fontSize: entry.isFocus ? '1.9px' : '1.5px',
                             textTransform: 'uppercase',
                             letterSpacing: '0.2px',
@@ -911,8 +924,8 @@ export default function TacticalMapPanel({
                             cx={anchorNode.x}
                             cy={anchorNode.y}
                             r={radius}
-                            fill={contested ? 'url(#zone-contested-hatch)' : 'rgba(179,90,47,0.12)'}
-                            stroke={contested ? 'rgba(201,145,102,0.7)' : 'rgba(179,90,47,0.55)'}
+                            fill={contested ? 'url(#zone-contested-hatch)' : 'rgba(86,150,196,0.12)'}
+                            stroke={contested ? 'rgba(201,145,102,0.7)' : 'rgba(98,174,220,0.56)'}
                             strokeWidth={1.4 + zone.contestationLevel * 2}
                             opacity={decayOpacity}
                           />
@@ -923,8 +936,8 @@ export default function TacticalMapPanel({
                               cx={anchorNode.x + (controllerIndex === 0 ? -0.5 : 0.5)}
                               cy={anchorNode.y}
                               r={radius + controllerIndex * 1.4}
-                              fill={controllerIndex === 0 ? 'rgba(179,90,47,0.12)' : 'url(#zone-contested-hatch)'}
-                              stroke={controllerIndex === 0 ? 'rgba(179,90,47,0.62)' : 'rgba(201,145,102,0.7)'}
+                              fill={controllerIndex === 0 ? 'rgba(86,150,196,0.12)' : 'url(#zone-contested-hatch)'}
+                              stroke={controllerIndex === 0 ? 'rgba(98,174,220,0.62)' : 'rgba(201,145,102,0.7)'}
                               strokeWidth={1.1 + controller.confidence * 2}
                               opacity={Math.max(0.16, Math.min(0.72, decayOpacity - controllerIndex * 0.08))}
                             />
@@ -984,7 +997,7 @@ export default function TacticalMapPanel({
                           y={anchor.y - 2.35}
                           textAnchor="middle"
                           style={{
-                            fill: 'rgba(221,214,206,0.86)',
+                            fill: 'rgba(205,224,240,0.86)',
                             fontSize: '1.25px',
                             textTransform: 'uppercase',
                           }}
@@ -1098,7 +1111,7 @@ export default function TacticalMapPanel({
                       y={node.y + node.radius + (isOm ? 1.4 : 2.6)}
                       textAnchor="middle"
                       style={{
-                        fill: isOm ? 'rgba(193,186,180,0.72)' : 'rgba(225,213,203,0.9)',
+                        fill: isOm ? 'rgba(170,188,206,0.72)' : 'rgba(214,230,242,0.9)',
                         fontSize: isSystem ? '2.6px' : isOm ? '1.2px' : isLagrange ? '1.45px' : '1.95px',
                         letterSpacing: isOm ? '0.16px' : '0.25px',
                         textTransform: 'uppercase',
@@ -1123,7 +1136,7 @@ export default function TacticalMapPanel({
                           x={x + 1.8}
                           y={y + 0.45}
                           style={{
-                            fill: 'rgba(238,230,223,0.88)',
+                            fill: 'rgba(220,235,246,0.88)',
                             fontSize: '1.6px',
                             textTransform: 'uppercase',
                           }}
@@ -1220,7 +1233,7 @@ export default function TacticalMapPanel({
 
             {!hasAnyOverlay ? (
               <AnimatedMount show className="absolute inset-x-3 bottom-3">
-                <div className="rounded border border-zinc-700 bg-zinc-950/72 px-3 py-2 text-xs text-zinc-400">
+                <div className="rounded border border-zinc-700 bg-zinc-950/72 px-3 py-2 text-xs text-zinc-400 nexus-command-capsule-grid">
                   No active overlays. Baseline system board is rendered and ready for scoped data.
                 </div>
               </AnimatedMount>
@@ -1229,7 +1242,7 @@ export default function TacticalMapPanel({
         </div>
 
         <div className={compact ? 'min-h-0' : 'xl:col-span-4 min-h-0 overflow-auto pr-1'}>
-          <div className="space-y-3">
+          <div className="space-y-3 nexus-map-sidebar">
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Presence</h4>
