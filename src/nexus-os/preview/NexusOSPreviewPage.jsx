@@ -1064,7 +1064,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   return (
     <div
-      className="nexus-shell-root nexus-layout-quiet relative w-full h-full min-h-0 overflow-hidden p-3 md:p-4 flex flex-col gap-2.5"
+      className="nexus-shell-root nexus-layout-quiet relative w-full h-full min-h-0 overflow-hidden p-3 pb-24 md:p-4 md:pb-28 flex flex-col gap-2.5"
       data-bridge-id={bridgeId}
       style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
@@ -1234,22 +1234,24 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         />
       </div>
 
-      <NexusTaskbar
-        bridgeId={bridgeId}
-        activeAppId={focusMode || lifecycle.foregroundAppId}
-        appEntries={lifecycle.entries}
-        appCatalog={FOCUS_APP_CATALOG}
-        online={online}
-        eventPulseCount={pulseCount}
-        notifications={tray.notifications}
-        unreadNotifications={tray.unreadCount}
-        onActivateApp={openFocusApp}
-        onSuspendApp={suspendFocusApp}
-        onOpenCommandDeck={() => setCommandDeckOpen(true)}
-        onMarkNotificationRead={tray.markNotificationRead}
-        onMarkAllNotificationsRead={tray.markAllNotificationsRead}
-        onClearNotifications={tray.clearNotifications}
-      />
+      <div className="fixed left-3 right-3 bottom-3 md:left-4 md:right-4 md:bottom-4 z-[1100]">
+        <NexusTaskbar
+          bridgeId={bridgeId}
+          activeAppId={focusMode || lifecycle.foregroundAppId}
+          appEntries={lifecycle.entries}
+          appCatalog={FOCUS_APP_CATALOG}
+          online={online}
+          eventPulseCount={pulseCount}
+          notifications={tray.notifications}
+          unreadNotifications={tray.unreadCount}
+          onActivateApp={openFocusApp}
+          onSuspendApp={suspendFocusApp}
+          onOpenCommandDeck={() => setCommandDeckOpen(true)}
+          onMarkNotificationRead={tray.markNotificationRead}
+          onMarkAllNotificationsRead={tray.markAllNotificationsRead}
+          onClearNotifications={tray.clearNotifications}
+        />
+      </div>
 
       <CommandFocus
         open={Boolean(focusMode)}

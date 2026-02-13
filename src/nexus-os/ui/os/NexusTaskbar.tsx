@@ -36,6 +36,22 @@ function toneForNotificationLevel(level: NexusTrayNotification['level']) {
   return 'active';
 }
 
+function labelForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
+  if (state === 'foreground') return 'Active';
+  if (state === 'background') return 'Background';
+  if (state === 'suspended') return 'Suspended';
+  if (state === 'error') return 'Error';
+  return 'Closed';
+}
+
+function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
+  if (state === 'foreground') return 'bg-emerald-400';
+  if (state === 'background') return 'bg-sky-400';
+  if (state === 'suspended') return 'bg-amber-400';
+  if (state === 'error') return 'bg-red-400';
+  return 'bg-zinc-600';
+}
+
 function ageLabel(timestamp: string): string {
   const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
   if (ageSeconds < 60) return `${ageSeconds}s`;
@@ -60,8 +76,18 @@ export default function NexusTaskbar({
   onClearNotifications,
 }: NexusTaskbarProps) {
   const [trayOpen, setTrayOpen] = React.useState(false);
+  const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
 
-  const shownNotifications = notifications.slice(0, 8);
+  const shownNotifications = React.useMemo(
+    () =>
+      (trayFilter === 'UNREAD'
+        ? notifications.filter((entry) => !entry.read)
+        : notifications
+      ).slice(0, 8),
+    [notifications, trayFilter]
+  );
+  const activeAppState = activeAppId ? appEntries[activeAppId]?.state || 'closed' : 'closed';
+  const activeAppLabel = activeAppId ? appCatalog.find((entry) => entry.id === activeAppId)?.label || activeAppId : 'None';
 
   return (
     <section
@@ -71,62 +97,75 @@ export default function NexusTaskbar({
         backgroundColor: 'rgba(10, 16, 23, 0.92)',
       }}
     >
-      <NexusButton size="sm" intent="subtle" onClick={onOpenCommandDeck} className="shrink-0">
-        <AppWindow className="w-3.5 h-3.5 mr-1" />
-        Nexus
-      </NexusButton>
-
-      <div className="min-w-0 flex-1 flex items-center gap-1 overflow-auto">
-        {appCatalog.map((app) => {
-          const entry = appEntries[app.id];
-          const active = activeAppId === app.id;
-          return (
-            <div key={app.id} className="flex items-center gap-1 shrink-0">
-              <NexusButton
-                size="sm"
-                intent={active ? 'primary' : 'subtle'}
-                onClick={() => onActivateApp(app.id)}
-                className="h-8 px-2"
-                title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
-              >
-                {app.label}
-              </NexusButton>
-              <NexusBadge tone={toneForState(entry?.state || 'closed')} className="h-6 px-1.5">
-                {(entry?.state || 'closed').slice(0, 3)}
-              </NexusBadge>
-              {entry?.state === 'foreground' ? (
-                <button
-                  type="button"
-                  className="h-6 w-6 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500 grid place-items-center"
-                  title={`Suspend ${app.label}`}
-                  onClick={() => onSuspendApp(app.id)}
-                >
-                  <PauseCircle className="w-3.5 h-3.5" />
-                </button>
-              ) : null}
-            </div>
-          );
-        })}
+      <div className="shrink-0 flex items-center gap-2">
+        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0">
+          <AppWindow className="w-3.5 h-3.5 mr-1" />
+          Command Deck
+        </NexusButton>
+        <div className="hidden lg:flex items-center gap-2 text-[10px] text-zinc-500 uppercase tracking-wide">
+          <span>Active:</span>
+          <NexusBadge tone={toneForState(activeAppState)}>{activeAppLabel} {labelForState(activeAppState)}</NexusBadge>
+        </div>
       </div>
 
-      <div className="shrink-0 flex items-center gap-2">
+      <div className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1">
+        <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Applications</div>
+        <div className="mt-1 flex items-center gap-1 overflow-auto pr-1">
+          {appCatalog.map((app) => {
+            const state = appEntries[app.id]?.state || 'closed';
+            const active = activeAppId === app.id;
+            return (
+              <button
+                key={app.id}
+                type="button"
+                onClick={() => onActivateApp(app.id)}
+                className={`h-8 shrink-0 rounded border px-2 inline-flex items-center gap-1.5 text-xs transition-colors ${
+                  active
+                    ? 'border-sky-500/55 bg-sky-950/25 text-sky-100'
+                    : 'border-zinc-700 bg-zinc-900/55 text-zinc-300 hover:border-zinc-500'
+                }`}
+                title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
+              >
+                <span className={`h-2 w-2 rounded-full ${dotForState(state)}`} />
+                <span>{app.label}</span>
+                {active ? <span className="text-[10px] text-sky-300">ACTIVE</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="shrink-0 flex items-center gap-1.5">
+        <NexusButton
+          size="sm"
+          intent="subtle"
+          disabled={!activeAppId || activeAppState !== 'foreground'}
+          onClick={() => {
+            if (!activeAppId) return;
+            onSuspendApp(activeAppId);
+          }}
+          title={activeAppId ? `Suspend ${activeAppLabel}` : 'No active foreground app'}
+        >
+          <PauseCircle className="w-3.5 h-3.5 mr-1" />
+          Suspend
+        </NexusButton>
         <button
           type="button"
           onClick={() => setTrayOpen((prev) => !prev)}
-          className="relative h-7 px-2 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-200 hover:border-zinc-500 inline-flex items-center gap-1"
+          className="relative h-8 px-2 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-200 hover:border-zinc-500 inline-flex items-center gap-1"
           title="Notification tray"
         >
           {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5 text-sky-300" /> : <Bell className="w-3.5 h-3.5" />}
-          <span className="text-[11px]">{unreadNotifications > 0 ? unreadNotifications : notifications.length}</span>
+          <span className="text-[11px]">Alerts {unreadNotifications > 0 ? unreadNotifications : notifications.length}</span>
         </button>
-        <NexusBadge tone="active">{bridgeId}</NexusBadge>
-        <NexusBadge tone={eventPulseCount > 0 ? 'warning' : 'neutral'}>
+        <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
+        <NexusBadge tone={eventPulseCount > 0 ? 'warning' : 'neutral'} className="hidden lg:inline-flex">
           <Activity className="w-3 h-3 mr-1" />
-          {eventPulseCount}
+          Pulse {eventPulseCount}
         </NexusBadge>
-        <NexusBadge tone={online ? 'ok' : 'danger'}>
+        <NexusBadge tone={online ? 'ok' : 'danger'} className="hidden lg:inline-flex">
           {online ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
-          {online ? 'NET' : 'OFF'}
+          {online ? 'Online' : 'Offline'}
         </NexusBadge>
       </div>
 
@@ -139,8 +178,24 @@ export default function NexusTaskbar({
           }}
         >
           <div className="flex items-center justify-between gap-2 px-1 py-1">
-            <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Taskbar Tray</div>
-            <div className="flex items-center gap-1">
+            <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Alerts Center</div>
+            <div className="flex items-center gap-1.5">
+              <NexusButton
+                size="sm"
+                intent={trayFilter === 'UNREAD' ? 'primary' : 'subtle'}
+                onClick={() => setTrayFilter('UNREAD')}
+                title="Show unread alerts"
+              >
+                Unread
+              </NexusButton>
+              <NexusButton
+                size="sm"
+                intent={trayFilter === 'ALL' ? 'primary' : 'subtle'}
+                onClick={() => setTrayFilter('ALL')}
+                title="Show all alerts"
+              >
+                All
+              </NexusButton>
               <NexusButton size="sm" intent="subtle" onClick={onMarkAllNotificationsRead} title="Mark all notifications as read">
                 <CheckCheck className="w-3.5 h-3.5" />
               </NexusButton>
@@ -172,7 +227,7 @@ export default function NexusTaskbar({
                   </div>
                   {notice.detail ? <div className="mt-1 text-[11px] text-zinc-500 line-clamp-2">{notice.detail}</div> : null}
                   <div className="mt-1 text-[10px] text-zinc-600">
-                    {notice.source || 'system'} {notice.read ? '· read' : '· unread'}
+                    {notice.source || 'system'} · {notice.read ? 'read' : 'unread'}
                   </div>
                 </button>
               ))}
