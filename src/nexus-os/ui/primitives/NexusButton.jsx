@@ -4,25 +4,23 @@ import { getNexusCssVars } from '../tokens';
 
 const intentClasses = {
   primary:
-    'border text-orange-50 shadow-[0_0_18px_rgba(190,89,46,0.28)]',
+    'border text-zinc-50',
   neutral:
-    'bg-gradient-to-b from-zinc-800 to-zinc-900 hover:from-zinc-700 hover:to-zinc-900 border border-zinc-600 text-zinc-100',
+    'bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-600 text-zinc-100',
   subtle:
     'border text-zinc-200',
   danger:
-    'bg-gradient-to-b from-red-700/90 to-red-900/90 hover:from-red-600 hover:to-red-800 border border-red-500/60 text-red-50 shadow-[0_0_18px_rgba(160,55,44,0.28)]',
+    'bg-red-900/70 hover:bg-red-800/80 border border-red-500/60 text-red-50',
 };
 
 const intentStyles = {
   primary: {
-    borderColor: 'rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.72)',
-    backgroundImage:
-      'linear-gradient(180deg, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.32), rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.84) 42%, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.62) 100%)',
+    borderColor: 'rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.64)',
+    backgroundColor: 'rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.34)',
   },
   subtle: {
-    borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.28)',
-    backgroundImage:
-      'linear-gradient(180deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.15), rgba(25, 22, 20, 0.86) 36%, rgba(13, 11, 10, 0.92) 100%)',
+    borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.24)',
+    backgroundColor: 'rgba(16, 24, 32, 0.9)',
   },
 };
 
@@ -44,7 +42,7 @@ const NexusButton = React.forwardRef(function NexusButton(
     <Button
       ref={ref}
       {...props}
-      className={`${intentClass} uppercase tracking-[0.12em] font-semibold rounded-md transition-all duration-200 hover:brightness-110 hover:-translate-y-[1px] active:translate-y-0 ${className}`.trim()}
+      className={`${intentClass} uppercase tracking-[0.12em] font-semibold rounded-md transition-all duration-200 hover:brightness-105 active:brightness-100 ${className}`.trim()}
       style={{ ...vars, ...(intentStyle || {}), ...style }}
     >
       {children}

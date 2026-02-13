@@ -230,6 +230,7 @@ export default function WorkbenchGrid({
   enableOnboardingExperience = false,
   workspaceUserDisplayName = 'Operator',
   onCompleteOnboarding,
+  atmosphereMode = 'standard',
 }) {
   const vars = getNexusCssVars();
   const reducedMotion = useReducedMotion();
@@ -262,6 +263,7 @@ export default function WorkbenchGrid({
   });
 
   const preset = WORKBENCH_PRESETS[presetId] || WORKBENCH_PRESETS[DEFAULT_WORKBENCH_PRESET_ID];
+  const minimalAtmosphere = atmosphereMode === 'minimal';
   const availablePresets = Object.values(WORKBENCH_PRESETS);
   const customWidgetMap = useMemo(
     () =>
@@ -910,7 +912,7 @@ export default function WorkbenchGrid({
 
   return (
     <div
-      className="h-full min-h-[28rem] md:min-h-[34rem] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col nexus-panel-glow relative"
+      className={`h-full min-h-[28rem] md:min-h-[34rem] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col relative ${minimalAtmosphere ? '' : 'nexus-panel-glow'}`.trim()}
       style={{
         ...vars,
         backgroundColor: 'var(--nx-shell-bg-elevated)',
@@ -921,21 +923,33 @@ export default function WorkbenchGrid({
         backfaceVisibility: 'hidden',
       }}
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-95"
-        style={{
-          backgroundImage:
-            `${PRESET_ATMOSPHERE[preset.id] || PRESET_ATMOSPHERE.GRID_2X2}, radial-gradient(circle at 14% 12%, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.18), transparent 40%), radial-gradient(circle at 86% 82%, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)),0.16), transparent 46%), repeating-linear-gradient(0deg, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)),0.055) 0px, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)),0.055) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.04) 0px, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.04) 1px, transparent 1px, transparent 52px)`,
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,rgba(0,0,0,0.45)_100%)]" />
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          backgroundImage:
-            'linear-gradient(90deg, transparent, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.42), transparent)',
-        }}
-      />
+      {minimalAtmosphere ? (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-80"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 20% 10%, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.08), transparent 40%), radial-gradient(circle at 85% 80%, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.07), transparent 44%)',
+          }}
+        />
+      ) : (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 opacity-95"
+            style={{
+              backgroundImage:
+                `${PRESET_ATMOSPHERE[preset.id] || PRESET_ATMOSPHERE.GRID_2X2}, radial-gradient(circle at 14% 12%, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.18), transparent 40%), radial-gradient(circle at 86% 82%, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)),0.16), transparent 46%), repeating-linear-gradient(0deg, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)),0.055) 0px, rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)),0.055) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.04) 0px, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)),0.04) 1px, transparent 1px, transparent 52px)`,
+            }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,rgba(0,0,0,0.45)_100%)]" />
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-px"
+            style={{
+              backgroundImage:
+                'linear-gradient(90deg, transparent, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.42), transparent)',
+            }}
+          />
+        </>
+      )}
       <div
         className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2"
         style={{
@@ -981,7 +995,7 @@ export default function WorkbenchGrid({
         <div className="px-3 py-1.5 text-[11px] text-zinc-400 border-b border-zinc-800 bg-zinc-900/40">{widgetNotice}</div>
       ) : null}
 
-      <div className="flex-1 min-h-0 overflow-hidden p-3 bg-[radial-gradient(circle_at_top,rgba(255,129,67,0.05),transparent_36%)]">
+      <div className={`flex-1 min-h-0 overflow-hidden p-3 ${minimalAtmosphere ? '' : 'bg-[radial-gradient(circle_at_top,rgba(102,162,212,0.06),transparent_36%)]'}`}>
         <AnimatedMount show durationMs={reducedMotion ? 0 : motionTokens.duration.fast} fromOpacity={0.92} toOpacity={1} fromY={3} toY={0} className="h-full min-h-0">
           <DragDropContext
             onDragEnd={(result) => {
@@ -996,7 +1010,7 @@ export default function WorkbenchGrid({
                 <div
                   ref={dropProvided.innerRef}
                   {...dropProvided.droppableProps}
-                  className={`h-full min-h-0 grid gap-3 overflow-auto overflow-x-hidden overscroll-contain ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-orange-500/40' : ''}`}
+                  className={`h-full min-h-0 grid gap-3 overflow-auto overflow-x-hidden overscroll-contain ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-sky-500/40' : ''}`}
                   style={{
                     gridTemplateColumns: `repeat(${preset.columns}, minmax(0, 1fr))`,
                     gridAutoRows: `${preset.minRowHeightPx}px`,
@@ -1008,7 +1022,7 @@ export default function WorkbenchGrid({
                 >
                   {!hasVisiblePanels ? (
                     <div
-                      className="rounded-lg border border-zinc-800/90 bg-[linear-gradient(180deg,rgba(34,22,16,0.78),rgba(14,11,10,0.88))] p-5 text-zinc-200 flex flex-col items-start justify-between gap-3 shadow-[inset_0_0_0_1px_rgba(255,125,60,0.06)]"
+                      className="rounded-lg border border-zinc-800/90 bg-[linear-gradient(180deg,rgba(18,24,32,0.82),rgba(10,14,20,0.9))] p-5 text-zinc-200 flex flex-col items-start justify-between gap-3 shadow-[inset_0_0_0_1px_rgba(98,164,215,0.08)]"
                       style={{ gridColumn: `1 / span ${preset.columns}`, minHeight: Math.max(260, preset.minRowHeightPx * 4) }}
                     >
                       <div className="space-y-1 w-full">
@@ -1056,7 +1070,7 @@ export default function WorkbenchGrid({
                                   onClick={() => setSelectedActivityPackId(pack.id)}
                                   className={`text-left rounded border px-3 py-2 transition ${
                                     selected
-                                      ? 'border-orange-500/60 bg-orange-500/10'
+                                      ? 'border-sky-500/60 bg-sky-500/10'
                                       : 'border-zinc-800 bg-zinc-900/45 hover:border-zinc-600'
                                   }`}
                                 >
@@ -1151,7 +1165,7 @@ export default function WorkbenchGrid({
                           <div
                             ref={dragProvided.innerRef}
                             {...dragProvided.draggableProps}
-                            className={`min-h-0 min-w-0 relative ${dragSnapshot.isDragging ? 'opacity-95 ring-1 ring-orange-500/50 rounded-md' : ''}`}
+                            className={`min-h-0 min-w-0 relative ${dragSnapshot.isDragging ? 'opacity-95 ring-1 ring-sky-500/50 rounded-md' : ''}`}
                             style={{
                               ...dragProvided.draggableProps.style,
                               gridColumn: `span ${size.colSpan} / span ${size.colSpan}`,
@@ -1293,7 +1307,7 @@ export default function WorkbenchGrid({
                     return (
                       <div
                         key={pack.id}
-                        className={`rounded border px-2 py-2 ${selected ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55'}`}
+                        className={`rounded border px-2 py-2 ${selected ? 'border-sky-500/60 bg-sky-500/10' : 'border-zinc-800 bg-zinc-950/55'}`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">

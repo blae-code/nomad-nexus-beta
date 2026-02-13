@@ -151,7 +151,7 @@ export default function MobileArCompanionFocusApp({
                       className="absolute -translate-x-1/2"
                       style={{ left: `${marker.screenX}%`, top: `${y}%` }}
                     >
-                      <div className="rounded border border-orange-500/45 bg-zinc-950/80 px-2 py-1 text-[11px] text-zinc-100 whitespace-nowrap">
+                      <div className="rounded border border-sky-500/45 bg-zinc-950/80 px-2 py-1 text-[11px] text-zinc-100 whitespace-nowrap">
                         <span className="font-semibold">{marker.label}</span>
                         <span className="text-zinc-400 ml-1">{marker.distanceMeters}m</span>
                       </div>
@@ -201,4 +201,3 @@ export default function MobileArCompanionFocusApp({
     </div>
   );
 }
-

@@ -151,7 +151,7 @@ export default function CoalitionOutreachPanel({ op, actorId }: CoalitionOutreac
               type="button"
               onClick={() => setRequesterOrgId(org.id)}
               className={`w-full text-left rounded border px-2 py-1 text-[11px] ${
-                requesterOrgId === org.id ? 'border-orange-500/70 bg-zinc-900/75' : 'border-zinc-800 bg-zinc-950/55'
+                requesterOrgId === org.id ? 'border-sky-500/60 bg-zinc-900/75' : 'border-zinc-800 bg-zinc-950/55'
               }`}
             >
               <div className="text-zinc-200">

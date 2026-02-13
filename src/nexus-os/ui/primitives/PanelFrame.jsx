@@ -35,28 +35,21 @@ export default function PanelFrame({
   }[statusTone] || 'var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base))';
   return (
     <section
-      className={`h-full min-h-0 flex flex-col rounded-md border bg-zinc-950/80 border-zinc-800 shadow-lg relative overflow-hidden ${className}`.trim()}
+      className={`h-full min-h-0 flex flex-col rounded-md border bg-zinc-950/72 border-zinc-800 shadow-lg relative overflow-hidden ${className}`.trim()}
       style={{
         ...vars,
         borderRadius: nexusUiTheme.panelRadius,
         backgroundImage:
-          `linear-gradient(180deg, rgba(${toneAccent}, 0.12), rgba(20,17,15,0.92) 12%, rgba(16,13,11,0.94))`,
+          `linear-gradient(180deg, rgba(${toneAccent}, 0.07), rgba(13, 20, 29, 0.88) 10%, rgba(9, 15, 23, 0.94))`,
         borderColor: 'var(--nx-border)',
-        boxShadow: `0 0 0 1px rgba(${toneAccent}, 0.2) inset, var(--nx-shadow-panel)`,
+        boxShadow: `0 0 0 1px rgba(${toneAccent}, 0.12) inset, 0 8px 16px rgba(0, 0, 0, 0.2)`,
       }}
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          backgroundImage:
-            'linear-gradient(90deg, transparent, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.45), transparent)',
-        }}
-      />
       <header
         className={`px-3 py-2 flex items-center justify-between gap-2 min-w-0 ${nexusUiTheme.panelHeaderClassName}`}
         style={{
           borderColor: 'var(--nx-border)',
-          backgroundImage: `linear-gradient(90deg, rgba(${toneAccent}, 0.2), rgba(14,12,11,0.65) 32%, rgba(14,12,11,0.82))`,
+          backgroundImage: `linear-gradient(90deg, rgba(${toneAccent}, 0.1), rgba(11, 18, 26, 0.62) 34%, rgba(10, 16, 24, 0.76))`,
         }}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -71,7 +64,7 @@ export default function PanelFrame({
         style={{
           scrollbarGutter: 'stable',
           backgroundImage:
-            'linear-gradient(180deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.06), rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.02) 35%, transparent 58%)',
+            'linear-gradient(180deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.025), rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.015) 30%, transparent 58%)',
         }}
       >
         <AnimatedMount show={!loading} fromOpacity={0} toOpacity={1} fromY={4} toY={0} durationMs={160}>

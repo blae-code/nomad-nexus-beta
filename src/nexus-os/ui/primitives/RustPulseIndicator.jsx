@@ -22,7 +22,7 @@ export default function RustPulseIndicator({ active = false, label, className = 
           border-radius: 999px;
           background: var(--nx-rust-soft);
           opacity: 0.65;
-          box-shadow: 0 0 0 1px rgba(179,90,47,0.2);
+          box-shadow: 0 0 0 1px rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.24);
         }
         .nx-rust-dot-active {
           width: 8px;
@@ -41,4 +41,3 @@ export default function RustPulseIndicator({ active = false, label, className = 
     </div>
   );
 }
-

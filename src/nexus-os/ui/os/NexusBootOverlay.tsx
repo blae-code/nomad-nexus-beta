@@ -28,7 +28,7 @@ export default function NexusBootOverlay({
 
   return (
     <div
-      className="absolute inset-0 z-[1250] flex items-end justify-start p-4 sm:p-6 bg-zinc-950/55 backdrop-blur-[2px]"
+      className="absolute inset-0 z-[1250] flex items-end justify-start p-4 sm:p-6 bg-zinc-950/65"
       style={{
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',
@@ -40,10 +40,10 @@ export default function NexusBootOverlay({
       }}
       aria-hidden={!visible}
     >
-      <section className="w-full max-w-xl rounded-xl border border-zinc-700/90 bg-[linear-gradient(180deg,rgba(58,35,25,0.9),rgba(16,13,11,0.96))] px-4 py-3 shadow-2xl nexus-panel-glow">
+      <section className="w-full max-w-xl rounded-xl border border-zinc-700/90 bg-zinc-950/95 px-4 py-3 shadow-xl nexus-panel-glow">
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2 text-zinc-200 text-xs font-semibold uppercase tracking-wide">
-            <Cpu className="w-3.5 h-3.5 text-orange-300" />
+            <Cpu className="w-3.5 h-3.5 text-sky-300" />
             Nexus OS {mode === 'resume' ? 'Resume' : 'Boot'}
           </div>
           <NexusBadge tone={mode === 'resume' ? 'active' : 'warning'}>
@@ -55,7 +55,7 @@ export default function NexusBootOverlay({
 
         <div className="mt-3 h-2 rounded bg-zinc-900 border border-zinc-800 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-orange-700 to-orange-400"
+            className="h-full bg-sky-600"
             style={{
               width: `${Math.round(safeProgress * 100)}%`,
               ...transitionStyle({

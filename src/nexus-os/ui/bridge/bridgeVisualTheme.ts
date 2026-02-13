@@ -9,46 +9,46 @@ interface BridgeVisualTheme {
 
 const BRIDGE_VISUAL_THEMES: Readonly<Record<ShellBridgeId, BridgeVisualTheme>> = {
   OPS: {
-    accentRgb: '238, 118, 66',
-    accentAltRgb: '91, 181, 255',
-    accentSoftRgb: '255, 186, 112',
-    chipText: '#ffe2cf',
+    accentRgb: '171, 111, 74',
+    accentAltRgb: '113, 146, 171',
+    accentSoftRgb: '213, 166, 118',
+    chipText: '#f2e1ca',
   },
   INTEL: {
-    accentRgb: '77, 174, 255',
-    accentAltRgb: '108, 227, 202',
-    accentSoftRgb: '136, 141, 255',
-    chipText: '#d9f2ff',
+    accentRgb: '89, 156, 201',
+    accentAltRgb: '109, 134, 189',
+    accentSoftRgb: '146, 201, 237',
+    chipText: '#d9edfb',
   },
   INDUSTRY: {
-    accentRgb: '230, 166, 72',
-    accentAltRgb: '121, 205, 110',
-    accentSoftRgb: '255, 205, 129',
-    chipText: '#f9ebd3',
+    accentRgb: '126, 164, 88',
+    accentAltRgb: '158, 143, 85',
+    accentSoftRgb: '177, 203, 132',
+    chipText: '#e2efd0',
   },
   COMMERCE: {
-    accentRgb: '78, 199, 158',
-    accentAltRgb: '229, 206, 92',
-    accentSoftRgb: '121, 234, 191',
-    chipText: '#dcfff1',
+    accentRgb: '80, 167, 151',
+    accentAltRgb: '113, 156, 109',
+    accentSoftRgb: '131, 210, 191',
+    chipText: '#d8f2ea',
   },
   FITTING: {
-    accentRgb: '235, 96, 96',
-    accentAltRgb: '103, 165, 255',
-    accentSoftRgb: '255, 138, 138',
-    chipText: '#ffe1e1',
+    accentRgb: '125, 138, 214',
+    accentAltRgb: '112, 164, 191',
+    accentSoftRgb: '166, 177, 236',
+    chipText: '#dde4fa',
   },
   CRAFTING: {
-    accentRgb: '219, 108, 203',
-    accentAltRgb: '86, 205, 189',
-    accentSoftRgb: '240, 153, 228',
-    chipText: '#ffe2f9',
+    accentRgb: '149, 112, 192',
+    accentAltRgb: '94, 171, 188',
+    accentSoftRgb: '191, 153, 224',
+    chipText: '#ece2f9',
   },
   COMMAND: {
-    accentRgb: '242, 129, 75',
-    accentAltRgb: '255, 207, 88',
-    accentSoftRgb: '255, 169, 119',
-    chipText: '#ffe5d0',
+    accentRgb: '184, 88, 80',
+    accentAltRgb: '132, 148, 178',
+    accentSoftRgb: '220, 136, 126',
+    chipText: '#f4dcda',
   },
 };
 
@@ -66,4 +66,3 @@ export function getBridgeThemeCssVars(bridgeId: string | undefined) {
     '--nx-bridge-chip-text': theme.chipText,
   };
 }
-

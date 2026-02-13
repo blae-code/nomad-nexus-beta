@@ -31,7 +31,7 @@ export default function NexusCommandDeck({ open, onClose, onRunCommand }: NexusC
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1300] w-[min(920px,94vw)] rounded-xl border border-zinc-700 bg-[linear-gradient(180deg,rgba(52,31,24,0.94),rgba(13,10,9,0.98))] shadow-2xl p-3 nexus-panel-glow">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1300] w-[min(920px,94vw)] rounded-xl border border-zinc-700 bg-zinc-950/92 shadow-xl p-3 nexus-panel-glow">
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}

@@ -342,8 +342,8 @@ export default function CqbHandsFreeControl({
             disabled={voiceMandatory && !voiceReady}
             className={`w-full h-24 rounded-lg border text-sm font-semibold uppercase tracking-[0.13em] transition ${
               holdingPTT || listening
-                ? 'border-orange-400 bg-orange-500/20 text-orange-100'
-                : 'border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-orange-500/60'
+                ? 'border-sky-400 bg-sky-500/20 text-sky-100'
+                : 'border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-sky-500/60'
             } ${voiceMandatory && !voiceReady ? 'opacity-60 cursor-not-allowed' : ''}`}
             aria-label="Press and hold PTT for gameplay loop voice command"
           >
@@ -357,7 +357,7 @@ export default function CqbHandsFreeControl({
             <div className="text-zinc-200 min-h-[1.4rem]">{lastTranscript || 'No transcript captured.'}</div>
             <div>{parseSummary}</div>
             <div className="text-zinc-500">{statusMessage}</div>
-            {agentSyncState ? <div className="text-orange-300">{agentSyncState}</div> : null}
+            {agentSyncState ? <div className="text-sky-300">{agentSyncState}</div> : null}
           </div>
         </div>
 

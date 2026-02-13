@@ -20,7 +20,7 @@ export default function BridgeSwitcher({ activeBridgeId, onSwitch }) {
         ...vars,
         borderColor: 'var(--nx-border)',
         backgroundImage:
-          `linear-gradient(145deg, rgba(${activeTheme.accentRgb}, 0.16), rgba(${activeTheme.accentAltRgb}, 0.1) 38%, rgba(16, 14, 13, 0.92))`,
+          `linear-gradient(160deg, rgba(${activeTheme.accentAltRgb}, 0.1), rgba(11, 15, 20, 0.94) 42%, rgba(8, 12, 17, 0.96))`,
       }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -44,15 +44,21 @@ export default function BridgeSwitcher({ activeBridgeId, onSwitch }) {
               className="h-14 normal-case tracking-[0.08em] px-2"
               style={{
                 borderColor: isActive
-                  ? `rgba(${theme.accentRgb}, 0.78)`
-                  : `rgba(${theme.accentAltRgb}, 0.36)`,
+                  ? `rgba(${theme.accentSoftRgb}, 0.68)`
+                  : `rgba(${theme.accentAltRgb}, 0.28)`,
                 backgroundImage: isActive
-                  ? `linear-gradient(165deg, rgba(${theme.accentSoftRgb}, 0.34), rgba(${theme.accentRgb}, 0.88) 58%, rgba(${theme.accentAltRgb}, 0.62))`
-                  : `linear-gradient(165deg, rgba(${theme.accentRgb}, 0.16), rgba(14, 12, 11, 0.86) 52%, rgba(${theme.accentAltRgb}, 0.2))`,
+                  ? `linear-gradient(180deg, rgba(${theme.accentRgb}, 0.34), rgba(12, 17, 24, 0.94) 72%)`
+                  : `linear-gradient(180deg, rgba(${theme.accentRgb}, 0.14), rgba(11, 14, 20, 0.9) 72%)`,
               }}
             >
-              <span className="flex flex-col items-start leading-tight">
-                <span>{bridge.id}</span>
+              <span className="flex flex-col items-start leading-tight w-full">
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="inline-block h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: `rgba(${theme.accentSoftRgb}, ${isActive ? 0.95 : 0.55})` }}
+                  />
+                  {bridge.id}
+                </span>
                 <span className="text-[10px] opacity-80">{bridge.label.replace(' Bridge', '')}</span>
               </span>
             </NexusButton>

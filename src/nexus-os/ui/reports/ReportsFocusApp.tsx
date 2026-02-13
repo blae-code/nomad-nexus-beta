@@ -274,7 +274,7 @@ export default function ReportsFocusApp({
             </div>
           ) : null}
           {!isListLoading ? reports.map((report) => (
-            <button key={report.id} type="button" onClick={() => setSelectedReportId(report.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedReportId === report.id ? 'border-orange-500/70 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
+            <button key={report.id} type="button" onClick={() => setSelectedReportId(report.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedReportId === report.id ? 'border-sky-500/60 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] text-zinc-200 truncate">{report.kind}</span>
                 <NexusBadge tone="neutral">{report.scope.kind}</NexusBadge>

@@ -73,7 +73,7 @@ export default function CqbQuickRadialMenu({ variantId, disabled = false, onSele
                 className="min-w-[5.4rem] sm:min-w-[6.2rem] justify-center text-[11px] px-1.5 sm:px-2"
                 title={macro.tooltip || macro.label}
               >
-                <span className="mr-1 text-[10px] text-orange-300">{index + 1}.</span>
+                <span className="mr-1 text-[10px] text-sky-300">{index + 1}.</span>
                 {clampLabel(macro.label)}
               </NexusButton>
             </div>

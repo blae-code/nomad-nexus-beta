@@ -5,13 +5,20 @@ import type { Operation, RequirementKind, RuleEnforcement } from '../../schemas/
 import type { DoctrineLevel, MandateEnforcement } from '../../services/operationEnhancementService';
 import {
   applyCommsTemplate,
+  canManageOperation,
+  cloneOperation,
+  createOperationTemplateFromOperation,
   getFocusOperationId,
+  listOperationAuditEvents,
+  listOperationEvents,
   listOperationsForUser,
   setFocusOperation,
   setPosture,
   subscribeOperations,
+  updateOperation,
   updateStatus,
 } from '../../services/operationService';
+import type { DataClassification } from '../../schemas/crossOrgSchemas';
 import {
   challengeAssumption,
   createAssumption,
@@ -91,14 +98,28 @@ import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
 import { deriveOperationStagePolicy } from './stagePolicy';
 
-type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'NARRATIVE' | 'COALITION';
+type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'TIMELINE' | 'NARRATIVE' | 'COALITION';
+type TimelineSource = 'AUDIT' | 'DECISION' | 'EVENT';
+type TimelineFilter = 'ALL' | TimelineSource;
+type TimelineSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
+
+interface TimelineEntry {
+  id: string;
+  source: TimelineSource;
+  kind: string;
+  summary: string;
+  actor?: string;
+  createdAt: string;
+  severity: TimelineSeverity;
+}
 
 interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
   actorId: string;
   onClose?: () => void;
 }
 
-const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'NARRATIVE', 'COALITION'];
+const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
+const TIMELINE_FILTERS: TimelineFilter[] = ['ALL', 'AUDIT', 'DECISION', 'EVENT'];
 
 function cycleStatus(status: Operation['status']): Operation['status'] {
   if (status === 'PLANNING') return 'ACTIVE';
@@ -120,6 +141,32 @@ function parseTokenList(value: string): string[] {
     .filter(Boolean))];
 }
 
+function deriveTimelineSeverity(source: TimelineSource, kind: string, summary: string): TimelineSeverity {
+  const signal = `${kind} ${summary}`.toUpperCase();
+  if (source === 'DECISION') return 'HIGH';
+  if (/(CRITICAL|ERROR|FAILED|FAIL|BLOCK|DENY|REJECT)/.test(signal)) return 'HIGH';
+  if (/(STATUS|POSTURE|ARCHIVED|WRAPPING|TEMPLATE|CLONED|WARN)/.test(signal)) return 'MEDIUM';
+  return 'LOW';
+}
+
+function toneForTimelineSeverity(severity: TimelineSeverity): 'ok' | 'active' | 'danger' {
+  if (severity === 'HIGH') return 'danger';
+  if (severity === 'MEDIUM') return 'active';
+  return 'ok';
+}
+
+function classesForTimelineSeverity(severity: TimelineSeverity): string {
+  if (severity === 'HIGH') return 'border-red-800/70 bg-red-950/20';
+  if (severity === 'MEDIUM') return 'border-sky-800/60 bg-sky-950/20';
+  return 'border-zinc-800 bg-zinc-950/55';
+}
+
+function toneForTimelineSource(source: TimelineSource): 'neutral' | 'active' | 'ok' {
+  if (source === 'DECISION') return 'active';
+  if (source === 'EVENT') return 'ok';
+  return 'neutral';
+}
+
 export default function OperationFocusApp({
   actorId,
   roster = [],
@@ -136,7 +183,17 @@ export default function OperationFocusApp({
   const [enhancementVersion, setEnhancementVersion] = useState(0);
   const [errorText, setErrorText] = useState('');
   const [tabId, setTabId] = useState<TabId>('PLAN');
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('ALL');
+  const [statusCapsuleOpen, setStatusCapsuleOpen] = useState(false);
+  const [commandCapsuleOpen, setCommandCapsuleOpen] = useState(false);
+  const [auditCapsuleOpen, setAuditCapsuleOpen] = useState(false);
   const [selectedOpId, setSelectedOpId] = useState('');
+  const [metadataNameInput, setMetadataNameInput] = useState('');
+  const [metadataAoNodeInput, setMetadataAoNodeInput] = useState('');
+  const [metadataAoNoteInput, setMetadataAoNoteInput] = useState('');
+  const [metadataClassificationInput, setMetadataClassificationInput] = useState<DataClassification>('INTERNAL');
+  const [focusTemplateNameInput, setFocusTemplateNameInput] = useState('');
+  const [focusTemplateDescriptionInput, setFocusTemplateDescriptionInput] = useState('');
 
   const [objectiveInput, setObjectiveInput] = useState('');
   const [phaseInput, setPhaseInput] = useState('');
@@ -228,6 +285,28 @@ export default function OperationFocusApp({
   }, [operations, selectedOpId, focusOperationId]);
 
   const selectedOp = useMemo(() => operations.find((op) => op.id === selectedOpId) || null, [operations, selectedOpId]);
+  useEffect(() => {
+    setStatusCapsuleOpen(false);
+    setCommandCapsuleOpen(false);
+    setAuditCapsuleOpen(false);
+  }, [selectedOp?.id]);
+  useEffect(() => {
+    setTimelineFilter('ALL');
+  }, [selectedOp?.id]);
+  const commandPermission = useMemo(() => {
+    if (!selectedOp) return { allowed: false, reason: 'No operation selected.' };
+    return canManageOperation(selectedOp.id, actorId);
+  }, [selectedOp?.id, actorId, opsVersion]);
+
+  useEffect(() => {
+    if (!selectedOp) return;
+    setMetadataNameInput(selectedOp.name || '');
+    setMetadataAoNodeInput(selectedOp.ao?.nodeId || '');
+    setMetadataAoNoteInput(selectedOp.ao?.note || '');
+    setMetadataClassificationInput(selectedOp.classification || 'INTERNAL');
+    setFocusTemplateNameInput(`${selectedOp.name} Template`);
+    setFocusTemplateDescriptionInput(`Template saved from ${selectedOp.name}.`);
+  }, [selectedOp?.id, selectedOp?.name, selectedOp?.ao?.nodeId, selectedOp?.ao?.note, selectedOp?.classification]);
 
   useEffect(() => {
     if (!selectedOp) return;
@@ -331,6 +410,62 @@ export default function OperationFocusApp({
   );
 
   const comments = useMemo(() => (selectedOp ? listComments(selectedOp.id) : []), [selectedOp?.id, threadVersion]);
+  const auditEvents = useMemo(
+    () => (selectedOp ? listOperationAuditEvents(selectedOp.id, 10) : []),
+    [selectedOp?.id, opsVersion]
+  );
+  const opEvents = useMemo(
+    () => (selectedOp ? listOperationEvents(selectedOp.id).slice(0, 20) : []),
+    [selectedOp?.id, opsVersion]
+  );
+  const timelineEntries = useMemo<TimelineEntry[]>(() => {
+    const decisionItems = decisions.map((entry) => ({
+      id: `decision:${entry.id}`,
+      source: 'DECISION' as const,
+      kind: 'DECISION',
+      summary: entry.title,
+      actor: entry.createdBy,
+      createdAt: entry.createdAt,
+      severity: deriveTimelineSeverity('DECISION', 'DECISION', entry.title),
+    }));
+    const auditItems = auditEvents.map((entry) => ({
+      id: `audit:${entry.id}`,
+      source: 'AUDIT' as const,
+      kind: entry.action,
+      summary: entry.summary,
+      actor: entry.actorId,
+      createdAt: entry.createdAt,
+      severity: deriveTimelineSeverity('AUDIT', entry.action, entry.summary),
+    }));
+    const eventItems = opEvents.map((entry) => ({
+      id: `event:${entry.id}`,
+      source: 'EVENT' as const,
+      kind: `EVENT:${entry.kind}`,
+      summary: (() => {
+        const payloadSummary = JSON.stringify(entry.payload || {});
+        return payloadSummary === '{}' ? entry.kind : payloadSummary.slice(0, 120);
+      })(),
+      actor: entry.createdBy,
+      createdAt: entry.createdAt,
+      severity: deriveTimelineSeverity('EVENT', entry.kind, JSON.stringify(entry.payload || {})),
+    }));
+    return [...auditItems, ...decisionItems, ...eventItems]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 40);
+  }, [auditEvents, decisions, opEvents]);
+  const timelineCounts = useMemo<Record<TimelineFilter, number>>(() => {
+    const counts: Record<TimelineFilter, number> = { ALL: timelineEntries.length, AUDIT: 0, DECISION: 0, EVENT: 0 };
+    for (const entry of timelineEntries) counts[entry.source] += 1;
+    return counts;
+  }, [timelineEntries]);
+  const filteredTimelineEntries = useMemo(
+    () => (timelineFilter === 'ALL' ? timelineEntries : timelineEntries.filter((entry) => entry.source === timelineFilter)),
+    [timelineEntries, timelineFilter]
+  );
+  const timelineHighSeverityCount = useMemo(
+    () => timelineEntries.filter((entry) => entry.severity === 'HIGH').length,
+    [timelineEntries]
+  );
   const threadSummaries = useMemo(
     () => (selectedOp ? listThreadSummaries(selectedOp.id, actorId) : []),
     [selectedOp?.id, actorId, threadVersion]
@@ -341,6 +476,7 @@ export default function OperationFocusApp({
   const rosterLocked = stagePolicy ? !stagePolicy.canManageRoster : true;
   const commsLocked = stagePolicy ? !stagePolicy.canPostComms : true;
   const doctrineRegistryLocked = stagePolicy ? !stagePolicy.isCommandRole : true;
+  const commandLocked = !commandPermission.allowed || !stagePolicy?.canChangeLifecycle;
   const actorEntry = entries.find((entry) => entry.userId === actorId && entry.status !== 'WITHDRAWN') || null;
   const activeThreadSummary =
     threadSummaries.find((entry) => entry.root.id === selectedThreadRootId) || threadSummaries[0] || null;
@@ -458,7 +594,7 @@ export default function OperationFocusApp({
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
-      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-3 py-2.5 space-y-2">
+      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-3 py-2.5 space-y-2 nexus-terminal-panel">
         <div className="flex items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100">Operation Focus</h3>
@@ -471,52 +607,229 @@ export default function OperationFocusApp({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-2">
-          <select value={selectedOp.id} onChange={(e) => setSelectedOpId(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 xl:col-span-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={selectedOp.id} onChange={(e) => setSelectedOpId(e.target.value)} className="h-8 min-w-[15rem] rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
             {operations.map((op) => <option key={op.id} value={op.id}>{op.name} ({op.posture}/{op.status})</option>)}
           </select>
+          <NexusBadge tone={selectedOp.posture === 'FOCUSED' ? 'active' : 'warning'}>{selectedOp.posture}</NexusBadge>
+          <NexusBadge tone={toneForStatus(selectedOp.status)}>{selectedOp.status}</NexusBadge>
+          <NexusBadge tone={(summary?.hardViolations || 0) > 0 ? 'warning' : 'neutral'}>
+            Violations {(summary?.hardViolations || 0)}
+          </NexusBadge>
           <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => setFocusOperation(actorId, selectedOp.id))}>Set Focus</NexusButton>
           <NexusButton
             size="sm"
-            intent="subtle"
-            disabled={!stagePolicy?.canChangeLifecycle}
-            onClick={() =>
-              runAction(() => {
-                const nextPosture = selectedOp.posture === 'FOCUSED' ? 'CASUAL' : 'FOCUSED';
-                setPosture(selectedOp.id, nextPosture, actorId);
-                alignRSVPPolicyToPosture(selectedOp.id, nextPosture);
-                alignOperationEnhancementsToPosture(selectedOp.id, nextPosture, actorId);
-              })
-            }
+            intent={statusCapsuleOpen ? 'primary' : 'subtle'}
+            className="nexus-command-capsule"
+            data-open={statusCapsuleOpen ? 'true' : 'false'}
+            aria-expanded={statusCapsuleOpen}
+            aria-controls="op-focus-status-capsule"
+            onClick={() => setStatusCapsuleOpen((prev) => !prev)}
           >
-            Toggle Posture
+            Status {statusCapsuleOpen ? 'Hide' : 'Show'}
           </NexusButton>
           <NexusButton
             size="sm"
-            intent="subtle"
-            disabled={!stagePolicy?.canChangeLifecycle}
-            onClick={() => runAction(() => updateStatus(selectedOp.id, cycleStatus(selectedOp.status), actorId))}
+            intent={commandCapsuleOpen ? 'primary' : 'subtle'}
+            className="nexus-command-capsule"
+            data-open={commandCapsuleOpen ? 'true' : 'false'}
+            aria-expanded={commandCapsuleOpen}
+            aria-controls="op-focus-command-capsule"
+            onClick={() => setCommandCapsuleOpen((prev) => !prev)}
           >
-            Cycle Status
+            Command {commandCapsuleOpen ? 'Hide' : 'Show'}
+          </NexusButton>
+          <NexusButton
+            size="sm"
+            intent={auditCapsuleOpen ? 'primary' : 'subtle'}
+            className="nexus-command-capsule"
+            data-open={auditCapsuleOpen ? 'true' : 'false'}
+            aria-expanded={auditCapsuleOpen}
+            aria-controls="op-focus-audit-capsule"
+            onClick={() => setAuditCapsuleOpen((prev) => !prev)}
+          >
+            Audit {auditCapsuleOpen ? 'Hide' : 'Show'}
           </NexusButton>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
-          <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"><span className="text-zinc-500">Posture</span><div><NexusBadge tone={selectedOp.posture === 'FOCUSED' ? 'active' : 'warning'}>{selectedOp.posture}</NexusBadge></div></div>
-          <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"><span className="text-zinc-500">Status</span><div><NexusBadge tone={toneForStatus(selectedOp.status)}>{selectedOp.status}</NexusBadge></div></div>
-          <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-zinc-300">Open seats: {summary?.openSeats.reduce((n, s) => n + s.openQty, 0) || 0}</div>
-          <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-zinc-300">Hard violations: {summary?.hardViolations || 0}</div>
-        </div>
+        {statusCapsuleOpen ? (
+          <div id="op-focus-status-capsule" className="nexus-command-capsule-grid grid grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+            <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"><span className="text-zinc-500">Posture</span><div><NexusBadge tone={selectedOp.posture === 'FOCUSED' ? 'active' : 'warning'}>{selectedOp.posture}</NexusBadge></div></div>
+            <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"><span className="text-zinc-500">Status</span><div><NexusBadge tone={toneForStatus(selectedOp.status)}>{selectedOp.status}</NexusBadge></div></div>
+            <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-zinc-300">Open seats: {summary?.openSeats.reduce((n, s) => n + s.openQty, 0) || 0}</div>
+            <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-zinc-300">Hard violations: {summary?.hardViolations || 0}</div>
+          </div>
+        ) : null}
         {stagePolicy ? (
           <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-[11px] text-zinc-400">
             {stagePolicy.bannerText}
+          </div>
+        ) : null}
+        {!commandPermission.allowed ? (
+          <div className="rounded border border-amber-900/60 bg-amber-950/25 px-2 py-1 text-[11px] text-amber-200">
+            {commandPermission.reason}
+          </div>
+        ) : null}
+
+        {commandCapsuleOpen ? (
+          <div id="op-focus-command-capsule" className="nexus-command-capsule-grid space-y-2">
+            <div className="grid grid-cols-1 xl:grid-cols-6 gap-2">
+              <input
+                value={metadataNameInput}
+                onChange={(e) => setMetadataNameInput(e.target.value)}
+                className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 xl:col-span-2"
+                placeholder="Operation name"
+              />
+              <input
+                value={metadataAoNodeInput}
+                onChange={(e) => setMetadataAoNodeInput(e.target.value)}
+                className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                placeholder="AO node"
+              />
+              <select
+                value={metadataClassificationInput}
+                onChange={(e) => setMetadataClassificationInput(e.target.value as DataClassification)}
+                className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+              >
+                <option value="INTERNAL">INTERNAL</option>
+                <option value="ALLIED">ALLIED</option>
+                <option value="PUBLIC">PUBLIC</option>
+              </select>
+              <input
+                value={metadataAoNoteInput}
+                onChange={(e) => setMetadataAoNoteInput(e.target.value)}
+                className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 xl:col-span-2"
+                placeholder="AO note / command intent"
+              />
+              <NexusButton size="sm" intent="primary" onClick={() => runAction(() => updateOperation(selectedOp.id, {
+                name: metadataNameInput.trim() || selectedOp.name,
+                ao: {
+                  nodeId: metadataAoNodeInput.trim() || selectedOp.ao.nodeId,
+                  note: metadataAoNoteInput.trim() || undefined,
+                },
+                classification: metadataClassificationInput,
+              }, actorId))} disabled={commandLocked}>
+                Save Metadata
+              </NexusButton>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(['CASUAL', 'FOCUSED'] as Operation['posture'][]).map((posture) => (
+                <NexusButton
+                  key={posture}
+                  size="sm"
+                  intent={selectedOp.posture === posture ? 'primary' : 'subtle'}
+                  disabled={commandLocked}
+                  onClick={() =>
+                    runAction(() => {
+                      setPosture(selectedOp.id, posture, actorId);
+                      alignRSVPPolicyToPosture(selectedOp.id, posture);
+                      alignOperationEnhancementsToPosture(selectedOp.id, posture, actorId);
+                    })
+                  }
+                >
+                  {posture}
+                </NexusButton>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(['PLANNING', 'ACTIVE', 'WRAPPING', 'ARCHIVED'] as Operation['status'][]).map((status) => (
+                <NexusButton
+                  key={status}
+                  size="sm"
+                  intent={selectedOp.status === status ? 'primary' : 'subtle'}
+                  disabled={commandLocked}
+                  onClick={() => runAction(() => updateStatus(selectedOp.id, status, actorId))}
+                >
+                  {status}
+                </NexusButton>
+              ))}
+              <NexusButton
+                size="sm"
+                intent="subtle"
+                disabled={commandLocked}
+                onClick={() => runAction(() => updateStatus(selectedOp.id, cycleStatus(selectedOp.status), actorId))}
+              >
+                Cycle Status
+              </NexusButton>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
+              <input
+                value={focusTemplateNameInput}
+                onChange={(e) => setFocusTemplateNameInput(e.target.value)}
+                className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 xl:col-span-2"
+                placeholder="Template name"
+              />
+              <input
+                value={focusTemplateDescriptionInput}
+                onChange={(e) => setFocusTemplateDescriptionInput(e.target.value)}
+                className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                placeholder="Template description"
+              />
+              <div className="flex items-center gap-2">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  disabled={commandLocked}
+                  onClick={() =>
+                    runAction(() => {
+                      createOperationTemplateFromOperation(selectedOp.id, actorId, {
+                        name: focusTemplateNameInput.trim() || `${selectedOp.name} Template`,
+                        description: focusTemplateDescriptionInput.trim() || undefined,
+                      });
+                    })
+                  }
+                >
+                  Save Template
+                </NexusButton>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  disabled={commandLocked}
+                  onClick={() =>
+                    runAction(() => {
+                      const cloned = cloneOperation(selectedOp.id, {
+                        createdBy: actorId,
+                        name: `${selectedOp.name} Copy`,
+                      });
+                      getOrCreateRSVPPolicy(cloned.id, cloned.posture);
+                      initializeOperationEnhancements(cloned.id, cloned.posture, actorId);
+                      setFocusOperation(actorId, cloned.id);
+                      setSelectedOpId(cloned.id);
+                    })
+                  }
+                >
+                  Clone Op
+                </NexusButton>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {auditCapsuleOpen ? (
+          <div id="op-focus-audit-capsule" className="nexus-command-capsule-grid">
+            <div className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1">Audit Stream</div>
+            <div className="space-y-1 max-h-24 overflow-auto pr-1 nexus-terminal-feed">
+              {auditEvents.map((entry) => (
+                <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1 text-[10px] text-zinc-400">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-zinc-200">{entry.action}</span>
+                    <span>{entry.createdAt}</span>
+                  </div>
+                  <div className="truncate">{entry.summary}</div>
+                </div>
+              ))}
+              {auditEvents.length === 0 ? <div className="text-[11px] text-zinc-500">No audit entries yet.</div> : null}
+            </div>
           </div>
         ) : null}
 
         {errorText ? <div className="rounded border border-red-900/60 bg-red-950/35 px-2 py-1 text-xs text-red-300">{errorText}</div> : null}
       </section>
 
-      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 flex items-center gap-2">
+      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 flex items-center gap-2 nexus-terminal-panel">
         {TABS.map((id) => <NexusButton key={id} size="sm" intent={tabId === id ? 'primary' : 'subtle'} onClick={() => setTabId(id)}>{id}</NexusButton>)}
       </section>
 
@@ -1008,7 +1321,7 @@ export default function OperationFocusApp({
                       setDecisionCommentId(summaryEntry.root.id);
                       markThreadRead(selectedOp.id, actorId, summaryEntry.root.id);
                     }}
-                    className={`w-full text-left rounded border px-2 py-1 text-[11px] ${activeThreadSummary?.root.id === summaryEntry.root.id ? 'border-orange-600/70 bg-zinc-900/75' : 'border-zinc-800 bg-zinc-950/55'}`}
+                    className={`w-full text-left rounded border px-2 py-1 text-[11px] ${activeThreadSummary?.root.id === summaryEntry.root.id ? 'border-sky-600/60 bg-zinc-900/75' : 'border-zinc-800 bg-zinc-950/55'}`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-zinc-200 truncate">{summaryEntry.root.body}</span>
@@ -1024,7 +1337,7 @@ export default function OperationFocusApp({
                 {threadSummaries.length === 0 ? <div className="text-xs text-zinc-500">No scoped comments yet.</div> : null}
               </div>
               {threadParentId ? (
-                <div className="rounded border border-orange-900/50 bg-orange-950/25 px-2 py-1 text-[11px] text-orange-200 flex items-center justify-between gap-2">
+                <div className="rounded border border-sky-900/50 bg-sky-950/25 px-2 py-1 text-[11px] text-sky-200 flex items-center justify-between gap-2">
                   <span>Replying in thread: {threadParentId}</span>
                   <NexusButton size="sm" intent="subtle" onClick={() => setThreadParentId('')}>Clear</NexusButton>
                 </div>
@@ -1050,7 +1363,7 @@ export default function OperationFocusApp({
                 {activeThreadComments.map((entry) => {
                   const rootId = activeThreadSummary?.root.id || entry.parentCommentId || entry.id;
                   return (
-                    <div key={entry.id} className={`rounded border px-2 py-1 text-[11px] ${entry.parentCommentId ? 'ml-3 border-orange-900/40 bg-zinc-950/45' : 'border-zinc-800 bg-zinc-950/55'} ${decisionCommentId === entry.id ? 'ring-1 ring-orange-500/60' : ''}`}>
+                    <div key={entry.id} className={`rounded border px-2 py-1 text-[11px] ${entry.parentCommentId ? 'ml-3 border-sky-900/40 bg-zinc-950/45' : 'border-zinc-800 bg-zinc-950/55'} ${decisionCommentId === entry.id ? 'ring-1 ring-sky-500/50' : ''}`}>
                       <button type="button" onClick={() => setDecisionCommentId(entry.id)} className="w-full text-left">
                         <div className="text-zinc-200 truncate">{entry.body}</div>
                         <div className="text-zinc-500">{entry.by}{entry.parentCommentId ? ` · reply to ${entry.parentCommentId}` : ''}</div>
@@ -1075,6 +1388,79 @@ export default function OperationFocusApp({
               </div>
               <div className="flex gap-2"><input value={decisionTitle} disabled={commsLocked} onChange={(e) => setDecisionTitle(e.target.value)} className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Decision title" /><NexusButton size="sm" intent="subtle" disabled={commsLocked} onClick={() => runAction(() => { if (!decisionCommentId || !decisionTitle.trim()) return; promoteCommentToDecision({ opId: selectedOp.id, sourceCommentId: decisionCommentId, title: decisionTitle, createdBy: actorId }); setDecisionTitle(''); setDecisionCommentId(''); })}>Promote</NexusButton></div>
               <div className="space-y-1 max-h-24 overflow-auto pr-1">{decisions.map((d) => <div key={d.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px] text-zinc-300">{d.title}</div>)}</div>
+            </section>
+          </div>
+        ) : null}
+
+        {tabId === 'TIMELINE' ? (
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+            <section className="xl:col-span-2 rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2 nexus-terminal-panel">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Command Timeline</h4>
+                <NexusBadge tone="neutral">{filteredTimelineEntries.length}/{timelineEntries.length} entries</NexusBadge>
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+                {TIMELINE_FILTERS.map((filterId) => (
+                  <NexusButton
+                    key={filterId}
+                    size="sm"
+                    intent={timelineFilter === filterId ? 'primary' : 'subtle'}
+                    onClick={() => setTimelineFilter(filterId)}
+                  >
+                    {filterId} {timelineCounts[filterId]}
+                  </NexusButton>
+                ))}
+              </div>
+              <div className="space-y-1.5 max-h-[30rem] overflow-auto pr-1 nexus-terminal-feed">
+                {filteredTimelineEntries.map((entry) => (
+                  <div key={entry.id} className={`rounded border px-2 py-1.5 text-[11px] ${classesForTimelineSeverity(entry.severity)}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <NexusBadge tone={toneForTimelineSource(entry.source)}>{entry.source}</NexusBadge>
+                        <NexusBadge tone={toneForTimelineSeverity(entry.severity)}>{entry.severity}</NexusBadge>
+                        <span className="text-zinc-200 font-medium truncate">{entry.kind}</span>
+                      </div>
+                      <span className="text-zinc-500">{new Date(entry.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div className="mt-0.5 text-zinc-300 break-words">{entry.summary}</div>
+                    <div className="mt-0.5 text-[10px] text-zinc-500">actor: {entry.actor || 'system'}</div>
+                  </div>
+                ))}
+                {filteredTimelineEntries.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
+                    No timeline entries for this filter.
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Telemetry Snapshot</h4>
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1 text-[11px]">
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span>Audit events</span>
+                  <span className="text-zinc-200">{auditEvents.length}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span>Operation events</span>
+                  <span className="text-zinc-200">{opEvents.length}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span>Decisions</span>
+                  <span className="text-zinc-200">{decisions.length}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span>High severity</span>
+                  <span className="text-red-200">{timelineHighSeverityCount}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span>Active filter</span>
+                  <span className="text-sky-200">{timelineFilter}</span>
+                </div>
+              </div>
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 text-[11px] text-zinc-500">
+                Timeline entries are merged from mission decisions, command audit actions, and service-level operation events.
+              </div>
             </section>
           </div>
         ) : null}

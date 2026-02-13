@@ -65,11 +65,10 @@ export default function NexusTaskbar({
 
   return (
     <section
-      className="relative rounded-xl border border-zinc-700 px-2 py-2 flex items-center gap-2 overflow-visible nexus-panel-glow"
+      className="relative rounded-xl border border-zinc-700 px-2.5 py-1.5 flex items-center gap-2 overflow-visible nexus-panel-glow"
       style={{
-        borderColor: 'rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.42)',
-        backgroundImage:
-          'linear-gradient(180deg, rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.28), rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.14) 34%, rgba(14,11,10,0.95) 100%)',
+        borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.28)',
+        backgroundColor: 'rgba(10, 16, 23, 0.92)',
       }}
     >
       <NexusButton size="sm" intent="subtle" onClick={onOpenCommandDeck} className="shrink-0">
@@ -114,10 +113,10 @@ export default function NexusTaskbar({
         <button
           type="button"
           onClick={() => setTrayOpen((prev) => !prev)}
-          className="relative h-7 px-2 rounded border border-zinc-700 bg-zinc-900/70 text-zinc-200 hover:border-zinc-500 inline-flex items-center gap-1"
+          className="relative h-7 px-2 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-200 hover:border-zinc-500 inline-flex items-center gap-1"
           title="Notification tray"
         >
-          {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5 text-orange-300" /> : <Bell className="w-3.5 h-3.5" />}
+          {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5 text-sky-300" /> : <Bell className="w-3.5 h-3.5" />}
           <span className="text-[11px]">{unreadNotifications > 0 ? unreadNotifications : notifications.length}</span>
         </button>
         <NexusBadge tone="active">{bridgeId}</NexusBadge>
@@ -133,11 +132,10 @@ export default function NexusTaskbar({
 
       {trayOpen ? (
         <div
-          className="absolute right-2 bottom-full mb-2 w-[min(420px,92vw)] rounded-xl border border-zinc-700 shadow-2xl p-2 z-[1200] nexus-panel-glow"
+          className="absolute right-2 bottom-full mb-2 w-[min(420px,92vw)] rounded-xl border border-zinc-700 shadow-xl p-2 z-[1200] nexus-panel-glow"
           style={{
-            borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.36)',
-            backgroundImage:
-              'linear-gradient(180deg, rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.22), rgba(var(--nx-bridge-a-rgb, var(--nx-bridge-a-rgb-base)), 0.12) 42%, rgba(13,10,9,0.97))',
+            borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.28)',
+            backgroundColor: 'rgba(10, 15, 23, 0.97)',
           }}
         >
           <div className="flex items-center justify-between gap-2 px-1 py-1">

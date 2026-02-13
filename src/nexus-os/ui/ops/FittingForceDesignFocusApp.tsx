@@ -261,7 +261,7 @@ export default function FittingForceDesignFocusApp({
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Profiles</h4>
               <div className="space-y-1.5 max-h-72 overflow-auto pr-1">
                 {fits.map((fit) => (
-                  <button key={fit.id} type="button" onClick={() => setSelectedFitId(fit.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedFitId === fit.id ? 'border-orange-500/70 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
+                  <button key={fit.id} type="button" onClick={() => setSelectedFitId(fit.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedFitId === fit.id ? 'border-sky-500/60 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] text-zinc-200 truncate">{fit.name}</span>
                       <NexusBadge tone="neutral">{fit.scope}</NexusBadge>
