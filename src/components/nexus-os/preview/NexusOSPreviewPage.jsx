@@ -33,7 +33,6 @@ import {
   getNexusCssVars,
   NexusBootOverlay,
   NexusCommandDeck,
-  NexusTaskbar,
   useNexusBackgroundPerformance,
   useNexusAppLifecycle,
   useNexusBootStateMachine,
@@ -43,6 +42,7 @@ import {
 } from '../ui';
 import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
+import ComprehensiveTacticalFooter from '../ui/os/ComprehensiveTacticalFooter';
 import { getActiveChannelId } from '../services/channelContextService';
 import { getCqbEventDiagnostics, listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
@@ -1264,48 +1264,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
 
 
-      <footer className="nx-shell-bottom">
-        <NexusTaskbar
-          bridgeId={bridgeId}
-          activeAppId={focusMode || lifecycle.foregroundAppId}
-          appEntries={lifecycle.entries}
-          appCatalog={FOCUS_APP_CATALOG}
-          online={online}
-          eventPulseCount={pulseCount}
-          notifications={tray.notifications}
-          unreadNotifications={tray.unreadCount}
-          onActivateApp={openFocusApp}
-          onSuspendApp={suspendFocusApp}
-          onOpenCommandDeck={() => setCommandDeckOpen(true)}
-          onMarkNotificationRead={tray.markNotificationRead}
-          onMarkAllNotificationsRead={tray.markAllNotificationsRead}
-          onClearNotifications={tray.clearNotifications}
-        />
-        <nav className="nx-mobile-nav">
-          {MOBILE_NAV_APP_IDS.map((appId) => {
-            const entry = FOCUS_APP_CATALOG.find((candidate) => candidate.id === appId);
-            if (!entry) return null;
-            const Icon = FOCUS_APP_ICON_BY_ID[entry.id] || Radar;
-            const active = focusMode === appId;
-            return (
-              <button
-                key={`mobile:${entry.id}`}
-                type="button"
-                className={`nx-mobile-nav-button ${active ? 'is-active' : ''}`}
-                onClick={() => openFocusApp(entry.id)}
-                aria-label={entry.label}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{entry.label}</span>
-              </button>
-            );
-          })}
-          <button type="button" className="nx-mobile-nav-button" onClick={() => setCommandDeckOpen(true)}>
-            <Search className="w-4 h-4" />
-            <span>More</span>
-          </button>
-        </nav>
-      </footer>
+      <ComprehensiveTacticalFooter />
 
       <CommandFocus
         open={Boolean(focusMode)}
