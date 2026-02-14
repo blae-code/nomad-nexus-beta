@@ -3,16 +3,8 @@ import { Cpu, Gauge } from 'lucide-react';
 import { useReducedMotion } from '../motion';
 import { transitionStyle } from '../motion/transitions';
 import { NexusBadge } from '../primitives';
-import type { NexusBootMode } from './bootStateMachine';
 
-interface NexusBootOverlayProps {
-  visible: boolean;
-  mode: NexusBootMode;
-  phaseLabel: string;
-  progress: number;
-}
-
-function clampProgress(value: number): number {
+function clampProgress(value) {
   if (!Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));
 }
@@ -22,7 +14,7 @@ export default function NexusBootOverlay({
   mode,
   phaseLabel,
   progress,
-}: NexusBootOverlayProps) {
+}) {
   const reducedMotion = useReducedMotion();
   const safeProgress = clampProgress(progress);
 
