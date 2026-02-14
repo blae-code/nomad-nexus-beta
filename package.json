@@ -9,6 +9,8 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "test:unit": "vitest run",
+    "test:backend": "vitest run tests/comms tests/admin tests/nexus-os/serviceHardening.test.ts",
+    "backend:preflight": "npm run typecheck && npm run lint && npm run test:backend",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

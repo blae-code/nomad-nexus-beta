@@ -82,6 +82,10 @@ The `package.json` file includes several scripts for common development tasks:
 - `npm run lint:fix`: Automatically fixes linting issues where possible.
 - `npm run typecheck`: Runs the TypeScript compiler to check for type errors.
 - `npm run test:unit`: Executes the unit test suite using Vitest.
+- `npm run test:backend`: Runs backend-focused test suites (`tests/comms`, `tests/admin`, service hardening).
+- `npm run backend:preflight`: One-command backend resume validation (`typecheck` + `lint` + `test:backend`).
+
+For Base44 restart sequencing, use `docs/BASE44_BACKEND_RESUME_PLAYBOOK.md`.
 
 ---
 
