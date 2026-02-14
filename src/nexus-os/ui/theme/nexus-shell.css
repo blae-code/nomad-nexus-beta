@@ -433,6 +433,198 @@
   cursor: crosshair;
 }
 
+.nexus-map-radial-shell {
+  position: relative;
+  width: clamp(188px, 15.8vw, 234px);
+  aspect-ratio: 1 / 1;
+  pointer-events: auto;
+}
+
+.nexus-map-radial-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 206, 164, 0.46);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(126, 206, 164, 0.1), rgba(8, 14, 16, 0.86) 56%, rgba(4, 8, 10, 0.94) 100%),
+    conic-gradient(from 0deg, rgba(126, 206, 164, 0.08), rgba(198, 176, 110, 0.06), rgba(126, 206, 164, 0.08));
+  box-shadow:
+    0 0 0 1px rgba(126, 206, 164, 0.14) inset,
+    0 10px 24px rgba(0, 0, 0, 0.52),
+    0 0 34px rgba(98, 184, 142, 0.16);
+}
+
+.nexus-map-radial-spokes {
+  position: absolute;
+  inset: 9%;
+  width: 82%;
+  height: 82%;
+  pointer-events: none;
+}
+
+.nexus-map-radial-spokes circle,
+.nexus-map-radial-spokes line {
+  fill: none;
+  stroke: rgba(124, 194, 156, 0.28);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.nexus-map-radial-core {
+  position: absolute;
+  inset: 30%;
+  border-radius: 999px;
+  border: 1px solid rgba(182, 239, 211, 0.4);
+  background:
+    radial-gradient(circle at 42% 34%, rgba(146, 226, 182, 0.2), rgba(11, 20, 22, 0.9) 70%),
+    linear-gradient(180deg, rgba(7, 14, 16, 0.92), rgba(5, 11, 12, 0.96));
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 8px;
+  box-shadow:
+    0 0 0 1px rgba(122, 194, 156, 0.2) inset,
+    0 0 16px rgba(124, 206, 164, 0.2);
+}
+
+.nexus-map-radial-core-title {
+  display: block;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(230, 252, 241, 0.9);
+}
+
+.nexus-map-radial-core-subtitle {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(146, 184, 166, 0.7);
+}
+
+.nexus-map-radial-item {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 206, 164, 0.58);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(166, 232, 196, 0.22), rgba(8, 14, 16, 0.9) 72%),
+    linear-gradient(180deg, rgba(8, 16, 18, 0.94), rgba(7, 12, 15, 0.95));
+  color: rgba(208, 240, 223, 0.92);
+  display: grid;
+  place-items: center;
+  position: relative;
+  transition: transform 140ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  box-shadow:
+    0 0 0 1px rgba(126, 206, 164, 0.2) inset,
+    0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.nexus-map-radial-item:hover,
+.nexus-map-radial-item:focus-visible {
+  transform: translateY(-1px) scale(1.04);
+  border-color: rgba(196, 248, 221, 0.9);
+  color: rgba(238, 255, 246, 0.98);
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(196, 248, 221, 0.32) inset,
+    0 0 0 2px rgba(196, 248, 221, 0.28),
+    0 0 22px rgba(126, 206, 164, 0.35);
+}
+
+.nexus-map-radial-item[data-tone="warning"] {
+  border-color: rgba(209, 172, 108, 0.72);
+  color: rgba(246, 226, 192, 0.95);
+}
+
+.nexus-map-radial-item[data-tone="warning"]:hover,
+.nexus-map-radial-item[data-tone="warning"]:focus-visible {
+  border-color: rgba(242, 205, 141, 0.94);
+  box-shadow:
+    0 0 0 1px rgba(242, 205, 141, 0.26) inset,
+    0 0 0 2px rgba(242, 205, 141, 0.22),
+    0 0 22px rgba(214, 164, 82, 0.35);
+}
+
+.nexus-map-radial-item[data-tone="danger"] {
+  border-color: rgba(202, 101, 82, 0.76);
+  color: rgba(255, 208, 199, 0.96);
+}
+
+.nexus-map-radial-item[data-tone="danger"]:hover,
+.nexus-map-radial-item[data-tone="danger"]:focus-visible {
+  border-color: rgba(232, 131, 112, 0.98);
+  box-shadow:
+    0 0 0 1px rgba(232, 131, 112, 0.28) inset,
+    0 0 0 2px rgba(232, 131, 112, 0.24),
+    0 0 22px rgba(214, 83, 64, 0.36);
+}
+
+.nexus-map-radial-item:disabled,
+.nexus-map-radial-item[aria-disabled="true"] {
+  opacity: 0.52;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.nexus-map-radial-item-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+
+.nexus-map-radial-item-shortcut {
+  position: absolute;
+  right: -2px;
+  bottom: -3px;
+  min-width: 16px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 206, 164, 0.6);
+  background: rgba(5, 11, 12, 0.95);
+  color: rgba(188, 236, 210, 0.92);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.nexus-map-radial-item-label {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-2px);
+  min-width: 84px;
+  max-width: 116px;
+  pointer-events: none;
+  border: 1px solid rgba(122, 194, 156, 0.34);
+  border-radius: 6px;
+  background: rgba(5, 10, 12, 0.92);
+  padding: 3px 6px;
+  color: rgba(222, 247, 234, 0.88);
+  font-size: 9px;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.nexus-map-radial-slot:hover .nexus-map-radial-item-label,
+.nexus-map-radial-item:focus-visible + .nexus-map-radial-item-label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* Layout QA checklist:
  * 1) 1366x768: top bar, rail, workbench, and footer remain visible with no page/panel scrollbars.
  * 2) 1440x900: context dock remains usable without clipping primary actions.

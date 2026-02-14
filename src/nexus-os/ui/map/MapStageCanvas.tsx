@@ -12,6 +12,7 @@ import type {
   TacticalMapViewMode,
 } from './mapTypes';
 import RadialMenu, { type RadialMenuItem } from './RadialMenu';
+import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
 
@@ -350,6 +351,21 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x, y }, zoom));
   };
 
+  const radialAnchorFromPointer = (clientX: number, clientY: number): { x: number; y: number } => {
+    if (!stageRef.current) return { x: 50, y: 50 };
+    const rect = stageRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return { x: 50, y: 50 };
+    return {
+      x: clamp(((clientX - rect.left) / rect.width) * 100, 4, 96),
+      y: clamp(((clientY - rect.top) / rect.height) * 100, 4, 96),
+    };
+  };
+
+  const radialAnchorFromNode = (x: number, y: number): { x: number; y: number } => ({
+    x: clamp(50 + (x - viewportCenter.x) * zoom, 6, 94),
+    y: clamp(50 + (y - viewportCenter.y) * zoom, 6, 94),
+  });
+
   return (
     <div
       ref={stageRef}
@@ -462,7 +478,19 @@ export default function MapStageCanvas({
                     onSetActiveRadial({
                       type: 'zone',
                       title: 'Control Zone',
-                      anchor: { x: anchorNode.x, y: anchorNode.y },
+                      anchor: radialAnchorFromPointer(event.clientX, event.clientY),
+                      zoneId: zone.id,
+                      nodeId: anchorNode.id,
+                    });
+                  }}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onSelectZone(zone.id);
+                    onSetActiveRadial({
+                      type: 'zone',
+                      title: 'Control Zone',
+                      anchor: radialAnchorFromPointer(event.clientX, event.clientY),
                       zoneId: zone.id,
                       nodeId: anchorNode.id,
                     });
@@ -474,7 +502,7 @@ export default function MapStageCanvas({
                     onSetActiveRadial({
                       type: 'zone',
                       title: 'Control Zone',
-                      anchor: { x: anchorNode.x, y: anchorNode.y },
+                      anchor: radialAnchorFromNode(anchorNode.x, anchorNode.y),
                       zoneId: zone.id,
                       nodeId: anchorNode.id,
                     });
@@ -630,7 +658,17 @@ export default function MapStageCanvas({
                 onSetActiveRadial({
                   type: 'node',
                   title: node.label,
-                  anchor: { x: node.x, y: node.y },
+                  anchor: radialAnchorFromPointer(event.clientX, event.clientY),
+                  nodeId: node.id,
+                });
+              }}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onSetActiveRadial({
+                  type: 'node',
+                  title: node.label,
+                  anchor: radialAnchorFromPointer(event.clientX, event.clientY),
                   nodeId: node.id,
                 });
               }}
@@ -640,7 +678,7 @@ export default function MapStageCanvas({
                 onSetActiveRadial({
                   type: 'node',
                   title: node.label,
-                  anchor: { x: node.x, y: node.y },
+                  anchor: radialAnchorFromNode(node.x, node.y),
                   nodeId: node.id,
                 });
               }}
@@ -675,6 +713,14 @@ export default function MapStageCanvas({
                 stroke={nodeStrokeColor(node.category, isSystem)}
                 strokeWidth={isSystem ? 0.92 : isOm ? 0.26 : isStation ? 0.38 : 0.46}
                 opacity={isOm ? 0.7 : 1}
+              />
+              <TacticalNodeGlyph
+                category={node.category}
+                kind={node.kind}
+                x={node.x}
+                y={node.y}
+                radius={node.radius}
+                selected={selectedNodeId === node.id}
               />
               {shouldRenderLabel(node, mapViewMode, selectedNodeId) ? (
                 <text
@@ -740,7 +786,19 @@ export default function MapStageCanvas({
                     onSetActiveRadial({
                       type: 'intel',
                       title: intel.type,
-                      anchor: { x, y },
+                      anchor: radialAnchorFromPointer(event.clientX, event.clientY),
+                      intelId: intel.id,
+                      nodeId: intel.anchor.nodeId,
+                    });
+                  }}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onSelectIntel(intel.id);
+                    onSetActiveRadial({
+                      type: 'intel',
+                      title: intel.type,
+                      anchor: radialAnchorFromPointer(event.clientX, event.clientY),
                       intelId: intel.id,
                       nodeId: intel.anchor.nodeId,
                     });
@@ -752,7 +810,7 @@ export default function MapStageCanvas({
                     onSetActiveRadial({
                       type: 'intel',
                       title: intel.type,
-                      anchor: { x, y },
+                      anchor: radialAnchorFromNode(x, y),
                       intelId: intel.id,
                       nodeId: intel.anchor.nodeId,
                     });

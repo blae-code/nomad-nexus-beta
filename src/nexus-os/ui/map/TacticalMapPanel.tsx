@@ -839,21 +839,21 @@ export default function TacticalMapPanel({
   };
 
   const createNodeRadialItems = (nodeId: string): RadialMenuItem[] => [
-    { id: 'declare-departing', label: 'Declare Departing', icon: 'D', shortcut: '1', onSelect: () => createDraftFromMap('DECLARE_DEPARTURE', { nodeId }, { notes: `Departing ${nodeId}` }) },
-    { id: 'declare-arriving', label: 'Declare Arriving', icon: 'A', shortcut: '2', onSelect: () => createDraftFromMap('DECLARE_ARRIVAL', { nodeId }, { notes: `Arriving ${nodeId}` }) },
-    { id: 'report-contact', label: 'Report Contact', icon: 'C', shortcut: '3', onSelect: () => createDraftFromMap('REPORT_CONTACT', { nodeId }, { notes: `Contact near ${nodeId}` }) },
-    { id: 'drop-intel-pin', label: 'Drop Intel Pin', icon: 'P', shortcut: '4', onSelect: () => createDraftFromMap('DROP_INTEL', { nodeId }, { intelType: 'PIN', title: 'Intel Pin', body: '' }) },
+    { id: 'declare-departing', label: 'Declare Departing', icon: 'depart', shortcut: '1', onSelect: () => createDraftFromMap('DECLARE_DEPARTURE', { nodeId }, { notes: `Departing ${nodeId}` }) },
+    { id: 'declare-arriving', label: 'Declare Arriving', icon: 'arrive', shortcut: '2', onSelect: () => createDraftFromMap('DECLARE_ARRIVAL', { nodeId }, { notes: `Arriving ${nodeId}` }) },
+    { id: 'report-contact', label: 'Report Contact', icon: 'contact', shortcut: '3', tone: 'warning', onSelect: () => createDraftFromMap('REPORT_CONTACT', { nodeId }, { notes: `Contact near ${nodeId}` }) },
+    { id: 'drop-intel-pin', label: 'Drop Intel Pin', icon: 'intel-pin', shortcut: '4', onSelect: () => createDraftFromMap('DROP_INTEL', { nodeId }, { intelType: 'PIN', title: 'Intel Pin', body: '' }) },
   ];
 
   const createIntelRadialItems = (intelId: string): RadialMenuItem[] => [
-    { id: 'endorse-intel', label: 'Endorse', icon: 'E', shortcut: '1', onSelect: () => createDraftFromMap('ENDORSE_INTEL', { intelId }, { note: '' }) },
-    { id: 'challenge-intel', label: 'Challenge', icon: '!', shortcut: '2', onSelect: () => createDraftFromMap('CHALLENGE_INTEL', { intelId }, { note: '' }) },
-    { id: 'link-op', label: 'Link to Op', icon: 'L', shortcut: '3', onSelect: () => createDraftFromMap('LINK_INTEL_TO_OP', { intelId }, { opIds: focusOperationId || opId || '' }) },
+    { id: 'endorse-intel', label: 'Endorse Intel', icon: 'endorse', shortcut: '1', onSelect: () => createDraftFromMap('ENDORSE_INTEL', { intelId }, { note: '' }) },
+    { id: 'challenge-intel', label: 'Challenge Intel', icon: 'challenge', shortcut: '2', tone: 'danger', onSelect: () => createDraftFromMap('CHALLENGE_INTEL', { intelId }, { note: '' }) },
+    { id: 'link-op', label: 'Link to Op', icon: 'link-op', shortcut: '3', onSelect: () => createDraftFromMap('LINK_INTEL_TO_OP', { intelId }, { opIds: focusOperationId || opId || '' }) },
   ];
 
   const createZoneRadialItems = (zoneId: string, nodeId?: string): RadialMenuItem[] => [
-    { id: 'attach-intel', label: 'Attach Intel', icon: 'I', shortcut: '1', onSelect: () => createDraftFromMap('ATTACH_INTEL', { zoneId, nodeId }, { intelType: 'NOTE', title: 'Zone Intel' }) },
-    { id: 'request-patrol', label: 'Request Patrol', icon: 'P', shortcut: '2', onSelect: () => createDraftFromMap('REQUEST_PATROL', { zoneId, nodeId }, { notes: 'Patrol requested' }) },
+    { id: 'attach-intel', label: 'Attach Intel', icon: 'attach-intel', shortcut: '1', onSelect: () => createDraftFromMap('ATTACH_INTEL', { zoneId, nodeId }, { intelType: 'NOTE', title: 'Zone Intel' }) },
+    { id: 'request-patrol', label: 'Request Patrol', icon: 'request-patrol', shortcut: '2', tone: 'warning', onSelect: () => createDraftFromMap('REQUEST_PATROL', { zoneId, nodeId }, { notes: 'Patrol requested' }) },
   ];
 
   const radialItems = useMemo(() => {
