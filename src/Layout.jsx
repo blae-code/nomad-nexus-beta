@@ -27,7 +27,7 @@ import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
 import { useRealtimeNotifications } from '@/components/hooks/useRealtimeNotifications';
 import OfflineStatusBanner from '@/components/mobile/OfflineStatusBanner';
 import MobileQuickActionBar from '@/components/mobile/MobileQuickActionBar';
-import NexusFooter from '@/components/layout/NexusFooter';
+import TacticalFooter from '@/components/layout/TacticalFooter';
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -237,8 +237,8 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         {/* Command Palette Modal */}
         <CommandPaletteUI />
 
-        {/* Nexus Footer - Global Status Bar */}
-        <NexusFooter />
+        {/* Tactical Footer - Integrated Tactical Map */}
+        <TacticalFooter />
 
         {/* Mobile quick actions (touch-first nav + toggles) */}
         <MobileQuickActionBar onToggleCommsDock={toggleCommsDock} onToggleContextPanel={toggleContextPanel} />
