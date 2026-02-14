@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import {
   BridgeSwitcher,
   BRIDGE_DEFAULT_PRESET,
@@ -410,6 +411,7 @@ function DiagnosticsPanel({ events, variantId, operations, focusOperationId, con
 
 export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const { user } = useAuth();
+  const activeOp = useActiveOp();
   const vars = getNexusCssVars();
   const isWorkspaceMode = mode === 'workspace';
   const sessionScopePrefix = isWorkspaceMode ? 'workspace-canvas-v2' : 'dev';
