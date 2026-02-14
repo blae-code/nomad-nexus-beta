@@ -1203,27 +1203,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </div>
       </header>
 
-      <aside className="nx-shell-rail nexus-surface">
-        <div className="nx-rail-kicker">Modules</div>
-        <div className="nx-rail-stack">
-          {FOCUS_APP_CATALOG.map((entry) => {
-            const Icon = FOCUS_APP_ICON_BY_ID[entry.id] || Radar;
-            const active = focusMode === entry.id;
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                className={`nx-rail-button ${active ? 'is-active' : ''}`}
-                onClick={() => openFocusApp(entry.id)}
-                title={entry.hotkey ? `${entry.label} (${entry.hotkey})` : entry.label}
-                aria-label={entry.label}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="nx-rail-label">{entry.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      <aside className="nx-shell-rail nexus-surface overflow-hidden">
+        <CommsHub
+          operations={operations}
+          focusOperationId={focusOperationId}
+          activeAppId={activeAppLabel}
+          online={online}
+          bridgeId={bridgeId}
+        />
       </aside>
 
       <main className="nx-shell-main">
