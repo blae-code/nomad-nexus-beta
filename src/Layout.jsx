@@ -202,7 +202,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         <Header />
 
         {/* Construction Ticker — below fixed header */}
-        <div className="relative z-[750] pt-16">
+        <div className="relative z-[750] pt-12">
           <ConstructionTicker />
         </div>
 
