@@ -38,6 +38,12 @@ Current adapter:
   - Normalizes channel/membership reads across possible entity names.
   - Keeps `commsGraphService` resilient to schema/table naming drift.
 
+UI access anchors:
+
+- `src/pages/NexusOSWorkspace.jsx` (authenticated workspace shell)
+- `src/pages/NexusOSPreview.jsx` (ungated Base44 UI refinement route)
+- `src/components/nexus-os/base44/uiRefinementManifest.ts` (stable machine-readable UI map)
+
 ## Anti-Drift Gate
 
 Run:

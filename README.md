@@ -92,6 +92,7 @@ The `package.json` file includes several scripts for common development tasks:
 For Base44 restart sequencing, use `docs/BASE44_BACKEND_RESUME_PLAYBOOK.md`.
 For stability/reliability handoff, use `docs/BASE44_STABILITY_RELIABILITY_RUNBOOK.md`.
 For Base44 compatibility boundaries and non-lock-in guardrails, use `docs/BASE44_COMPATIBILITY_CONTEXT.md`.
+For NexusOS UI refinement entry points and file map, use `docs/BASE44_NEXUSOS_UI_REFINEMENT_MAP.md`.
 For the latest NexusOS top-10 refinement report + TODO execution, use `docs/NEXUS_OS_TOP10_REFINEMENTS_2026-02-14.md`.
 
 ---

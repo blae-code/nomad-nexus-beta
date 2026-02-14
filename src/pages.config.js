@@ -79,6 +79,7 @@ import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import AccessGate from './pages/AccessGate';
 import Disclaimers from './pages/Disclaimers';
+import NexusOSPreview from './pages/NexusOSPreview';
 import NexusOSWorkspace from './pages/NexusOSWorkspace';
 import Onboarding from './pages/Onboarding';
 import PageNotFound from './pages/PageNotFound';
@@ -123,6 +124,7 @@ export const PAGES = {
     "UserDirectory": UserDirectory,
     "AccessGate": AccessGate,
     "Disclaimers": Disclaimers,
+    "NexusOSPreview": NexusOSPreview,
     "NexusOSWorkspace": NexusOSWorkspace,
     "Onboarding": Onboarding,
     "PageNotFound": PageNotFound,

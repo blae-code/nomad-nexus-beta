@@ -29,6 +29,9 @@ const forbiddenImportRules = [
 
 const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
 const nexusBase44ReadAdapterPath = 'src/components/nexus-os/services/base44CommsReadAdapter.ts';
+const nexusUiManifestPath = 'src/components/nexus-os/base44/uiRefinementManifest.ts';
+const nexusPreviewRoutePath = 'src/pages/NexusOSPreview.jsx';
+const pagesConfigPath = 'src/pages.config.js';
 const nexusDeprecatedDiscoveryDir = 'src/components/nexus-os/discovery';
 
 function listFiles(dir) {
@@ -57,6 +60,31 @@ for (const relativePath of deprecatedPaths) {
     violations.push({
       path: relativePath,
       reason: 'Deprecated artifact is present and should be purged.',
+    });
+  }
+}
+
+for (const requiredPath of [nexusBase44ReadAdapterPath, nexusUiManifestPath, nexusPreviewRoutePath, pagesConfigPath]) {
+  if (!existsSync(path.join(repoRoot, requiredPath))) {
+    violations.push({
+      path: requiredPath,
+      reason: 'Required Base44/NexusOS context file is missing.',
+    });
+  }
+}
+
+if (existsSync(path.join(repoRoot, pagesConfigPath))) {
+  const pagesConfig = readFileSync(path.join(repoRoot, pagesConfigPath), 'utf8');
+  if (!/"NexusOSWorkspace"\s*:/.test(pagesConfig)) {
+    violations.push({
+      path: pagesConfigPath,
+      reason: 'NexusOSWorkspace route must remain registered.',
+    });
+  }
+  if (!/"NexusOSPreview"\s*:/.test(pagesConfig)) {
+    violations.push({
+      path: pagesConfigPath,
+      reason: 'NexusOSPreview route must remain registered for Base44 UI refinement.',
     });
   }
 }
@@ -115,4 +143,3 @@ if (violations.length > 0) {
 }
 
 console.log('[base44-context-check] pass: Base44 context remains clean and non-legacy.');
-
