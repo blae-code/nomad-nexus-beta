@@ -218,18 +218,13 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
               <PermissionGuard>{children}</PermissionGuard>
             </main>
 
-            {/* Text Comms Core — right sidebar, counterpart to Voice Command Core */}
-            {isContextPanelOpen &&
-            <div className={`${contextPanelMinimized ? 'w-12' : 'w-80'} border-l-2 border-red-700/50 flex-shrink-0 z-[900] relative transition-all duration-200`}>
-                <TextCommsCore isOpen={true} onClose={toggleContextPanel} isMinimized={contextPanelMinimized} onMinimize={setContextPanelMinimized} />
-              </div>
-            }
+
           </div>
         </div>
 
-        {/* Bottom Text Comms Dock (fixed, collapsible, respects context panel) */}
+        {/* Bottom Text Comms Dock (fixed, collapsible) */}
          {isCommsDockOpen &&
-        <div className={`fixed bottom-0 left-0 z-[600] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? contextPanelMinimized ? 'right-12' : 'right-80' : 'right-0'} transition-all duration-200`}>
+        <div className="fixed bottom-0 left-0 right-0 z-[600] border-t border-orange-500/20 bg-zinc-950 transition-all duration-200">
              <TextCommsDock isOpen={true} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
            </div>
         }
