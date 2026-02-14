@@ -72,9 +72,17 @@ interface CustomWorkbenchWidgetSharePayloadV1 {
 const STORAGE_PREFIX = 'nexus.os.workbench.customWidgets.v1';
 const FALLBACK_SCOPE = 'global';
 const WIDGET_REMOTE_NAMESPACE = 'custom_workbench_widgets';
+const MAX_WIDGETS_PER_SCOPE = 160;
+const MAX_SHARE_CODE_CHARS = 28_000;
+const LEGACY_WIDGET_STORAGE_PREFIXES = [
+  'nexus.os.workbench.customWidgets.v0:',
+  'nexus.os.customWorkbenchWidgets.v1:',
+  'nexus.workbench.customWidgets.v1:',
+];
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 
 const inMemoryStore = new Map<string, CustomWorkbenchWidget[]>();
+let hasPurgedLegacyWidgetStorage = false;
 
 function nowIso(nowMs = Date.now()): string {
   return new Date(nowMs).toISOString();
@@ -86,6 +94,30 @@ function storageAvailable(): boolean {
 
 function storageKey(scopeKey?: string): string {
   return `${STORAGE_PREFIX}:${String(scopeKey || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE}`;
+}
+
+function normalizeScope(scopeKey?: string): string {
+  return String(scopeKey || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+}
+
+function ensureLegacyWidgetStoragePurged(): void {
+  if (hasPurgedLegacyWidgetStorage || !storageAvailable()) return;
+  hasPurgedLegacyWidgetStorage = true;
+  try {
+    const keysToDelete: string[] = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key) continue;
+      if (LEGACY_WIDGET_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+        keysToDelete.push(key);
+      }
+    }
+    for (const key of keysToDelete) {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // best effort
+  }
 }
 
 function trimText(value: unknown, maxLength: number): string {
@@ -217,6 +249,10 @@ function compareWidgets(a: CustomWorkbenchWidget, b: CustomWorkbenchWidget): num
   return a.title.localeCompare(b.title);
 }
 
+function limitWidgetList(widgets: CustomWorkbenchWidget[]): CustomWorkbenchWidget[] {
+  return [...widgets].sort(compareWidgets).slice(0, MAX_WIDGETS_PER_SCOPE);
+}
+
 function latestWidgetUpdateMs(widgets: CustomWorkbenchWidget[]): number {
   let latest = 0;
   for (const widget of widgets) {
@@ -289,21 +325,27 @@ function parseStoredList(value: string | null): CustomWorkbenchWidget[] {
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((entry) => sanitizeWidget(entry, Date.now()))
-      .filter(Boolean)
-      .sort(compareWidgets);
+    const normalized: CustomWorkbenchWidget[] = [];
+    for (const entry of parsed) {
+      try {
+        normalized.push(sanitizeWidget(entry as CustomWorkbenchWidgetInput, Date.now()));
+      } catch {
+        // Keep valid widgets even if one payload is malformed.
+      }
+    }
+    return limitWidgetList(normalized);
   } catch {
     return [];
   }
 }
 
 function persistWidgetList(scopeKeyValue: string, widgets: CustomWorkbenchWidget[]): void {
-  const sorted = [...widgets].sort(compareWidgets);
-  inMemoryStore.set(scopeKeyValue, sorted);
+  const limited = limitWidgetList(widgets);
+  inMemoryStore.set(scopeKeyValue, limited);
   if (!storageAvailable()) return;
+  ensureLegacyWidgetStoragePurged();
   try {
-    localStorage.setItem(storageKey(scopeKeyValue), JSON.stringify(sorted));
+    localStorage.setItem(storageKey(scopeKeyValue), JSON.stringify(limited));
   } catch {
     // best effort
   }
@@ -311,7 +353,7 @@ function persistWidgetList(scopeKeyValue: string, widgets: CustomWorkbenchWidget
     namespace: WIDGET_REMOTE_NAMESPACE,
     scopeKey: scopeKeyValue,
     schemaVersion: 2,
-    state: sorted,
+    state: limited,
     debounceMs: 700,
   });
 }
@@ -320,7 +362,16 @@ function loadWidgetList(scopeKeyValue: string): CustomWorkbenchWidget[] {
   const inMemory = inMemoryStore.get(scopeKeyValue);
   if (inMemory) return [...inMemory];
   if (!storageAvailable()) return [];
-  const parsed = parseStoredList(localStorage.getItem(storageKey(scopeKeyValue)));
+  ensureLegacyWidgetStoragePurged();
+  const raw = localStorage.getItem(storageKey(scopeKeyValue));
+  const parsed = parseStoredList(raw);
+  if (raw && parsed.length === 0 && String(raw || '').trim() !== '[]') {
+    try {
+      localStorage.removeItem(storageKey(scopeKeyValue));
+    } catch {
+      // best effort
+    }
+  }
   inMemoryStore.set(scopeKeyValue, parsed);
   return [...parsed];
 }
@@ -337,12 +388,12 @@ export function parseCustomWorkbenchWidgetPanelId(panelId: string): string | nul
 }
 
 export function listCustomWorkbenchWidgets(scopeKeyValue?: string): CustomWorkbenchWidget[] {
-  const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  const scope = normalizeScope(scopeKeyValue);
   return loadWidgetList(scope);
 }
 
 export async function hydrateCustomWorkbenchWidgetsFromBackend(scopeKeyValue?: string): Promise<CustomWorkbenchWidget[]> {
-  const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  const scope = normalizeScope(scopeKeyValue);
   const local = loadWidgetList(scope);
   const remote = await loadWorkspaceStateSnapshot<unknown>({
     namespace: WIDGET_REMOTE_NAMESPACE,
@@ -365,7 +416,8 @@ export async function hydrateCustomWorkbenchWidgetsFromBackend(scopeKeyValue?: s
       }
     })
     .filter((entry): entry is CustomWorkbenchWidget => Boolean(entry))
-    .sort(compareWidgets);
+    .sort(compareWidgets)
+    .slice(0, MAX_WIDGETS_PER_SCOPE);
   if (normalized.length === 0) return local;
   const localFreshness = latestWidgetUpdateMs(local);
   const remoteFreshness = Math.max(
@@ -384,7 +436,7 @@ export function upsertCustomWorkbenchWidget(
   input: CustomWorkbenchWidgetInput,
   nowMs = Date.now()
 ): CustomWorkbenchWidget {
-  const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  const scope = normalizeScope(scopeKeyValue);
   const current = loadWidgetList(scope);
   const existing = input.id ? current.find((entry) => entry.id === input.id) : undefined;
   const widget = sanitizeWidget(input, nowMs, existing);
@@ -396,7 +448,7 @@ export function upsertCustomWorkbenchWidget(
 }
 
 export function removeCustomWorkbenchWidget(scopeKeyValue: string | undefined, widgetId: string): boolean {
-  const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  const scope = normalizeScope(scopeKeyValue);
   const current = loadWidgetList(scope);
   const next = current.filter((entry) => entry.id !== widgetId);
   if (next.length === current.length) return false;
@@ -428,7 +480,13 @@ export function exportCustomWorkbenchWidgetShareCode(widget: CustomWorkbenchWidg
 function parseSharePayload(value: string): CustomWorkbenchWidgetSharePayloadV1 {
   const trimmed = String(value || '').trim();
   const encoded = trimmed.startsWith('NXW1.') ? trimmed.slice(5) : trimmed;
+  if (!encoded || encoded.length > MAX_SHARE_CODE_CHARS) {
+    throw new Error('Invalid widget share code.');
+  }
   const decoded = decodeBase64Url(encoded);
+  if (!decoded || decoded.length > MAX_SHARE_CODE_CHARS * 2) {
+    throw new Error('Invalid widget share code.');
+  }
   const parsed = JSON.parse(decoded) as CustomWorkbenchWidgetSharePayloadV1;
   const validVersion = parsed?.version === 1 || parsed?.version === 2;
   if (!parsed || parsed.schema !== 'nexus-os-custom-widget' || !validVersion || !parsed.widget) {
@@ -465,13 +523,14 @@ export function importCustomWorkbenchWidgetFromShareCode(
 export function resetCustomWorkbenchWidgetStore(scopeKeyValue?: string): void {
   if (!scopeKeyValue) {
     inMemoryStore.clear();
+    hasPurgedLegacyWidgetStorage = false;
     if (storageAvailable()) {
       try {
-        const prefix = `${STORAGE_PREFIX}:`;
+        const prefixes = [`${STORAGE_PREFIX}:`, ...LEGACY_WIDGET_STORAGE_PREFIXES];
         const keys: string[] = [];
         for (let index = 0; index < localStorage.length; index += 1) {
           const key = localStorage.key(index);
-          if (key && key.startsWith(prefix)) keys.push(key);
+          if (key && prefixes.some((prefix) => key.startsWith(prefix))) keys.push(key);
         }
         for (const key of keys) localStorage.removeItem(key);
       } catch {
@@ -481,9 +540,10 @@ export function resetCustomWorkbenchWidgetStore(scopeKeyValue?: string): void {
     return;
   }
 
-  const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  const scope = normalizeScope(scopeKeyValue);
   inMemoryStore.delete(scope);
   if (!storageAvailable()) return;
+  ensureLegacyWidgetStoragePurged();
   try {
     localStorage.removeItem(storageKey(scope));
   } catch {

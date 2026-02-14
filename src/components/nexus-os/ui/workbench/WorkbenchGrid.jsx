@@ -1060,6 +1060,8 @@ export default function WorkbenchGrid({
   useEffect(() => {
     onActivePanelIdsChange?.(activePanelIds);
   }, [activePanelIds, onActivePanelIdsChange]);
+  const activePanelSignature = useMemo(() => activePanelIds.join('|'), [activePanelIds]);
+  const panelSizesSignature = useMemo(() => JSON.stringify(panelSizes), [panelSizes]);
 
   useEffect(() => {
     if (!layoutHydrated || !persistenceEnabled || !layoutPersistenceScopeKey) return;
@@ -1094,7 +1096,7 @@ export default function WorkbenchGrid({
     if (report.perf.avgMs > 2) {
       console.info('[NexusOS][Workbench][Perf]', report.perf);
     }
-  }, [allPanels, activePanelIds.join('|'), JSON.stringify(panelSizes), preset.id, preset.columns]);
+  }, [activePanelSignature, allPanels, panelSizesSignature, preset.id, preset.columns]);
 
   return (
     <div

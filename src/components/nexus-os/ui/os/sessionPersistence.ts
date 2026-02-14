@@ -27,6 +27,8 @@ export interface NexusWorkspaceSessionSnapshot {
 
 const STORAGE_PREFIX = 'nexus.os.session.v1';
 const SESSION_REMOTE_NAMESPACE = 'workspace_session_snapshot';
+const MAX_TEXT_LENGTH = 120;
+const MAX_ACTIVE_PANELS = 64;
 
 function storageAvailable(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
@@ -51,6 +53,65 @@ function defaultSnapshot(overrides: Partial<NexusWorkspaceSessionSnapshot> = {})
   };
 }
 
+function trimText(value: unknown, fallback: string, maxLength = MAX_TEXT_LENGTH): string {
+  const token = String(value ?? '').trim().slice(0, maxLength);
+  return token || fallback;
+}
+
+function normalizeIsoTimestamp(value: unknown, fallback: string): string {
+  const token = String(value || '').trim();
+  const parsed = Date.parse(token);
+  if (token && !Number.isNaN(parsed)) return new Date(parsed).toISOString();
+  return fallback;
+}
+
+function normalizePanelIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const deduped = new Set<string>();
+  for (const entry of value) {
+    const panelId = String(entry || '').trim().slice(0, MAX_TEXT_LENGTH);
+    if (!panelId) continue;
+    deduped.add(panelId);
+    if (deduped.size >= MAX_ACTIVE_PANELS) break;
+  }
+  return Array.from(deduped);
+}
+
+function normalizeSessionSnapshot(
+  input: Partial<NexusWorkspaceSessionSnapshot>,
+  fallback: NexusWorkspaceSessionSnapshot
+): NexusWorkspaceSessionSnapshot {
+  const focusModeCandidate =
+    input.focusMode === null ? null : trimText(input.focusMode, fallback.focusMode || '');
+  return {
+    version: 1,
+    bridgeId: trimText(input.bridgeId, fallback.bridgeId),
+    presetId: trimText(input.presetId, fallback.presetId),
+    variantId: trimText(input.variantId, fallback.variantId),
+    opId: trimText(input.opId, ''),
+    elementFilter: trimText(input.elementFilter, fallback.elementFilter),
+    actorId: trimText(input.actorId, fallback.actorId),
+    focusMode: focusModeCandidate || null,
+    forceDesignOpId: trimText(input.forceDesignOpId, ''),
+    reportsOpId: trimText(input.reportsOpId, ''),
+    activePanelIds: normalizePanelIds(input.activePanelIds),
+    workspaceOnboardingCompleted:
+      typeof input.workspaceOnboardingCompleted === 'boolean'
+        ? input.workspaceOnboardingCompleted
+        : fallback.workspaceOnboardingCompleted,
+    updatedAt: normalizeIsoTimestamp(input.updatedAt, fallback.updatedAt),
+  };
+}
+
+function removeCorruptSession(sessionScopeKey: string): void {
+  if (!storageAvailable()) return;
+  try {
+    localStorage.removeItem(workspaceSessionStorageKey(sessionScopeKey));
+  } catch {
+    // best effort
+  }
+}
+
 export function workspaceSessionStorageKey(sessionScopeKey: string): string {
   return `${STORAGE_PREFIX}:${sessionScopeKey}`;
 }
@@ -73,26 +134,28 @@ export function loadWorkspaceSession(
   try {
     const raw = localStorage.getItem(workspaceSessionStorageKey(sessionScopeKey));
     if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== 1) return fallback;
-    const onboardingCompleted =
-      typeof parsed.workspaceOnboardingCompleted === 'boolean'
-        ? parsed.workspaceOnboardingCompleted
-        : true;
+    const parsed = JSON.parse(raw) as Partial<NexusWorkspaceSessionSnapshot>;
+    if (!parsed || typeof parsed !== 'object' || parsed.version !== 1) {
+      removeCorruptSession(sessionScopeKey);
+      return fallback;
+    }
+    const normalized = normalizeSessionSnapshot(parsed, fallback);
     return {
-      ...fallback,
-      ...parsed,
-      workspaceOnboardingCompleted: onboardingCompleted,
-      version: 1,
+      ...normalized,
+      workspaceOnboardingCompleted:
+        typeof parsed.workspaceOnboardingCompleted === 'boolean'
+          ? parsed.workspaceOnboardingCompleted
+          : true,
     };
   } catch {
+    removeCorruptSession(sessionScopeKey);
     return fallback;
   }
 }
 
 export function persistWorkspaceSession(sessionScopeKey: string, snapshot: NexusWorkspaceSessionSnapshot): void {
   const persisted = {
-    ...snapshot,
+    ...normalizeSessionSnapshot(snapshot, defaultSnapshot()),
     version: 1 as const,
     updatedAt: new Date().toISOString(),
   };
@@ -137,11 +200,17 @@ export async function hydrateWorkspaceSessionFromBackend(
   if (!state || typeof state !== 'object') return fallback;
   const parsed = state as Partial<NexusWorkspaceSessionSnapshot>;
   if (parsed.version !== 1) return fallback;
-  const merged = {
-    ...fallback,
-    ...parsed,
-    version: 1 as const,
-  };
+  const merged = normalizeSessionSnapshot(
+    {
+      ...fallback,
+      ...parsed,
+      workspaceOnboardingCompleted:
+        typeof parsed.workspaceOnboardingCompleted === 'boolean'
+          ? parsed.workspaceOnboardingCompleted
+          : fallback.workspaceOnboardingCompleted,
+    },
+    fallback
+  );
   if (storageAvailable()) {
     try {
       localStorage.setItem(workspaceSessionStorageKey(sessionScopeKey), JSON.stringify(merged));

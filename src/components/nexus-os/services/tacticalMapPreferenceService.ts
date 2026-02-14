@@ -16,7 +16,7 @@ const STORAGE_PREFIX = 'nexus.os.tacticalMap.preferences.v2';
 const MODE_LAYER_DEFAULTS: Readonly<Record<TacticalMapMode, Partial<Record<TacticalLayerId, boolean>>>> = Object.freeze({
   ESSENTIAL: {
     presence: true,
-    controlZones: false,
+    controlZones: true,
     ops: true,
     intel: false,
     comms: false,
@@ -24,10 +24,10 @@ const MODE_LAYER_DEFAULTS: Readonly<Record<TacticalMapMode, Partial<Record<Tacti
   },
   COMMAND: {
     presence: true,
-    controlZones: false,
+    controlZones: true,
     ops: true,
-    intel: false,
-    comms: false,
+    intel: true,
+    comms: true,
     logistics: false,
   },
   FULL: {

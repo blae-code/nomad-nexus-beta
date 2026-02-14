@@ -259,53 +259,82 @@ function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onCl
 }
 
 function DiagnosticsPanel({ events, variantId, operations, focusOperationId, controlZones }) {
-  const pulses = gameplayPulseSummary(events);
-  const eventDiagnostics = getCqbEventDiagnostics(60000);
-  const intelObjects = listAllIntelObjectsForDev();
-  const drafts = listDrafts();
-  const reports = listReports();
-  const marketObservations = listPriceObservations({ includeStale: true });
-  const fitProfiles = listFitProfiles();
-  const opComments = (operations || []).flatMap((operation) => listComments(operation.id));
-  const assumptions = (operations || []).flatMap((operation) => listAssumptions(operation.id));
-  const referenceSpecs = listShipSpecs();
-  const warnings = runNexusOSInvariantChecks({
-    ttl: {
+  const diagnostics = useMemo(() => {
+    const pulses = gameplayPulseSummary(events);
+    const eventDiagnostics = getCqbEventDiagnostics(60000);
+    const intelObjects = listAllIntelObjectsForDev();
+    const drafts = listDrafts();
+    const reports = listReports();
+    const marketObservations = listPriceObservations({ includeStale: true });
+    const fitProfiles = listFitProfiles();
+    const opComments = (operations || []).flatMap((operation) => listComments(operation.id));
+    const assumptions = (operations || []).flatMap((operation) => listAssumptions(operation.id));
+    const referenceSpecs = listShipSpecs();
+    const warnings = runNexusOSInvariantChecks({
+      ttl: {
+        intelObjects,
+        controlZones,
+        marketObservations,
+        assumptions,
+      },
+      provenance: {
+        referenceRecords: referenceSpecs,
+        marketObservations,
+      },
+      scoping: {
+        events,
+        intelObjects,
+        comments: opComments,
+      },
+      noGlobalChat: {
+        opComments,
+        intelComments: [],
+      },
+      focus: {
+        operations,
+        focusOperationId,
+      },
+    });
+    const summary = summarizeInvariantWarnings(warnings);
+    const staleIntelCount = intelObjects.filter((entry) => getIntelObjectTTLState(entry).stale).length;
+    const staleMarketCount = marketObservations.filter((entry) => entry.stale).length;
+    const patchMismatchCount = fitProfiles.reduce(
+      (count, profile) => count + (profile.validation?.patchMismatchWarnings?.length || 0),
+      0
+    );
+    const diagnosticsState = resolveAvailabilityState({
+      count: warnings.length === 0 ? 1 : warnings.length,
+      hasConflict: summary.criticalCount > 0,
+      staleCount: warnings.length > 0 ? warnings.length - summary.criticalCount : 0,
+    });
+    return {
+      pulses,
+      eventDiagnostics,
       intelObjects,
-      controlZones,
-      marketObservations,
-      assumptions,
-    },
-    provenance: {
-      referenceRecords: referenceSpecs,
-      marketObservations,
-    },
-    scoping: {
-      events,
-      intelObjects,
-      comments: opComments,
-    },
-    noGlobalChat: {
-      opComments,
-      intelComments: [],
-    },
-    focus: {
-      operations,
-      focusOperationId,
-    },
-  });
-  const summary = summarizeInvariantWarnings(warnings);
-  const staleIntelCount = intelObjects.filter((entry) => getIntelObjectTTLState(entry).stale).length;
-  const staleMarketCount = marketObservations.filter((entry) => entry.stale).length;
-  const patchMismatchCount = fitProfiles.reduce(
-    (count, profile) => count + (profile.validation?.patchMismatchWarnings?.length || 0),
-    0
-  );
-  const diagnosticsState = resolveAvailabilityState({
-    count: warnings.length === 0 ? 1 : warnings.length,
-    hasConflict: summary.criticalCount > 0,
-    staleCount: warnings.length > 0 ? warnings.length - summary.criticalCount : 0,
-  });
+      drafts,
+      reports,
+      warnings,
+      summary,
+      staleIntelCount,
+      staleMarketCount,
+      patchMismatchCount,
+      diagnosticsState,
+    };
+  }, [controlZones, events, focusOperationId, operations]);
+
+  const {
+    pulses,
+    eventDiagnostics,
+    intelObjects,
+    drafts,
+    reports,
+    warnings,
+    summary,
+    staleIntelCount,
+    staleMarketCount,
+    patchMismatchCount,
+    diagnosticsState,
+  } = diagnostics;
 
   return (
     <div className="space-y-2 text-xs">

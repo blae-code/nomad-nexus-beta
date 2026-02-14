@@ -22,6 +22,7 @@ import {
 const STORAGE_PREFIX = 'nexus.os.workbench.layout.v2';
 const LATEST_VERSION = 2 as const;
 const LAYOUT_REMOTE_NAMESPACE = 'workbench_layout_snapshot';
+const MAX_LAYOUT_PANELS = 96;
 
 function storageAvailable(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
@@ -29,6 +30,13 @@ function storageAvailable(): boolean {
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function normalizeIsoTimestamp(value: unknown, fallback: string): string {
+  const token = String(value || '').trim();
+  const parsed = Date.parse(token);
+  if (token && !Number.isNaN(parsed)) return new Date(parsed).toISOString();
+  return fallback;
 }
 
 export function workbenchLayoutStorageKey(scopeKey: string): string {
@@ -57,10 +65,25 @@ function isV2Snapshot(value: unknown): value is WorkbenchLayoutSnapshotV2 {
   );
 }
 
-function normalizePanelSizes(panelSizes: unknown): Record<string, PanelSize> {
+function normalizePanelIdList(ids: unknown, availablePanelIds: string[]): string[] {
+  if (!Array.isArray(ids)) return [];
+  const available = new Set(availablePanelIds);
+  const deduped = new Set<string>();
+  for (const entry of ids) {
+    const panelId = String(entry || '').trim();
+    if (!panelId || !available.has(panelId)) continue;
+    deduped.add(panelId);
+    if (deduped.size >= MAX_LAYOUT_PANELS) break;
+  }
+  return Array.from(deduped);
+}
+
+function normalizePanelSizes(panelSizes: unknown, allowedPanelIds: string[]): Record<string, PanelSize> {
   const next: Record<string, PanelSize> = {};
   if (!panelSizes || typeof panelSizes !== 'object') return next;
+  const allowed = new Set(allowedPanelIds);
   for (const [panelId, size] of Object.entries(panelSizes as Record<string, PanelSize>)) {
+    if (!allowed.has(panelId)) continue;
     if (!size || typeof size !== 'object') continue;
     const normalized: PanelSize = {};
     if (typeof size.colSpan === 'number' && Number.isFinite(size.colSpan)) normalized.colSpan = size.colSpan;
@@ -75,17 +98,24 @@ function normalizeSnapshot(
   fallbackPresetId: WorkbenchPresetId,
   availablePanelIds: string[]
 ): WorkbenchLayoutSnapshotV2 {
-  const panelOrder = normalizePanelOrder(snapshot.panelOrder || [], availablePanelIds);
+  const boundedAvailablePanelIds = Array.from(
+    new Set((availablePanelIds || []).map((entry) => String(entry || '').trim()).filter(Boolean))
+  ).slice(0, MAX_LAYOUT_PANELS);
+  const panelOrder = normalizePanelOrder(
+    normalizePanelIdList(snapshot.panelOrder, boundedAvailablePanelIds),
+    boundedAvailablePanelIds
+  );
   const hasExplicitActivePanelIds = Array.isArray(snapshot.activePanelIds);
-  const activePanelIds = (snapshot.activePanelIds || []).filter((id) => availablePanelIds.includes(id));
+  const activePanelIds = normalizePanelIdList(snapshot.activePanelIds, boundedAvailablePanelIds);
+  const sizePanelIds = Array.from(new Set([...panelOrder, ...activePanelIds]));
   return {
     version: LATEST_VERSION,
     schema: 'nexus-os-workbench',
     presetId: (snapshot.presetId || fallbackPresetId) as WorkbenchPresetId,
     panelOrder,
     activePanelIds: hasExplicitActivePanelIds ? activePanelIds : panelOrder,
-    panelSizes: normalizePanelSizes(snapshot.panelSizes),
-    updatedAt: snapshot.updatedAt || nowIso(),
+    panelSizes: normalizePanelSizes(snapshot.panelSizes, sizePanelIds),
+    updatedAt: normalizeIsoTimestamp(snapshot.updatedAt, nowIso()),
   };
 }
 
@@ -95,14 +125,17 @@ export function toWorkbenchLayoutSnapshot(
   panelSizes: Record<string, PanelSize>,
   activePanelIds?: string[]
 ): WorkbenchLayoutSnapshotV2 {
-  const panelOrder = panels.map((panel) => panel.id);
+  const panelOrder = Array.from(new Set(panels.map((panel) => String(panel.id || '').trim()).filter(Boolean))).slice(0, MAX_LAYOUT_PANELS);
+  const activeIds = Array.isArray(activePanelIds)
+    ? activePanelIds.map((entry) => String(entry || '').trim()).filter(Boolean).slice(0, MAX_LAYOUT_PANELS)
+    : panelOrder;
   return {
     version: LATEST_VERSION,
     schema: 'nexus-os-workbench',
     presetId,
     panelOrder,
-    activePanelIds: Array.isArray(activePanelIds) ? activePanelIds : panelOrder,
-    panelSizes: normalizePanelSizes(panelSizes),
+    activePanelIds: activeIds,
+    panelSizes: normalizePanelSizes(panelSizes, Array.from(new Set([...panelOrder, ...activeIds]))),
     updatedAt: nowIso(),
   };
 }
@@ -192,18 +225,27 @@ export function loadWorkbenchLayout(input: {
   availablePanelIds: string[];
 }) {
   if (!storageAvailable()) return null;
+  const key = workbenchLayoutStorageKey(input.scopeKey);
   try {
-    const raw = localStorage.getItem(workbenchLayoutStorageKey(input.scopeKey));
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as AnyWorkbenchLayoutSnapshot;
     const snapshot = fromWorkbenchLayoutSnapshot(parsed, input.fallbackPresetId, input.availablePanelIds);
-    if (!snapshot) return null;
+    if (!snapshot) {
+      localStorage.removeItem(key);
+      return null;
+    }
     const migratedFrom = (parsed as AnyWorkbenchLayoutSnapshot).version === 1 ? 1 : null;
     return {
       snapshot,
       migratedFrom,
     };
   } catch {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // best effort
+    }
     return null;
   }
 }

@@ -23,6 +23,8 @@ export interface WorkspaceStateSnapshot<T = unknown> {
 
 const DEFAULT_DEBOUNCE_MS = 900;
 const DEFAULT_SCOPE = 'default';
+const MAX_STATE_PAYLOAD_BYTES = 220_000;
+const MAX_PENDING_SAVE_KEYS = 48;
 
 type PendingSave = {
   namespace: string;
@@ -65,16 +67,45 @@ export function workspaceStateSyncEnabled(): boolean {
   }
 }
 
-function stableClone<T>(value: T): T | null {
+function utf8Bytes(value: string): number {
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(value).length;
+  }
+  return value.length;
+}
+
+function stableCloneWithBytes<T>(value: T): { state: T; bytes: number } | null {
   try {
-    return JSON.parse(JSON.stringify(value ?? {})) as T;
+    const serialized = JSON.stringify(value ?? {});
+    return {
+      state: JSON.parse(serialized) as T,
+      bytes: utf8Bytes(serialized),
+    };
   } catch {
     return null;
   }
 }
 
+export function workspaceStateMaxPayloadBytes(): number {
+  return MAX_STATE_PAYLOAD_BYTES;
+}
+
+export function workspaceStateMaxPendingKeys(): number {
+  return MAX_PENDING_SAVE_KEYS;
+}
+
 function queueKey(namespace: string, scopeKey: string): string {
   return `${namespace}:${scopeKey}`;
+}
+
+function evictOldestPendingSave(): void {
+  if (pendingByKey.size < MAX_PENDING_SAVE_KEYS) return;
+  const oldestKey = pendingByKey.keys().next().value as string | undefined;
+  if (!oldestKey) return;
+  const timer = timerByKey.get(oldestKey);
+  if (timer) clearTimeout(timer);
+  timerByKey.delete(oldestKey);
+  pendingByKey.delete(oldestKey);
 }
 
 async function invokeWorkspaceFunction(payload: Record<string, unknown>) {
@@ -85,6 +116,8 @@ async function invokeWorkspaceFunction(payload: Record<string, unknown>) {
 async function flushQueuedSave(key: string): Promise<void> {
   const pending = pendingByKey.get(key);
   if (!pending) return;
+  const timer = timerByKey.get(key);
+  if (timer) clearTimeout(timer);
   pendingByKey.delete(key);
   timerByKey.delete(key);
   if (!workspaceStateSyncEnabled()) return;
@@ -102,14 +135,17 @@ export function enqueueWorkspaceStateSave(input: WorkspaceStateSaveInput): void 
   const namespace = normalizeNamespace(input.namespace);
   const scopeKey = normalizeScopeKey(input.scopeKey || DEFAULT_SCOPE);
   const schemaVersion = normalizeSchemaVersion(input.schemaVersion || 1);
-  const state = stableClone(input.state);
-  if (state === null) return;
+  const normalizedState = stableCloneWithBytes(input.state);
+  if (!normalizedState || normalizedState.bytes > MAX_STATE_PAYLOAD_BYTES) return;
   const key = queueKey(namespace, scopeKey);
+  if (!pendingByKey.has(key)) {
+    evictOldestPendingSave();
+  }
   pendingByKey.set(key, {
     namespace,
     scopeKey,
     schemaVersion,
-    state,
+    state: normalizedState.state,
   });
   const debounceMs = Math.max(200, Math.min(Math.floor(Number(input.debounceMs || DEFAULT_DEBOUNCE_MS)), 5000));
   const existing = timerByKey.get(key);
@@ -138,15 +174,15 @@ export async function loadWorkspaceStateSnapshot<T = unknown>(
   }).catch(() => null);
   const snapshot = response?.data?.snapshot;
   if (!snapshot || typeof snapshot !== 'object') return null;
-  const clonedState = stableClone(snapshot.state as T);
-  if (clonedState === null) return null;
+  const clonedState = stableCloneWithBytes(snapshot.state as T);
+  if (!clonedState) return null;
   return {
     namespace: normalizeNamespace(snapshot.namespace || namespace),
     scopeKey: normalizeScopeKey(snapshot.scopeKey || scopeKey),
     schemaVersion: normalizeSchemaVersion(snapshot.schemaVersion || 1),
     persistedAt: text(snapshot.persistedAt),
-    bytes: Number.isFinite(Number(snapshot.bytes)) ? Number(snapshot.bytes) : 0,
-    state: clonedState,
+    bytes: Number.isFinite(Number(snapshot.bytes)) ? Number(snapshot.bytes) : clonedState.bytes,
+    state: clonedState.state,
     source: snapshot.source === 'entity' || snapshot.source === 'event_log' ? snapshot.source : 'none',
   };
 }

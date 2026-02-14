@@ -10,6 +10,24 @@ import {
   upsertCustomWorkbenchWidget,
 } from '../../src/components/nexus-os/services/customWorkbenchWidgetService';
 
+function createMemoryStorage() {
+  const memory = new Map<string, string>();
+  return {
+    getItem: (key: string) => memory.get(key) || null,
+    setItem: (key: string, value: string) => {
+      memory.set(key, value);
+    },
+    removeItem: (key: string) => {
+      memory.delete(key);
+    },
+    clear: () => memory.clear(),
+    key: (index: number) => Array.from(memory.keys())[index] || null,
+    get length() {
+      return memory.size;
+    },
+  };
+}
+
 describe('customWorkbenchWidgetService', () => {
   beforeEach(() => {
     resetCustomWorkbenchWidgetStore();
@@ -156,6 +174,64 @@ describe('customWorkbenchWidgetService', () => {
 
   it('rejects invalid widget share codes', () => {
     expect(() => importCustomWorkbenchWidgetFromShareCode('bridge:alpha', 'NOT_A_CODE')).toThrow();
+  });
+
+  it('salvages valid widgets when storage contains malformed entries', () => {
+    const previousWindow = (globalThis as { window?: unknown }).window;
+    const previousStorage = (globalThis as { localStorage?: unknown }).localStorage;
+    const storage = createMemoryStorage();
+    storage.setItem(
+      'nexus.os.workbench.customWidgets.v1:bridge:salvage',
+      JSON.stringify([
+        { title: 'Valid Widget', body: 'Ready' },
+        { id: 'broken-widget' },
+      ])
+    );
+    (globalThis as { localStorage?: unknown }).localStorage = storage;
+    (globalThis as { window?: unknown }).window = { localStorage: storage };
+
+    try {
+      const widgets = listCustomWorkbenchWidgets('bridge:salvage');
+      expect(widgets).toHaveLength(1);
+      expect(widgets[0].title).toBe('Valid Widget');
+    } finally {
+      if (typeof previousStorage === 'undefined') {
+        delete (globalThis as { localStorage?: unknown }).localStorage;
+      } else {
+        (globalThis as { localStorage?: unknown }).localStorage = previousStorage;
+      }
+      if (typeof previousWindow === 'undefined') {
+        delete (globalThis as { window?: unknown }).window;
+      } else {
+        (globalThis as { window?: unknown }).window = previousWindow;
+      }
+      resetCustomWorkbenchWidgetStore();
+    }
+  });
+
+  it('caps widget count per scope', () => {
+    const scope = 'bridge:cap-check';
+    for (let index = 0; index < 220; index += 1) {
+      upsertCustomWorkbenchWidget(
+        scope,
+        {
+          title: `Widget ${index}`,
+          body: `Body ${index}`,
+        },
+        1_736_300_000_000 + index
+      );
+    }
+
+    const widgets = listCustomWorkbenchWidgets(scope);
+    expect(widgets.length).toBeLessThanOrEqual(160);
+    expect(widgets[0].title).toBe('Widget 219');
+  });
+
+  it('rejects oversized share codes early', () => {
+    const oversized = `NXW1.${'a'.repeat(30_000)}`;
+    expect(() => importCustomWorkbenchWidgetFromShareCode('bridge:alpha', oversized)).toThrow(
+      /Invalid widget share code/
+    );
   });
 });
 
