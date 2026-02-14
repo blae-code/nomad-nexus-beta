@@ -4,6 +4,15 @@ import { createPageUrl } from '@/utils';
 
 const AuthContext = createContext(null);
 
+function resolveAiConsent(memberProfile) {
+  const raw = memberProfile?.ai_consent;
+  if (raw === null || raw === undefined || raw === '') return true;
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'number') return raw !== 0;
+  const normalized = String(raw).trim().toLowerCase();
+  if (['false', '0', 'off', 'disabled', 'no'].includes(normalized)) return false;
+  return true;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -12,6 +21,9 @@ export function AuthProvider({ children }) {
   const [disclaimersCompleted, setDisclaimersCompleted] = useState(false);
   const [error, setError] = useState(null);
   const [initialized, setInitialized] = useState(false);
+  const [aiFeaturesEnabled, setAiFeaturesEnabledState] = useState(true);
+  const [aiFeaturesUpdating, setAiFeaturesUpdating] = useState(false);
+  const [aiFeaturesError, setAiFeaturesError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -75,6 +87,8 @@ export function AuthProvider({ children }) {
               });
               setDisclaimersCompleted(!!memberProfile.accepted_pwa_disclaimer_at);
               setOnboardingCompleted(!!memberProfile.onboarding_completed);
+              setAiFeaturesEnabledState(resolveAiConsent(memberProfile));
+              setAiFeaturesError(null);
               setInitialized(true);
               setLoading(false);
               return; 
@@ -121,6 +135,8 @@ export function AuthProvider({ children }) {
               });
               setDisclaimersCompleted(true);
               setOnboardingCompleted(true);
+              setAiFeaturesEnabledState(true);
+              setAiFeaturesError(null);
               setInitialized(true);
               setLoading(false);
               return;
@@ -130,6 +146,8 @@ export function AuthProvider({ children }) {
           }
 
           setUser(null);
+          setAiFeaturesEnabledState(true);
+          setAiFeaturesError(null);
           setInitialized(true);
           setLoading(false);
         }
@@ -137,6 +155,8 @@ export function AuthProvider({ children }) {
         if (!isMounted) return;
         console.error('[AUTH] Auth initialization error:', err?.message);
         setUser(null);
+        setAiFeaturesEnabledState(true);
+        setAiFeaturesError(null);
         setInitialized(true);
         setLoading(false);
       }
@@ -157,9 +177,59 @@ export function AuthProvider({ children }) {
         localStorage.removeItem(`nexus.display_callsign.${user.member_profile_id}`);
       }
       setUser(null);
+      setAiFeaturesEnabledState(true);
+      setAiFeaturesError(null);
       window.location.href = createPageUrl('AccessGate');
     } catch (err) {
       console.error('[AUTH] Logout error:', err);
+    }
+  };
+
+  const setAiFeaturesEnabled = async (nextEnabled) => {
+    const normalized = Boolean(nextEnabled);
+
+    if (!user?.member_profile_id) {
+      setAiFeaturesEnabledState(normalized);
+      setAiFeaturesError(null);
+      return { success: true, value: normalized, persisted: false };
+    }
+
+    if (user?.authType === 'admin') {
+      setAiFeaturesEnabledState(true);
+      setAiFeaturesError(null);
+      return { success: true, value: true, persisted: false };
+    }
+
+    const previous = aiFeaturesEnabled;
+    setAiFeaturesUpdating(true);
+    setAiFeaturesError(null);
+    setAiFeaturesEnabledState(normalized);
+
+    try {
+      await base44.entities.MemberProfile.update(user.member_profile_id, {
+        ai_consent: normalized,
+      });
+
+      setUser((prev) => {
+        if (!prev) return prev;
+        const profile = prev.member_profile_data || {};
+        return {
+          ...prev,
+          member_profile_data: {
+            ...profile,
+            ai_consent: normalized,
+          },
+        };
+      });
+
+      return { success: true, value: normalized, persisted: true };
+    } catch (err) {
+      const message = err?.message || 'Failed to update AI feature preference.';
+      setAiFeaturesEnabledState(previous);
+      setAiFeaturesError(message);
+      return { success: false, value: previous, error: message, persisted: false };
+    } finally {
+      setAiFeaturesUpdating(false);
     }
   };
 
@@ -171,6 +241,10 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     onboardingCompleted,
     disclaimersCompleted,
+    aiFeaturesEnabled,
+    aiFeaturesUpdating,
+    aiFeaturesError,
+    setAiFeaturesEnabled,
     logout
   };
 

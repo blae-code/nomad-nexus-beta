@@ -40,6 +40,7 @@ import ModerationPanel from '@/components/comms/ModerationPanel';
 import AIModerationIndicator from '@/components/comms/AIModerationIndicator';
 import CommsTemplateDialog from '@/components/comms/CommsTemplateDialog';
 import { useChannelPackRecommendations } from '@/components/hooks/useChannelPackRecommendations';
+import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
 
 const COMMAND_CORE_HEIGHT_KEY = 'nexus.comms.commandCoreHeight';
 const DEFAULT_COMMAND_CORE_HEIGHT = 240;
@@ -148,9 +149,10 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const commandCoreResizingRef = useRef(false);
   const commandCoreResizeStartRef = useRef({ y: 0, height: DEFAULT_COMMAND_CORE_HEIGHT });
 
-  const { user: authUser } = useAuth();
+  const { user: authUser, aiFeaturesEnabled } = useAuth();
   const user = authUser?.member_profile_data || authUser;
   const isAdmin = isAdminUser(authUser);
+  const aiEnabled = aiFeaturesEnabled !== false;
   const { addNotification } = useNotification();
   const { unreadByChannel, unreadByTab, refreshUnreadCounts, markChannelRead } = useUnreadCounts(user?.id);
   const activeOp = useActiveOp();
@@ -190,6 +192,44 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   const notify = useCallback((title, message, type = 'info') => {
     addNotification?.({ title, message, type, duration: 6000 });
   }, [addNotification]);
+
+  const registerMessageAttachments = useCallback(async (message, attachments = []) => {
+    if (!message?.id || !Array.isArray(attachments) || attachments.length === 0) return;
+    const channelId = message.channel_id || selectedChannelId || null;
+    const eventId = activeOp?.activeEventId || null;
+    const normalized = attachments
+      .map((entry) => {
+        const fileUrl = String(entry?.url || '').trim();
+        if (!fileUrl) return null;
+        return {
+          fileUrl,
+          fileName: String(entry?.fileName || '').trim() || fileUrl.split('?')[0].split('/').pop() || 'attachment',
+          contentType: String(entry?.contentType || '').trim() || 'application/octet-stream',
+          sizeBytes: Number.isFinite(Number(entry?.sizeBytes)) ? Number(entry.sizeBytes) : null,
+          sourceKind: String(entry?.sourceKind || 'file').trim().toLowerCase() || 'file',
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 16);
+    if (normalized.length === 0) return;
+    await Promise.allSettled(
+      normalized.map((attachment) =>
+        invokeMemberFunction('updateFileAssets', {
+          action: 'register',
+          fileUrl: attachment.fileUrl,
+          fileName: attachment.fileName,
+          contentType: attachment.contentType,
+          sizeBytes: attachment.sizeBytes,
+          sourceType: 'MESSAGE_ATTACHMENT',
+          sourceId: message.id,
+          channelId,
+          eventId,
+          ttlHours: 24 * 90,
+          attachmentKind: attachment.sourceKind,
+        })
+      )
+    );
+  }, [activeOp?.activeEventId, selectedChannelId]);
 
   const canAccessChannel = useCallback((channel) => {
     return canAccessCommsChannel(user, channel);
@@ -685,24 +725,25 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
   };
 
   const askRiggsy = async () => {
+    if (!aiEnabled) {
+      setRiggsyResponse('AI features are Disabled. Enable AI features to use Riggsy.');
+      return;
+    }
     if (!riggsyPrompt.trim()) return;
     setRiggsyLoading(true);
     setRiggsyResponse('');
 
     try {
       const channelContext = messages.slice(-10).map((m) => m.content).join('\n');
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Riggsy, a tactical AI assistant for the Nomad Nexus communication system. 
-
-Recent channel activity:
-${channelContext}
-
-User question: ${riggsyPrompt}
-
-Provide a helpful, concise response with tactical awareness.`,
+      const result = await invokeMemberFunction('commsAssistant', {
+        action: 'ask_comms',
+        data: {
+          eventId: activeOp?.activeEventId || null,
+          query: `${riggsyPrompt}\n\nRecent channel activity:\n${channelContext || '(none)'}`,
+        },
       });
-
-      setRiggsyResponse(result);
+      const answer = result?.data?.answer || result?.data?.response?.answer || result?.data?.summary || '';
+      setRiggsyResponse(String(answer || '').trim() || 'No response from Riggsy.');
     } catch (error) {
       setRiggsyResponse('Error: Unable to reach Riggsy at this time.');
     } finally {
@@ -874,6 +915,10 @@ Provide a helpful, concise response with tactical awareness.`,
     }
 
     if (command === 'sitrep') {
+      if (!aiEnabled) {
+        notify('SITREP disabled', 'AI features are Disabled for this profile.', 'warning');
+        return true;
+      }
       if (!selectedChannelId) {
         notify('SITREP', 'Select a channel to post the SITREP.', 'warning');
         return true;
@@ -1331,7 +1376,7 @@ Provide a helpful, concise response with tactical awareness.`,
               {tab === 'dms' && <>DMs</>}
               {tab === 'mentions' && <>@Mentions</>}
               {tab === 'polls' && <>Polls</>}
-              {tab === 'riggsy' && <>Riggsy</>}
+              {tab === 'riggsy' && <>Riggsy {!aiEnabled && <span className="text-[9px] text-zinc-600 ml-1">(Disabled)</span>}</>}
               {tab === 'inbox' && <>Inbox <span className="text-[9px] text-zinc-700 ml-1">(coming soon)</span></>}
             </button>
           ))}
@@ -1667,13 +1712,14 @@ Provide a helpful, concise response with tactical awareness.`,
                     draftKey={selectedChannelId ? `nexus.comms.draft.${selectedChannelId}` : ''}
                     disabled={composerDisabled}
                     disabledReason={composerDisabledReason}
-                    onSendMessage={async (messageData) => {
+                    onSendMessage={async (messageData, composerContext = {}) => {
                       if (composerDisabled) return;
                       try {
                         const handled = await executeCommand(messageData?.content || '');
                         if (handled) return;
 
                         const newMsg = await base44.entities.Message.create(messageData);
+                        void registerMessageAttachments(newMsg, composerContext?.attachments || []);
                         if (newMsg?.id && messageData?.content && messageData.content.includes('@')) {
                           invokeMemberFunction('processMessageMentions', {
                             messageId: newMsg.id,
@@ -1845,10 +1891,18 @@ Provide a helpful, concise response with tactical awareness.`,
                 {activeTab === 'riggsy' && (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                      <AIFeatureToggle
+                        label="Riggsy AI Access"
+                        description="Toggle AI assistant access for this profile."
+                      />
                       <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded">
-                        <div className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-1">Riggsy Tactical AI</div>
+                        <div className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-1">
+                          Riggsy Tactical AI {aiEnabled ? '' : '· Disabled'}
+                        </div>
                         <div className="text-[11px] text-zinc-400">
-                          Ask for comms summaries, tactical insights, or channel guidance.
+                          {aiEnabled
+                            ? 'Ask for comms summaries, tactical insights, or channel guidance.'
+                            : 'AI assistant is disabled. Enable AI features to send prompts.'}
                         </div>
                       </div>
 
@@ -1865,11 +1919,12 @@ Provide a helpful, concise response with tactical awareness.`,
                         <Input
                           value={riggsyPrompt}
                           onChange={(e) => setRiggsyPrompt(e.target.value)}
-                          placeholder="Ask Riggsy anything..."
+                          placeholder={aiEnabled ? 'Ask Riggsy anything...' : 'Riggsy is disabled'}
                           className="h-9 text-xs"
+                          disabled={!aiEnabled}
                         />
-                        <Button onClick={askRiggsy} disabled={!riggsyPrompt.trim() || riggsyLoading} className="h-9">
-                          {riggsyLoading ? '...' : 'Ask'}
+                        <Button onClick={askRiggsy} disabled={!aiEnabled || !riggsyPrompt.trim() || riggsyLoading} className="h-9">
+                          {riggsyLoading ? '...' : aiEnabled ? 'Ask' : 'Disabled'}
                         </Button>
                       </div>
                     </div>

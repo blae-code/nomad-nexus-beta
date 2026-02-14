@@ -61,6 +61,18 @@ export function isAdminMember(memberProfile: any) {
   return Boolean(memberProfile.is_admin) || rank === 'PIONEER' || rank === 'FOUNDER' || roles.includes('admin');
 }
 
+export function isAiFeaturesEnabled(memberProfile: any) {
+  const raw = memberProfile?.ai_consent;
+  if (raw === null || raw === undefined || raw === '') return true;
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'number') return raw !== 0;
+  const normalized = String(raw).trim().toLowerCase();
+  if (normalized === 'false' || normalized === '0' || normalized === 'off' || normalized === 'disabled' || normalized === 'no') {
+    return false;
+  }
+  return true;
+}
+
 function decodeMemberToken(token: string | null | undefined) {
   if (!token) return null;
   try {

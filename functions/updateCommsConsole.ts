@@ -1,4 +1,4 @@
-import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
+import { getAuthContext, isAdminMember, isAiFeaturesEnabled, readJson } from './_shared/memberAuth.ts';
 
 const COMMAND_RANKS = new Set(['COMMANDER', 'PIONEER', 'FOUNDER', 'VOYAGER']);
 const COMMAND_ROLES = new Set(['admin', 'command', 'officer', 'communications', 'comms']);
@@ -1236,6 +1236,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'generate_voice_structured_draft') {
+      if (actorType === 'member' && !isAiFeaturesEnabled(memberProfile)) {
+        return Response.json({ success: false, action, error: 'AI features are disabled for this profile.' }, { status: 403 });
+      }
       const eventId = text(payload.eventId || payload.event_id) || null;
       const netId = text(payload.netId || payload.net_id) || null;
       const draftTypeRaw = text(payload.draftType || payload.draft_type || 'SITREP').toUpperCase();

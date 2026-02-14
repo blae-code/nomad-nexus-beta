@@ -12,6 +12,8 @@ import {
   upsertCharacterProfile,
 } from '../../services/narrativeService';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
+import { useAuth } from '@/components/providers/AuthProvider';
+import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
 
 interface OperationNarrativePanelProps {
   op: Operation;
@@ -27,6 +29,8 @@ function toneBadgeTone(tone: NarrativeEvent['tone']): 'neutral' | 'active' | 'wa
 }
 
 export default function OperationNarrativePanel({ op, actorId }: OperationNarrativePanelProps) {
+  const { aiFeaturesEnabled } = useAuth();
+  const aiEnabled = aiFeaturesEnabled !== false;
   const [narrativeVersion, setNarrativeVersion] = useState(0);
   const [isBusy, setIsBusy] = useState(false);
   const [errorText, setErrorText] = useState('');
@@ -137,6 +141,10 @@ export default function OperationNarrativePanel({ op, actorId }: OperationNarrat
 
   const generateAiNarrative = () =>
     runAction(async () => {
+      if (!aiEnabled) {
+        setErrorText('AI features are Disabled for this profile.');
+        return;
+      }
       setIsBusy(true);
       try {
         const response: any = await invokeMemberFunction('generateNarrative', {
@@ -223,17 +231,22 @@ export default function OperationNarrativePanel({ op, actorId }: OperationNarrat
 
         <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
           <div className="text-[11px] uppercase tracking-wide text-zinc-500">Narrative Generation</div>
+          <AIFeatureToggle
+            label="Narrative AI"
+            description="Enable or disable AI-generated story updates."
+          />
           <NexusButton size="sm" intent="subtle" onClick={generateLocalBrief}>
             Generate Brief Draft
           </NexusButton>
           <NexusButton size="sm" intent="subtle" onClick={generateStorySnapshot}>
             Story So Far (Local)
           </NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={generateAiNarrative} disabled={isBusy}>
-            {isBusy ? 'Generating...' : 'Story So Far (AI)'}
+          <NexusButton size="sm" intent="subtle" onClick={generateAiNarrative} disabled={!aiEnabled || isBusy}>
+            {isBusy ? 'Generating...' : aiEnabled ? 'Story So Far (AI)' : 'Story So Far (AI Disabled)'}
           </NexusButton>
           <p className="text-[11px] text-zinc-500">
             AI entries are tagged and never treated as authoritative truth without evidence refs.
+            {!aiEnabled ? ' Current state: Disabled.' : ''}
           </p>
         </div>
       </section>

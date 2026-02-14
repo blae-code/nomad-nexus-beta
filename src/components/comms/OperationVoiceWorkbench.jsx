@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Activity, AlertTriangle, CheckCircle2, Headphones, Lock, Mic, Radio, Shield, Waves } from 'lucide-react';
+import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
 
 const PRIORITIES = ['STANDARD', 'HIGH', 'CRITICAL'];
 const MOD_ACTIONS = ['MUTE', 'UNMUTE', 'DEAFEN', 'UNDEAFEN', 'KICK', 'LOCK_CHANNEL', 'UNLOCK_CHANNEL'];
@@ -62,8 +63,9 @@ function formatDate(value) {
 }
 
 export default function OperationVoiceWorkbench({ channels = [] }) {
-  const { user: authUser } = useAuth();
+  const { user: authUser, aiFeaturesEnabled } = useAuth();
   const currentUser = authUser?.member_profile_data || authUser;
+  const aiEnabled = aiFeaturesEnabled !== false;
   const voiceNet = useVoiceNet();
   const activeOp = useActiveOp();
   const latency = useLatency();
@@ -644,6 +646,10 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
 
         <div className="border border-zinc-800 rounded p-4 bg-zinc-900/40 space-y-3">
           <div className="text-xs uppercase tracking-widest text-zinc-500">Radio Log + Command Whisper</div>
+          <AIFeatureToggle
+            label="Voice AI Drafting"
+            description="Controls AI SITREP/ORDERS/STATUS draft generation."
+          />
           <div className="grid grid-cols-2 gap-2">
             <Input value={radioSearch} onChange={(e) => setRadioSearch(e.target.value)} placeholder="Search radio log" />
             <Button size="sm" variant="outline" onClick={async () => {
@@ -680,10 +686,18 @@ export default function OperationVoiceWorkbench({ channels = [] }) {
               await voiceNet.captureVoiceClip?.({ eventId: activeOp?.activeEventId || undefined, netId: voiceNet?.transmitNetId || undefined, clipSeconds: 60, ttlHours: 24, visibility: 'COMMAND' });
               await loadSignals();
             }}>Capture 60s Clip</Button>
-            <Button size="sm" variant="outline" onClick={async () => {
+            <Button size="sm" variant="outline" disabled={!aiEnabled} onClick={async () => {
+              if (!aiEnabled) {
+                setBanner({ type: 'error', message: 'AI features are Disabled for this profile.' });
+                return;
+              }
               const draft = await voiceNet.generateVoiceStructuredDraft?.({ eventId: activeOp?.activeEventId || undefined, netId: voiceNet?.transmitNetId || undefined, draftType: 'SITREP' });
-              if (draft?.draft?.summary) setBanner({ type: 'success', message: `AI draft ready: ${draft.draft.summary}` });
-            }}>AI SITREP Draft</Button>
+              if (draft?.error) {
+                setBanner({ type: 'error', message: draft.error });
+              } else if (draft?.draft?.summary) {
+                setBanner({ type: 'success', message: `AI draft ready: ${draft.draft.summary}` });
+              }
+            }}>{aiEnabled ? 'AI SITREP Draft' : 'AI SITREP Draft (Disabled)'}</Button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button size="sm" variant="outline" onClick={async () => {

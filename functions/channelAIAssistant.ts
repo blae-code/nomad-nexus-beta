@@ -1,15 +1,19 @@
-import { getAuthContext, readJson } from './_shared/memberAuth.ts';
+import { getAuthContext, isAiFeaturesEnabled, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {
   try {
     const body = await readJson(req);
-    const { base44, actorType } = await getAuthContext(req, body, {
+    const { base44, actorType, memberProfile } = await getAuthContext(req, body, {
       allowAdmin: true,
       allowMember: true
     });
 
     if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (actorType === 'member' && !isAiFeaturesEnabled(memberProfile)) {
+      return Response.json({ error: 'AI features are disabled for this profile.' }, { status: 403 });
     }
 
     const { action, channelId, messageContent, recentMessages = [], timeWindowHours = 24 } = body;

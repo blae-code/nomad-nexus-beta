@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
+import { useAuth } from '@/components/providers/AuthProvider';
+import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
 import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
 import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
 import type {
@@ -207,6 +209,8 @@ export default function TacticalMapPanel({
   onOpenCommsWorkspace,
   onOpenOperationFocus,
 }: TacticalMapPanelProps) {
+  const { aiFeaturesEnabled } = useAuth();
+  const aiEnabled = aiFeaturesEnabled !== false;
   useRenderProfiler('TacticalMapPanel');
   const reducedMotion = useReducedMotion();
   const commandSurfaceV2Enabled = isMapCommandSurfaceV2Enabled();
@@ -805,6 +809,10 @@ export default function TacticalMapPanel({
   };
 
   const requestAiInference = async () => {
+    if (!aiEnabled) {
+      setAiInferenceError('AI features are Disabled for this profile.');
+      return;
+    }
     setAiInferenceError(null);
     setAiInferenceLoading(true);
     try {
@@ -1128,8 +1136,12 @@ export default function TacticalMapPanel({
   const evidenceTab = (
     <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
       <div className="flex items-center justify-between"><h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Evidence</h4><NexusBadge tone="neutral">{mapInference.confidenceScore}%</NexusBadge></div>
+      <AIFeatureToggle
+        label="Map AI Sync"
+        description="Enable or disable AI context sync for this profile."
+      />
       {mapInference.factors.map((factor) => <div key={factor.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]"><span className="text-zinc-200 uppercase">{factor.id}</span> <span className="text-zinc-500">{factor.score}</span><div className="text-zinc-400">{factor.rationale}</div></div>)}
-      <div className="flex items-center justify-between"><NexusButton size="sm" intent="subtle" onClick={requestAiInference} disabled={aiInferenceLoading}>{aiInferenceLoading ? 'AI Sync...' : 'AI Context Sync'}</NexusButton><span className="text-[10px] text-zinc-500">Z{mapInference.evidence.zoneSignals}/C{mapInference.evidence.commsSignals}/I{mapInference.evidence.intelSignals}</span></div>
+      <div className="flex items-center justify-between"><NexusButton size="sm" intent="subtle" onClick={requestAiInference} disabled={!aiEnabled || aiInferenceLoading}>{aiInferenceLoading ? 'AI Sync...' : aiEnabled ? 'AI Context Sync' : 'AI Context Sync Disabled'}</NexusButton><span className="text-[10px] text-zinc-500">Z{mapInference.evidence.zoneSignals}/C{mapInference.evidence.commsSignals}/I{mapInference.evidence.intelSignals}</span></div>
       {aiInferenceError ? <div className="rounded border border-red-900/70 bg-red-950/35 px-2 py-1 text-[11px] text-red-300">{aiInferenceError}</div> : null}
       {aiInferenceText ? <div className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5 text-[11px] text-zinc-300 whitespace-pre-wrap">{aiInferenceText}</div> : null}
       {!selectedZone ? <div className="text-xs text-zinc-500">Select a zone to inspect contributing signals.</div> : <div className="space-y-1.5">{selectedZone.signals.slice(0, 6).map((signal) => <div key={`${selectedZone.id}:${signal.sourceRef.kind}:${signal.sourceRef.id}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]"><div className="flex items-center justify-between"><span className="text-zinc-200">{signal.type}</span><span className="text-zinc-500">{signalWeightLabel(signal, nowMs)}</span></div><div className="text-zinc-500">{signal.sourceRef.kind}:{signal.sourceRef.id}</div></div>)}</div>}

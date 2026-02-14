@@ -1,4 +1,4 @@
-import { getAuthContext, readJson } from './_shared/memberAuth.ts';
+import { getAuthContext, isAiFeaturesEnabled, readJson } from './_shared/memberAuth.ts';
 
 const withTimeout = (promise, ms = 2000) => Promise.race([
   promise,
@@ -8,13 +8,17 @@ const withTimeout = (promise, ms = 2000) => Promise.race([
 Deno.serve(async (req) => {
   try {
     const payload = await readJson(req);
-    const { base44, actorType } = await getAuthContext(req, payload, {
+    const { base44, actorType, memberProfile } = await getAuthContext(req, payload, {
       allowAdmin: true,
       allowMember: true
     });
     
     if (!actorType) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (actorType === 'member' && !isAiFeaturesEnabled(memberProfile)) {
+      return Response.json({ error: 'AI features are disabled for this profile.' }, { status: 403 });
     }
 
     const { eventId, timeWindowMinutes = 15, netIds = [] } = payload;

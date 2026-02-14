@@ -1,4 +1,4 @@
-import { getAuthContext, readJson } from './_shared/memberAuth.ts';
+import { getAuthContext, isAiFeaturesEnabled, readJson } from './_shared/memberAuth.ts';
 
 type NarrativeMode = 'MISSION_BRIEF' | 'STORY_SO_FAR' | 'AAR_EPILOGUE' | 'IC_SUMMARY';
 
@@ -160,6 +160,10 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (actorType === 'member' && !isAiFeaturesEnabled(memberProfile)) {
+      return Response.json({ success: false, error: 'AI features are disabled for this profile.' }, { status: 403 });
+    }
+
     const actorLabel =
       toText(memberProfile?.display_callsign) ||
       toText(memberProfile?.callsign) ||
@@ -240,4 +244,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-

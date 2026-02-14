@@ -22,6 +22,7 @@ import ResourceManagement from '@/components/events/ResourceManagement';
 import PostEventAnalysis from '@/components/events/PostEventAnalysis';
 import MissionControlAdvancedPanel from '@/components/missions/MissionControlAdvancedPanel';
 import OperationExecutionPanel from '@/components/missions/OperationExecutionPanel';
+import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
 
 export default function MissionControl() {
   const [loading, setLoading] = useState(true);
@@ -69,11 +70,18 @@ export default function MissionControl() {
   const [keyMomentInput, setKeyMomentInput] = useState('');
 
   const activeOp = useActiveOp();
-  const { user } = useAuth();
+  const { user, aiFeaturesEnabled } = useAuth();
+  const aiEnabled = aiFeaturesEnabled !== false;
 
   useEffect(() => {
     loadEvents();
   }, []);
+
+  useEffect(() => {
+    if (!aiEnabled && showPlanningTools) {
+      setShowPlanningTools(null);
+    }
+  }, [aiEnabled, showPlanningTools]);
 
   const loadEvents = async () => {
     setLoading(true);
@@ -300,8 +308,8 @@ export default function MissionControl() {
            <Button onClick={() => setShowTemplates(true)} variant="outline">
              📋 Templates
            </Button>
-           <Button onClick={() => setShowPlanningTools('blueprints')} variant="outline">
-             ⚙️ AI Planning
+           <Button onClick={() => setShowPlanningTools('blueprints')} variant="outline" disabled={!aiEnabled}>
+             {aiEnabled ? '⚙️ AI Planning' : '⚙️ AI Planning (Disabled)'}
            </Button>
            <Button onClick={() => setShowCreateEvent(true)}>
              <Plus className="w-4 h-4 mr-2" />
@@ -324,6 +332,12 @@ export default function MissionControl() {
           <div className="text-xs text-zinc-300 mt-1">Use Contract Exchange for async player jobs and commerce.</div>
         </div>
       </div>
+
+      <AIFeatureToggle
+        className="mb-6"
+        label="Operations AI"
+        description="Controls AI planning, threat analysis, and scheduling assistance."
+      />
 
       {/* Calendar View */}
       <div className="mb-6">

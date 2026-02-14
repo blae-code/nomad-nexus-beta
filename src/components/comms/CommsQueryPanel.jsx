@@ -1,21 +1,29 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { invokeMemberFunction } from '@/api/memberFunctions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
+import { useAuth } from '@/components/providers/AuthProvider';
+import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
 
 export default function CommsQueryPanel() {
   const [query, setQuery] = useState('');
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const activeOp = useActiveOp();
+  const { aiFeaturesEnabled } = useAuth();
+  const aiEnabled = aiFeaturesEnabled !== false;
 
   const submitQuery = async () => {
+    if (!aiEnabled) {
+      setAnswer('AI features are Disabled. Enable AI features to query comms intelligence.');
+      return;
+    }
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('commsAssistant', {
+      const response = await invokeMemberFunction('commsAssistant', {
         action: 'ask_comms',
         data: { query: query.trim(), eventId: activeOp?.activeEventId || null },
       });
@@ -30,18 +38,25 @@ export default function CommsQueryPanel() {
 
   return (
     <div className="space-y-4">
+      <AIFeatureToggle
+        label="Comms AI Access"
+        description="Toggle AI-assisted comms queries for this profile."
+      />
       <div className="bg-zinc-900/60 border border-zinc-800 rounded p-4 space-y-3">
-        <div className="text-xs uppercase tracking-widest text-zinc-500">Ask Riggsy</div>
+        <div className="text-xs uppercase tracking-widest text-zinc-500">
+          Ask Riggsy {aiEnabled ? '' : '· Disabled'}
+        </div>
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="What is the ammo status of Bravo Squad?"
+          placeholder={aiEnabled ? 'What is the ammo status of Bravo Squad?' : 'AI query is disabled'}
+          disabled={!aiEnabled}
         />
-        <Button onClick={submitQuery} disabled={!query.trim() || loading} className="w-full">
+        <Button onClick={submitQuery} disabled={!aiEnabled || !query.trim() || loading} className="w-full">
           {loading ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Querying...</>
           ) : (
-            <><Sparkles className="w-4 h-4 mr-2" />Ask</>
+            <><Sparkles className="w-4 h-4 mr-2" />{aiEnabled ? 'Ask' : 'Disabled'}</>
           )}
         </Button>
       </div>
