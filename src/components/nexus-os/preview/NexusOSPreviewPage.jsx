@@ -1269,12 +1269,30 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             {contextTab === 'SUMMARY' ? (
               <div className="nx-context-stack">
                 <div className="nx-context-grid">
-                  <div className="nx-context-kv"><span>Bridge</span><strong>{bridgeId}</strong></div>
-                  <div className="nx-context-kv"><span>Foreground</span><strong>{activeAppLabel}</strong></div>
-                  <div className="nx-context-kv"><span>Focus Op</span><strong className="truncate">{focusOperationLabel}</strong></div>
-                  <div className="nx-context-kv"><span>Pulse</span><strong>{pulseCount}</strong></div>
-                  <div className="nx-context-kv"><span>Scheduler</span><strong>{activeLifecycleState}</strong></div>
-                  <div className="nx-context-kv"><span>Boot</span><strong>{bootState.visible ? bootState.phase : 'ready'}</strong></div>
+                  <div className="nx-context-kv" title="Current command deck and workspace bridge">
+                    <span>Bridge</span>
+                    <strong>{bridgeId}</strong>
+                  </div>
+                  <div className="nx-context-kv" title="Active focus application">
+                    <span>Foreground</span>
+                    <strong>{activeAppLabel}</strong>
+                  </div>
+                  <div className="nx-context-kv" title="Currently linked operation context">
+                    <span>Focus Op</span>
+                    <strong className="truncate">{focusOperationLabel}</strong>
+                  </div>
+                  <div className="nx-context-kv" title="Recent gameplay events in last 20 seconds">
+                    <span>Pulse</span>
+                    <strong>{pulseCount}</strong>
+                  </div>
+                  <div className="nx-context-kv" title="App lifecycle state: foreground, background, or suspended">
+                    <span>Scheduler</span>
+                    <strong>{activeLifecycleState}</strong>
+                  </div>
+                  <div className="nx-context-kv" title="Boot sequence phase or ready state">
+                    <span>Boot</span>
+                    <strong>{bootState.visible ? bootState.phase : 'ready'}</strong>
+                  </div>
                 </div>
                 <button
                   type="button"
