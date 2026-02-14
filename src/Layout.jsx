@@ -13,7 +13,7 @@ import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
 import { useVoiceCommands } from '@/components/hooks/useVoiceCommands';
-import TextCommsDock from '@/components/comms/TextCommsDock';
+
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
 import { BootOverlay, useBootOverlay } from '@/components/boot/BootOverlay';
@@ -28,18 +28,7 @@ import VoiceCommandFeedback from '@/components/voice/VoiceCommandFeedback';
 import SyncIndicator from '@/components/sync/SyncIndicator';
 import GuidedTour from '@/components/common/GuidedTour';
 
-const TacticalFooter = React.lazy(() => import('@/components/layout/TacticalFooter'));
-const TACTICAL_FOOTER_PAGES = new Set([
-  'Hub',
-  'CommsConsole',
-  'CommandCenter',
-  'MissionControl',
-  'FleetTracking',
-  'FleetCommand',
-  'UniverseMap',
-  'FrontierOps',
-  'HighCommand',
-]);
+const ComprehensiveTacticalFooter = React.lazy(() => import('@/components/nexus-os/ui/os/ComprehensiveTacticalFooter'));
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -178,14 +167,8 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
 
   }
 
-  // Mobile-optimized padding: smaller dock on mobile, normal on desktop
-  const mobileAwareMainPaddingClass =
-  isCommsDockOpen && !dockMinimized ?
-  'pb-64 md:pb-96' :
-  isCommsDockOpen && dockMinimized ?
-  'pb-12' :
-  'pb-16 md:pb-0';
-  const shouldShowTacticalFooter = TACTICAL_FOOTER_PAGES.has(currentPageName);
+  // Main content padding for tactical footer
+  const mobileAwareMainPaddingClass = 'pb-80 md:pb-80';
 
   return (
     <CommandPaletteProvider
@@ -237,22 +220,15 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
           </div>
         </div>
 
-        {/* Bottom Text Comms Dock (fixed, collapsible) */}
-         {isCommsDockOpen &&
-        <div className="fixed bottom-0 left-0 right-0 z-[600] border-t border-orange-500/20 bg-zinc-950 transition-all duration-200">
-             <TextCommsDock isOpen={true} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
-           </div>
-        }
+
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
 
-        {/* Tactical Footer - Integrated Tactical Map */}
-        {shouldShowTacticalFooter ?
+        {/* Comprehensive Tactical Footer - Tactical Map + Event Dashboard */}
         <React.Suspense fallback={null}>
-            <TacticalFooter />
-          </React.Suspense> :
-        null}
+          <ComprehensiveTacticalFooter />
+        </React.Suspense>
 
         {/* Mobile quick actions (touch-first nav + toggles) */}
         <MobileQuickActionBar onToggleCommsDock={toggleCommsDock} onToggleContextPanel={toggleContextPanel} />
