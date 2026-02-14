@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NexusButton } from '../primitives';
 
-interface NexusCommandDeckProps {
-  open: boolean;
-  onClose: () => void;
-  onRunCommand: (command: string) => string;
-}
-
-export default function NexusCommandDeck({ open, onClose, onRunCommand }: NexusCommandDeckProps) {
+/**
+ * NexusCommandDeck — Right-side command panel
+ * @param {boolean} open - Whether the deck is visible
+ * @param {() => void} onClose - Callback to close the deck
+ * @param {(command: string) => string} onRunCommand - Execute command and return output
+ */
+export default function NexusCommandDeck({ open, onClose, onRunCommand }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [command, setCommand] = useState('');
   const [output, setOutput] = useState('');
