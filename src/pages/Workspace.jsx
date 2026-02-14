@@ -26,29 +26,63 @@ export default function Workspace() {
   const [showSavePreset, setShowSavePreset] = useState(false);
   const [presetName, setPresetName] = useState('');
 
-  // Load saved layout or apply role-based preset
+  // Load saved layout from backend, fallback to localStorage, then role-based preset
   useEffect(() => {
-    const savedLayoutJson = localStorage.getItem(STORAGE_KEY);
-    const savedPreset = localStorage.getItem(PRESET_KEY);
+    if (!user?.id) return;
 
-    if (savedLayoutJson) {
+    const loadLayout = async () => {
       try {
-        const parsed = JSON.parse(savedLayoutJson);
-        setLayouts(parsed.layouts || { lg: [], md: [], sm: [] });
-        setActiveWidgets(parsed.widgets || []);
-        setActivePreset(savedPreset || 'custom');
-        return;
-      } catch (e) {
-        console.warn('[Workspace] Failed to parse saved layout:', e);
-      }
-    }
+        // Try to load from backend first
+        const savedLayouts = await base44.entities.WorkspaceLayout.filter({
+          created_by: user.id,
+        });
 
-    // Apply role-based default preset
-    const userRole = user?.member_profile_data?.roles?.[0] || 'member';
-    const defaultPreset = getPresetForRole(userRole);
-    if (defaultPreset) {
-      applyPreset(defaultPreset);
-    }
+        if (savedLayouts.length > 0) {
+          const latest = savedLayouts.sort((a, b) => 
+            new Date(b.updated_date) - new Date(a.updated_date)
+          )[0];
+          
+          setLayouts(latest.layouts || { lg: [], md: [], sm: [] });
+          setActiveWidgets(latest.widgets || []);
+          setActivePreset(latest.preset_id || 'custom');
+          
+          // Update localStorage cache
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            layouts: latest.layouts,
+            widgets: latest.widgets,
+            savedAt: new Date().toISOString(),
+          }));
+          return;
+        }
+      } catch (error) {
+        console.warn('[Workspace] Failed to load from backend:', error);
+      }
+
+      // Fallback to localStorage
+      const savedLayoutJson = localStorage.getItem(STORAGE_KEY);
+      const savedPreset = localStorage.getItem(PRESET_KEY);
+
+      if (savedLayoutJson) {
+        try {
+          const parsed = JSON.parse(savedLayoutJson);
+          setLayouts(parsed.layouts || { lg: [], md: [], sm: [] });
+          setActiveWidgets(parsed.widgets || []);
+          setActivePreset(savedPreset || 'custom');
+          return;
+        } catch (e) {
+          console.warn('[Workspace] Failed to parse saved layout:', e);
+        }
+      }
+
+      // Apply role-based default preset
+      const userRole = user?.member_profile_data?.roles?.[0] || 'member';
+      const defaultPreset = getPresetForRole(userRole);
+      if (defaultPreset) {
+        applyPreset(defaultPreset);
+      }
+    };
+
+    loadLayout();
   }, [user]);
 
   const applyPreset = (preset) => {
@@ -59,12 +93,39 @@ export default function Workspace() {
     saveLayout(preset.layouts, preset.widgets);
   };
 
-  const saveLayout = (layoutData, widgetData) => {
+  const saveLayout = async (layoutData, widgetData) => {
+    // Immediate localStorage save
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       layouts: layoutData,
       widgets: widgetData,
       savedAt: new Date().toISOString(),
     }));
+
+    // Background backend sync
+    if (user?.id) {
+      try {
+        const existing = await base44.entities.WorkspaceLayout.filter({
+          created_by: user.id,
+        });
+
+        if (existing.length > 0) {
+          await base44.entities.WorkspaceLayout.update(existing[0].id, {
+            layouts: layoutData,
+            widgets: widgetData,
+            preset_id: activePreset,
+          });
+        } else {
+          await base44.entities.WorkspaceLayout.create({
+            layouts: layoutData,
+            widgets: widgetData,
+            preset_id: activePreset,
+            created_by: user.id,
+          });
+        }
+      } catch (error) {
+        console.error('[Workspace] Failed to sync to backend:', error);
+      }
+    }
   };
 
   const handleLayoutChange = (currentLayout, allLayouts) => {
