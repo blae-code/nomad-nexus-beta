@@ -194,22 +194,22 @@ export default function AccessGate() {
     <RouteGuard requiredAuth="none">
       <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
       <PageTransition>
-        <div className="nexus-immersive-screen w-full h-screen flex items-center justify-center px-4 overflow-hidden relative">
+        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative">
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="nexus-immersive-panel p-0 overflow-hidden">
+      <div className="relative z-10 w-full max-w-md my-8">
+        <div className="nexus-immersive-panel p-0 overflow-hidden flex-shrink-0">
           {/* Header Section */}
-          <div className="border-b border-red-700/50 bg-gradient-to-r from-red-700/15 via-transparent to-transparent p-8 relative overflow-hidden">
-            <div className="flex items-center justify-center mb-6">
+          <div className="border-b border-red-700/50 bg-gradient-to-r from-red-700/15 via-transparent to-transparent p-6 relative overflow-hidden">
+            <div className="flex items-center justify-center mb-4">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
                 alt="Redscar Nomads"
-                className="w-20 h-20 drop-shadow-lg"
+                className="w-16 h-16 drop-shadow-lg"
               />
             </div>
 
-            <div className="text-center space-y-2.5">
-              <h1 className="nexus-section-title text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
+            <div className="text-center space-y-2">
+              <h1 className="nexus-section-title text-4xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
                 Nexus <span className="text-red-600">Gate</span>
               </h1>
               <div className="h-px bg-gradient-to-r from-transparent via-red-700/40 to-transparent" />
@@ -221,14 +221,14 @@ export default function AccessGate() {
 
           {/* Form Section */}
           <form
-            className="p-8 space-y-6"
+            className="p-6 space-y-5"
             onSubmit={(e) => {
               e.preventDefault();
               handleRedeem();
             }}
           >
             {/* Access Code Field */}
-            <div className="space-y-2.5 group">
+            <div className="space-y-2 group">
               <label htmlFor="accessCode" className="nexus-label text-amber-300 block">
                 ◆ Access Code
               </label>
@@ -239,13 +239,13 @@ export default function AccessGate() {
                   placeholder="XXXX-XXXX-XXXX"
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                  className="font-mono tracking-widest text-center h-12 text-yellow-300 border-yellow-500/35"
+                  className="font-mono tracking-widest text-center h-11 text-yellow-300 border-yellow-500/35"
                   />
               </div>
             </div>
 
             {/* Callsign Field */}
-            <div className="space-y-2.5 group">
+            <div className="space-y-2 group">
               <label htmlFor="callsign" className="nexus-label text-emerald-300 block">
                 ◆ Callsign
               </label>
@@ -256,7 +256,7 @@ export default function AccessGate() {
                   placeholder="Enter callsign"
                   value={callsign}
                   onChange={(e) => setCallsign(e.target.value)}
-                  className="tracking-wider text-center h-12 border-white/35"
+                  className="tracking-wider text-center h-11 border-white/35"
                   />
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function AccessGate() {
             <Button
               type="submit"
               disabled={loading || verifyingAuth || !accessCode.trim() || !callsign.trim()}
-              className="w-full h-12 mt-8 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 relative overflow-hidden group"
+              className="w-full h-11 mt-6 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-full group-hover:-translate-x-full transition-transform duration-500" />
               {loading || verifyingAuth ? (
@@ -342,7 +342,7 @@ export default function AccessGate() {
           </form>
 
           {/* Footer */}
-          <div className="border-t border-red-700/40 bg-gradient-to-r from-red-700/5 to-transparent px-8 py-5">
+          <div className="border-t border-red-700/40 bg-gradient-to-r from-red-700/5 to-transparent px-6 py-4">
             <p className="text-[10px] text-red-700/70 text-center uppercase tracking-[0.2em] font-bold">
               ⸻ REDSCAR NOMADS COMMAND ⸻
             </p>
@@ -350,7 +350,7 @@ export default function AccessGate() {
         </div>
 
         {/* Security indicator */}
-        <div className="mt-6 text-center text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">
+        <div className="mt-4 text-center text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">
           <span className="inline-flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-green-500/70 rounded-full animate-pulse" />
             ENCRYPTED PROTOCOL
@@ -361,13 +361,6 @@ export default function AccessGate() {
 
       {/* Hidden readiness beacon */}
       {authState && <div id="nn-ready" data-state={authState} style={{ display: 'none' }} />}
-
-      {/* Debug marker - bottom left corner */}
-      {import.meta.env.DEV ? (
-        <div className="fixed bottom-3 left-3 text-[9px] px-2 py-1 bg-green-900/40 border border-green-500/30 text-green-400 rounded opacity-60 hover:opacity-100 transition-opacity font-mono z-50">
-          ✓ CUSTOM ACCESSGATE LOADED
-        </div>
-      ) : null}
       </div>
       </PageTransition>
       </RouteGuard>
