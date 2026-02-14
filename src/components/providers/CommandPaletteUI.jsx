@@ -27,13 +27,9 @@ import {
 } from 'lucide-react';
 
 /**
- * CommandPaletteUI — Modal overlay with search, navigation, execution
- * Handles: Ctrl/⌘+K to open, Esc to close, arrow keys, Enter
- */
-
-/**
- * CommandPaletteUI — Modal overlay with search, navigation, execution
- * Handles: Ctrl/⌘+K to open, Esc to close, arrow keys, Enter
+ * CommandPaletteUI — Immersive Command Execution System
+ * Features: Global search, categorized actions, keyboard navigation, visual feedback, shortcut hints
+ * Handles: Ctrl/⌘+K to open, Esc to close, arrow keys, Enter, real-time search
  */
 export default function CommandPaletteUI() {
   const context = useCommandPalette();
@@ -45,6 +41,7 @@ export default function CommandPaletteUI() {
 
   const { isOpen, openPalette, closePalette, search, setSearch, groupedActions, filteredActions } = context;
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentlyUsed, setRecentlyUsed] = useState([]);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
 
