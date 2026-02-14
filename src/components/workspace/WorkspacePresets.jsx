@@ -1,3 +1,4 @@
+// Legacy presets removed - users start with blank workspace and customize as needed
 export const WORKSPACE_PRESETS = [
   {
     id: 'commander',

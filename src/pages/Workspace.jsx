@@ -83,12 +83,8 @@ export default function Workspace() {
         }
       }
 
-      // Apply role-based default preset
-      const userRole = user?.member_profile_data?.roles?.[0] || 'member';
-      const defaultPreset = getPresetForRole(userRole);
-      if (defaultPreset) {
-        applyPreset(defaultPreset);
-      }
+      // Start with blank workspace - no default preset
+      // Users will customize as needed
     };
 
     loadLayout();
