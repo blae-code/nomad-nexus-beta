@@ -1198,7 +1198,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             <span>{systemTimeLabel}</span>
           </div>
           <NexusButton size="sm" intent={contextVisible ? 'primary' : 'subtle'} onClick={() => setContextPanelOpen((prev) => !prev)}>
-            Context
+            Comms
           </NexusButton>
         </div>
       </header>
