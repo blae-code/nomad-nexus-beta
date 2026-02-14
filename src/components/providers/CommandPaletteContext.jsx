@@ -347,6 +347,34 @@ const createActionRegistry = (user, callbacks) => {
       icon: 'AlertTriangle',
       onExecute: () => callbacks.triggerTestAlert?.('system'),
     },
+    // Enhanced Features
+    {
+      id: 'feature:theme',
+      label: 'Customize Theme',
+      category: 'Settings',
+      description: 'Change app colors and appearance',
+      icon: 'Palette',
+      shortcut: '⌘⇧T',
+      onExecute: () => window.dispatchEvent(new CustomEvent('nexus:open-theme-customizer')),
+    },
+    {
+      id: 'feature:notifications',
+      label: 'AI Notification Rules',
+      category: 'Settings',
+      description: 'Configure smart notification filtering',
+      icon: 'Brain',
+      onExecute: () => window.location.href = '/settings?tab=notifications',
+    },
+    {
+      id: 'action:create-event',
+      label: 'Schedule Operation',
+      category: 'Operations',
+      description: 'Create a new operation/event',
+      icon: 'Plus',
+      shortcut: '⌘⇧N',
+      onExecute: () => callbacks.navigate('Events'),
+      isVisible: (u) => !!u,
+    },
   ];
 };
 
