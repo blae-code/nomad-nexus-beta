@@ -41,6 +41,7 @@ import {
   useReducedMotion,
   CommsArray,
 } from '../ui';
+import CommsHub from '../ui/comms/CommsHub';
 import { getActiveChannelId } from '../services/channelContextService';
 import { getCqbEventDiagnostics, listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
