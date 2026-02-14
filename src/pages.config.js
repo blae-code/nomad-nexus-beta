@@ -47,9 +47,11 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AccessGate from './pages/AccessGate';
 import CommandCenter from './pages/CommandCenter';
 import CommsConsole from './pages/CommsConsole';
 import DataVault from './pages/DataVault';
+import Disclaimers from './pages/Disclaimers';
 import Events from './pages/Events';
 import FleetCommand from './pages/FleetCommand';
 import FleetManager from './pages/FleetManager';
@@ -65,11 +67,18 @@ import MemberProgression from './pages/MemberProgression';
 import MissionBoard from './pages/MissionBoard';
 import MissionCatalog from './pages/MissionCatalog';
 import MissionControl from './pages/MissionControl';
+import NexusOSPreview from './pages/NexusOSPreview';
+import NexusOSWorkspace from './pages/NexusOSWorkspace';
 import NexusTraining from './pages/NexusTraining';
 import NomadRegistry from './pages/NomadRegistry';
+import Onboarding from './pages/Onboarding';
 import OnboardingPipeline from './pages/OnboardingPipeline';
+import PageNotFound from './pages/PageNotFound';
+import PublicUpdate from './pages/PublicUpdate';
+import QAConsole from './pages/QAConsole';
 import Recon from './pages/Recon';
 import ReportBuilder from './pages/ReportBuilder';
+import Settings from './pages/Settings';
 import StrategicObjectives from './pages/StrategicObjectives';
 import SystemAdmin from './pages/SystemAdmin';
 import TradeNexus from './pages/TradeNexus';
@@ -77,24 +86,17 @@ import Treasury from './pages/Treasury';
 import UXRoadmap from './pages/UXRoadmap';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
-import AccessGate from './pages/AccessGate';
-import Disclaimers from './pages/Disclaimers';
-import NexusOSPreview from './pages/NexusOSPreview';
-import NexusOSWorkspace from './pages/NexusOSWorkspace';
-import Onboarding from './pages/Onboarding';
-import PageNotFound from './pages/PageNotFound';
-import PublicUpdate from './pages/PublicUpdate';
-import QAConsole from './pages/QAConsole';
-import Settings from './pages/Settings';
 import WarAcademy from './pages/WarAcademy';
 import Workspace from './pages/Workspace';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AccessGate": AccessGate,
     "CommandCenter": CommandCenter,
     "CommsConsole": CommsConsole,
     "DataVault": DataVault,
+    "Disclaimers": Disclaimers,
     "Events": Events,
     "FleetCommand": FleetCommand,
     "FleetManager": FleetManager,
@@ -110,11 +112,18 @@ export const PAGES = {
     "MissionBoard": MissionBoard,
     "MissionCatalog": MissionCatalog,
     "MissionControl": MissionControl,
+    "NexusOSPreview": NexusOSPreview,
+    "NexusOSWorkspace": NexusOSWorkspace,
     "NexusTraining": NexusTraining,
     "NomadRegistry": NomadRegistry,
+    "Onboarding": Onboarding,
     "OnboardingPipeline": OnboardingPipeline,
+    "PageNotFound": PageNotFound,
+    "PublicUpdate": PublicUpdate,
+    "QAConsole": QAConsole,
     "Recon": Recon,
     "ReportBuilder": ReportBuilder,
+    "Settings": Settings,
     "StrategicObjectives": StrategicObjectives,
     "SystemAdmin": SystemAdmin,
     "TradeNexus": TradeNexus,
@@ -122,15 +131,6 @@ export const PAGES = {
     "UXRoadmap": UXRoadmap,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
-    "AccessGate": AccessGate,
-    "Disclaimers": Disclaimers,
-    "NexusOSPreview": NexusOSPreview,
-    "NexusOSWorkspace": NexusOSWorkspace,
-    "Onboarding": Onboarding,
-    "PageNotFound": PageNotFound,
-    "PublicUpdate": PublicUpdate,
-    "QAConsole": QAConsole,
-    "Settings": Settings,
     "WarAcademy": WarAcademy,
     "Workspace": Workspace,
 }

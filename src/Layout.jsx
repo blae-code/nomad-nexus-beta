@@ -24,6 +24,9 @@ import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
 import { useRealtimeNotifications } from '@/components/hooks/useRealtimeNotifications';
 import OfflineStatusBanner from '@/components/mobile/OfflineStatusBanner';
 import MobileQuickActionBar from '@/components/mobile/MobileQuickActionBar';
+import VoiceCommandFeedback from '@/components/voice/VoiceCommandFeedback';
+import SyncIndicator from '@/components/sync/SyncIndicator';
+import GuidedTour from '@/components/common/GuidedTour';
 
 const TacticalFooter = React.lazy(() => import('@/components/layout/TacticalFooter'));
 const TACTICAL_FOOTER_PAGES = new Set([
