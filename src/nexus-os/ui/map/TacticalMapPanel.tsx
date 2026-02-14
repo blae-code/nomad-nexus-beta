@@ -71,7 +71,7 @@ import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import IntelDetailPanel from './IntelDetailPanel';
 import IntentDraftPanel from './IntentDraftPanel';
 import type { RadialMenuItem } from './RadialMenu';
-import { TACTICAL_MAP_NODE_BY_ID, TACTICAL_MAP_NODES, findMapNodeForLocation } from './mapBoard';
+import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID, TACTICAL_MAP_NODES, findMapNodeForLocation } from './mapBoard';
 import type { MapCommsAnchor, MapRadialState, OpsOverlayNode, RenderablePresence, TacticalMapViewMode } from './mapTypes';
 import MapCommandStrip from './MapCommandStrip';
 import MapStageCanvas from './MapStageCanvas';
@@ -99,6 +99,8 @@ const DEFAULT_VISIBLE_STRATA: Readonly<Record<IntelStratum, boolean>> = Object.f
   OPERATIONAL: false,
   COMMAND_ASSESSED: false,
 });
+
+const SUMMARY_PAGE_SIZE = 4;
 
 function createLayerState(defaults: Partial<Record<TacticalLayerId, boolean>>): MapLayerState[] {
   return [
@@ -238,6 +240,13 @@ export default function TacticalMapPanel({
   const [remoteMapAlerts, setRemoteMapAlerts] = useState<MapCommandAlert[]>([]);
   const [commsDegraded, setCommsDegraded] = useState(false);
   const [commsRetryDelayMs, setCommsRetryDelayMs] = useState(20_000);
+  const [commsRefreshNonce, setCommsRefreshNonce] = useState(0);
+  const [quickBroadcastMessage, setQuickBroadcastMessage] = useState('');
+  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState<CommsPriority>('STANDARD');
+  const [quickBroadcastBusy, setQuickBroadcastBusy] = useState(false);
+  const [quickBroadcastError, setQuickBroadcastError] = useState<string | null>(null);
+  const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
+  const [summaryCommsPage, setSummaryCommsPage] = useState(0);
   const commsRetryDelayRef = useRef(20_000);
 
   const scopedCommsOpId = focusOperationId || opId || '';
@@ -401,7 +410,7 @@ export default function TacticalMapPanel({
       active = false;
       window.clearTimeout(timerId);
     };
-  }, [scopedCommsOpId, opId, focusOperationId, operationMapSignature, commandSurfaceV2Enabled]);
+  }, [scopedCommsOpId, opId, focusOperationId, operationMapSignature, commandSurfaceV2Enabled, commsRefreshNonce]);
 
   const presence = useMemo(() => mapPresence(locationEstimates, viewerScope), [locationEstimates, viewerScope]);
   const controlZones = useMemo(() => {
@@ -491,6 +500,21 @@ export default function TacticalMapPanel({
       return true;
     });
   }, [mapMode, showStations, showLagrange, showOmMarkers]);
+  const priorityNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const entry of presence) ids.add(entry.nodeId);
+    for (const entry of visibleIntel) ids.add(entry.anchor.nodeId);
+    for (const zone of controlZones) {
+      if (zone.geometryHint.nodeId) ids.add(zone.geometryHint.nodeId);
+    }
+    for (const entry of opsOverlay) ids.add(entry.nodeId);
+    for (const net of commsOverlay.nets) ids.add(net.nodeId);
+    for (const lane of logisticsOverlay.lanes) {
+      ids.add(lane.fromNodeId);
+      ids.add(lane.toNodeId);
+    }
+    return ids;
+  }, [presence, visibleIntel, controlZones, opsOverlay, commsOverlay.nets, logisticsOverlay.lanes]);
 
   const selectedNode = useMemo(() => {
     if (activeRadial?.nodeId && TACTICAL_MAP_NODE_BY_ID[activeRadial.nodeId]) {
@@ -507,48 +531,97 @@ export default function TacticalMapPanel({
 
   const stageVisibleNodes = useMemo(() => {
     if (!selectedNode) return visibleMapNodes;
-    if (mapViewMode === 'SYSTEM') return visibleMapNodes;
+    if (mapViewMode === 'SYSTEM') {
+      const focusSystemTag = selectedNode.systemTag;
+      const focusSystemId = `system-${focusSystemTag.toLowerCase()}`;
+      const adjacentSystems = new Set<string>([focusSystemId]);
+      for (const edge of TACTICAL_MAP_EDGES) {
+        if (edge.kind !== 'jump') continue;
+        if (edge.fromNodeId === focusSystemId) adjacentSystems.add(edge.toNodeId);
+        if (edge.toNodeId === focusSystemId) adjacentSystems.add(edge.fromNodeId);
+      }
+      return visibleMapNodes.filter((node) => {
+        if (node.systemTag === focusSystemTag) {
+          return node.kind === 'system' || node.category === 'planet' || priorityNodeIds.has(node.id);
+        }
+        if (node.kind === 'system') return adjacentSystems.has(node.id);
+        return false;
+      });
+    }
     if (mapViewMode === 'PLANETARY') {
-      return visibleMapNodes.filter((node) => node.systemTag === selectedNode.systemTag || node.id === selectedNode.id);
+      return visibleMapNodes.filter(
+        (node) =>
+          node.systemTag === selectedNode.systemTag ||
+          node.id === selectedNode.id ||
+          (priorityNodeIds.has(node.id) && node.systemTag === selectedNode.systemTag)
+      );
     }
     const distanceMax = 14;
     return visibleMapNodes.filter((node) => {
       if (node.id === selectedNode.id) return true;
       if (node.parentId === selectedNode.id || selectedNode.parentId === node.id) return true;
+      if (priorityNodeIds.has(node.id) && node.systemTag === selectedNode.systemTag) return true;
       const dx = node.x - selectedNode.x;
       const dy = node.y - selectedNode.y;
       return Math.sqrt(dx * dx + dy * dy) <= distanceMax;
     });
-  }, [mapViewMode, selectedNode, visibleMapNodes]);
+  }, [mapViewMode, selectedNode, visibleMapNodes, priorityNodeIds]);
 
   const stageNodeIdSet = useMemo(() => new Set(stageVisibleNodes.map((node) => node.id)), [stageVisibleNodes]);
-  const stagePresence = useMemo(() => presence.filter((entry) => stageNodeIdSet.has(entry.nodeId)), [presence, stageNodeIdSet]);
-  const stageIntel = useMemo(() => visibleIntel.filter((entry) => stageNodeIdSet.has(entry.anchor.nodeId)), [visibleIntel, stageNodeIdSet]);
+  const stagePresence = useMemo(
+    () =>
+      presence
+        .filter((entry) => stageNodeIdSet.has(entry.nodeId))
+        .sort((a, b) => b.confidence - a.confidence || a.ageSeconds - b.ageSeconds)
+        .slice(0, mapViewMode === 'LOCAL' ? 14 : 10),
+    [presence, stageNodeIdSet, mapViewMode]
+  );
+  const stageIntel = useMemo(
+    () =>
+      visibleIntel
+        .filter((entry) => stageNodeIdSet.has(entry.anchor.nodeId))
+        .sort((a, b) => {
+          if (a.ttl.stale !== b.ttl.stale) return a.ttl.stale ? 1 : -1;
+          return b.ttl.decayRatio - a.ttl.decayRatio;
+        })
+        .slice(0, mapViewMode === 'LOCAL' ? 12 : 8),
+    [visibleIntel, stageNodeIdSet, mapViewMode]
+  );
   const stageControlZones = useMemo(
     () => controlZones.filter((zone) => (zone.geometryHint.nodeId ? stageNodeIdSet.has(zone.geometryHint.nodeId) : true)),
     [controlZones, stageNodeIdSet]
   );
   const stageOpsOverlay = useMemo(() => opsOverlay.filter((entry) => stageNodeIdSet.has(entry.nodeId)), [opsOverlay, stageNodeIdSet]);
-  const stageCommsCallouts = useMemo(() => visibleCommsCallouts.filter((entry) => stageNodeIdSet.has(entry.nodeId)), [visibleCommsCallouts, stageNodeIdSet]);
+  const stageCommsCallouts = useMemo(
+    () =>
+      visibleCommsCallouts
+        .filter((entry) => stageNodeIdSet.has(entry.nodeId))
+        .sort((a, b) => commsPriorityRank(b.priority) - commsPriorityRank(a.priority) || a.ageSeconds - b.ageSeconds)
+        .slice(0, mapViewMode === 'LOCAL' ? 10 : 7),
+    [visibleCommsCallouts, stageNodeIdSet, mapViewMode]
+  );
   const stageCommsLinks = useMemo(() => {
     if (!visibleCommsLinks.length) return [];
     const netNodeById = commsOverlay.nets.reduce<Record<string, string>>((acc, net) => {
       acc[net.id] = net.nodeId;
       return acc;
     }, {});
-    return visibleCommsLinks.filter((link) => stageNodeIdSet.has(netNodeById[link.fromNetId]) && stageNodeIdSet.has(netNodeById[link.toNetId]));
-  }, [visibleCommsLinks, commsOverlay.nets, stageNodeIdSet]);
+    return visibleCommsLinks
+      .filter((link) => stageNodeIdSet.has(netNodeById[link.fromNetId]) && stageNodeIdSet.has(netNodeById[link.toNetId]))
+      .sort((a, b) => (a.status === b.status ? 0 : a.status === 'degraded' ? -1 : 1))
+      .slice(0, mapViewMode === 'LOCAL' ? 16 : 12);
+  }, [visibleCommsLinks, commsOverlay.nets, stageNodeIdSet, mapViewMode]);
   const stageCommsNets = useMemo(() => commsOverlay.nets.filter((net) => stageNodeIdSet.has(net.nodeId)), [commsOverlay.nets, stageNodeIdSet]);
   const stageLogisticsOverlay = useMemo(
     () => ({
       ...logisticsOverlay,
-      lanes: logisticsOverlay.lanes.filter((lane) => stageNodeIdSet.has(lane.fromNodeId) && stageNodeIdSet.has(lane.toNodeId)),
+      lanes: logisticsOverlay.lanes.filter((lane) => stageNodeIdSet.has(lane.fromNodeId) && stageNodeIdSet.has(lane.toNodeId)).slice(0, mapViewMode === 'LOCAL' ? 10 : 7),
     }),
-    [logisticsOverlay, stageNodeIdSet]
+    [logisticsOverlay, stageNodeIdSet, mapViewMode]
   );
   const mapRosterItems = useMemo(
     () =>
-      stagePresence.slice(0, 5).map((entry) => ({
+      stagePresence.slice(0, 12).map((entry) => ({
         id: entry.id,
         label: entry.subjectId,
         stateLabel: entry.displayState === 'DECLARED' ? 'DECL' : entry.displayState === 'INFERRED' ? 'INFR' : 'STALE',
@@ -562,16 +635,35 @@ export default function TacticalMapPanel({
       })),
     [stagePresence]
   );
+  const selectedNodePresenceCount = useMemo(
+    () => (selectedNode ? stagePresence.filter((entry) => entry.nodeId === selectedNode.id).length : 0),
+    [selectedNode, stagePresence]
+  );
+  const selectedNodeIntelCount = useMemo(
+    () => (selectedNode ? stageIntel.filter((entry) => entry.anchor.nodeId === selectedNode.id).length : 0),
+    [selectedNode, stageIntel]
+  );
+  const selectedNodeCommsCount = useMemo(
+    () => (selectedNode ? stageCommsCallouts.filter((entry) => entry.nodeId === selectedNode.id).length : 0),
+    [selectedNode, stageCommsCallouts]
+  );
+  const selectedNodeNetCount = useMemo(
+    () => (selectedNode ? stageCommsNets.filter((entry) => entry.nodeId === selectedNode.id).length : 0),
+    [selectedNode, stageCommsNets]
+  );
   const selectedInfoRows = useMemo(() => {
     if (!selectedNode) return [];
     return [
       { label: 'Type', value: String(selectedNode.category || selectedNode.kind).toUpperCase() },
       { label: 'Name', value: selectedNode.label },
       { label: 'System', value: selectedNode.systemTag },
-      { label: 'Node', value: selectedNode.id },
+      { label: 'Coords', value: `${selectedNode.x.toFixed(1)} / ${selectedNode.y.toFixed(1)}` },
+      { label: 'Contacts', value: String(selectedNodePresenceCount) },
+      { label: 'Comms', value: `${selectedNodeCommsCount} callouts / ${selectedNodeNetCount} nets` },
+      { label: 'Intel', value: String(selectedNodeIntelCount) },
       { label: 'View', value: mapViewMode },
     ];
-  }, [selectedNode, mapViewMode]);
+  }, [selectedNode, mapViewMode, selectedNodePresenceCount, selectedNodeCommsCount, selectedNodeNetCount, selectedNodeIntelCount]);
 
   const mapInference = useMemo(
     () => computeMapInference({ controlZones, commsOverlay, intelObjects: visibleIntel, operations, focusOperationId: focusOperationId || opId || '', nowMs }),
@@ -583,6 +675,32 @@ export default function TacticalMapPanel({
     () => buildMapTimelineSnapshot({ opId: scopedCommsOpId || undefined, commsOverlay, windowMinutes: replayWindowMinutes, offsetMinutes: replayOffsetMinutes, nowMs }),
     [scopedCommsOpId, commsOverlay, replayWindowMinutes, replayOffsetMinutes, nowMs]
   );
+  const summaryOrderPageCount = Math.max(1, Math.ceil(timeline.visibleEntries.length / SUMMARY_PAGE_SIZE));
+  const summaryCommsPageCount = Math.max(1, Math.ceil(stageCommsCallouts.length / SUMMARY_PAGE_SIZE));
+  const summaryOrders = useMemo(
+    () =>
+      timeline.visibleEntries.slice(
+        summaryOrdersPage * SUMMARY_PAGE_SIZE,
+        summaryOrdersPage * SUMMARY_PAGE_SIZE + SUMMARY_PAGE_SIZE
+      ),
+    [timeline.visibleEntries, summaryOrdersPage]
+  );
+  const summaryComms = useMemo(
+    () =>
+      stageCommsCallouts.slice(
+        summaryCommsPage * SUMMARY_PAGE_SIZE,
+        summaryCommsPage * SUMMARY_PAGE_SIZE + SUMMARY_PAGE_SIZE
+      ),
+    [stageCommsCallouts, summaryCommsPage]
+  );
+
+  useEffect(() => {
+    setSummaryOrdersPage((prev) => Math.min(prev, summaryOrderPageCount - 1));
+  }, [summaryOrderPageCount]);
+
+  useEffect(() => {
+    setSummaryCommsPage((prev) => Math.min(prev, summaryCommsPageCount - 1));
+  }, [summaryCommsPageCount]);
 
   const hasPresence = layerEnabled('presence') && presence.length > 0;
   const hasControl = layerEnabled('controlZones') && controlZones.length > 0;
@@ -655,6 +773,34 @@ export default function TacticalMapPanel({
       }
     } finally {
       setBusyMacroId(null);
+    }
+  };
+
+  const sendQuickBroadcast = async () => {
+    const message = quickBroadcastMessage.trim();
+    if (!message || quickBroadcastBusy) return;
+    setQuickBroadcastBusy(true);
+    setQuickBroadcastError(null);
+    try {
+      await invokeMemberFunction('updateCommsConsole', {
+        action: 'issue_priority_callout',
+        message,
+        priority: quickBroadcastPriority,
+        eventId: scopedCommsOpId || undefined,
+        lane: 'COMMAND',
+        requiresAck: quickBroadcastPriority === 'CRITICAL',
+      });
+      setQuickBroadcastMessage('');
+      setMacroExecutionMessage(`Broadcast transmitted (${quickBroadcastPriority}).`);
+      setCommsRefreshNonce((prev) => prev + 1);
+    } catch (error: unknown) {
+      const message = getErrorText(error) || 'Broadcast failed.';
+      setQuickBroadcastError(message);
+      if (/permission|403|privilege/i.test(message)) {
+        createDraftFromMap('REQUEST_SITREP', { nodeId: selectedNode?.id || 'system-stanton' }, { notes: 'Comms broadcast fallback draft' });
+      }
+    } finally {
+      setQuickBroadcastBusy(false);
     }
   };
 
@@ -781,9 +927,16 @@ export default function TacticalMapPanel({
       <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Recent Orders</h4>
-          <NexusBadge tone="neutral">{Math.min(4, timeline.visibleEntries.length)}</NexusBadge>
+          <div className="flex items-center gap-1.5">
+            <NexusBadge tone="neutral">{timeline.visibleEntries.length}</NexusBadge>
+            {summaryOrderPageCount > 1 ? (
+              <span className="text-[10px] text-zinc-500">
+                {summaryOrdersPage + 1}/{summaryOrderPageCount}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {timeline.visibleEntries.slice(0, 4).map((entry) => (
+        {summaryOrders.map((entry) => (
           <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-zinc-200 truncate">{entry.title}</span>
@@ -792,15 +945,44 @@ export default function TacticalMapPanel({
             <div className="text-zinc-500 mt-0.5 truncate">{entry.detail}</div>
           </div>
         ))}
+        {summaryOrderPageCount > 1 ? (
+          <div className="flex items-center justify-between gap-2">
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              className="text-[10px]"
+              disabled={summaryOrdersPage === 0}
+              onClick={() => setSummaryOrdersPage((prev) => Math.max(0, prev - 1))}
+            >
+              Prev
+            </NexusButton>
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              className="text-[10px]"
+              disabled={summaryOrdersPage >= summaryOrderPageCount - 1}
+              onClick={() => setSummaryOrdersPage((prev) => Math.min(summaryOrderPageCount - 1, prev + 1))}
+            >
+              Next
+            </NexusButton>
+          </div>
+        ) : null}
         {timeline.visibleEntries.length === 0 ? <div className="text-[11px] text-zinc-500">No orders inside current replay window.</div> : null}
       </section>
 
       <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Comms Log</h4>
-          <NexusBadge tone={commsStatusTone}>{commsStatusLabel}</NexusBadge>
+          <div className="flex items-center gap-1.5">
+            <NexusBadge tone={commsStatusTone}>{commsStatusLabel}</NexusBadge>
+            {summaryCommsPageCount > 1 ? (
+              <span className="text-[10px] text-zinc-500">
+                {summaryCommsPage + 1}/{summaryCommsPageCount}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {stageCommsCallouts.slice(0, 4).map((callout) => (
+        {summaryComms.map((callout) => (
           <div key={callout.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[11px]">
             <div className="flex items-center justify-between gap-2">
               <span style={{ color: commsPriorityColor(callout.priority) }}>{callout.priority}</span>
@@ -809,6 +991,28 @@ export default function TacticalMapPanel({
             <div className="text-zinc-300 mt-0.5 truncate">{callout.message}</div>
           </div>
         ))}
+        {summaryCommsPageCount > 1 ? (
+          <div className="flex items-center justify-between gap-2">
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              className="text-[10px]"
+              disabled={summaryCommsPage === 0}
+              onClick={() => setSummaryCommsPage((prev) => Math.max(0, prev - 1))}
+            >
+              Prev
+            </NexusButton>
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              className="text-[10px]"
+              disabled={summaryCommsPage >= summaryCommsPageCount - 1}
+              onClick={() => setSummaryCommsPage((prev) => Math.min(summaryCommsPageCount - 1, prev + 1))}
+            >
+              Next
+            </NexusButton>
+          </div>
+        ) : null}
         {stageCommsCallouts.length === 0 ? <div className="text-[11px] text-zinc-500">No comms callouts in current view scope.</div> : null}
       </section>
     </div>
@@ -839,6 +1043,54 @@ export default function TacticalMapPanel({
           <div className="mt-1 text-zinc-300">{callout.message}</div>
         </div>
       ))}
+      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Quick Broadcast</div>
+          <NexusBadge tone={quickBroadcastPriority === 'CRITICAL' ? 'danger' : quickBroadcastPriority === 'HIGH' ? 'warning' : 'active'}>
+            {quickBroadcastPriority}
+          </NexusBadge>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
+            <NexusButton
+              key={`broadcast:${entry}`}
+              size="sm"
+              intent={quickBroadcastPriority === entry ? 'primary' : 'subtle'}
+              className="text-[10px]"
+              onClick={() => setQuickBroadcastPriority(entry)}
+            >
+              {entry === 'STANDARD' ? 'STD' : entry}
+            </NexusButton>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <input
+            value={quickBroadcastMessage}
+            onChange={(event) => setQuickBroadcastMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return;
+              event.preventDefault();
+              void sendQuickBroadcast();
+            }}
+            className="flex-1 min-w-0 rounded border border-zinc-800 bg-zinc-950/75 px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-zinc-600"
+            placeholder="Transmit callout..."
+          />
+          <NexusButton
+            size="sm"
+            intent="primary"
+            className="text-[10px]"
+            disabled={!quickBroadcastMessage.trim() || quickBroadcastBusy}
+            onClick={() => void sendQuickBroadcast()}
+          >
+            {quickBroadcastBusy ? 'TX...' : 'TX'}
+          </NexusButton>
+        </div>
+        {quickBroadcastError ? (
+          <div className="rounded border border-red-900/70 bg-red-950/35 px-2 py-1 text-[11px] text-red-300">
+            {quickBroadcastError}
+          </div>
+        ) : null}
+      </section>
       <div className="flex items-center gap-1.5">
         <NexusButton size="sm" intent="subtle" onClick={() => onOpenCommsWorkspace?.({ opId: scopedCommsOpId || opId, netId: commsOverlay.nets[0]?.id, view: 'voice' })}>Open Voice</NexusButton>
         <NexusButton size="sm" intent="subtle" onClick={() => onOpenOperationFocus?.()}>Open Ops</NexusButton>
@@ -952,6 +1204,7 @@ export default function TacticalMapPanel({
             presence={stagePresence}
             visibleIntel={stageIntel}
             mapViewMode={mapViewMode}
+            selectedNodeId={selectedNode?.id}
             selectedNodeLabel={selectedNode?.label}
             activeRadial={activeRadial}
             radialItems={radialItems}

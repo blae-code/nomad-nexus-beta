@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { transitionStyle } from '../motion';
 import { NexusBadge, NexusButton } from '../primitives';
 import type { MapLayerState, TacticalLayerId, TacticalMapMode } from '../../schemas/mapSchemas';
@@ -42,6 +42,8 @@ function layerLabel(id: TacticalLayerId): string {
   return 'Presence';
 }
 
+const ROSTER_PAGE_SIZE = 4;
+
 export default function MapCommandStrip({
   mode,
   viewMode,
@@ -64,11 +66,22 @@ export default function MapCommandStrip({
   onToggleOmMarkers,
   onOpenMapFocus,
 }: MapCommandStripProps) {
+  const [rosterPage, setRosterPage] = useState(0);
+  const rosterPageCount = Math.max(1, Math.ceil(rosterItems.length / ROSTER_PAGE_SIZE));
+  const pagedRoster = useMemo(
+    () => rosterItems.slice(rosterPage * ROSTER_PAGE_SIZE, rosterPage * ROSTER_PAGE_SIZE + ROSTER_PAGE_SIZE),
+    [rosterItems, rosterPage]
+  );
+
+  useEffect(() => {
+    setRosterPage((prev) => Math.min(prev, rosterPageCount - 1));
+  }, [rosterPageCount]);
+
   return (
     <section className="nexus-map-instrument rounded border border-zinc-800 bg-zinc-950/55 px-3 py-2.5 space-y-3 nexus-terminal-panel nexus-map-toolbar">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 truncate">Tactical Controls</h3>
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 truncate">Layer Controls</h3>
           <NexusBadge tone={riskScore >= 70 ? 'danger' : riskScore >= 45 ? 'warning' : 'ok'}>Risk {riskScore}</NexusBadge>
         </div>
         {onOpenMapFocus ? (
@@ -166,9 +179,16 @@ export default function MapCommandStrip({
       <section className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Fleet Roster</div>
-          <NexusBadge tone="neutral">{rosterItems.length}</NexusBadge>
+          <div className="flex items-center gap-1.5">
+            <NexusBadge tone="neutral">{rosterItems.length}</NexusBadge>
+            {rosterPageCount > 1 ? (
+              <span className="text-[10px] text-zinc-500">
+                {rosterPage + 1}/{rosterPageCount}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {rosterItems.map((item) => (
+        {pagedRoster.map((item) => (
           <div key={item.id} className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-[11px]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-zinc-200 truncate">{item.label}</span>
@@ -177,6 +197,28 @@ export default function MapCommandStrip({
             <div className="text-zinc-500 mt-0.5 truncate">{item.detail}</div>
           </div>
         ))}
+        {rosterPageCount > 1 ? (
+          <div className="flex items-center justify-between gap-2">
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              className="text-[10px]"
+              disabled={rosterPage === 0}
+              onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
+            >
+              Prev
+            </NexusButton>
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              className="text-[10px]"
+              disabled={rosterPage >= rosterPageCount - 1}
+              onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
+            >
+              Next
+            </NexusButton>
+          </div>
+        ) : null}
         {rosterItems.length === 0 ? (
           <div className="text-[11px] text-zinc-500 rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1">No active presence data in scope.</div>
         ) : null}

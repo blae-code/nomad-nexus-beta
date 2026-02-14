@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ControlZone, TacticalLayerId } from '../../schemas/mapSchemas';
 import type { IntelRenderable } from '../../services/intelService';
 import type { MapCommsOverlay, MapCommsOverlayCallout, MapCommsOverlayLink } from '../../services/mapCommsOverlayService';
@@ -28,6 +28,7 @@ interface MapStageCanvasProps {
   presence: RenderablePresence[];
   visibleIntel: IntelRenderable[];
   mapViewMode: TacticalMapViewMode;
+  selectedNodeId?: string;
   selectedNodeLabel?: string;
   activeRadial: MapRadialState | null;
   radialItems: RadialMenuItem[];
@@ -42,10 +43,19 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+function clampViewportCenter(center: { x: number; y: number }, zoom: number): { x: number; y: number } {
+  const boundedZoom = clamp(zoom, 0.8, 2.2);
+  const halfSpan = 50 / boundedZoom;
+  return {
+    x: clamp(center.x, halfSpan, 100 - halfSpan),
+    y: clamp(center.y, halfSpan, 100 - halfSpan),
+  };
+}
+
 function confidenceBandToStroke(confidence: IntelRenderable['confidence']): number {
-  if (confidence === 'HIGH') return 1.35;
-  if (confidence === 'MED') return 1;
-  return 0.72;
+  if (confidence === 'HIGH') return 0.65;
+  if (confidence === 'MED') return 0.5;
+  return 0.42;
 }
 
 function confidenceBandToColor(confidence: IntelRenderable['confidence']): string {
@@ -96,23 +106,31 @@ function logisticsLaneColor(lane: MapLogisticsLane): string {
 }
 
 function nodeStrokeColor(category: string | undefined, isSystem: boolean): string {
-  if (isSystem) return 'rgba(110, 178, 224, 0.74)';
-  if (category === 'planet') return 'rgba(150, 172, 196, 0.72)';
-  if (category === 'moon') return 'rgba(134, 160, 182, 0.7)';
-  if (category === 'station') return 'rgba(98, 188, 218, 0.82)';
-  if (category === 'lagrange') return 'rgba(132, 176, 206, 0.72)';
-  if (category === 'orbital-marker') return 'rgba(118, 144, 172, 0.58)';
-  return 'rgba(126, 152, 178, 0.64)';
+  if (isSystem) return 'rgba(235, 224, 146, 0.86)';
+  if (category === 'planet') return 'rgba(142, 206, 172, 0.74)';
+  if (category === 'moon') return 'rgba(154, 170, 186, 0.62)';
+  if (category === 'station') return 'rgba(124, 220, 168, 0.84)';
+  if (category === 'lagrange') return 'rgba(210, 196, 118, 0.72)';
+  if (category === 'orbital-marker') return 'rgba(132, 186, 156, 0.54)';
+  return 'rgba(124, 188, 160, 0.62)';
 }
 
 function nodeFillColor(category: string | undefined, isSystem: boolean): string {
-  if (isSystem) return 'rgba(78, 138, 188, 0.2)';
-  if (category === 'planet') return 'rgba(78, 98, 124, 0.28)';
-  if (category === 'moon') return 'rgba(70, 88, 108, 0.24)';
-  if (category === 'station') return 'rgba(58, 102, 124, 0.32)';
-  if (category === 'lagrange') return 'rgba(70, 96, 116, 0.2)';
-  if (category === 'orbital-marker') return 'rgba(80, 96, 116, 0.14)';
-  return 'rgba(72, 92, 112, 0.2)';
+  if (isSystem) return 'rgba(214, 168, 94, 0.26)';
+  if (category === 'planet') return 'rgba(70, 132, 108, 0.27)';
+  if (category === 'moon') return 'rgba(74, 92, 104, 0.24)';
+  if (category === 'station') return 'rgba(50, 112, 92, 0.32)';
+  if (category === 'lagrange') return 'rgba(120, 102, 58, 0.2)';
+  if (category === 'orbital-marker') return 'rgba(64, 90, 80, 0.12)';
+  return 'rgba(64, 92, 82, 0.2)';
+}
+
+function shouldRenderLabel(node: TacticalRenderableNode, viewMode: TacticalMapViewMode, selectedNodeId?: string): boolean {
+  if (selectedNodeId && node.id === selectedNodeId) return true;
+  if (node.kind === 'system' || node.category === 'planet') return true;
+  if (viewMode === 'LOCAL') return node.category !== 'orbital-marker';
+  if (viewMode === 'PLANETARY') return node.category === 'moon' || node.category === 'station';
+  return false;
 }
 
 export default function MapStageCanvas({
@@ -128,6 +146,7 @@ export default function MapStageCanvas({
   presence,
   visibleIntel,
   mapViewMode,
+  selectedNodeId,
   selectedNodeLabel,
   activeRadial,
   radialItems,
@@ -138,16 +157,30 @@ export default function MapStageCanvas({
   onSetActiveRadial,
 }: MapStageCanvasProps) {
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const minimapRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{ pointerId: number; clientX: number; clientY: number } | null>(null);
+  const recenterKeyRef = useRef('');
   const [zoom, setZoom] = useState(1);
+  const [viewportCenter, setViewportCenter] = useState({ x: 50, y: 50 });
   const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [isPointerActive, setIsPointerActive] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
   const mapScaleLabel = `${Math.max(1, Math.round(500_000 / zoom)).toLocaleString()} km`;
 
   const mapTransform = useMemo(() => {
     const scale = clamp(Number.isFinite(zoom) ? zoom : 1, 0.8, 2.2);
-    return `translate(50 50) scale(${scale}) translate(-50 -50)`;
-  }, [zoom]);
+    return `translate(50 50) scale(${scale}) translate(${-viewportCenter.x} ${-viewportCenter.y})`;
+  }, [zoom, viewportCenter.x, viewportCenter.y]);
+  const viewportWindow = useMemo(() => {
+    const span = 100 / Math.max(zoom, 0.8);
+    return {
+      x: viewportCenter.x - span / 2,
+      y: viewportCenter.y - span / 2,
+      width: span,
+      height: span,
+    };
+  }, [viewportCenter.x, viewportCenter.y, zoom]);
 
   const orbitalRings = useMemo(
     () =>
@@ -155,10 +188,10 @@ export default function MapStageCanvas({
         .filter(
           (node) =>
             Boolean(node.parentId) &&
+            mapViewMode !== 'SYSTEM' &&
             (node.category === 'moon' ||
               node.category === 'station' ||
-              node.category === 'lagrange' ||
-              node.category === 'orbital-marker')
+              (mapViewMode === 'LOCAL' && (node.category === 'lagrange' || node.category === 'orbital-marker')))
         )
         .map((node) => {
           const parent = node.parentId ? TACTICAL_MAP_NODE_BY_ID[node.parentId] : null;
@@ -174,9 +207,43 @@ export default function MapStageCanvas({
           };
         })
         .filter(Boolean) as Array<{ id: string; x: number; y: number; radius: number; dashed: boolean }>,
-    [visibleMapNodes]
+    [visibleMapNodes, mapViewMode]
   );
   const mapNodeIdSet = useMemo(() => new Set(visibleMapNodes.map((node) => node.id)), [visibleMapNodes]);
+  const visibleEdges = useMemo(
+    () =>
+      TACTICAL_MAP_EDGES.filter((edge) => {
+        if (!mapNodeIdSet.has(edge.fromNodeId) || !mapNodeIdSet.has(edge.toNodeId)) return false;
+        if (mapViewMode === 'SYSTEM') return edge.kind === 'jump';
+        if (mapViewMode === 'PLANETARY') return edge.kind !== 'jump';
+        return true;
+      }),
+    [mapNodeIdSet, mapViewMode]
+  );
+  const minimapNodes = useMemo(
+    () =>
+      visibleMapNodes.filter(
+        (node) =>
+          node.kind === 'system' ||
+          node.category === 'planet' ||
+          (selectedNodeId ? node.id === selectedNodeId : false)
+      ),
+    [visibleMapNodes, selectedNodeId]
+  );
+
+  useEffect(() => {
+    setViewportCenter((prev) => clampViewportCenter(prev, zoom));
+  }, [zoom]);
+
+  useEffect(() => {
+    const recenterKey = `${selectedNodeId || ''}:${mapViewMode}`;
+    if (recenterKeyRef.current === recenterKey) return;
+    recenterKeyRef.current = recenterKey;
+    if (!selectedNodeId) return;
+    const node = TACTICAL_MAP_NODE_BY_ID[selectedNodeId];
+    if (!node) return;
+    setViewportCenter(clampViewportCenter({ x: node.x, y: node.y }, zoom));
+  }, [selectedNodeId, mapViewMode, zoom]);
 
   const handleCursorUpdate: React.PointerEventHandler<HTMLDivElement> = (event) => {
     if (!stageRef.current) return;
@@ -186,20 +253,125 @@ export default function MapStageCanvas({
     const relativeY = (event.clientY - rect.top) / rect.height;
     const centeredX = relativeX * 100;
     const centeredY = relativeY * 100;
-    const x = clamp((centeredX - 50) / zoom + 50, 0, 100);
-    const y = clamp((centeredY - 50) / zoom + 50, 0, 100);
+    const x = clamp(viewportCenter.x + (centeredX - 50) / zoom, 0, 100);
+    const y = clamp(viewportCenter.y + (centeredY - 50) / zoom, 0, 100);
     setCursorCoords({ x, y });
+  };
+
+  const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('[data-map-interactive="true"]')) return;
+    if (!stageRef.current) return;
+    stageRef.current.setPointerCapture(event.pointerId);
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    };
+    setIsDragging(true);
+    onClearRadial();
+  };
+
+  const handlePointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
+    handleCursorUpdate(event);
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId || !stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dx = event.clientX - dragState.clientX;
+    const dy = event.clientY - dragState.clientY;
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    };
+    const dxPercent = (dx / rect.width) * 100;
+    const dyPercent = (dy / rect.height) * 100;
+    setViewportCenter((prev) =>
+      clampViewportCenter(
+        {
+          x: prev.x - dxPercent / zoom,
+          y: prev.y - dyPercent / zoom,
+        },
+        zoom
+      )
+    );
+  };
+
+  const handlePointerUp: React.PointerEventHandler<HTMLDivElement> = (event) => {
+    if (stageRef.current && stageRef.current.hasPointerCapture(event.pointerId)) {
+      stageRef.current.releasePointerCapture(event.pointerId);
+    }
+    dragStateRef.current = null;
+    setIsDragging(false);
+  };
+
+  const updateZoom = (updater: (value: number) => number) => {
+    setZoom((prev) => {
+      const next = clamp(updater(prev), 0.8, 2.2);
+      setViewportCenter((center) => clampViewportCenter(center, next));
+      return next;
+    });
+  };
+
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+    event.preventDefault();
+    if (!stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const pointerX = ((event.clientX - rect.left) / rect.width) * 100;
+    const pointerY = ((event.clientY - rect.top) / rect.height) * 100;
+    const zoomMultiplier = event.deltaY > 0 ? 0.9 : 1.1;
+    const nextZoom = clamp(zoom * zoomMultiplier, 0.8, 2.2);
+    const worldX = viewportCenter.x + (pointerX - 50) / zoom;
+    const worldY = viewportCenter.y + (pointerY - 50) / zoom;
+
+    setZoom(nextZoom);
+    setViewportCenter(
+      clampViewportCenter(
+        {
+          x: worldX - (pointerX - 50) / nextZoom,
+          y: worldY - (pointerY - 50) / nextZoom,
+        },
+        nextZoom
+      )
+    );
+  };
+
+  const handleMinimapPointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+    event.stopPropagation();
+    if (!minimapRef.current) return;
+    const rect = minimapRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setViewportCenter(clampViewportCenter({ x, y }, zoom));
   };
 
   return (
     <div
       ref={stageRef}
-      className="h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage"
+      className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage ${
+        isDragging ? 'cursor-grabbing' : 'cursor-grab'
+      }`}
+      data-dragging={isDragging ? 'true' : 'false'}
       onClick={onClearRadial}
-      onDoubleClick={() => setZoom(1)}
-      onPointerMove={handleCursorUpdate}
+      onDoubleClick={() => {
+        setZoom(1);
+        setViewportCenter({ x: 50, y: 50 });
+      }}
+      onWheel={handleWheel}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onPointerEnter={() => setIsPointerActive(true)}
-      onPointerLeave={() => setIsPointerActive(false)}
+      onPointerLeave={(event) => {
+        setIsPointerActive(false);
+        handlePointerUp(event);
+      }}
     >
       <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 h-full w-full">
         <defs>
@@ -208,7 +380,7 @@ export default function MapStageCanvas({
           </pattern>
         </defs>
 
-        <rect x="0" y="0" width="100" height="100" fill="rgba(8, 14, 21, 0.9)" />
+        <rect x="0" y="0" width="100" height="100" fill="rgba(5, 10, 13, 0.94)" />
         <g transform={mapTransform}>
           {orbitalRings.map((ring) => (
             <circle
@@ -217,14 +389,13 @@ export default function MapStageCanvas({
               cy={ring.y}
               r={ring.radius}
               fill="none"
-              stroke="rgba(128, 174, 208, 0.2)"
-              strokeWidth={0.4}
-              strokeDasharray={ring.dashed ? '1.6 1.1' : undefined}
+              stroke="rgba(132, 201, 162, 0.2)"
+              strokeWidth={0.18}
+              strokeDasharray={ring.dashed ? '1.1 1' : undefined}
             />
           ))}
 
-        {TACTICAL_MAP_EDGES.map((edge) => {
-          if (!mapNodeIdSet.has(edge.fromNodeId) || !mapNodeIdSet.has(edge.toNodeId)) return null;
+        {visibleEdges.map((edge) => {
           const source = TACTICAL_MAP_NODE_BY_ID[edge.fromNodeId];
           const target = TACTICAL_MAP_NODE_BY_ID[edge.toNodeId];
           if (!source || !target) return null;
@@ -235,9 +406,15 @@ export default function MapStageCanvas({
               y1={source.y}
               x2={target.x}
               y2={target.y}
-              stroke={edge.risk === 'high' ? 'rgba(214,83,64,0.5)' : edge.risk === 'medium' ? 'rgba(201,161,94,0.45)' : 'rgba(92,138,174,0.3)'}
-              strokeWidth={1.05}
-              strokeDasharray="3 2"
+              stroke={
+                edge.risk === 'high'
+                  ? 'rgba(214,83,64,0.54)'
+                  : edge.risk === 'medium'
+                    ? 'rgba(201,161,94,0.42)'
+                    : 'rgba(118, 198, 158, 0.28)'
+              }
+              strokeWidth={edge.kind === 'jump' ? 0.28 : 0.14}
+              strokeDasharray={edge.kind === 'jump' ? '1.1 0.8' : '0.8 1.1'}
             />
           );
         })}
@@ -251,11 +428,11 @@ export default function MapStageCanvas({
                   <circle
                     cx={anchorNode.x}
                     cy={anchorNode.y}
-                    r={anchorNode.radius + (entry.isFocus ? 3.8 : 2.2)}
+                    r={anchorNode.radius + (entry.isFocus ? 2.2 : 1.4)}
                     fill="none"
-                    stroke={entry.isFocus ? 'rgba(106, 188, 236, 0.9)' : 'rgba(102, 136, 164, 0.38)'}
-                    strokeWidth={entry.isFocus ? 1.3 : 0.9}
-                    strokeDasharray={entry.isFocus ? '4 2' : '2 2'}
+                    stroke={entry.isFocus ? 'rgba(132, 214, 172, 0.9)' : 'rgba(118, 152, 136, 0.38)'}
+                    strokeWidth={entry.isFocus ? 0.72 : 0.46}
+                    strokeDasharray={entry.isFocus ? '1.8 1' : '1.2 1.2'}
                     opacity={entry.isFocus ? 0.9 : 0.45}
                   />
                 </g>
@@ -270,12 +447,13 @@ export default function MapStageCanvas({
               const lead = zone.assertedControllers[0];
               const confidence = lead?.confidence || 0.45;
               const decayOpacity = Math.max(0.18, Math.min(0.78, confidence * 0.8));
-              const radius = anchorNode.radius + 7 + confidence * 11;
+              const radius = anchorNode.radius + 4 + confidence * 5.2;
               const contested = zone.contestationLevel >= 0.45;
               const controllers = zone.assertedControllers.slice(0, 2);
               return (
                 <g
                   key={zone.id}
+                  data-map-interactive="true"
                   tabIndex={0}
                   role="button"
                   onClick={(event) => {
@@ -310,7 +488,7 @@ export default function MapStageCanvas({
                       r={radius}
                       fill={contested ? 'url(#zone-contested-hatch)' : 'rgba(86,150,196,0.12)'}
                       stroke={contested ? 'rgba(201,145,102,0.7)' : 'rgba(98,174,220,0.56)'}
-                      strokeWidth={1.4 + zone.contestationLevel * 2}
+                      strokeWidth={0.52 + zone.contestationLevel * 0.56}
                       opacity={decayOpacity}
                     />
                   ) : (
@@ -322,7 +500,7 @@ export default function MapStageCanvas({
                         r={radius + controllerIndex * 1.4}
                         fill={controllerIndex === 0 ? 'rgba(86,150,196,0.12)' : 'url(#zone-contested-hatch)'}
                         stroke={controllerIndex === 0 ? 'rgba(98,174,220,0.62)' : 'rgba(201,145,102,0.7)'}
-                        strokeWidth={1.1 + controller.confidence * 2}
+                        strokeWidth={0.45 + controller.confidence * 0.5}
                         opacity={Math.max(0.16, Math.min(0.72, decayOpacity - controllerIndex * 0.08))}
                       />
                     ))
@@ -345,9 +523,9 @@ export default function MapStageCanvas({
                   y1={source.y}
                   x2={target.x}
                   y2={target.y}
-                  stroke={isDegraded ? 'rgba(201,161,94,0.74)' : 'rgba(89,172,198,0.68)'}
-                  strokeWidth={isDegraded ? 1.05 : 0.95}
-                  strokeDasharray={isDegraded ? '2 2' : '4 2'}
+                  stroke={isDegraded ? 'rgba(201,161,94,0.6)' : 'rgba(118,198,162,0.52)'}
+                  strokeWidth={isDegraded ? 0.34 : 0.28}
+                  strokeDasharray={isDegraded ? '1 1' : '1.2 1'}
                   opacity={isDegraded ? 0.74 : 0.62}
                 />
               );
@@ -368,11 +546,11 @@ export default function MapStageCanvas({
                   <circle
                     cx={anchor.x}
                     cy={anchor.y}
-                    r={Math.max(0.95, Math.min(2.1, 0.9 + net.participants * 0.16))}
+                    r={Math.max(0.58, Math.min(1.3, 0.56 + net.participants * 0.08))}
                     fill={color}
                     fillOpacity={net.speaking > 0 ? 0.42 : 0.22}
                     stroke={color}
-                    strokeWidth={net.speaking > 0 ? 1.2 : 0.75}
+                    strokeWidth={net.speaking > 0 ? 0.64 : 0.36}
                     opacity={net.participants > 0 ? 0.95 : 0.55}
                   />
                 </g>
@@ -385,19 +563,19 @@ export default function MapStageCanvas({
               const anchorNet = callout.netId ? commsAnchors[callout.netId] : null;
               const node = TACTICAL_MAP_NODE_BY_ID[callout.nodeId];
               if (!node) return null;
-              const x = anchorNet ? anchorNet.x + (((index % 2) * 2) - 1) * 1.15 : node.x + (((index % 3) - 1) * 1.2);
-              const y = anchorNet ? anchorNet.y - 2.35 : node.y - node.radius - 2.4 - (index % 2);
+              const x = anchorNet ? anchorNet.x + (((index % 2) * 2) - 1) * 0.8 : node.x + (((index % 3) - 1) * 0.9);
+              const y = anchorNet ? anchorNet.y - 1.7 : node.y - node.radius - 1.8 - (index % 2) * 0.6;
               const color = commsPriorityColor(callout.priority);
               const opacity = callout.stale ? 0.44 : 0.92;
               return (
                 <g key={`comms-callout:${callout.id}`} opacity={opacity}>
                   <polygon
-                    points={`${x},${y - 1.25} ${x + 1.2},${y + 1.05} ${x - 1.2},${y + 1.05}`}
+                    points={`${x},${y - 0.9} ${x + 0.84},${y + 0.72} ${x - 0.84},${y + 0.72}`}
                     fill="rgba(17,13,11,0.9)"
                     stroke={color}
-                    strokeWidth={0.68}
+                    strokeWidth={0.34}
                   />
-                  <circle cx={x} cy={y + 0.25} r={0.32} fill={color} />
+                  <circle cx={x} cy={y + 0.18} r={0.24} fill={color} />
                 </g>
               );
             })
@@ -409,7 +587,7 @@ export default function MapStageCanvas({
               const toNode = TACTICAL_MAP_NODE_BY_ID[lane.toNodeId];
               if (!fromNode || !toNode) return null;
               const color = logisticsLaneColor(lane);
-              const offset = ((index % 3) - 1) * 0.45;
+              const offset = ((index % 3) - 1) * 0.24;
               const x1 = fromNode.x + offset;
               const y1 = fromNode.y + offset;
               const x2 = toNode.x + offset;
@@ -422,10 +600,10 @@ export default function MapStageCanvas({
                     x2={x2}
                     y2={y2}
                     stroke={color}
-                    strokeWidth={lane.laneKind === 'EXTRACT' ? 1.25 : 1}
-                    strokeDasharray={lane.laneKind === 'HOLD' ? '2 2' : lane.laneKind === 'ROUTE_HYPOTHESIS' ? '4 2' : '5 2'}
+                    strokeWidth={lane.laneKind === 'EXTRACT' ? 0.54 : 0.38}
+                    strokeDasharray={lane.laneKind === 'HOLD' ? '1 1' : lane.laneKind === 'ROUTE_HYPOTHESIS' ? '1.4 1' : '1.6 1'}
                   />
-                  <circle cx={x2} cy={y2} r={0.62} fill={color} />
+                  <circle cx={x2} cy={y2} r={0.34} fill={color} />
                 </g>
               );
             })
@@ -444,6 +622,7 @@ export default function MapStageCanvas({
           return (
             <g
               key={node.id}
+              data-map-interactive="true"
               tabIndex={0}
               role="button"
               onClick={(event) => {
@@ -467,28 +646,51 @@ export default function MapStageCanvas({
               }}
               style={{ cursor: 'pointer' }}
             >
+              {isSystem ? (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={node.radius + 1.8}
+                  fill="none"
+                  stroke="rgba(218, 191, 112, 0.36)"
+                  strokeWidth={0.34}
+                />
+              ) : null}
+              {selectedNodeId === node.id ? (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={node.radius + 1.1}
+                  fill="none"
+                  stroke="rgba(182, 239, 211, 0.86)"
+                  strokeWidth={0.26}
+                  strokeDasharray="1.2 0.9"
+                />
+              ) : null}
               <circle
                 cx={node.x}
                 cy={node.y}
                 r={node.radius}
                 fill={nodeFillColor(node.category, isSystem)}
                 stroke={nodeStrokeColor(node.category, isSystem)}
-                strokeWidth={isSystem ? 1.8 : isOm ? 0.45 : isStation ? 0.8 : 1.05}
+                strokeWidth={isSystem ? 0.92 : isOm ? 0.26 : isStation ? 0.38 : 0.46}
                 opacity={isOm ? 0.7 : 1}
               />
-              <text
-                x={node.x}
-                y={node.y + node.radius + (isOm ? 1.4 : 2.6)}
-                textAnchor="middle"
-                style={{
-                  fill: isOm ? 'rgba(170,188,206,0.72)' : 'rgba(214,230,242,0.9)',
-                  fontSize: isSystem ? '2.6px' : isOm ? '1.2px' : isLagrange ? '1.45px' : '1.95px',
-                  letterSpacing: isOm ? '0.16px' : '0.25px',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {labelText}
-              </text>
+              {shouldRenderLabel(node, mapViewMode, selectedNodeId) ? (
+                <text
+                  x={node.x}
+                  y={node.y + node.radius + (isOm ? 1.2 : 1.9)}
+                  textAnchor="middle"
+                  style={{
+                    fill: isOm ? 'rgba(170,198,184,0.72)' : 'rgba(215,242,227,0.88)',
+                    fontSize: isSystem ? '2.2px' : isOm ? '1px' : isLagrange ? '1.2px' : '1.46px',
+                    letterSpacing: isOm ? '0.12px' : '0.2px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {labelText}
+                </text>
+              ) : null}
             </g>
           );
         })}
@@ -501,13 +703,13 @@ export default function MapStageCanvas({
               const y = node.y - node.radius - 2.2 - ((index % 2) * 1.2);
               return (
                 <g key={entry.id}>
-                  <circle cx={x} cy={y} r={1.3} fill={stateColor(entry.displayState)} stroke={confidenceColor(entry.confidenceBand)} strokeWidth={0.45} />
+                  <circle cx={x} cy={y} r={0.9} fill={stateColor(entry.displayState)} stroke={confidenceColor(entry.confidenceBand)} strokeWidth={0.28} />
                   <text
                     x={x + 1.8}
-                    y={y + 0.45}
+                    y={y + 0.34}
                     style={{
-                      fill: 'rgba(220,235,246,0.88)',
-                      fontSize: '1.6px',
+                      fill: 'rgba(220,240,226,0.88)',
+                      fontSize: '1.25px',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -531,6 +733,7 @@ export default function MapStageCanvas({
               return (
                 <g
                   key={keyForIntel(intel)}
+                  data-map-interactive="true"
                   onClick={(event) => {
                     event.stopPropagation();
                     onSelectIntel(intel.id);
@@ -593,7 +796,20 @@ export default function MapStageCanvas({
         </g>
       </svg>
 
+      <div className="pointer-events-none absolute inset-0 nexus-map-crt-overlay" />
       <div className="pointer-events-none absolute inset-0 nexus-map-noise-overlay" />
+
+      <div className="absolute top-3 left-3 nexus-map-hud-panel text-[11px] z-[12]">
+        <div className="nexus-map-hud-title">Stanton Tactical Ops</div>
+        <div className="nexus-map-hud-row">
+          <span>Grid</span>
+          <strong>{mapViewMode}</strong>
+        </div>
+        <div className="nexus-map-hud-row">
+          <span>Selection</span>
+          <strong className="truncate">{selectedNodeLabel || 'None'}</strong>
+        </div>
+      </div>
 
       <div className="absolute top-3 right-3 flex items-center gap-1.5 z-[12]">
         <button
@@ -601,7 +817,7 @@ export default function MapStageCanvas({
           className="nexus-map-zoom-btn"
           onClick={(event) => {
             event.stopPropagation();
-            setZoom((prev) => clamp(prev + 0.15, 0.8, 2.2));
+            updateZoom((prev) => prev + 0.15);
           }}
           title="Zoom in"
         >
@@ -612,7 +828,7 @@ export default function MapStageCanvas({
           className="nexus-map-zoom-btn"
           onClick={(event) => {
             event.stopPropagation();
-            setZoom((prev) => clamp(prev - 0.15, 0.8, 2.2));
+            updateZoom((prev) => prev - 0.15);
           }}
           title="Zoom out"
         >
@@ -624,6 +840,7 @@ export default function MapStageCanvas({
           onClick={(event) => {
             event.stopPropagation();
             setZoom(1);
+            setViewportCenter({ x: 50, y: 50 });
           }}
           title="Reset zoom"
         >
@@ -631,19 +848,49 @@ export default function MapStageCanvas({
         </button>
       </div>
 
+      <div className="absolute bottom-[7.25rem] left-3 nexus-map-hud-panel nexus-map-minimap-panel z-[12]">
+        <div className="nexus-map-hud-title">Minimap</div>
+        <div
+          ref={minimapRef}
+          className="nexus-map-minimap"
+          onPointerDown={handleMinimapPointerDown}
+          title="Click to recenter map viewport"
+        >
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
+            <rect x="0" y="0" width="100" height="100" fill="rgba(5, 12, 12, 0.92)" />
+            {minimapNodes.map((node) => (
+              <circle
+                key={`mini:${node.id}`}
+                cx={node.x}
+                cy={node.y}
+                r={node.kind === 'system' ? 1.2 : 0.65}
+                fill={node.id === selectedNodeId ? 'rgba(196, 244, 218, 0.92)' : 'rgba(142, 206, 172, 0.6)'}
+                stroke="rgba(60, 108, 88, 0.86)"
+                strokeWidth={0.18}
+              />
+            ))}
+            <rect
+              x={viewportWindow.x}
+              y={viewportWindow.y}
+              width={viewportWindow.width}
+              height={viewportWindow.height}
+              fill="rgba(182, 239, 211, 0.08)"
+              stroke="rgba(182, 239, 211, 0.7)"
+              strokeWidth={0.34}
+            />
+          </svg>
+        </div>
+      </div>
+
       <div className="absolute bottom-3 left-3 nexus-map-hud-panel text-[11px] z-[12]">
-        <div className="nexus-map-hud-title">Map Telemetry</div>
+        <div className="nexus-map-hud-title">Cursor Position</div>
         <div className="nexus-map-hud-row">
           <span>Cursor</span>
           <strong>{isPointerActive ? `${cursorCoords.x.toFixed(2)} / ${cursorCoords.y.toFixed(2)}` : '-- / --'}</strong>
         </div>
         <div className="nexus-map-hud-row">
-          <span>View</span>
-          <strong>{mapViewMode}</strong>
-        </div>
-        <div className="nexus-map-hud-row">
-          <span>Selection</span>
-          <strong className="truncate">{selectedNodeLabel || 'None'}</strong>
+          <span>Nodes</span>
+          <strong>{visibleMapNodes.length}</strong>
         </div>
       </div>
 

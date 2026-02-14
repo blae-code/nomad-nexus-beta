@@ -11,12 +11,12 @@ interface PreferenceScopeInput {
   opId?: string;
 }
 
-const STORAGE_PREFIX = 'nexus.os.tacticalMap.preferences.v1';
+const STORAGE_PREFIX = 'nexus.os.tacticalMap.preferences.v2';
 
 const MODE_LAYER_DEFAULTS: Readonly<Record<TacticalMapMode, Partial<Record<TacticalLayerId, boolean>>>> = Object.freeze({
   ESSENTIAL: {
     presence: true,
-    controlZones: true,
+    controlZones: false,
     ops: true,
     intel: false,
     comms: false,
@@ -24,10 +24,10 @@ const MODE_LAYER_DEFAULTS: Readonly<Record<TacticalMapMode, Partial<Record<Tacti
   },
   COMMAND: {
     presence: true,
-    controlZones: true,
+    controlZones: false,
     ops: true,
-    intel: true,
-    comms: true,
+    intel: false,
+    comms: false,
     logistics: false,
   },
   FULL: {
@@ -79,7 +79,7 @@ export function createDefaultTacticalMapPreferences(bridgeId?: string): Tactical
     dockId: normalizeDockId(mode, undefined),
     layerDefaults: { ...MODE_LAYER_DEFAULTS[mode] },
     mapDetail: {
-      showStations: true,
+      showStations: mode === 'FULL',
       showLagrange: mode === 'FULL',
       showOmMarkers: false,
     },
@@ -88,6 +88,7 @@ export function createDefaultTacticalMapPreferences(bridgeId?: string): Tactical
 
 function normalizePreferences(raw: Partial<TacticalMapPreferences> | null | undefined, bridgeId?: string): TacticalMapPreferences {
   const mode = normalizeMode(bridgeId, raw?.mode);
+  const defaultMapDetail = createDefaultTacticalMapPreferences(bridgeId).mapDetail;
   const layerDefaults = {
     ...MODE_LAYER_DEFAULTS[mode],
     ...(raw?.layerDefaults || {}),
@@ -97,9 +98,9 @@ function normalizePreferences(raw: Partial<TacticalMapPreferences> | null | unde
     dockId: normalizeDockId(mode, raw?.dockId),
     layerDefaults,
     mapDetail: {
-      showStations: raw?.mapDetail?.showStations !== false,
-      showLagrange: Boolean(raw?.mapDetail?.showLagrange),
-      showOmMarkers: Boolean(raw?.mapDetail?.showOmMarkers),
+      showStations: raw?.mapDetail?.showStations ?? defaultMapDetail.showStations,
+      showLagrange: raw?.mapDetail?.showLagrange ?? defaultMapDetail.showLagrange,
+      showOmMarkers: raw?.mapDetail?.showOmMarkers ?? defaultMapDetail.showOmMarkers,
     },
   };
 }
