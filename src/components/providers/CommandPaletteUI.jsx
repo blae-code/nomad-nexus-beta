@@ -373,29 +373,33 @@ export default function CommandPaletteUI() {
           `}</style>
 
           {/* Footer Controls */}
-          <div className="relative px-6 py-3 border-t-2 border-red-700/40 bg-zinc-900/60 backdrop-blur-sm">
-            <div className="flex items-center justify-between text-[11px] font-mono">
-              <div className="flex items-center gap-4 text-zinc-500">
-                <span className="flex items-center gap-1.5">
-                  <kbd className="px-1.5 py-0.5 bg-zinc-800/60 border border-zinc-700/60 rounded text-[10px]">↑↓</kbd>
-                  <span>Navigate</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <kbd className="px-1.5 py-0.5 bg-zinc-800/60 border border-zinc-700/60 rounded text-[10px]">⏎</kbd>
-                  <span>Execute</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <kbd className="px-1.5 py-0.5 bg-zinc-800/60 border border-zinc-700/60 rounded text-[10px]">ESC</kbd>
-                  <span>Close</span>
-                </span>
-              </div>
-              <div className="hidden sm:flex items-center gap-1.5 text-zinc-600">
-                <span className="text-red-400 font-bold">⌘K</span>
-                <span>•</span>
-                <span className="text-red-400 font-bold">CTRL+K</span>
-              </div>
-            </div>
-          </div>
+           <div className="relative px-6 py-3 border-t-2 border-red-700/40 bg-zinc-900/60 backdrop-blur-sm">
+             <div className="flex items-center justify-between text-[11px] font-mono">
+               <div className="flex items-center gap-3 text-zinc-500">
+                 <span className="flex items-center gap-1.5">
+                   <kbd className="px-2 py-0.5 bg-red-950/40 border border-red-700/60 rounded text-[10px] font-bold text-red-400">↑↓</kbd>
+                   <span>Navigate</span>
+                 </span>
+                 <span className="flex items-center gap-1.5">
+                   <kbd className="px-2 py-0.5 bg-red-950/40 border border-red-700/60 rounded text-[10px] font-bold text-red-400">⏎</kbd>
+                   <span>Execute</span>
+                 </span>
+                 <span className="flex items-center gap-1.5">
+                   <kbd className="px-2 py-0.5 bg-red-950/40 border border-red-700/60 rounded text-[10px] font-bold text-red-400">ESC</kbd>
+                   <span>Close</span>
+                 </span>
+                 <span className="flex items-center gap-1.5">
+                   <kbd className="px-2 py-0.5 bg-red-950/40 border border-red-700/60 rounded text-[10px] font-bold text-red-400">TAB</kbd>
+                   <span>Next</span>
+                 </span>
+               </div>
+               <div className="hidden sm:flex items-center gap-2 text-zinc-600">
+                 <span className="text-red-400 font-bold text-[10px] px-2 py-1 bg-red-950/30 border border-red-700/40 rounded">OPEN: ⌘K</span>
+                 <span className="text-red-500">•</span>
+                 <span className="text-red-400 font-bold text-[10px]">{flatActions.length} commands</span>
+               </div>
+             </div>
+           </div>
         </div>
       </div>
     </div>
