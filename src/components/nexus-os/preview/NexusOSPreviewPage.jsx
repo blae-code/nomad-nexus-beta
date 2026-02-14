@@ -39,7 +39,6 @@ import {
   useNexusTrayNotifications,
   useNexusWorkspaceSession,
   useReducedMotion,
-  CommsArray,
 } from '../ui';
 import CommsHub from '../ui/comms/CommsHub';
 import { getActiveChannelId } from '../services/channelContextService';
@@ -1242,16 +1241,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </div>
       </main>
 
-      <CommsArray
-        isOpen={contextVisible}
-        bridgeId={bridgeId}
-        activeAppId={activeAppLabel}
-        operations={operations}
-        focusOperationId={focusOperationId}
-        trayNotifications={tray.notifications}
-        unreadCount={tray.unreadCount}
-        online={online}
-      />
+
 
       <footer className="nx-shell-bottom">
         <NexusTaskbar
