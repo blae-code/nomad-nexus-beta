@@ -1256,100 +1256,16 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </div>
       </main>
 
-      <aside className={`nx-shell-context nexus-surface ${contextVisible ? 'is-open' : 'is-collapsed'}`}>
-        {contextVisible ? (
-          <div className="nx-context-inner">
-            <div className="nx-context-tabs">
-              <NexusButton size="sm" intent={contextTab === 'SUMMARY' ? 'primary' : 'subtle'} onClick={() => setContextTab('SUMMARY')} title="View system state and diagnostics">
-                Summary
-              </NexusButton>
-              <NexusButton size="sm" intent={contextTab === 'ACTIONS' ? 'primary' : 'subtle'} onClick={() => setContextTab('ACTIONS')} title="Switch bridges and open applications">
-                Actions
-              </NexusButton>
-            </div>
-
-            {contextTab === 'SUMMARY' ? (
-              <div className="nx-context-stack">
-                <div className="nx-context-grid">
-                  <div className="nx-context-kv" title="Current command deck and workspace bridge">
-                    <span>Bridge</span>
-                    <strong>{bridgeId}</strong>
-                  </div>
-                  <div className="nx-context-kv" title="Active focus application">
-                    <span>Foreground</span>
-                    <strong>{activeAppLabel}</strong>
-                  </div>
-                  <div className="nx-context-kv" title="Currently linked operation context">
-                    <span>Focus Op</span>
-                    <strong className="truncate">{focusOperationLabel}</strong>
-                  </div>
-                  <div className="nx-context-kv" title="Recent gameplay events in last 20 seconds">
-                    <span>Pulse</span>
-                    <strong>{pulseCount}</strong>
-                  </div>
-                  <div className="nx-context-kv" title="App lifecycle state: foreground, background, or suspended">
-                    <span>Scheduler</span>
-                    <strong>{activeLifecycleState}</strong>
-                  </div>
-                  <div className="nx-context-kv" title="Boot sequence phase or ready state">
-                    <span>Boot</span>
-                    <strong>{bootState.visible ? bootState.phase : 'ready'}</strong>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setStatusCapsuleOpen((prev) => !prev)}
-                  className="nx-context-toggle"
-                  aria-expanded={statusCapsuleOpen}
-                >
-                  {statusCapsuleOpen ? 'Collapse Diagnostics' : 'Expand Diagnostics'}
-                </button>
-                {statusCapsuleOpen ? (
-                  <div className="nx-context-grid">
-                    <div className="nx-context-kv" title="Current workspace session key">
-                      <span>Session</span>
-                      <strong className="truncate">{sessionScopeKey}</strong>
-                    </div>
-                    <div className="nx-context-kv" title="Operational mode based on network status">
-                      <span>Posture</span>
-                      <strong>{operationalPostureLabel}</strong>
-                    </div>
-                    <div className="nx-context-kv" title="Performance samples collected">
-                      <span>Samples</span>
-                      <strong>{recentSamples.length}</strong>
-                    </div>
-                    <div className="nx-context-kv" title="Operation context binding status">
-                      <span>Op Link</span>
-                      <strong>{focusedOperation ? 'linked' : 'unlinked'}</strong>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="nx-context-stack">
-                <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
-                <div className="nx-context-actions">
-                    {FOCUS_APP_CATALOG.map((entry) => (
-                      <NexusButton 
-                        key={`ctx:${entry.id}`} 
-                        size="sm" 
-                        intent={focusMode === entry.id ? 'primary' : 'subtle'} 
-                        onClick={() => openFocusApp(entry.id)}
-                        title={`Open ${entry.label} (${entry.hotkey})`}
-                      >
-                        {entry.label}
-                      </NexusButton>
-                    ))}
-                  </div>
-                <div className="nx-context-note" title="Network posture and motion preference settings">
-                  <Radar className="inline w-3.5 h-3.5 mr-1.5 align-[-1px]" />
-                  {operationalPostureLabel} · Reduced motion {reducedMotion ? 'on' : 'off'}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : null}
-      </aside>
+      <CommsArray
+        isOpen={contextVisible}
+        bridgeId={bridgeId}
+        activeAppId={activeAppLabel}
+        operations={operations}
+        focusOperationId={focusOperationId}
+        trayNotifications={tray.notifications}
+        unreadCount={tray.unreadCount}
+        online={online}
+      />
 
       <footer className="nx-shell-bottom">
         <NexusTaskbar
