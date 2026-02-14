@@ -127,7 +127,7 @@ export default function Onboarding() {
         console.warn('Unable to save workspace activity preference:', prefErr);
       }
 
-      window.location.href = createPageUrl('Hub');
+      window.location.href = createPageUrl('Workspace');
     } catch (error) {
       console.error('Onboarding error:', error);
       alert('Error completing onboarding. Please try again.');
