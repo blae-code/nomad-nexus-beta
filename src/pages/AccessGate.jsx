@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Zap, Trash2 } from 'lucide-react';
+import { Zap, Trash2, Shield, Signal } from 'lucide-react';
 import { navigateToPage } from '@/utils';
 import RouteGuard from '@/components/auth/RouteGuard';
 import PageTransition from '@/components/transitions/PageTransition';
