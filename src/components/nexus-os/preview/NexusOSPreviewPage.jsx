@@ -449,7 +449,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [commandDeckOpen, setCommandDeckOpen] = useState(false);
   const [commandFeedback, setCommandFeedback] = useState('');
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
-  const [statusCapsuleOpen, setStatusCapsuleOpen] = useState(false);
+
   const [contextPanelOpen, setContextPanelOpen] = useState(true);
   const [compactShell, setCompactShell] = useState(() => (typeof window === 'undefined' ? false : window.innerWidth < 1480));
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
