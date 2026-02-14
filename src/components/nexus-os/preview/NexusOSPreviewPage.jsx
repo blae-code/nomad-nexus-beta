@@ -1172,14 +1172,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           </div>
         </div>
         <button
-          type="button"
-          className="nx-command-entry"
-          onClick={() => setCommandDeckOpen(true)}
-          title="Open command palette"
+        type="button"
+        className="nx-command-entry"
+        onClick={() => setCommandDeckOpen(true)}
+        title="Open command palette to manage apps, bridges, and settings (Ctrl+Shift+P)"
         >
-          <Search className="w-3.5 h-3.5" />
-          <span>Command Palette</span>
-          <span className="nx-hotkey">Ctrl+Shift+P</span>
+        <Search className="w-3.5 h-3.5" />
+        <span>Command Palette</span>
+        <span className="nx-hotkey">Ctrl+Shift+P</span>
         </button>
         <div className="nx-topbar-right">
           {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV</NexusBadge>}
