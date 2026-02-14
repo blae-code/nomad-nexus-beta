@@ -185,7 +185,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
     >
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
-      <div className="nexus-shell-standard h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden relative">
+      <div className="nexus-shell-standard h-screen max-h-screen w-full max-w-full bg-zinc-950 flex flex-col overflow-hidden relative">
          <a
            href="#main-content"
            className="absolute left-2 top-2 z-[1200] -translate-y-16 rounded bg-zinc-900 px-3 py-2 text-xs text-orange-300 border border-orange-500/40 transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
