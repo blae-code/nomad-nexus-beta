@@ -4,9 +4,6 @@ import { navigateToPage } from '@/utils';
 import Header from '@/components/layout/Header';
 import CSSDebugOverlay from '@/components/debug/CSSDebugOverlay';
 
-
-import TextCommsCore from '@/components/layout/TextCommsCore';
-
 import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
 import { CommandPaletteProvider } from '@/components/providers/CommandPaletteContext';
 import { NotificationProvider } from '@/components/providers/NotificationContext';
