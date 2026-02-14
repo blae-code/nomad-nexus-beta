@@ -1339,7 +1339,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
                       </NexusButton>
                     ))}
                   </div>
-                <div className="nx-context-note">
+                <div className="nx-context-note" title="Network posture and motion preference settings">
                   <Radar className="inline w-3.5 h-3.5 mr-1.5 align-[-1px]" />
                   {operationalPostureLabel} · Reduced motion {reducedMotion ? 'on' : 'off'}
                 </div>
