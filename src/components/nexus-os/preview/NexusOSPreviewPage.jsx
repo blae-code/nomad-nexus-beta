@@ -41,6 +41,7 @@ import {
   useReducedMotion,
 } from '../ui';
 import CommsHub from '../ui/comms/CommsHub';
+import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import { getActiveChannelId } from '../services/channelContextService';
 import { getCqbEventDiagnostics, listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
@@ -451,6 +452,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const [contextPanelOpen, setContextPanelOpen] = useState(true);
   const [commsHubExpanded, setCommsHubExpanded] = useState(true);
+  const [voiceRailExpanded, setVoiceRailExpanded] = useState(true);
   const [compactShell, setCompactShell] = useState(() => (typeof window === 'undefined' ? false : window.innerWidth < 1480));
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
 
@@ -1204,15 +1206,29 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       </header>
 
       <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
-        <CommsHub
-          operations={operations}
-          focusOperationId={focusOperationId}
-          activeAppId={activeAppLabel}
-          online={online}
-          bridgeId={bridgeId}
-          isExpanded={commsHubExpanded}
-          onToggleExpand={() => setCommsHubExpanded(!commsHubExpanded)}
-        />
+      <CommsHub
+      operations={operations}
+      focusOperationId={focusOperationId}
+      activeAppId={activeAppLabel}
+      online={online}
+      bridgeId={bridgeId}
+      isExpanded={commsHubExpanded}
+      onToggleExpand={() => setCommsHubExpanded(!commsHubExpanded)}
+      />
+      </aside>
+
+      <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
+      <VoiceCommsRail
+      voiceNets={[
+      { id: 'net1', code: 'COMMAND', label: 'Command Net' },
+      { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
+      { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
+      ]}
+      activeNetId="COMMAND"
+      participants={activeOp?.participants || []}
+      isExpanded={voiceRailExpanded}
+      onToggleExpand={() => setVoiceRailExpanded(!voiceRailExpanded)}
+      />
       </aside>
 
       <main className="nx-shell-main">
