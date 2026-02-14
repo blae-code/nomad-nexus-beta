@@ -80,9 +80,7 @@ export default function Header() {
   const isAdmin = isAdminUser(authUser);
   const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank || 'VAGRANT');
 
-  return (
-    <header className="fixed top-0 left-0 right-0 h-12 bg-black/98 border-b-2 border-red-700/50 backdrop-blur-xl shadow-2xl shadow-red-500/10 overflow-hidden z-[800]">
-      
+  return null;
 
 
 
@@ -194,6 +192,8 @@ export default function Header() {
 
 
 
-    </header>);
+
+
+
 
 }
