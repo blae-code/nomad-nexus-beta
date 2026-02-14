@@ -1258,10 +1258,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         {contextVisible ? (
           <div className="nx-context-inner">
             <div className="nx-context-tabs">
-              <NexusButton size="sm" intent={contextTab === 'SUMMARY' ? 'primary' : 'subtle'} onClick={() => setContextTab('SUMMARY')}>
+              <NexusButton size="sm" intent={contextTab === 'SUMMARY' ? 'primary' : 'subtle'} onClick={() => setContextTab('SUMMARY')} title="View system state and diagnostics">
                 Summary
               </NexusButton>
-              <NexusButton size="sm" intent={contextTab === 'ACTIONS' ? 'primary' : 'subtle'} onClick={() => setContextTab('ACTIONS')}>
+              <NexusButton size="sm" intent={contextTab === 'ACTIONS' ? 'primary' : 'subtle'} onClick={() => setContextTab('ACTIONS')} title="Switch bridges and open applications">
                 Actions
               </NexusButton>
             </div>
