@@ -1,3 +1,4 @@
+
 import { 
   MessageSquare, Radio, Ship, Calendar, Users, Map, Activity, Bell, 
   Brain, Target, AlertTriangle, Heart, Gauge, TrendingUp, Shield, 
@@ -6,15 +7,6 @@ import {
   Lightbulb, Terminal, Mic, Inbox, Cloud, Skull
 } from 'lucide-react';
 
-// Legacy widgets
-import CommsWidget from '@/components/widgets/CommsWidget';
-import VoiceNetWidget from '@/components/widgets/VoiceNetWidget';
-import FleetStatusWidget from '@/components/widgets/FleetStatusWidget';
-import EventTimelineWidget from '@/components/widgets/EventTimelineWidget';
-import TacticalMapWidget from '@/components/widgets/TacticalMapWidget';
-import MemberRosterWidget from '@/components/widgets/MemberRosterWidget';
-import SystemStatusWidget from '@/components/widgets/SystemStatusWidget';
-import NotificationsWidget from '@/components/widgets/NotificationsWidget';
 
 // Next-gen widgets
 import NeuralCommandConsole from '@/components/widgets/NeuralCommandConsole';
@@ -462,87 +454,5 @@ export const WIDGET_REGISTRY = {
     minSize: { w: 2, h: 2 },
     singleton: false,
     category: 'Quick Access',
-  },
-
-  // === LEGACY WIDGETS (backward compatibility) ===
-  comms: {
-    component: CommsWidget,
-    label: '[Legacy] Comms',
-    icon: MessageSquare,
-    description: 'Original text communications',
-    defaultSize: { w: 6, h: 4 },
-    minSize: { w: 3, h: 3 },
-    singleton: false,
-    category: 'Legacy',
-  },
-  voiceNet: {
-    component: VoiceNetWidget,
-    label: '[Legacy] Voice Net',
-    icon: Radio,
-    description: 'Original voice control',
-    defaultSize: { w: 4, h: 3 },
-    minSize: { w: 3, h: 2 },
-    singleton: true,
-    category: 'Legacy',
-  },
-  fleetStatus: {
-    component: FleetStatusWidget,
-    label: '[Legacy] Fleet Status',
-    icon: Ship,
-    description: 'Original fleet viewer',
-    defaultSize: { w: 4, h: 3 },
-    minSize: { w: 3, h: 2 },
-    singleton: false,
-    category: 'Legacy',
-  },
-  eventTimeline: {
-    component: EventTimelineWidget,
-    label: '[Legacy] Operations',
-    icon: Calendar,
-    description: 'Original event timeline',
-    defaultSize: { w: 4, h: 3 },
-    minSize: { w: 3, h: 2 },
-    singleton: false,
-    category: 'Legacy',
-  },
-  tacticalMap: {
-    component: TacticalMapWidget,
-    label: '[Legacy] Tactical Map',
-    icon: Map,
-    description: 'Original map view',
-    defaultSize: { w: 6, h: 4 },
-    minSize: { w: 4, h: 3 },
-    singleton: false,
-    category: 'Legacy',
-  },
-  memberRoster: {
-    component: MemberRosterWidget,
-    label: '[Legacy] Roster',
-    icon: Users,
-    description: 'Original member list',
-    defaultSize: { w: 3, h: 3 },
-    minSize: { w: 2, h: 2 },
-    singleton: true,
-    category: 'Legacy',
-  },
-  systemStatus: {
-    component: SystemStatusWidget,
-    label: '[Legacy] System Status',
-    icon: Activity,
-    description: 'Original health metrics',
-    defaultSize: { w: 3, h: 2 },
-    minSize: { w: 2, h: 2 },
-    singleton: true,
-    category: 'Legacy',
-  },
-  notifications: {
-    component: NotificationsWidget,
-    label: '[Legacy] Alerts',
-    icon: Bell,
-    description: 'Original notification center',
-    defaultSize: { w: 3, h: 3 },
-    minSize: { w: 2, h: 2 },
-    singleton: true,
-    category: 'Legacy',
   },
 };
