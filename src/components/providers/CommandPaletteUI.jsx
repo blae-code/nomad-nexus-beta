@@ -178,18 +178,79 @@ export default function CommandPaletteUI() {
             </button>
           </div>
 
-          {/* Results Grid */}
-          <div className="relative max-h-[60vh] overflow-y-auto command-scrollbar">
+          {/* Results Grid with Quick Actions */}
+          <div className="relative max-h-[65vh] overflow-y-auto command-scrollbar">
             {flatActions.length === 0 ? (
               <div className="px-6 py-16 text-center">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-900/60 border-2 border-zinc-800 flex items-center justify-center">
                   <FileSearch className="w-8 h-8 text-zinc-700" />
                 </div>
                 <div className="text-zinc-500 font-mono text-sm mb-2 uppercase tracking-[0.2em]">No Commands Found</div>
-                <div className="text-zinc-700 text-xs">Try a different search term or press ESC to close</div>
+                <div className="text-zinc-700 text-xs mb-4">Try a different search term or press ESC to close</div>
+                <div className="text-zinc-800 text-[10px] font-mono">Available: <span className="text-zinc-700">{Object.keys(groupedActions).length} categories</span></div>
               </div>
             ) : (
               <div className="p-2">
+                {/* Recently Used Section */}
+                {recentlyUsed.length > 0 && !search && (
+                  <div className="mb-4">
+                    <div className="sticky top-0 z-10 px-4 py-2 mb-2 bg-zinc-900/90 backdrop-blur-md border-l-4 border-orange-500/60 rounded flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                      <span className="text-xs font-black text-orange-400 uppercase tracking-[0.25em]">Recently Used</span>
+                      <div className="flex-1 h-px bg-gradient-to-r from-orange-500/30 to-transparent" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 px-2">
+                      {recentlyUsed.map((actionId) => {
+                        const action = flatActions.find((a) => a.id === actionId);
+                        if (!action) return null;
+                        const globalIdx = flatActions.findIndex((a) => a.id === actionId);
+                        const isSelected = globalIdx === selectedIndex;
+                        const iconMap = {
+                          Home, Calendar, Radio, Users, Map, Box, DollarSign, Settings, FileSearch,
+                          PanelRight, MessageSquare, Bell, Zap, AlertTriangle, ClipboardCopy, RotateCcw, Lock,
+                          Target, ScrollText, Boxes, Monitor, ClipboardList
+                        };
+                        const IconComponent = action.icon ? iconMap[action.icon] : Zap;
+                        return (
+                          <button
+                            key={action.id}
+                            onClick={() => {
+                              action.onExecute();
+                              closePalette();
+                            }}
+                            className={`group relative text-left p-3 rounded-lg border-2 transition-all duration-200 ${
+                              isSelected
+                                ? 'bg-orange-500/20 border-orange-500/70 shadow-lg shadow-orange-500/20 scale-[1.02]'
+                                : 'bg-zinc-900/40 border-zinc-800/60 hover:border-orange-700/50 hover:bg-zinc-900/60'
+                            }`}
+                          >
+                            {isSelected && (
+                              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-orange-600/10 via-amber-600/10 to-orange-600/10 animate-pulse pointer-events-none" />
+                            )}
+                            <div className="relative flex items-start gap-3">
+                              <div className={`relative w-10 h-10 flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ${
+                                isSelected 
+                                  ? 'bg-orange-500/20 border-orange-500/60' 
+                                  : 'bg-zinc-800/60 border-zinc-700/60 group-hover:border-orange-700/40'
+                              }`}>
+                                <IconComponent className={`w-5 h-5 transition-all ${
+                                  isSelected ? 'text-orange-400 scale-110' : 'text-zinc-500 group-hover:text-orange-500'
+                                }`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className={`font-bold text-sm tracking-wide truncate mb-1 ${
+                                  isSelected ? 'text-white' : 'text-zinc-300'
+                                }`}>
+                                  {action.label}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {Object.entries(groupedActions).map(([category, actions]) => (
                   <div key={category} className="mb-4">
                     {/* Category Header */}
