@@ -123,62 +123,86 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Right: Telemetry + Controls — Live Status */}
-        <div className="flex items-center gap-2 justify-end flex-shrink-0 min-w-max">
+        {/* Right: Critical System Status + Controls */}
+        <div className="flex items-center gap-3 justify-end flex-shrink-0 min-w-max">
           {/* Verse Clock */}
           <VerseClock />
 
-          {/* Telemetry Chips — Compact */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {voiceNet?.activeNetId && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'bg-green-500/15 text-green-300 border-green-500/30' :
-                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
+          {/* Critical Telemetry Bar */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-800/60 rounded-md">
+            {/* Voice Net Status */}
+            {voiceNet?.activeNetId ? (
+              <div className={`flex items-center gap-1.5 ${
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'text-green-400' :
+                voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'text-orange-400' : 'text-red-400'
               }`}>
-                <Mic className="w-3 h-3" />
-                <span className="font-mono text-[11px]">{voiceNet.participants?.length || 0}</span>
+                <Mic className="w-3.5 h-3.5" />
+                <span className="font-mono text-[10px] font-bold">{voiceNet.participants?.length || 0}</span>
+                <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-zinc-600">
+                <Mic className="w-3.5 h-3.5" />
+                <span className="font-mono text-[10px]">—</span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800/50 text-zinc-400 rounded text-xs font-semibold border border-zinc-700/50 h-7">
-              <Users className="w-3 h-3" />
-              <span className="font-mono text-[11px]">{onlineCount}</span>
+            
+            <div className="w-px h-3 bg-zinc-700/40" />
+            
+            {/* Online Members */}
+            <div className="flex items-center gap-1.5 text-cyan-400">
+              <Users className="w-3.5 h-3.5" />
+              <span className="font-mono text-[10px] font-bold">{onlineCount}</span>
             </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border h-7 ${
-              isHealthy ? 'bg-green-500/15 text-green-300 border-green-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'
-            }`}>
-              {isHealthy ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span className="font-mono text-[11px]">{latencyMs}ms</span>
+            
+            <div className="w-px h-3 bg-zinc-700/40" />
+            
+            {/* Network Health */}
+            <div className={`flex items-center gap-1.5 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
+              {isHealthy ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+              <span className="font-mono text-[10px] font-bold">{latencyMs}ms</span>
+              <div className={`w-1 h-1 rounded-full bg-current ${isHealthy ? 'animate-pulse' : ''}`} />
             </div>
           </div>
 
-          <div className="w-px h-5 bg-zinc-700/40" />
+          <div className="w-px h-6 bg-zinc-700/30" />
 
           {/* Panel Toggles */}
-          <div className="flex items-center gap-0.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               size="icon"
               variant="ghost"
               onClick={toggleContextPanel}
               aria-label="Toggle voice control panel"
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 transition-all duration-200 rounded"
-              title="Voice Control Panel (Right)"
+              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 transition-all duration-200 rounded group"
+              title="Voice Control Panel • Right Sidebar"
             >
-              <Radio className="w-4 h-4" />
+              <Radio className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
               onClick={toggleCommsDock}
               aria-label="Toggle text comms dock"
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 relative transition-all duration-200 rounded"
-              title="Text Comms Dock (Bottom)"
+              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 relative transition-all duration-200 rounded group"
+              title="Text Comms Dock • Bottom Panel"
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" />
               {unreadByTab?.comms > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-gradient-to-br from-red-500 to-red-600 text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none shadow-lg">
+                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-gradient-to-br from-red-500 to-red-600 text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none shadow-lg animate-pulse">
                   {unreadByTab.comms > 9 ? '9+' : unreadByTab.comms}
                 </span>
               )}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => window.location.href = createPageUrl('Settings')}
+              aria-label="Settings"
+              className="hidden md:flex h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 transition-all duration-200 rounded group"
+              title="System Settings"
+            >
+              <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
             </Button>
           </div>
         </div>

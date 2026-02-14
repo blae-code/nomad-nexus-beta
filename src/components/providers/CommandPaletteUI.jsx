@@ -104,7 +104,7 @@ export default function CommandPaletteUI() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center pt-24 z-50 p-4"
+      className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-start justify-center pt-20 z-[1000] p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="command-palette-title"
@@ -116,118 +116,211 @@ export default function CommandPaletteUI() {
     >
       <div
         ref={modalRef}
-        className="bg-zinc-950 border-2 border-orange-500/30 rounded-lg shadow-2xl shadow-orange-500/10 w-full max-w-3xl overflow-hidden"
+        className="relative w-full max-w-4xl animate-in slide-in-from-top-4 duration-300"
       >
-        {/* Search Input */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b-2 border-zinc-800 bg-zinc-900/50">
-          <h2 id="command-palette-title" className="sr-only">Command palette</h2>
-          <div className="w-1 h-6 bg-orange-500" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Type a command or search..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSelectedIndex(0);
-            }}
-            onKeyDown={handleKeyDown}
-            aria-label="Search commands"
-            className="flex-1 bg-transparent text-white text-base font-mono tracking-wide outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 rounded placeholder:text-zinc-600"
-          />
-          <button
-            onClick={closePalette}
-            aria-label="Close command palette"
-            className="text-zinc-600 hover:text-orange-400 transition-colors p-1"
-            title="Close (Esc)"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        {/* Immersive panel with Redscar styling */}
+        <div className="relative bg-black/95 border-2 border-red-700/60 rounded-lg shadow-2xl shadow-red-500/20 overflow-hidden backdrop-blur-xl">
+          {/* Ambient glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 via-transparent to-orange-600/5 pointer-events-none" />
+          
+          {/* Scanline overlay */}
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(200,68,50,0.03)_0px,rgba(200,68,50,0.03)_1px,transparent_1px,transparent_2px)] pointer-events-none animate-scan" />
 
-        {/* Results */}
-        <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-          {flatActions.length === 0 ? (
-            <div className="px-5 py-12 text-center">
-              <div className="text-zinc-600 font-mono text-sm mb-2">NO COMMANDS FOUND</div>
-              <div className="text-zinc-700 text-xs">Try a different search term</div>
+          {/* Search Input Header */}
+          <div className="relative flex items-center gap-3 px-6 py-4 border-b-2 border-red-700/40 bg-zinc-900/60">
+            <h2 id="command-palette-title" className="sr-only">Command palette</h2>
+            
+            {/* Accent bar */}
+            <div className="w-1.5 h-8 bg-gradient-to-b from-red-600 to-red-500 rounded-sm shadow-lg shadow-red-500/30" />
+            
+            {/* Search icon with glow */}
+            <div className="relative">
+              <FileSearch className="w-5 h-5 text-red-400" />
+              <div className="absolute inset-0 blur-md bg-red-400/30 animate-pulse" />
             </div>
-          ) : (
-            Object.entries(groupedActions).map(([category, actions]) => (
-              <div key={category}>
-                <div className="sticky top-0 px-5 py-2 text-xs font-black text-orange-500/70 uppercase tracking-widest bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50 flex items-center gap-2">
-                  <div className="w-0.5 h-3 bg-orange-500/50" />
-                  {category}
-                  <div className="ml-auto text-zinc-700 font-mono">{actions.length}</div>
-                </div>
-                {actions.map((action, idx) => {
-                  const globalIdx = flatActions.findIndex((a) => a.id === action.id);
-                  const isSelected = globalIdx === selectedIndex;
-                  
-                  const iconMap = {
-                    Home, Calendar, Radio, Users, Map, Box, DollarSign, Settings, FileSearch,
-                    PanelRight, MessageSquare, Bell, Zap, AlertTriangle, ClipboardCopy, RotateCcw, Lock,
-                    Target, ScrollText, Boxes, Monitor, ClipboardList
-                  };
-                  const IconComponent = action.icon ? iconMap[action.icon] : null;
-
-                  return (
-                    <button
-                      key={action.id}
-                      onClick={() => {
-                        action.onExecute();
-                        closePalette();
-                      }}
-                      className={`w-full text-left px-5 py-3 transition-all duration-150 border-l-4 flex items-center gap-3 ${
-                        isSelected
-                          ? 'bg-orange-500/20 border-orange-500 text-white'
-                          : 'hover:bg-zinc-900/50 border-transparent text-zinc-300 hover:border-zinc-700'
-                      }`}
-                    >
-                      {IconComponent && (
-                        <div className={`w-5 h-5 flex-shrink-0 ${isSelected ? 'text-orange-400' : 'text-zinc-600'}`}>
-                          <IconComponent className="w-full h-full" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold tracking-wide truncate">{action.label}</div>
-                        {action.description && (
-                          <div className="text-xs text-zinc-500 mt-0.5 font-mono truncate">{action.description}</div>
-                        )}
-                      </div>
-                      {action.shortcut && (
-                        <div className="text-xs font-mono text-zinc-600 bg-zinc-800/50 px-2 py-1 rounded border border-zinc-700 flex-shrink-0">
-                          {action.shortcut}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+            
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Command search • Navigation • Execute..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSelectedIndex(0);
+              }}
+              onKeyDown={handleKeyDown}
+              aria-label="Search commands"
+              className="flex-1 bg-transparent text-white text-lg font-mono tracking-wide outline-none placeholder:text-zinc-600 focus:placeholder:text-zinc-700 transition-all"
+            />
+            
+            {search && (
+              <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+                <span className="text-red-400 font-bold">{flatActions.length}</span>
+                <span>results</span>
               </div>
-            ))
-          )}
-        </div>
+            )}
+            
+            <button
+              onClick={closePalette}
+              aria-label="Close command palette"
+              className="text-zinc-600 hover:text-red-400 transition-all p-2 rounded hover:bg-red-500/10 group"
+              title="Close • ESC"
+            >
+              <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+            </button>
+          </div>
 
-        <style>{`
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(24, 24, 27, 0.5);
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(234, 88, 12, 0.3);
-            border-radius: 4px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(234, 88, 12, 0.5);
-          }
-        `}</style>
+          {/* Results Grid */}
+          <div className="relative max-h-[60vh] overflow-y-auto command-scrollbar">
+            {flatActions.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-900/60 border-2 border-zinc-800 flex items-center justify-center">
+                  <FileSearch className="w-8 h-8 text-zinc-700" />
+                </div>
+                <div className="text-zinc-500 font-mono text-sm mb-2 uppercase tracking-[0.2em]">No Commands Found</div>
+                <div className="text-zinc-700 text-xs">Try a different search term or press ESC to close</div>
+              </div>
+            ) : (
+              <div className="p-2">
+                {Object.entries(groupedActions).map(([category, actions]) => (
+                  <div key={category} className="mb-4">
+                    {/* Category Header */}
+                    <div className="sticky top-0 z-10 px-4 py-2 mb-2 bg-zinc-900/90 backdrop-blur-md border-l-4 border-red-500/60 rounded flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-xs font-black text-red-400 uppercase tracking-[0.25em]">{category}</span>
+                      <div className="flex-1 h-px bg-gradient-to-r from-red-500/30 to-transparent" />
+                      <span className="text-[10px] font-mono text-zinc-600 bg-zinc-800/50 px-2 py-0.5 rounded">{actions.length}</span>
+                    </div>
+                    
+                    {/* Actions Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 px-2">
+                      {actions.map((action) => {
+                        const globalIdx = flatActions.findIndex((a) => a.id === action.id);
+                        const isSelected = globalIdx === selectedIndex;
+                        
+                        const iconMap = {
+                          Home, Calendar, Radio, Users, Map, Box, DollarSign, Settings, FileSearch,
+                          PanelRight, MessageSquare, Bell, Zap, AlertTriangle, ClipboardCopy, RotateCcw, Lock,
+                          Target, ScrollText, Boxes, Monitor, ClipboardList
+                        };
+                        const IconComponent = action.icon ? iconMap[action.icon] : Zap;
 
-        {/* Footer Hint */}
-        <div className="px-5 py-3 border-t-2 border-zinc-800 bg-zinc-900/30 text-xs text-zinc-600 flex justify-between font-mono">
-          <span>↑↓ navigate • ⏎ execute • ESC close</span>
-          <span className="hidden sm:inline text-zinc-700">⌘K / CTRL+K</span>
+                        return (
+                          <button
+                            key={action.id}
+                            onClick={() => {
+                              action.onExecute();
+                              closePalette();
+                            }}
+                            className={`group relative text-left p-3 rounded-lg border-2 transition-all duration-200 ${
+                              isSelected
+                                ? 'bg-red-500/20 border-red-500/70 shadow-lg shadow-red-500/20 scale-[1.02]'
+                                : 'bg-zinc-900/40 border-zinc-800/60 hover:border-red-700/50 hover:bg-zinc-900/60'
+                            }`}
+                          >
+                            {/* Selection indicator */}
+                            {isSelected && (
+                              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-red-600/10 via-orange-600/10 to-red-600/10 animate-pulse pointer-events-none" />
+                            )}
+                            
+                            <div className="relative flex items-start gap-3">
+                              {/* Icon with glow */}
+                              <div className={`relative w-10 h-10 flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ${
+                                isSelected 
+                                  ? 'bg-red-500/20 border-red-500/60' 
+                                  : 'bg-zinc-800/60 border-zinc-700/60 group-hover:border-red-700/40'
+                              }`}>
+                                <IconComponent className={`w-5 h-5 transition-all ${
+                                  isSelected ? 'text-red-400 scale-110' : 'text-zinc-500 group-hover:text-red-500'
+                                }`} />
+                                {isSelected && (
+                                  <div className="absolute inset-0 rounded-lg bg-red-500/20 blur-md animate-pulse" />
+                                )}
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className={`font-bold text-sm tracking-wide truncate mb-1 ${
+                                  isSelected ? 'text-white' : 'text-zinc-300'
+                                }`}>
+                                  {action.label}
+                                </div>
+                                {action.description && (
+                                  <div className="text-[11px] text-zinc-500 font-mono truncate leading-tight">
+                                    {action.description}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Shortcut badge */}
+                              {action.shortcut && (
+                                <div className={`self-start flex-shrink-0 text-[10px] font-mono px-2 py-1 rounded border ${
+                                  isSelected 
+                                    ? 'text-red-300 bg-red-500/20 border-red-500/40' 
+                                    : 'text-zinc-600 bg-zinc-800/50 border-zinc-700/50'
+                                }`}>
+                                  {action.shortcut}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <style>{`
+            .command-scrollbar::-webkit-scrollbar {
+              width: 10px;
+            }
+            .command-scrollbar::-webkit-scrollbar-track {
+              background: rgba(0, 0, 0, 0.4);
+            }
+            .command-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(185, 28, 28, 0.4);
+              border-radius: 5px;
+              border: 2px solid rgba(0, 0, 0, 0.4);
+            }
+            .command-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: rgba(185, 28, 28, 0.6);
+            }
+            @keyframes scan {
+              0% { transform: translateY(-100%); }
+              100% { transform: translateY(100%); }
+            }
+            .animate-scan {
+              animation: scan 8s linear infinite;
+            }
+          `}</style>
+
+          {/* Footer Controls */}
+          <div className="relative px-6 py-3 border-t-2 border-red-700/40 bg-zinc-900/60 backdrop-blur-sm">
+            <div className="flex items-center justify-between text-[11px] font-mono">
+              <div className="flex items-center gap-4 text-zinc-500">
+                <span className="flex items-center gap-1.5">
+                  <kbd className="px-1.5 py-0.5 bg-zinc-800/60 border border-zinc-700/60 rounded text-[10px]">↑↓</kbd>
+                  <span>Navigate</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="px-1.5 py-0.5 bg-zinc-800/60 border border-zinc-700/60 rounded text-[10px]">⏎</kbd>
+                  <span>Execute</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="px-1.5 py-0.5 bg-zinc-800/60 border border-zinc-700/60 rounded text-[10px]">ESC</kbd>
+                  <span>Close</span>
+                </span>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 text-zinc-600">
+                <span className="text-red-400 font-bold">⌘K</span>
+                <span>•</span>
+                <span className="text-red-400 font-bold">CTRL+K</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
