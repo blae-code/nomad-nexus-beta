@@ -194,7 +194,21 @@ export default function AccessGate() {
     <RouteGuard requiredAuth="none">
       <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
       <PageTransition>
-        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative">
+        {/* Polished Header */}
+        <header className="fixed top-0 left-0 right-0 z-40 border-b border-red-700/30 bg-zinc-950/95 backdrop-blur-sm px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="w-4 h-4 text-red-500" />
+            <div className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Redscar Nomads Command Intranet</div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-xs text-zinc-400">
+              <Signal className="w-3 h-3 text-green-500" />
+              SECURE CONNECTION
+            </div>
+          </div>
+        </header>
+
+        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative pt-16 pb-16">
 
       <div className="relative z-10 w-full max-w-md my-8">
         <div className="nexus-immersive-panel p-0 overflow-hidden flex-shrink-0">
