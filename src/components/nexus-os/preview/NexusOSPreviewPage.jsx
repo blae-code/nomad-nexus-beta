@@ -1327,12 +1327,18 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
               <div className="nx-context-stack">
                 <BridgeSwitcher activeBridgeId={bridgeId} onSwitch={handleBridgeSwitch} />
                 <div className="nx-context-actions">
-                  {FOCUS_APP_CATALOG.map((entry) => (
-                    <NexusButton key={`ctx:${entry.id}`} size="sm" intent={focusMode === entry.id ? 'primary' : 'subtle'} onClick={() => openFocusApp(entry.id)}>
-                      {entry.label}
-                    </NexusButton>
-                  ))}
-                </div>
+                    {FOCUS_APP_CATALOG.map((entry) => (
+                      <NexusButton 
+                        key={`ctx:${entry.id}`} 
+                        size="sm" 
+                        intent={focusMode === entry.id ? 'primary' : 'subtle'} 
+                        onClick={() => openFocusApp(entry.id)}
+                        title={`Open ${entry.label} (${entry.hotkey})`}
+                      >
+                        {entry.label}
+                      </NexusButton>
+                    ))}
+                  </div>
                 <div className="nx-context-note">
                   <Radar className="inline w-3.5 h-3.5 mr-1.5 align-[-1px]" />
                   {operationalPostureLabel} · Reduced motion {reducedMotion ? 'on' : 'off'}
