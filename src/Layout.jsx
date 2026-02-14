@@ -35,11 +35,11 @@ import TacticalFooter from '@/components/layout/TacticalFooter';
  * No horizontal scrolling, responsive, stable under resize.
  */
 const cn = (...classes) => {
-  return classes
-    .filter(Boolean)
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return classes.
+  filter(Boolean).
+  join(' ').
+  replace(/\s+/g, ' ').
+  trim();
 };
 
 export default function Layout({ children, currentPageName }) {
@@ -58,23 +58,23 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
-      {!children ? (
-        <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      {!children ?
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
           <div className="text-orange-500 text-xl">Loading...</div>
-        </div>
-      ) : (
-        <>
+        </div> :
+
+      <>
           <AuthDebugOverlay />
           <LayoutWithAuth
-            currentPageName={currentPageName}
-            children={children}
-            isFullScreen={isFullScreen}
-            isNexusWorkspace={isNexusWorkspace}
-          />
+          currentPageName={currentPageName}
+          children={children}
+          isFullScreen={isFullScreen}
+          isNexusWorkspace={isNexusWorkspace} />
+
         </>
-      )}
-    </>
-  );
+      }
+    </>);
+
 }
 
 function LayoutWithAuth({ children, currentPageName, isFullScreen, isNexusWorkspace }) {
@@ -91,18 +91,18 @@ function LayoutWithAuth({ children, currentPageName, isFullScreen, isNexusWorksp
       <ShellUIProvider>
         <ActiveOpProvider>
           <VoiceNetProvider>
-            {isFullScreen ? (
-              <div className="nexus-immersive-screen min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
+            {isFullScreen ?
+            <div className="nexus-immersive-screen min-h-screen w-screen bg-zinc-950 flex flex-col overflow-hidden">
                 {children}
-              </div>
-            ) : (
-              <LayoutContent currentPageName={currentPageName} children={children} isNexusWorkspace={isNexusWorkspace} />
-            )}
+              </div> :
+
+            <LayoutContent currentPageName={currentPageName} children={children} isNexusWorkspace={isNexusWorkspace} />
+            }
           </VoiceNetProvider>
         </ActiveOpProvider>
       </ShellUIProvider>
-    </NotificationProvider>
-  );
+    </NotificationProvider>);
+
 }
 
 function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
@@ -161,17 +161,17 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
             </main>
           </div>
         </div>
-      </>
-    );
+      </>);
+
   }
 
   // Mobile-optimized padding: smaller dock on mobile, normal on desktop
   const mobileAwareMainPaddingClass =
-    isCommsDockOpen && !dockMinimized
-      ? 'pb-64 md:pb-96'
-      : isCommsDockOpen && dockMinimized
-      ? 'pb-12'
-      : 'pb-16 md:pb-0';
+  isCommsDockOpen && !dockMinimized ?
+  'pb-64 md:pb-96' :
+  isCommsDockOpen && dockMinimized ?
+  'pb-12' :
+  'pb-16 md:pb-0';
 
   return (
     <CommandPaletteProvider
@@ -181,15 +181,15 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
       onTriggerTestAlert={handleTriggerTestAlert}
       onCopyDiagnostics={handleCopyDiagnostics}
       onResetUILayout={handleResetUILayout}
-      onReplayBoot={handleReplayBoot}
-    >
+      onReplayBoot={handleReplayBoot}>
+
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
-      <div className="nexus-shell-standard h-screen max-h-screen w-full max-w-full bg-zinc-950 flex flex-col overflow-hidden relative">
+      <div className="nexus-shell-standard min-h-screen bg-zinc-950 flex flex-col overflow-hidden relative">
          <a
-           href="#main-content"
-           className="absolute left-2 top-2 z-[1200] -translate-y-16 rounded bg-zinc-900 px-3 py-2 text-xs text-orange-300 border border-orange-500/40 transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
-         >
+          href="#main-content"
+          className="absolute left-2 top-2 z-[1200] -translate-y-16 rounded bg-zinc-900 px-3 py-2 text-xs text-orange-300 border border-orange-500/40 transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-orange-500/40">
+
            Skip to main content
          </a>
          {/* CSS Debug Overlay */}
@@ -202,9 +202,9 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         <Header />
 
         {/* Construction Ticker — below fixed header */}
-        <div className="relative z-[750] pt-12">
-          <ConstructionTicker />
-        </div>
+        
+
+
 
         {/* Main content area — offset for fixed header (pt-16) + dock spacer */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
@@ -213,26 +213,26 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
             <main
               id="main-content"
               tabIndex={-1}
-              className={`nexus-page-main flex-1 overflow-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}
-            >
+              className={`nexus-page-main flex-1 overflow-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}>
+
               <PermissionGuard>{children}</PermissionGuard>
             </main>
 
             {/* ContextPanel — right sidebar, collapsible */}
-            {isContextPanelOpen && (
-              <div className={`${contextPanelMinimized ? 'w-12' : 'w-80'} border-l border-orange-500/20 flex-shrink-0 z-[900] relative transition-all duration-200`}>
+            {isContextPanelOpen &&
+            <div className={`${contextPanelMinimized ? 'w-12' : 'w-80'} border-l border-orange-500/20 flex-shrink-0 z-[900] relative transition-all duration-200`}>
                 <ContextPanel isOpen={true} onClose={toggleContextPanel} isMinimized={contextPanelMinimized} onMinimize={setContextPanelMinimized} />
               </div>
-            )}
+            }
           </div>
         </div>
 
         {/* Bottom Text Comms Dock (fixed, collapsible, respects context panel) */}
-         {isCommsDockOpen && (
-           <div className={`fixed bottom-0 left-0 z-[600] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? contextPanelMinimized ? 'right-12' : 'right-80' : 'right-0'} transition-all duration-200`}>
+         {isCommsDockOpen &&
+        <div className={`fixed bottom-0 left-0 z-[600] border-t border-orange-500/20 bg-zinc-950 ${isContextPanelOpen ? contextPanelMinimized ? 'right-12' : 'right-80' : 'right-0'} transition-all duration-200`}>
              <TextCommsDock isOpen={true} isMinimized={dockMinimized} onMinimize={setDockMinimized} />
            </div>
-         )}
+        }
 
         {/* Command Palette Modal */}
         <CommandPaletteUI />
@@ -243,6 +243,6 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         {/* Mobile quick actions (touch-first nav + toggles) */}
         <MobileQuickActionBar onToggleCommsDock={toggleCommsDock} onToggleContextPanel={toggleContextPanel} />
         </div>
-        </CommandPaletteProvider>
-        );
-        }
+        </CommandPaletteProvider>);
+
+}
