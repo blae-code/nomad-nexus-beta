@@ -46,7 +46,7 @@ const FOOTER_MAPLEVEL_KEY = 'nexus.tacticalFooter.mapLevel';
 
 const DEFAULT_HEIGHT = 380;
 const MIN_HEIGHT = 200;
-const MAX_HEIGHT = 700;
+const MAX_HEIGHT = window.innerHeight - 100;
 
 const MAP_LEVELS = [
   { id: 'system', label: 'System', bounds: [[0, 0], [400, 400]], zoom: -0.5 },
