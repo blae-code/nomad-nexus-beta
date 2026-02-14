@@ -745,8 +745,163 @@
   grid-row: 3;
   min-height: var(--nx-bottom-h);
   display: grid;
-  align-items: stretch;
+  align-items: center;
   overflow: visible;
+}
+
+.nx-taskbar-strip {
+  position: relative;
+  min-height: var(--nx-bottom-h);
+  border: 1px solid rgba(var(--nx-bridge-b-rgb-effective), 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(7, 13, 17, 0.96), rgba(6, 11, 14, 0.98)),
+    linear-gradient(90deg, rgba(var(--nx-bridge-a-rgb-effective), 0.08), transparent 36%);
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) minmax(0, max-content);
+  align-items: center;
+  gap: clamp(6px, 0.8vw, 10px);
+  padding: 4px clamp(6px, 0.7vw, 10px);
+  box-shadow:
+    0 0 0 1px rgba(var(--nx-bridge-b-rgb-effective), 0.11) inset,
+    0 10px 18px rgba(0, 0, 0, 0.22);
+}
+
+.nx-taskbar-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.nx-taskbar-status {
+  color: #9eb4c7;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.nx-taskbar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  height: 24px;
+  border: 1px solid rgba(var(--nx-bridge-b-rgb-effective), 0.34);
+  border-radius: 6px;
+  background: rgba(10, 17, 22, 0.86);
+  color: #bad0df;
+}
+
+.nx-taskbar-launcher {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nx-taskbar-app-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.nx-taskbar-app {
+  height: 24px;
+  min-width: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--nx-bridge-b-rgb-effective), 0.34);
+  background: rgba(10, 17, 23, 0.84);
+  color: #b9cedf;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 6px;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.nx-taskbar-app:hover {
+  border-color: rgba(var(--nx-bridge-c-rgb-effective), 0.42);
+  color: #e4eff8;
+}
+
+.nx-taskbar-app.is-active {
+  border-color: rgba(var(--nx-bridge-a-rgb-effective), 0.62);
+  background: rgba(var(--nx-bridge-a-rgb-effective), 0.18);
+  color: #f2f9ff;
+}
+
+.nx-taskbar-nav-btn {
+  height: 24px;
+  width: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--nx-bridge-b-rgb-effective), 0.34);
+  background: rgba(10, 17, 23, 0.84);
+  color: #b9cedf;
+  display: grid;
+  place-items: center;
+}
+
+.nx-taskbar-nav-btn:disabled {
+  opacity: 0.4;
+}
+
+.nx-taskbar-actions {
+  justify-self: end;
+}
+
+.nx-taskbar-alert-btn {
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--nx-bridge-b-rgb-effective), 0.34);
+  background: rgba(10, 17, 23, 0.84);
+  color: #cad9e7;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.nx-taskbar-alert-btn strong {
+  font-size: 10px;
+  color: #e8f2fb;
+  font-weight: 600;
+}
+
+.nx-taskbar-alert-btn.is-open {
+  border-color: rgba(var(--nx-bridge-a-rgb-effective), 0.62);
+  color: #f2f9ff;
+}
+
+.nx-taskbar-tray {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  width: min(420px, 92vw);
+  border-radius: 10px;
+  border: 1px solid rgba(var(--nx-bridge-b-rgb-effective), 0.3);
+  background: rgba(9, 15, 22, 0.97);
+  box-shadow:
+    0 0 0 1px rgba(var(--nx-bridge-b-rgb-effective), 0.1) inset,
+    0 14px 24px rgba(0, 0, 0, 0.34);
+  padding: 8px;
+  z-index: 1200;
+}
+
+.nx-taskbar-tray-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 2px 6px;
 }
 
 .nx-mobile-nav {
@@ -868,6 +1023,24 @@
   .nx-shell-bottom {
     gap: 6px;
     grid-auto-rows: minmax(0, auto);
+  }
+
+  .nx-taskbar-strip {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .nx-taskbar-status {
+    justify-content: space-between;
+  }
+
+  .nx-taskbar-launcher {
+    width: 100%;
+  }
+
+  .nx-taskbar-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .nx-mobile-nav {

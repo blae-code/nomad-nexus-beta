@@ -48,14 +48,6 @@ function toneForNotificationLevel(level: NexusTrayNotification['level']) {
   return 'active';
 }
 
-function labelForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
-  if (state === 'foreground') return 'Active';
-  if (state === 'background') return 'Background';
-  if (state === 'suspended') return 'Suspended';
-  if (state === 'error') return 'Error';
-  return 'Closed';
-}
-
 function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
   if (state === 'foreground') return 'bg-emerald-400';
   if (state === 'background') return 'bg-sky-400';
@@ -69,6 +61,12 @@ function ageLabel(timestamp: string): string {
   if (ageSeconds < 60) return `${ageSeconds}s`;
   if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m`;
   return `${Math.floor(ageSeconds / 3600)}h`;
+}
+
+function compactLabel(value: string, max = 10): string {
+  const clean = String(value || '').trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max - 1)}…`;
 }
 
 export default function NexusTaskbar({
@@ -91,7 +89,7 @@ export default function NexusTaskbar({
   const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
   const [appPage, setAppPage] = React.useState(0);
   const [noticePage, setNoticePage] = React.useState(0);
-  const appsPerPage = 5;
+  const appsPerPage = 6;
   const noticesPerPage = 5;
 
   const filteredNotifications = React.useMemo(
@@ -120,44 +118,43 @@ export default function NexusTaskbar({
   }, [noticePageCount]);
 
   const activeAppState = activeAppId ? appEntries[activeAppId]?.state || 'closed' : 'closed';
-  const activeAppLabel = activeAppId ? appCatalog.find((entry) => entry.id === activeAppId)?.label || activeAppId : 'None';
+  const activeAppLabel = activeAppId
+    ? appCatalog.find((entry) => entry.id === activeAppId)?.label || activeAppId
+    : 'None';
 
   return (
-    <section
-      className="relative rounded-lg border border-zinc-700 px-2 py-1 flex items-center gap-2 overflow-visible nexus-panel-glow"
-      style={{
-        borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.34)',
-        backgroundColor: 'rgba(9, 14, 21, 0.95)',
-      }}
-    >
-      <div className="shrink-0 flex items-center gap-1.5">
-        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 h-7 px-2.5">
-          <AppWindow className="w-3.5 h-3.5 mr-1" />
-          Deck
-        </NexusButton>
-        <div className="hidden md:flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase tracking-wide">
-          <NexusBadge tone={toneForState(activeAppState)}>
-            {activeAppLabel} {labelForState(activeAppState)}
-          </NexusBadge>
-          <NexusBadge tone={online ? 'ok' : 'danger'}>
-            {online ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
-            {online ? 'Link' : 'Degraded'}
-          </NexusBadge>
+    <section className="relative nx-taskbar-strip">
+      <div className="nx-taskbar-block nx-taskbar-status">
+        <div className="nx-taskbar-link">
+          {online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          <span>{online ? 'Linked' : 'Degraded'}</span>
         </div>
+        <NexusBadge tone="active" className="hidden md:inline-flex">
+          Bridge {bridgeId}
+        </NexusBadge>
+        <NexusBadge tone={toneForState(activeAppState)} className="hidden lg:inline-flex">
+          Focus {compactLabel(activeAppLabel, 12)}
+        </NexusBadge>
+        <NexusBadge tone={eventPulseCount > 0 ? 'warning' : 'neutral'} className="hidden xl:inline-flex">
+          <Activity className="w-3 h-3 mr-1" />
+          Pulse {eventPulseCount}
+        </NexusBadge>
       </div>
 
-      <div className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950/55 px-1.5 py-1 flex items-center gap-1.5">
-        <button
-          type="button"
-          className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
-          onClick={() => setAppPage((prev) => Math.max(0, prev - 1))}
-          disabled={appPage === 0}
-          aria-label="Previous app window"
-          title="Previous app window"
-        >
-          <ChevronLeft className="w-3.5 h-3.5" />
-        </button>
-        <div className="flex-1 min-w-0 grid grid-cols-5 gap-1">
+      <div className="nx-taskbar-launcher">
+        {appPageCount > 1 ? (
+          <button
+            type="button"
+            className="nx-taskbar-nav-btn"
+            onClick={() => setAppPage((prev) => Math.max(0, prev - 1))}
+            disabled={appPage === 0}
+            aria-label="Previous app set"
+            title="Previous app set"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        ) : null}
+        <div className="nx-taskbar-app-grid">
           {shownApps.map((app) => {
             const state = appEntries[app.id]?.state || 'closed';
             const active = activeAppId === app.id;
@@ -166,76 +163,66 @@ export default function NexusTaskbar({
                 key={app.id}
                 type="button"
                 onClick={() => onActivateApp(app.id)}
-                className={`h-7 min-w-0 rounded border px-2 inline-flex items-center gap-1.5 text-[11px] transition-colors ${
-                  active
-                    ? 'border-sky-500/55 bg-sky-950/25 text-sky-100'
-                    : 'border-zinc-700 bg-zinc-900/55 text-zinc-300 hover:border-zinc-500'
-                }`}
+                className={`nx-taskbar-app ${active ? 'is-active' : ''}`}
                 title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
               >
                 <span className={`h-2 w-2 rounded-full ${dotForState(state)}`} />
-                <span className="truncate">{app.label}</span>
+                <span className="truncate">{compactLabel(app.label, 9)}</span>
               </button>
             );
           })}
-          {shownApps.length < appsPerPage
-            ? Array.from({ length: appsPerPage - shownApps.length }).map((_, index) => (
-                <div key={`empty-slot-${index}`} className="h-7 rounded border border-zinc-800/80 bg-zinc-900/25" />
-              ))
-            : null}
         </div>
-        <NexusBadge tone="neutral">{appPage + 1}/{appPageCount}</NexusBadge>
-        <button
-          type="button"
-          className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
-          onClick={() => setAppPage((prev) => Math.min(appPageCount - 1, prev + 1))}
-          disabled={appPage >= appPageCount - 1}
-          aria-label="Next app window"
-          title="Next app window"
-        >
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        {appPageCount > 1 ? (
+          <>
+            <NexusBadge tone="neutral" className="hidden md:inline-flex">
+              {appPage + 1}/{appPageCount}
+            </NexusBadge>
+            <button
+              type="button"
+              className="nx-taskbar-nav-btn"
+              onClick={() => setAppPage((prev) => Math.min(appPageCount - 1, prev + 1))}
+              disabled={appPage >= appPageCount - 1}
+              aria-label="Next app set"
+              title="Next app set"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </>
+        ) : null}
       </div>
 
-      <div className="shrink-0 flex items-center gap-1.5">
-        <NexusButton
-          size="sm"
-          intent="subtle"
-          disabled={!activeAppId || activeAppState !== 'foreground'}
-          onClick={() => {
-            if (!activeAppId) return;
-            onSuspendApp(activeAppId);
-          }}
-          title={activeAppId ? `Suspend ${activeAppLabel}` : 'No active foreground app'}
-        >
-          <PauseCircle className="w-3.5 h-3.5 mr-1" />
-          Suspend
-        </NexusButton>
+      <div className="nx-taskbar-block nx-taskbar-actions">
+        {activeAppId && activeAppState === 'foreground' ? (
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => onSuspendApp(activeAppId)}
+            title={`Suspend ${activeAppLabel}`}
+            className="hidden lg:inline-flex"
+          >
+            <PauseCircle className="w-3.5 h-3.5 mr-1" />
+            Hold
+          </NexusButton>
+        ) : null}
         <button
           type="button"
           onClick={() => setTrayOpen((prev) => !prev)}
-          className="relative h-8 px-2 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-200 hover:border-zinc-500 inline-flex items-center gap-1"
+          className={`nx-taskbar-alert-btn ${trayOpen ? 'is-open' : ''}`}
           title="Notification tray"
         >
-          {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5 text-sky-300" /> : <Bell className="w-3.5 h-3.5" />}
-          <span className="text-[11px]">Alerts {unreadNotifications > 0 ? unreadNotifications : notifications.length}</span>
+          {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+          <span className="hidden md:inline">Alerts</span>
+          <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
         </button>
-        <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
-        <NexusBadge tone={eventPulseCount > 0 ? 'warning' : 'neutral'} className="hidden xl:inline-flex">
-          <Activity className="w-3 h-3 mr-1" />
-          Pulse {eventPulseCount}
-        </NexusBadge>
+        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0">
+          <AppWindow className="w-3.5 h-3.5 mr-1" />
+          Deck
+        </NexusButton>
       </div>
 
       {trayOpen ? (
-        <div
-          className="absolute right-2 bottom-full mb-2 w-[min(420px,92vw)] rounded-xl border border-zinc-700 shadow-xl p-2 z-[1200] nexus-panel-glow"
-          style={{
-            borderColor: 'rgba(var(--nx-bridge-b-rgb, var(--nx-bridge-b-rgb-base)), 0.28)',
-            backgroundColor: 'rgba(10, 15, 23, 0.97)',
-          }}
-        >
-          <div className="flex items-center justify-between gap-2 px-1 py-1">
+        <div className="nx-taskbar-tray">
+          <div className="nx-taskbar-tray-header">
             <div className="text-[11px] text-zinc-400 uppercase tracking-wide">Alerts Center</div>
             <div className="flex items-center gap-1.5">
               <NexusButton
@@ -279,7 +266,9 @@ export default function NexusTaskbar({
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-zinc-200 truncate">{notice.title}</span>
                     <div className="shrink-0 flex items-center gap-1">
-                      <NexusBadge tone={toneForNotificationLevel(notice.level)}>{notice.level.slice(0, 3).toUpperCase()}</NexusBadge>
+                      <NexusBadge tone={toneForNotificationLevel(notice.level)}>
+                        {notice.level.slice(0, 3).toUpperCase()}
+                      </NexusBadge>
                       <span className="text-[10px] text-zinc-500">{ageLabel(notice.createdAt)}</span>
                     </div>
                   </div>
@@ -292,17 +281,19 @@ export default function NexusTaskbar({
               <div className="pt-1 flex items-center justify-end gap-1.5">
                 <button
                   type="button"
-                  className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
+                  className="nx-taskbar-nav-btn"
                   onClick={() => setNoticePage((prev) => Math.max(0, prev - 1))}
                   disabled={noticePage === 0}
                   aria-label="Previous alert page"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <NexusBadge tone="neutral">{noticePage + 1}/{noticePageCount}</NexusBadge>
+                <NexusBadge tone="neutral">
+                  {noticePage + 1}/{noticePageCount}
+                </NexusBadge>
                 <button
                   type="button"
-                  className="h-6 w-6 rounded border border-zinc-700 bg-zinc-900/55 text-zinc-300 grid place-items-center disabled:opacity-40"
+                  className="nx-taskbar-nav-btn"
                   onClick={() => setNoticePage((prev) => Math.min(noticePageCount - 1, prev + 1))}
                   disabled={noticePage >= noticePageCount - 1}
                   aria-label="Next alert page"
