@@ -162,11 +162,17 @@ export default function CommandPaletteUI() {
             />
             
             {search && (
-              <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
-                <span className="text-red-400 font-bold">{flatActions.length}</span>
-                <span>results</span>
-              </div>
-            )}
+               <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+                 <span className="text-red-400 font-bold">{flatActions.length}</span>
+                 <span>match{flatActions.length !== 1 ? 'es' : ''}</span>
+               </div>
+             )}
+             {!search && (
+               <div className="flex items-center gap-2 text-xs text-zinc-600 font-mono">
+                 <span className="text-red-500">{Object.keys(groupedActions).length}</span>
+                 <span>categories</span>
+               </div>
+             )}
             
             <button
               onClick={closePalette}
