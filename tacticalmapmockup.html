@@ -302,6 +302,10 @@
     }
     
     .unit-marker:hover { z-index: 200; }
+    .unit-marker.selected .unit-icon {
+      box-shadow: 0 0 12px var(--accent), 0 0 20px var(--primary);
+      transform: scale(1.1);
+    }
     
     .unit-icon {
       width: 20px;
@@ -398,6 +402,94 @@
     
     .radial-option.warning { border-color: var(--accent); }
     .radial-option.warning:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
+
+    .selection-marquee {
+      position: absolute;
+      border: 1px dashed var(--accent);
+      background: rgba(255, 255, 0, 0.12);
+      pointer-events: none;
+      z-index: 120;
+      display: none;
+    }
+
+    .selection-toast {
+      position: fixed;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px solid var(--accent);
+      background: rgba(10, 14, 26, 0.95);
+      color: var(--accent);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1200;
+    }
+
+    .selection-toast.show {
+      opacity: 1;
+    }
+
+    .pager-row {
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 10px;
+      opacity: 0.75;
+    }
+
+    .pager-btn {
+      min-width: 24px;
+      height: 20px;
+      border: 1px solid var(--primary);
+      background: rgba(10, 14, 26, 0.82);
+      color: var(--primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .pager-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .unit-order-badge {
+      position: absolute;
+      top: 34px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      line-height: 1;
+      padding: 1px 3px;
+      border: 1px solid var(--accent);
+      background: rgba(10, 14, 26, 0.95);
+      color: var(--accent);
+      white-space: nowrap;
+      z-index: 220;
+      cursor: pointer;
+    }
+
+    .unit-order-badge.acked {
+      border-color: var(--primary);
+      color: var(--primary);
+      cursor: default;
+    }
+
+    .unit-order-badge.pending {
+      animation: unitAckBlink 1.4s ease-in-out infinite;
+    }
+
+    @keyframes unitAckBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
     
     /* Status indicators */
     .status-dot {
@@ -578,7 +670,17 @@
       <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
        // LAYER CONTROLS
       </div>
-      <div class="flex flex-wrap gap-2"><button class="layer-btn active" data-layer="celestial">CELESTIAL</button> <button class="layer-btn active" data-layer="markers">NAV MARKERS</button> <button class="layer-btn active" data-layer="units">UNITS</button> <button class="layer-btn" data-layer="comms">COMMS NET</button> <button class="layer-btn" data-layer="zones">AO ZONES</button>
+     <div class="flex flex-wrap gap-2"><button class="layer-btn active" data-layer="celestial">CELESTIAL</button> <button class="layer-btn active" data-layer="markers">NAV MARKERS</button> <button class="layer-btn active" data-layer="units">UNITS</button> <button class="layer-btn" data-layer="comms">COMMS NET</button> <button class="layer-btn" data-layer="zones">AO ZONES</button>
+      </div>
+     </div>
+     <div class="p-3 border-b border-current opacity-50">
+      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
+       // SELECT BY
+      </div>
+      <div class="flex gap-2">
+       <button class="layer-btn" data-select-by="wing">WING: ALL</button>
+       <button class="layer-btn" data-select-by="role">ROLE: ALL</button>
+       <button class="layer-btn" data-select-by="status">STATUS: ALL</button>
       </div>
      </div>
      <div class="p-3 border-b border-current opacity-50">
@@ -588,11 +690,14 @@
       <div class="flex gap-2"><button class="layer-btn active" data-view="system">SYSTEM</button> <button class="layer-btn" data-view="planet">PLANETARY</button> <button class="layer-btn" data-view="local">LOCAL</button>
       </div>
      </div>
-     <div class="flex-1 overflow-y-auto p-3">
+     <div class="flex-1 p-3 overflow-hidden">
       <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
        // FLEET ROSTER
       </div>
       <div id="fleetRoster" class="space-y-2 text-xs"><!-- Populated by JS -->
+      </div>
+      <div class="pager-row">
+       <button class="pager-btn" id="fleetRosterPrev">◀</button><span id="fleetRosterPage">1/1</span><button class="pager-btn" id="fleetRosterNext">▶</button>
       </div>
      </div>
      <div class="p-3 border-t border-current opacity-50">
@@ -607,7 +712,9 @@
       <div class="map-content" id="mapContent">
        <svg id="commsSvg" style="position: absolute; top: 0; left: 0; width: 3000px; height: 3000px; pointer-events: none; z-index: 5;"></svg>
        <svg id="zonesSvg" style="position: absolute; top: 0; left: 0; width: 3000px; height: 3000px; pointer-events: none; z-index: 4;"></svg><!-- Celestial bodies and markers populated by JS -->
+       <svg id="ordersSvg" style="position: absolute; top: 0; left: 0; width: 3000px; height: 3000px; pointer-events: none; z-index: 6;"></svg>
       </div>
+      <div class="selection-marquee" id="selectionMarquee"></div>
      </div><!-- Zoom Controls -->
      <div class="absolute top-4 right-4 zoom-controls"><button class="zoom-btn" id="zoomIn">+</button> <button class="zoom-btn" id="zoomOut">−</button> <button class="zoom-btn" id="zoomReset" style="font-size: 12px;">⟲</button>
      </div><!-- Coordinates Display -->
@@ -640,17 +747,26 @@
       </div>
      </div>
      <div class="p-3 border-b border-current opacity-50">
-      <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
-       // RECENT ORDERS
+      <div class="mb-2 flex items-center justify-between">
+       <div class="orbitron text-xs opacity-70" style="color: var(--accent);">
+        // RECENT ORDERS
+       </div>
+       <button class="pager-btn" id="cancelLatestOrder" style="min-width: 58px;">CANCEL</button>
       </div>
-      <div id="recentOrders" class="space-y-2 text-xs max-h-40 overflow-y-auto"><!-- Populated by JS -->
+      <div id="recentOrders" class="space-y-2 text-xs"><!-- Populated by JS -->
+      </div>
+      <div class="pager-row">
+       <button class="pager-btn" id="ordersPrev">◀</button><span id="ordersPage">1/1</span><button class="pager-btn" id="ordersNext">▶</button>
       </div>
      </div>
-     <div class="flex-1 overflow-y-auto p-3">
+     <div class="flex-1 p-3 overflow-hidden">
       <div class="orbitron text-xs mb-2 opacity-70" style="color: var(--accent);">
        // COMMS LOG
       </div>
       <div id="commsLog" class="space-y-1 text-xs"><!-- Populated by JS -->
+      </div>
+      <div class="pager-row">
+       <button class="pager-btn" id="commsPrev">◀</button><span id="commsPage">1/1</span><button class="pager-btn" id="commsNext">▶</button>
       </div>
      </div>
      <div class="p-3 border-t border-current opacity-50">
@@ -662,12 +778,13 @@
      </div>
     </aside>
    </div><!-- Radial Menu -->
-   <div class="radial-menu" id="radialMenu">
-    <div class="radial-center" id="radialCenter">
+  <div class="radial-menu" id="radialMenu">
+   <div class="radial-center" id="radialCenter">
      SELECT<br>
      ACTION
-    </div><!-- Options populated dynamically -->
-   </div>
+   </div><!-- Options populated dynamically -->
+  </div>
+  <div class="selection-toast" id="selectionToast"></div>
   </div>
   <div class="crt-overlay crt-flicker"></div>
   <div class="noise-overlay"></div>
@@ -686,6 +803,22 @@ const defaultConfig = {
 let config = { ...defaultConfig };
 
 // Map state
+const PAGE_SIZE = {
+  roster: 6,
+  comms: 6,
+  orders: 6
+};
+
+const ORDER_STATES = {
+  ISSUED: 'ISSUED',
+  ACKED: 'ACKED',
+  CANCELLED: 'CANCELLED'
+};
+
+const ACTIVE_ORDER_STATES = new Set([ORDER_STATES.ISSUED, ORDER_STATES.ACKED]);
+
+const mapEntityIndex = new Map();
+
 const mapState = {
   zoom: 1,
   minZoom: 0.3,
@@ -693,9 +826,24 @@ const mapState = {
   panX: 0,
   panY: 0,
   isDragging: false,
+  isBoxSelecting: false,
+  boxAdditive: false,
+  boxStartX: 0,
+  boxStartY: 0,
+  boxCurrentX: 0,
+  boxCurrentY: 0,
   lastX: 0,
   lastY: 0,
   selectedObject: null,
+  activeCommandTarget: null,
+  pagers: {
+    roster: 0,
+    comms: 0,
+    orders: 0
+  },
+  orders: [],
+  commsLog: [],
+  orderSequence: 1,
   layers: {
     celestial: true,
     markers: true,
@@ -832,30 +980,62 @@ const stantonSystem = {
 
 // Fleet units data
 const fleetUnits = [
-  { id: 'alpha-1', callsign: 'ALPHA-1', type: 'friendly', role: 'Command', ship: 'Carrack', x: 1450, y: 920, status: 'online' },
-  { id: 'alpha-2', callsign: 'ALPHA-2', type: 'friendly', role: 'Fighter', ship: 'Gladius', x: 1420, y: 890, status: 'online' },
-  { id: 'alpha-3', callsign: 'ALPHA-3', type: 'friendly', role: 'Fighter', ship: 'Arrow', x: 1480, y: 895, status: 'combat' },
-  { id: 'bravo-1', callsign: 'BRAVO-1', type: 'friendly', role: 'Support', ship: 'Hammerhead', x: 2080, y: 1520, status: 'online' },
-  { id: 'bravo-2', callsign: 'BRAVO-2', type: 'friendly', role: 'Fighter', ship: 'Sabre', x: 2060, y: 1480, status: 'online' },
-  { id: 'hostile-1', callsign: 'TANGO-1', type: 'hostile', role: 'Unknown', ship: 'Cutlass', x: 1530, y: 880, status: 'combat' },
-  { id: 'hostile-2', callsign: 'TANGO-2', type: 'hostile', role: 'Unknown', ship: 'Buccaneer', x: 1560, y: 910, status: 'combat' },
-  { id: 'neutral-1', callsign: 'TRADER-7', type: 'neutral', role: 'Cargo', ship: 'Caterpillar', x: 1520, y: 2080, status: 'online' }
+  { id: 'alpha-1', callsign: 'ALPHA-1', type: 'friendly', wing: 'ALPHA', squad: 'A1', role: 'Command', ship: 'Carrack', x: 1450, y: 920, status: 'online' },
+  { id: 'alpha-2', callsign: 'ALPHA-2', type: 'friendly', wing: 'ALPHA', squad: 'A1', role: 'Fighter', ship: 'Gladius', x: 1420, y: 890, status: 'online' },
+  { id: 'alpha-3', callsign: 'ALPHA-3', type: 'friendly', wing: 'ALPHA', squad: 'A2', role: 'Fighter', ship: 'Arrow', x: 1480, y: 895, status: 'combat' },
+  { id: 'bravo-1', callsign: 'BRAVO-1', type: 'friendly', wing: 'BRAVO', squad: 'B1', role: 'Support', ship: 'Hammerhead', x: 2080, y: 1520, status: 'online' },
+  { id: 'bravo-2', callsign: 'BRAVO-2', type: 'friendly', wing: 'BRAVO', squad: 'B1', role: 'Fighter', ship: 'Sabre', x: 2060, y: 1480, status: 'online' },
+  { id: 'hostile-1', callsign: 'TANGO-1', type: 'hostile', wing: 'HOSTILE', role: 'Unknown', ship: 'Cutlass', x: 1530, y: 880, status: 'combat' },
+  { id: 'hostile-2', callsign: 'TANGO-2', type: 'hostile', wing: 'HOSTILE', role: 'Unknown', ship: 'Buccaneer', x: 1560, y: 910, status: 'combat' },
+  { id: 'neutral-1', callsign: 'TRADER-7', type: 'neutral', wing: 'CIVIL', role: 'Cargo', ship: 'Caterpillar', x: 1520, y: 2080, status: 'online' }
 ];
 
-// Comms log entries
-const commsLogEntries = [
-  { time: '14:31:42', sender: 'ALPHA-1', msg: 'Contact bearing 045, two hostiles' },
-  { time: '14:31:15', sender: 'BRAVO-1', msg: 'Station secure, awaiting orders' },
-  { time: '14:30:58', sender: 'COMMAND', msg: 'All units maintain position' },
-  { time: '14:30:22', sender: 'ALPHA-3', msg: 'Engaging hostile, request backup' },
-  { time: '14:29:45', sender: 'RECON-2', msg: 'Jump point clear, no activity' }
+const fleetUnitsById = new Map(fleetUnits.map((unit) => [unit.id, unit]));
+
+// Seed comms log entries
+const seedCommsLogEntries = [
+  { createdAt: new Date(Date.now() - 30 * 1000).toISOString(), sender: 'ALPHA-1', msg: 'Contact bearing 045, two hostiles' },
+  { createdAt: new Date(Date.now() - 58 * 1000).toISOString(), sender: 'BRAVO-1', msg: 'Station secure, awaiting orders' },
+  { createdAt: new Date(Date.now() - 86 * 1000).toISOString(), sender: 'COMMAND', msg: 'All units maintain position' },
+  { createdAt: new Date(Date.now() - 114 * 1000).toISOString(), sender: 'ALPHA-3', msg: 'Engaging hostile, request backup' },
+  { createdAt: new Date(Date.now() - 142 * 1000).toISOString(), sender: 'RECON-2', msg: 'Jump point clear, no activity' }
 ];
 
-// Recent orders
-const recentOrders = [
-  { time: '14:30', target: 'ALPHA SQUAD', order: 'ENGAGE', status: 'active' },
-  { time: '14:28', target: 'BRAVO-1', order: 'HOLD POSITION', status: 'active' },
-  { time: '14:25', target: 'ALL UNITS', order: 'WEAPONS FREE', status: 'acknowledged' }
+// Seed orders
+const seedOrders = [
+  {
+    id: 'ord-seed-1',
+    createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    issuer: 'COMMAND',
+    selectionUnitIds: ['alpha-1', 'alpha-2'],
+    selectionLabel: 'ALPHA WING',
+    verb: 'ENGAGE',
+    target: { type: 'unit', id: 'hostile-1', name: 'TANGO-1', x: 1530, y: 880 },
+    params: {},
+    state: 'ISSUED'
+  },
+  {
+    id: 'ord-seed-2',
+    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    issuer: 'COMMAND',
+    selectionUnitIds: ['bravo-1'],
+    selectionLabel: 'BRAVO-1',
+    verb: 'HOLD',
+    target: { type: 'coordinates', id: 'coord-2080-1520', name: 'GRID 2080,1520', x: 2080, y: 1520 },
+    params: {},
+    state: 'ISSUED'
+  },
+  {
+    id: 'ord-seed-3',
+    createdAt: new Date(Date.now() - 7 * 60 * 1000).toISOString(),
+    issuer: 'COMMAND',
+    selectionUnitIds: ['alpha-1', 'alpha-2', 'alpha-3', 'bravo-1', 'bravo-2'],
+    selectionLabel: 'TASK FORCE',
+    verb: 'ROE',
+    target: { type: 'jump-point', id: 'jp-pyro', name: 'PYRO GATE', x: 2600, y: 800 },
+    params: { profile: 'WEAPONS FREE' },
+    state: 'ISSUED'
+  }
 ];
 
 // DOM Elements
@@ -863,16 +1043,213 @@ const mapContainer = document.getElementById('mapContainer');
 const mapContent = document.getElementById('mapContent');
 const radialMenu = document.getElementById('radialMenu');
 const radialCenter = document.getElementById('radialCenter');
+const selectionMarquee = document.getElementById('selectionMarquee');
+const selectionToast = document.getElementById('selectionToast');
+
+let toastTimeout = null;
+let selectionManager = null;
+
+function registerMapEntity(entity, element) {
+  const entityId = `${entity.type}:${entity.id}`;
+  mapEntityIndex.set(entityId, entity);
+  element.dataset.entityId = entityId;
+}
+
+class SelectionManager {
+  constructor(units) {
+    this.units = units.filter((unit) => unit.type === 'friendly');
+    this.unitIds = new Set(this.units.map((unit) => unit.id));
+    this.selectedIds = new Set();
+    this.controlGroups = {};
+    this.filters = {
+      wing: 'ALL',
+      role: 'ALL',
+      status: 'ALL'
+    };
+    this.filterOptions = {
+      wing: ['ALL', ...new Set(this.units.map((unit) => unit.wing))],
+      role: ['ALL', ...new Set(this.units.map((unit) => unit.role))],
+      status: ['ALL', ...new Set(this.units.map((unit) => unit.status))]
+    };
+  }
+
+  getSelectedIds() {
+    return Array.from(this.selectedIds);
+  }
+
+  getSelectedUnits() {
+    return this.getSelectedIds().map((id) => fleetUnitsById.get(id)).filter(Boolean);
+  }
+
+  setSelection(ids, mode = 'replace') {
+    const normalizedIds = ids.filter((id) => this.unitIds.has(id));
+    if (mode === 'append') {
+      normalizedIds.forEach((id) => this.selectedIds.add(id));
+    } else {
+      this.selectedIds = new Set(normalizedIds);
+    }
+    syncSelectionState();
+  }
+
+  selectSingle(id) {
+    if (!this.unitIds.has(id)) {
+      return;
+    }
+    this.selectedIds = new Set([id]);
+    syncSelectionState();
+  }
+
+  toggle(id) {
+    if (!this.unitIds.has(id)) {
+      return;
+    }
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    syncSelectionState();
+  }
+
+  clear() {
+    if (this.selectedIds.size === 0) {
+      return;
+    }
+    this.selectedIds.clear();
+    syncSelectionState();
+  }
+
+  getSelectionLabel() {
+    const units = this.getSelectedUnits();
+    if (units.length === 0) {
+      return 'NONE';
+    }
+    if (units.length <= 2) {
+      return units.map((unit) => unit.callsign).join(', ');
+    }
+    return `${units[0].callsign}, ${units[1].callsign} +${units.length - 2}`;
+  }
+
+  assignGroup(slot) {
+    if (this.selectedIds.size === 0) {
+      showSelectionToast(`GROUP ${slot}: EMPTY`);
+      return;
+    }
+    this.controlGroups[slot] = this.getSelectedIds();
+    showSelectionToast(`GROUP ${slot}: ${this.getSelectionLabel()}`);
+  }
+
+  recallGroup(slot) {
+    const group = this.controlGroups[slot];
+    if (!group || group.length === 0) {
+      showSelectionToast(`GROUP ${slot}: EMPTY`);
+      return;
+    }
+    this.setSelection(group);
+    centerOnSelectionBounds(this.getSelectedUnits());
+    showSelectionToast(`GROUP ${slot}: ${this.getSelectionLabel()}`);
+  }
+
+  cycleFilter(filterKey) {
+    const options = this.filterOptions[filterKey];
+    const currentIndex = options.indexOf(this.filters[filterKey]);
+    const nextIndex = (currentIndex + 1) % options.length;
+    this.filters[filterKey] = options[nextIndex];
+    updateSelectByChips();
+    this.applyActiveFilter();
+  }
+
+  applyActiveFilter() {
+    const filteredIds = this.units
+      .filter((unit) =>
+        (this.filters.wing === 'ALL' || unit.wing === this.filters.wing) &&
+        (this.filters.role === 'ALL' || unit.role === this.filters.role) &&
+        (this.filters.status === 'ALL' || unit.status === this.filters.status)
+      )
+      .map((unit) => unit.id);
+    this.setSelection(filteredIds);
+    showSelectionToast(`SELECT ${this.getSelectionLabel()}`);
+  }
+}
+
+function getVerbCode(verb) {
+  const table = {
+    MOVE: 'MOV',
+    HOLD: 'HLD',
+    PATROL: 'PAT',
+    ESCORT: 'ESC',
+    ENGAGE: 'ENG',
+    ROE: 'ROE',
+    MARK: 'MRK',
+    PING: 'PNG',
+    DRAW_ZONE: 'DRW',
+    INFO: 'INF',
+    SCAN: 'SCN'
+  };
+  return table[verb] || String(verb || 'CMD').slice(0, 3).toUpperCase();
+}
+
+function getLatestOrderForUnit(unitId) {
+  return mapState.orders.find((order) =>
+    ACTIVE_ORDER_STATES.has(order.state) &&
+    Array.isArray(order.selectionUnitIds) &&
+    order.selectionUnitIds.includes(unitId)
+  ) || null;
+}
+
+function getLatestPendingOrderForUnit(unitId) {
+  return mapState.orders.find((order) =>
+    order.state === ORDER_STATES.ISSUED &&
+    Array.isArray(order.selectionUnitIds) &&
+    order.selectionUnitIds.includes(unitId)
+  ) || null;
+}
+
+function getOrderSummary(order) {
+  return `${order.verb} ${order.selectionLabel} → ${order.target?.name || 'TARGET'}`;
+}
+
+function isOrderActive(order) {
+  return ACTIVE_ORDER_STATES.has(order.state);
+}
+
+function getOrderTargetPoint(order) {
+  if (!order || !order.target) {
+    return null;
+  }
+  if (order.target.type === 'unit' && order.target.id) {
+    const targetUnit = fleetUnitsById.get(order.target.id);
+    if (targetUnit) {
+      return { x: targetUnit.x, y: targetUnit.y, name: targetUnit.callsign };
+    }
+  }
+  if (typeof order.target.x === 'number' && typeof order.target.y === 'number') {
+    return { x: order.target.x, y: order.target.y, name: order.target.name };
+  }
+  return null;
+}
+
+function refreshOrderPresentation() {
+  renderOrdersOverlay();
+  renderUnitOrderBadges();
+  renderRecentOrders();
+  renderFleetRoster();
+}
 
 // Initialize map
 function initMap() {
+  mapState.commsLog = [...seedCommsLogEntries];
+  mapState.orders = [...seedOrders];
+  mapState.orderSequence = mapState.orders.length + 1;
+  selectionManager = new SelectionManager(fleetUnits);
   renderCelestialBodies();
   renderLagrangePoints();
   renderJumpPoints();
   renderUnits();
-  renderFleetRoster();
+  updateSelectByChips();
+  syncSelectionState();
   renderCommsLog();
-  renderRecentOrders();
+  refreshOrderPresentation();
   renderMinimap();
   updateMapTransform();
   setupEventListeners();
@@ -892,6 +1269,7 @@ function renderCelestialBodies() {
   starEl.dataset.id = star.id;
   starEl.dataset.type = 'star';
   starEl.onclick = (e) => handleObjectClick(e, star);
+  registerMapEntity(star, starEl);
   container.appendChild(starEl);
   
   // Planets and their elements
@@ -911,6 +1289,7 @@ function renderCelestialBodies() {
     planetEl.dataset.id = planet.id;
     planetEl.dataset.type = 'planet';
     planetEl.onclick = (e) => handleObjectClick(e, planet);
+    registerMapEntity(planet, planetEl);
     container.appendChild(planetEl);
     
     // Moons
@@ -922,7 +1301,9 @@ function renderCelestialBodies() {
       moonEl.dataset.id = moon.id;
       moonEl.dataset.type = 'moon';
       moonEl.dataset.parent = planet.name;
-      moonEl.onclick = (e) => handleObjectClick(e, { ...moon, parent: planet.name, x: planet.x + moon.x, y: planet.y + moon.y });
+      const moonEntity = { ...moon, parent: planet.name, type: 'moon', x: planet.x + moon.x, y: planet.y + moon.y };
+      moonEl.onclick = (e) => handleObjectClick(e, moonEntity);
+      registerMapEntity(moonEntity, moonEl);
       container.appendChild(moonEl);
     });
     
@@ -940,7 +1321,9 @@ function renderCelestialBodies() {
       omEl.dataset.id = om.id;
       omEl.dataset.type = 'om-marker';
       omEl.dataset.parent = planet.name;
-      omEl.onclick = (e) => handleObjectClick(e, { ...om, x: omX, y: omY, parent: planet.name, type: 'om-marker' });
+      const omEntity = { ...om, x: omX, y: omY, parent: planet.name, type: 'om-marker' };
+      omEl.onclick = (e) => handleObjectClick(e, omEntity);
+      registerMapEntity(omEntity, omEl);
       container.appendChild(omEl);
     });
   });
@@ -958,7 +1341,9 @@ function renderLagrangePoints() {
     lpEl.dataset.id = lp.id;
     lpEl.dataset.type = 'lagrange';
     lpEl.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2L2 12l10 10 10-10L12 2zm0 4l6 6-6 6-6-6 6-6z"/></svg>`;
-    lpEl.onclick = (e) => handleObjectClick(e, { ...lp, type: 'lagrange' });
+    const lagrangeEntity = { ...lp, type: 'lagrange' };
+    lpEl.onclick = (e) => handleObjectClick(e, lagrangeEntity);
+    registerMapEntity(lagrangeEntity, lpEl);
     container.appendChild(lpEl);
   });
 }
@@ -975,7 +1360,9 @@ function renderJumpPoints() {
     jpEl.dataset.id = jp.id;
     jpEl.dataset.type = 'jump-point';
     jpEl.innerHTML = `<div style="width: 10px; height: 10px; background: var(--warning); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>`;
-    jpEl.onclick = (e) => handleObjectClick(e, { ...jp, type: 'jump-point' });
+    const jumpEntity = { ...jp, type: 'jump-point' };
+    jpEl.onclick = (e) => handleObjectClick(e, jumpEntity);
+    registerMapEntity(jumpEntity, jpEl);
     container.appendChild(jpEl);
   });
 }
@@ -990,11 +1377,221 @@ function renderUnits() {
     unitEl.style.cssText = `left: ${unit.x}px; top: ${unit.y}px; color: ${unit.type === 'friendly' ? 'var(--primary)' : unit.type === 'hostile' ? 'var(--danger)' : 'var(--accent)'};`;
     unitEl.dataset.callsign = unit.callsign;
     unitEl.dataset.id = unit.id;
+    unitEl.dataset.unitId = unit.id;
     unitEl.dataset.type = 'unit';
     unitEl.dataset.unitType = unit.type;
     unitEl.innerHTML = `<div class="unit-icon unit-${unit.type}">${unit.callsign.charAt(0)}</div>`;
-    unitEl.onclick = (e) => handleObjectClick(e, { ...unit, type: 'unit' });
+    const unitEntity = { ...unit, type: 'unit', unitType: unit.type };
+    unitEl.onclick = (e) => handleUnitSelectionClick(e, unit);
+    registerMapEntity(unitEntity, unitEl);
     container.appendChild(unitEl);
+  });
+}
+
+function createSvgElement(name, attrs = {}) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+  Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
+  return node;
+}
+
+function renderOrdersOverlay() {
+  const svg = document.getElementById('ordersSvg');
+  if (!svg) {
+    return;
+  }
+  svg.innerHTML = '';
+
+  const defs = createSvgElement('defs');
+  const arrowMarker = createSvgElement('marker', {
+    id: 'ordersArrow',
+    markerWidth: 8,
+    markerHeight: 8,
+    refX: 7,
+    refY: 4,
+    orient: 'auto'
+  });
+  arrowMarker.appendChild(createSvgElement('path', { d: 'M0,0 L8,4 L0,8 Z', fill: '#ffff00' }));
+  defs.appendChild(arrowMarker);
+
+  const chevronMarker = createSvgElement('marker', {
+    id: 'ordersChevron',
+    markerWidth: 10,
+    markerHeight: 10,
+    refX: 8,
+    refY: 5,
+    orient: 'auto'
+  });
+  chevronMarker.appendChild(createSvgElement('path', { d: 'M1,1 L9,5 L1,9 L3,5 Z', fill: '#ff4444' }));
+  defs.appendChild(chevronMarker);
+  svg.appendChild(defs);
+
+  mapState.orders.filter((order) => isOrderActive(order)).forEach((order) => {
+    const targetPoint = getOrderTargetPoint(order);
+    if (!targetPoint) {
+      return;
+    }
+
+    const isAcked = order.state === ORDER_STATES.ACKED;
+    const intentColor = isAcked ? 'var(--primary)' : 'var(--accent)';
+    const intentOpacity = isAcked ? 0.75 : 1;
+
+    const drawTargetLabel = () => {
+      const labelText = `${getVerbCode(order.verb)}${isAcked ? '' : '?'}`;
+      const labelGroup = createSvgElement('g', { opacity: intentOpacity });
+      labelGroup.appendChild(createSvgElement('rect', {
+        x: targetPoint.x + 10,
+        y: targetPoint.y - 20,
+        width: 28,
+        height: 14,
+        fill: 'rgba(10,14,26,0.9)',
+        stroke: intentColor,
+        'stroke-width': 1
+      }));
+      labelGroup.appendChild(createSvgElement('text', {
+        x: targetPoint.x + 24,
+        y: targetPoint.y - 10,
+        'text-anchor': 'middle',
+        fill: intentColor,
+        'font-family': 'Share Tech Mono',
+        'font-size': 8
+      }));
+      labelGroup.lastChild.textContent = labelText;
+      svg.appendChild(labelGroup);
+    };
+
+    if (!Array.isArray(order.selectionUnitIds) || order.selectionUnitIds.length === 0) {
+      svg.appendChild(createSvgElement('circle', {
+        cx: targetPoint.x,
+        cy: targetPoint.y,
+        r: 10,
+        fill: 'none',
+        stroke: intentColor,
+        'stroke-width': 1.2,
+        opacity: intentOpacity
+      }));
+      drawTargetLabel();
+      return;
+    }
+
+    order.selectionUnitIds.forEach((unitId) => {
+      const source = fleetUnitsById.get(unitId);
+      if (!source) {
+        return;
+      }
+
+      if (order.verb === 'HOLD') {
+        svg.appendChild(createSvgElement('circle', {
+          cx: source.x,
+          cy: source.y,
+          r: 16,
+          fill: 'none',
+          stroke: intentColor,
+          'stroke-width': 1.4,
+          opacity: intentOpacity
+        }));
+        return;
+      }
+
+      if (order.verb === 'PATROL') {
+        svg.appendChild(createSvgElement('line', {
+          x1: source.x,
+          y1: source.y,
+          x2: targetPoint.x,
+          y2: targetPoint.y,
+          stroke: intentColor,
+          'stroke-width': 1.2,
+          'stroke-dasharray': '5 4',
+          opacity: intentOpacity
+        }));
+        svg.appendChild(createSvgElement('circle', {
+          cx: targetPoint.x,
+          cy: targetPoint.y,
+          r: 26,
+          fill: 'none',
+          stroke: intentColor,
+          'stroke-width': 1.2,
+          'stroke-dasharray': '6 4',
+          opacity: intentOpacity
+        }));
+        return;
+      }
+
+      if (order.verb === 'ENGAGE') {
+        svg.appendChild(createSvgElement('line', {
+          x1: source.x,
+          y1: source.y,
+          x2: targetPoint.x,
+          y2: targetPoint.y,
+          stroke: 'var(--danger)',
+          'stroke-width': 2.4,
+          'marker-end': 'url(#ordersChevron)',
+          opacity: intentOpacity
+        }));
+        return;
+      }
+
+      if (order.verb === 'ESCORT') {
+        svg.appendChild(createSvgElement('line', {
+          x1: source.x,
+          y1: source.y,
+          x2: targetPoint.x,
+          y2: targetPoint.y,
+          stroke: 'var(--primary)',
+          'stroke-width': 1.6,
+          opacity: intentOpacity
+        }));
+        return;
+      }
+
+      svg.appendChild(createSvgElement('line', {
+        x1: source.x,
+        y1: source.y,
+        x2: targetPoint.x,
+        y2: targetPoint.y,
+        stroke: intentColor,
+        'stroke-width': 1.6,
+        'marker-end': 'url(#ordersArrow)',
+        opacity: intentOpacity
+      }));
+    });
+
+    if (order.verb === 'ESCORT') {
+      svg.appendChild(createSvgElement('polygon', {
+        points: `${targetPoint.x},${targetPoint.y - 9} ${targetPoint.x + 7},${targetPoint.y - 4} ${targetPoint.x + 5},${targetPoint.y + 8} ${targetPoint.x - 5},${targetPoint.y + 8} ${targetPoint.x - 7},${targetPoint.y - 4}`,
+        fill: 'rgba(0,255,0,0.18)',
+        stroke: 'var(--primary)',
+        'stroke-width': 1.1,
+        opacity: intentOpacity
+      }));
+    }
+
+    drawTargetLabel();
+  });
+}
+
+function renderUnitOrderBadges() {
+  document.querySelectorAll('.unit-marker[data-unit-id]').forEach((marker) => {
+    marker.querySelectorAll('.unit-order-badge').forEach((badge) => badge.remove());
+    const unitId = marker.dataset.unitId;
+    const order = getLatestOrderForUnit(unitId);
+    if (!order) {
+      return;
+    }
+    const badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = `unit-order-badge ${order.state === ORDER_STATES.ISSUED ? 'pending' : 'acked'}`;
+    badge.textContent = `${getVerbCode(order.verb)}${order.state === ORDER_STATES.ISSUED ? '?' : ''}`;
+    if (order.state === ORDER_STATES.ISSUED) {
+      badge.title = 'Acknowledge order';
+      badge.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        acknowledgeOrderForUnit(unitId);
+      });
+    } else {
+      badge.disabled = true;
+    }
+    marker.appendChild(badge);
   });
 }
 
@@ -1002,61 +1599,110 @@ function renderUnits() {
 function renderFleetRoster() {
   const roster = document.getElementById('fleetRoster');
   roster.innerHTML = '';
-  
-  const friendlyUnits = fleetUnits.filter(u => u.type === 'friendly');
-  friendlyUnits.forEach(unit => {
+
+  const friendlyUnits = fleetUnits.filter((unit) => unit.type === 'friendly');
+  const pageCount = Math.max(1, Math.ceil(friendlyUnits.length / PAGE_SIZE.roster));
+  mapState.pagers.roster = Math.min(mapState.pagers.roster, pageCount - 1);
+  const pageStart = mapState.pagers.roster * PAGE_SIZE.roster;
+  const pageUnits = friendlyUnits.slice(pageStart, pageStart + PAGE_SIZE.roster);
+
+  pageUnits.forEach((unit) => {
     const unitEl = document.createElement('div');
-    unitEl.className = 'flex items-center gap-2 p-2 border border-current opacity-50 cursor-pointer hover:opacity-100 transition-opacity';
+    const isSelected = selectionManager && selectionManager.selectedIds.has(unit.id);
+    const lastOrder = getLatestOrderForUnit(unit.id);
+    const awaitingAck = lastOrder && lastOrder.state === ORDER_STATES.ISSUED;
+    unitEl.className = `flex items-center gap-2 p-2 border border-current cursor-pointer transition-opacity ${isSelected ? 'opacity-100' : 'opacity-50 hover:opacity-100'}`;
+    unitEl.dataset.unitId = unit.id;
     unitEl.innerHTML = `
       <span class="status-dot status-${unit.status}"></span>
       <div class="flex-1">
         <div class="font-bold" style="color: var(--primary);">${unit.callsign}</div>
-        <div class="opacity-60">${unit.ship} • ${unit.role}</div>
+        <div class="opacity-60">${unit.ship} • ${unit.role} • ${unit.wing}</div>
       </div>
+      ${lastOrder ? `<div class="text-[9px] px-1 py-[1px] border border-current opacity-75">${getVerbCode(lastOrder.verb)}${awaitingAck ? '?' : ''}</div>` : ''}
+      ${lastOrder ? `<div class="text-[9px] px-1 py-[1px] border border-current opacity-75 ${awaitingAck ? '' : 'text-green-200'}">${awaitingAck ? 'ACK?' : 'ACK'}</div>` : ''}
+      ${awaitingAck ? `<button class="pager-btn" data-ack-unit="${unit.id}" style="min-width:32px;height:18px;">ACK</button>` : ''}
     `;
-    unitEl.onclick = () => {
-      centerOnObject(unit);
-      updateSelectedInfo(unit);
+    if (isSelected) {
+      unitEl.style.borderColor = 'var(--accent)';
+    }
+    const ackButton = unitEl.querySelector('[data-ack-unit]');
+    if (ackButton) {
+      ackButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        acknowledgeOrderForUnit(unit.id);
+      });
+    }
+    unitEl.onclick = (e) => {
+      const unitEntity = { ...unit, type: 'unit', unitType: unit.type };
+      handleUnitSelectionClick(e, unit);
+      mapState.selectedObject = unitEntity;
+      updateSelectedInfo(unitEntity);
+      centerOnSelectionBounds(selectionManager.getSelectedUnits());
     };
     roster.appendChild(unitEl);
   });
+
+  updatePagerControls('fleetRosterPage', 'fleetRosterPrev', 'fleetRosterNext', mapState.pagers.roster, pageCount);
 }
 
 // Render comms log
 function renderCommsLog() {
   const log = document.getElementById('commsLog');
   log.innerHTML = '';
-  
-  commsLogEntries.forEach(entry => {
+
+  const pageCount = Math.max(1, Math.ceil(mapState.commsLog.length / PAGE_SIZE.comms));
+  mapState.pagers.comms = Math.min(mapState.pagers.comms, pageCount - 1);
+  const pageStart = mapState.pagers.comms * PAGE_SIZE.comms;
+  const pageEntries = mapState.commsLog.slice(pageStart, pageStart + PAGE_SIZE.comms);
+
+  pageEntries.forEach((entry) => {
     const entryEl = document.createElement('div');
     entryEl.className = 'p-1 border-l-2 pl-2 mb-1';
-    entryEl.style.borderColor = 'var(--primary)';
+    entryEl.style.borderColor = entry.sender === 'COMMAND' ? 'var(--accent)' : 'var(--primary)';
     entryEl.innerHTML = `
-      <div class="opacity-50">${entry.time}</div>
-      <div><span style="color: var(--primary);">${entry.sender}:</span> ${entry.msg}</div>
+      <div class="opacity-50">${formatClock(entry.createdAt, true)}</div>
+      <div><span style="color: ${entry.sender === 'COMMAND' ? 'var(--accent)' : 'var(--primary)'};">${entry.sender}:</span> ${entry.msg}</div>
     `;
     log.appendChild(entryEl);
   });
+
+  updatePagerControls('commsPage', 'commsPrev', 'commsNext', mapState.pagers.comms, pageCount);
 }
 
 // Render recent orders
 function renderRecentOrders() {
   const orders = document.getElementById('recentOrders');
   orders.innerHTML = '';
-  
-  recentOrders.forEach(order => {
+
+  const pageCount = Math.max(1, Math.ceil(mapState.orders.length / PAGE_SIZE.orders));
+  mapState.pagers.orders = Math.min(mapState.pagers.orders, pageCount - 1);
+  const pageStart = mapState.pagers.orders * PAGE_SIZE.orders;
+  const pageEntries = mapState.orders.slice(pageStart, pageStart + PAGE_SIZE.orders);
+
+  pageEntries.forEach((order) => {
     const orderEl = document.createElement('div');
     orderEl.className = 'p-2 border border-current opacity-50';
-    const statusColor = order.status === 'active' ? 'var(--accent)' : 'var(--primary)';
+    const isCancelled = order.state === ORDER_STATES.CANCELLED;
+    const isAcked = order.state === ORDER_STATES.ACKED;
+    orderEl.style.borderColor = isCancelled ? 'var(--warning)' : (isAcked ? 'var(--primary)' : 'var(--accent)');
     orderEl.innerHTML = `
       <div class="flex justify-between">
-        <span style="color: ${statusColor};">${order.order}</span>
-        <span class="opacity-50">${order.time}</span>
+        <span style="color: ${isCancelled ? 'var(--warning)' : (isAcked ? 'var(--primary)' : 'var(--accent)')};">${order.verb}</span>
+        <span class="opacity-50">${formatClock(order.createdAt, false)}</span>
       </div>
-      <div class="opacity-60">→ ${order.target}</div>
+      <div class="opacity-60">${order.selectionLabel} → ${order.target.name}</div>
+      <div class="opacity-50">${order.state}${order.ackBy ? ` • ${order.ackBy}` : ''}</div>
     `;
     orders.appendChild(orderEl);
   });
+
+  updatePagerControls('ordersPage', 'ordersPrev', 'ordersNext', mapState.pagers.orders, pageCount);
+  const cancelButton = document.getElementById('cancelLatestOrder');
+  if (cancelButton) {
+    cancelButton.disabled = !(mapState.orders[0] && mapState.orders[0].state !== ORDER_STATES.CANCELLED);
+  }
 }
 
 // Render minimap
@@ -1105,15 +1751,39 @@ function updateMinimapViewport() {
 // Handle object click
 function handleObjectClick(e, obj) {
   e.stopPropagation();
+  hideRadialMenu();
+  selectionManager.clear();
   mapState.selectedObject = obj;
   updateSelectedInfo(obj);
-  showRadialMenu(e.clientX, e.clientY, obj);
+}
+
+function handleUnitSelectionClick(e, unit) {
+  e.stopPropagation();
+  hideRadialMenu();
+  if (unit.type !== 'friendly') {
+    mapState.selectedObject = { ...unit, type: 'unit', unitType: unit.type };
+    updateSelectedInfo(mapState.selectedObject);
+    return;
+  }
+
+  if (e.shiftKey) {
+    selectionManager.toggle(unit.id);
+  } else {
+    selectionManager.selectSingle(unit.id);
+  }
+  mapState.selectedObject = { ...unit, type: 'unit', unitType: unit.type };
+  updateSelectedInfo(mapState.selectedObject);
 }
 
 // Update selected info panel
 function updateSelectedInfo(obj) {
   const info = document.getElementById('selectedInfo');
   let content = '';
+
+  if (!obj) {
+    info.innerHTML = '<div class="text-center opacity-50 py-4">No selection</div>';
+    return;
+  }
   
   if (obj.type === 'star') {
     content = `
@@ -1153,104 +1823,187 @@ function updateSelectedInfo(obj) {
       <div class="data-row"><span class="data-label">DEST</span><span class="data-value" style="color: var(--accent);">${obj.dest}</span></div>
     `;
   } else if (obj.type === 'unit') {
+    const affiliation = (obj.unitType || obj.affiliation || 'friendly').toUpperCase();
     const statusColor = obj.status === 'online' ? 'var(--primary)' : obj.status === 'combat' ? 'var(--danger)' : '#555';
     content = `
       <div class="data-row"><span class="data-label">CALLSIGN</span><span class="data-value">${obj.callsign}</span></div>
       <div class="data-row"><span class="data-label">SHIP</span><span class="data-value">${obj.ship}</span></div>
+      <div class="data-row"><span class="data-label">WING</span><span class="data-value">${obj.wing || 'N/A'}</span></div>
       <div class="data-row"><span class="data-label">ROLE</span><span class="data-value">${obj.role}</span></div>
       <div class="data-row"><span class="data-label">STATUS</span><span class="data-value" style="color: ${statusColor};">${obj.status.toUpperCase()}</span></div>
-      <div class="data-row"><span class="data-label">AFFIL</span><span class="data-value">${obj.type === 'hostile' ? 'HOSTILE' : obj.type === 'neutral' ? 'NEUTRAL' : 'FRIENDLY'}</span></div>
+      <div class="data-row"><span class="data-label">AFFIL</span><span class="data-value">${affiliation}</span></div>
+    `;
+  } else if (obj.type === 'coordinates') {
+    content = `
+      <div class="data-row"><span class="data-label">TYPE</span><span class="data-value">GRID COORD</span></div>
+      <div class="data-row"><span class="data-label">NAME</span><span class="data-value">${obj.name}</span></div>
+      <div class="data-row"><span class="data-label">X</span><span class="data-value">${Math.round(obj.x)}</span></div>
+      <div class="data-row"><span class="data-label">Y</span><span class="data-value">${Math.round(obj.y)}</span></div>
     `;
   }
   
   info.innerHTML = content || '<div class="text-center opacity-50 py-4">No selection</div>';
 }
 
-// Show radial menu
-function showRadialMenu(x, y, obj) {
-  const menu = document.getElementById('radialMenu');
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-  menu.classList.add('active');
-  
-  // Clear existing options
-  const existingOptions = menu.querySelectorAll('.radial-option');
-  existingOptions.forEach(opt => opt.remove());
-  
-  // Update center text
-  radialCenter.innerHTML = obj.name || obj.callsign || 'SELECT<br>ACTION';
-  
-  // Define options based on object type
-  let options = [];
-  
-  if (obj.type === 'unit') {
-    if (obj.unitType === 'friendly') {
-      options = [
-        { label: 'MOVE TO', angle: 0, action: 'move' },
-        { label: 'HOLD', angle: 45, action: 'hold' },
-        { label: 'ENGAGE', angle: 90, action: 'engage', class: 'warning' },
-        { label: 'ESCORT', angle: 135, action: 'escort' },
-        { label: 'RTB', angle: 180, action: 'rtb' },
-        { label: 'REGROUP', angle: 225, action: 'regroup' },
-        { label: 'STATUS', angle: 270, action: 'status' },
-        { label: 'COMMS', angle: 315, action: 'comms' }
-      ];
-    } else if (obj.unitType === 'hostile') {
-      options = [
-        { label: 'TRACK', angle: 0, action: 'track' },
-        { label: 'ENGAGE', angle: 90, action: 'engage', class: 'danger' },
-        { label: 'MARK', angle: 180, action: 'mark', class: 'warning' },
-        { label: 'INTEL', angle: 270, action: 'intel' }
-      ];
-    } else {
-      options = [
-        { label: 'HAIL', angle: 0, action: 'hail' },
-        { label: 'TRACK', angle: 120, action: 'track' },
-        { label: 'INTEL', angle: 240, action: 'intel' }
-      ];
-    }
-  } else if (obj.type === 'planet' || obj.type === 'moon') {
-    options = [
-      { label: 'RALLY PT', angle: 0, action: 'rally' },
-      { label: 'SCAN', angle: 72, action: 'scan' },
-      { label: 'PATROL', angle: 144, action: 'patrol' },
-      { label: 'MARK AO', angle: 216, action: 'markao', class: 'warning' },
-      { label: 'ZOOM', angle: 288, action: 'zoom' }
-    ];
-  } else if (obj.type === 'lagrange' || obj.type === 'om-marker') {
-    options = [
-      { label: 'RALLY', angle: 0, action: 'rally' },
-      { label: 'WAYPOINT', angle: 90, action: 'waypoint' },
-      { label: 'AMBUSH', angle: 180, action: 'ambush', class: 'warning' },
-      { label: 'PATROL', angle: 270, action: 'patrol' }
-    ];
-  } else if (obj.type === 'jump-point') {
-    options = [
-      { label: 'GUARD', angle: 0, action: 'guard' },
-      { label: 'BLOCKADE', angle: 120, action: 'blockade', class: 'danger' },
-      { label: 'SCOUT', angle: 240, action: 'scout' }
-    ];
-  } else {
-    options = [
-      { label: 'INFO', angle: 0, action: 'info' },
-      { label: 'MARK', angle: 180, action: 'mark' }
-    ];
+function formatClock(timestamp, withSeconds) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return '--:--';
   }
-  
-  // Render options
+  return date.toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    ...(withSeconds ? { second: '2-digit' } : {})
+  });
+}
+
+function updatePagerControls(labelId, prevId, nextId, pageIndex, pageCount) {
+  const label = document.getElementById(labelId);
+  const prev = document.getElementById(prevId);
+  const next = document.getElementById(nextId);
+  if (!label || !prev || !next) {
+    return;
+  }
+  label.textContent = `${pageIndex + 1}/${pageCount}`;
+  prev.disabled = pageIndex === 0;
+  next.disabled = pageIndex >= pageCount - 1;
+}
+
+function updateSelectByChips() {
+  document.querySelectorAll('[data-select-by]').forEach((chip) => {
+    const key = chip.dataset.selectBy;
+    const value = selectionManager.filters[key];
+    chip.textContent = `${key.toUpperCase()}: ${value === 'ALL' ? 'ALL' : String(value).toUpperCase()}`;
+    chip.classList.toggle('active', value !== 'ALL');
+  });
+}
+
+function showSelectionToast(message) {
+  selectionToast.textContent = message;
+  selectionToast.classList.add('show');
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+  toastTimeout = setTimeout(() => selectionToast.classList.remove('show'), 1300);
+}
+
+function syncSelectionState() {
+  const selectedIds = selectionManager ? selectionManager.selectedIds : new Set();
+  document.querySelectorAll('.unit-marker[data-unit-id]').forEach((marker) => {
+    marker.classList.toggle('selected', selectedIds.has(marker.dataset.unitId));
+  });
+  renderFleetRoster();
+}
+
+function toMapCoordinates(clientX, clientY) {
+  const containerRect = mapContainer.getBoundingClientRect();
+  return {
+    x: (clientX - containerRect.left - mapState.panX) / mapState.zoom,
+    y: (clientY - containerRect.top - mapState.panY) / mapState.zoom
+  };
+}
+
+function resolveContextTarget(event) {
+  const targetNode = event.target.closest('[data-entity-id]');
+  if (targetNode) {
+    const entity = mapEntityIndex.get(targetNode.dataset.entityId);
+    if (entity) {
+      if (entity.type === 'unit') {
+        return {
+          type: 'unit',
+          id: entity.id,
+          name: entity.callsign,
+          callsign: entity.callsign,
+          x: entity.x,
+          y: entity.y,
+          unitType: entity.unitType,
+          ship: entity.ship,
+          role: entity.role,
+          status: entity.status,
+          wing: entity.wing
+        };
+      }
+      return {
+        type: entity.type,
+        id: entity.id,
+        name: entity.name,
+        x: entity.x,
+        y: entity.y
+      };
+    }
+  }
+  const coords = toMapCoordinates(event.clientX, event.clientY);
+  return {
+    type: 'coordinates',
+    id: `coord-${Math.round(coords.x)}-${Math.round(coords.y)}`,
+    name: `GRID ${Math.round(coords.x)},${Math.round(coords.y)}`,
+    x: coords.x,
+    y: coords.y
+  };
+}
+
+function buildRadialOptions(target) {
+  const selectedUnits = selectionManager.getSelectedUnits();
+  if (selectedUnits.length > 0) {
+    const options = [
+      { label: 'MOVE', verb: 'MOVE' },
+      { label: 'HOLD', verb: 'HOLD' },
+      { label: 'PATROL', verb: 'PATROL' },
+      { label: 'MARK', verb: 'MARK' },
+      { label: 'ROE', verb: 'ROE' }
+    ];
+    if (target.type === 'unit' && target.unitType === 'friendly') {
+      options.push({ label: 'ESCORT', verb: 'ESCORT' });
+    }
+    if (target.type === 'unit' && target.unitType === 'hostile') {
+      options.push({ label: 'ENGAGE', verb: 'ENGAGE', class: 'danger' });
+    }
+    if (['planet', 'moon', 'om-marker', 'lagrange', 'jump-point', 'zone'].includes(target.type)) {
+      options.push({ label: 'SCAN', verb: 'SCAN', class: 'warning' });
+    }
+    return options;
+  }
+  return [
+    { label: 'PING', verb: 'PING' },
+    { label: 'MARK', verb: 'MARK' },
+    { label: 'DRAW ZONE', verb: 'DRAW_ZONE' },
+    { label: 'INFO', verb: 'INFO' }
+  ];
+}
+
+// Show radial menu
+function showRadialMenu(x, y, target) {
+  const menu = document.getElementById('radialMenu');
+  const options = buildRadialOptions(target);
+  const selectedUnits = selectionManager.getSelectedUnits();
+
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+  menu.classList.add('active');
+  mapState.activeCommandTarget = target;
+
+  menu.querySelectorAll('.radial-option').forEach((opt) => opt.remove());
+  if (selectedUnits.length > 0) {
+    radialCenter.innerHTML = `${selectedUnits.length} UNIT${selectedUnits.length > 1 ? 'S' : ''}<br>${target.name}`;
+  } else {
+    radialCenter.innerHTML = `MAP TOOLS<br>${target.name}`;
+  }
+
   const radius = 80;
-  options.forEach(opt => {
+  const step = 360 / options.length;
+  options.forEach((opt, idx) => {
     const optEl = document.createElement('div');
     optEl.className = `radial-option ${opt.class || ''}`;
-    const angleRad = (opt.angle - 90) * Math.PI / 180;
-    const x = 100 + radius * Math.cos(angleRad);
-    const y = 100 + radius * Math.sin(angleRad);
-    optEl.style.left = x + 'px';
-    optEl.style.top = y + 'px';
+    const angleRad = (idx * step - 90) * Math.PI / 180;
+    const optionX = 100 + radius * Math.cos(angleRad);
+    const optionY = 100 + radius * Math.sin(angleRad);
+    optEl.style.left = `${optionX}px`;
+    optEl.style.top = `${optionY}px`;
     optEl.textContent = opt.label;
     optEl.onclick = (e) => {
       e.stopPropagation();
-      executeOrder(opt.action, obj);
+      executeOrder(opt.verb, target);
       hideRadialMenu();
     };
     menu.appendChild(optEl);
@@ -1263,41 +2016,75 @@ function hideRadialMenu() {
 }
 
 // Execute order
-function executeOrder(action, obj) {
-  const targetName = obj.callsign || obj.name;
-  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-  
-  // Add to recent orders
-  const ordersEl = document.getElementById('recentOrders');
-  const newOrder = document.createElement('div');
-  newOrder.className = 'p-2 border border-current opacity-50';
-  newOrder.style.borderColor = 'var(--accent)';
-  newOrder.innerHTML = `
-    <div class="flex justify-between">
-      <span style="color: var(--accent);">${action.toUpperCase()}</span>
-      <span class="opacity-50">${timestamp}</span>
-    </div>
-    <div class="opacity-60">→ ${targetName}</div>
-  `;
-  ordersEl.insertBefore(newOrder, ordersEl.firstChild);
-  
-  // Add to comms log
-  addCommsEntry('COMMAND', `Order issued: ${action.toUpperCase()} to ${targetName}`);
+function executeOrder(verb, target) {
+  const selectedUnits = selectionManager.getSelectedUnits();
+  const nowIso = new Date().toISOString();
+  const order = {
+    id: `ord-${Date.now()}-${mapState.orderSequence++}`,
+    createdAt: nowIso,
+    issuer: 'COMMAND',
+    selectionUnitIds: selectedUnits.map((unit) => unit.id),
+    selectionLabel: selectedUnits.length ? selectionManager.getSelectionLabel() : 'MAP',
+    verb,
+    target: {
+      type: target.type,
+      id: target.id || null,
+      name: target.name || 'UNSPECIFIED',
+      x: typeof target.x === 'number' ? target.x : null,
+      y: typeof target.y === 'number' ? target.y : null
+    },
+    params: {},
+    state: ORDER_STATES.ISSUED
+  };
+
+  mapState.orders.unshift(order);
+  if (mapState.orders.length > 60) {
+    mapState.orders.length = 60;
+  }
+  mapState.pagers.orders = 0;
+  refreshOrderPresentation();
+  addCommsEntry('COMMAND', `Order ISSUED — ${getOrderSummary(order)}`);
+}
+
+function acknowledgeOrderForUnit(unitId) {
+  const pendingOrder = getLatestPendingOrderForUnit(unitId);
+  if (!pendingOrder) {
+    return;
+  }
+  const unit = fleetUnitsById.get(unitId);
+  const ackBy = unit ? unit.callsign : unitId.toUpperCase();
+  pendingOrder.state = ORDER_STATES.ACKED;
+  pendingOrder.ackAt = new Date().toISOString();
+  pendingOrder.ackBy = ackBy;
+  refreshOrderPresentation();
+  addCommsEntry(ackBy, `ACK — ${getOrderSummary(pendingOrder)}`);
+  showSelectionToast(`${ackBy} ACK ${getVerbCode(pendingOrder.verb)}`);
+}
+
+function cancelMostRecentOrder() {
+  const latestOrder = mapState.orders[0];
+  if (!latestOrder || latestOrder.state === ORDER_STATES.CANCELLED) {
+    return;
+  }
+  latestOrder.state = ORDER_STATES.CANCELLED;
+  latestOrder.cancelledAt = new Date().toISOString();
+  latestOrder.cancelledBy = 'COMMAND';
+  refreshOrderPresentation();
+  addCommsEntry('COMMAND', `Order CANCELLED — ${getOrderSummary(latestOrder)}`);
 }
 
 // Add comms entry
 function addCommsEntry(sender, msg) {
-  const log = document.getElementById('commsLog');
-  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  
-  const entry = document.createElement('div');
-  entry.className = 'p-1 border-l-2 pl-2 mb-1';
-  entry.style.borderColor = sender === 'COMMAND' ? 'var(--accent)' : 'var(--primary)';
-  entry.innerHTML = `
-    <div class="opacity-50">${timestamp}</div>
-    <div><span style="color: ${sender === 'COMMAND' ? 'var(--accent)' : 'var(--primary)'};">${sender}:</span> ${msg}</div>
-  `;
-  log.insertBefore(entry, log.firstChild);
+  mapState.commsLog.unshift({
+    createdAt: new Date().toISOString(),
+    sender,
+    msg
+  });
+  if (mapState.commsLog.length > 80) {
+    mapState.commsLog.length = 80;
+  }
+  mapState.pagers.comms = 0;
+  renderCommsLog();
 }
 
 // Center on object
@@ -1305,6 +2092,27 @@ function centerOnObject(obj) {
   const containerRect = mapContainer.getBoundingClientRect();
   mapState.panX = containerRect.width / 2 - obj.x * mapState.zoom;
   mapState.panY = containerRect.height / 2 - obj.y * mapState.zoom;
+  updateMapTransform();
+}
+
+function centerOnSelectionBounds(units) {
+  if (!units || units.length === 0) {
+    return;
+  }
+  const minX = Math.min(...units.map((unit) => unit.x));
+  const maxX = Math.max(...units.map((unit) => unit.x));
+  const minY = Math.min(...units.map((unit) => unit.y));
+  const maxY = Math.max(...units.map((unit) => unit.y));
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const containerRect = mapContainer.getBoundingClientRect();
+
+  const width = Math.max(120, maxX - minX + 120);
+  const height = Math.max(120, maxY - minY + 120);
+  const fitZoom = Math.max(mapState.minZoom, Math.min(mapState.maxZoom, Math.min(containerRect.width / width, containerRect.height / height)));
+  mapState.zoom = Math.min(mapState.zoom, fitZoom);
+  mapState.panX = containerRect.width / 2 - centerX * mapState.zoom;
+  mapState.panY = containerRect.height / 2 - centerY * mapState.zoom;
   updateMapTransform();
 }
 
@@ -1328,11 +2136,130 @@ function updateScaleIndicator() {
   }
 }
 
+function isInteractiveMapNode(target) {
+  return Boolean(target.closest('.unit-marker, .celestial-body, .om-marker, .lagrange-point, .jump-point, .radial-menu'));
+}
+
+function startSelectionBox(clientX, clientY, additive) {
+  mapState.isBoxSelecting = true;
+  mapState.boxAdditive = additive;
+  mapState.boxStartX = clientX;
+  mapState.boxStartY = clientY;
+  mapState.boxCurrentX = clientX;
+  mapState.boxCurrentY = clientY;
+  selectionMarquee.style.display = 'block';
+  updateSelectionBox(clientX, clientY);
+}
+
+function updateSelectionBox(clientX, clientY) {
+  mapState.boxCurrentX = clientX;
+  mapState.boxCurrentY = clientY;
+  const containerRect = mapContainer.getBoundingClientRect();
+  const left = Math.min(mapState.boxStartX, clientX) - containerRect.left;
+  const top = Math.min(mapState.boxStartY, clientY) - containerRect.top;
+  const width = Math.abs(mapState.boxStartX - clientX);
+  const height = Math.abs(mapState.boxStartY - clientY);
+  selectionMarquee.style.left = `${left}px`;
+  selectionMarquee.style.top = `${top}px`;
+  selectionMarquee.style.width = `${width}px`;
+  selectionMarquee.style.height = `${height}px`;
+}
+
+function finishSelectionBox() {
+  if (!mapState.isBoxSelecting) {
+    return;
+  }
+
+  const minClientX = Math.min(mapState.boxStartX, mapState.boxCurrentX);
+  const maxClientX = Math.max(mapState.boxStartX, mapState.boxCurrentX);
+  const minClientY = Math.min(mapState.boxStartY, mapState.boxCurrentY);
+  const maxClientY = Math.max(mapState.boxStartY, mapState.boxCurrentY);
+  const width = maxClientX - minClientX;
+  const height = maxClientY - minClientY;
+  selectionMarquee.style.display = 'none';
+  mapState.isBoxSelecting = false;
+
+  if (width < 4 || height < 4) {
+    return;
+  }
+
+  const containerRect = mapContainer.getBoundingClientRect();
+  const minMapX = (minClientX - containerRect.left - mapState.panX) / mapState.zoom;
+  const maxMapX = (maxClientX - containerRect.left - mapState.panX) / mapState.zoom;
+  const minMapY = (minClientY - containerRect.top - mapState.panY) / mapState.zoom;
+  const maxMapY = (maxClientY - containerRect.top - mapState.panY) / mapState.zoom;
+
+  const selectedIds = fleetUnits
+    .filter((unit) =>
+      unit.type === 'friendly' &&
+      unit.x >= minMapX && unit.x <= maxMapX &&
+      unit.y >= minMapY && unit.y <= maxMapY
+    )
+    .map((unit) => unit.id);
+
+  selectionManager.setSelection(selectedIds, mapState.boxAdditive ? 'append' : 'replace');
+  showSelectionToast(`SELECT ${selectionManager.getSelectionLabel()}`);
+}
+
+function isTypingTarget(target) {
+  return Boolean(
+    target &&
+    (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+  );
+}
+
 // Setup event listeners
 function setupEventListeners() {
+  /*
+    QA checklist:
+    - No scrollbars anywhere (page or panel lists).
+    - Orders render as overlays and follow map pan/zoom transforms.
+    - Issued orders appear in overlays, unit badges, roster state, recent orders, and comms log.
+    - ACK updates order state and is reflected across overlays, badges, roster, orders, and comms.
+    - Right-click issue, left-click selection, and map pan/zoom all remain functional.
+  */
+
+  const bindPager = (stateKey, renderer, prevId, nextId) => {
+    document.getElementById(prevId).addEventListener('click', () => {
+      if (mapState.pagers[stateKey] > 0) {
+        mapState.pagers[stateKey] -= 1;
+        renderer();
+      }
+    });
+    document.getElementById(nextId).addEventListener('click', () => {
+      mapState.pagers[stateKey] += 1;
+      renderer();
+    });
+  };
+
+  bindPager('roster', renderFleetRoster, 'fleetRosterPrev', 'fleetRosterNext');
+  bindPager('orders', renderRecentOrders, 'ordersPrev', 'ordersNext');
+  bindPager('comms', renderCommsLog, 'commsPrev', 'commsNext');
+  document.getElementById('cancelLatestOrder').addEventListener('click', () => {
+    cancelMostRecentOrder();
+  });
+
+  document.querySelectorAll('[data-select-by]').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      selectionManager.cycleFilter(chip.dataset.selectBy);
+    });
+  });
+
   // Pan
   mapContainer.addEventListener('mousedown', (e) => {
-    if (e.target === mapContainer || e.target.classList.contains('grid-overlay')) {
+    if (e.button !== 0) {
+      return;
+    }
+
+    if (e.ctrlKey) {
+      e.preventDefault();
+      hideRadialMenu();
+      mapState.isDragging = false;
+      startSelectionBox(e.clientX, e.clientY, e.shiftKey);
+      return;
+    }
+
+    if (!isInteractiveMapNode(e.target)) {
       mapState.isDragging = true;
       mapState.lastX = e.clientX;
       mapState.lastY = e.clientY;
@@ -1342,12 +2269,17 @@ function setupEventListeners() {
   
   document.addEventListener('mousemove', (e) => {
     // Update cursor coords
-    if (mapContainer.contains(e.target)) {
-      const containerRect = mapContainer.getBoundingClientRect();
+    const containerRect = mapContainer.getBoundingClientRect();
+    if (e.clientX >= containerRect.left && e.clientX <= containerRect.right && e.clientY >= containerRect.top && e.clientY <= containerRect.bottom) {
       const mapX = (e.clientX - containerRect.left - mapState.panX) / mapState.zoom;
       const mapY = (e.clientY - containerRect.top - mapState.panY) / mapState.zoom;
       document.getElementById('cursorCoords').textContent = 
         `X: ${mapX.toFixed(0)} | Y: ${mapY.toFixed(0)} | Z: 0.00`;
+    }
+
+    if (mapState.isBoxSelecting) {
+      updateSelectionBox(e.clientX, e.clientY);
+      return;
     }
     
     if (mapState.isDragging) {
@@ -1362,7 +2294,24 @@ function setupEventListeners() {
   });
   
   document.addEventListener('mouseup', () => {
+    finishSelectionBox();
     mapState.isDragging = false;
+  });
+
+  mapContainer.addEventListener('click', (e) => {
+    if (!isInteractiveMapNode(e.target) && !e.shiftKey && !e.ctrlKey) {
+      selectionManager.clear();
+      mapState.selectedObject = null;
+      updateSelectedInfo(null);
+    }
+  });
+
+  mapContainer.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const target = resolveContextTarget(e);
+    mapState.activeCommandTarget = target;
+    updateSelectedInfo(target);
+    showRadialMenu(e.clientX, e.clientY, target);
   });
   
   // Zoom
@@ -1420,10 +2369,33 @@ function setupEventListeners() {
       mapState.viewMode = btn.dataset.view;
     });
   });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      selectionManager.clear();
+      hideRadialMenu();
+      return;
+    }
+
+    if (isTypingTarget(e.target)) {
+      return;
+    }
+
+    if (/^[1-9]$/.test(e.key)) {
+      const slot = Number(e.key);
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        selectionManager.assignGroup(slot);
+      } else {
+        e.preventDefault();
+        selectionManager.recallGroup(slot);
+      }
+    }
+  });
   
   // Close radial menu on click outside
   document.addEventListener('click', (e) => {
-    if (!radialMenu.contains(e.target) && !e.target.closest('.celestial-body, .om-marker, .lagrange-point, .jump-point, .unit-marker')) {
+    if (!radialMenu.contains(e.target)) {
       hideRadialMenu();
     }
   });
