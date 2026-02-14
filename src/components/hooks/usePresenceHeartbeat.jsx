@@ -1,15 +1,179 @@
 /**
  * Presence Heartbeat Hook
- * Writes presence on load and periodically; visibility-aware
+ * Writes presence on load and periodically using a shared runtime
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { createPresenceRecord, getOrCreateClientId } from '@/components/models/presence';
 import * as presenceService from '@/components/services/presenceService';
 
 const HEARTBEAT_INTERVAL_MS = 25000; // 25 seconds
 const CLEANUP_INTERVAL_MS = 60000;   // 60 seconds
+
+const DEFAULT_LAST_WRITE = {
+  success: false,
+  at: null,
+  failureCount: 0,
+};
+
+const heartbeatSubscribers = new Set();
+let lastWriteSnapshot = { ...DEFAULT_LAST_WRITE };
+
+const heartbeatRuntime = {
+  user: null,
+  clientId: null,
+  intervalMs: HEARTBEAT_INTERVAL_MS,
+  heartbeatTimer: null,
+  cleanupTimer: null,
+  visibilityHandler: null,
+  beforeUnloadHandler: null,
+  consumerCount: 0,
+};
+
+const notifySubscribers = () => {
+  heartbeatSubscribers.forEach((listener) => {
+    try {
+      listener(lastWriteSnapshot);
+    } catch {
+      // ignore listener failures
+    }
+  });
+};
+
+const updateLastWrite = (next) => {
+  lastWriteSnapshot = { ...next };
+  notifySubscribers();
+};
+
+const clearHeartbeatTimer = () => {
+  if (heartbeatRuntime.heartbeatTimer && typeof window !== 'undefined') {
+    window.clearInterval(heartbeatRuntime.heartbeatTimer);
+  }
+  heartbeatRuntime.heartbeatTimer = null;
+};
+
+const clearCleanupTimer = () => {
+  if (heartbeatRuntime.cleanupTimer && typeof window !== 'undefined') {
+    window.clearInterval(heartbeatRuntime.cleanupTimer);
+  }
+  heartbeatRuntime.cleanupTimer = null;
+};
+
+const writePresence = async (statusOverride = null) => {
+  const user = heartbeatRuntime.user;
+  if (!user?.id || typeof window === 'undefined') return;
+
+  try {
+    const presenceRecord = createPresenceRecord(user, heartbeatRuntime.clientId, {
+      route: window.location.pathname,
+      ...(statusOverride ? { status: statusOverride } : {}),
+      // activeNetId will be injected by VoiceNetProvider when connected
+    });
+    await presenceService.writePresence(presenceRecord);
+    updateLastWrite({
+      success: true,
+      at: new Date().toISOString(),
+      failureCount: 0,
+    });
+  } catch (error) {
+    console.error('[usePresenceHeartbeat] Heartbeat write failed:', error);
+    updateLastWrite({
+      success: false,
+      at: lastWriteSnapshot.at,
+      failureCount: (lastWriteSnapshot.failureCount || 0) + 1,
+    });
+  }
+};
+
+const ensureHeartbeatTimer = () => {
+  if (typeof window === 'undefined') return;
+  if (!heartbeatRuntime.user?.id || heartbeatRuntime.heartbeatTimer || document.hidden) return;
+  heartbeatRuntime.heartbeatTimer = window.setInterval(() => {
+    writePresence().catch(() => {});
+  }, heartbeatRuntime.intervalMs);
+};
+
+const ensureCleanupTimer = () => {
+  if (typeof window === 'undefined' || heartbeatRuntime.cleanupTimer) return;
+  heartbeatRuntime.cleanupTimer = window.setInterval(() => {
+    presenceService.cleanupOfflineRecords().catch((error) => {
+      console.error('[usePresenceHeartbeat] Cleanup failed:', error);
+    });
+  }, CLEANUP_INTERVAL_MS);
+};
+
+const attachRuntimeListeners = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  if (!heartbeatRuntime.visibilityHandler) {
+    heartbeatRuntime.visibilityHandler = () => {
+      if (document.hidden) {
+        writePresence('idle').catch(() => {});
+        clearHeartbeatTimer();
+      } else {
+        writePresence('online').catch(() => {});
+        ensureHeartbeatTimer();
+      }
+    };
+    document.addEventListener('visibilitychange', heartbeatRuntime.visibilityHandler);
+  }
+
+  if (!heartbeatRuntime.beforeUnloadHandler) {
+    heartbeatRuntime.beforeUnloadHandler = () => {
+      writePresence().catch(() => {});
+    };
+    window.addEventListener('beforeunload', heartbeatRuntime.beforeUnloadHandler);
+  }
+};
+
+const detachRuntimeListeners = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  if (heartbeatRuntime.visibilityHandler) {
+    document.removeEventListener('visibilitychange', heartbeatRuntime.visibilityHandler);
+    heartbeatRuntime.visibilityHandler = null;
+  }
+
+  if (heartbeatRuntime.beforeUnloadHandler) {
+    window.removeEventListener('beforeunload', heartbeatRuntime.beforeUnloadHandler);
+    heartbeatRuntime.beforeUnloadHandler = null;
+  }
+};
+
+const startHeartbeatRuntime = (user, intervalMs) => {
+  if (!user?.id) return;
+
+  const interval = Number(intervalMs);
+  const nextInterval = Number.isFinite(interval) && interval > 0 ? interval : HEARTBEAT_INTERVAL_MS;
+  const userChanged = heartbeatRuntime.user?.id !== user.id;
+  const intervalChanged = heartbeatRuntime.intervalMs !== nextInterval;
+
+  heartbeatRuntime.user = user;
+  heartbeatRuntime.clientId = heartbeatRuntime.clientId || getOrCreateClientId();
+  heartbeatRuntime.intervalMs = nextInterval;
+
+  if (intervalChanged) {
+    clearHeartbeatTimer();
+  }
+
+  ensureCleanupTimer();
+  attachRuntimeListeners();
+  ensureHeartbeatTimer();
+
+  if (userChanged || !lastWriteSnapshot.at) {
+    writePresence().catch(() => {});
+  }
+};
+
+const stopHeartbeatRuntime = () => {
+  clearHeartbeatTimer();
+  clearCleanupTimer();
+  detachRuntimeListeners();
+  heartbeatRuntime.user = null;
+  heartbeatRuntime.clientId = null;
+  heartbeatRuntime.intervalMs = HEARTBEAT_INTERVAL_MS;
+};
 
 /**
  * usePresenceHeartbeat
@@ -20,129 +184,31 @@ export function usePresenceHeartbeat(config = {}) {
   const { intervalMs = HEARTBEAT_INTERVAL_MS, enabled = true } = config;
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
-  const clientIdRef = useRef(null);
-  const heartbeatIntervalRef = useRef(null);
-  const cleanupIntervalRef = useRef(null);
-  const lastWriteRef = useRef({
-    success: false,
-    at: null,
-    failureCount: 0,
-  });
+  const [lastWrite, setLastWrite] = useState(lastWriteSnapshot);
 
-  // Initial write on mount
   useEffect(() => {
-    if (!enabled || !user || !user.id) return;
+    if (!enabled || !user?.id) return undefined;
 
-    clientIdRef.current = getOrCreateClientId();
-
-    // Write presence immediately
-    const writePresenceImmediately = async (statusOverride = null) => {
-      try {
-        const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
-          route: window.location.pathname,
-          ...(statusOverride ? { status: statusOverride } : {}),
-          // activeNetId will be injected by VoiceNetProvider when connected
-        });
-        await presenceService.writePresence(presenceRecord);
-        lastWriteRef.current = {
-          success: true,
-          at: new Date().toISOString(),
-          failureCount: 0,
-        };
-      } catch (error) {
-        console.error('[usePresenceHeartbeat] Initial write failed:', error);
-        lastWriteRef.current.failureCount += 1;
-      }
+    const listener = (nextSnapshot) => {
+      setLastWrite(nextSnapshot);
     };
 
-    // Delay initial write to avoid blocking UI
-    const timeoutId = setTimeout(() => writePresenceImmediately(), 1500);
+    heartbeatSubscribers.add(listener);
+    heartbeatRuntime.consumerCount += 1;
+    listener(lastWriteSnapshot);
+    startHeartbeatRuntime(user, intervalMs);
 
-    // Periodic heartbeat
-    const startHeartbeat = () => {
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
-      
-      heartbeatIntervalRef.current = setInterval(async () => {
-        try {
-          const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
-            route: window.location.pathname,
-            // activeNetId will be injected by VoiceNetProvider when connected
-          });
-          await presenceService.writePresence(presenceRecord);
-          lastWriteRef.current = {
-            success: true,
-            at: new Date().toISOString(),
-            failureCount: 0,
-          };
-        } catch (error) {
-          console.error('[usePresenceHeartbeat] Heartbeat write failed:', error);
-          lastWriteRef.current.failureCount += 1;
-        }
-      }, intervalMs);
-    };
-
-    // Cleanup interval (prune old offline records)
-    if (cleanupIntervalRef.current) clearInterval(cleanupIntervalRef.current);
-    cleanupIntervalRef.current = setInterval(async () => {
-      try {
-        await presenceService.cleanupOfflineRecords();
-      } catch (error) {
-        console.error('[usePresenceHeartbeat] Cleanup failed:', error);
-      }
-    }, CLEANUP_INTERVAL_MS);
-
-    startHeartbeat();
-
-    // Visibility-aware pause/resume
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        writePresenceImmediately('idle');
-        // Tab is hidden; pause heartbeat
-        if (heartbeatIntervalRef.current) {
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
-        }
-      } else {
-        // Tab is visible; resume heartbeat (write immediately + restart interval)
-        writePresenceImmediately('online');
-        startHeartbeat();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Final write on unload (best-effort)
-    const handleBeforeUnload = async () => {
-      try {
-        const presenceRecord = createPresenceRecord(user, clientIdRef.current, {
-          route: window.location.pathname,
-          // activeNetId will be injected by VoiceNetProvider when connected
-        });
-        // Send beacon if available (async, non-blocking)
-        if (navigator.sendBeacon) {
-          // For now, just clear the interval; real impl would POST to endpoint
-        }
-        await presenceService.writePresence(presenceRecord);
-      } catch (error) {
-        // Suppress errors on unload
-        console.debug('[usePresenceHeartbeat] Unload write suppressed');
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // Cleanup
     return () => {
-      clearTimeout(timeoutId);
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
-      if (cleanupIntervalRef.current) clearInterval(cleanupIntervalRef.current);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      heartbeatSubscribers.delete(listener);
+      heartbeatRuntime.consumerCount = Math.max(0, heartbeatRuntime.consumerCount - 1);
+      if (heartbeatRuntime.consumerCount === 0) {
+        stopHeartbeatRuntime();
+      }
     };
-  }, [enabled, user]);
+  }, [enabled, intervalMs, user?.id]);
 
   return {
-    lastWrite: lastWriteRef.current,
+    lastWrite,
   };
 }
 

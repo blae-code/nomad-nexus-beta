@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { createPageUrl, isAdminUser } from '@/utils';
+import { isAdminUser, navigateToPage } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { base44 } from '@/api/base44Client';
 import {
@@ -57,7 +57,7 @@ export default function QAConsole() {
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-red-400 mb-2">Access Denied</h1>
           <p className="text-zinc-400 mb-4">QA Console requires admin privileges.</p>
-          <Button onClick={() => (window.location.href = createPageUrl('Hub'))}>Return to Hub</Button>
+          <Button onClick={() => navigateToPage('Hub')}>Return to Hub</Button>
         </div>
       </div>
     );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildBootPlan, resolveBootMode } from '../../src/nexus-os/ui/os/bootStateMachine';
-import { resolveLifecycleThrottleMs, shouldRunLifecycleWork } from '../../src/nexus-os/ui/os/backgroundPerformance';
+import { buildBootPlan, resolveBootMode } from '../../src/components/nexus-os/ui/os/bootStateMachine';
+import { resolveLifecycleThrottleMs, shouldRunLifecycleWork } from '../../src/components/nexus-os/ui/os/backgroundPerformance';
 
 describe('Nexus OS shell polish primitives', () => {
   it('resolves boot mode from session recency', () => {
@@ -41,3 +41,4 @@ describe('Nexus OS shell polish primitives', () => {
     expect(shouldRunLifecycleWork('closed')).toBe(false);
   });
 });
+

@@ -11,7 +11,7 @@ import {
   setPosture,
   updateOperation,
   updateStatus,
-} from '../../src/nexus-os/services/operationService';
+} from '../../src/components/nexus-os/services/operationService';
 
 describe('operation service command-grade workflows', () => {
   beforeEach(() => {
@@ -86,3 +86,4 @@ describe('operation service command-grade workflows', () => {
     expect(actions).toContain('OP_COMMS_TEMPLATE_APPLIED');
   });
 });
+

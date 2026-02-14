@@ -18,7 +18,7 @@ import { useVoiceHealth, formatHealthState, getHealthColor } from '@/components/
 import { useVoiceNotifications } from '@/components/voice/notifications/voiceNotifications';
 import { FocusedNetConfirmationSheet } from '@/components/voice/FocusedNetConfirmation';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 import ActiveNets from '@/components/voice/VoiceControlPanel/ActiveNets';
 import NetHealth from '@/components/voice/VoiceControlPanel/NetHealth';
 import NetRoster from '@/components/voice/VoiceControlPanel/NetRoster';
@@ -311,7 +311,7 @@ export default function ContextPanel({ isOpen, onClose, isMinimized, onMinimize 
                    variant="outline"
                    className="w-full text-xs"
                    onClick={() => {
-                     window.location.href = createPageUrl('Events');
+                     navigateToPage('Events');
                    }}
                  >
                    <ExternalLink className="w-3 h-3 mr-1" />

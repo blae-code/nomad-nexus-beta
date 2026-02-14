@@ -5,14 +5,14 @@ import {
   normalizePanelOrder,
   reorderPanelIds,
   resolvePanelSizeForLayout,
-} from '../../src/nexus-os/ui/workbench/layoutEngine';
+} from '../../src/components/nexus-os/ui/workbench/layoutEngine';
 import {
   fromWorkbenchLayoutSnapshot,
   migrateWorkbenchLayoutSnapshot,
   parseWorkbenchLayout,
   serializeWorkbenchLayout,
-} from '../../src/nexus-os/ui/workbench/layoutPersistence';
-import type { PanelDescriptor } from '../../src/nexus-os/ui/workbench/types';
+} from '../../src/components/nexus-os/ui/workbench/layoutPersistence';
+import type { PanelDescriptor } from '../../src/components/nexus-os/ui/workbench/types';
 
 function panel(id: string, colSpan = 1, rowSpan = 1): PanelDescriptor {
   return {
@@ -110,3 +110,4 @@ describe('Workbench persistence migration', () => {
     expect(fromWorkbenchLayoutSnapshot(null, 'GRID_2X2', ['a'])).toBeNull();
   });
 });
+

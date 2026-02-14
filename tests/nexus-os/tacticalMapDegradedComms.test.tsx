@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { TACTICAL_MAP_NODES } from '../../src/nexus-os/ui/map/mapBoard';
+import { TACTICAL_MAP_NODES } from '../../src/components/nexus-os/ui/map/mapBoard';
 import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
-} from '../../src/nexus-os/services/mapCommsOverlayService';
-import { getMapCommandSurfaceRetryDelayMs } from '../../src/nexus-os/services/tacticalMapFeatureFlagService';
+} from '../../src/components/nexus-os/services/mapCommsOverlayService';
+import { getMapCommandSurfaceRetryDelayMs } from '../../src/components/nexus-os/services/tacticalMapFeatureFlagService';
 
 describe('tactical map degraded comms handling', () => {
   it('parses malformed/404 payloads without breaking map overlays', () => {
@@ -45,4 +45,5 @@ describe('tactical map degraded comms handling', () => {
     expect(getMapCommandSurfaceRetryDelayMs(NaN)).toBe(32_000);
   });
 });
+
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deriveWorkspacePreferenceFromOnboarding,
   recommendWorkspaceActivityPacks,
-} from '../../src/nexus-os/services/workspaceConfigurationService';
+} from '../../src/components/nexus-os/services/workspaceConfigurationService';
 
 describe('workspaceConfigurationService', () => {
   it('derives normalized activity tags and role hints from onboarding selections', () => {
@@ -38,4 +38,5 @@ describe('workspaceConfigurationService', () => {
     expect(recommended[0].panelIds.length).toBeGreaterThan(0);
   });
 });
+
 

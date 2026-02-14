@@ -4,7 +4,7 @@ import {
   TACTICAL_MAP_NODES,
   TACTICAL_MAP_NODE_BY_ID,
   findMapNodeForLocation,
-} from '../../src/nexus-os/ui/map/mapBoard';
+} from '../../src/components/nexus-os/ui/map/mapBoard';
 
 describe('mapBoard tactical layout', () => {
   it('includes three operational systems and their primary bodies', () => {
@@ -41,4 +41,5 @@ describe('mapBoard tactical layout', () => {
     expect(station?.id).toContain('station-porttressler');
   });
 });
+
 

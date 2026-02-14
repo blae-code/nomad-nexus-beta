@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -7,9 +8,10 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import PageNotFound from '@/pages/PageNotFound';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import FittingDataOpsScheduler from '@/components/admin/FittingDataOpsScheduler';
-import { NexusOSPreviewPage } from '@/nexus-os';
+import { NexusOSPreviewPage } from '@/components/nexus-os';
 import NexusOSWorkspace from '@/pages/NexusOSWorkspace';
 import PublicUpdate from '@/pages/PublicUpdate';
+import { navigateToUrl } from '@/utils';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -101,6 +103,36 @@ const AppRoutes = () => (
 
 
 function App() {
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const anchor = target.closest('a[href]');
+      if (!anchor) return;
+      if (anchor.dataset.hardNav === 'true') return;
+      if (anchor.hasAttribute('download')) return;
+
+      const anchorTarget = (anchor.getAttribute('target') || '').toLowerCase();
+      if (anchorTarget && anchorTarget !== '_self') return;
+
+      const href = anchor.getAttribute('href') || '';
+      if (!href || href.startsWith('#')) return;
+      if (href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) return;
+
+      if (navigateToUrl(href)) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
 
   return (
     <AuthProvider>

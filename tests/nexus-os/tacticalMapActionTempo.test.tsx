@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildMapCommandSurface } from '../../src/nexus-os/services/mapCommandSurfaceService';
-import { computeMapInference } from '../../src/nexus-os/services/mapInferenceService';
-import { resolveTacticalMapShortcut } from '../../src/nexus-os/services/tacticalMapInteractionService';
+import { buildMapCommandSurface } from '../../src/components/nexus-os/services/mapCommandSurfaceService';
+import { computeMapInference } from '../../src/components/nexus-os/services/mapInferenceService';
+import { resolveTacticalMapShortcut } from '../../src/components/nexus-os/services/tacticalMapInteractionService';
 
 describe('tactical map action tempo', () => {
   it('supports critical callout macro flow in two interactions', () => {
@@ -85,4 +85,5 @@ describe('tactical map action tempo', () => {
     expect(interactions).toBe(2);
   });
 });
+
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { deriveOperationStagePolicy } from '../../src/nexus-os/ui/ops/stagePolicy';
-import type { Operation } from '../../src/nexus-os/schemas/opSchemas';
+import { deriveOperationStagePolicy } from '../../src/components/nexus-os/ui/ops/stagePolicy';
+import type { Operation } from '../../src/components/nexus-os/schemas/opSchemas';
 
 function makeOperation(status: Operation['status']): Operation {
   return {
@@ -61,4 +61,5 @@ describe('stagePolicy', () => {
     expect(policy.canChangeLifecycle).toBe(false);
   });
 });
+
 

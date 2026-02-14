@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildMapCommandSurface } from '../../src/nexus-os/services/mapCommandSurfaceService';
-import { computeMapInference } from '../../src/nexus-os/services/mapInferenceService';
+import { buildMapCommandSurface } from '../../src/components/nexus-os/services/mapCommandSurfaceService';
+import { computeMapInference } from '../../src/components/nexus-os/services/mapInferenceService';
 
 describe('mapCommandSurfaceService', () => {
   it('ranks alerts and recommended macros from comms + inference pressure', () => {
@@ -120,3 +120,4 @@ describe('mapCommandSurfaceService', () => {
     expect(surface.disciplineMode).toBe('REQUEST_TO_SPEAK');
   });
 });
+

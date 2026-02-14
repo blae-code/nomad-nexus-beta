@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { wipeAll, countAllDomains } from '@/components/services/dataRegistry';
 import { useNotification } from '@/components/providers/NotificationContext';
 import { useShellUI } from '@/components/providers/ShellUIContext';
+import { navigateToUrl } from '@/utils';
 
 const STORAGE_KEYS_TO_CLEAR = [
   'nexus.shell.ui.state',
@@ -99,7 +100,7 @@ export default function FactoryReset() {
 
       // Reload after delay
       setTimeout(() => {
-        window.location.href = '/';
+        navigateToUrl('/');
       }, 3000);
     } catch (error) {
       addNotification({

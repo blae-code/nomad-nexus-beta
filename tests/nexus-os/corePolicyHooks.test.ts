@@ -2,17 +2,17 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   isCqbEventActive,
   partitionCqbEventsByTTL,
-} from '../../src/nexus-os/services/cqbTTLService';
+} from '../../src/components/nexus-os/services/cqbTTLService';
 import {
   createCommandIntent,
   registerCommandAuthorityPolicyValidator,
   resetCommandAuthorityPolicyValidators,
   validateCommandIntent,
-} from '../../src/nexus-os/services/commandIntentService';
+} from '../../src/components/nexus-os/services/commandIntentService';
 import {
   determineChannelContext,
   setChannelAccessResolver,
-} from '../../src/nexus-os/services/channelContextService';
+} from '../../src/components/nexus-os/services/channelContextService';
 
 afterEach(() => {
   resetCommandAuthorityPolicyValidators();
@@ -104,3 +104,4 @@ describe('channelContextService policy hooks', () => {
     expect(scoped.authorityExpectations).toEqual(['SQUAD', 'COMMAND']);
   });
 });
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight, Download, Shield, Lock, Database, Brain, AlertCircle, CheckCircle2, Zap, Eye, Server } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -61,7 +61,7 @@ export default function Disclaimers() {
         ai_use_history: aiDefaults,
       });
 
-      window.location.href = createPageUrl('Onboarding');
+      navigateToPage('Onboarding');
     } catch (error) {
       console.error('Disclaimer error:', error);
       alert('Error processing disclaimers. Please try again.');

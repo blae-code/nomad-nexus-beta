@@ -1,8 +1,7 @@
 import React from 'react';
 import '@/globals.css';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 import Header from '@/components/layout/Header';
-import ConstructionTicker from '@/components/layout/ConstructionTicker';
 import CSSDebugOverlay from '@/components/debug/CSSDebugOverlay';
 
 
@@ -27,7 +26,19 @@ import AuthDebugOverlay from '@/components/auth/AuthDebugOverlay';
 import { useRealtimeNotifications } from '@/components/hooks/useRealtimeNotifications';
 import OfflineStatusBanner from '@/components/mobile/OfflineStatusBanner';
 import MobileQuickActionBar from '@/components/mobile/MobileQuickActionBar';
-import TacticalFooter from '@/components/layout/TacticalFooter';
+
+const TacticalFooter = React.lazy(() => import('@/components/layout/TacticalFooter'));
+const TACTICAL_FOOTER_PAGES = new Set([
+  'Hub',
+  'CommsConsole',
+  'CommandCenter',
+  'MissionControl',
+  'FleetTracking',
+  'FleetCommand',
+  'UniverseMap',
+  'FrontierOps',
+  'HighCommand',
+]);
 
 /**
  * AppShell — Top-level layout wrapper for all routes.
@@ -120,7 +131,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   }, []);
 
   const handleNavigate = (page) => {
-    window.location.href = createPageUrl(page);
+    navigateToPage(page);
   };
 
   const handleTriggerTestAlert = (type) => {
@@ -172,6 +183,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   isCommsDockOpen && dockMinimized ?
   'pb-12' :
   'pb-16 md:pb-0';
+  const shouldShowTacticalFooter = TACTICAL_FOOTER_PAGES.has(currentPageName);
 
   return (
     <CommandPaletteProvider
@@ -228,7 +240,11 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         <CommandPaletteUI />
 
         {/* Tactical Footer - Integrated Tactical Map */}
-        <TacticalFooter />
+        {shouldShowTacticalFooter ?
+        <React.Suspense fallback={null}>
+            <TacticalFooter />
+          </React.Suspense> :
+        null}
 
         {/* Mobile quick actions (touch-first nav + toggles) */}
         <MobileQuickActionBar onToggleCommsDock={toggleCommsDock} onToggleContextPanel={toggleContextPanel} />

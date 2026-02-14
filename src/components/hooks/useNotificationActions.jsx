@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNotification } from '@/components/providers/NotificationContext';
 import { base44 } from '@/api/base44Client';
+import { navigateToUrl } from '@/utils';
 
 /**
  * useNotificationActions — Helper hook for common notification workflows
@@ -39,7 +40,7 @@ export function useNotificationActions() {
   const investigateEvent = useCallback(
     (eventId) => {
       // Trigger navigation to event details
-      window.location.href = `/Events?id=${eventId}`;
+      navigateToUrl(`/Events?id=${eventId}`);
     },
     []
   );

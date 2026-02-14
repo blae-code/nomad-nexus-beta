@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { computeControlZones } from '../../src/nexus-os/services/controlZoneService';
+import { computeControlZones } from '../../src/components/nexus-os/services/controlZoneService';
 import {
   resetRsvpServiceState,
   updateRSVPPolicy,
@@ -14,7 +14,7 @@ import {
   listCrewSeatAssignments,
   computeRosterSummary,
   listOpenCrewSeats,
-} from '../../src/nexus-os/services/rsvpService';
+} from '../../src/components/nexus-os/services/rsvpService';
 import {
   createOperation,
   appendOperationEvent,
@@ -28,10 +28,10 @@ import {
   setFocusOperation,
   setPosture,
   updateStatus,
-} from '../../src/nexus-os/services/operationService';
+} from '../../src/components/nexus-os/services/operationService';
 import {
   analyzeRoster,
-} from '../../src/nexus-os/services/forceDesignService';
+} from '../../src/components/nexus-os/services/forceDesignService';
 import {
   createObjective,
   createPhase,
@@ -40,13 +40,13 @@ import {
   challengeAssumption,
   promoteCommentToDecision,
   resetPlanningServiceState,
-} from '../../src/nexus-os/services/planningService';
-import { addComment, resetOpThreadServiceState } from '../../src/nexus-os/services/opThreadService';
+} from '../../src/components/nexus-os/services/planningService';
+import { addComment, resetOpThreadServiceState } from '../../src/components/nexus-os/services/opThreadService';
 import {
   createIntelObject,
   retireIntelObject,
   resetIntelServiceState,
-} from '../../src/nexus-os/services/intelService';
+} from '../../src/components/nexus-os/services/intelService';
 import {
   generateReport,
   generateReportPreview,
@@ -55,17 +55,17 @@ import {
   listReportInputSnapshots,
   validateReport,
   resetReportServiceState,
-} from '../../src/nexus-os/services/reportService';
+} from '../../src/components/nexus-os/services/reportService';
 import {
   attachFitProfileToAssetSlot,
   createFitProfile,
   resetFitProfileServiceState,
-} from '../../src/nexus-os/services/fitProfileService';
+} from '../../src/components/nexus-os/services/fitProfileService';
 import {
   createDraft,
   confirmDraft,
   resetIntentDraftServiceState,
-} from '../../src/nexus-os/services/intentDraftService';
+} from '../../src/components/nexus-os/services/intentDraftService';
 import {
   createMissionBriefNarrative,
   createNarrativeEvent,
@@ -74,7 +74,7 @@ import {
   listNarrativeEvents,
   resetNarrativeServiceState,
   upsertCharacterProfile,
-} from '../../src/nexus-os/services/narrativeService';
+} from '../../src/components/nexus-os/services/narrativeService';
 import {
   canAccessOperationContext,
   createAlliance,
@@ -88,7 +88,7 @@ import {
   respondAlliance,
   respondOperationInvite,
   sendOperationInvite,
-} from '../../src/nexus-os/services/crossOrgService';
+} from '../../src/components/nexus-os/services/crossOrgService';
 import {
   createTrainingScenario,
   injectSimulationEvent,
@@ -98,8 +98,8 @@ import {
   resumeSimulationSession,
   startSimulationSession,
   stopSimulationSession,
-} from '../../src/nexus-os/services/trainingSimulationService';
-import { resetOperationEnhancementServiceState } from '../../src/nexus-os/services/operationEnhancementService';
+} from '../../src/components/nexus-os/services/trainingSimulationService';
+import { resetOperationEnhancementServiceState } from '../../src/components/nexus-os/services/operationEnhancementService';
 
 describe('Nexus OS hardening services', () => {
   beforeEach(() => {
@@ -1033,3 +1033,4 @@ describe('Nexus OS hardening services', () => {
     expect(broadcasts.length).toBeGreaterThan(0);
   });
 });
+

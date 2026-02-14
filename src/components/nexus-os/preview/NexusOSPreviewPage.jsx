@@ -381,13 +381,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const { user } = useAuth();
   const vars = getNexusCssVars();
   const isWorkspaceMode = mode === 'workspace';
+  const sessionScopePrefix = isWorkspaceMode ? 'workspace-canvas-v2' : 'dev';
   const workspaceActorId = user?.member_profile_id || user?.id || 'workspace-operator';
   const workspaceDisplayCallsign =
     user?.member_profile_data?.display_callsign ||
     user?.member_profile_data?.callsign ||
     user?.callsign ||
     'Operator';
-  const sessionScopeKey = `${isWorkspaceMode ? 'workspace' : 'dev'}:${workspaceActorId || 'anon'}`;
+  const sessionScopeKey = `${sessionScopePrefix}:${workspaceActorId || 'anon'}`;
   const { snapshot: osSession, hydrated, patchSnapshot, reset: resetSession } = useNexusWorkspaceSession(sessionScopeKey, {
     bridgeId: 'OPS',
     presetId: BRIDGE_DEFAULT_PRESET.OPS,
@@ -399,7 +400,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     forceDesignOpId: '',
     reportsOpId: '',
     activePanelIds: [],
-    workspaceOnboardingCompleted: !isWorkspaceMode,
+    workspaceOnboardingCompleted: true,
   });
 
   const bridgeId = osSession.bridgeId;
@@ -413,8 +414,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const forceDesignOpId = osSession.forceDesignOpId;
   const reportsOpId = osSession.reportsOpId;
   const activePanelIds = osSession.activePanelIds || [];
-  const workspaceOnboardingCompleted = Boolean(osSession.workspaceOnboardingCompleted);
-  const needsWorkspaceOnboarding = Boolean(isWorkspaceMode && !workspaceOnboardingCompleted);
 
   const [commandDeckOpen, setCommandDeckOpen] = useState(false);
   const [commandFeedback, setCommandFeedback] = useState('');
@@ -1209,13 +1208,9 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             panels={panelDescriptors}
             presetId={presetId}
             onPresetChange={setPresetId}
-            defaultActivationMode={needsWorkspaceOnboarding ? 'empty' : 'all'}
-            enableOnboardingExperience={needsWorkspaceOnboarding}
+            defaultActivationMode="empty"
+            enableOnboardingExperience={false}
             workspaceUserDisplayName={workspaceDisplayCallsign}
-            onCompleteOnboarding={() => {
-              if (!needsWorkspaceOnboarding) return;
-              patchSnapshot({ workspaceOnboardingCompleted: true });
-            }}
             layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
             enableLayoutPersistence
             atmosphereMode="minimal"
@@ -1223,7 +1218,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             onActivePanelIdsChange={(next) =>
               patchSnapshot({
                 activePanelIds: next,
-                workspaceOnboardingCompleted: workspaceOnboardingCompleted || next.length > 0,
               })
             }
             panelComponentProps={sharedPanelProps}

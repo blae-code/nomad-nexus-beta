@@ -92,8 +92,8 @@ For Base44 restart sequencing, use `docs/BASE44_BACKEND_RESUME_PLAYBOOK.md`.
 ## Project Structure
 
 - **`src/`**: Frontend application source.
-  - **`src/nexus-os/`**: NexusOS shell, services, schemas, validators, and preview workbench.
-  - **`src/nexus-os/ui/theme/`**: Shared Nexus design foundations and shell theme layers (global Redscar styling).
+  - **`src/components/nexus-os/`**: NexusOS shell, services, schemas, validators, and preview workbench.
+  - **`src/components/nexus-os/ui/theme/`**: Shared Nexus design foundations and shell theme layers (global Redscar styling).
   - **`src/pages/`**: Route-level page modules (including AccessGate and onboarding flow).
   - **`src/components/`**: Shared React UI and feature components.
   - **`src/lib/`**: Core utilities, contexts, and app-wide helpers.

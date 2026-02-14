@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCqbVoiceCommand } from '../../src/nexus-os/services/cqbVoiceCommandService';
+import { parseCqbVoiceCommand } from '../../src/components/nexus-os/services/cqbVoiceCommandService';
 
 describe('cqbVoiceCommandService', () => {
   it('maps canonical brevity phrase to gameplay macro event', () => {
@@ -25,3 +25,4 @@ describe('cqbVoiceCommandService', () => {
     expect(result.reason).toContain('No known gameplay brevity phrase');
   });
 });
+

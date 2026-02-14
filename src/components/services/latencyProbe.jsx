@@ -14,6 +14,16 @@
 
 const DEFAULT_THRESHOLD_MS = 150;
 const MOCK_LATENCY_RANGE = [20, 80];
+const LATENCY_MONITOR_DEFAULT_INTERVAL_MS = 20000;
+const latencySubscribers = new Set();
+
+const latencyMonitor = {
+  intervalMs: LATENCY_MONITOR_DEFAULT_INTERVAL_MS,
+  consumerCount: 0,
+  timerId: null,
+  visibilityBound: false,
+  inFlight: false,
+};
 
 /**
  * In-memory latency state
@@ -24,6 +34,53 @@ let latencyState = {
   isHealthy: true,
   error: null,
 };
+
+function notifySubscribers() {
+  latencySubscribers.forEach((listener) => {
+    try {
+      listener({ ...latencyState });
+    } catch {
+      // ignore subscriber errors
+    }
+  });
+}
+
+function clearMonitorTimer() {
+  if (latencyMonitor.timerId && typeof window !== 'undefined') {
+    window.clearInterval(latencyMonitor.timerId);
+  }
+  latencyMonitor.timerId = null;
+}
+
+function ensureMonitorTimer() {
+  if (typeof window === 'undefined') return;
+  if (latencyMonitor.timerId || document.hidden || latencyMonitor.consumerCount <= 0) return;
+  latencyMonitor.timerId = window.setInterval(() => {
+    probeLatency().catch(() => {});
+  }, latencyMonitor.intervalMs);
+}
+
+async function probeLatency() {
+  if (latencyMonitor.inFlight) return;
+  latencyMonitor.inFlight = true;
+  try {
+    const measured = await measureLatency();
+    updateLatency(measured);
+  } catch (error) {
+    recordLatencyError(error);
+  } finally {
+    latencyMonitor.inFlight = false;
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    clearMonitorTimer();
+    return;
+  }
+  ensureMonitorTimer();
+  probeLatency().catch(() => {});
+}
 
 /**
  * Stub implementation: deterministic mock latency generator
@@ -90,6 +147,7 @@ export function updateLatency(latencyMs, thresholdMs = DEFAULT_THRESHOLD_MS) {
     isHealthy: latencyMs < thresholdMs,
     error: null,
   };
+  notifySubscribers();
   return { ...latencyState };
 }
 
@@ -104,6 +162,7 @@ export function recordLatencyError(error) {
     error: error?.message || 'Unknown error',
     isHealthy: false,
   };
+  notifySubscribers();
   return { ...latencyState };
 }
 
@@ -117,6 +176,48 @@ export function resetLatency() {
     isHealthy: true,
     error: null,
   };
+  notifySubscribers();
+}
+
+export function subscribeLatencyState(listener) {
+  if (typeof listener !== 'function') {
+    return () => {};
+  }
+  latencySubscribers.add(listener);
+  listener({ ...latencyState });
+  return () => {
+    latencySubscribers.delete(listener);
+  };
+}
+
+export function retainLatencyMonitor(intervalMs = LATENCY_MONITOR_DEFAULT_INTERVAL_MS) {
+  latencyMonitor.consumerCount += 1;
+  const nextInterval = Number(intervalMs);
+  if (Number.isFinite(nextInterval) && nextInterval > 0) {
+    latencyMonitor.intervalMs = Math.min(latencyMonitor.intervalMs, nextInterval);
+  }
+
+  if (typeof document !== 'undefined' && !latencyMonitor.visibilityBound) {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    latencyMonitor.visibilityBound = true;
+  }
+
+  ensureMonitorTimer();
+  probeLatency().catch(() => {});
+}
+
+export function releaseLatencyMonitor() {
+  latencyMonitor.consumerCount = Math.max(0, latencyMonitor.consumerCount - 1);
+  if (latencyMonitor.consumerCount > 0) return;
+
+  clearMonitorTimer();
+  latencyMonitor.intervalMs = LATENCY_MONITOR_DEFAULT_INTERVAL_MS;
+  latencyMonitor.inFlight = false;
+
+  if (typeof document !== 'undefined' && latencyMonitor.visibilityBound) {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    latencyMonitor.visibilityBound = false;
+  }
 }
 
 export default {
@@ -126,5 +227,8 @@ export default {
   updateLatency,
   recordLatencyError,
   resetLatency,
+  subscribeLatencyState,
+  retainLatencyMonitor,
+  releaseLatencyMonitor,
   DEFAULT_THRESHOLD_MS,
 };

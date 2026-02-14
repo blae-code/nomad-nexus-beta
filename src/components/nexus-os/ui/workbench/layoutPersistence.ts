@@ -76,13 +76,14 @@ function normalizeSnapshot(
   availablePanelIds: string[]
 ): WorkbenchLayoutSnapshotV2 {
   const panelOrder = normalizePanelOrder(snapshot.panelOrder || [], availablePanelIds);
+  const hasExplicitActivePanelIds = Array.isArray(snapshot.activePanelIds);
   const activePanelIds = (snapshot.activePanelIds || []).filter((id) => availablePanelIds.includes(id));
   return {
     version: LATEST_VERSION,
     schema: 'nexus-os-workbench',
     presetId: (snapshot.presetId || fallbackPresetId) as WorkbenchPresetId,
     panelOrder,
-    activePanelIds: activePanelIds.length > 0 ? activePanelIds : panelOrder,
+    activePanelIds: hasExplicitActivePanelIds ? activePanelIds : panelOrder,
     panelSizes: normalizePanelSizes(snapshot.panelSizes),
     updatedAt: snapshot.updatedAt || nowIso(),
   };
@@ -100,7 +101,7 @@ export function toWorkbenchLayoutSnapshot(
     schema: 'nexus-os-workbench',
     presetId,
     panelOrder,
-    activePanelIds: Array.isArray(activePanelIds) && activePanelIds.length > 0 ? activePanelIds : panelOrder,
+    activePanelIds: Array.isArray(activePanelIds) ? activePanelIds : panelOrder,
     panelSizes: normalizePanelSizes(panelSizes),
     updatedAt: nowIso(),
   };

@@ -1241,12 +1241,12 @@ export default function WorkbenchGrid({
                           className="text-sm sm:text-base font-semibold uppercase tracking-[0.1em]"
                           style={{ color: 'rgba(var(--nx-bridge-c-rgb, var(--nx-bridge-c-rgb-base)), 0.96)' }}
                         >
-                          {onboardingVisible ? `Welcome, ${workspaceUserDisplayName}` : 'Workspace Standby'}
+                          {onboardingVisible ? `Welcome, ${workspaceUserDisplayName}` : 'Blank Canvas Ready'}
                         </h3>
                         <p className="text-xs text-zinc-400 max-w-2xl">
                           {onboardingVisible
                             ? 'Start from an empty desk, then stage only what you need. Use starter packs, templates, or a custom brief to generate bespoke widgets and visualizations.'
-                            : 'No visible widgets are mounted. Restore panel visibility or open Workspace Studio to curate a cleaner layout.'}
+                            : 'The workbench starts empty by design. Open the panel drawer to stage only the modules you need.'}
                         </p>
                       </div>
                       {onboardingVisible ? (
@@ -1328,9 +1328,9 @@ export default function WorkbenchGrid({
                           <NexusButton
                             size="sm"
                             intent="primary"
-                            onClick={() => setActivePanelIds(allPanels.map((panel) => panel.id))}
+                            onClick={() => setIsPanelDrawerOpen(true)}
                           >
-                            Restore All Panels
+                            Populate Canvas
                           </NexusButton>
                         )}
                         <NexusButton
@@ -1345,6 +1345,15 @@ export default function WorkbenchGrid({
                         >
                           {onboardingVisible ? 'Open Guided Studio' : 'Open Panel Drawer'}
                         </NexusButton>
+                        {!onboardingVisible ? (
+                          <NexusButton
+                            size="sm"
+                            intent="subtle"
+                            onClick={() => setActivePanelIds(allPanels.map((panel) => panel.id))}
+                          >
+                            Restore All Panels
+                          </NexusButton>
+                        ) : null}
                         {onboardingVisible ? (
                           <NexusButton size="sm" intent="subtle" onClick={completeOnboarding}>
                             Skip Tour

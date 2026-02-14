@@ -17,8 +17,8 @@ import {
   updateDoctrineDefinition,
   upsertRoleMandate,
   upsertUserOperationPreference,
-} from '../../src/nexus-os/services/operationEnhancementService';
-import { createOperation, resetOperationServiceState } from '../../src/nexus-os/services/operationService';
+} from '../../src/components/nexus-os/services/operationEnhancementService';
+import { createOperation, resetOperationServiceState } from '../../src/components/nexus-os/services/operationService';
 
 describe('operationEnhancementService', () => {
   beforeEach(() => {
@@ -277,3 +277,4 @@ describe('operationEnhancementService', () => {
     }
   });
 });
+

@@ -78,7 +78,7 @@ function queueKey(namespace: string, scopeKey: string): string {
 }
 
 async function invokeWorkspaceFunction(payload: Record<string, unknown>) {
-  const module = await import('../../api/memberFunctions');
+  const module = await import('../../../api/memberFunctions');
   return module.invokeMemberFunction('updateWorkspaceState', payload);
 }
 

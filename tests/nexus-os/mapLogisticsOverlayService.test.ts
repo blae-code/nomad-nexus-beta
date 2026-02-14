@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMapLogisticsOverlay,
   createEmptyMapLogisticsOverlay,
-} from '../../src/nexus-os/services/mapLogisticsOverlayService';
-import { TACTICAL_MAP_NODES } from '../../src/nexus-os/ui/map/mapBoard';
+} from '../../src/components/nexus-os/services/mapLogisticsOverlayService';
+import { TACTICAL_MAP_NODES } from '../../src/components/nexus-os/ui/map/mapBoard';
 
 describe('mapLogisticsOverlayService', () => {
   it('builds scoped logistics lanes from operation events', () => {
@@ -94,4 +94,5 @@ describe('mapLogisticsOverlayService', () => {
     expect(createEmptyMapLogisticsOverlay().lanes.length).toBe(0);
   });
 });
+
 

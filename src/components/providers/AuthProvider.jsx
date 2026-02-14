@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 
 const AuthContext = createContext(null);
 
@@ -179,7 +179,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setAiFeaturesEnabledState(true);
       setAiFeaturesError(null);
-      window.location.href = createPageUrl('AccessGate');
+      navigateToPage('AccessGate');
     } catch (err) {
       console.error('[AUTH] Logout error:', err);
     }

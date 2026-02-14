@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getPublicUpdateBySlug } from '@/nexus-os';
+import { getPublicUpdateBySlug } from '@/components/nexus-os';
 
 /**
  * Public outreach landing page for sanitized coalition updates.
@@ -48,4 +48,3 @@ export default function PublicUpdate() {
     </main>
   );
 }
-

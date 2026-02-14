@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { mapModeLayerDefaults } from '../../src/nexus-os/services/tacticalMapPreferenceService';
+import { mapModeLayerDefaults } from '../../src/components/nexus-os/services/tacticalMapPreferenceService';
 import {
   resolveTacticalMapDefaultMode,
   resolveTacticalMapShortcut,
   tacticalMapDockIdsForMode,
-} from '../../src/nexus-os/services/tacticalMapInteractionService';
+} from '../../src/components/nexus-os/services/tacticalMapInteractionService';
 
 describe('tactical map progressive modes', () => {
   it('maps bridge defaults to progressive mode layers and dock tabs', () => {
@@ -52,3 +52,4 @@ describe('tactical map progressive modes', () => {
     expect(resolveTacticalMapShortcut({ key: 'c', shiftKey: true, mode: 'COMMAND', isFormTarget: true })).toEqual({ type: 'NONE' });
   });
 });
+

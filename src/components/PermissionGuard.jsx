@@ -1,5 +1,5 @@
 import React from 'react';
-import { createPageUrl, isAdminUser } from '@/utils';
+import { isAdminUser, navigateToPage } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isRankSufficient, RANKS } from './constants/ranks';
 import { hasRequiredRole, hasAllRequiredRoles } from './constants/roles';
@@ -39,7 +39,7 @@ export default function PermissionGuard({
   // No user - redirect to login
   if (!user) {
     if (typeof window !== 'undefined') {
-      window.location.href = createPageUrl('AccessGate');
+      navigateToPage('AccessGate');
     }
     return fallback || (
       <div className="p-4 text-center text-orange-500">

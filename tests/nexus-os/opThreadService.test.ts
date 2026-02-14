@@ -7,7 +7,7 @@ import {
   listUnreadThreadNotifications,
   markThreadRead,
   resetOpThreadServiceState,
-} from '../../src/nexus-os/services/opThreadService';
+} from '../../src/components/nexus-os/services/opThreadService';
 
 describe('opThreadService', () => {
   beforeEach(() => {
@@ -90,3 +90,4 @@ describe('opThreadService', () => {
     expect(notifications.length).toBe(0);
   });
 });
+

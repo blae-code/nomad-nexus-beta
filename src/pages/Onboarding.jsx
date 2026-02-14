@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Shield, Compass, ChevronRight, Check, AlertCircle, CheckCircle2, Zap, Brain } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import RouteGuard from '@/components/auth/RouteGuard';
-import { upsertUserOperationPreference } from '@/nexus-os/services/operationEnhancementService';
+import { upsertUserOperationPreference } from '@/components/nexus-os/services/operationEnhancementService';
 import {
   WORKSPACE_ACTIVITY_OPTIONS,
   deriveWorkspacePreferenceFromOnboarding,
-} from '@/nexus-os/services/workspaceConfigurationService';
+} from '@/components/nexus-os/services/workspaceConfigurationService';
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -127,7 +127,7 @@ export default function Onboarding() {
         console.warn('Unable to save workspace activity preference:', prefErr);
       }
 
-      window.location.href = createPageUrl('Workspace');
+      navigateToPage('Hub');
     } catch (error) {
       console.error('Onboarding error:', error);
       alert('Error completing onboarding. Please try again.');

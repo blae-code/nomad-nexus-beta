@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMapTimelineSnapshot } from '../../src/nexus-os/services/mapTimelineService';
+import { buildMapTimelineSnapshot } from '../../src/components/nexus-os/services/mapTimelineService';
 
 describe('mapTimelineService', () => {
   it('builds deterministic replay windows with mixed-source entries', () => {
@@ -78,3 +78,4 @@ describe('mapTimelineService', () => {
     expect(snapshot.replayCursorMs).toBe(nowMs - 5 * 60_000);
   });
 });
+

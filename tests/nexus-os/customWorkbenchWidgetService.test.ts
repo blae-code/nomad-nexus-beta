@@ -8,7 +8,7 @@ import {
   removeCustomWorkbenchWidget,
   resetCustomWorkbenchWidgetStore,
   upsertCustomWorkbenchWidget,
-} from '../../src/nexus-os/services/customWorkbenchWidgetService';
+} from '../../src/components/nexus-os/services/customWorkbenchWidgetService';
 
 describe('customWorkbenchWidgetService', () => {
   beforeEach(() => {
@@ -158,3 +158,4 @@ describe('customWorkbenchWidgetService', () => {
     expect(() => importCustomWorkbenchWidgetFromShareCode('bridge:alpha', 'NOT_A_CODE')).toThrow();
   });
 });
+

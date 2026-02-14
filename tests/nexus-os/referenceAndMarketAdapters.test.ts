@@ -5,7 +5,7 @@ import {
   refreshReferenceDataFromAdapters,
   registerReferenceDataAdapter,
   resetReferenceDataServiceState,
-} from '../../src/nexus-os/services/referenceDataService';
+} from '../../src/components/nexus-os/services/referenceDataService';
 import {
   getMarketIntelAdapterHealth,
   getPriceObservationMetadata,
@@ -13,7 +13,7 @@ import {
   refreshMarketIntelFromAdapters,
   registerMarketIntelAdapter,
   resetMarketIntelServiceState,
-} from '../../src/nexus-os/services/marketIntelService';
+} from '../../src/components/nexus-os/services/marketIntelService';
 
 afterEach(() => {
   resetReferenceDataServiceState();
@@ -162,3 +162,4 @@ describe('marketIntelService adapters', () => {
     expect(health.adapters[0].warnings.some((message) => message.includes('terminalId'))).toBe(true);
   });
 });
+

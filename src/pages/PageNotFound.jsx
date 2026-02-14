@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -26,7 +26,7 @@ export default function PageNotFound() {
         </div>
         
         <Button 
-          onClick={() => window.location.href = createPageUrl('Hub')}
+          onClick={() => navigateToPage('Hub')}
           className="w-full"
         >
           <Home className="w-4 h-4 mr-2" />

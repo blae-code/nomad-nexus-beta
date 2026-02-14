@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { createPageUrl, isAdminUser } from '@/utils';
+import { isAdminUser, navigateToPage } from '@/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { 
   Shield,
@@ -56,7 +56,7 @@ export default function Settings() {
           <p className="text-zinc-400 mb-4">
             System Admin console requires elevated privileges.
           </p>
-          <Button onClick={() => (window.location.href = createPageUrl('Hub'))}>
+          <Button onClick={() => navigateToPage('Hub')}>
             Return to Hub
           </Button>
         </div>

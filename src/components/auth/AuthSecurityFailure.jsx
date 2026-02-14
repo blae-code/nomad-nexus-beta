@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Lock, Shield, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 
 /**
  * AuthSecurityFailure - Themed error screen for authentication failures
@@ -115,7 +115,7 @@ export default function AuthSecurityFailure({ reason = 'unknown', onRetry = null
             {/* Action Buttons */}
             <div className="flex flex-col gap-3">
               <Button
-                onClick={() => window.location.href = createPageUrl('AccessGate')}
+                onClick={() => navigateToPage('AccessGate')}
                 className="w-full h-12 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-widest shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />

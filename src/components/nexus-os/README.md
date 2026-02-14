@@ -30,4 +30,4 @@ This folder is the non-UI foundation for Nexus OS. It is intentionally isolated 
 
 ## Migration Backlog
 
-- TODO: Move legacy domain services from `src/components/services/` into `src/nexus-os/services/` with staged adoption to avoid runtime regressions.
+- TODO: Move legacy domain services from `src/components/services/` into `src/components/nexus-os/services/` with staged adoption to avoid runtime regressions.

@@ -3,8 +3,8 @@ import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
-} from '../../src/nexus-os/services/mapCommsOverlayService';
-import { TACTICAL_MAP_NODES } from '../../src/nexus-os/ui/map/mapBoard';
+} from '../../src/components/nexus-os/services/mapCommsOverlayService';
+import { TACTICAL_MAP_NODES } from '../../src/components/nexus-os/ui/map/mapBoard';
 
 describe('mapCommsOverlayService', () => {
   it('extracts topology payload from member-function envelopes', () => {
@@ -125,4 +125,5 @@ describe('mapCommsOverlayService', () => {
     expect(createEmptyMapCommsOverlay().nets.length).toBe(0);
   });
 });
+
 

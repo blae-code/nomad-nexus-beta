@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNotification } from '@/components/providers/NotificationContext';
 import { useNotificationActions } from './useNotificationActions';
+import { navigateToPage } from '@/utils';
 
 /**
  * useAlertSimulator — Simulate different alert types for testing
@@ -42,7 +43,7 @@ export function useAlertSimulator() {
           label: 'Investigate',
           variant: 'primary',
           onClick: () => {
-            window.location.href = '/CommsConsole';
+            navigateToPage('CommsConsole');
           },
         },
         {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMapAiPrompt, computeMapInference } from '../../src/nexus-os/services/mapInferenceService';
+import { buildMapAiPrompt, computeMapInference } from '../../src/components/nexus-os/services/mapInferenceService';
 
 describe('mapInferenceService', () => {
   it('computes bounded risk/confidence metrics from scoped evidence', () => {
@@ -99,3 +99,4 @@ describe('mapInferenceService', () => {
     expect(promptA).toContain('Prioritized actions');
   });
 });
+

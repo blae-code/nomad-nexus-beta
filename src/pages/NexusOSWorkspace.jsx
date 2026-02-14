@@ -1,6 +1,6 @@
 import React from 'react';
 import RouteGuard from '@/components/auth/RouteGuard';
-import { NexusOSPreviewPage } from '@/nexus-os';
+import { NexusOSPreviewPage } from '@/components/nexus-os';
 
 /**
  * Authenticated Nexus OS workspace surface.

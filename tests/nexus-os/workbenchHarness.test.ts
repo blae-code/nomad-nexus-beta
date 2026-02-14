@@ -3,8 +3,8 @@ import {
   runWorkbenchA11yChecks,
   runWorkbenchHarness,
   runWorkbenchPerfSample,
-} from '../../src/nexus-os/ui/workbench/workbenchHarness';
-import type { PanelDescriptor } from '../../src/nexus-os/ui/workbench/types';
+} from '../../src/components/nexus-os/ui/workbench/workbenchHarness';
+import type { PanelDescriptor } from '../../src/components/nexus-os/ui/workbench/types';
 
 function panel(id: string, title = id): PanelDescriptor {
   return {
@@ -52,3 +52,4 @@ describe('Workbench a11y/perf harness', () => {
     expect(report.perf.iterationCount).toBe(8);
   });
 });
+

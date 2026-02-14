@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Zap, Trash2 } from 'lucide-react';
-import { createPageUrl } from '@/utils';
+import { navigateToPage } from '@/utils';
 import RouteGuard from '@/components/auth/RouteGuard';
 import PageTransition from '@/components/transitions/PageTransition';
 import AsyncLoadingOverlay from '@/components/transitions/AsyncLoadingOverlay';
@@ -133,7 +133,7 @@ export default function AccessGate() {
               }
 
               setTimeout(() => {
-                window.location.href = createPageUrl(nextPage);
+                navigateToPage(nextPage);
               }, 1000);
               } catch (authErr) {
                 setVerifyingAuth(false);
