@@ -81,68 +81,56 @@ export default function Header() {
   const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank || 'VAGRANT');
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-zinc-900 via-zinc-925 to-zinc-950 border-b border-orange-500/30 backdrop-blur-xl shadow-lg shadow-orange-500/5 overflow-hidden z-[800]">
+    <header className="fixed top-0 left-0 right-0 h-12 bg-black/98 border-b-2 border-red-700/50 backdrop-blur-xl shadow-2xl shadow-red-500/10 overflow-hidden z-[800]">
       <div className="h-full px-6 flex items-center justify-between gap-4 overflow-hidden max-w-full">
         {/* Left: Identity — Compact Single-Row */}
-        <div className="flex items-center gap-2.5 flex-shrink-0 min-w-max">
-          <div className={`w-1.5 h-8 rounded-sm ${isAdmin ? 'bg-gradient-to-b from-red-500 to-red-600' : 'bg-gradient-to-b from-orange-500 to-orange-600'} shadow-lg`} />
+        <div className="flex items-center gap-2 flex-shrink-0 min-w-max">
+          <div className={`w-1 h-6 rounded-sm ${isAdmin ? 'bg-red-500' : 'bg-orange-500'}`} />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white tracking-wider uppercase leading-none">{user.callsign || 'Nomad'}</span>
-            <span className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${isAdmin ? 'text-red-300 border-red-500/40 bg-red-500/10' : 'text-orange-300 border-orange-500/40 bg-orange-500/10'}`}>{rankLabel}</span>
-            {user.membership && <span className="text-[10px] font-mono font-semibold uppercase border rounded px-1.5 py-0.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/50">{getMembershipLabel(user.membership)}</span>}
+            <span className="text-sm font-black text-white tracking-[0.2em] uppercase leading-none">{user.callsign || 'Nomad'}</span>
+            <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded border ${isAdmin ? 'text-red-300 border-red-500/30 bg-red-500/10' : 'text-orange-300 border-orange-500/30 bg-orange-500/10'}`}>{rankLabel}</span>
+            {user.membership && <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.15em] border rounded px-2 py-0.5 bg-zinc-900/40 text-zinc-400 border-zinc-800/60">{getMembershipLabel(user.membership)}</span>}
           </div>
         </div>
 
         {/* Center: Active Op + Command Palette */}
-        <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div className="flex-1 min-w-0 flex items-center gap-2">
           {activeEvent && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500/15 to-amber-500/15 rounded border border-orange-500/40 text-xs font-semibold text-orange-200 flex-shrink-0 whitespace-nowrap shadow-sm shadow-orange-500/10">
-              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 animate-pulse" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 rounded border border-orange-500/30 text-[10px] font-bold text-orange-300 flex-shrink-0 whitespace-nowrap uppercase tracking-[0.15em]">
+              <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
               <span className="max-w-[150px] truncate">{activeEvent.title}</span>
             </div>
           )}
           <button
             onClick={openPalette}
-            className="flex-1 h-8 flex items-center gap-2 px-3 bg-gradient-to-r from-zinc-900/50 via-zinc-900/40 to-zinc-950/50 border border-orange-500/20 hover:border-orange-500/60 text-zinc-500 hover:text-zinc-100 transition-all duration-300 group rounded-md relative overflow-hidden shadow-lg shadow-orange-500/0 hover:shadow-orange-500/20"
-            title="Universal Command Palette — Search, navigate, execute • Ctrl+K or Cmd+K"
+            className="flex-1 h-7 flex items-center gap-2 px-2.5 bg-zinc-900/40 border border-red-700/40 hover:border-red-500/60 text-zinc-500 hover:text-red-300 transition-all group rounded relative"
+            title="Command Palette • Ctrl+K"
           >
-            {/* Animated shimmer effect */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-400/30 to-transparent animate-shimmer pointer-events-none" />
-            </div>
-
-            {/* Animated border glow */}
-            <div className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute inset-0 rounded-md border border-orange-500/40 shadow-inset shadow-orange-400/20 blur-sm" />
-              <div className="absolute inset-0 rounded-md border-2 border-transparent bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-orange-500/20 group-hover:animate-pulse" />
-            </div>
-            
-            <Command className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-all duration-300 flex-shrink-0 relative z-10 group-hover:scale-110" />
-            <span className="text-xs font-semibold tracking-tight uppercase text-zinc-400 group-hover:text-zinc-100 min-w-0 truncate relative z-10 flex-1 text-left transition-colors duration-300">Ctrl+K</span>
-            <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-orange-400 transition-all duration-300 flex-shrink-0 relative z-10 opacity-0 group-hover:opacity-100 group-hover:translate-x-1" />
+            <Command className="w-3 h-3 text-red-400 group-hover:text-red-300 transition-all flex-shrink-0 relative z-10" />
+            <span className="text-[10px] font-mono font-bold tracking-[0.15em] uppercase text-zinc-400 group-hover:text-zinc-200 min-w-0 truncate relative z-10 flex-1 text-left transition-colors">CMD+K</span>
           </button>
         </div>
 
         {/* Right: Critical System Status + Controls */}
-        <div className="flex items-center gap-3 justify-end flex-shrink-0 min-w-max">
+        <div className="flex items-center gap-2 justify-end flex-shrink-0 min-w-max">
           {/* Verse Clock */}
           <VerseClock />
 
           {/* Critical Telemetry Bar */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border border-zinc-800/60 rounded-md">
+          <div className="hidden md:flex items-center gap-2 px-2.5 py-1 bg-zinc-900/40 border border-zinc-800/60 rounded">
             {/* Voice Net Status */}
             {voiceNet?.activeNetId ? (
               <div className={`flex items-center gap-1.5 ${
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'text-green-400' :
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'text-orange-400' : 'text-red-400'
               }`}>
-                <Mic className="w-3.5 h-3.5" />
+                <Radio className="w-3 h-3" />
                 <span className="font-mono text-[10px] font-bold">{voiceNet.participants?.length || 0}</span>
                 <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-zinc-600">
-                <Mic className="w-3.5 h-3.5" />
+                <Radio className="w-3 h-3" />
                 <span className="font-mono text-[10px]">—</span>
               </div>
             )}
@@ -150,8 +138,8 @@ export default function Header() {
             <div className="w-px h-3 bg-zinc-700/40" />
             
             {/* Online Members */}
-            <div className="flex items-center gap-1.5 text-cyan-400">
-              <Users className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 text-orange-400">
+              <Users className="w-3 h-3" />
               <span className="font-mono text-[10px] font-bold">{onlineCount}</span>
             </div>
             
@@ -159,13 +147,12 @@ export default function Header() {
             
             {/* Network Health */}
             <div className={`flex items-center gap-1.5 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
-              {isHealthy ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-              <span className="font-mono text-[10px] font-bold">{latencyMs}ms</span>
-              <div className={`w-1 h-1 rounded-full bg-current ${isHealthy ? 'animate-pulse' : ''}`} />
+              <Activity className="w-3 h-3" />
+              <span className="font-mono text-[10px] font-bold">{latencyMs}<span className="text-[9px] ml-0.5">ms</span></span>
             </div>
           </div>
 
-          <div className="w-px h-6 bg-zinc-700/30" />
+          <div className="w-px h-4 bg-zinc-700/40" />
 
           {/* Panel Toggles */}
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -174,22 +161,22 @@ export default function Header() {
               variant="ghost"
               onClick={toggleContextPanel}
               aria-label="Toggle voice control panel"
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 transition-all duration-200 rounded group"
-              title="Voice Control Panel • Right Sidebar"
+              className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all rounded"
+              title="Voice Control Panel"
             >
-              <Radio className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <Radio className="w-3.5 h-3.5" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
               onClick={toggleCommsDock}
               aria-label="Toggle text comms dock"
-              className="h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 relative transition-all duration-200 rounded group"
-              title="Text Comms Dock • Bottom Panel"
+              className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 relative transition-all rounded"
+              title="Text Comms Dock"
             >
-              <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <MessageSquare className="w-3.5 h-3.5" />
               {unreadByTab?.comms > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-gradient-to-br from-red-500 to-red-600 text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none shadow-lg animate-pulse">
+                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center font-bold leading-none animate-pulse">
                   {unreadByTab.comms > 9 ? '9+' : unreadByTab.comms}
                 </span>
               )}
@@ -199,10 +186,10 @@ export default function Header() {
               variant="ghost"
               onClick={() => window.location.href = createPageUrl('Settings')}
               aria-label="Settings"
-              className="hidden md:flex h-8 w-8 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/15 transition-all duration-200 rounded group"
-              title="System Settings"
+              className="hidden md:flex h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all rounded"
+              title="Settings"
             >
-              <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+              <Settings className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
