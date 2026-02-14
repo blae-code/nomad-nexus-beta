@@ -76,6 +76,7 @@ import {
   normalizeGameplayLoopVariantId,
 } from '../ui/cqb/gameplayLoopLanguage';
 import '../ui/theme/nexus-shell.css';
+import '../ui/comms/comms-array-styles.css';
 
 function normalizeElementTag(raw) {
   const normalized = String(raw || '')
