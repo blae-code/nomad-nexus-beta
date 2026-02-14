@@ -85,11 +85,13 @@ The `package.json` file includes several scripts for common development tasks:
 - `npm run test:backend`: Runs backend-focused test suites (`tests/comms`, `tests/admin`, service hardening).
 - `npm run backend:preflight`: One-command backend resume validation (`typecheck` + `lint` + `test:backend`).
 - `npm run audit:prod`: Audits production dependencies only.
+- `npm run verify:base44-context`: Fails on deprecated Base44 artifacts/import patterns to prevent context drift.
 - `npm run verify:stability`: Full stability sweep (`lint` + `typecheck` + `test:unit` + `build`).
-- `npm run verify:all`: Full production readiness sweep (`verify:stability` + `test:backend` + `audit:prod`).
+- `npm run verify:all`: Full production readiness sweep (`verify:base44-context` + `verify:stability` + `test:backend` + `audit:prod`).
 
 For Base44 restart sequencing, use `docs/BASE44_BACKEND_RESUME_PLAYBOOK.md`.
 For stability/reliability handoff, use `docs/BASE44_STABILITY_RELIABILITY_RUNBOOK.md`.
+For Base44 compatibility boundaries and non-lock-in guardrails, use `docs/BASE44_COMPATIBILITY_CONTEXT.md`.
 For the latest NexusOS top-10 refinement report + TODO execution, use `docs/NEXUS_OS_TOP10_REFINEMENTS_2026-02-14.md`.
 
 ---

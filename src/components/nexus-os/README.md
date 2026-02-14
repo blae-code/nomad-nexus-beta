@@ -19,15 +19,16 @@ This folder is the non-UI foundation for Nexus OS. It is intentionally isolated 
 
 ## Layout
 
-- `discovery/`: inventory snapshots of current repo concepts (Phase 1).
 - `registries/`: canonical variant, macro, TTL, and comms template data.
 - `schemas/`: core interfaces for CQB events, command intents, and location estimates.
-- `services/`: safe stubs with minimal validation and TODO integration points.
+- `services/`: operational services, including Base44 adapter boundaries for non-lock-in reads.
 - `specs/`: doctrine and policy specs (no UI implementation).
 - `ui/`: Nexus OS shell primitives, workbench grid, focus overlay, and bridge switcher.
 - `preview/`: dev-only shell surface for immediate iteration.
 - `validators/`: dev-only registry integrity checks (warnings only).
 
-## Migration Backlog
+## Base44 Compatibility
 
-- TODO: Move legacy domain services from `src/components/services/` into `src/components/nexus-os/services/` with staged adoption to avoid runtime regressions.
+- Avoid embedding raw Base44 table assumptions inside feature logic; use service adapters.
+- Keep workspace sync writes routed through `updateWorkspaceState` contracts.
+- Run `npm run verify:base44-context` before shipping NexusOS changes.

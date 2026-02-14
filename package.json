@@ -12,8 +12,9 @@
     "test:backend": "vitest run tests/comms tests/admin tests/nexus-os/serviceHardening.test.ts",
     "backend:preflight": "npm run typecheck && npm run lint && npm run test:backend",
     "audit:prod": "npm audit --omit=dev",
+    "verify:base44-context": "node scripts/base44-context-check.mjs",
     "verify:stability": "npm run lint && npm run typecheck && npm run test:unit && npm run build",
-    "verify:all": "npm run verify:stability && npm run test:backend && npm run audit:prod",
+    "verify:all": "npm run verify:base44-context && npm run verify:stability && npm run test:backend && npm run audit:prod",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

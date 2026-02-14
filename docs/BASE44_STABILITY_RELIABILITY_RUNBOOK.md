@@ -13,12 +13,19 @@ npm run test:backend
 npm run test:unit
 npm run build
 npm run audit:prod
+npm run verify:base44-context
 ```
 
 One-command stability sweep:
 
 ```bash
 npm run verify:stability
+```
+
+Full readiness sweep (includes Base44 compatibility guardrails):
+
+```bash
+npm run verify:all
 ```
 
 ## 2) Core Runtime Surfaces (Base44-Facing)

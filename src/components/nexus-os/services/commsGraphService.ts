@@ -1,9 +1,12 @@
-import { base44 } from '../../../api/base44Client';
 import { determineChannelContext } from './channelContextService';
 import { getCommsTemplate } from '../registries/commsTemplateRegistry';
 import { listStoredCqbEvents } from './cqbEventService';
 import type { CqbRosterMember } from '../ui/cqb/cqbTypes';
 import { listSharedOperationChannels } from './crossOrgService';
+import {
+  listBase44ChannelMemberships,
+  listBase44CommsChannels,
+} from './base44CommsReadAdapter';
 
 /**
  * Comms Graph Service (MVP)
@@ -62,38 +65,12 @@ export interface ChannelTrafficSnapshot {
   generatedAt: string;
 }
 
-function normalizeChannelId(value: unknown): string {
-  return String(value || '').trim();
-}
-
 async function listChannelsFromBase44() {
-  try {
-    const channels = await base44.entities.Channel.list?.('-created_date', 250);
-    return Array.isArray(channels) ? channels : [];
-  } catch {
-    return [];
-  }
+  return listBase44CommsChannels(250);
 }
 
 async function listMembershipsFromBase44(): Promise<ChannelMembershipRecord[]> {
-  const candidates = [base44?.entities?.ChannelMembership, base44?.entities?.ChannelMember];
-  for (const entity of candidates) {
-    if (!entity?.list) continue;
-    try {
-      const rows = await entity.list('-created_date', 500);
-      if (!Array.isArray(rows)) continue;
-      const normalized = rows
-        .map((row: any) => ({
-          channelId: normalizeChannelId(row.channel_id || row.channelId || row.comms_channel_id),
-          memberId: String(row.member_profile_id || row.user_id || row.memberId || '').trim(),
-        }))
-        .filter((row) => row.channelId && row.memberId);
-      if (normalized.length > 0) return normalized;
-    } catch {
-      // keep trying fallback entities
-    }
-  }
-  return [];
+  return listBase44ChannelMemberships(500);
 }
 
 function buildDevMemberships(channelIds: string[], roster: CqbRosterMember[]): ChannelMembershipRecord[] {
@@ -175,11 +152,11 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
 
   const baseChannels = await listChannelsFromBase44();
   const templateRows = context.channelIds.map((id) => {
-    const fromBase44 = baseChannels.find((entry: any) => normalizeChannelId(entry.id) === id || normalizeChannelId(entry.name) === id);
+    const fromBase44 = baseChannels.find((entry) => entry.matchKeys.includes(id));
     const fromTemplate = template.channels.find((entry) => entry.id === id);
     return {
       id,
-      label: fromBase44?.name || fromTemplate?.label || id,
+      label: fromBase44?.label || fromTemplate?.label || id,
     };
   });
   const sharedRows =
