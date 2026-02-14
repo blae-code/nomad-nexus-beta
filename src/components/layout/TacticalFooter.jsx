@@ -500,7 +500,7 @@ export default function TacticalFooter() {
 
   if (collapsed) {
     return (
-      <footer className="fixed bottom-0 left-0 right-0 z-[700] border-t-2 border-red-700/40 bg-black/95 backdrop-blur-xl shadow-lg shadow-black/50">
+      <footer className="fixed bottom-0 left-0 right-0 z-[700] border-t-2 border-red-700/40 bg-black/95 backdrop-blur-xl shadow-lg shadow-black/50 m-0 p-0">
         <div className="px-6 py-2.5">
           <div className="flex items-center justify-between gap-4">
             {/* Left: System Status */}
@@ -570,7 +570,7 @@ export default function TacticalFooter() {
   return (
     <>
       <footer
-        className="fixed bottom-0 left-0 right-0 z-[700] border-t-2 border-red-700/50 bg-black/98 backdrop-blur-xl shadow-2xl shadow-red-500/10 flex flex-col"
+        className="fixed bottom-0 left-0 right-0 z-[700] border-t-2 border-red-700/50 bg-black/98 backdrop-blur-xl shadow-2xl shadow-red-500/10 flex flex-col m-0 p-0"
         style={{ height: `${height}px` }}
       >
         {/* Resize Handle */}
