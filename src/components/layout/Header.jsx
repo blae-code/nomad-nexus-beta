@@ -29,17 +29,17 @@ export default function Header() {
   // Fallback if hooks not in provider scope
   if (!paletteContext || !shellUI) {
     return (
-      <header className="h-16 bg-zinc-900/80 border-b border-zinc-800 flex items-center px-4">
-        <div className="text-sm text-zinc-400">Header (providers unavailable)</div>
+      <header className="h-12 bg-zinc-950/95 border-b border-red-700/30 flex items-center px-4">
+        <div className="text-xs text-zinc-600">Initializing...</div>
       </header>
     );
   }
 
-  const { openPalette, filteredActions } = paletteContext;
+  const { openPalette, filteredActions, search } = paletteContext;
   const { toggleContextPanel, toggleCommsDock } = shellUI;
   const flatActions = filteredActions || [];
 
-  // Ctrl/⌘+K global handler
+  // Ctrl/⌘+K global handler with visual feedback
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
