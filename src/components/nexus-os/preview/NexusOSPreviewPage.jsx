@@ -1304,10 +1304,22 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
                 </button>
                 {statusCapsuleOpen ? (
                   <div className="nx-context-grid">
-                    <div className="nx-context-kv"><span>Session</span><strong className="truncate">{sessionScopeKey}</strong></div>
-                    <div className="nx-context-kv"><span>Posture</span><strong>{operationalPostureLabel}</strong></div>
-                    <div className="nx-context-kv"><span>Samples</span><strong>{recentSamples.length}</strong></div>
-                    <div className="nx-context-kv"><span>Op Link</span><strong>{focusedOperation ? 'linked' : 'unlinked'}</strong></div>
+                    <div className="nx-context-kv" title="Current workspace session key">
+                      <span>Session</span>
+                      <strong className="truncate">{sessionScopeKey}</strong>
+                    </div>
+                    <div className="nx-context-kv" title="Operational mode based on network status">
+                      <span>Posture</span>
+                      <strong>{operationalPostureLabel}</strong>
+                    </div>
+                    <div className="nx-context-kv" title="Performance samples collected">
+                      <span>Samples</span>
+                      <strong>{recentSamples.length}</strong>
+                    </div>
+                    <div className="nx-context-kv" title="Operation context binding status">
+                      <span>Op Link</span>
+                      <strong>{focusedOperation ? 'linked' : 'unlinked'}</strong>
+                    </div>
                   </div>
                 ) : null}
               </div>
