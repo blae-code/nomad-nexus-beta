@@ -194,7 +194,7 @@ export default function AccessGate() {
     <RouteGuard requiredAuth="none">
       <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
       <PageTransition>
-        <div className="nexus-immersive-screen w-screen h-screen flex items-center justify-center px-4 overflow-hidden relative">
+        <div className="nexus-immersive-screen w-full h-screen flex items-center justify-center px-4 overflow-hidden relative">
 
       <div className="relative z-10 w-full max-w-md">
         <div className="nexus-immersive-panel p-0 overflow-hidden">
