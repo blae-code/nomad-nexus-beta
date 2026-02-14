@@ -19,6 +19,13 @@ import MessageTranslator from '@/components/comms/MessageTranslator';
 import { getMembershipLabel, getRankLabel, getRoleLabel } from '@/components/constants/labels';
 import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
 import LinkPreview from '@/components/comms/LinkPreview';
+import {
+  isLikelyAudioUrl,
+  isLikelyImageUrl,
+  safeFileNameFromUrl,
+  sanitizeAttachmentUrl,
+  sanitizeExternalUrl,
+} from '@/components/comms/urlSafety';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '👀', '🔥', '✅', '❌'];
 const STATUS_META = {
@@ -75,6 +82,7 @@ export default function MessageItem({
   presenceRecord,
   memberProfile,
   autoLinkPreview = true,
+  aiEnabled = true,
   authorLabel,
   onEdit,
   onDelete,
@@ -107,8 +115,22 @@ export default function MessageItem({
   const linkUrls = useMemo(() => {
     if (!message?.content) return [];
     const matches = message.content.match(/https?:\/\/[^\s)]+/g);
-    return matches ? Array.from(new Set(matches)) : [];
+    if (!matches) return [];
+    const safeLinks = matches
+      .map((entry) => sanitizeExternalUrl(entry))
+      .filter(Boolean);
+    return Array.from(new Set(safeLinks));
   }, [message?.content]);
+  const safeAttachments = useMemo(() => {
+    const raw = Array.isArray(message?.attachments) ? message.attachments : [];
+    return raw
+      .map((url) => sanitizeAttachmentUrl(url, { allowBlob: false }))
+      .filter(Boolean);
+  }, [message?.attachments]);
+  const blockedAttachmentCount = Math.max(
+    0,
+    (Array.isArray(message?.attachments) ? message.attachments.length : 0) - safeAttachments.length
+  );
   const primaryLink = linkUrls[0] || null;
   const shouldShowPreview = autoLinkPreview || showLinkPreview;
   const readByIdsRaw = message.read_by_member_profile_ids || message.read_by || [];
@@ -326,11 +348,17 @@ export default function MessageItem({
                     inline 
                       ? <code className="px-1 py-0.5 bg-zinc-800 rounded text-orange-400">{children}</code>
                       : <pre className="bg-zinc-900 p-2 rounded overflow-x-auto my-2"><code className="text-green-400">{children}</code></pre>,
-                  a: ({ children, href }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
-                      {children}
-                    </a>
-                  ),
+                  a: ({ children, href }) => {
+                    const safeHref = sanitizeExternalUrl(href);
+                    if (!safeHref) {
+                      return <span className="text-zinc-500">{children}</span>;
+                    }
+                    return (
+                      <a href={safeHref} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
+                        {children}
+                      </a>
+                    );
+                  },
                   strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                   em: ({ children }) => <em className="italic">{children}</em>,
                 }}
@@ -341,28 +369,39 @@ export default function MessageItem({
           )}
 
           {/* Attachments */}
-          {message.attachments && message.attachments.length > 0 && (
+          {(safeAttachments.length > 0 || blockedAttachmentCount > 0) && (
             <div className="mt-2 space-y-2">
-              {message.attachments.map((url, idx) => (
+              {safeAttachments.map((safeUrl, idx) => (
                 <div key={idx}>
-                  {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                    <img src={url} alt="attachment" className="max-w-sm rounded border border-zinc-700" />
-                  ) : url.match(/\.(mp3|wav|ogg|webm|m4a)$/i) ? (
+                  {isLikelyImageUrl(safeUrl) ? (
+                    <img
+                      src={safeUrl}
+                      alt="attachment"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="max-w-sm rounded border border-zinc-700"
+                    />
+                  ) : isLikelyAudioUrl(safeUrl) ? (
                     <audio controls className="w-full max-w-sm">
-                      <source src={url} />
+                      <source src={safeUrl} />
                     </audio>
                   ) : (
                     <a 
-                      href={url} 
+                      href={safeUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-xs text-orange-400 hover:underline flex items-center gap-1"
                     >
-                      📎 {url.split('/').pop()}
+                      📎 {safeFileNameFromUrl(safeUrl)}
                     </a>
                   )}
                 </div>
               ))}
+              {blockedAttachmentCount > 0 && (
+                <div className="text-[10px] text-zinc-500">
+                  {blockedAttachmentCount} attachment{blockedAttachmentCount === 1 ? '' : 's'} blocked for safety.
+                </div>
+              )}
             </div>
           )}
 
@@ -378,7 +417,7 @@ export default function MessageItem({
                   Preview link
                 </button>
               ) : (
-                <LinkPreview url={primaryLink} />
+                <LinkPreview url={primaryLink} aiEnabled={aiEnabled} />
               )}
             </div>
           )}

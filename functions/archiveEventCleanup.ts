@@ -1,7 +1,17 @@
-import { createServiceClient } from './_shared/memberAuth.ts';
+import { createServiceClient, readJson } from './_shared/memberAuth.ts';
+import { enforceJsonPost, verifyInternalAutomationRequest } from './_shared/security.ts';
 
 Deno.serve(async (req) => {
     try {
+        const methodCheck = enforceJsonPost(req);
+        if (!methodCheck.ok) {
+            return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+        }
+        const payload = await readJson(req);
+        const internalAuth = verifyInternalAutomationRequest(req, payload, { requiredWhenSecretMissing: true });
+        if (!internalAuth.ok) {
+            return Response.json({ error: internalAuth.error }, { status: internalAuth.status });
+        }
         const base44 = createServiceClient();
         
         // Calculate cutoff: 48 hours ago
@@ -51,6 +61,6 @@ Deno.serve(async (req) => {
         });
 
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ error: error?.message || 'Archive cleanup failed' }, { status: 500 });
     }
 });

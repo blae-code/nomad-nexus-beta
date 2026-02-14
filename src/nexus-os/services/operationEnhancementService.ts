@@ -1,5 +1,10 @@
 import type { OperationPosture } from '../schemas/opSchemas';
 import { canManageOperation } from './operationService';
+import {
+  enqueueWorkspaceStateSave,
+  loadWorkspaceStateSnapshot,
+  workspaceStateSyncEnabled,
+} from './workspaceStateBridgeService';
 
 export type DoctrineLevel = 'INDIVIDUAL' | 'SQUAD' | 'WING' | 'FLEET';
 export type MandateEnforcement = 'HARD' | 'SOFT' | 'ADVISORY';
@@ -259,6 +264,8 @@ const DOCTRINE_PRESET_WEIGHTS: Record<string, DoctrinePresetWeight> = {
 
 const LEVELS: DoctrineLevel[] = ['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'];
 const STORAGE_KEY = 'nexus.os.operationEnhancement.v1';
+const ENHANCEMENT_REMOTE_NAMESPACE = 'operation_enhancement_snapshot';
+const ENHANCEMENT_REMOTE_SCOPE_KEY = 'default';
 const listeners = new Set<OperationEnhancementListener>();
 let doctrineLibraryStore: DoctrineDefinition[] = [...DEFAULT_DOCTRINE_LIBRARY];
 let doctrineStore: OperationDoctrineProfile[] = [];
@@ -266,6 +273,7 @@ let mandateStore: OperationMandateProfile[] = [];
 let preferenceStore: UserOperationPreference[] = [];
 let leadAlertStore: LeadAlert[] = [];
 let storeHydrated = false;
+let remoteHydrateRequested = false;
 
 function nowIso(nowMs = Date.now()): string {
   return new Date(nowMs).toISOString();
@@ -291,50 +299,118 @@ function storageAvailable(): boolean {
   return typeof localStorage !== 'undefined';
 }
 
+function createPersistedStatePayload(): PersistedOperationEnhancementState {
+  return {
+    schema: 'nexus-os-operation-enhancements',
+    version: 2,
+    doctrineLibrary: doctrineLibraryStore,
+    doctrines: doctrineStore,
+    mandates: mandateStore,
+    preferences: preferenceStore,
+    alerts: leadAlertStore,
+  };
+}
+
+function parseTimestampMs(value: unknown): number {
+  const parsed = Date.parse(String(value || ''));
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function enhancementFreshnessMs(state: Partial<PersistedOperationEnhancementState> | null | undefined, persistedAt?: string): number {
+  if (!state) return parseTimestampMs(persistedAt);
+  let latest = parseTimestampMs(persistedAt);
+  for (const entry of state.doctrineLibrary || []) {
+    latest = Math.max(latest, parseTimestampMs((entry as { updatedAt?: string; createdAt?: string }).updatedAt || (entry as { createdAt?: string }).createdAt));
+  }
+  for (const entry of state.doctrines || []) {
+    latest = Math.max(latest, parseTimestampMs(entry?.updatedAt || entry?.createdAt));
+  }
+  for (const entry of state.mandates || []) {
+    latest = Math.max(latest, parseTimestampMs(entry?.updatedAt || entry?.createdAt));
+  }
+  for (const entry of state.preferences || []) {
+    latest = Math.max(latest, parseTimestampMs((entry as { updatedAt?: string; createdAt?: string }).updatedAt || (entry as { createdAt?: string }).createdAt));
+  }
+  for (const entry of state.alerts || []) {
+    latest = Math.max(latest, parseTimestampMs(entry?.createdAt));
+  }
+  return latest;
+}
+
+function currentEnhancementFreshnessMs(): number {
+  return enhancementFreshnessMs(createPersistedStatePayload());
+}
+
+function applyPersistedState(parsed: Partial<PersistedOperationEnhancementState>) {
+  doctrineLibraryStore = Array.isArray(parsed.doctrineLibrary) && parsed.doctrineLibrary.length > 0
+    ? parsed.doctrineLibrary
+    : [...DEFAULT_DOCTRINE_LIBRARY];
+  doctrineStore = Array.isArray(parsed.doctrines) ? parsed.doctrines : [];
+  mandateStore = Array.isArray(parsed.mandates) ? parsed.mandates : [];
+  preferenceStore = Array.isArray(parsed.preferences) ? parsed.preferences : [];
+  leadAlertStore = Array.isArray(parsed.alerts) ? parsed.alerts : [];
+}
+
+function requestRemoteHydration() {
+  if (remoteHydrateRequested || !workspaceStateSyncEnabled()) return;
+  remoteHydrateRequested = true;
+  void loadWorkspaceStateSnapshot<PersistedOperationEnhancementState>({
+    namespace: ENHANCEMENT_REMOTE_NAMESPACE,
+    scopeKey: ENHANCEMENT_REMOTE_SCOPE_KEY,
+  }).then((remote) => {
+    const remoteState = remote?.state;
+    if (!remoteState || typeof remoteState !== 'object') return;
+    if ((remoteState as PersistedOperationEnhancementState).schema !== 'nexus-os-operation-enhancements') return;
+    const remoteFreshness = enhancementFreshnessMs(remoteState, remote?.persistedAt);
+    const localFreshness = currentEnhancementFreshnessMs();
+    if (localFreshness > 0 && remoteFreshness > 0 && remoteFreshness < localFreshness) return;
+    applyPersistedState(remoteState);
+    notifyListeners();
+  }).catch(() => {
+    // best effort remote hydration
+  });
+}
+
 function hydrateStore() {
   if (storeHydrated) return;
   storeHydrated = true;
-  if (!storageAvailable()) return;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as PersistedOperationEnhancementState;
-    if (
-      !parsed ||
-      parsed.schema !== 'nexus-os-operation-enhancements' ||
-      (parsed.version !== 1 && parsed.version !== 2)
-    ) {
-      return;
+  if (storageAvailable()) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as PersistedOperationEnhancementState;
+        if (
+          parsed &&
+          parsed.schema === 'nexus-os-operation-enhancements' &&
+          (parsed.version === 1 || parsed.version === 2)
+        ) {
+          applyPersistedState(parsed);
+        }
+      }
+    } catch {
+      // best effort
     }
-    doctrineLibraryStore = Array.isArray(parsed.doctrineLibrary) && parsed.doctrineLibrary.length > 0
-      ? parsed.doctrineLibrary
-      : [...DEFAULT_DOCTRINE_LIBRARY];
-    doctrineStore = Array.isArray(parsed.doctrines) ? parsed.doctrines : [];
-    mandateStore = Array.isArray(parsed.mandates) ? parsed.mandates : [];
-    preferenceStore = Array.isArray(parsed.preferences) ? parsed.preferences : [];
-    leadAlertStore = Array.isArray(parsed.alerts) ? parsed.alerts : [];
-  } catch {
-    // best effort
   }
+  requestRemoteHydration();
 }
 
 function persistStore() {
   if (!storeHydrated) return;
-  if (!storageAvailable()) return;
-  try {
-    const payload: PersistedOperationEnhancementState = {
-      schema: 'nexus-os-operation-enhancements',
-      version: 2,
-      doctrineLibrary: doctrineLibraryStore,
-      doctrines: doctrineStore,
-      mandates: mandateStore,
-      preferences: preferenceStore,
-      alerts: leadAlertStore,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch {
-    // best effort
+  const payload = createPersistedStatePayload();
+  if (storageAvailable()) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // best effort
+    }
   }
+  enqueueWorkspaceStateSave({
+    namespace: ENHANCEMENT_REMOTE_NAMESPACE,
+    scopeKey: ENHANCEMENT_REMOTE_SCOPE_KEY,
+    schemaVersion: 2,
+    state: payload,
+    debounceMs: 900,
+  });
 }
 
 function notifyListeners() {
@@ -1344,6 +1420,7 @@ export function resetOperationEnhancementServiceState() {
   mandateStore = [];
   preferenceStore = [];
   leadAlertStore = [];
+  remoteHydrateRequested = false;
   if (storageAvailable()) {
     try {
       localStorage.removeItem(STORAGE_KEY);

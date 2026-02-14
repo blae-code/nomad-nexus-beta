@@ -1,3 +1,9 @@
+import {
+  clearWorkspaceStateSnapshot,
+  enqueueWorkspaceStateSave,
+  loadWorkspaceStateSnapshot,
+} from '../../services/workspaceStateBridgeService';
+
 /**
  * Nexus OS workspace session persistence.
  * Restores shell context so users return to a workstation state, not a blank page.
@@ -20,6 +26,7 @@ export interface NexusWorkspaceSessionSnapshot {
 }
 
 const STORAGE_PREFIX = 'nexus.os.session.v1';
+const SESSION_REMOTE_NAMESPACE = 'workspace_session_snapshot';
 
 function storageAvailable(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
@@ -84,19 +91,24 @@ export function loadWorkspaceSession(
 }
 
 export function persistWorkspaceSession(sessionScopeKey: string, snapshot: NexusWorkspaceSessionSnapshot): void {
+  const persisted = {
+    ...snapshot,
+    version: 1 as const,
+    updatedAt: new Date().toISOString(),
+  };
   if (!storageAvailable()) return;
   try {
-    localStorage.setItem(
-      workspaceSessionStorageKey(sessionScopeKey),
-      JSON.stringify({
-        ...snapshot,
-        version: 1,
-        updatedAt: new Date().toISOString(),
-      })
-    );
+    localStorage.setItem(workspaceSessionStorageKey(sessionScopeKey), JSON.stringify(persisted));
   } catch {
     // Best-effort persistence.
   }
+  enqueueWorkspaceStateSave({
+    namespace: SESSION_REMOTE_NAMESPACE,
+    scopeKey: sessionScopeKey,
+    schemaVersion: 1,
+    state: persisted,
+    debounceMs: 800,
+  });
 }
 
 export function resetWorkspaceSession(sessionScopeKey: string): void {
@@ -106,4 +118,36 @@ export function resetWorkspaceSession(sessionScopeKey: string): void {
   } catch {
     // Best-effort reset.
   }
+  void clearWorkspaceStateSnapshot({
+    namespace: SESSION_REMOTE_NAMESPACE,
+    scopeKey: sessionScopeKey,
+  }, 'session_reset');
+}
+
+export async function hydrateWorkspaceSessionFromBackend(
+  sessionScopeKey: string,
+  overrides: Partial<NexusWorkspaceSessionSnapshot> = {}
+): Promise<NexusWorkspaceSessionSnapshot> {
+  const fallback = loadWorkspaceSession(sessionScopeKey, overrides);
+  const remote = await loadWorkspaceStateSnapshot<unknown>({
+    namespace: SESSION_REMOTE_NAMESPACE,
+    scopeKey: sessionScopeKey,
+  }).catch(() => null);
+  const state = remote?.state;
+  if (!state || typeof state !== 'object') return fallback;
+  const parsed = state as Partial<NexusWorkspaceSessionSnapshot>;
+  if (parsed.version !== 1) return fallback;
+  const merged = {
+    ...fallback,
+    ...parsed,
+    version: 1 as const,
+  };
+  if (storageAvailable()) {
+    try {
+      localStorage.setItem(workspaceSessionStorageKey(sessionScopeKey), JSON.stringify(merged));
+    } catch {
+      // best effort
+    }
+  }
+  return merged;
 }

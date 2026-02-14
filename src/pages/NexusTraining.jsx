@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, CheckCircle2, Film, GraduationCap, MessageSquare } from 'lucide-react';
+import { sanitizeExternalUrl } from '@/components/comms/urlSafety';
 
 const COMMAND_RANKS = new Set(['COMMANDER', 'PIONEER', 'FOUNDER']);
 
@@ -143,6 +144,7 @@ export default function NexusTraining() {
         id: entry.id,
         title: entry?.details?.title || 'Video',
         url: entry?.details?.url || '',
+        safeUrl: sanitizeExternalUrl(entry?.details?.url || ''),
         platform: entry?.details?.platform || 'external',
         durationMinutes: Number(entry?.details?.duration_minutes || 0),
         tags: Array.isArray(entry?.details?.tags) ? entry.details.tags : [],
@@ -277,11 +279,16 @@ export default function NexusTraining() {
 
   const submitVideo = async () => {
     if (!videoForm.title.trim() || !videoForm.url.trim()) return;
+    const safeUrl = sanitizeExternalUrl(videoForm.url.trim());
+    if (!safeUrl) {
+      setBanner({ type: 'error', message: 'Video URL blocked for safety. Use a public http(s) URL.' });
+      return;
+    }
     const result = await runAction(
       {
         action: 'record_video_resource',
         title: videoForm.title.trim(),
-        url: videoForm.url.trim(),
+        url: safeUrl,
         platform: videoForm.platform,
         durationMinutes: Number(videoForm.durationMinutes || 0),
         tags: asList(videoForm.tags),
@@ -481,9 +488,13 @@ export default function NexusTraining() {
                   <div key={video.id} className="border border-zinc-700/70 rounded p-3 bg-zinc-950/50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <a href={video.url} target="_blank" rel="noreferrer" className="text-sm text-cyan-300 hover:text-cyan-200 underline">
-                          {video.title}
-                        </a>
+                        {video.safeUrl ? (
+                          <a href={video.safeUrl} target="_blank" rel="noreferrer" className="text-sm text-cyan-300 hover:text-cyan-200 underline">
+                            {video.title}
+                          </a>
+                        ) : (
+                          <div className="text-sm text-zinc-400">{video.title} (Blocked)</div>
+                        )}
                         <div className="text-[10px] text-zinc-500 uppercase">{video.platform} · {video.durationMinutes} min</div>
                       </div>
                       <div className="text-[10px] text-zinc-500">{asDateLabel(video.createdAt)}</div>

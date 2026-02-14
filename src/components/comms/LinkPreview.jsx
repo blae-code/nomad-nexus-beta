@@ -5,11 +5,25 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ExternalLink, Loader2 } from 'lucide-react';
+import { sanitizeAttachmentUrl, sanitizeExternalUrl } from '@/components/comms/urlSafety';
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 const memoryCache = new Map();
 
 const getCacheKey = (url) => `nexus.linkpreview.${encodeURIComponent(url)}`;
+
+function normalizePreviewData(input = {}) {
+  const title = String(input?.title || '').trim().slice(0, 180);
+  const description = String(input?.description || '').trim().slice(0, 360);
+  const domain = String(input?.domain || '').trim().slice(0, 120);
+  const image = sanitizeAttachmentUrl(input?.image, { allowBlob: false });
+  return {
+    title: title || 'Link',
+    description,
+    domain,
+    image: image || null,
+  };
+}
 
 const loadCachedPreview = (url) => {
   const cached = memoryCache.get(url);
@@ -39,14 +53,26 @@ const saveCachedPreview = (url, data) => {
   }
 };
 
-export default function LinkPreview({ url }) {
+export default function LinkPreview({ url, aiEnabled = true }) {
+  const safeUrl = sanitizeExternalUrl(url);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPreview = async () => {
+      setLoading(true);
+      if (!safeUrl) {
+        setPreview(null);
+        setLoading(false);
+        return;
+      }
+      if (!aiEnabled) {
+        setPreview(null);
+        setLoading(false);
+        return;
+      }
       try {
-        const cached = loadCachedPreview(url);
+        const cached = loadCachedPreview(safeUrl);
         if (cached) {
           setPreview(cached);
           setLoading(false);
@@ -54,7 +80,7 @@ export default function LinkPreview({ url }) {
         }
 
         const response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Extract metadata from this URL and return structured data: ${url}
+          prompt: `Extract metadata from this URL and return structured data: ${safeUrl}
 
 Return JSON with: title, description, image, domain`,
           response_json_schema: {
@@ -69,8 +95,9 @@ Return JSON with: title, description, image, domain`,
           add_context_from_internet: true,
         });
 
-        setPreview(response);
-        if (response) saveCachedPreview(url, response);
+        const normalized = normalizePreviewData(response || {});
+        setPreview(normalized);
+        if (normalized) saveCachedPreview(safeUrl, normalized);
       } catch (error) {
         console.error('Failed to fetch preview:', error);
       } finally {
@@ -79,7 +106,23 @@ Return JSON with: title, description, image, domain`,
     };
 
     fetchPreview();
-  }, [url]);
+  }, [aiEnabled, safeUrl]);
+
+  if (!safeUrl) {
+    return (
+      <div className="mt-2 text-[10px] text-zinc-500 border border-zinc-800 rounded px-2 py-1">
+        Link preview blocked for safety.
+      </div>
+    );
+  }
+
+  if (!aiEnabled) {
+    return (
+      <div className="mt-2 text-[10px] text-zinc-500 border border-zinc-800 rounded px-2 py-1">
+        Link preview (AI Disabled)
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -94,7 +137,7 @@ Return JSON with: title, description, image, domain`,
 
   return (
     <a
-      href={url}
+      href={safeUrl}
       target="_blank"
       rel="noopener noreferrer"
       className="mt-2 block p-3 border border-zinc-700 rounded hover:border-orange-500/50 transition-colors bg-zinc-900/30"

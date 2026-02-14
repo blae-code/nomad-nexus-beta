@@ -1,7 +1,8 @@
 import React from 'react';
-import { Copy, ExternalLink, PenLine, Trash2 } from 'lucide-react';
+import { Copy, ExternalLink, PenLine, Pin, Trash2 } from 'lucide-react';
 import { NexusButton } from '../primitives';
 import { parseCustomWorkbenchWidgetPanelId } from '../../services/customWorkbenchWidgetService';
+import { sanitizeExternalUrl } from '@/components/comms/urlSafety';
 
 function renderBody(widget, maxLines = 8) {
   const body = widget?.body || '';
@@ -79,6 +80,19 @@ export default function CustomWorkbenchWidgetPanel({
 }) {
   const widgetId = parseCustomWorkbenchWidgetPanelId(panelId);
   const widget = widgetId ? customWorkbenchWidgetMap[widgetId] : null;
+  const safeLinks = Array.isArray(widget?.links)
+    ? widget.links
+      .map((link) => {
+        const safeUrl = sanitizeExternalUrl(link?.url);
+        if (!safeUrl) return null;
+        return {
+          id: link.id,
+          label: link.label,
+          safeUrl,
+        };
+      })
+      .filter(Boolean)
+    : [];
 
   if (!widget) {
     return (
@@ -91,27 +105,46 @@ export default function CustomWorkbenchWidgetPanel({
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        {widget.description ? <p className="text-xs text-zinc-500 truncate">{widget.description}</p> : <div className="text-xs text-zinc-600">No description</div>}
+        <div className="min-w-0">
+          {widget.description ? <p className="text-xs text-zinc-500 truncate">{widget.description}</p> : <div className="text-xs text-zinc-600">No description</div>}
+          {widget.createdBy ? <div className="text-[10px] text-zinc-600 truncate">By {widget.createdBy}</div> : null}
+        </div>
         <div className="text-[10px] text-zinc-600 shrink-0">Updated {new Date(widget.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
       </div>
 
       <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500">
         <span>{widget.kind || 'NOTE'}</span>
         <span>{widget.visualStyle || 'STANDARD'}</span>
+        {widget.isPinned ? (
+          <span className="inline-flex items-center gap-1 text-zinc-400">
+            <Pin className="w-3 h-3" />
+            Pinned
+          </span>
+        ) : null}
       </div>
+
+      {Array.isArray(widget.tags) && widget.tags.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {widget.tags.map((tag) => (
+            <span key={tag} className="rounded border border-zinc-800 bg-zinc-900/50 px-1.5 py-0.5 text-[10px] text-zinc-400">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <div className={`rounded border p-2.5 space-y-1 overflow-hidden min-h-[5rem] ${bodyStyleClasses(widget)}`}>
         {widget.body ? renderBody(widget) : <div className="text-[12px] text-zinc-600">No widget body content.</div>}
       </div>
 
-      {Array.isArray(widget.links) && widget.links.length > 0 ? (
+      {safeLinks.length > 0 ? (
         <div className="space-y-2">
           <div className="text-[11px] uppercase tracking-widest text-zinc-500">Links</div>
           <div className="space-y-1.5">
-            {widget.links.map((link) => (
+            {safeLinks.map((link) => (
               <a
                 key={link.id}
-                href={link.url}
+                href={link.safeUrl}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-900/40 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-600"

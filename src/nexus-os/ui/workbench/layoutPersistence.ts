@@ -7,6 +7,11 @@ import type {
   WorkbenchPresetId,
 } from './types';
 import { normalizePanelOrder } from './layoutEngine';
+import {
+  clearWorkspaceStateSnapshot,
+  enqueueWorkspaceStateSave,
+  loadWorkspaceStateSnapshot,
+} from '../../services/workspaceStateBridgeService';
 
 /**
  * Layout persistence with migration support.
@@ -16,6 +21,7 @@ import { normalizePanelOrder } from './layoutEngine';
 
 const STORAGE_PREFIX = 'nexus.os.workbench.layout.v2';
 const LATEST_VERSION = 2 as const;
+const LAYOUT_REMOTE_NAMESPACE = 'workbench_layout_snapshot';
 
 function storageAvailable(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
@@ -150,12 +156,20 @@ export function parseWorkbenchLayout(
 }
 
 export function persistWorkbenchLayout(scopeKey: string, snapshot: WorkbenchLayoutSnapshotV2): void {
+  const serialized = serializeWorkbenchLayout(snapshot);
   if (!storageAvailable()) return;
   try {
-    localStorage.setItem(workbenchLayoutStorageKey(scopeKey), serializeWorkbenchLayout(snapshot));
+    localStorage.setItem(workbenchLayoutStorageKey(scopeKey), serialized);
   } catch {
     // Best effort persistence.
   }
+  enqueueWorkspaceStateSave({
+    namespace: LAYOUT_REMOTE_NAMESPACE,
+    scopeKey,
+    schemaVersion: LATEST_VERSION,
+    state: snapshot,
+    debounceMs: 700,
+  });
 }
 
 export function resetWorkbenchLayout(scopeKey: string): void {
@@ -165,6 +179,10 @@ export function resetWorkbenchLayout(scopeKey: string): void {
   } catch {
     // Best effort reset.
   }
+  void clearWorkspaceStateSnapshot({
+    namespace: LAYOUT_REMOTE_NAMESPACE,
+    scopeKey,
+  }, 'layout_reset');
 }
 
 export function loadWorkbenchLayout(input: {
@@ -187,4 +205,33 @@ export function loadWorkbenchLayout(input: {
   } catch {
     return null;
   }
+}
+
+export async function hydrateWorkbenchLayoutFromBackend(input: {
+  scopeKey: string;
+  fallbackPresetId: WorkbenchPresetId;
+  availablePanelIds: string[];
+}) {
+  const remote = await loadWorkspaceStateSnapshot<AnyWorkbenchLayoutSnapshot>({
+    namespace: LAYOUT_REMOTE_NAMESPACE,
+    scopeKey: input.scopeKey,
+  }).catch(() => null);
+  const state = remote?.state;
+  if (!state) return null;
+  const snapshot = fromWorkbenchLayoutSnapshot(state, input.fallbackPresetId, input.availablePanelIds);
+  if (!snapshot) return null;
+  if (storageAvailable()) {
+    try {
+      localStorage.setItem(workbenchLayoutStorageKey(input.scopeKey), serializeWorkbenchLayout(snapshot));
+    } catch {
+      // best effort
+    }
+  }
+  const rawVersion = Number((state as { version?: number }).version || LATEST_VERSION);
+  return {
+    snapshot,
+    migratedFrom: rawVersion === 1 ? 1 : null,
+    source: remote?.source || 'none',
+    persistedAt: remote?.persistedAt || snapshot.updatedAt,
+  };
 }

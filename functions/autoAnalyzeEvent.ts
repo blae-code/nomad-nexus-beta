@@ -1,4 +1,5 @@
 import { createServiceClient, readJson } from './_shared/memberAuth.ts';
+import { enforceJsonPost, verifyInternalAutomationRequest } from './_shared/security.ts';
 
 /**
  * Auto-analyze new events for tactical recommendations
@@ -6,8 +7,17 @@ import { createServiceClient, readJson } from './_shared/memberAuth.ts';
  */
 Deno.serve(async (req) => {
     try {
+        const methodCheck = enforceJsonPost(req);
+        if (!methodCheck.ok) {
+            return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+        }
+        const payload = await readJson(req);
+        const internalAuth = verifyInternalAutomationRequest(req, payload, { requiredWhenSecretMissing: true });
+        if (!internalAuth.ok) {
+            return Response.json({ error: internalAuth.error }, { status: internalAuth.status });
+        }
         const base44 = createServiceClient();
-        const { event, data, payload_too_large } = await readJson(req);
+        const { event, data, payload_too_large } = payload || {};
 
         // Fetch event if payload was too large
         const eventData = payload_too_large 
@@ -71,6 +81,6 @@ Identify:
 
     } catch (error) {
         console.error('Auto-analyze event failed:', error);
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ error: error?.message || 'Auto-analyze event failed' }, { status: 500 });
     }
 });

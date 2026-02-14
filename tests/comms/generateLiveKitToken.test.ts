@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildRequest, cleanupDeno, loadHandler } from './helpers';
 
+vi.mock('npm:@base44/sdk@0.8.6', () => ({
+  createClient: () => ({}),
+  createClientFromRequest: () => ({
+    auth: {
+      me: vi.fn().mockResolvedValue({ id: 'admin-test', role: 'admin' }),
+    },
+  }),
+}));
+
 vi.mock('npm:livekit@2.0.0', () => {
   class AccessToken {
     apiKey: string;
@@ -34,6 +43,8 @@ afterEach(() => {
 describe('generateLiveKitToken', () => {
   it('returns token with secure URL normalized to wss', async () => {
     const handler = await loadHandler('../../functions/generateLiveKitToken.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'https://livekit.example.com',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret',
@@ -59,6 +70,8 @@ describe('generateLiveKitToken', () => {
 
   it('allows insecure URL in development mode', async () => {
     const handler = await loadHandler('../../functions/generateLiveKitToken.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'http://livekit.dev',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret',
@@ -83,6 +96,8 @@ describe('generateLiveKitToken', () => {
 
   it('rejects insecure URL in production mode', async () => {
     const handler = await loadHandler('../../functions/generateLiveKitToken.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'http://livekit.prod',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret',
@@ -102,6 +117,8 @@ describe('generateLiveKitToken', () => {
 
   it('returns error when LiveKit credentials are missing', async () => {
     const handler = await loadHandler('../../functions/generateLiveKitToken.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'https://livekit.example.com',
       LIVEKIT_API_SECRET: 'secret',
       NODE_ENV: 'production'

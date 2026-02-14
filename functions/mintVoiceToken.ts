@@ -1,8 +1,13 @@
 import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { AccessToken } from 'npm:livekit@2.0.0';
+import { enforceContentLength, enforceJsonPost } from './_shared/security.ts';
 
 const FOCUSED_MEMBERSHIPS = new Set(['MEMBER', 'AFFILIATE', 'PARTNER']);
 const DISCIPLINE_MODES = new Set(['OPEN', 'PTT', 'REQUEST_TO_SPEAK', 'COMMAND_ONLY']);
+const TOKEN_PATTERN = /^[A-Za-z0-9:_-]{1,120}$/;
+const CALLSIGN_PATTERN = /^[A-Za-z0-9 .:'_-]{1,80}$/;
+const SUBMIX_PATTERN = /^[A-Z0-9_-]{1,40}$/;
+const MAX_MONITOR_SUBMIXES = 12;
 
 function text(value: unknown, fallback = '') {
   const normalized = String(value || '').trim();
@@ -154,6 +159,15 @@ async function deriveVoicePolicy(
  */
 Deno.serve(async (req) => {
   try {
+    const methodCheck = enforceJsonPost(req);
+    if (!methodCheck.ok) {
+      return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+    }
+    const lengthCheck = enforceContentLength(req, 40_000);
+    if (!lengthCheck.ok) {
+      return Response.json({ error: lengthCheck.error }, { status: lengthCheck.status });
+    }
+
     const payload = await readJson(req);
     const { base44, actorType, adminUser, memberProfile } = await getAuthContext(req, payload, {
       allowAdmin: true,
@@ -164,19 +178,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { netId, userId, callsign, clientId } = payload;
+    const netId = text(payload?.netId, 120);
+    const userId = text(payload?.userId, 120);
+    const callsign = text(payload?.callsign, 80);
+    const clientId = text(payload?.clientId, 120);
     const requestedDisciplineMode = text(payload?.disciplineMode || payload?.discipline_mode || 'PTT').toUpperCase();
     const secureMode = Boolean(payload?.secureMode || payload?.secure_mode);
     const secureKeyVersion = text(payload?.secureKeyVersion || payload?.secure_key_version);
-    const whisperTarget = payload?.whisperTarget || payload?.whisper_target || null;
-    const monitorSubmixes = Array.isArray(payload?.monitorSubmixes || payload?.monitor_submixes)
+    const whisperTargetRaw = text(payload?.whisperTarget || payload?.whisper_target, 120);
+    const whisperTarget = whisperTargetRaw || null;
+    const monitorSubmixesRaw = Array.isArray(payload?.monitorSubmixes || payload?.monitor_submixes)
       ? (payload?.monitorSubmixes || payload?.monitor_submixes)
       : [];
+    const monitorSubmixes = monitorSubmixesRaw
+      .map((entry: unknown) => text(entry, 40).toUpperCase())
+      .filter((entry: string) => SUBMIX_PATTERN.test(entry))
+      .slice(0, MAX_MONITOR_SUBMIXES);
     const txSubmix = text(payload?.txSubmix || payload?.tx_submix || 'SQUAD').toUpperCase();
     const disableRecordings = payload?.disableRecordings !== false;
 
     if (!netId || !userId) {
       return Response.json({ error: 'Missing netId or userId' }, { status: 400 });
+    }
+    if (!TOKEN_PATTERN.test(netId) || !TOKEN_PATTERN.test(userId)) {
+      return Response.json({ error: 'Invalid netId or userId' }, { status: 400 });
+    }
+    if (callsign && !CALLSIGN_PATTERN.test(callsign)) {
+      return Response.json({ error: 'Invalid callsign' }, { status: 400 });
+    }
+    if (clientId && !TOKEN_PATTERN.test(clientId)) {
+      return Response.json({ error: 'Invalid clientId' }, { status: 400 });
+    }
+    if (whisperTarget && !TOKEN_PATTERN.test(whisperTarget)) {
+      return Response.json({ error: 'Invalid whisper target' }, { status: 400 });
+    }
+    if (!SUBMIX_PATTERN.test(txSubmix)) {
+      return Response.json({ error: 'Invalid txSubmix' }, { status: 400 });
+    }
+    if (!DISCIPLINE_MODES.has(requestedDisciplineMode)) {
+      return Response.json({ error: 'Invalid discipline mode' }, { status: 400 });
     }
 
     if (actorType === 'member' && memberProfile?.id && userId !== memberProfile.id) {
@@ -321,11 +361,11 @@ Deno.serve(async (req) => {
       },
     });
   } catch (error) {
-    console.error('[mintVoiceToken]', error.message);
+    console.error('[mintVoiceToken]', error instanceof Error ? error.message : error);
     return Response.json(
       {
         error: 'VOICE_TOKEN_FAILED',
-        message: error.message,
+        message: 'Voice token generation failed',
       },
       { status: 500 }
     );

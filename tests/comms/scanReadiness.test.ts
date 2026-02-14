@@ -89,15 +89,18 @@ afterEach(() => {
 });
 
 describe('scanReadiness', () => {
+  const internalSecret = 'internal-test-secret';
+
   it('returns no-op response when there are no active events', async () => {
     mockState.base44 = createBase44Mock({ events: [] });
 
     const handler = await loadHandler('../../functions/scanReadiness.ts', {
       BASE44_APP_ID: 'app',
       BASE44_SERVICE_ROLE_KEY: 'service-role',
+      NEXUS_INTERNAL_AUTOMATION_SECRET: internalSecret,
     });
 
-    const response = await handler(buildRequest({}));
+    const response = await handler(buildRequest({ internalSecret }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -139,9 +142,10 @@ describe('scanReadiness', () => {
       BASE44_APP_ID: 'app',
       BASE44_SERVICE_ROLE_KEY: 'service-role',
       READINESS_LLM_MODE: 'auto',
+      NEXUS_INTERNAL_AUTOMATION_SECRET: internalSecret,
     });
 
-    const response = await handler(buildRequest({}));
+    const response = await handler(buildRequest({ internalSecret }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -194,9 +198,10 @@ describe('scanReadiness', () => {
       BASE44_APP_ID: 'app',
       BASE44_SERVICE_ROLE_KEY: 'service-role',
       READINESS_LLM_MODE: 'auto',
+      NEXUS_INTERNAL_AUTOMATION_SECRET: internalSecret,
     });
 
-    const response = await handler(buildRequest({}));
+    const response = await handler(buildRequest({ internalSecret }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -244,9 +249,10 @@ describe('scanReadiness', () => {
       BASE44_APP_ID: 'app',
       BASE44_SERVICE_ROLE_KEY: 'service-role',
       READINESS_LLM_MODE: 'off',
+      NEXUS_INTERNAL_AUTOMATION_SECRET: internalSecret,
     });
 
-    const response = await handler(buildRequest({}));
+    const response = await handler(buildRequest({ internalSecret }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);

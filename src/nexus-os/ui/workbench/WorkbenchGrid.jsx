@@ -10,6 +10,7 @@ import CustomWorkbenchWidgetPanel from './CustomWorkbenchWidgetPanel';
 import { DEFAULT_WORKBENCH_PRESET_ID, WORKBENCH_PRESETS } from './presets';
 import { reorderPanelIds, resolvePanelSizeForLayout } from './layoutEngine';
 import {
+  hydrateWorkbenchLayoutFromBackend,
   loadWorkbenchLayout,
   persistWorkbenchLayout,
   resetWorkbenchLayout,
@@ -19,6 +20,7 @@ import { runWorkbenchHarness } from './workbenchHarness';
 import {
   customWorkbenchWidgetPanelId,
   exportCustomWorkbenchWidgetShareCode,
+  hydrateCustomWorkbenchWidgetsFromBackend,
   importCustomWorkbenchWidgetFromShareCode,
   listCustomWorkbenchWidgets,
   parseCustomWorkbenchWidgetPanelId,
@@ -139,8 +141,12 @@ function createWidgetFormState(overrides = {}) {
     tone: DEFAULT_WIDGET_TONE,
     kind: 'NOTE',
     visualStyle: 'STANDARD',
-    linkLabel: '',
-    linkUrl: '',
+    links: [],
+    linkDraftLabel: '',
+    linkDraftUrl: '',
+    tagsText: '',
+    isPinned: false,
+    createdBy: '',
     colSpan: DEFAULT_WIDGET_COL_SPAN,
     rowSpan: DEFAULT_WIDGET_ROW_SPAN,
     ...overrides,
@@ -153,6 +159,14 @@ function parsePromptKeywords(value) {
     .split(/[^a-z0-9]+/)
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+function parseWidgetTags(value) {
+  return String(value || '')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 8);
 }
 
 function guessWidgetFromPrompt(prompt, actorPreference) {
@@ -333,11 +347,24 @@ export default function WorkbenchGrid({
     const token = String(panelSearchQuery || '').trim().toLowerCase();
     if (!token) return allPanels;
     return allPanels.filter((panel) => {
-      const title = String(panel.title || '').toLowerCase();
-      const id = String(panel.id || '').toLowerCase();
-      return title.includes(token) || id.includes(token);
+      const customWidgetId = parseCustomWorkbenchWidgetPanelId(panel.id);
+      const customWidget = customWidgetId ? customWidgetMap[customWidgetId] : null;
+      const searchText = [
+        panel.title,
+        panel.id,
+        panel.status,
+        customWidget?.description,
+        customWidget?.body,
+        customWidget?.kind,
+        customWidget?.visualStyle,
+        ...(Array.isArray(customWidget?.tags) ? customWidget.tags : []),
+      ]
+        .map((entry) => String(entry || '').trim().toLowerCase())
+        .filter(Boolean)
+        .join(' ');
+      return searchText.includes(token);
     });
-  }, [allPanels, panelSearchQuery]);
+  }, [allPanels, customWidgetMap, panelSearchQuery]);
   const actorId = String(panelComponentProps?.actorId || '').trim();
   const actorPreference = useMemo(
     () => (actorId ? getUserOperationPreference(actorId) : null),
@@ -402,7 +429,27 @@ export default function WorkbenchGrid({
   }, [onboardingDismissed, onCompleteOnboarding]);
 
   useEffect(() => {
-    setCustomWidgets(listCustomWorkbenchWidgets(widgetScopeKey));
+    let active = true;
+    const localWidgets = listCustomWorkbenchWidgets(widgetScopeKey);
+    setCustomWidgets(localWidgets);
+    void hydrateCustomWorkbenchWidgetsFromBackend(widgetScopeKey).then((remoteWidgets) => {
+      if (!active || !Array.isArray(remoteWidgets)) return;
+      const localFreshness = localWidgets.reduce((max, entry) => {
+        const ms = Date.parse(String(entry?.updatedAt || entry?.createdAt || ''));
+        return Number.isNaN(ms) ? max : Math.max(max, ms);
+      }, 0);
+      const remoteFreshness = remoteWidgets.reduce((max, entry) => {
+        const ms = Date.parse(String(entry?.updatedAt || entry?.createdAt || ''));
+        return Number.isNaN(ms) ? max : Math.max(max, ms);
+      }, 0);
+      if (localFreshness > 0 && remoteFreshness > 0 && remoteFreshness < localFreshness) return;
+      setCustomWidgets(remoteWidgets);
+    }).catch(() => {
+      // best effort remote hydration
+    });
+    return () => {
+      active = false;
+    };
   }, [widgetScopeKey]);
 
   useEffect(() => {
@@ -429,6 +476,47 @@ export default function WorkbenchGrid({
     setWidgetForm(createWidgetFormState());
   }, []);
 
+  const addWidgetLink = useCallback(() => {
+    const label = String(widgetForm.linkDraftLabel || '').trim();
+    const url = String(widgetForm.linkDraftUrl || '').trim();
+    if (!label || !url) {
+      setWidgetNotice('Provide both link label and URL before adding.');
+      return;
+    }
+    setWidgetForm((prev) => {
+      const current = Array.isArray(prev.links) ? prev.links : [];
+      if (current.length >= 6) return prev;
+      const duplicate = current.some(
+        (entry) =>
+          String(entry?.label || '').trim().toLowerCase() === label.toLowerCase() &&
+          String(entry?.url || '').trim() === url
+      );
+      if (duplicate) {
+        return {
+          ...prev,
+          linkDraftLabel: '',
+          linkDraftUrl: '',
+        };
+      }
+      return {
+        ...prev,
+        links: [...current, { label, url }],
+        linkDraftLabel: '',
+        linkDraftUrl: '',
+      };
+    });
+  }, [widgetForm.linkDraftLabel, widgetForm.linkDraftUrl]);
+
+  const removeWidgetLink = useCallback((indexToRemove) => {
+    setWidgetForm((prev) => {
+      const current = Array.isArray(prev.links) ? prev.links : [];
+      return {
+        ...prev,
+        links: current.filter((_, index) => index !== indexToRemove),
+      };
+    });
+  }, []);
+
   const editWidget = useCallback(
     (widgetId) => {
       const widget = customWidgetMap[widgetId];
@@ -442,8 +530,14 @@ export default function WorkbenchGrid({
         tone: widget.tone || DEFAULT_WIDGET_TONE,
         kind: widget.kind || 'NOTE',
         visualStyle: widget.visualStyle || 'STANDARD',
-        linkLabel: widget.links?.[0]?.label || '',
-        linkUrl: widget.links?.[0]?.url || '',
+        links: Array.isArray(widget.links)
+          ? widget.links.map((entry) => ({ label: entry?.label || '', url: entry?.url || '' }))
+          : [],
+        linkDraftLabel: '',
+        linkDraftUrl: '',
+        tagsText: Array.isArray(widget.tags) ? widget.tags.join(', ') : '',
+        isPinned: Boolean(widget.isPinned),
+        createdBy: widget.createdBy || '',
         colSpan: clampColSpan(Number(currentSize.colSpan) || DEFAULT_WIDGET_COL_SPAN, preset.columns),
         rowSpan: clampRowSpan(Number(currentSize.rowSpan) || DEFAULT_WIDGET_ROW_SPAN),
       });
@@ -477,10 +571,12 @@ export default function WorkbenchGrid({
         tone: widgetForm.tone,
         kind: widgetForm.kind,
         visualStyle: widgetForm.visualStyle,
-        links:
-          widgetForm.linkLabel && widgetForm.linkUrl
-            ? [{ label: widgetForm.linkLabel, url: widgetForm.linkUrl }]
-            : [],
+        links: Array.isArray(widgetForm.links)
+          ? widgetForm.links.map((entry) => ({ label: entry?.label, url: entry?.url }))
+          : [],
+        tags: parseWidgetTags(widgetForm.tagsText),
+        isPinned: Boolean(widgetForm.isPinned),
+        createdBy: String(widgetForm.createdBy || workspaceUserDisplayName || '').trim() || undefined,
       });
       setCustomWidgets(listCustomWorkbenchWidgets(widgetScopeKey));
       setActivePanelIds((prev) => {
@@ -505,7 +601,7 @@ export default function WorkbenchGrid({
     } catch (error) {
       setWidgetNotice(error instanceof Error ? error.message : 'Unable to save widget.');
     }
-  }, [clearWidgetForm, completeOnboarding, preset.columns, widgetForm, widgetScopeKey]);
+  }, [clearWidgetForm, completeOnboarding, preset.columns, widgetForm, widgetScopeKey, workspaceUserDisplayName]);
 
   const copyWidgetShareCode = useCallback(
     (widgetId) => {
@@ -524,12 +620,18 @@ export default function WorkbenchGrid({
       const template = recommendedTemplates.find((entry) => entry.id === templateId);
       if (!template) return;
       applyWidgetFormUpdate({
+        editingWidgetId: '',
         title: template.title,
         description: template.description,
         body: template.body,
         tone: template.tone,
         kind: template.kind,
         visualStyle: template.visualStyle,
+        links: [],
+        linkDraftLabel: '',
+        linkDraftUrl: '',
+        tagsText: '',
+        isPinned: false,
         colSpan: template.colSpan,
         rowSpan: template.rowSpan,
       });
@@ -544,6 +646,11 @@ export default function WorkbenchGrid({
       applyWidgetFormUpdate({
         editingWidgetId: '',
         ...generated,
+        links: [],
+        linkDraftLabel: '',
+        linkDraftUrl: '',
+        tagsText: '',
+        isPinned: false,
       });
       setWidgetNotice('Generated widget draft from brief.');
     } catch (error) {
@@ -564,6 +671,8 @@ export default function WorkbenchGrid({
           kind: widget.kind,
           visualStyle: widget.visualStyle,
           links: widget.links?.map((entry) => ({ label: entry.label, url: entry.url })) || [],
+          tags: Array.isArray(widget.tags) ? widget.tags : [],
+          isPinned: Boolean(widget.isPinned),
           createdBy: widget.createdBy,
         });
         const sourcePanelId = customWorkbenchWidgetPanelId(widget.id);
@@ -623,6 +732,8 @@ export default function WorkbenchGrid({
         kind: widget.kind,
         visualStyle: widget.visualStyle,
         links: widget.links?.map((entry) => ({ label: entry.label, url: entry.url })) || [],
+        tags: Array.isArray(widget.tags) ? widget.tags : [],
+        isPinned: Boolean(widget.isPinned),
         createdBy: widget.createdBy,
       })),
     };
@@ -662,6 +773,8 @@ export default function WorkbenchGrid({
             links: Array.isArray(widget.links)
               ? widget.links.map((entry) => ({ label: entry?.label, url: entry?.url }))
               : [],
+            tags: Array.isArray(widget.tags) ? widget.tags : [],
+            isPinned: Boolean(widget.isPinned),
             createdBy: widget.createdBy,
           });
         }
@@ -897,28 +1010,52 @@ export default function WorkbenchGrid({
   useEffect(() => {
     if (!persistenceEnabled || !layoutPersistenceScopeKey) {
       setLayoutHydrated(true);
-      return;
+      return undefined;
     }
+
+    let active = true;
+    const availablePanelIds = allPanels.map((panel) => panel.id);
+    const applyLoadedLayout = (loadedSnapshot, migratedFrom) => {
+      if (!loadedSnapshot) return;
+      setActivePanelIds(loadedSnapshot.activePanelIds);
+      setPanelSizes(loadedSnapshot.panelSizes || {});
+      if (loadedSnapshot.presetId !== preset.id) {
+        onPresetChange?.(loadedSnapshot.presetId);
+      }
+      if (migratedFrom === 1) {
+        setMigrationNotice('Layout migrated from v1 snapshot.');
+      }
+    };
 
     const loaded = loadWorkbenchLayout({
       scopeKey: layoutPersistenceScopeKey,
       fallbackPresetId: preset.id,
-      availablePanelIds: allPanels.map((panel) => panel.id),
+      availablePanelIds,
     });
 
-    if (loaded?.snapshot) {
-      setActivePanelIds(loaded.snapshot.activePanelIds);
-      setPanelSizes(loaded.snapshot.panelSizes || {});
-      if (loaded.snapshot.presetId !== preset.id) {
-        onPresetChange?.(loaded.snapshot.presetId);
-      }
-      if (loaded.migratedFrom === 1) {
-        setMigrationNotice('Layout migrated from v1 snapshot.');
-      }
-    }
+    applyLoadedLayout(loaded?.snapshot || null, loaded?.migratedFrom || null);
 
     setLayoutHydrated(true);
-  }, [allPanels, persistenceEnabled, layoutPersistenceScopeKey, panelSignature]);
+    void hydrateWorkbenchLayoutFromBackend({
+      scopeKey: layoutPersistenceScopeKey,
+      fallbackPresetId: preset.id,
+      availablePanelIds,
+    }).then((remoteLoaded) => {
+      if (!active || !remoteLoaded?.snapshot) return;
+      const localFreshness = Date.parse(String(loaded?.snapshot?.updatedAt || ''));
+      const remoteFreshness = Date.parse(String(remoteLoaded.snapshot.updatedAt || remoteLoaded.persistedAt || ''));
+      if (!Number.isNaN(localFreshness) && !Number.isNaN(remoteFreshness) && remoteFreshness < localFreshness) return;
+      applyLoadedLayout(remoteLoaded.snapshot, remoteLoaded.migratedFrom || null);
+      if (remoteLoaded.source === 'entity' || remoteLoaded.source === 'event_log') {
+        setMigrationNotice('Layout restored from synced workspace state.');
+      }
+    }).catch(() => {
+      // best effort remote hydration
+    });
+    return () => {
+      active = false;
+    };
+  }, [allPanels, layoutPersistenceScopeKey, onPresetChange, panelSignature, persistenceEnabled, preset.id]);
 
   useEffect(() => {
     onActivePanelIdsChange?.(activePanelIds);
@@ -1499,18 +1636,66 @@ export default function WorkbenchGrid({
                   <option value="SURFACE">Surface</option>
                 </select>
                 <input
-                  value={widgetForm.linkLabel}
-                  onChange={(event) => applyWidgetFormUpdate({ linkLabel: event.target.value })}
-                  placeholder="Link label"
+                  value={widgetForm.tagsText}
+                  onChange={(event) => applyWidgetFormUpdate({ tagsText: event.target.value })}
+                  placeholder="Tags (comma separated)"
                   className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
                 />
                 <input
-                  value={widgetForm.linkUrl}
-                  onChange={(event) => applyWidgetFormUpdate({ linkUrl: event.target.value })}
-                  placeholder="https://..."
+                  value={widgetForm.createdBy}
+                  onChange={(event) => applyWidgetFormUpdate({ createdBy: event.target.value })}
+                  placeholder={`Created by (${workspaceUserDisplayName || 'Operator'})`}
                   className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
                 />
               </div>
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">Links</div>
+                  <div className="text-[10px] text-zinc-600">{Array.isArray(widgetForm.links) ? widgetForm.links.length : 0}/6</div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+                  <input
+                    value={widgetForm.linkDraftLabel}
+                    onChange={(event) => applyWidgetFormUpdate({ linkDraftLabel: event.target.value })}
+                    placeholder="Link label"
+                    className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  />
+                  <input
+                    value={widgetForm.linkDraftUrl}
+                    onChange={(event) => applyWidgetFormUpdate({ linkDraftUrl: event.target.value })}
+                    placeholder="https://..."
+                    className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                  />
+                  <NexusButton size="sm" intent="subtle" onClick={addWidgetLink}>
+                    Add Link
+                  </NexusButton>
+                </div>
+                {Array.isArray(widgetForm.links) && widgetForm.links.length > 0 ? (
+                  <div className="space-y-1">
+                    {widgetForm.links.map((entry, index) => (
+                      <div key={`${entry.label}-${entry.url}-${index}`} className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1">
+                        <div className="min-w-0">
+                          <div className="text-[11px] text-zinc-200 truncate">{entry.label}</div>
+                          <div className="text-[10px] text-zinc-500 truncate">{entry.url}</div>
+                        </div>
+                        <NexusButton size="sm" intent="subtle" onClick={() => removeWidgetLink(index)}>
+                          Remove
+                        </NexusButton>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-zinc-600">No links added yet.</div>
+                )}
+              </div>
+              <label className="flex items-center gap-2 text-[11px] text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={Boolean(widgetForm.isPinned)}
+                  onChange={(event) => applyWidgetFormUpdate({ isPinned: event.target.checked })}
+                />
+                Pin this widget in the library and panel listings
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <label className="text-[11px] text-zinc-500 flex flex-col gap-1">
                   Width span
@@ -1548,6 +1733,19 @@ export default function WorkbenchGrid({
                 <div className="text-sm text-zinc-200 truncate">{widgetForm.title || 'Untitled widget'}</div>
                 <div className="text-[11px] text-zinc-500 line-clamp-2">{widgetForm.description || 'No description yet.'}</div>
                 <div className="text-[10px] text-zinc-500">{widgetForm.kind} · {widgetForm.visualStyle}</div>
+                <div className="text-[10px] text-zinc-600">
+                  {(Array.isArray(widgetForm.links) ? widgetForm.links.length : 0)} links
+                  {widgetForm.isPinned ? ' · pinned' : ''}
+                </div>
+                {parseWidgetTags(widgetForm.tagsText).length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {parseWidgetTags(widgetForm.tagsText).map((tag) => (
+                      <span key={tag} className="rounded border border-zinc-700 bg-zinc-900/70 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="text-[10px] text-zinc-600">Span {widgetForm.colSpan}x{widgetForm.rowSpan}</div>
               </div>
               <div className="flex items-center gap-2">

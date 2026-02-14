@@ -1,4 +1,5 @@
-import { createServiceClient } from './_shared/memberAuth.ts';
+import { createServiceClient, readJson } from './_shared/memberAuth.ts';
+import { enforceJsonPost, verifyInternalAutomationRequest } from './_shared/security.ts';
 
 /**
  * Scheduled scan - Check all active events for readiness issues
@@ -194,8 +195,17 @@ Deterministic baseline:
 Refine concerns/recommendations for command action.`;
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   try {
+    const methodCheck = enforceJsonPost(req);
+    if (!methodCheck.ok) {
+      return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+    }
+    const payload = await readJson(req);
+    const internalAuth = verifyInternalAutomationRequest(req, payload, { requiredWhenSecretMissing: true });
+    if (!internalAuth.ok) {
+      return Response.json({ error: internalAuth.error }, { status: internalAuth.status });
+    }
     const base44 = createServiceClient();
     const llmMode = String(Deno.env.get('READINESS_LLM_MODE') || 'auto').trim().toLowerCase();
     const maxEvents = envInt('READINESS_MAX_EVENTS', MAX_EVENTS_DEFAULT, 1, 500);

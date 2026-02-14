@@ -1,4 +1,5 @@
 import { createServiceClient, isAdminMember } from './_shared/memberAuth.ts';
+import { enforceJsonPost, verifyInternalAutomationRequest } from './_shared/security.ts';
 
 /**
  * Auto-detect priority messages in comms
@@ -6,8 +7,17 @@ import { createServiceClient, isAdminMember } from './_shared/memberAuth.ts';
  */
 Deno.serve(async (req) => {
     try {
+        const methodCheck = enforceJsonPost(req);
+        if (!methodCheck.ok) {
+            return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+        }
+        const payload = await req.json();
+        const internalAuth = verifyInternalAutomationRequest(req, payload, { requiredWhenSecretMissing: true });
+        if (!internalAuth.ok) {
+            return Response.json({ error: internalAuth.error }, { status: internalAuth.status });
+        }
         const base44 = createServiceClient();
-        const { event, data, payload_too_large } = await req.json();
+        const { event, data, payload_too_large } = payload || {};
 
         const messageData = payload_too_large 
             ? await base44.asServiceRole.entities.Message.get(event.entity_id)
@@ -79,6 +89,6 @@ Also identify sentiment and key topics.`,
 
     } catch (error) {
         console.error('Auto-detect priority failed:', error);
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ error: error?.message || 'Auto-detect priority failed' }, { status: 500 });
     }
 });

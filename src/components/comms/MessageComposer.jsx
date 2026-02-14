@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Paperclip, Bold, Italic, Code, Smile, Mic, Square, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
+import { sanitizeAttachmentUrl } from '@/components/comms/urlSafety';
 
 const COMMAND_HINTS = [
   { usage: '/help', desc: 'List available commands' },
@@ -18,6 +19,44 @@ const COMMAND_HINTS = [
   { usage: '/contact <msg>', desc: 'Structured contact report' },
   { usage: '/status <msg>', desc: 'Structured status update' },
 ];
+
+const MAX_ATTACHMENTS = 6;
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt', 'webm', 'mp3', 'wav', 'ogg', 'm4a']);
+
+function extensionFromFileName(fileName = '') {
+  const token = String(fileName || '').trim().toLowerCase();
+  const dot = token.lastIndexOf('.');
+  if (dot < 0) return '';
+  return token.slice(dot + 1);
+}
+
+function isAllowedUploadFile(file) {
+  const mime = String(file?.type || '').toLowerCase();
+  if (mime.startsWith('image/')) return true;
+  if (mime.startsWith('audio/')) return true;
+  if (mime === 'application/pdf') return true;
+  if (mime === 'text/plain') return true;
+  if (
+    mime === 'application/msword' ||
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    return true;
+  }
+  return ALLOWED_EXTENSIONS.has(extensionFromFileName(file?.name));
+}
+
+function createAttachmentEntry(url, meta = {}) {
+  const normalizedUrl = String(url || '').trim();
+  return {
+    id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    url: normalizedUrl,
+    fileName: String(meta.fileName || '').trim() || normalizedUrl.split('?')[0].split('/').pop() || 'attachment',
+    contentType: String(meta.contentType || '').trim() || 'application/octet-stream',
+    sizeBytes: Number.isFinite(Number(meta.sizeBytes)) ? Number(meta.sizeBytes) : null,
+    sourceKind: String(meta.sourceKind || 'file').trim() || 'file',
+  };
+}
 
 export default function MessageComposer({ 
   channelId, 
@@ -32,6 +71,7 @@ export default function MessageComposer({
   const [body, setBody] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showCommandHelp, setShowCommandHelp] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -98,16 +138,19 @@ export default function MessageComposer({
   const handleSend = async () => {
     if (disabled || uploading) return;
     if (!body.trim() && attachments.length === 0) return;
+    const attachmentUrls = attachments
+      .map((entry) => String(entry?.url || '').trim())
+      .filter(Boolean);
 
     const messageData = {
       channel_id: channelId,
       user_id: userId,
       content: body.trim(),
-      attachments: attachments.length > 0 ? attachments : undefined,
+      attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined,
     };
 
     try {
-      await onSendMessage(messageData);
+      await onSendMessage(messageData, { attachments });
       setBody('');
       setAttachments([]);
       if (draftKey) {
@@ -131,23 +174,66 @@ export default function MessageComposer({
     if (files.length === 0) return;
 
     setUploading(true);
+    setUploadError('');
     try {
-      const uploadedUrls = await Promise.all(
-        files.map(async (file) => {
+      const availableSlots = Math.max(0, MAX_ATTACHMENTS - attachments.length);
+      if (availableSlots <= 0) {
+        setUploadError(`Attachment limit reached (${MAX_ATTACHMENTS}).`);
+        return;
+      }
+
+      const accepted = [];
+      const rejected = [];
+      for (const file of files) {
+        if (accepted.length >= availableSlots) {
+          rejected.push(`${file.name}: limit reached`);
+          continue;
+        }
+        if (!isAllowedUploadFile(file)) {
+          rejected.push(`${file.name}: unsupported file type`);
+          continue;
+        }
+        if (Number(file.size) > MAX_FILE_SIZE_BYTES) {
+          rejected.push(`${file.name}: file is larger than 20MB`);
+          continue;
+        }
+        accepted.push(file);
+      }
+
+      if (rejected.length > 0) {
+        setUploadError(rejected.slice(0, 2).join(' | '));
+      }
+      if (accepted.length === 0) return;
+
+      const uploadedAttachments = await Promise.all(
+        accepted.map(async (file) => {
           const result = await base44.integrations.Core.UploadFile({ file });
-          return result.file_url;
+          const safeUrl = sanitizeAttachmentUrl(result?.file_url);
+          if (!safeUrl) {
+            throw new Error(`Unsafe file URL rejected for ${file.name}`);
+          }
+          return createAttachmentEntry(safeUrl, {
+            fileName: file.name,
+            contentType: file.type || 'application/octet-stream',
+            sizeBytes: file.size,
+            sourceKind: 'file',
+          });
         })
       );
-      setAttachments(prev => [...prev, ...uploadedUrls]);
+      setAttachments((prev) => [...prev, ...uploadedAttachments]);
     } catch (error) {
       console.error('Failed to upload files:', error);
+      setUploadError('File upload failed. Please try again.');
     } finally {
+      if (e?.target) {
+        e.target.value = '';
+      }
       setUploading(false);
     }
   };
 
-  const removeAttachment = (url) => {
-    setAttachments(prev => prev.filter(a => a !== url));
+  const removeAttachment = (attachmentId) => {
+    setAttachments((prev) => prev.filter((entry) => entry.id !== attachmentId));
   };
 
   const startRecording = async () => {
@@ -180,19 +266,40 @@ export default function MessageComposer({
         setRecordingSeconds(0);
 
         if (!chunks.length) return;
-        setUploading(true);
-        try {
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
-          const result = await base44.integrations.Core.UploadFile({ file });
-          if (result?.file_url) {
-            setAttachments((prev) => [...prev, result.file_url]);
-          }
-        } catch (error) {
-          console.error('Failed to upload recording:', error);
-        } finally {
-          setUploading(false);
+        if (attachments.length >= MAX_ATTACHMENTS) {
+          setUploadError(`Attachment limit reached (${MAX_ATTACHMENTS}).`);
+          return;
         }
+        setUploading(true);
+        setUploadError('');
+      try {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          setUploadError('Recording exceeds the 20MB attachment limit.');
+          return;
+        }
+        const result = await base44.integrations.Core.UploadFile({ file });
+        const safeUrl = sanitizeAttachmentUrl(result?.file_url);
+        if (safeUrl) {
+          setAttachments((prev) => [
+            ...prev,
+            createAttachmentEntry(safeUrl, {
+              fileName: file.name,
+              contentType: file.type || 'audio/webm',
+              sizeBytes: file.size,
+              sourceKind: 'recording',
+            }),
+          ]);
+        } else {
+          setUploadError('Recording URL rejected for safety.');
+        }
+      } catch (error) {
+        console.error('Failed to upload recording:', error);
+        setUploadError('Failed to upload recording.');
+      } finally {
+        setUploading(false);
+      }
       };
 
       mediaRecorder.start();
@@ -287,21 +394,26 @@ export default function MessageComposer({
           {disabledReason}
         </div>
       )}
+      {uploadError && (
+        <div className="text-[10px] text-red-300 bg-red-500/10 border border-red-500/20 rounded px-2 py-1">
+          {uploadError}
+        </div>
+      )}
 
       {/* Attachments Preview */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {attachments.map((url, idx) => (
-            <div key={idx} className="relative group">
-              {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img src={url} alt="preview" className="h-12 w-12 object-cover rounded border border-zinc-700" />
+          {attachments.map((attachment) => (
+            <div key={attachment.id} className="relative group">
+              {attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img src={attachment.url} alt="preview" className="h-12 w-12 object-cover rounded border border-zinc-700" />
               ) : (
                 <div className="h-12 w-12 bg-zinc-800 rounded border border-zinc-700 flex items-center justify-center text-xs">
                   📎
                 </div>
               )}
               <button
-                onClick={() => removeAttachment(url)}
+                onClick={() => removeAttachment(attachment.id)}
                 className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="w-3 h-3" />
@@ -364,7 +476,7 @@ export default function MessageComposer({
           multiple
           onChange={handleFileUpload}
           className="hidden"
-          accept="image/*,.pdf,.doc,.docx,.txt"
+          accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
         />
         <Button
           size="icon"

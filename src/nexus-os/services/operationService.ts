@@ -15,6 +15,11 @@ import type {
 } from '../schemas/opSchemas';
 import type { CommsTemplateId } from '../registries/commsTemplateRegistry';
 import type { DataClassification } from '../schemas/crossOrgSchemas';
+import {
+  enqueueWorkspaceStateSave,
+  loadWorkspaceStateSnapshot,
+  workspaceStateSyncEnabled,
+} from './workspaceStateBridgeService';
 
 export interface OperationCreateInput {
   name: string;
@@ -123,6 +128,8 @@ interface OperationServiceSnapshot {
 }
 
 const OP_SERVICE_STORAGE_KEY = 'nexus.os.operationService.v1';
+const OP_REMOTE_NAMESPACE = 'operation_service_snapshot';
+const OP_REMOTE_SCOPE_KEY = 'default';
 
 let operationsStore: Operation[] = [];
 let operationEventsStore: OperationEventStub[] = [];
@@ -131,6 +138,7 @@ let operationAuditStore: OperationAuditEvent[] = [];
 const focusByUser: Record<string, string> = {};
 const listeners = new Set<OperationListener>();
 let hasHydratedFromStorage = false;
+let remoteHydrateRequested = false;
 
 function nowIso(nowMs = Date.now()): string {
   return new Date(nowMs).toISOString();
@@ -168,45 +176,118 @@ function sortOperationAudit(records: OperationAuditEvent[]): OperationAuditEvent
   return [...records].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+function createSnapshot(): OperationServiceSnapshot {
+  return {
+    operationsStore,
+    operationEventsStore,
+    operationTemplatesStore,
+    operationAuditStore,
+    focusByUser: { ...focusByUser },
+  };
+}
+
+function parseTimestampMs(value: unknown): number {
+  const parsed = Date.parse(String(value || ''));
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function snapshotFreshnessMs(snapshot: Partial<OperationServiceSnapshot> | null | undefined, persistedAt?: string): number {
+  if (!snapshot) return parseTimestampMs(persistedAt);
+  let latest = parseTimestampMs(persistedAt);
+  for (const op of snapshot.operationsStore || []) {
+    latest = Math.max(latest, parseTimestampMs(op?.updatedAt || op?.createdAt));
+  }
+  for (const entry of snapshot.operationEventsStore || []) {
+    latest = Math.max(latest, parseTimestampMs(entry?.createdAt));
+  }
+  for (const template of snapshot.operationTemplatesStore || []) {
+    latest = Math.max(latest, parseTimestampMs(template?.updatedAt || template?.createdAt));
+  }
+  for (const audit of snapshot.operationAuditStore || []) {
+    latest = Math.max(latest, parseTimestampMs(audit?.createdAt));
+  }
+  return latest;
+}
+
+function currentStoreFreshnessMs(): number {
+  return snapshotFreshnessMs(createSnapshot());
+}
+
+function applySnapshot(snapshot: Partial<OperationServiceSnapshot>) {
+  if (Array.isArray(snapshot.operationsStore)) {
+    operationsStore = sortOperations(snapshot.operationsStore);
+  }
+  if (Array.isArray(snapshot.operationEventsStore)) {
+    operationEventsStore = sortOperationEvents(snapshot.operationEventsStore);
+  }
+  if (Array.isArray(snapshot.operationTemplatesStore)) {
+    operationTemplatesStore = sortOperationTemplates(snapshot.operationTemplatesStore);
+  }
+  if (Array.isArray(snapshot.operationAuditStore)) {
+    operationAuditStore = sortOperationAudit(snapshot.operationAuditStore);
+  }
+  if (snapshot.focusByUser && typeof snapshot.focusByUser === 'object') {
+    for (const key of Object.keys(focusByUser)) delete focusByUser[key];
+    Object.assign(focusByUser, snapshot.focusByUser);
+  }
+}
+
 function hasBrowserStorage(): boolean {
   return typeof window !== 'undefined' && Boolean(window.localStorage);
 }
 
+function requestRemoteHydration() {
+  if (remoteHydrateRequested || !workspaceStateSyncEnabled()) return;
+  remoteHydrateRequested = true;
+  void loadWorkspaceStateSnapshot<OperationServiceSnapshot>({
+    namespace: OP_REMOTE_NAMESPACE,
+    scopeKey: OP_REMOTE_SCOPE_KEY,
+  }).then((remote) => {
+    if (!remote?.state || typeof remote.state !== 'object') return;
+    const remoteState = remote.state as Partial<OperationServiceSnapshot>;
+    const remoteFreshness = snapshotFreshnessMs(remoteState, remote.persistedAt);
+    const localFreshness = currentStoreFreshnessMs();
+    if (localFreshness > 0 && remoteFreshness > 0 && remoteFreshness < localFreshness) return;
+    applySnapshot(remoteState);
+    notifyListeners();
+  }).catch(() => {
+    // best effort remote hydration
+  });
+}
+
 function persistSnapshot() {
-  if (!hasBrowserStorage()) return;
-  try {
-    const snapshot: OperationServiceSnapshot = {
-      operationsStore,
-      operationEventsStore,
-      operationTemplatesStore,
-      operationAuditStore,
-      focusByUser: { ...focusByUser },
-    };
-    window.localStorage.setItem(OP_SERVICE_STORAGE_KEY, JSON.stringify(snapshot));
-  } catch {
-    // Persistence is best-effort only.
+  const snapshot = createSnapshot();
+  if (hasBrowserStorage()) {
+    try {
+      window.localStorage.setItem(OP_SERVICE_STORAGE_KEY, JSON.stringify(snapshot));
+    } catch {
+      // Persistence is best-effort only.
+    }
   }
+  enqueueWorkspaceStateSave({
+    namespace: OP_REMOTE_NAMESPACE,
+    scopeKey: OP_REMOTE_SCOPE_KEY,
+    schemaVersion: 1,
+    state: snapshot,
+    debounceMs: 850,
+  });
 }
 
 function hydrateSnapshot() {
   if (hasHydratedFromStorage) return;
   hasHydratedFromStorage = true;
-  if (!hasBrowserStorage()) return;
-  try {
-    const raw = window.localStorage.getItem(OP_SERVICE_STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Partial<OperationServiceSnapshot>;
-    if (Array.isArray(parsed.operationsStore)) operationsStore = sortOperations(parsed.operationsStore);
-    if (Array.isArray(parsed.operationEventsStore)) operationEventsStore = sortOperationEvents(parsed.operationEventsStore);
-    if (Array.isArray(parsed.operationTemplatesStore)) operationTemplatesStore = sortOperationTemplates(parsed.operationTemplatesStore);
-    if (Array.isArray(parsed.operationAuditStore)) operationAuditStore = sortOperationAudit(parsed.operationAuditStore);
-    if (parsed.focusByUser && typeof parsed.focusByUser === 'object') {
-      for (const key of Object.keys(focusByUser)) delete focusByUser[key];
-      Object.assign(focusByUser, parsed.focusByUser);
+  if (hasBrowserStorage()) {
+    try {
+      const raw = window.localStorage.getItem(OP_SERVICE_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<OperationServiceSnapshot>;
+        applySnapshot(parsed);
+      }
+    } catch {
+      // Ignore invalid snapshots.
     }
-  } catch {
-    // Ignore invalid snapshots.
   }
+  requestRemoteHydration();
 }
 
 function defaultCommsTemplateByPosture(posture: OperationPosture): CommsTemplateId {
@@ -792,6 +873,7 @@ export function resetOperationServiceState() {
   operationEventsStore = [];
   operationTemplatesStore = [];
   operationAuditStore = [];
+  remoteHydrateRequested = false;
   for (const key of Object.keys(focusByUser)) delete focusByUser[key];
   if (hasBrowserStorage()) {
     try {

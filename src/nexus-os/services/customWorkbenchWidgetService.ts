@@ -1,3 +1,8 @@
+import {
+  enqueueWorkspaceStateSave,
+  loadWorkspaceStateSnapshot,
+} from './workspaceStateBridgeService';
+
 export type CustomWorkbenchWidgetTone =
   | 'neutral'
   | 'active'
@@ -25,6 +30,8 @@ export interface CustomWorkbenchWidget {
   kind: CustomWorkbenchWidgetKind;
   visualStyle: CustomWorkbenchWidgetVisualStyle;
   links: CustomWorkbenchWidgetLink[];
+  tags: string[];
+  isPinned: boolean;
   createdBy?: string;
   createdAt: string;
   updatedAt: string;
@@ -39,18 +46,33 @@ export interface CustomWorkbenchWidgetInput {
   kind?: CustomWorkbenchWidgetKind;
   visualStyle?: CustomWorkbenchWidgetVisualStyle;
   links?: Array<Pick<CustomWorkbenchWidgetLink, 'label' | 'url'>>;
+  tags?: string[];
+  isPinned?: boolean;
   createdBy?: string;
 }
 
 interface CustomWorkbenchWidgetSharePayloadV1 {
   schema: 'nexus-os-custom-widget';
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
-  widget: Omit<CustomWorkbenchWidget, 'id' | 'createdAt' | 'updatedAt'>;
+  widget: {
+    title: string;
+    description?: string;
+    body?: string;
+    tone?: CustomWorkbenchWidgetTone;
+    kind?: CustomWorkbenchWidgetKind;
+    visualStyle?: CustomWorkbenchWidgetVisualStyle;
+    links?: Array<Pick<CustomWorkbenchWidgetLink, 'label' | 'url'>>;
+    tags?: string[];
+    isPinned?: boolean;
+    createdBy?: string;
+  };
 }
 
 const STORAGE_PREFIX = 'nexus.os.workbench.customWidgets.v1';
 const FALLBACK_SCOPE = 'global';
+const WIDGET_REMOTE_NAMESPACE = 'custom_workbench_widgets';
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 
 const inMemoryStore = new Map<string, CustomWorkbenchWidget[]>();
 
@@ -106,13 +128,46 @@ function normalizeWidgetVisualStyle(value: unknown): CustomWorkbenchWidgetVisual
   return 'STANDARD';
 }
 
+function isPrivateIpv4(hostname: string): boolean {
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
+  const parts = hostname.split('.').map((entry) => Number(entry));
+  if (parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  if (parts[0] === 10 || parts[0] === 127 || parts[0] === 0) return true;
+  if (parts[0] === 169 && parts[1] === 254) return true;
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+  if (parts[0] === 192 && parts[1] === 168) return true;
+  if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+  return false;
+}
+
+function isPrivateIpv6(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!normalized.includes(':')) return false;
+  if (normalized === '::1') return true;
+  if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
+  if (normalized.startsWith('fe80:')) return true;
+  return false;
+}
+
+function isPrivateHost(hostname: string): boolean {
+  const normalized = String(hostname || '').trim().toLowerCase().replace(/\.$/, '');
+  if (!normalized) return true;
+  if (LOCAL_HOSTS.has(normalized)) return true;
+  if (normalized.endsWith('.local') || normalized.endsWith('.internal') || normalized.endsWith('.home')) return true;
+  if (isPrivateIpv4(normalized)) return true;
+  if (isPrivateIpv6(normalized)) return true;
+  return false;
+}
+
 function validUrl(url: string): boolean {
   const value = String(url || '').trim();
   if (!value) return false;
   if (value.startsWith('/')) return true;
   try {
     const parsed = new URL(value);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    if (isPrivateHost(parsed.hostname)) return false;
+    return true;
   } catch {
     return false;
   }
@@ -134,8 +189,41 @@ function normalizeLinks(links: CustomWorkbenchWidgetInput['links']): CustomWorkb
   return next.slice(0, 6);
 }
 
+function normalizeTags(tags: CustomWorkbenchWidgetInput['tags']): string[] {
+  const tokens = Array.isArray(tags) ? tags : [];
+  const deduped = new Set<string>();
+  for (const entry of tokens) {
+    const normalized = trimText(entry, 24).toLowerCase();
+    if (!normalized) continue;
+    deduped.add(normalized);
+    if (deduped.size >= 8) break;
+  }
+  return Array.from(deduped);
+}
+
 function createWidgetId(nowMs = Date.now()): string {
   return `cw_${nowMs}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function compareWidgets(a: CustomWorkbenchWidget, b: CustomWorkbenchWidget): number {
+  if (Boolean(a.isPinned) !== Boolean(b.isPinned)) {
+    return a.isPinned ? -1 : 1;
+  }
+  const aMs = Date.parse(a.updatedAt);
+  const bMs = Date.parse(b.updatedAt);
+  if (!Number.isNaN(aMs) && !Number.isNaN(bMs) && aMs !== bMs) {
+    return bMs - aMs;
+  }
+  return a.title.localeCompare(b.title);
+}
+
+function latestWidgetUpdateMs(widgets: CustomWorkbenchWidget[]): number {
+  let latest = 0;
+  for (const widget of widgets) {
+    const ms = Date.parse(String(widget?.updatedAt || widget?.createdAt || ''));
+    if (!Number.isNaN(ms)) latest = Math.max(latest, ms);
+  }
+  return latest;
 }
 
 function encodeBase64Url(value: string): string {
@@ -188,6 +276,8 @@ function sanitizeWidget(
     kind: normalizeWidgetKind(input.kind || existing?.kind || 'NOTE'),
     visualStyle: normalizeWidgetVisualStyle(input.visualStyle || existing?.visualStyle || 'STANDARD'),
     links: normalizeLinks(input.links || existing?.links || []),
+    tags: normalizeTags(input.tags ?? existing?.tags ?? []),
+    isPinned: Boolean(input.isPinned ?? existing?.isPinned ?? false),
     createdBy: trimText(input.createdBy || existing?.createdBy || '', 120) || undefined,
     createdAt,
     updatedAt,
@@ -202,14 +292,14 @@ function parseStoredList(value: string | null): CustomWorkbenchWidget[] {
     return parsed
       .map((entry) => sanitizeWidget(entry, Date.now()))
       .filter(Boolean)
-      .sort((a, b) => a.title.localeCompare(b.title));
+      .sort(compareWidgets);
   } catch {
     return [];
   }
 }
 
 function persistWidgetList(scopeKeyValue: string, widgets: CustomWorkbenchWidget[]): void {
-  const sorted = [...widgets].sort((a, b) => a.title.localeCompare(b.title));
+  const sorted = [...widgets].sort(compareWidgets);
   inMemoryStore.set(scopeKeyValue, sorted);
   if (!storageAvailable()) return;
   try {
@@ -217,6 +307,13 @@ function persistWidgetList(scopeKeyValue: string, widgets: CustomWorkbenchWidget
   } catch {
     // best effort
   }
+  enqueueWorkspaceStateSave({
+    namespace: WIDGET_REMOTE_NAMESPACE,
+    scopeKey: scopeKeyValue,
+    schemaVersion: 2,
+    state: sorted,
+    debounceMs: 700,
+  });
 }
 
 function loadWidgetList(scopeKeyValue: string): CustomWorkbenchWidget[] {
@@ -241,6 +338,44 @@ export function parseCustomWorkbenchWidgetPanelId(panelId: string): string | nul
 
 export function listCustomWorkbenchWidgets(scopeKeyValue?: string): CustomWorkbenchWidget[] {
   const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  return loadWidgetList(scope);
+}
+
+export async function hydrateCustomWorkbenchWidgetsFromBackend(scopeKeyValue?: string): Promise<CustomWorkbenchWidget[]> {
+  const scope = String(scopeKeyValue || FALLBACK_SCOPE).trim() || FALLBACK_SCOPE;
+  const local = loadWidgetList(scope);
+  const remote = await loadWorkspaceStateSnapshot<unknown>({
+    namespace: WIDGET_REMOTE_NAMESPACE,
+    scopeKey: scope,
+  }).catch(() => null);
+  const remoteState = remote?.state;
+  if (!remoteState) return local;
+  const rawList = Array.isArray(remoteState)
+    ? remoteState
+    : Array.isArray((remoteState as { widgets?: unknown[] }).widgets)
+      ? (remoteState as { widgets: unknown[] }).widgets
+      : [];
+  if (!Array.isArray(rawList) || rawList.length === 0) return local;
+  const normalized = rawList
+    .map((entry) => {
+      try {
+        return sanitizeWidget(entry as CustomWorkbenchWidgetInput, Date.now());
+      } catch {
+        return null;
+      }
+    })
+    .filter((entry): entry is CustomWorkbenchWidget => Boolean(entry))
+    .sort(compareWidgets);
+  if (normalized.length === 0) return local;
+  const localFreshness = latestWidgetUpdateMs(local);
+  const remoteFreshness = Math.max(
+    latestWidgetUpdateMs(normalized),
+    Date.parse(String(remote?.persistedAt || '')) || 0
+  );
+  if (localFreshness > 0 && remoteFreshness > 0 && remoteFreshness < localFreshness) {
+    return local;
+  }
+  persistWidgetList(scope, normalized);
   return loadWidgetList(scope);
 }
 
@@ -272,7 +407,7 @@ export function removeCustomWorkbenchWidget(scopeKeyValue: string | undefined, w
 export function exportCustomWorkbenchWidgetShareCode(widget: CustomWorkbenchWidget, nowMs = Date.now()): string {
   const payload: CustomWorkbenchWidgetSharePayloadV1 = {
     schema: 'nexus-os-custom-widget',
-    version: 1,
+    version: 2,
     exportedAt: nowIso(nowMs),
     widget: {
       title: widget.title,
@@ -282,6 +417,8 @@ export function exportCustomWorkbenchWidgetShareCode(widget: CustomWorkbenchWidg
       kind: widget.kind,
       visualStyle: widget.visualStyle,
       links: widget.links,
+      tags: widget.tags,
+      isPinned: widget.isPinned,
       createdBy: widget.createdBy,
     },
   };
@@ -293,7 +430,8 @@ function parseSharePayload(value: string): CustomWorkbenchWidgetSharePayloadV1 {
   const encoded = trimmed.startsWith('NXW1.') ? trimmed.slice(5) : trimmed;
   const decoded = decodeBase64Url(encoded);
   const parsed = JSON.parse(decoded) as CustomWorkbenchWidgetSharePayloadV1;
-  if (!parsed || parsed.schema !== 'nexus-os-custom-widget' || parsed.version !== 1 || !parsed.widget) {
+  const validVersion = parsed?.version === 1 || parsed?.version === 2;
+  if (!parsed || parsed.schema !== 'nexus-os-custom-widget' || !validVersion || !parsed.widget) {
     throw new Error('Invalid widget share code.');
   }
   return parsed;
@@ -315,6 +453,8 @@ export function importCustomWorkbenchWidgetFromShareCode(
       kind: payload.widget.kind,
       visualStyle: payload.widget.visualStyle,
       links: payload.widget.links,
+      tags: payload.widget.tags,
+      isPinned: payload.widget.isPinned,
       createdBy: payload.widget.createdBy,
     },
     nowMs

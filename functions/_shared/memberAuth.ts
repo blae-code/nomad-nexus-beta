@@ -20,6 +20,17 @@ type AuthOptions = {
   requireMember?: boolean;
 };
 
+const MAX_MEMBER_TOKEN_LENGTH = 4096;
+const MEMBER_TOKEN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 90; // 90 days
+
+function normalizeSessionTokenField(value: unknown, maxLength: number, casing: 'upper' | 'lower' | 'none' = 'none'): string {
+  const raw = String(value || '').trim().slice(0, maxLength);
+  if (!raw) return '';
+  if (casing === 'upper') return raw.toUpperCase();
+  if (casing === 'lower') return raw.toLowerCase();
+  return raw;
+}
+
 export function createServiceClient() {
   const appId = Deno.env.get('BASE44_APP_ID');
   const serviceRoleKey = Deno.env.get('BASE44_SERVICE_ROLE_KEY');
@@ -75,13 +86,23 @@ export function isAiFeaturesEnabled(memberProfile: any) {
 
 function decodeMemberToken(token: string | null | undefined) {
   if (!token) return null;
+  if (token.length > MAX_MEMBER_TOKEN_LENGTH) return null;
   try {
     const decoded = JSON.parse(atob(token));
     if (!decoded || typeof decoded !== 'object') return null;
+    const code = normalizeSessionTokenField(decoded.code, 64, 'upper');
+    const callsign = normalizeSessionTokenField(decoded.callsign, 64, 'none');
+    const memberProfileId = normalizeSessionTokenField(decoded.memberProfileId || decoded.member_profile_id, 120, 'none') || null;
+    if (!code || !callsign) return null;
+    const timestamp = Number(decoded.timestamp);
+    if (Number.isFinite(timestamp) && timestamp > 0) {
+      const ageMs = Date.now() - timestamp;
+      if (ageMs < 0 || ageMs > MEMBER_TOKEN_MAX_AGE_MS) return null;
+    }
     return {
-      code: decoded.code,
-      callsign: decoded.callsign,
-      memberProfileId: decoded.memberProfileId || decoded.member_profile_id || null
+      code,
+      callsign,
+      memberProfileId,
     } as MemberSession;
   } catch {
     return null;
@@ -97,7 +118,11 @@ function getMemberSessionFromPayload(payload: any) {
   const code = payload.code;
   const callsign = payload.callsign;
   if (typeof code === 'string' && typeof callsign === 'string') {
-    return { code, callsign, memberProfileId: payload.memberProfileId || payload.member_profile_id || null };
+    return {
+      code: normalizeSessionTokenField(code, 64, 'upper'),
+      callsign: normalizeSessionTokenField(callsign, 64, 'none'),
+      memberProfileId: normalizeSessionTokenField(payload.memberProfileId || payload.member_profile_id, 120, 'none') || null,
+    };
   }
   return null;
 }

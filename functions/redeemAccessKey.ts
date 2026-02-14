@@ -1,7 +1,35 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { enforceContentLength } from './_shared/security.ts';
 
 // In-memory rate limiter (5 min lockout after 10 failures)
 const failureMap = new Map();
+const FAIL_WINDOW_MS = 5 * 60 * 1000;
+const FAIL_LIMIT = 10;
+const MAX_FAILURE_RECORDS = 5000;
+
+function normalizeIp(req) {
+  const forwarded = String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+  const realIp = String(req.headers.get('x-real-ip') || '').trim();
+  return forwarded || realIp || 'unknown-ip';
+}
+
+function fingerprintRequest(req, code = '', callsign = '') {
+  const ip = normalizeIp(req);
+  const ua = String(req.headers.get('user-agent') || '').slice(0, 96);
+  const codeToken = String(code || '').trim().toUpperCase().slice(0, 24);
+  const callsignToken = String(callsign || '').trim().toLowerCase().slice(0, 40);
+  return [ip, ua, codeToken, callsignToken].join('|');
+}
+
+function trimFailureMap() {
+  if (failureMap.size <= MAX_FAILURE_RECORDS) return;
+  const entries = Array.from(failureMap.entries())
+    .sort((a, b) => Number(a[1]?.lastFailure || 0) - Number(b[1]?.lastFailure || 0));
+  const removeCount = Math.max(1, entries.length - MAX_FAILURE_RECORDS);
+  for (let i = 0; i < removeCount; i += 1) {
+    failureMap.delete(entries[i][0]);
+  }
+}
 
 function getDefaultMembershipForRank(rank) {
   const normalized = (rank || '').toString().toUpperCase();
@@ -25,13 +53,13 @@ function checkRateLimit(userId) {
   const record = failureMap.get(key);
   
   if (!record) return { allowed: true };
-  if (Date.now() - record.lastFailure > 5 * 60 * 1000) {
+  if (Date.now() - record.lastFailure > FAIL_WINDOW_MS) {
     failureMap.delete(key);
     return { allowed: true };
   }
   
-  if (record.failures >= 10) {
-    const remaining = Math.ceil((5 * 60 * 1000 - (Date.now() - record.lastFailure)) / 1000);
+  if (record.failures >= FAIL_LIMIT) {
+    const remaining = Math.ceil((FAIL_WINDOW_MS - (Date.now() - record.lastFailure)) / 1000);
     return { allowed: false, remaining };
   }
   
@@ -44,6 +72,7 @@ function recordFailure(userId) {
   record.failures++;
   record.lastFailure = Date.now();
   failureMap.set(key, record);
+  trimFailureMap();
 }
 
 function clearFailures(userId) {
@@ -53,45 +82,65 @@ function clearFailures(userId) {
 
 Deno.serve(async (req) => {
    try {
+      if (req.method !== 'POST') {
+        return Response.json({
+          success: false,
+          message: 'Method not allowed',
+        }, { status: 405 });
+      }
+      const lengthCheck = enforceContentLength(req, 25_000);
+      if (!lengthCheck.ok) {
+        return Response.json({
+          success: false,
+          message: lengthCheck.error,
+        }, { status: lengthCheck.status });
+      }
+
       // For new user registration via access key
       const base44 = createClientFromRequest(req);
 
-      // Generate unique ID for rate limiting (before user creation)
-      const redemptionId = crypto.randomUUID();
-
-      // Rate limit check
-      const limit = checkRateLimit(redemptionId);
-      if (!limit.allowed) {
+      let payload;
+      const initialRequestKey = fingerprintRequest(req);
+      const initialLimit = checkRateLimit(initialRequestKey);
+      if (!initialLimit.allowed) {
         return Response.json({
           success: false,
-          message: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
-          lockout_seconds: limit.remaining
+          message: 'Rate limited. Try again in ' + initialLimit.remaining + ' seconds',
+          lockout_seconds: initialLimit.remaining
         }, { status: 429 });
       }
-
-      let payload;
       try {
         const body = await req.text();
         payload = body ? JSON.parse(body) : {};
       } catch (parseErr) {
-        console.error('JSON parse error:', parseErr?.message, 'body was:', await req.text().catch(() => 'unreadable'));
-        recordFailure(redemptionId);
+        console.error('JSON parse error:', parseErr?.message);
+        recordFailure(initialRequestKey);
         return Response.json({ success: false, message: 'Invalid request format' }, { status: 400 });
       }
      const { code, callsign } = payload;
+     const requestKey = fingerprintRequest(req, code, callsign);
+
+     const limit = checkRateLimit(requestKey);
+     if (!limit.allowed) {
+       return Response.json({
+         success: false,
+         message: 'Rate limited. Try again in ' + limit.remaining + ' seconds',
+         lockout_seconds: limit.remaining
+       }, { status: 429 });
+     }
 
      if (code === 'DEMO-ACCESS') {
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Demo access is no longer supported' }, { status: 403 });
      }
 
-     if (!code || typeof code !== 'string') {
-       recordFailure(redemptionId);
+     if (!code || typeof code !== 'string' || code.trim().length < 4 || code.trim().length > 64) {
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Invalid code' }, { status: 400 });
      }
 
-     if (!callsign || typeof callsign !== 'string' || callsign.trim().length === 0) {
-       recordFailure(redemptionId);
+     if (!callsign || typeof callsign !== 'string' || callsign.trim().length === 0 || callsign.trim().length > 64) {
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Callsign is required' }, { status: 400 });
      }
 
@@ -101,12 +150,12 @@ Deno.serve(async (req) => {
        keys = await base44.asServiceRole.entities.AccessKey.filter({ code });
      } catch (filterErr) {
        console.error('Filter error:', filterErr?.message);
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Invalid access code' }, { status: 404 });
      }
 
      if (!keys || keys.length === 0) {
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Invalid access code' }, { status: 404 });
      }
 
@@ -114,7 +163,7 @@ Deno.serve(async (req) => {
 
      // Validation checks
      if (key.status === 'REVOKED') {
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'This access code has been revoked' }, { status: 403 });
      }
 
@@ -123,7 +172,7 @@ Deno.serve(async (req) => {
        if (key.status !== 'EXPIRED') {
          await base44.asServiceRole.entities.AccessKey.update(key.id, { status: 'EXPIRED' });
        }
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'This access code has expired' }, { status: 403 });
      }
 
@@ -170,7 +219,7 @@ Deno.serve(async (req) => {
 
        // Re-login with same key - just verify and return success
        console.log('Login successful for existing profile:', existingProfile.id);
-       clearFailures(redemptionId);
+       clearFailures(requestKey);
        const loginToken = btoa(JSON.stringify({
          code: code,
          callsign: callsign.trim(),
@@ -191,7 +240,7 @@ Deno.serve(async (req) => {
 
      // New user - check if key is still available for new redemptions
      if (key.uses_count >= key.max_uses) {
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'This access code has reached its usage limit' }, { status: 403 });
      }
 
@@ -213,12 +262,12 @@ Deno.serve(async (req) => {
        console.log('New member profile created:', newMemberProfile.id, 'admin:', isAdmin);
      } catch (createErr) {
        console.error('Member profile creation error:', createErr?.message);
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Failed to create member profile' }, { status: 500 });
      }
 
      if (!newMemberProfile || !newMemberProfile.id) {
-       recordFailure(redemptionId);
+       recordFailure(requestKey);
        return Response.json({ success: false, message: 'Member profile creation failed' }, { status: 500 });
      }
 
@@ -248,7 +297,7 @@ Deno.serve(async (req) => {
        status: 'success'
      }).catch(err => console.error('Audit log error:', err));
 
-      clearFailures(redemptionId);
+      clearFailures(requestKey);
 
       // Generate login token for Member-first authentication
       const loginToken = btoa(JSON.stringify({
@@ -270,6 +319,6 @@ Deno.serve(async (req) => {
       });
      } catch (error) {
       console.error('redeemAccessKey error:', error);
-      return Response.json({ success: false, message: error.message }, { status: 500 });
+      return Response.json({ success: false, message: 'Access key redemption failed' }, { status: 500 });
      }
 });

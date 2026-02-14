@@ -3,8 +3,30 @@
  * Checks: env vars, LiveKit connectivity, token minting capability.
  * Returns: { isReady: boolean, reason: string }
  */
+import { getAuthContext, readJson } from './_shared/memberAuth.ts';
+import { enforceJsonPost } from './_shared/security.ts';
+
 Deno.serve(async (req) => {
   try {
+    const methodCheck = enforceJsonPost(req);
+    if (!methodCheck.ok) {
+      return Response.json({
+        isReady: false,
+        reason: methodCheck.error,
+      }, { status: methodCheck.status });
+    }
+    const payload = await readJson(req);
+    const { actorType } = await getAuthContext(req, payload, {
+      allowAdmin: true,
+      allowMember: true,
+    });
+    if (!actorType) {
+      return Response.json({
+        isReady: false,
+        reason: 'Unauthorized',
+      }, { status: 401 });
+    }
+
     const loopbackHosts = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0']);
     const getLoopbackInfo = () => {
       const url = new URL(req.url);
@@ -33,6 +55,13 @@ Deno.serve(async (req) => {
       const warning = isLoopbackRequest
         ? 'Local loopback detected. LiveKit env vars are missing, so LIVE comms are disabled.'
         : 'LiveKit env vars are missing. Configure LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET.';
+      if (actorType !== 'admin') {
+        return Response.json({
+          isReady: false,
+          reason: 'LiveKit environment not configured',
+          warning: 'Live comms are currently unavailable.',
+        });
+      }
       return Response.json({
         isReady: false,
         reason: 'LiveKit environment not configured',
@@ -54,6 +83,13 @@ Deno.serve(async (req) => {
       clearTimeout(timeoutId);
 
       if (!healthResponse?.ok) {
+        if (actorType !== 'admin') {
+          return Response.json({
+            isReady: false,
+            reason: 'LiveKit server unreachable',
+            warning: 'Live comms are currently unavailable.',
+          });
+        }
         return Response.json({
           isReady: false,
           reason: 'LiveKit server unreachable',
@@ -62,6 +98,13 @@ Deno.serve(async (req) => {
         });
       }
     } catch (error) {
+      if (actorType !== 'admin') {
+        return Response.json({
+          isReady: false,
+          reason: 'LiveKit connectivity check failed',
+          warning: 'Live comms are currently unavailable.',
+        });
+      }
       return Response.json({
         isReady: false,
         reason: 'LiveKit connectivity check failed',
@@ -92,7 +135,7 @@ Deno.serve(async (req) => {
     console.error('[verifyCommsReadiness] Error:', error);
     return Response.json({
       isReady: false,
-      reason: 'Readiness verification error: ' + error.message
+      reason: 'Readiness verification failed'
     }, { status: 500 });
   }
 });

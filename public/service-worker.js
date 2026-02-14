@@ -7,8 +7,11 @@
  * - Uses stale-while-revalidate/network-first patterns for app shell resilience.
  */
 
-const CACHE_NAME = 'nexus-os-shell-v1';
+const CACHE_NAME = 'nexus-os-shell-v2';
 const CORE_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/offline.html', '/icons/nexus-192.svg', '/icons/nexus-512.svg'];
+const STATIC_EXTENSIONS = new Set([
+  'js', 'mjs', 'css', 'json', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'map',
+]);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -35,17 +38,36 @@ function isSameOrigin(url) {
   return url.origin === self.location.origin;
 }
 
+function isCacheableAsset(request) {
+  if (request.method !== 'GET') return false;
+  const requestUrl = new URL(request.url);
+  if (!isSameOrigin(requestUrl)) return false;
+  if (request.mode === 'navigate') return true;
+  const pathname = requestUrl.pathname || '/';
+  if (pathname.startsWith('/api/') || pathname.startsWith('/functions/')) return false;
+  if (pathname.includes('/auth/') || pathname.includes('/session')) return false;
+  if (pathname === '/' || pathname === '/index.html' || pathname === '/offline.html' || pathname === '/manifest.webmanifest') return true;
+  const match = pathname.match(/\.([a-zA-Z0-9]+)$/);
+  if (!match) return false;
+  return STATIC_EXTENSIONS.has(match[1].toLowerCase());
+}
+
+async function safeCachePut(request, response) {
+  if (!response || response.status !== 200 || response.type === 'opaque') return;
+  if (!isCacheableAsset(request)) return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response.clone());
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET') return;
-  const requestUrl = new URL(request.url);
+  if (!request.url.startsWith('http')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined);
+          safeCachePut(request, response).catch(() => undefined);
           return response;
         })
         .catch(() => caches.match(request).then((cached) => cached || caches.match('/offline.html')))
@@ -53,16 +75,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (!isSameOrigin(requestUrl)) return;
+  if (!isCacheableAsset(request)) {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(request).then((cached) => cached || new Response('', { status: 503, statusText: 'Offline' })))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request)
         .then((response) => {
-          if (response && response.status === 200) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined);
-          }
+          safeCachePut(request, response).catch(() => undefined);
           return response;
         })
         .catch(() => cached || new Response('', { status: 503, statusText: 'Offline' }));
@@ -112,4 +136,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-

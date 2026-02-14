@@ -1,4 +1,5 @@
 import { createServiceClient } from './_shared/memberAuth.ts';
+import { enforceJsonPost, verifyInternalAutomationRequest } from './_shared/security.ts';
 
 /**
  * Auto-detect distress situations from status updates
@@ -6,8 +7,17 @@ import { createServiceClient } from './_shared/memberAuth.ts';
  */
 Deno.serve(async (req) => {
     try {
+        const methodCheck = enforceJsonPost(req);
+        if (!methodCheck.ok) {
+            return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+        }
+        const payload = await req.json();
+        const internalAuth = verifyInternalAutomationRequest(req, payload, { requiredWhenSecretMissing: true });
+        if (!internalAuth.ok) {
+            return Response.json({ error: internalAuth.error }, { status: internalAuth.status });
+        }
         const base44 = createServiceClient();
-        const { event, data, old_data, payload_too_large } = await req.json();
+        const { event, data, old_data, payload_too_large } = payload || {};
 
         const statusData = payload_too_large 
             ? await base44.asServiceRole.entities.PlayerStatus.get(event.entity_id)
@@ -116,6 +126,6 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         console.error('Auto-distress response failed:', error);
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ error: error?.message || 'Auto-distress response failed' }, { status: 500 });
     }
 });

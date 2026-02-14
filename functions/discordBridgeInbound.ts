@@ -1,22 +1,38 @@
 import { createClient } from 'npm:@base44/sdk@0.8.6';
+import { readJson } from './_shared/memberAuth.ts';
+import { enforceJsonPost, verifyInternalAutomationRequest } from './_shared/security.ts';
 
-const getSecret = () => Deno.env.get('DISCORD_BRIDGE_SECRET') || '';
+const STATUS_SET = new Set(['active', 'away', 'idle', 'offline', 'in-call', 'transmitting']);
+
+function text(value: unknown, maxLength = 200): string {
+  return String(value || '').trim().slice(0, maxLength);
+}
 
 Deno.serve(async (req) => {
   try {
-    const payload = await req.json();
-    const secret = getSecret();
-    if (!secret || payload.bridgeSecret !== secret) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    const methodCheck = enforceJsonPost(req);
+    if (!methodCheck.ok) {
+      return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+    }
+
+    const payload = await readJson(req);
+    const internalAuth = verifyInternalAutomationRequest(req, payload, { requiredWhenSecretMissing: true });
+    if (!internalAuth.ok) {
+      return Response.json({ error: internalAuth.error }, { status: internalAuth.status });
     }
 
     const base44 = createClient();
-    const { action } = payload;
+    const action = text(payload?.action, 40).toLowerCase();
 
     if (action === 'rsvp') {
-      const { eventId, memberProfileId, status } = payload;
+      const eventId = text(payload?.eventId, 120);
+      const memberProfileId = text(payload?.memberProfileId, 120);
+      const status = text(payload?.status, 24).toLowerCase();
       if (!eventId || !memberProfileId || !status) {
         return Response.json({ error: 'Missing rsvp fields' }, { status: 400 });
+      }
+      if (!['going', 'maybe', 'declined'].includes(status)) {
+        return Response.json({ error: 'Invalid rsvp status' }, { status: 400 });
       }
       const event = await base44.entities.Event.get(eventId);
       const going = new Set(event.rsvp_going_ids || []);
@@ -41,9 +57,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'status') {
-      const { memberProfileId, status, notes } = payload;
+      const memberProfileId = text(payload?.memberProfileId, 120);
+      const status = text(payload?.status, 32).toLowerCase();
+      const notes = text(payload?.notes, 500);
       if (!memberProfileId || !status) {
         return Response.json({ error: 'Missing status fields' }, { status: 400 });
+      }
+      if (!STATUS_SET.has(status)) {
+        return Response.json({ error: 'Invalid status' }, { status: 400 });
       }
       const existing = await base44.entities.PlayerStatus.filter({ member_profile_id: memberProfileId });
       const data = {
@@ -61,7 +82,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
-    console.error('[discordBridgeInbound] Error:', error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[discordBridgeInbound] Error:', error instanceof Error ? error.message : error);
+    return Response.json({ error: 'Bridge inbound failed' }, { status: 500 });
   }
 });

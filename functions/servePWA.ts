@@ -66,9 +66,37 @@ Deno.serve(async (req) => {
   if (url.pathname === '/service-worker.js') {
     const sw = `
 /**
- * Nexus Service Worker - Offline support and caching
+ * Nexus Service Worker - Offline support and cache-safe static asset handling
  */
-const CACHE_NAME = 'nexus-v1';
+const CACHE_NAME = 'nexus-v2';
+const STATIC_EXTENSIONS = new Set([
+  'js', 'mjs', 'css', 'json', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'map'
+]);
+
+function isSameOrigin(url) {
+  return url.origin === self.location.origin;
+}
+
+function isCacheableAsset(request) {
+  if (request.method !== 'GET') return false;
+  const requestUrl = new URL(request.url);
+  if (!isSameOrigin(requestUrl)) return false;
+  if (request.mode === 'navigate') return true;
+  const pathname = requestUrl.pathname || '/';
+  if (pathname.startsWith('/api/') || pathname.startsWith('/functions/')) return false;
+  if (pathname.includes('/auth/') || pathname.includes('/session')) return false;
+  if (pathname === '/' || pathname === '/index.html' || pathname === '/offline.html' || pathname === '/manifest.json') return true;
+  const match = pathname.match(/\\.([a-zA-Z0-9]+)$/);
+  if (!match) return false;
+  return STATIC_EXTENSIONS.has(match[1].toLowerCase());
+}
+
+async function safeCachePut(request, response) {
+  if (!response || response.status !== 200 || response.type === 'opaque') return;
+  if (!isCacheableAsset(request)) return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response.clone());
+}
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -89,30 +117,56 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first strategy with cache fallback
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+  const request = event.request;
+  const requestUrl = new URL(request.url);
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          safeCachePut(request, response).catch(() => undefined);
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const offline = await caches.match('/offline.html');
+          return offline || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+        })
+    );
+    return;
+  }
+
+  if (!isCacheableAsset(request)) {
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const cached = await caches.match(request);
+        return cached || new Response('Offline', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      })
+    );
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
+    caches.match(request).then((cached) => {
+      const network = fetch(request)
       .then((response) => {
-        if (response.status === 200) {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, response.clone());
-          });
-        }
+        safeCachePut(request, response).catch(() => undefined);
         return response;
       })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || new Response('Offline', {
-            status: 503,
-            headers: { 'Content-Type': 'text/plain' }
-          });
-        });
-      })
+      .catch(() => cached || new Response('Offline', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain' }
+      }));
+      return cached || network;
+    })
   );
 });
     `.trim();

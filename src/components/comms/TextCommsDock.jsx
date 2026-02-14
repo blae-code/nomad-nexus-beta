@@ -1636,6 +1636,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                             authorLabel={memberMap[msg.user_id]?.label}
                             memberProfile={memberMap[msg.user_id]?.profile}
                             autoLinkPreview={autoLinkPreview}
+                            aiEnabled={aiEnabled}
                             onEdit={() => {
                               // Refresh messages after edit
                               const loadMessages = async () => {
@@ -1765,6 +1766,7 @@ export default function TextCommsDock({ isOpen, isMinimized, onMinimize }) {
                   composerDisabled={composerDisabled}
                   composerDisabledReason={composerDisabledReason}
                   autoLinkPreview={autoLinkPreview}
+                  aiEnabled={aiEnabled}
                 />
                 )}
                 </div>

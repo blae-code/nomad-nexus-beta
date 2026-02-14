@@ -14,7 +14,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { getThreadSubscription, setThreadSubscription } from '@/components/services/threadSubscriptionService';
 
-export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin, composerDisabled, composerDisabledReason, autoLinkPreview = true }) {
+export default function ThreadPanel({ parentMessage, onClose, currentUserId, isAdmin, composerDisabled, composerDisabledReason, autoLinkPreview = true, aiEnabled = true }) {
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const repliesEndRef = useRef(null);
@@ -186,6 +186,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
           presenceRecord={presenceMap[parentMessage?.user_id]}
           lastSeen={lastSeenMap[parentMessage?.user_id]}
           autoLinkPreview={autoLinkPreview}
+          aiEnabled={aiEnabled}
           onEdit={() => {}}
           onDelete={() => {}}
         />
@@ -216,6 +217,7 @@ export default function ThreadPanel({ parentMessage, onClose, currentUserId, isA
                 presenceRecord={presenceMap[reply.user_id]}
                 lastSeen={lastSeenMap[reply.user_id]}
                 autoLinkPreview={autoLinkPreview}
+                aiEnabled={aiEnabled}
                 onEdit={() => {
                   // Refresh replies after edit
                   const loadReplies = async () => {

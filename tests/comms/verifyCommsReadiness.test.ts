@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildRequest, cleanupDeno, loadHandler } from './helpers';
 
 vi.mock('npm:@base44/sdk@0.8.6', () => ({
-  createClientFromRequest: () => ({})
+  createClient: () => ({}),
+  createClientFromRequest: () => ({
+    auth: {
+      me: vi.fn().mockResolvedValue({ id: 'admin-test', role: 'admin' }),
+    },
+  }),
 }));
 
 afterEach(() => {
@@ -16,6 +21,8 @@ describe('verifyCommsReadiness', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     const handler = await loadHandler('../../functions/verifyCommsReadiness.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'https://livekit.example.com',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret'
@@ -33,6 +40,8 @@ describe('verifyCommsReadiness', () => {
 
   it('returns not ready when environment variables are missing', async () => {
     const handler = await loadHandler('../../functions/verifyCommsReadiness.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'https://livekit.example.com'
     });
 
@@ -49,6 +58,8 @@ describe('verifyCommsReadiness', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
 
     const handler = await loadHandler('../../functions/verifyCommsReadiness.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'https://livekit.example.com',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret'
@@ -67,6 +78,8 @@ describe('verifyCommsReadiness', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     const handler = await loadHandler('../../functions/verifyCommsReadiness.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-role',
       LIVEKIT_URL: 'ws://livekit.example.com',
       LIVEKIT_API_KEY: 'key',
       LIVEKIT_API_SECRET: 'secret'

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  hydrateWorkspaceSessionFromBackend,
   loadWorkspaceSession,
   persistWorkspaceSession,
   resetWorkspaceSession,
@@ -17,8 +18,22 @@ export function useNexusWorkspaceSession(
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setSnapshot(loadWorkspaceSession(sessionScopeKey, mergedDefaults));
+    let active = true;
+    const local = loadWorkspaceSession(sessionScopeKey, mergedDefaults);
+    setSnapshot(local);
     setHydrated(true);
+    void hydrateWorkspaceSessionFromBackend(sessionScopeKey, mergedDefaults).then((remote) => {
+      if (!active) return;
+      const localMs = Date.parse(String(local.updatedAt || ''));
+      const remoteMs = Date.parse(String(remote.updatedAt || ''));
+      if (!Number.isNaN(localMs) && !Number.isNaN(remoteMs) && remoteMs < localMs) return;
+      setSnapshot(remote);
+    }).catch(() => {
+      // best effort remote hydration
+    });
+    return () => {
+      active = false;
+    };
   }, [sessionScopeKey, mergedDefaults]);
 
   useEffect(() => {
@@ -50,4 +65,3 @@ export function useNexusWorkspaceSession(
     reset,
   };
 }
-

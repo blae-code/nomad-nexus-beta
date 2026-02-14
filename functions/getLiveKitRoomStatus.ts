@@ -1,8 +1,21 @@
 import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 import { RoomServiceClient } from 'npm:livekit-server-sdk@2.0.0';
+import { enforceContentLength, enforceJsonPost } from './_shared/security.ts';
+
+const ROOM_PATTERN = /^[A-Za-z0-9:_-]{1,120}$/;
+const MAX_ROOMS_PER_REQUEST = 40;
 
 Deno.serve(async (req) => {
   try {
+    const methodCheck = enforceJsonPost(req);
+    if (!methodCheck.ok) {
+      return Response.json({ error: methodCheck.error }, { status: methodCheck.status });
+    }
+    const lengthCheck = enforceContentLength(req, 20_000);
+    if (!lengthCheck.ok) {
+      return Response.json({ error: lengthCheck.error }, { status: lengthCheck.status });
+    }
+
     const payload = await readJson(req);
     const { actorType } = await getAuthContext(req, payload, {
       allowAdmin: true,
@@ -13,10 +26,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { rooms } = payload;
+    const roomsRaw = Array.isArray(payload?.rooms) ? payload.rooms : [];
+    const rooms = roomsRaw
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean)
+      .slice(0, MAX_ROOMS_PER_REQUEST);
 
-    if (!rooms || !Array.isArray(rooms) || rooms.length === 0) {
+    if (rooms.length === 0) {
       return Response.json({}, { status: 200 }); // Empty result for no rooms
+    }
+    for (const roomName of rooms) {
+      if (!ROOM_PATTERN.test(roomName)) {
+        return Response.json({ error: 'Invalid room name' }, { status: 400 });
+      }
     }
 
     // Get LiveKit credentials
@@ -57,7 +79,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('LiveKit room status error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[getLiveKitRoomStatus] error:', error instanceof Error ? error.message : error);
+    return Response.json({ error: 'LiveKit room status failed' }, { status: 500 });
   }
 });
