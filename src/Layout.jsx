@@ -54,7 +54,7 @@ export default function Layout({ children, currentPageName }) {
   // Full-screen pages that hide shell UI
   const fullScreenPages = ['AccessGate', 'Disclaimers', 'Onboarding'];
   const isFullScreen = fullScreenPages.includes(currentPageName);
-  const isNexusWorkspace = currentPageName === 'Hub';
+  const isNexusWorkspace = currentPageName === 'Workspace';
 
   return (
     <>
