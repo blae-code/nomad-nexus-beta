@@ -81,7 +81,7 @@ export default function Header() {
   const rankLabel = isAdmin ? 'System Admin' : getRankLabel(user.rank || 'VAGRANT');
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-12 bg-black/98 border-b-2 border-red-700/50 backdrop-blur-xl shadow-2xl shadow-red-500/10 overflow-hidden z-[800]">
+    <header className="fixed top-0 left-0 right-0 h-12 m-0 bg-black/98 border-b-2 border-red-700/50 backdrop-blur-xl shadow-2xl shadow-red-500/10 overflow-hidden z-[800]">
       <div className="h-full px-6 flex items-center justify-between gap-4 overflow-hidden max-w-full">
         {/* Left: Identity — Compact Single-Row */}
         <div className="flex items-center gap-2 flex-shrink-0 min-w-max">
