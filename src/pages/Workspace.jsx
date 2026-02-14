@@ -5,7 +5,7 @@ import 'react-resizable/css/styles.css';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Layout, Save, Plus, Settings, Monitor, User } from 'lucide-react';
+import { Layout, Save, Plus, Settings, Monitor, User, X, Edit2, Check } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { WIDGET_REGISTRY } from '@/components/workspace/WidgetRegistry';
 import { WORKSPACE_PRESETS, getPresetForRole } from '@/components/workspace/WorkspacePresets';
@@ -16,23 +16,30 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 const STORAGE_KEY = 'nexus.workspace.layout';
 const PRESET_KEY = 'nexus.workspace.activePreset';
 
+const MAX_WIDGETS_PER_PAGE = 20;
+
 export default function Workspace() {
   const { user } = useAuth();
-  const [layouts, setLayouts] = useState({ lg: [], md: [], sm: [] });
-  const [activeWidgets, setActiveWidgets] = useState([]);
+  const [pages, setPages] = useState([{ id: 'page-1', label: 'Main', widgets: [], layouts: { lg: [], md: [], sm: [] } }]);
+  const [activePageId, setActivePageId] = useState('page-1');
   const [isDragging, setIsDragging] = useState(false);
   const [activePreset, setActivePreset] = useState(null);
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [showSavePreset, setShowSavePreset] = useState(false);
   const [presetName, setPresetName] = useState('');
+  const [editingPageId, setEditingPageId] = useState(null);
+  const [editingPageLabel, setEditingPageLabel] = useState('');
 
-  // Load saved layout from backend, fallback to localStorage, then role-based preset
+  const activePage = pages.find(p => p.id === activePageId) || pages[0];
+  const activeWidgets = activePage.widgets;
+  const layouts = activePage.layouts;
+
+  // Load saved pages from backend, fallback to localStorage, then role-based preset
   useEffect(() => {
     if (!user?.id) return;
 
     const loadLayout = async () => {
       try {
-        // Try to load from backend first
         const savedLayouts = await base44.entities.WorkspaceLayout.filter({
           created_by: user.id,
         });
@@ -42,14 +49,14 @@ export default function Workspace() {
             new Date(b.updated_date) - new Date(a.updated_date)
           )[0];
           
-          setLayouts(latest.layouts || { lg: [], md: [], sm: [] });
-          setActiveWidgets(latest.widgets || []);
+          if (latest.pages && latest.pages.length > 0) {
+            setPages(latest.pages);
+            setActivePageId(latest.pages[0].id);
+          }
           setActivePreset(latest.preset_id || 'custom');
           
-          // Update localStorage cache
           localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            layouts: latest.layouts,
-            widgets: latest.widgets,
+            pages: latest.pages,
             savedAt: new Date().toISOString(),
           }));
           return;
@@ -65,8 +72,10 @@ export default function Workspace() {
       if (savedLayoutJson) {
         try {
           const parsed = JSON.parse(savedLayoutJson);
-          setLayouts(parsed.layouts || { lg: [], md: [], sm: [] });
-          setActiveWidgets(parsed.widgets || []);
+          if (parsed.pages) {
+            setPages(parsed.pages);
+            setActivePageId(parsed.pages[0]?.id || 'page-1');
+          }
           setActivePreset(savedPreset || 'custom');
           return;
         } catch (e) {
@@ -86,22 +95,25 @@ export default function Workspace() {
   }, [user]);
 
   const applyPreset = (preset) => {
-    setLayouts(preset.layouts);
-    setActiveWidgets(preset.widgets);
+    const newPages = [{ 
+      id: 'page-1', 
+      label: 'Main', 
+      widgets: preset.widgets, 
+      layouts: preset.layouts 
+    }];
+    setPages(newPages);
+    setActivePageId('page-1');
     setActivePreset(preset.id);
     localStorage.setItem(PRESET_KEY, preset.id);
-    saveLayout(preset.layouts, preset.widgets);
+    savePages(newPages);
   };
 
-  const saveLayout = async (layoutData, widgetData) => {
-    // Immediate localStorage save
+  const savePages = async (pagesData) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      layouts: layoutData,
-      widgets: widgetData,
+      pages: pagesData,
       savedAt: new Date().toISOString(),
     }));
 
-    // Background backend sync
     if (user?.id) {
       try {
         const existing = await base44.entities.WorkspaceLayout.filter({
@@ -110,14 +122,12 @@ export default function Workspace() {
 
         if (existing.length > 0) {
           await base44.entities.WorkspaceLayout.update(existing[0].id, {
-            layouts: layoutData,
-            widgets: widgetData,
+            pages: pagesData,
             preset_id: activePreset,
           });
         } else {
           await base44.entities.WorkspaceLayout.create({
-            layouts: layoutData,
-            widgets: widgetData,
+            pages: pagesData,
             preset_id: activePreset,
             created_by: user.id,
           });
@@ -129,13 +139,33 @@ export default function Workspace() {
   };
 
   const handleLayoutChange = (currentLayout, allLayouts) => {
-    setLayouts(allLayouts);
-    saveLayout(allLayouts, activeWidgets);
+    const updatedPages = pages.map(p => 
+      p.id === activePageId ? { ...p, layouts: allLayouts } : p
+    );
+    setPages(updatedPages);
+    savePages(updatedPages);
   };
 
   const addWidget = (widgetType) => {
     const widgetDef = WIDGET_REGISTRY[widgetType];
     if (!widgetDef) return;
+
+    let targetPage = activePage;
+    
+    // Auto-overflow: if current page is full, create new page
+    if (activePage.widgets.length >= MAX_WIDGETS_PER_PAGE) {
+      const newPageId = `page-${Date.now()}`;
+      targetPage = {
+        id: newPageId,
+        label: `Page ${pages.length + 1}`,
+        widgets: [],
+        layouts: { lg: [], md: [], sm: [] }
+      };
+      const updatedPages = [...pages, targetPage];
+      setPages(updatedPages);
+      setActivePageId(newPageId);
+      savePages(updatedPages);
+    }
 
     const newWidget = {
       id: `${widgetType}-${Date.now()}`,
@@ -153,46 +183,85 @@ export default function Workspace() {
       minH: widgetDef.minSize.h,
     };
 
-    setActiveWidgets([...activeWidgets, newWidget]);
-    setLayouts({
-      lg: [...layouts.lg, newLayout],
-      md: [...layouts.md, { ...newLayout, w: Math.min(newLayout.w, 6) }],
-      sm: [...layouts.sm, { ...newLayout, w: 12 }],
-    });
+    const updatedPages = pages.map(p => 
+      p.id === targetPage.id ? {
+        ...p,
+        widgets: [...p.widgets, newWidget],
+        layouts: {
+          lg: [...p.layouts.lg, newLayout],
+          md: [...p.layouts.md, { ...newLayout, w: Math.min(newLayout.w, 6) }],
+          sm: [...p.layouts.sm, { ...newLayout, w: 12 }],
+        }
+      } : p
+    );
+    setPages(updatedPages);
+    savePages(updatedPages);
     setShowAddWidget(false);
   };
 
   const removeWidget = (widgetId) => {
-    setActiveWidgets(activeWidgets.filter((w) => w.id !== widgetId));
-    setLayouts({
-      lg: layouts.lg.filter((l) => l.i !== widgetId),
-      md: layouts.md.filter((l) => l.i !== widgetId),
-      sm: layouts.sm.filter((l) => l.i !== widgetId),
-    });
+    const updatedPages = pages.map(p => 
+      p.id === activePageId ? {
+        ...p,
+        widgets: p.widgets.filter(w => w.id !== widgetId),
+        layouts: {
+          lg: p.layouts.lg.filter(l => l.i !== widgetId),
+          md: p.layouts.md.filter(l => l.i !== widgetId),
+          sm: p.layouts.sm.filter(l => l.i !== widgetId),
+        }
+      } : p
+    );
+    setPages(updatedPages);
+    savePages(updatedPages);
+  };
+
+  const addPage = () => {
+    const newPageId = `page-${Date.now()}`;
+    const newPage = {
+      id: newPageId,
+      label: `Page ${pages.length + 1}`,
+      widgets: [],
+      layouts: { lg: [], md: [], sm: [] }
+    };
+    const updatedPages = [...pages, newPage];
+    setPages(updatedPages);
+    setActivePageId(newPageId);
+    savePages(updatedPages);
+  };
+
+  const deletePage = (pageId) => {
+    if (pages.length <= 1) return;
+    const updatedPages = pages.filter(p => p.id !== pageId);
+    setPages(updatedPages);
+    if (activePageId === pageId) {
+      setActivePageId(updatedPages[0].id);
+    }
+    savePages(updatedPages);
+  };
+
+  const renamePage = (pageId, newLabel) => {
+    const updatedPages = pages.map(p => 
+      p.id === pageId ? { ...p, label: newLabel } : p
+    );
+    setPages(updatedPages);
+    savePages(updatedPages);
+    setEditingPageId(null);
+    setEditingPageLabel('');
   };
 
   const saveCustomPreset = async () => {
     if (!presetName.trim()) return;
 
-    const customPreset = {
-      id: `custom-${Date.now()}`,
-      name: presetName,
-      role: 'custom',
-      layouts,
-      widgets: activeWidgets,
-    };
-
     try {
       await base44.entities.WorkspaceLayout.create({
         name: presetName,
         role: 'custom',
-        layouts,
-        widgets: activeWidgets,
+        pages: pages,
         created_by: user?.id,
       });
       setShowSavePreset(false);
       setPresetName('');
-      setActivePreset(customPreset.id);
+      setActivePreset(`custom-${Date.now()}`);
     } catch (error) {
       console.error('[Workspace] Failed to save preset:', error);
     }
@@ -309,8 +378,69 @@ export default function Workspace() {
         </div>
       </div>
 
+      {/* Page Tabs */}
+      <div className="flex-shrink-0 border-b border-red-700/40 bg-black/60 backdrop-blur-sm px-4 flex items-center gap-2 overflow-x-auto">
+        {pages.map(page => (
+          <div key={page.id} className="flex items-center gap-1 group">
+            {editingPageId === page.id ? (
+              <div className="flex items-center gap-1 py-2">
+                <input
+                  autoFocus
+                  value={editingPageLabel}
+                  onChange={(e) => setEditingPageLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') renamePage(page.id, editingPageLabel);
+                    if (e.key === 'Escape') { setEditingPageId(null); setEditingPageLabel(''); }
+                  }}
+                  className="w-24 h-6 px-2 bg-zinc-900 border border-red-700/60 rounded text-[10px] text-zinc-200 focus:outline-none"
+                />
+                <button
+                  onClick={() => renamePage(page.id, editingPageLabel)}
+                  className="p-1 hover:bg-red-950/40 rounded"
+                >
+                  <Check className="w-3 h-3 text-green-500" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setActivePageId(page.id)}
+                className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                  activePageId === page.id
+                    ? 'text-red-400 border-b-2 border-red-500'
+                    : 'text-zinc-600 hover:text-zinc-400'
+                }`}
+              >
+                {page.label}
+              </button>
+            )}
+            {pages.length > 1 && activePageId === page.id && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => { setEditingPageId(page.id); setEditingPageLabel(page.label); }}
+                  className="p-1 hover:bg-red-950/40 rounded"
+                >
+                  <Edit2 className="w-3 h-3 text-zinc-600 hover:text-red-400" />
+                </button>
+                <button
+                  onClick={() => deletePage(page.id)}
+                  className="p-1 hover:bg-red-950/40 rounded"
+                >
+                  <X className="w-3 h-3 text-zinc-600 hover:text-red-400" />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        <button
+          onClick={addPage}
+          className="px-3 py-2 text-[10px] text-zinc-600 hover:text-red-400 transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+        </button>
+      </div>
+
       {/* Grid Layout */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 pb-20">
         <ResponsiveGridLayout
           className="layout"
           layouts={layouts}
@@ -355,16 +485,26 @@ export default function Workspace() {
                 <div className="absolute inset-0 blur-xl bg-red-500/20 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-red-400 uppercase tracking-[0.2em]">Workspace Empty</h3>
-                <p className="text-xs text-zinc-600 mt-2 uppercase tracking-wider">Add widgets to build your command interface</p>
+                <h3 className="text-xl font-black text-red-400 uppercase tracking-[0.2em]">Page Empty</h3>
+                <p className="text-xs text-zinc-600 mt-2 uppercase tracking-wider">Add widgets to this page</p>
               </div>
               <Button onClick={() => setShowAddWidget(true)} className="gap-2 bg-red-600 hover:bg-red-500">
                 <Plus className="w-4 h-4" />
-                Add Your First Widget
+                Add Widget
               </Button>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Footer - Fixed at bottom with padding for content */}
+      <div className="flex-shrink-0 h-8 border-t border-red-700/40 bg-black/95 backdrop-blur-sm px-4 flex items-center justify-between">
+        <div className="text-[9px] text-zinc-600 font-mono uppercase tracking-wider">
+          {activePage.widgets.length} / {MAX_WIDGETS_PER_PAGE} Widgets • Page {pages.findIndex(p => p.id === activePageId) + 1} / {pages.length}
+        </div>
+        <div className="text-[9px] text-zinc-700 font-mono">
+          NexusOS Workspace v2.0
+        </div>
       </div>
     </div>
   );
