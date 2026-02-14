@@ -64,14 +64,16 @@ import IntelNexus from './pages/IntelNexus';
 import LogisticsHub from './pages/LogisticsHub';
 import MemberManagement from './pages/MemberManagement';
 import MemberProgression from './pages/MemberProgression';
-import MissionCatalog from './pages/MissionCatalog';
 import MissionBoard from './pages/MissionBoard';
+import MissionCatalog from './pages/MissionCatalog';
 import MissionControl from './pages/MissionControl';
-import NomadRegistry from './pages/NomadRegistry';
+import NexusOSWorkspace from './pages/NexusOSWorkspace';
 import NexusTraining from './pages/NexusTraining';
-import OnboardingPipeline from './pages/OnboardingPipeline';
+import NomadRegistry from './pages/NomadRegistry';
 import Onboarding from './pages/Onboarding';
+import OnboardingPipeline from './pages/OnboardingPipeline';
 import PageNotFound from './pages/PageNotFound';
+import PublicUpdate from './pages/PublicUpdate';
 import QAConsole from './pages/QAConsole';
 import Recon from './pages/Recon';
 import ReportBuilder from './pages/ReportBuilder';
@@ -83,6 +85,7 @@ import Treasury from './pages/Treasury';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import WarAcademy from './pages/WarAcademy';
+import UXRoadmap from './pages/UXRoadmap';
 import __Layout from './Layout.jsx';
 
 
@@ -104,14 +107,16 @@ export const PAGES = {
     "LogisticsHub": LogisticsHub,
     "MemberManagement": MemberManagement,
     "MemberProgression": MemberProgression,
-    "MissionCatalog": MissionCatalog,
     "MissionBoard": MissionBoard,
+    "MissionCatalog": MissionCatalog,
     "MissionControl": MissionControl,
-    "NomadRegistry": NomadRegistry,
+    "NexusOSWorkspace": NexusOSWorkspace,
     "NexusTraining": NexusTraining,
-    "OnboardingPipeline": OnboardingPipeline,
+    "NomadRegistry": NomadRegistry,
     "Onboarding": Onboarding,
+    "OnboardingPipeline": OnboardingPipeline,
     "PageNotFound": PageNotFound,
+    "PublicUpdate": PublicUpdate,
     "QAConsole": QAConsole,
     "Recon": Recon,
     "ReportBuilder": ReportBuilder,
@@ -123,6 +128,7 @@ export const PAGES = {
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
     "WarAcademy": WarAcademy,
+    "UXRoadmap": UXRoadmap,
 }
 
 export const pagesConfig = {

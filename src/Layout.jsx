@@ -164,9 +164,10 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
     );
   }
 
+  // Mobile-optimized padding: smaller dock on mobile, normal on desktop
   const mobileAwareMainPaddingClass =
     isCommsDockOpen && !dockMinimized
-      ? 'pb-96'
+      ? 'pb-64 md:pb-96'
       : isCommsDockOpen && dockMinimized
       ? 'pb-12'
       : 'pb-16 md:pb-0';
