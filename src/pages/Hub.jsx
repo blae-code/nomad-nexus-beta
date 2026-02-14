@@ -127,93 +127,69 @@ export default function Hub() {
   return (
     <RouteGuard requiredAuth="onboarded">
       <NexusLoadingOverlay isLoading={authLoading} message="Loading command center..." />
-      <div className="nexus-immersive-screen min-h-screen relative overflow-hidden">
-        {/* Immersive background effects matching AccessGate */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
-        
-        {/* Corner decorations */}
-        <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-red-500/40 opacity-50" />
-        <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-red-500/40 opacity-50" />
-        <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-red-500/40 opacity-50" />
-        <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
+      <div className="h-screen max-h-screen bg-black/98 relative flex flex-col overflow-hidden">
+        {/* Tactical grid background */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(185,28,28,0.03)_1px,transparent_1px),linear-gradient(rgba(185,28,28,0.03)_1px,transparent_1px)] bg-[length:32px_32px]" />
         
         {/* Tactical overlay */}
         {overlayEnabled && (
-          <div className="pointer-events-none absolute inset-0 opacity-20">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(245,158,11,0.10),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(16,185,129,0.08),transparent_45%)]" />
-            <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:34px_34px]" />
+          <div className="pointer-events-none absolute inset-0 opacity-15">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(239,68,68,0.08),transparent_50%)]" />
+            <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] [background-size:40px_40px]" />
           </div>
         )}
 
-        <div className="relative z-10 min-h-screen flex flex-col px-6 py-8 overflow-y-auto">
-          {/* Header Section with Redscar branding */}
-          <div className="relative mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
-                  alt="Redscar Nomads"
-                  className="w-14 h-14 drop-shadow-lg"
-                />
+        <div className="relative z-10 flex-1 flex flex-col px-6 py-6 overflow-hidden">
+          {/* Header Section - Compact for viewport containment */}
+          <div className="flex-shrink-0 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-10 bg-red-500 rounded-sm" />
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 mb-1">
-                    {breadcrumb.map((node, index) => (
-                      <React.Fragment key={`${node}-${index}`}>
-                        {index > 0 && <span className="mx-2">▸</span>}
-                        <span>{node}</span>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                  <h1 className="nexus-section-title text-4xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
+                  <h1 className="text-2xl font-black uppercase tracking-[0.2em] text-white">
                     Command <span className="text-red-600">Hub</span>
                   </h1>
-                  <p className="text-xs text-zinc-500 uppercase tracking-[0.15em] mt-1 font-bold">
-                    Module Status • Roadmap • Tactical Readiness
+                  <p className="text-[9px] text-zinc-600 uppercase tracking-wider font-mono mt-0.5">
+                    Module Status • Tactical Readiness
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Button 
-                  size="sm" 
-                  variant={overlayEnabled ? 'default' : 'outline'} 
-                  onClick={() => setOverlayEnabled((prev) => !prev)}
-                  className="border-red-500/40"
-                >
-                  <Radar className="w-4 h-4 mr-2" />
-                  Tactical Overlay
-                </Button>
-              </div>
+              <Button 
+                size="sm" 
+                variant={overlayEnabled ? 'default' : 'outline'} 
+                onClick={() => setOverlayEnabled((prev) => !prev)}
+                className="h-8 border-red-700/40 hover:border-red-500/60 text-[10px]"
+              >
+                <Radar className="w-3 h-3 mr-1.5" />
+                Overlay
+              </Button>
             </div>
             
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-red-700/50 to-transparent" />
+            <div className="h-px bg-red-700/40" />
             
             {metricsLoading && (
-              <div className="nexus-immersive-panel mt-6 p-4">
-                <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-zinc-400 mb-3">
-                  <span className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                    Loading Telemetry
+              <div className="mt-3 p-3 bg-black/60 border border-red-700/40 rounded">
+                <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-zinc-500 mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                    Loading
                   </span>
                   <span className="font-mono text-red-400 font-bold">{loadingProgress}%</span>
                 </div>
-                <div className="h-3 bg-zinc-900 rounded-full overflow-hidden border border-red-500/30">
+                <div className="h-2 bg-zinc-900 rounded-full overflow-hidden border border-red-700/30">
                   <div 
-                    className="h-full bg-gradient-to-r from-red-700 via-red-600 to-red-500 transition-all duration-300 relative overflow-hidden"
+                    className="h-full bg-gradient-to-r from-red-700 to-red-500 transition-all duration-300"
                     style={{ width: `${loadingProgress}%` }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                  </div>
+                  />
                 </div>
               </div>
             )}
           </div>
 
           {/* Main Content Grid */}
-          <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+          <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Modules Section */}
-            <div className="lg:col-span-2 space-y-6 overflow-y-auto pr-2">
+            <div className="lg:col-span-2 space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-red-700/40 scrollbar-track-transparent">
               <SectionBlock
                 title={`Complete (${organizedItems.complete.length})`}
                 tone="complete"
@@ -242,7 +218,7 @@ export default function Hub() {
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1 space-y-6 overflow-y-auto">
+            <div className="lg:col-span-1 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-red-700/40 scrollbar-track-transparent">
               <DevelopmentRoadmap metrics={metrics} loading={metricsLoading} />
               
               <div className="nexus-immersive-panel p-4">
@@ -274,29 +250,25 @@ export default function Hub() {
             </div>
           </div>
 
-          {/* Status Footer */}
-          <div className="nexus-immersive-panel mt-6 px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] uppercase tracking-[0.15em]">
-              <div className="flex flex-wrap items-center gap-4 text-zinc-500">
-                <span className="flex items-center gap-2">
-                  <span className="text-zinc-600">Active Op:</span>
-                  <span className="text-zinc-200 font-bold">{activeOp?.activeEvent?.title || 'None'}</span>
+          {/* Status Footer - Compact */}
+          <div className="flex-shrink-0 mt-3 px-3 py-2 bg-black/60 border-t border-red-700/40">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[9px] uppercase tracking-wider font-mono">
+              <div className="flex flex-wrap items-center gap-3 text-zinc-600">
+                <span className="flex items-center gap-1.5">
+                  <span>Op:</span>
+                  <span className="text-zinc-300 font-bold">{activeOp?.activeEvent?.title || 'None'}</span>
                 </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-zinc-600">Voice Net:</span>
-                  <span className="text-zinc-200 font-bold">{voiceNet?.activeNetId || 'None'}</span>
+                <span className="flex items-center gap-1.5">
+                  <span>Net:</span>
+                  <span className="text-zinc-300 font-bold">{voiceNet?.activeNetId ? 'Active' : 'None'}</span>
                 </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-zinc-600">Dock:</span>
-                  <span className="text-zinc-200 font-bold">{isCommsDockOpen ? 'Open' : 'Closed'}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-zinc-600">Context:</span>
-                  <span className="text-zinc-200 font-bold">{isContextPanelOpen ? 'Open' : 'Closed'}</span>
+                <span className="flex items-center gap-1.5">
+                  <span>Dock:</span>
+                  <span className="text-zinc-300 font-bold">{isCommsDockOpen ? 'Open' : 'Closed'}</span>
                 </span>
               </div>
-              <div className="text-zinc-600 font-mono">
-                Last sync: <span className="text-zinc-400">{metrics?.lastSync ? new Date(metrics.lastSync).toLocaleTimeString() : '--:--:--'}</span>
+              <div className="text-zinc-700">
+                {metrics?.lastSync ? new Date(metrics.lastSync).toLocaleTimeString() : '--:--:--'}
               </div>
             </div>
           </div>
