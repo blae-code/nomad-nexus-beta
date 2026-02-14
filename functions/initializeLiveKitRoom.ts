@@ -2,7 +2,7 @@
  * Initialize LiveKit Room
  * Validates room exists/creates, returns structured result
  */
-import { createCommsResult } from '../components/comms/commsContract.js';
+import { createCommsResult } from './_shared/commsResult.ts';
 
 Deno.serve(async (req) => {
   try {

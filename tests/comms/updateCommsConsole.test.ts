@@ -160,6 +160,32 @@ describe('updateCommsConsole', () => {
     expect(payload).toMatchObject({ error: 'Unauthorized' });
   });
 
+  it('blocks event-scoped comms actions for non-assigned non-command members', async () => {
+    const actorProfile = { id: 'member-9', callsign: 'Drifter', rank: 'MEMBER', roles: [] };
+    const { base44 } = createBase44Mock({ actorProfile });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'record_voice_caption',
+        eventId: 'event-1',
+        netId: 'net-1',
+        text: 'Status green',
+        code: 'ACCESS-01',
+        callsign: 'Drifter',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({ error: 'Operation access denied' });
+  });
+
   it('schedules a message when channel and payload are valid', async () => {
     const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER' };
     const { base44 } = createBase44Mock({ actorProfile });

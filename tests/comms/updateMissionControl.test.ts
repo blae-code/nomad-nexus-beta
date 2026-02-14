@@ -181,6 +181,33 @@ describe('updateMissionControl', () => {
     expect(payload).toMatchObject({ error: 'Unauthorized' });
   });
 
+  it('blocks non-command members who are not assigned to the operation', async () => {
+    const actorProfile = { id: 'member-9', callsign: 'Drifter', rank: 'MEMBER', roles: [] };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      event: operation,
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateMissionControl.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'log_position_update',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Drifter',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({ error: 'Operation access denied' });
+  });
+
   it('logs live position updates', async () => {
     const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER' };
     const { base44 } = createBase44Mock({
@@ -255,6 +282,38 @@ describe('updateMissionControl', () => {
     });
     expect(base44.entities.EventLog.create).toHaveBeenCalledTimes(1);
     expect(base44.entities.Notification.create).toHaveBeenCalled();
+  });
+
+  it('requires command privileges for high-priority tactical callouts', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER', roles: [] };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      event: operation,
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateMissionControl.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'push_tactical_callout',
+        eventId: 'event-1',
+        message: 'Enemy armor on ridge',
+        priority: 'HIGH',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({
+      error: 'Command privileges required for HIGH/CRITICAL callouts',
+    });
+    expect(base44.entities.EventLog.create).not.toHaveBeenCalled();
   });
 
   it('blocks role swap for other members without command privileges', async () => {

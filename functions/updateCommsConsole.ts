@@ -498,6 +498,26 @@ Deno.serve(async (req) => {
     const actorMemberId = memberProfile?.id || null;
     const commandAccess = hasCommandAccess(memberProfile, actorType);
     const nowIso = new Date().toISOString();
+    const scopedEventId = text(payload.eventId || payload.event_id) || null;
+
+    if (actorType === 'member' && !commandAccess && scopedEventId) {
+      const scopedEvent = base44.entities.Event?.get
+        ? await base44.entities.Event.get(scopedEventId).catch(() => null)
+        : null;
+      if (!scopedEvent) {
+        return Response.json({ error: 'Operation not found' }, { status: 404 });
+      }
+      const assignedMemberIds = Array.isArray(scopedEvent?.assigned_member_profile_ids)
+        ? scopedEvent.assigned_member_profile_ids
+        : Array.isArray(scopedEvent?.assigned_user_ids)
+          ? scopedEvent.assigned_user_ids
+          : [];
+      const assigned = assignedMemberIds.map((entry: unknown) => text(entry)).filter(Boolean);
+      const hostMemberId = text(scopedEvent?.host_id || scopedEvent?.hostId);
+      if (!actorMemberId || (!assigned.includes(actorMemberId) && hostMemberId !== actorMemberId)) {
+        return Response.json({ error: 'Operation access denied' }, { status: 403 });
+      }
+    }
 
     if (action === 'schedule_message') {
       const channelId = text(payload.channelId || payload.channel_id);

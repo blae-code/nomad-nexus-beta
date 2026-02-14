@@ -3,7 +3,7 @@
  * Allows Voyager+ or Command role to patch two rooms together
  * Returns canonical commsResult structure
  */
-import { createCommsResult } from '../components/comms/commsContract.js';
+import { createCommsResult } from './_shared/commsResult.ts';
 import { getAuthContext, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {

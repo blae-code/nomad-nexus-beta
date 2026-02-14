@@ -3,7 +3,7 @@
  * Push a short tactical command to OP live feed (for leadership)
  * Returns canonical commsResult structure
  */
-import { createCommsResult } from '../components/comms/commsContract.js';
+import { createCommsResult } from './_shared/commsResult.ts';
 import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 
 Deno.serve(async (req) => {

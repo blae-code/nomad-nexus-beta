@@ -307,6 +307,16 @@ Deno.serve(async (req) => {
 
     const nowIso = new Date().toISOString();
     const assignedMembers = eventAssignedMembers(event);
+    const hostMemberId = text(event?.host_id || event?.hostId);
+    if (actorType === 'member' && !commandAccess) {
+      if (!actorMemberId) {
+        return Response.json({ error: 'Operation access denied' }, { status: 403 });
+      }
+      const inOperationScope = assignedMembers.includes(actorMemberId) || hostMemberId === actorMemberId;
+      if (!inOperationScope) {
+        return Response.json({ error: 'Operation access denied' }, { status: 403 });
+      }
+    }
 
     if (action === 'log_position_update') {
       const memberProfileId = text(payload.memberProfileId || payload.member_profile_id || actorMemberId);
@@ -837,6 +847,9 @@ Deno.serve(async (req) => {
       }
       const priority = text(payload.priority || 'STANDARD').toUpperCase();
       const normalizedPriority = CALL_PRIORITIES.has(priority) ? priority : 'STANDARD';
+      if (normalizedPriority !== 'STANDARD' && !commandAccess) {
+        return Response.json({ error: 'Command privileges required for HIGH/CRITICAL callouts' }, { status: 403 });
+      }
       const calloutType = text(payload.calloutType || payload.callout_type || 'STATUS').toUpperCase();
       const details = {
         event_id: eventId,
