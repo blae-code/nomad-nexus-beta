@@ -82,10 +82,10 @@ import StrategicObjectives from './pages/StrategicObjectives';
 import SystemAdmin from './pages/SystemAdmin';
 import TradeNexus from './pages/TradeNexus';
 import Treasury from './pages/Treasury';
+import UXRoadmap from './pages/UXRoadmap';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import WarAcademy from './pages/WarAcademy';
-import UXRoadmap from './pages/UXRoadmap';
 import Workspace from './pages/Workspace';
 import __Layout from './Layout.jsx';
 
@@ -126,10 +126,10 @@ export const PAGES = {
     "SystemAdmin": SystemAdmin,
     "TradeNexus": TradeNexus,
     "Treasury": Treasury,
+    "UXRoadmap": UXRoadmap,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
     "WarAcademy": WarAcademy,
-    "UXRoadmap": UXRoadmap,
     "Workspace": Workspace,
 }
 

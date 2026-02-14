@@ -205,15 +205,16 @@ export default function Workspace() {
   return (
     <div className="h-full bg-zinc-950 flex flex-col overflow-hidden">
       {/* Workspace Toolbar */}
-      <div className="flex-shrink-0 h-14 border-b border-orange-500/20 bg-zinc-900/50 backdrop-blur-sm px-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Monitor className="w-5 h-5 text-orange-500" />
-          <span className="text-sm font-bold text-orange-400 uppercase tracking-wide">
-            NexusOS Workspace
+      <div className="flex-shrink-0 h-12 border-b-2 border-red-700/50 bg-black/95 backdrop-blur-sm px-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-6 bg-red-500 rounded-sm" />
+          <Monitor className="w-4 h-4 text-red-500" />
+          <span className="text-sm font-black text-white uppercase tracking-[0.2em]">
+            WORKSPACE
           </span>
-          <div className="h-4 w-px bg-orange-500/30" />
-          <span className="text-xs text-zinc-500">
-            {activePreset && WORKSPACE_PRESETS.find(p => p.id === activePreset)?.name || 'Custom Layout'}
+          <div className="h-4 w-px bg-red-700/40" />
+          <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider">
+            {activePreset && WORKSPACE_PRESETS.find(p => p.id === activePreset)?.name || 'Custom'}
           </span>
         </div>
 
@@ -223,12 +224,12 @@ export default function Workspace() {
             const preset = WORKSPACE_PRESETS.find(p => p.id === id);
             if (preset) applyPreset(preset);
           }}>
-            <SelectTrigger className="w-40 h-8 text-xs bg-zinc-800 border-zinc-700">
+            <SelectTrigger className="w-40 h-7 text-[10px] bg-zinc-900/60 border-red-700/40 hover:border-red-500/60 font-mono">
               <SelectValue placeholder="Select Preset" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-red-700/40">
               {WORKSPACE_PRESETS.map((preset) => (
-                <SelectItem key={preset.id} value={preset.id}>
+                <SelectItem key={preset.id} value={preset.id} className="text-xs">
                   {preset.name}
                 </SelectItem>
               ))}
@@ -238,26 +239,42 @@ export default function Workspace() {
           {/* Add Widget */}
           <Dialog open={showAddWidget} onOpenChange={setShowAddWidget}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-8 gap-2">
-                <Plus className="w-4 h-4" />
+              <Button size="sm" variant="outline" className="h-7 gap-2 text-[10px] border-red-700/40 hover:border-red-500/60">
+                <Plus className="w-3 h-3" />
                 Add Widget
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-orange-500/30">
+            <DialogContent className="bg-black/95 border-2 border-red-700/60 max-w-4xl max-h-[80vh]">
               <DialogHeader>
-                <DialogTitle className="text-orange-400">Add Widget to Workspace</DialogTitle>
+                <DialogTitle className="text-red-400 font-black uppercase tracking-wider">Add Widget to Workspace</DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {availableWidgets.map((widget) => (
-                  <Button
-                    key={widget.type}
-                    variant="outline"
-                    className="h-20 flex flex-col items-center justify-center gap-2 border-zinc-700 hover:border-orange-500/50"
-                    onClick={() => addWidget(widget.type)}
-                  >
-                    <widget.icon className="w-6 h-6 text-orange-500" />
-                    <span className="text-xs">{widget.label}</span>
-                  </Button>
+              <div className="max-h-[60vh] overflow-y-auto">
+                {Object.entries(
+                  availableWidgets.reduce((acc, w) => {
+                    const cat = w.category || 'Other';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(w);
+                    return acc;
+                  }, {})
+                ).map(([category, widgets]) => (
+                  <div key={category} className="mb-4">
+                    <div className="text-[10px] font-bold text-red-500 uppercase tracking-[0.2em] mb-2 px-2 border-l-2 border-red-700">
+                      {category}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {widgets.map((widget) => (
+                        <Button
+                          key={widget.type}
+                          variant="outline"
+                          className="h-20 flex flex-col items-center justify-center gap-2 border-zinc-700/60 hover:border-red-500/60 bg-zinc-900/40 hover:bg-red-950/20"
+                          onClick={() => addWidget(widget.type)}
+                        >
+                          <widget.icon className="w-5 h-5 text-red-500" />
+                          <span className="text-[10px] text-zinc-400 text-center leading-tight">{widget.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </DialogContent>
@@ -266,14 +283,14 @@ export default function Workspace() {
           {/* Save Preset */}
           <Dialog open={showSavePreset} onOpenChange={setShowSavePreset}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-8 gap-2">
-                <Save className="w-4 h-4" />
+              <Button size="sm" variant="outline" className="h-7 gap-2 text-[10px] border-red-700/40 hover:border-red-500/60">
+                <Save className="w-3 h-3" />
                 Save
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-zinc-900 border-orange-500/30">
+            <DialogContent className="bg-black/95 border-2 border-red-700/60">
               <DialogHeader>
-                <DialogTitle className="text-orange-400">Save Workspace Preset</DialogTitle>
+                <DialogTitle className="text-red-400 font-black uppercase tracking-wider">Save Workspace Preset</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <input
@@ -281,9 +298,9 @@ export default function Workspace() {
                   placeholder="Preset Name"
                   value={presetName}
                   onChange={(e) => setPresetName(e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-sm text-zinc-200"
+                  className="w-full px-3 py-2 bg-zinc-900/60 border border-red-700/40 rounded text-sm text-zinc-200 focus:border-red-500/60 focus:outline-none"
                 />
-                <Button onClick={saveCustomPreset} className="w-full">
+                <Button onClick={saveCustomPreset} className="w-full bg-red-600 hover:bg-red-500">
                   Save Preset
                 </Button>
               </div>
@@ -316,7 +333,8 @@ export default function Workspace() {
             return (
               <div
                 key={widget.id}
-                className="bg-zinc-900/80 border border-orange-500/20 rounded-lg overflow-hidden flex flex-col shadow-lg hover:border-orange-500/40 transition-colors"
+                className="bg-black/95 border border-red-700/40 rounded overflow-hidden flex flex-col shadow-2xl shadow-red-500/10 hover:border-red-500/60 transition-all duration-200"
+                style={{ willChange: isDragging ? 'transform' : 'auto' }}
               >
                 <WidgetComponent
                   widgetId={widget.id}
@@ -331,13 +349,16 @@ export default function Workspace() {
 
         {activeWidgets.length === 0 && (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <Layout className="w-16 h-16 text-orange-500/30 mx-auto" />
-              <div>
-                <h3 className="text-lg font-bold text-orange-400">Empty Workspace</h3>
-                <p className="text-sm text-zinc-500 mt-2">Add widgets to build your command interface</p>
+            <div className="text-center space-y-4 max-w-md">
+              <div className="relative">
+                <Layout className="w-16 h-16 text-red-700/40 mx-auto" />
+                <div className="absolute inset-0 blur-xl bg-red-500/20 animate-pulse" />
               </div>
-              <Button onClick={() => setShowAddWidget(true)} className="gap-2">
+              <div>
+                <h3 className="text-xl font-black text-red-400 uppercase tracking-[0.2em]">Workspace Empty</h3>
+                <p className="text-xs text-zinc-600 mt-2 uppercase tracking-wider">Add widgets to build your command interface</p>
+              </div>
+              <Button onClick={() => setShowAddWidget(true)} className="gap-2 bg-red-600 hover:bg-red-500">
                 <Plus className="w-4 h-4" />
                 Add Your First Widget
               </Button>
