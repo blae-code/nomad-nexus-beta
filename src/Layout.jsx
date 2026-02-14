@@ -6,7 +6,7 @@ import ConstructionTicker from '@/components/layout/ConstructionTicker';
 import CSSDebugOverlay from '@/components/debug/CSSDebugOverlay';
 
 
-import ContextPanel from '@/components/layout/ContextPanel';
+import TextCommsCore from '@/components/layout/TextCommsCore';
 
 import CommandPaletteUI from '@/components/providers/CommandPaletteUI';
 import { CommandPaletteProvider } from '@/components/providers/CommandPaletteContext';
@@ -218,10 +218,10 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
               <PermissionGuard>{children}</PermissionGuard>
             </main>
 
-            {/* ContextPanel — right sidebar, collapsible */}
+            {/* Text Comms Core — right sidebar, counterpart to Voice Command Core */}
             {isContextPanelOpen &&
-            <div className={`${contextPanelMinimized ? 'w-12' : 'w-80'} border-l border-orange-500/20 flex-shrink-0 z-[900] relative transition-all duration-200`}>
-                <ContextPanel isOpen={true} onClose={toggleContextPanel} isMinimized={contextPanelMinimized} onMinimize={setContextPanelMinimized} />
+            <div className={`${contextPanelMinimized ? 'w-12' : 'w-80'} border-l-2 border-red-700/50 flex-shrink-0 z-[900] relative transition-all duration-200`}>
+                <TextCommsCore isOpen={true} onClose={toggleContextPanel} isMinimized={contextPanelMinimized} onMinimize={setContextPanelMinimized} />
               </div>
             }
           </div>
