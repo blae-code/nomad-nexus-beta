@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { MessageSquare, Send, Settings, Bell, Hash, AtSign, Trash2, ChevronDown } from 'lucide-react';
+import { MessageSquare, Send, Settings, Bell, Hash, AtSign, Trash2, ChevronDown, ChevronLeft } from 'lucide-react';
 import { NexusButton, NexusBadge } from '../primitives';
 
 /**
  * CommsHub — Integrated text-based communications hub for NexusOS
  * Discord-like channel system with advanced message filtering, presence, and voice integration
  */
-export default function CommsHub({ operations = [], focusOperationId, activeAppId, online, bridgeId }) {
+export default function CommsHub({ operations = [], focusOperationId, activeAppId, online, bridgeId, isExpanded = true, onToggleExpand }) {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [messages, setMessages] = useState({});
   const [expandedCategories, setExpandedCategories] = useState({ tactical: true, social: true });
@@ -77,21 +77,47 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
     .find((ch) => ch.id === selectedChannel);
 
   return (
-    <div className="nx-comms-hub flex flex-col h-full bg-zinc-950/80 border-l border-zinc-700/40">
+    <div className={`nx-comms-hub flex flex-col h-full bg-zinc-950/80 border-l border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${
+      isExpanded ? 'w-full' : 'w-12'
+    }`}>
       {/* Header */}
       <div className="nx-comms-header border-b border-zinc-700/40 p-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-orange-500" />
-            <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider">Comms Hub</h3>
-          </div>
-          <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
+          {isExpanded ? (
+            <>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-orange-500" />
+                <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider">Comms Hub</h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
+                  <Settings className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onToggleExpand}
+                  className="text-zinc-500 hover:text-orange-500 transition-colors"
+                  title="Collapse"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="w-full flex items-center justify-center text-zinc-500 hover:text-orange-500 transition-colors"
+              title="Expand"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Channel List */}
+      {isExpanded && (
       <div className="flex-1 min-h-0 overflow-y-auto space-y-2 p-2">
         {/* Tactical Channels */}
         <div>
@@ -190,9 +216,10 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
           </div>
         )}
       </div>
+      )}
 
       {/* Message View */}
-      {selectedChannel ? (
+      {isExpanded && selectedChannel ? (
         <div className="flex flex-col h-64 border-t border-zinc-700/40">
           {/* Channel Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/40">

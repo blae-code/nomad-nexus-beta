@@ -450,6 +450,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
 
   const [contextPanelOpen, setContextPanelOpen] = useState(true);
+  const [commsHubExpanded, setCommsHubExpanded] = useState(true);
   const [compactShell, setCompactShell] = useState(() => (typeof window === 'undefined' ? false : window.innerWidth < 1480));
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
 
@@ -1202,13 +1203,15 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </div>
       </header>
 
-      <aside className="nx-shell-rail nexus-surface overflow-hidden">
+      <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
         <CommsHub
           operations={operations}
           focusOperationId={focusOperationId}
           activeAppId={activeAppLabel}
           online={online}
           bridgeId={bridgeId}
+          isExpanded={commsHubExpanded}
+          onToggleExpand={() => setCommsHubExpanded(!commsHubExpanded)}
         />
       </aside>
 
