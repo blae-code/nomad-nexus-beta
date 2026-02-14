@@ -94,22 +94,26 @@ export default function Header() {
         </div>
 
         {/* Center: Active Op + Command Palette */}
-        <div className="flex-1 min-w-0 flex items-center gap-2">
-          {activeEvent && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 rounded border border-orange-500/30 text-[10px] font-bold text-orange-300 flex-shrink-0 whitespace-nowrap uppercase tracking-[0.15em]">
-              <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
-              <span className="max-w-[150px] truncate">{activeEvent.title}</span>
-            </div>
-          )}
-          <button
-            onClick={openPalette}
-            className="flex-1 h-7 flex items-center gap-2 px-2.5 bg-zinc-900/40 border border-red-700/40 hover:border-red-500/60 text-zinc-500 hover:text-red-300 transition-all group rounded relative"
-            title="Command Palette • Ctrl+K"
-          >
-            <Command className="w-3 h-3 text-red-400 group-hover:text-red-300 transition-all flex-shrink-0 relative z-10" />
-            <span className="text-[10px] font-mono font-bold tracking-[0.15em] uppercase text-zinc-400 group-hover:text-zinc-200 min-w-0 truncate relative z-10 flex-1 text-left transition-colors">CMD+K</span>
-          </button>
-        </div>
+         <div className="flex-1 min-w-0 flex items-center gap-2">
+           {activeEvent && (
+             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 rounded border border-orange-500/30 text-[10px] font-bold text-orange-300 flex-shrink-0 whitespace-nowrap uppercase tracking-[0.15em]">
+               <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
+               <span className="max-w-[150px] truncate">{activeEvent.title}</span>
+             </div>
+           )}
+           <button
+             onClick={openPalette}
+             className="flex-1 h-7 flex items-center gap-2 px-3 bg-gradient-to-r from-red-950/40 to-zinc-900/40 border border-red-600/60 hover:border-red-500/80 hover:from-red-900/50 hover:to-zinc-900/60 text-zinc-400 hover:text-red-300 transition-all group rounded-lg relative overflow-hidden"
+             title="Command Palette • Ctrl+K • Search, Navigate, Execute"
+           >
+             <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/10 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+             <Command className="w-3.5 h-3.5 text-red-400 group-hover:text-red-300 transition-all flex-shrink-0 relative z-10" />
+             <span className="text-[10px] font-mono font-bold tracking-[0.15em] uppercase min-w-0 flex-1 text-left transition-colors z-10">
+               {search ? `Search: "${search.slice(0, 20)}..."` : 'COMMAND PALETTE'}
+             </span>
+             <span className="text-[9px] font-mono text-zinc-500 group-hover:text-red-400 flex-shrink-0 z-10">⌘K</span>
+           </button>
+         </div>
 
         {/* Right: Critical System Status + Controls */}
         <div className="flex items-center gap-2 justify-end flex-shrink-0 min-w-max">
