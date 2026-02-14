@@ -1262,7 +1262,19 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </div>
       </main>
 
-
+      <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
+        <VoiceCommsRail
+          voiceNets={[
+            { id: 'net1', code: 'COMMAND', label: 'Command Net' },
+            { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
+            { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
+          ]}
+          activeNetId="COMMAND"
+          participants={activeOp?.participants || []}
+          isExpanded={voiceRailExpanded}
+          onToggleExpand={() => setVoiceRailExpanded(!voiceRailExpanded)}
+        />
+      </aside>
 
       <ComprehensiveTacticalFooter />
 
