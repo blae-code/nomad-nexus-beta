@@ -93,8 +93,19 @@ export default function CommandPaletteUI() {
       e.preventDefault();
       const action = flatActions[selectedIndex];
       if (action) {
+        // Track recently used
+        setRecentlyUsed((prev) => {
+          const filtered = prev.filter((id) => id !== action.id);
+          return [action.id, ...filtered].slice(0, 5);
+        });
         action.onExecute();
         closePalette();
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      // Tab switches between search and actions
+      if (e.shiftKey) {
+        setSelectedIndex(0);
       }
     }
   };
