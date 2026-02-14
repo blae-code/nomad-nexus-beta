@@ -373,6 +373,13 @@ export default function AccessGate() {
         </div>
       </div>
 
+      {/* Polished Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-red-700/30 bg-zinc-950/95 backdrop-blur-sm px-6 py-3">
+        <p className="text-center text-[10px] text-red-700/70 uppercase tracking-[0.2em] font-bold">
+          ⸻ REDSCAR NOMADS COMMAND ⸻
+        </p>
+      </footer>
+
       {/* Hidden readiness beacon */}
       {authState && <div id="nn-ready" data-state={authState} style={{ display: 'none' }} />}
       </div>
