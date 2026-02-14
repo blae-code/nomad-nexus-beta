@@ -1153,7 +1153,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   return (
     <div
-      className="nexus-shell-root nexus-layout-quiet nx-app-shell"
+      className="nexus-shell-root nexus-layout-quiet nx-app-shell fixed inset-0"
       data-bridge-id={bridgeId}
       style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
