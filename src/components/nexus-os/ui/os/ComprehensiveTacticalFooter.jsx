@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { MapContainer, Marker, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { base44 } from '@/api/base44Client';
@@ -18,6 +18,10 @@ import {
   ChevronUp,
   Shield,
 } from 'lucide-react';
+
+const FOOTER_HEIGHT_KEY = 'nexus.tacticalFooter.height';
+const DEFAULT_HEIGHT = 320;
+const MIN_HEIGHT = 200;
 
 const STATUS_COLORS = {
   READY: '#22c55e',
@@ -155,8 +159,49 @@ export default function ComprehensiveTacticalFooter() {
   const [markers, setMarkers] = useState([]);
   const [playerStatuses, setPlayerStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [height, setHeight] = useState(() => {
+    try {
+      const saved = localStorage.getItem(FOOTER_HEIGHT_KEY);
+      return saved ? Number(saved) : DEFAULT_HEIGHT;
+    } catch {
+      return DEFAULT_HEIGHT;
+    }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef(null);
 
   const eventId = activeOp?.activeEvent?.id || null;
+
+  // Persist height preference
+  useEffect(() => {
+    try {
+      localStorage.setItem(FOOTER_HEIGHT_KEY, String(height));
+    } catch {}
+  }, [height]);
+
+  // Handle resize
+  const handleResizeStart = useCallback((e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startY = e.clientY;
+    const startHeight = height;
+
+    const handleMouseMove = (moveEvent) => {
+      const delta = startY - moveEvent.clientY;
+      const maxHeight = window.innerHeight - 80; // Account for header
+      const newHeight = Math.max(MIN_HEIGHT, Math.min(maxHeight, startHeight + delta));
+      setHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [height]);
 
   // Load map data
   React.useEffect(() => {
@@ -211,7 +256,19 @@ export default function ComprehensiveTacticalFooter() {
   }
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-[700] border-t border-orange-500/20 bg-black/98 backdrop-blur-xl shadow-2xl shadow-orange-500/5 flex flex-col h-80">
+    <footer className="fixed bottom-0 left-0 right-0 z-[700] border-t border-orange-500/20 bg-black/98 backdrop-blur-xl shadow-2xl shadow-orange-500/5 flex flex-col transition-all duration-200" style={{ height: `${height}px` }}>
+      {/* Resize Handle */}
+      <div
+        ref={resizeRef}
+        className={`h-1.5 bg-gradient-to-r from-transparent via-orange-700/60 to-transparent cursor-ns-resize hover:via-orange-500 transition-all flex-shrink-0 flex items-center justify-center ${
+          isResizing ? 'via-orange-500' : ''
+        }`}
+        onMouseDown={handleResizeStart}
+        title="Drag to resize tactical footer"
+      >
+        <div className="w-12 h-0.5 bg-orange-400/60 rounded-full" />
+      </div>
+
       {/* Header */}
       <div className="flex-shrink-0 px-4 py-2.5 border-b border-orange-500/15 bg-zinc-900/40 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
