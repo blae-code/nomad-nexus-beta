@@ -270,8 +270,8 @@ export default function Workspace() {
   return (
     <div className="h-full bg-zinc-950 flex flex-col overflow-hidden">
       {/* Workspace Toolbar */}
-      <div className="flex-shrink-0 h-12 border-b-2 border-red-700/50 bg-black/95 backdrop-blur-sm px-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      <div className="flex-shrink-0 h-12 border-b-2 border-red-700/50 bg-black/95 backdrop-blur-sm px-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5">
           <div className="w-1 h-6 bg-red-500 rounded-sm" />
           <Monitor className="w-4 h-4 text-red-500" />
           <span className="text-sm font-black text-white uppercase tracking-[0.2em]">
@@ -375,7 +375,7 @@ export default function Workspace() {
       </div>
 
       {/* Page Tabs */}
-      <div className="flex-shrink-0 border-b border-red-700/40 bg-black/60 backdrop-blur-sm px-4 flex items-center gap-2 overflow-x-auto">
+      <div className="flex-shrink-0 border-b border-red-700/40 bg-black/60 backdrop-blur-sm px-4 flex items-center gap-1 overflow-x-auto">
         {pages.map(page => (
           <div key={page.id} className="flex items-center gap-1 group">
             {editingPageId === page.id ? (
@@ -436,7 +436,7 @@ export default function Workspace() {
       </div>
 
       {/* Grid Layout */}
-      <div className="flex-1 overflow-auto p-4 pb-20">
+      <div className="flex-1 overflow-auto p-3 pb-20">
         <ResponsiveGridLayout
           className="layout"
           layouts={layouts}

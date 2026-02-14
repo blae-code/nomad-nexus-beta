@@ -201,19 +201,14 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         {/* Header — fixed at top (z-50) */}
         <Header />
 
-        {/* Construction Ticker — below fixed header */}
-        
-
-
-
-        {/* Main content area — offset for fixed header (pt-16) + dock spacer */}
+        {/* Main content area */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
           <OfflineStatusBanner />
-          <div className="flex-1 overflow-hidden flex gap-0">
+          <div className="flex-1 overflow-hidden flex">
             <main
               id="main-content"
               tabIndex={-1}
-              className={`nexus-page-main flex-1 overflow-hidden ${mobileAwareMainPaddingClass} transition-all duration-200`}>
+              className={`nexus-page-main flex-1 overflow-hidden ${mobileAwareMainPaddingClass}`}>
 
               <PermissionGuard>{children}</PermissionGuard>
             </main>
