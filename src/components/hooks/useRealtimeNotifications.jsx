@@ -47,6 +47,12 @@ export function useRealtimeNotifications({ enabled = true } = {}) {
   useEffect(() => {
     if (!enabled || !user?.id) return undefined;
 
+    // Delay subscription to avoid blocking initial render
+    const timeoutId = setTimeout(() => {
+      startSubscription();
+    }, 2000);
+
+    const startSubscription = () => {
     const loadPreferences = async (channelId) => {
       const cacheKey = getPrefKey(user.id, channelId);
       const cached = prefCacheRef.current.get(cacheKey);
@@ -119,9 +125,11 @@ export function useRealtimeNotifications({ enabled = true } = {}) {
         handleNotification(event.data);
       }
     });
+    };
 
     return () => {
-      unsubscribe();
+      clearTimeout(timeoutId);
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [enabled, user?.id, addNotification, sendNotification]);
 

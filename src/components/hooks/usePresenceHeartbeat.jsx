@@ -55,7 +55,8 @@ export function usePresenceHeartbeat(config = {}) {
       }
     };
 
-    writePresenceImmediately();
+    // Delay initial write to avoid blocking UI
+    const timeoutId = setTimeout(() => writePresenceImmediately(), 1500);
 
     // Periodic heartbeat
     const startHeartbeat = () => {
@@ -132,6 +133,7 @@ export function usePresenceHeartbeat(config = {}) {
 
     // Cleanup
     return () => {
+      clearTimeout(timeoutId);
       if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
       if (cleanupIntervalRef.current) clearInterval(cleanupIntervalRef.current);
       document.removeEventListener('visibilitychange', handleVisibilityChange);

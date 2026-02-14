@@ -349,10 +349,19 @@ export function VoiceNetProvider({ children }) {
       try { const nets = await base44.entities.VoiceNet.list('-created_date', 200); if (Array.isArray(nets) && nets.length) return setVoiceNets(nets); } catch {}
       setVoiceNets(DEFAULT_VOICE_NETS);
     };
-    loadNets();
-    if (!base44.entities.VoiceNet?.subscribe) return undefined;
-    const unsub = base44.entities.VoiceNet.subscribe((event) => setVoiceNets((prev) => event.type === 'create' ? [...prev, event.data] : event.type === 'update' ? prev.map((n) => n.id === event.id ? event.data : n) : event.type === 'delete' ? prev.filter((n) => n.id !== event.id) : prev));
-    return () => unsub?.();
+
+    // Delay to avoid blocking initial render
+    const loadTimeout = setTimeout(() => loadNets(), 3000);
+
+    if (!base44.entities.VoiceNet?.subscribe) return () => clearTimeout(loadTimeout);
+
+    // Delay subscription even more
+    const subTimeout = setTimeout(() => {
+      const unsub = base44.entities.VoiceNet.subscribe((event) => setVoiceNets((prev) => event.type === 'create' ? [...prev, event.data] : event.type === 'update' ? prev.map((n) => n.id === event.id ? event.data : n) : event.type === 'delete' ? prev.filter((n) => n.id !== event.id) : prev));
+      return () => unsub?.();
+    }, 4000);
+
+    return () => { clearTimeout(loadTimeout); clearTimeout(subTimeout); };
   }, []);
 
   useEffect(() => {
