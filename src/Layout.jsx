@@ -118,6 +118,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   // Start presence heartbeat (non-blocking background task)
   usePresenceHeartbeat();
   useRealtimeNotifications();
+  useVoiceCommands();
 
   const { isContextPanelOpen, isCommsDockOpen, dockMinimized, contextPanelMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized, setContextPanelMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
