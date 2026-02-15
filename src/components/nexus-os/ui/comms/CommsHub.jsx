@@ -124,10 +124,6 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
         <div className="flex items-center justify-between">
           {isExpanded ? (
             <>
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-orange-500" />
-                <h3 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
-              </div>
               <div className="flex items-center gap-1">
                 <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
                   <Settings className="w-3.5 h-3.5" />
@@ -140,6 +136,10 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
+                <MessageSquare className="w-4 h-4 text-orange-500" />
               </div>
             </>
           ) : (
