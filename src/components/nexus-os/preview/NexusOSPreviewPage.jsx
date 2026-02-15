@@ -457,6 +457,21 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [voiceRailExpanded, setVoiceRailExpanded] = useState(true);
   const [compactShell, setCompactShell] = useState(() => (typeof window === 'undefined' ? false : window.innerWidth < 1480));
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
+  
+  const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
+    if (typeof window === 'undefined') return 320;
+    const stored = localStorage.getItem('nexus.leftPanelWidth');
+    return stored ? parseInt(stored, 10) : 320;
+  });
+  const [rightPanelWidth, setRightPanelWidth] = useState(() => {
+    if (typeof window === 'undefined') return 320;
+    const stored = localStorage.getItem('nexus.rightPanelWidth');
+    return stored ? parseInt(stored, 10) : 320;
+  });
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
 
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
@@ -1145,6 +1160,58 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     return () => window.clearInterval(timerId);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('nexus.leftPanelWidth', String(leftPanelWidth));
+  }, [leftPanelWidth]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('nexus.rightPanelWidth', String(rightPanelWidth));
+  }, [rightPanelWidth]);
+
+  useEffect(() => {
+    if (!isResizingLeft) return;
+    
+    const handleMouseMove = (e) => {
+      const newWidth = Math.max(280, Math.min(600, e.clientX));
+      setLeftPanelWidth(newWidth);
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingLeft]);
+
+  useEffect(() => {
+    if (!isResizingRight) return;
+    
+    const handleMouseMove = (e) => {
+      const newWidth = Math.max(280, Math.min(600, window.innerWidth - e.clientX));
+      setRightPanelWidth(newWidth);
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizingRight(false);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingRight]);
+
   const systemTimeLabel = useMemo(
     () =>
       new Date(clockNowMs).toLocaleTimeString([], {
@@ -1158,7 +1225,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   return (
     <div
-      className="nexus-shell-root nexus-layout-quiet nx-app-shell fixed inset-0"
+      className="nexus-shell-root nexus-layout-quiet nx-app-shell fixed inset-0 flex flex-col"
       data-bridge-id={bridgeId}
       style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}
     >
@@ -1166,7 +1233,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <div className="nexus-shell-grid" />
       <div className="nexus-shell-vignette" />
 
-      <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow">
+      {/* Fixed Header */}
+      <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0">
         <div className="nx-topbar-left">
           <div className="nx-topbar-mark">
             <Shield className="w-3.5 h-3.5" />
@@ -1177,14 +1245,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           </div>
         </div>
         <button
-        type="button"
-        className="nx-command-entry"
-        onClick={() => setCommandDeckOpen(true)}
-        title="Open command palette to manage apps, bridges, and settings (Ctrl+Shift+P)"
+          type="button"
+          className="nx-command-entry"
+          onClick={() => setCommandDeckOpen(true)}
+          title="Open command palette to manage apps, bridges, and settings (Ctrl+Shift+P)"
         >
-        <Search className="w-3.5 h-3.5" />
-        <span>Command Palette</span>
-        <span className="nx-hotkey">Ctrl+Shift+P</span>
+          <Search className="w-3.5 h-3.5" />
+          <span>Command Palette</span>
+          <span className="nx-hotkey">Ctrl+Shift+P</span>
         </button>
         <div className="nx-topbar-right">
           {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV</NexusBadge>}
@@ -1201,81 +1269,95 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             <Clock3 className="w-3.5 h-3.5" />
             <span>{systemTimeLabel}</span>
           </div>
-          <NexusButton size="sm" intent={contextVisible ? 'primary' : 'subtle'} onClick={() => setContextPanelOpen((prev) => !prev)}>
-            Comms
+          <NexusButton size="sm" intent="subtle" onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}>
+            Text
+          </NexusButton>
+          <NexusButton size="sm" intent="subtle" onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}>
+            Voice
           </NexusButton>
         </div>
       </header>
 
-      <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
-      <CommsHub
-      operations={operations}
-      focusOperationId={focusOperationId}
-      activeAppId={activeAppLabel}
-      online={online}
-      bridgeId={bridgeId}
-      isExpanded={commsHubExpanded}
-      onToggleExpand={() => setCommsHubExpanded(!commsHubExpanded)}
-      />
-      </aside>
-
-      <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
-      <VoiceCommsRail
-      voiceNets={[
-      { id: 'net1', code: 'COMMAND', label: 'Command Net' },
-      { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
-      { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
-      ]}
-      activeNetId="COMMAND"
-      participants={activeOp?.participants || []}
-      isExpanded={voiceRailExpanded}
-      onToggleExpand={() => setVoiceRailExpanded(!voiceRailExpanded)}
-      />
-      </aside>
-
-      <main className="nx-shell-main">
-        {commandFeedback ? (
-          <section aria-live="polite" className="nx-inline-feedback nexus-console-text">
-            {commandFeedback}
-          </section>
-        ) : null}
-        <div className="nx-workbench-wrap nexus-panel-glow">
-          <WorkbenchGrid
+      {/* Main Content Area with Panels */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Text Comms */}
+        <aside
+          className="nexus-surface border-r border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300"
+          style={{ width: leftPanelCollapsed ? 0 : leftPanelWidth }}
+        >
+          <CommsHub
+            operations={operations}
+            focusOperationId={focusOperationId}
+            activeAppId={activeAppLabel}
+            online={online}
             bridgeId={bridgeId}
-            panels={panelDescriptors}
-            presetId={presetId}
-            onPresetChange={setPresetId}
-            defaultActivationMode="empty"
-            enableOnboardingExperience={false}
-            workspaceUserDisplayName={workspaceDisplayCallsign}
-            layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
-            enableLayoutPersistence
-            atmosphereMode="minimal"
-            initialActivePanelIds={activePanelIds}
-            onActivePanelIdsChange={(next) =>
-              patchSnapshot({
-                activePanelIds: next,
-              })
-            }
-            panelComponentProps={sharedPanelProps}
+            isExpanded={!leftPanelCollapsed}
+            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
           />
-        </div>
-      </main>
+          {!leftPanelCollapsed && (
+            <div
+              className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors"
+              onMouseDown={() => setIsResizingLeft(true)}
+            />
+          )}
+        </aside>
 
-      <aside className="nx-shell-rail nexus-surface overflow-hidden transition-all duration-300">
-        <VoiceCommsRail
-          voiceNets={[
-            { id: 'net1', code: 'COMMAND', label: 'Command Net' },
-            { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
-            { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
-          ]}
-          activeNetId="COMMAND"
-          participants={activeOp?.participants || []}
-          isExpanded={voiceRailExpanded}
-          onToggleExpand={() => setVoiceRailExpanded(!voiceRailExpanded)}
-        />
-      </aside>
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden flex flex-col">
+          {commandFeedback ? (
+            <section aria-live="polite" className="nx-inline-feedback nexus-console-text">
+              {commandFeedback}
+            </section>
+          ) : null}
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow">
+            <WorkbenchGrid
+              bridgeId={bridgeId}
+              panels={panelDescriptors}
+              presetId={presetId}
+              onPresetChange={setPresetId}
+              defaultActivationMode="empty"
+              enableOnboardingExperience={false}
+              workspaceUserDisplayName={workspaceDisplayCallsign}
+              layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
+              enableLayoutPersistence
+              atmosphereMode="minimal"
+              initialActivePanelIds={activePanelIds}
+              onActivePanelIdsChange={(next) =>
+                patchSnapshot({
+                  activePanelIds: next,
+                })
+              }
+              panelComponentProps={sharedPanelProps}
+            />
+          </div>
+        </main>
 
+        {/* Right Panel - Voice Comms */}
+        <aside
+          className="nexus-surface border-l border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300"
+          style={{ width: rightPanelCollapsed ? 0 : rightPanelWidth }}
+        >
+          <VoiceCommsRail
+            voiceNets={[
+              { id: 'net1', code: 'COMMAND', label: 'Command Net' },
+              { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
+              { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
+            ]}
+            activeNetId="COMMAND"
+            participants={activeOp?.participants || []}
+            isExpanded={!rightPanelCollapsed}
+            onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          />
+          {!rightPanelCollapsed && (
+            <div
+              className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors"
+              onMouseDown={() => setIsResizingRight(true)}
+            />
+          )}
+        </aside>
+      </div>
+
+      {/* Fixed Footer */}
       <ComprehensiveTacticalFooter />
 
       <CommandFocus
