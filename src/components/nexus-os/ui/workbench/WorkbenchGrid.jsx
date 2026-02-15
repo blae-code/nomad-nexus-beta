@@ -1232,11 +1232,11 @@ export default function WorkbenchGrid({
                 <div
                   ref={dropProvided.innerRef}
                   {...dropProvided.droppableProps}
-                  className={`h-full min-h-0 grid gap-3 overflow-hidden ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-sky-500/40' : ''}`}
+                  className={`h-full min-h-0 grid gap-3 ${hasVisiblePanels ? 'overflow-y-auto' : 'overflow-hidden'} ${dropSnapshot.isDraggingOver ? 'outline outline-1 outline-sky-500/40' : ''}`}
                   style={{
                     gridTemplateColumns: `repeat(${preset.columns}, minmax(0, 1fr))`,
                     gridAutoRows: `${effectiveRowHeightPx}px`,
-                    alignContent: 'start',
+                    alignContent: hasVisiblePanels ? 'start' : 'stretch',
                     minHeight: '100%',
                   }}
                   aria-label="Workbench panel layout"
@@ -1244,7 +1244,11 @@ export default function WorkbenchGrid({
                   {!hasVisiblePanels ? (
                     <div
                       className="rounded-lg border border-zinc-800/90 bg-[linear-gradient(180deg,rgba(18,24,32,0.82),rgba(10,14,20,0.9))] p-5 text-zinc-200 flex flex-col items-start justify-between gap-3 shadow-[inset_0_0_0_1px_rgba(98,164,215,0.08)]"
-                      style={{ gridColumn: `1 / span ${preset.columns}`, minHeight: Math.max(260, preset.minRowHeightPx * 4) }}
+                      style={{ 
+                        gridColumn: `1 / span ${preset.columns}`, 
+                        gridRow: 'span 6',
+                        minHeight: '100%'
+                      }}
                     >
                       <div className="space-y-1 w-full">
                         <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
