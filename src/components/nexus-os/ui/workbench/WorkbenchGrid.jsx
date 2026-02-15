@@ -1054,14 +1054,14 @@ export default function WorkbenchGrid({
       const next = prev.filter((id) => valid.has(id));
       return next.length === prev.length ? prev : next;
     });
-  }, [allPanels, panelSignature]);
+  }, [panelSignature]);
 
   useEffect(() => {
     if (!hasExplicitInitialPanels) return;
     const valid = new Set(allPanels.map((panel) => panel.id));
     const filtered = initialActivePanelIds.filter((id) => valid.has(id));
     setActivePanelIds((prev) => (prev.join('|') === filtered.join('|') ? prev : filtered));
-  }, [allPanels, hasExplicitInitialPanels, initialActivePanelIds, panelSignature]);
+  }, [hasExplicitInitialPanels, initialActivePanelIds, panelSignature]);
 
   useEffect(() => {
     if (!enableOnboardingExperience || onboardingDismissed || !hasVisiblePanels) return;
@@ -1162,10 +1162,9 @@ export default function WorkbenchGrid({
     const snapshot = toWorkbenchLayoutSnapshot(preset.id, orderedPanels, panelSizes, activePanelIds);
     persistWorkbenchLayout(layoutPersistenceScopeKey, snapshot);
   }, [
-    activePanelIds,
+    activePanelSignature,
     layoutHydrated,
-    panelMap,
-    panelSizes,
+    panelSizesSignature,
     persistenceEnabled,
     layoutPersistenceScopeKey,
     preset.id,
