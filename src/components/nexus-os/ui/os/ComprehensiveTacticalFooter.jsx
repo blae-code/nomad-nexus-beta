@@ -178,20 +178,20 @@ function StarSystemMap({ markers, playerStatuses, events, operations, controlZon
               ? 'bg-green-500/20 border-green-500/40 text-green-400'
               : 'bg-zinc-900/80 border-zinc-700 text-zinc-500'
           }`}
-          title="Toggle AI tactical overlays"
+          title="Toggle tactical analysis overlays"
         >
           <Activity className="w-3 h-3" />
-          AI
+          ANALYSIS
         </button>
       </div>
 
-      {/* AI Threat Assessment Panel */}
+      {/* Threat Assessment Panel */}
       {tacticalAI && showAIOverlays && (
         <div className="absolute top-2 right-2 z-40 text-[10px] bg-zinc-900/95 border border-orange-500/30 text-zinc-200 px-3 py-2 rounded min-w-48 space-y-1">
           <div className="flex items-center justify-between">
             <span className="font-bold text-orange-400 flex items-center gap-1">
               <Target className="w-3 h-3" />
-              Tactical AI
+              Threat Assessment
             </span>
             <span className={`text-[9px] font-bold ${
               tacticalAI.assessment.overallThreat === 'CRITICAL' ? 'text-red-400' :
@@ -374,7 +374,7 @@ function StarSystemMap({ markers, playerStatuses, events, operations, controlZon
           </g>
         ))}
 
-        {/* AI Tactical Overlays */}
+        {/* Tactical Analysis Overlays */}
         {showAIOverlays && tacticalAI && (
           <g>
             {/* Risk Zones */}
