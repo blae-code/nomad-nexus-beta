@@ -2,23 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
-import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
-import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
-import type {
-  ControlSignal,
-  MapLayerState,
-  TacticalLayerId,
-  TacticalMapDockId,
-  TacticalMapMode,
-} from '../../schemas/mapSchemas';
 import { getRenderableLocationEstimates } from '../../services/locationEstimateService';
 import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
-  type CommsPriority,
-  type MapCommsOverlay,
-  type MapCommsOverlayNet,
 } from '../../services/mapCommsOverlayService';
 import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
@@ -38,12 +26,9 @@ import {
 } from '../../services/intentDraftService';
 import {
   buildMapLogisticsOverlay,
-  type MapLogisticsLane,
 } from '../../services/mapLogisticsOverlayService';
 import {
   buildMapCommandSurface,
-  type MapCommandAlert,
-  type TacticalMacroId,
 } from '../../services/mapCommandSurfaceService';
 import { buildMapTimelineSnapshot } from '../../services/mapTimelineService';
 import {
@@ -69,35 +54,18 @@ import {
   availabilityTone,
   resolveAvailabilityState,
 } from '../state';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import IntelDetailPanel from './IntelDetailPanel';
 import IntentDraftPanel from './IntentDraftPanel';
-import type { RadialMenuItem } from './RadialMenu';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID, TACTICAL_MAP_NODES, findMapNodeForLocation } from './mapBoard';
-import type { MapCommsAnchor, MapRadialState, OpsOverlayNode, RenderablePresence, TacticalMapViewMode } from './mapTypes';
 import MapCommandStrip from './MapCommandStrip';
 import MapStageCanvas from './MapStageCanvas';
-import MapDock, { type MapDockTab } from './MapDock';
+import MapDock from './MapDock';
 import MapActionQueue from './MapActionQueue';
 import MapTimelineReplay from './MapTimelineReplay';
 import MapLayerManager from './MapLayerManager';
 import { MapLegend } from './MapLegend';
 
-interface TacticalMapPanelProps extends Partial<CqbPanelSharedProps> {
-  locationEstimates?: LocationEstimate[];
-  controlSignals?: ControlSignal[];
-  viewerScope?: VisibilityScope;
-  onOpenMapFocus?: () => void;
-  compact?: boolean;
-}
-
-interface CommsOverlayState {
-  loading: boolean;
-  error: string | null;
-  overlay: MapCommsOverlay;
-}
-
-const DEFAULT_VISIBLE_STRATA: Readonly<Record<IntelStratum, boolean>> = Object.freeze({
+const DEFAULT_VISIBLE_STRATA = Object.freeze({
   PERSONAL: true,
   SHARED_COMMONS: true,
   OPERATIONAL: false,
@@ -106,7 +74,7 @@ const DEFAULT_VISIBLE_STRATA: Readonly<Record<IntelStratum, boolean>> = Object.f
 
 const SUMMARY_PAGE_SIZE = 4;
 
-function createLayerState(defaults: Partial<Record<TacticalLayerId, boolean>>): MapLayerState[] {
+function createLayerState(defaults) {
   return [
     { id: 'presence', enabled: defaults.presence !== false },
     { id: 'controlZones', enabled: defaults.controlZones !== false },
@@ -117,7 +85,7 @@ function createLayerState(defaults: Partial<Record<TacticalLayerId, boolean>>): 
   ];
 }
 
-function mapPresence(estimates: LocationEstimate[], viewerScope: VisibilityScope): RenderablePresence[] {
+function mapPresence(estimates, viewerScope) {
   const renderable = getRenderableLocationEstimates(estimates, { viewerScope, includeStale: true });
   return renderable
     .map((estimate) => {
@@ -146,51 +114,51 @@ function formatAge(seconds: number): string {
   return `${minutes}m ${remainder}s`;
 }
 
-function commsPriorityRank(priority: CommsPriority): number {
+function commsPriorityRank(priority) {
   if (priority === 'CRITICAL') return 3;
   if (priority === 'HIGH') return 2;
   return 1;
 }
 
-function commsPriorityColor(priority: CommsPriority): string {
+function commsPriorityColor(priority) {
   if (priority === 'CRITICAL') return 'rgba(214, 83, 64, 0.92)';
   if (priority === 'HIGH') return 'rgba(201, 161, 94, 0.9)';
   return 'rgba(118, 172, 214, 0.84)';
 }
 
-function commsPriorityTone(priority: CommsPriority): 'danger' | 'warning' | 'active' {
+function commsPriorityTone(priority) {
   if (priority === 'CRITICAL') return 'danger';
   if (priority === 'HIGH') return 'warning';
   return 'active';
 }
 
-function commsQualityTone(quality: MapCommsOverlayNet['quality']): 'ok' | 'warning' | 'danger' {
+function commsQualityTone(quality) {
   if (quality === 'CONTESTED') return 'danger';
   if (quality === 'DEGRADED') return 'warning';
   return 'ok';
 }
 
-function logisticsLaneTone(lane: MapLogisticsLane): 'ok' | 'warning' | 'neutral' {
+function logisticsLaneTone(lane) {
   if (lane.stale) return 'neutral';
   if (lane.laneKind === 'AVOID') return 'warning';
   if (lane.laneKind === 'EXTRACT') return 'ok';
   return 'warning';
 }
 
-function signalWeightLabel(signal: ControlSignal, nowMs: number): string {
+function signalWeightLabel(signal, nowMs) {
   const decayed = applyTTLDecay(signal, nowMs);
   if (decayed <= 0) return 'STALE';
   return `${Math.round(decayed * 100)}%`;
 }
 
-function getErrorText(error: unknown): string {
+function getErrorText(error) {
   if (typeof error === 'string') return error;
   if (error instanceof Error) return error.message || '';
   const candidate = (error as any)?.message;
   return typeof candidate === 'string' ? candidate : '';
 }
 
-function isFormTarget(target: EventTarget | null): boolean {
+function isFormTarget(target) {
   if (!target || typeof target !== 'object') return false;
   const node = target as HTMLElement;
   const tag = String((node as any).tagName || '').toLowerCase();
@@ -210,7 +178,7 @@ export default function TacticalMapPanel({
   focusOperationId,
   onOpenCommsWorkspace,
   onOpenOperationFocus,
-}: TacticalMapPanelProps) {
+}) {
   const { aiFeaturesEnabled } = useAuth();
   const aiEnabled = aiFeaturesEnabled !== false;
   useRenderProfiler('TacticalMapPanel');
@@ -218,45 +186,45 @@ export default function TacticalMapPanel({
   const commandSurfaceV2Enabled = isMapCommandSurfaceV2Enabled();
 
   const initialMode = resolveTacticalMapDefaultMode(bridgeId);
-  const [mapMode, setMapMode] = useState<TacticalMapMode>(initialMode);
-  const [layers, setLayers] = useState<MapLayerState[]>(() => createLayerState(mapModeLayerDefaults(initialMode)));
-  const [activeDockId, setActiveDockId] = useState<TacticalMapDockId>(tacticalMapDockIdsForMode(initialMode)[0]);
-  const [visibleStrata, setVisibleStrata] = useState<Record<IntelStratum, boolean>>({ ...DEFAULT_VISIBLE_STRATA });
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const [selectedIntelId, setSelectedIntelId] = useState<string | null>(null);
-  const [activeRadial, setActiveRadial] = useState<MapRadialState | null>(null);
+  const [mapMode, setMapMode] = useState(initialMode);
+  const [layers, setLayers] = useState(() => createLayerState(mapModeLayerDefaults(initialMode)));
+  const [activeDockId, setActiveDockId] = useState(tacticalMapDockIdsForMode(initialMode)[0]);
+  const [visibleStrata, setVisibleStrata] = useState({ ...DEFAULT_VISIBLE_STRATA });
+  const [selectedZoneId, setSelectedZoneId] = useState(null);
+  const [selectedIntelId, setSelectedIntelId] = useState(null);
+  const [activeRadial, setActiveRadial] = useState(null);
   const [intelVersion, setIntelVersion] = useState(0);
   const [draftVersion, setDraftVersion] = useState(0);
-  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftError, setDraftError] = useState(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [commsPriorityFloor, setCommsPriorityFloor] = useState<CommsPriority>('STANDARD');
+  const [commsPriorityFloor, setCommsPriorityFloor] = useState('STANDARD');
   const [showCommsLinks, setShowCommsLinks] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [showLagrange, setShowLagrange] = useState(false);
   const [showOmMarkers, setShowOmMarkers] = useState(false);
   const [aiInferenceLoading, setAiInferenceLoading] = useState(false);
   const [aiInferenceText, setAiInferenceText] = useState('');
-  const [aiInferenceError, setAiInferenceError] = useState<string | null>(null);
+  const [aiInferenceError, setAiInferenceError] = useState(null);
   const [replayWindowMinutes, setReplayWindowMinutes] = useState(30);
   const [replayOffsetMinutes, setReplayOffsetMinutes] = useState(0);
-  const [mapViewMode, setMapViewMode] = useState<TacticalMapViewMode>('SYSTEM');
-  const [busyMacroId, setBusyMacroId] = useState<TacticalMacroId | null>(null);
-  const [macroExecutionMessage, setMacroExecutionMessage] = useState<string | null>(null);
-  const [macroExecutionError, setMacroExecutionError] = useState<string | null>(null);
-  const [remoteMapAlerts, setRemoteMapAlerts] = useState<MapCommandAlert[]>([]);
+  const [mapViewMode, setMapViewMode] = useState('SYSTEM');
+  const [busyMacroId, setBusyMacroId] = useState(null);
+  const [macroExecutionMessage, setMacroExecutionMessage] = useState(null);
+  const [macroExecutionError, setMacroExecutionError] = useState(null);
+  const [remoteMapAlerts, setRemoteMapAlerts] = useState([]);
   const [commsDegraded, setCommsDegraded] = useState(false);
   const [commsRetryDelayMs, setCommsRetryDelayMs] = useState(20_000);
   const [commsRefreshNonce, setCommsRefreshNonce] = useState(0);
   const [quickBroadcastMessage, setQuickBroadcastMessage] = useState('');
-  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState<CommsPriority>('STANDARD');
+  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState('STANDARD');
   const [quickBroadcastBusy, setQuickBroadcastBusy] = useState(false);
-  const [quickBroadcastError, setQuickBroadcastError] = useState<string | null>(null);
+  const [quickBroadcastError, setQuickBroadcastError] = useState(null);
   const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
   const [summaryCommsPage, setSummaryCommsPage] = useState(0);
   const commsRetryDelayRef = useRef(20_000);
 
   const scopedCommsOpId = focusOperationId || opId || '';
-  const [commsState, setCommsState] = useState<CommsOverlayState>({
+  const [commsState, setCommsState] = useState({
     loading: true,
     error: null,
     overlay: createEmptyMapCommsOverlay(scopedCommsOpId),
@@ -296,7 +264,7 @@ export default function TacticalMapPanel({
       {
         mode: mapMode,
         dockId: activeDockId,
-        layerDefaults: layers.reduce<Partial<Record<TacticalLayerId, boolean>>>((acc, layer) => {
+        layerDefaults: layers.reduce((acc, layer) => {
           acc[layer.id] = layer.enabled;
           return acc;
         }, {}),
@@ -366,7 +334,7 @@ export default function TacticalMapPanel({
         const alertsRaw = Array.isArray(response?.actionable_alerts) ? response.actionable_alerts : [];
         setRemoteMapAlerts(
           alertsRaw
-            .map((entry: any) => ({
+            .map((entry) => ({
               id: String(entry?.id || ''),
               level: String(entry?.level || 'LOW').toUpperCase() === 'HIGH'
                 ? 'HIGH'
@@ -375,9 +343,9 @@ export default function TacticalMapPanel({
                   : 'LOW',
               title: String(entry?.title || 'Map alert'),
               detail: String(entry?.detail || ''),
-              source: 'comms' as const,
-            }))
-            .filter((entry: MapCommandAlert) => Boolean(entry.id && entry.title))
+              source: 'comms',
+              }))
+              .filter((entry) => Boolean(entry.id && entry.title))
         );
         if (!commandSurfaceV2Enabled) {
           setRemoteMapAlerts([]);
@@ -416,9 +384,9 @@ export default function TacticalMapPanel({
       active = false;
       window.clearTimeout(timerId);
     };
-  }, [scopedCommsOpId, opId, focusOperationId, operationMapSignature, commandSurfaceV2Enabled, commsRefreshNonce]);
+    }, [scopedCommsOpId, opId, focusOperationId, operationMapSignature, commandSurfaceV2Enabled, commsRefreshNonce]);
 
-  const presence = useMemo(() => mapPresence(locationEstimates, viewerScope), [locationEstimates, viewerScope]);
+    const presence = useMemo(() => mapPresence(locationEstimates, viewerScope), [locationEstimates, viewerScope]);
   const controlZones = useMemo(() => {
     try {
       return computeControlZones(controlSignals, nowMs);
@@ -477,8 +445,8 @@ export default function TacticalMapPanel({
   );
   const visibleCommsLinks = useMemo(() => (showCommsLinks ? commsOverlay.links : []), [showCommsLinks, commsOverlay.links]);
   const commsAnchors = useMemo(() => {
-    const byNetId: Record<string, MapCommsAnchor> = {};
-    const netsByNode = commsOverlay.nets.reduce<Record<string, MapCommsOverlayNet[]>>((acc, net) => {
+    const byNetId = {};
+    const netsByNode = commsOverlay.nets.reduce((acc, net) => {
       if (!acc[net.nodeId]) acc[net.nodeId] = [];
       acc[net.nodeId].push(net);
       return acc;
@@ -608,7 +576,7 @@ export default function TacticalMapPanel({
   );
   const stageCommsLinks = useMemo(() => {
     if (!visibleCommsLinks.length) return [];
-    const netNodeById = commsOverlay.nets.reduce<Record<string, string>>((acc, net) => {
+    const netNodeById = commsOverlay.nets.reduce((acc, net) => {
       acc[net.id] = net.nodeId;
       return acc;
     }, {});
@@ -633,10 +601,10 @@ export default function TacticalMapPanel({
         stateLabel: entry.displayState === 'DECLARED' ? 'DECL' : entry.displayState === 'INFERRED' ? 'INFR' : 'STALE',
         stateTone:
           entry.displayState === 'DECLARED'
-            ? ('ok' as const)
+            ? 'ok'
             : entry.displayState === 'INFERRED'
-              ? ('warning' as const)
-              : ('neutral' as const),
+              ? 'warning'
+              : 'neutral',
         detail: `${entry.nodeId} · ${Math.round(entry.confidence * 100)}% · ${formatAge(entry.ageSeconds)}`,
       })),
     [stagePresence]
@@ -730,25 +698,26 @@ export default function TacticalMapPanel({
   const applyMapMode = (nextMode: TacticalMapMode) => {
     setMapMode(nextMode);
     setLayers(createLayerState(mapModeLayerDefaults(nextMode)));
-    if (!tacticalMapDockIdsForMode(nextMode).includes(activeDockId)) {
-      setActiveDockId(tacticalMapDockIdsForMode(nextMode)[0]);
+    const allowedDocks = tacticalMapDockIdsForMode(nextMode);
+    if (!allowedDocks.includes(activeDockId)) {
+      setActiveDockId(allowedDocks[0]);
     }
     if (nextMode === 'ESSENTIAL') {
       setMapViewMode('SYSTEM');
       setShowLagrange(false);
       setShowOmMarkers(false);
     }
-  };
+    };
 
-  const toggleLayer = (id: TacticalLayerId) => {
+    const toggleLayer = (id) => {
     setLayers((prev) => prev.map((layer) => (layer.id === id ? { ...layer, enabled: !layer.enabled } : layer)));
-  };
+    };
 
-  const applyLayerPreset = (config: Partial<Record<TacticalLayerId, boolean>>) => {
+    const applyLayerPreset = (config) => {
     setLayers((prev) => prev.map((layer) => ({ ...layer, enabled: config[layer.id] !== undefined ? config[layer.id] : layer.enabled })));
-  };
+    };
 
-  const createDraftFromMap = (kind: IntentDraftKind, target: { nodeId?: string; intelId?: string; zoneId?: string }, payload: Record<string, unknown> = {}) => {
+    const createDraftFromMap = (kind, target, payload = {}) => {
     setDraftError(null);
     createDraft({
       kind,
@@ -758,9 +727,9 @@ export default function TacticalMapPanel({
     });
     setDraftVersion((prev) => prev + 1);
     setActiveRadial(null);
-  };
+    };
 
-  const executeMacro = async (macroId: TacticalMacroId) => {
+    const executeMacro = async (macroId) => {
     if (busyMacroId) return;
     setBusyMacroId(macroId);
     setMacroExecutionError(null);
@@ -828,7 +797,7 @@ export default function TacticalMapPanel({
       });
       const answer = response?.data?.answer || response?.data?.response?.answer || response?.data?.summary || response?.data?.response || '';
       setAiInferenceText(String(answer || '').trim() || 'No AI estimate returned for current scoped records.');
-    } catch (error: any) {
+      } catch (error) {
       setAiInferenceError(error?.message || 'AI estimate unavailable.');
     } finally {
       setAiInferenceLoading(false);
@@ -847,25 +816,25 @@ export default function TacticalMapPanel({
       setDraftError(null);
       setDraftVersion((prev) => prev + 1);
       setIntelVersion((prev) => prev + 1);
-    } catch (error: any) {
+      } catch (error) {
       setDraftError(error?.message || 'Failed to confirm draft');
     }
-  };
+    };
 
-  const createNodeRadialItems = (nodeId: string): RadialMenuItem[] => [
+    const createNodeRadialItems = (nodeId) => [
     { id: 'declare-departing', label: 'Declare Departing', icon: 'depart', shortcut: '1', onSelect: () => createDraftFromMap('DECLARE_DEPARTURE', { nodeId }, { notes: `Departing ${nodeId}` }) },
     { id: 'declare-arriving', label: 'Declare Arriving', icon: 'arrive', shortcut: '2', onSelect: () => createDraftFromMap('DECLARE_ARRIVAL', { nodeId }, { notes: `Arriving ${nodeId}` }) },
     { id: 'report-contact', label: 'Report Contact', icon: 'contact', shortcut: '3', tone: 'warning', onSelect: () => createDraftFromMap('REPORT_CONTACT', { nodeId }, { notes: `Contact near ${nodeId}` }) },
     { id: 'drop-intel-pin', label: 'Drop Intel Pin', icon: 'intel-pin', shortcut: '4', onSelect: () => createDraftFromMap('DROP_INTEL', { nodeId }, { intelType: 'PIN', title: 'Intel Pin', body: '' }) },
-  ];
+    ];
 
-  const createIntelRadialItems = (intelId: string): RadialMenuItem[] => [
+    const createIntelRadialItems = (intelId) => [
     { id: 'endorse-intel', label: 'Endorse Intel', icon: 'endorse', shortcut: '1', onSelect: () => createDraftFromMap('ENDORSE_INTEL', { intelId }, { note: '' }) },
     { id: 'challenge-intel', label: 'Challenge Intel', icon: 'challenge', shortcut: '2', tone: 'danger', onSelect: () => createDraftFromMap('CHALLENGE_INTEL', { intelId }, { note: '' }) },
     { id: 'link-op', label: 'Link to Op', icon: 'link-op', shortcut: '3', onSelect: () => createDraftFromMap('LINK_INTEL_TO_OP', { intelId }, { opIds: focusOperationId || opId || '' }) },
-  ];
+    ];
 
-  const createZoneRadialItems = (zoneId: string, nodeId?: string): RadialMenuItem[] => [
+    const createZoneRadialItems = (zoneId, nodeId) => [
     { id: 'attach-intel', label: 'Attach Intel', icon: 'attach-intel', shortcut: '1', onSelect: () => createDraftFromMap('ATTACH_INTEL', { zoneId, nodeId }, { intelType: 'NOTE', title: 'Zone Intel' }) },
     { id: 'request-patrol', label: 'Request Patrol', icon: 'request-patrol', shortcut: '2', tone: 'warning', onSelect: () => createDraftFromMap('REQUEST_PATROL', { zoneId, nodeId }, { notes: 'Patrol requested' }) },
   ];
@@ -875,11 +844,11 @@ export default function TacticalMapPanel({
     if (activeRadial.type === 'node' && activeRadial.nodeId) return createNodeRadialItems(activeRadial.nodeId);
     if (activeRadial.type === 'intel' && activeRadial.intelId) return createIntelRadialItems(activeRadial.intelId);
     if (activeRadial.type === 'zone' && activeRadial.zoneId) return createZoneRadialItems(activeRadial.zoneId, activeRadial.nodeId);
-    return [] as RadialMenuItem[];
-  }, [activeRadial, actorId, opId, focusOperationId]);
+    return [];
+    }, [activeRadial, actorId, opId, focusOperationId]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event) => {
       const action = resolveTacticalMapShortcut({
         key: event.key,
         shiftKey: event.shiftKey,
