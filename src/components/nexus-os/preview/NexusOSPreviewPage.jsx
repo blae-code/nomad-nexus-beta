@@ -458,6 +458,24 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
+  
+  // Metric history for sparklines
+  const [metricHistory, setMetricHistory] = useState({
+    Channels: Array.from({ length: 20 }, (_, i) => ({ value: 8 + Math.random() * 2 - 1 })),
+    Unread: Array.from({ length: 20 }, (_, i) => ({ value: 4 + Math.random() * 3 - 1.5 })),
+    Ping: Array.from({ length: 20 }, (_, i) => ({ value: 24 + Math.random() * 10 - 5 })),
+    Nets: Array.from({ length: 20 }, (_, i) => ({ value: 3 + Math.random() * 0.5 - 0.25 })),
+    Users: Array.from({ length: 20 }, (_, i) => ({ value: 12 + Math.random() * 4 - 2 })),
+    Quality: Array.from({ length: 20 }, (_, i) => ({ value: 98 + Math.random() * 2 - 1 })),
+  });
+
+  const [logEntries, setLogEntries] = useState([
+    { timestamp: Date.now() - 120000, level: 'info', message: 'Text comms channel initialized' },
+    { timestamp: Date.now() - 90000, level: 'success', message: 'Voice net COMMAND connected' },
+    { timestamp: Date.now() - 60000, level: 'warning', message: 'High latency detected on net ALPHA' },
+    { timestamp: Date.now() - 30000, level: 'info', message: '3 new participants joined' },
+    { timestamp: Date.now() - 5000, level: 'success', message: 'All systems operational' },
+  ]);
 
   const lifecycle = useNexusAppLifecycle(FOCUS_APP_CATALOG.map((entry) => entry.id));
   const reducedMotion = useReducedMotion();
@@ -1141,6 +1159,26 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       setClockNowMs(Date.now());
     }, 1000);
     return () => window.clearInterval(timerId);
+  }, []);
+
+  // Update metric history for sparklines
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetricHistory((prev) => {
+        const updated = {};
+        Object.keys(prev).forEach((key) => {
+          const history = [...prev[key]];
+          const lastValue = history[history.length - 1]?.value || 0;
+          const newValue = lastValue + (Math.random() * 2 - 1);
+          history.push({ value: Math.max(0, newValue) });
+          if (history.length > 20) history.shift();
+          updated[key] = history;
+        });
+        return updated;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const systemTimeLabel = useMemo(
