@@ -18,7 +18,11 @@ import {
   ChevronUp,
   Shield,
   ExternalLink,
+  AlertTriangle,
+  Target,
+  Activity,
 } from 'lucide-react';
+import { analyzeTacticalSituation, subscribeToTacticalAI, updateTacticalAI } from '../../services/tacticalAIService';
 
 const FOOTER_HEIGHT_KEY = 'nexus.tacticalFooter.height';
 const DEFAULT_HEIGHT = 320;
@@ -110,34 +114,109 @@ const STAR_SYSTEMS = {
   },
 };
 
-function StarSystemMap({ markers, playerStatuses }) {
+function StarSystemMap({ markers, playerStatuses, events, operations, controlZones }) {
   const [selectedSystem, setSelectedSystem] = useState('stanton');
   const [hoveredBody, setHoveredBody] = useState(null);
+  const [tacticalAI, setTacticalAI] = useState(null);
+  const [showAIOverlays, setShowAIOverlays] = useState(true);
   const svgRef = useRef(null);
 
   const system = STAR_SYSTEMS[selectedSystem];
 
+  // AI Analysis
+  useEffect(() => {
+    const analysis = analyzeTacticalSituation({
+      events: events || [],
+      operations: operations || [],
+      playerStatuses: playerStatuses || [],
+      controlZones: controlZones || [],
+    });
+    setTacticalAI(analysis);
+
+    const unsubscribe = subscribeToTacticalAI((newAnalysis) => {
+      setTacticalAI(newAnalysis);
+    });
+
+    const interval = setInterval(() => {
+      updateTacticalAI({
+        events: events || [],
+        operations: operations || [],
+        playerStatuses: playerStatuses || [],
+        controlZones: controlZones || [],
+      });
+    }, 5000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [events, operations, playerStatuses, controlZones]);
+
   return (
     <div className="h-full relative bg-zinc-950">
-      {/* System Selector */}
-      <div className="absolute top-2 left-2 z-40 flex gap-1">
-        {Object.keys(STAR_SYSTEMS).map((sysKey) => (
-          <button
-            key={sysKey}
-            onClick={() => setSelectedSystem(sysKey)}
-            className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded border transition-colors ${
-              selectedSystem === sysKey
-                ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
-                : 'bg-zinc-900/80 border-zinc-700 text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {STAR_SYSTEMS[sysKey].name}
-          </button>
-        ))}
+      {/* System Selector & AI Controls */}
+      <div className="absolute top-2 left-2 z-40 flex gap-2">
+        <div className="flex gap-1">
+          {Object.keys(STAR_SYSTEMS).map((sysKey) => (
+            <button
+              key={sysKey}
+              onClick={() => setSelectedSystem(sysKey)}
+              className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded border transition-colors ${
+                selectedSystem === sysKey
+                  ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
+                  : 'bg-zinc-900/80 border-zinc-700 text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {STAR_SYSTEMS[sysKey].name}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setShowAIOverlays(!showAIOverlays)}
+          className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded border transition-colors flex items-center gap-1 ${
+            showAIOverlays
+              ? 'bg-green-500/20 border-green-500/40 text-green-400'
+              : 'bg-zinc-900/80 border-zinc-700 text-zinc-500'
+          }`}
+          title="Toggle AI tactical overlays"
+        >
+          <Activity className="w-3 h-3" />
+          AI
+        </button>
       </div>
 
+      {/* AI Threat Assessment Panel */}
+      {tacticalAI && showAIOverlays && (
+        <div className="absolute top-2 right-2 z-40 text-[10px] bg-zinc-900/95 border border-orange-500/30 text-zinc-200 px-3 py-2 rounded min-w-48 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-orange-400 flex items-center gap-1">
+              <Target className="w-3 h-3" />
+              Tactical AI
+            </span>
+            <span className={`text-[9px] font-bold ${
+              tacticalAI.assessment.overallThreat === 'CRITICAL' ? 'text-red-400' :
+              tacticalAI.assessment.overallThreat === 'HIGH' ? 'text-orange-400' :
+              tacticalAI.assessment.overallThreat === 'MODERATE' ? 'text-yellow-400' :
+              'text-green-400'
+            }`}>
+              {tacticalAI.assessment.overallThreat}
+            </span>
+          </div>
+          <div className="text-zinc-400 text-[9px] space-y-0.5 border-t border-zinc-800 pt-1">
+            <div>Threats: {tacticalAI.assessment.activeThreats}</div>
+            <div>Risk Zones: {tacticalAI.assessment.totalRiskZones}</div>
+            <div>Ready: {tacticalAI.assessment.readyUnits} | Engaged: {tacticalAI.assessment.engagedUnits}</div>
+          </div>
+          {tacticalAI.assessment.recommendations.length > 0 && (
+            <div className="text-[9px] text-yellow-300 border-t border-zinc-800 pt-1">
+              {tacticalAI.assessment.recommendations[0]}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Info Panel */}
-      {hoveredBody && (
+      {hoveredBody && !tacticalAI && (
         <div className="absolute top-2 right-2 z-40 text-[10px] bg-zinc-900/95 border border-zinc-700 text-zinc-200 px-3 py-2 rounded min-w-32">
           <div className="font-bold text-orange-400">{hoveredBody.name}</div>
           <div className="text-zinc-500 text-[9px] mt-0.5">{hoveredBody.type || 'lagrange'}</div>
@@ -295,6 +374,67 @@ function StarSystemMap({ markers, playerStatuses }) {
           </g>
         ))}
 
+        {/* AI Tactical Overlays */}
+        {showAIOverlays && tacticalAI && (
+          <g>
+            {/* Risk Zones */}
+            {tacticalAI.riskZones.map((zone, i) => {
+              const x = 50 + Math.random() * 150;
+              const y = 35 + Math.random() * 30;
+              const radius = 8;
+              const color = zone.level === 'critical' ? '#ef4444' : zone.level === 'danger' ? '#f97316' : '#eab308';
+              return (
+                <g key={`risk-${i}`}>
+                  <circle cx={x} cy={y} r={radius} fill={color} opacity="0.08" />
+                  <circle cx={x} cy={y} r={radius} fill="none" stroke={color} strokeWidth="0.3" strokeDasharray="1,1" opacity="0.4" />
+                  <circle cx={x} cy={y} r={radius * 0.5} fill="none" stroke={color} strokeWidth="0.2" opacity="0.6" />
+                </g>
+              );
+            })}
+
+            {/* Threat Predictions */}
+            {tacticalAI.threats.map((threat, i) => {
+              const x = 50 + Math.random() * 150;
+              const y = 35 + Math.random() * 30;
+              const size = 2 + threat.threatLevel * 3;
+              return (
+                <g key={`threat-${i}`} filter="url(#glow)">
+                  <path
+                    d={`M ${x - size} ${y} L ${x} ${y - size} L ${x + size} ${y} L ${x} ${y + size} Z`}
+                    fill="none"
+                    stroke="#dc2626"
+                    strokeWidth="0.4"
+                    opacity="0.7"
+                  />
+                  <circle cx={x} cy={y} r={size * 1.5} fill="none" stroke="#dc2626" strokeWidth="0.2" opacity="0.3" strokeDasharray="0.5,1">
+                    <animate attributeName="r" from={size * 1.5} to={size * 2} dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" from="0.3" to="0" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                </g>
+              );
+            })}
+
+            {/* Unit Placement Suggestions */}
+            {tacticalAI.placements.map((placement, i) => {
+              const x = 50 + Math.random() * 150;
+              const y = 35 + Math.random() * 30;
+              const size = 2;
+              return (
+                <g key={`placement-${i}`}>
+                  <circle cx={x} cy={y} r={size} fill="#22c55e" opacity="0.4" />
+                  <path
+                    d={`M ${x - size * 1.5} ${y} L ${x + size * 1.5} ${y} M ${x} ${y - size * 1.5} L ${x} ${y + size * 1.5}`}
+                    stroke="#22c55e"
+                    strokeWidth="0.3"
+                    opacity="0.6"
+                  />
+                  <circle cx={x} cy={y} r={size * 2} fill="none" stroke="#22c55e" strokeWidth="0.2" opacity="0.3" strokeDasharray="0.5,0.5" />
+                </g>
+              );
+            })}
+          </g>
+        )}
+
         {/* Player Markers - Tactical Icons */}
         {playerStatuses
           .filter((status) => status.system === selectedSystem)
@@ -338,6 +478,23 @@ function StarSystemMap({ markers, playerStatuses }) {
           <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
           <span>Lagrange</span>
         </div>
+        {showAIOverlays && tacticalAI && (
+          <>
+            <div className="border-t border-zinc-700 pt-0.5 mt-0.5" />
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-red-500/40" />
+              <span>Risk Zone</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-2 h-2 text-red-500" />
+              <span>Threat</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Target className="w-2 h-2 text-green-500" />
+              <span>Suggested</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -495,12 +652,36 @@ export default function ComprehensiveTacticalFooter() {
       setLoading(true);
       try {
         const filter = eventId ? { event_id: eventId } : {};
-        const [markerList, statusList] = await Promise.all([
+        const [markerList, statusList, eventsList] = await Promise.all([
           base44.entities.MapMarker?.filter(filter, '-created_date', 100).catch(() => []),
           base44.entities.PlayerStatus?.filter(filter, '-created_date', 50).catch(() => []),
+          base44.entities.Message?.filter({}, '-created_date', 200).catch(() => []),
         ]);
         setMarkers(markerList || []);
         setPlayerStatuses(statusList || []);
+        
+        // Transform messages to events format for AI
+        const transformedEvents = (eventsList || []).map(msg => ({
+          id: msg.id,
+          createdAt: msg.created_date,
+          eventType: 'MESSAGE',
+          channelId: msg.channel_id,
+          authorId: msg.member_profile_id,
+          payload: {
+            content: msg.content,
+            location: msg.channel_id,
+          },
+        }));
+        
+        // Initial AI analysis
+        if (transformedEvents.length > 0) {
+          updateTacticalAI({
+            events: transformedEvents,
+            operations: [],
+            playerStatuses: statusList || [],
+            controlZones: [],
+          });
+        }
       } catch (error) {
         console.error('Tactical footer load failed:', error);
       } finally {
@@ -813,7 +994,13 @@ export default function ComprehensiveTacticalFooter() {
       {/* Tabbed Content - No scrolling needed */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'map' && (
-          <StarSystemMap markers={markers} playerStatuses={playerStatuses} />
+          <StarSystemMap 
+            markers={markers} 
+            playerStatuses={playerStatuses}
+            events={[]}
+            operations={[]}
+            controlZones={[]}
+          />
         )}
 
         {activeTab === 'operation' && (
