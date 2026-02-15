@@ -502,6 +502,17 @@ function StarSystemMap({ markers, playerStatuses, events, operations, controlZon
 }
 
 function EventDashboard({ activeOp, voiceNet }) {
+  const [sectionsCollapsed, setSectionsCollapsed] = React.useState({
+    details: false,
+    metrics: false,
+    voice: false,
+    team: false,
+  });
+
+  const toggleSection = (section) => {
+    setSectionsCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   if (!activeOp?.activeEvent) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-center">
@@ -519,67 +530,105 @@ function EventDashboard({ activeOp, voiceNet }) {
   const participants = activeOp?.participants || [];
 
   return (
-    <div className="flex flex-col h-full p-3 overflow-hidden">
-      {/* Op Title & Status */}
-      <div className="flex-shrink-0 space-y-2 mb-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wide truncate">
-            {event.title}
-          </h4>
-          <NexusBadge tone="active" className="text-[10px]">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Op Details Section */}
+      <div className="flex-shrink-0 border-b border-zinc-800/40">
+        <button
+          onClick={() => toggleSection('details')}
+          className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-800/20 transition-colors"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${sectionsCollapsed.details ? '-rotate-90' : ''}`} />
+            <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wide truncate">
+              {event.title}
+            </h4>
+          </div>
+          <NexusBadge tone="active" className="text-[10px] shrink-0">
             {event.phase || 'ACTIVE'}
           </NexusBadge>
-        </div>
-        {event.description && (
-          <p className="text-[10px] text-zinc-400 line-clamp-2">{event.description}</p>
+        </button>
+        {!sectionsCollapsed.details && event.description && (
+          <div className="px-3 pb-2">
+            <p className="text-[10px] text-zinc-400 line-clamp-2">{event.description}</p>
+          </div>
         )}
       </div>
 
-      <div className="flex-shrink-0 h-px bg-zinc-800/40 mb-3" />
-
-      {/* Quick Metrics */}
-      <div className="flex-shrink-0 grid grid-cols-2 gap-2 mb-3">
-        <div className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800/40">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Participants</div>
-          <div className="text-sm font-bold text-zinc-200">{participants.length}</div>
-        </div>
-        <div className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800/40">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Duration</div>
-          <div className="text-sm font-bold text-zinc-200">
-            {event.start_time ? Math.round((Date.now() - new Date(event.start_time).getTime()) / 60000) : '0'}m
+      {/* Quick Metrics Section */}
+      <div className="flex-shrink-0 border-b border-zinc-800/40">
+        <button
+          onClick={() => toggleSection('metrics')}
+          className="w-full px-3 py-2 flex items-center gap-2 hover:bg-zinc-800/20 transition-colors"
+        >
+          <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${sectionsCollapsed.metrics ? '-rotate-90' : ''}`} />
+          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Metrics</span>
+        </button>
+        {!sectionsCollapsed.metrics && (
+          <div className="px-3 pb-2 grid grid-cols-2 gap-2">
+            <div className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800/40">
+              <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Participants</div>
+              <div className="text-sm font-bold text-zinc-200">{participants.length}</div>
+            </div>
+            <div className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800/40">
+              <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Duration</div>
+              <div className="text-sm font-bold text-zinc-200">
+                {event.start_time ? Math.round((Date.now() - new Date(event.start_time).getTime()) / 60000) : '0'}m
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Voice Net Status */}
+      {/* Voice Net Section */}
       {voiceNet?.activeNetId && (
-        <div className="flex-shrink-0 px-2.5 py-1.5 rounded border border-green-500/30 bg-green-500/5 mb-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Radio className="w-3 h-3 text-green-400" />
-              <span className="text-[10px] text-green-300 font-bold uppercase tracking-wider">{voiceNet.activeNetId}</span>
-            </div>
-            <span className="text-[10px] text-green-400 font-mono">({voiceNet.participants?.length || 0})</span>
-          </div>
-        </div>
-      )}
-
-      {/* Participants List (flex-1 with internal scroll if needed) */}
-      {participants.length > 0 && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="flex-shrink-0 text-[10px] font-bold text-zinc-400 uppercase tracking-wide mb-1.5">Team</div>
-          <div className="flex-1 overflow-y-auto space-y-1">
-            {participants.map((p) => (
-              <div key={p.id} className="flex items-center justify-between text-[10px] px-1.5 py-1 rounded hover:bg-zinc-800/30">
-                <span className="text-zinc-300 truncate">{p.callsign || p.name || 'Unknown'}</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+        <div className="flex-shrink-0 border-b border-zinc-800/40">
+          <button
+            onClick={() => toggleSection('voice')}
+            className="w-full px-3 py-2 flex items-center gap-2 hover:bg-zinc-800/20 transition-colors"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${sectionsCollapsed.voice ? '-rotate-90' : ''}`} />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Voice Comms</span>
+          </button>
+          {!sectionsCollapsed.voice && (
+            <div className="px-3 pb-2">
+              <div className="px-2.5 py-1.5 rounded border border-green-500/30 bg-green-500/5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Radio className="w-3 h-3 text-green-400" />
+                    <span className="text-[10px] text-green-300 font-bold uppercase tracking-wider">{voiceNet.activeNetId}</span>
+                  </div>
+                  <span className="text-[10px] text-green-400 font-mono">({voiceNet.participants?.length || 0})</span>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      <div className="flex-shrink-0 mt-3 pt-2 flex gap-1.5 border-t border-zinc-800/40">
+      {/* Team Section */}
+      {participants.length > 0 && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 border-b border-zinc-800/40">
+          <button
+            onClick={() => toggleSection('team')}
+            className="flex-shrink-0 px-3 py-2 flex items-center gap-2 hover:bg-zinc-800/20 transition-colors"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${sectionsCollapsed.team ? '-rotate-90' : ''}`} />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Team ({participants.length})</span>
+          </button>
+          {!sectionsCollapsed.team && (
+            <div className="flex-1 overflow-y-auto px-3 pb-2 space-y-1">
+              {participants.map((p) => (
+                <div key={p.id} className="flex items-center justify-between text-[10px] px-1.5 py-1 rounded hover:bg-zinc-800/30 transition-colors">
+                  <span className="text-zinc-300 truncate">{p.callsign || p.name || 'Unknown'}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex-shrink-0 p-2 flex gap-1.5 border-t border-zinc-800/40">
         <NexusButton size="sm" intent="subtle" className="flex-1 h-7 text-[10px]">
           <Users className="w-3 h-3" />
         </NexusButton>

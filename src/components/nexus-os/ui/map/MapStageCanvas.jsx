@@ -34,11 +34,6 @@ interface MapStageCanvasProps {
   activeRadial: MapRadialState | null;
   radialItems: RadialMenuItem[];
   hasAnyOverlay: boolean;
-  showAIOverlays?: boolean;
-  aiThreatZones?: any[];
-  aiMovementPredictions?: any[];
-  aiUnitSuggestions?: any[];
-  tacticalAssessment?: any;
   onClearRadial: () => void;
   onSelectZone: (zoneId: string) => void;
   onSelectIntel: (intelId: string) => void;
@@ -157,11 +152,6 @@ export default function MapStageCanvas({
   activeRadial,
   radialItems,
   hasAnyOverlay,
-  showAIOverlays,
-  aiThreatZones,
-  aiMovementPredictions,
-  aiUnitSuggestions,
-  tacticalAssessment,
   onClearRadial,
   onSelectZone,
   onSelectIntel,
@@ -334,7 +324,8 @@ export default function MapStageCanvas({
 
     const pointerX = ((event.clientX - rect.left) / rect.width) * 100;
     const pointerY = ((event.clientY - rect.top) / rect.height) * 100;
-    const zoomMultiplier = event.deltaY > 0 ? 0.9 : 1.1;
+    // Smooth zoom with smaller increments
+    const zoomMultiplier = event.deltaY > 0 ? 0.95 : 1.05;
     const nextZoom = clamp(zoom * zoomMultiplier, 0.8, 2.2);
     const worldX = viewportCenter.x + (pointerX - 50) / zoom;
     const worldY = viewportCenter.y + (pointerY - 50) / zoom;
@@ -404,6 +395,13 @@ export default function MapStageCanvas({
           <pattern id="zone-contested-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(201,152,96,0.3)" strokeWidth="1" />
           </pattern>
+          <filter id="ai-overlay-glow">
+            <feGaussianBlur stdDeviation="0.4" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
 
         <rect x="0" y="0" width="100" height="100" fill="rgba(5, 10, 13, 0.94)" />
@@ -861,57 +859,6 @@ export default function MapStageCanvas({
               );
             })
           : null}
-
-        {/* AI Threat Zones Overlay */}
-        {showAIOverlays && aiThreatZones?.map((zone) => {
-          const node = visibleMapNodes.find((n) => n.id === zone.location || n.label === zone.location);
-          if (!node) return null;
-          return (
-            <g key={zone.id}>
-              <circle cx={node.x} cy={node.y} r={zone.radius / 10} fill={zone.color} stroke={zone.level === 'critical' ? 'rgba(239, 68, 68, 0.8)' : zone.level === 'danger' ? 'rgba(251, 146, 60, 0.7)' : 'rgba(234, 179, 8, 0.6)'} strokeWidth={0.3} strokeDasharray="0.6,0.4">
-                <animate attributeName="r" values={`${zone.radius / 10};${zone.radius / 10 + 1};${zone.radius / 10}`} dur="3s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.6;0.9;0.6" dur="3s" repeatCount="indefinite" />
-              </circle>
-              <text x={node.x} y={node.y - zone.radius / 10 - 1.2} fill="rgba(239, 68, 68, 0.95)" fontSize={1.2} fontWeight={700} textAnchor="middle">
-                ⚠ {zone.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* AI Movement Predictions */}
-        {showAIOverlays && aiMovementPredictions?.map((pred) => {
-          const node = visibleMapNodes.find((n) => n.id === pred.location || n.label === pred.location);
-          if (!node || pred.threatLevel < 0.3) return null;
-          return (
-            <g key={pred.id}>
-              <path d={`M ${node.x - 2} ${node.y} L ${node.x + 2} ${node.y} M ${node.x} ${node.y - 2} L ${node.x} ${node.y + 2}`} stroke="rgba(239, 68, 68, 0.9)" strokeWidth={0.4} />
-              <circle cx={node.x} cy={node.y} r={1.4} fill="none" stroke="rgba(239, 68, 68, 0.7)" strokeWidth={0.3}>
-                <animate attributeName="r" values="1.4;2.4;1.4" dur="2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite" />
-              </circle>
-              <text x={node.x} y={node.y + 3.5} fill="rgba(239, 68, 68, 0.95)" fontSize={1} fontWeight={700} textAnchor="middle">
-                THREAT {Math.round(pred.confidence * 100)}%
-              </text>
-            </g>
-          );
-        })}
-
-        {/* AI Unit Placement Suggestions */}
-        {showAIOverlays && aiUnitSuggestions?.map((suggestion) => {
-          const node = visibleMapNodes.find((n) => n.id === suggestion.location || n.label?.includes(suggestion.location));
-          if (!node || suggestion.priority < 0.4) return null;
-          return (
-            <g key={suggestion.id}>
-              <polygon points={`${node.x},${node.y - 1.8} ${node.x + 1.6},${node.y + 0.9} ${node.x - 1.6},${node.y + 0.9}`} fill="rgba(34, 197, 94, 0.25)" stroke="rgba(34, 197, 94, 0.8)" strokeWidth={0.3}>
-                <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.5s" repeatCount="indefinite" />
-              </polygon>
-              <text x={node.x} y={node.y + 3.8} fill="rgba(34, 197, 94, 0.95)" fontSize={1} fontWeight={700} textAnchor="middle">
-                +{suggestion.suggestedUnits} UNITS
-              </text>
-            </g>
-          );
-        })}
         </g>
       </svg>
 
@@ -936,9 +883,9 @@ export default function MapStageCanvas({
           className="nexus-map-zoom-btn"
           onClick={(event) => {
             event.stopPropagation();
-            updateZoom((prev) => prev + 0.15);
+            updateZoom((prev) => prev + 0.1);
           }}
-          title="Zoom in"
+          title="Zoom in (or scroll up)"
         >
           +
         </button>
@@ -947,9 +894,9 @@ export default function MapStageCanvas({
           className="nexus-map-zoom-btn"
           onClick={(event) => {
             event.stopPropagation();
-            updateZoom((prev) => prev - 0.15);
+            updateZoom((prev) => prev - 0.1);
           }}
-          title="Zoom out"
+          title="Zoom out (or scroll down)"
         >
           -
         </button>
@@ -961,7 +908,7 @@ export default function MapStageCanvas({
             setZoom(1);
             setViewportCenter({ x: 50, y: 50 });
           }}
-          title="Reset zoom"
+          title="Reset zoom and position"
         >
           R
         </button>
