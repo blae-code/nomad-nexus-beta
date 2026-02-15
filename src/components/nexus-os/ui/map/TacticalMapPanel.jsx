@@ -22,7 +22,6 @@ import {
 } from '../../services/mapCommsOverlayService';
 import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
-import { analyzeTacticalSituation, subscribeToTacticalAI } from '../../services/tacticalAIService';
 import {
   addComment,
   listIntelComments,
@@ -253,8 +252,6 @@ export default function TacticalMapPanel({
   const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
   const [summaryCommsPage, setSummaryCommsPage] = useState(0);
   const commsRetryDelayRef = useRef(20_000);
-  const [tacticalAI, setTacticalAI] = useState(null);
-  const [showAIOverlays, setShowAIOverlays] = useState(true);
 
   const scopedCommsOpId = focusOperationId || opId || '';
   const [commsState, setCommsState] = useState<CommsOverlayState>({
@@ -271,11 +268,9 @@ export default function TacticalMapPanel({
   useEffect(() => {
     const unsubscribeIntel = subscribeIntelObjects(() => setIntelVersion((prev) => prev + 1));
     const unsubscribeDrafts = subscribeIntentDrafts(() => setDraftVersion((prev) => prev + 1));
-    const unsubscribeTacticalAI = subscribeToTacticalAI((analysis) => setTacticalAI(analysis));
     return () => {
       unsubscribeIntel();
       unsubscribeDrafts();
-      unsubscribeTacticalAI();
     };
   }, []);
 
@@ -678,15 +673,6 @@ export default function TacticalMapPanel({
     () => computeMapInference({ controlZones, commsOverlay, intelObjects: visibleIntel, operations, focusOperationId: focusOperationId || opId || '', nowMs }),
     [controlZones, commsOverlay, visibleIntel, operations, focusOperationId, opId, nowMs]
   );
-
-  // Real-time tactical AI overlays
-  const aiThreatZones = useMemo(() => (tacticalAI?.riskZones || []).map((zone) => ({
-    ...zone,
-    color: zone.level === 'critical' ? 'rgba(239, 68, 68, 0.25)' : zone.level === 'danger' ? 'rgba(251, 146, 60, 0.2)' : 'rgba(234, 179, 8, 0.15)',
-  })), [tacticalAI]);
-
-  const aiMovementPredictions = useMemo(() => tacticalAI?.threats || [], [tacticalAI]);
-  const aiUnitSuggestions = useMemo(() => tacticalAI?.placements || [], [tacticalAI]);
   const localCommandSurface = useMemo(() => buildMapCommandSurface({ mapInference, commsOverlay, nowMs }), [mapInference, commsOverlay, nowMs]);
   const commandSurfaceAlerts = useMemo(() => [...remoteMapAlerts, ...localCommandSurface.alerts].slice(0, 10), [remoteMapAlerts, localCommandSurface.alerts]);
   const timeline = useMemo(
@@ -1159,13 +1145,13 @@ export default function TacticalMapPanel({
         <button
           type="button"
           onClick={() => setShowAIOverlays(!showAIOverlays)}
-          className={`px-2 py-1 rounded text-xs ${showAIOverlays ? 'bg-orange-500/20 text-orange-300' : 'bg-zinc-800 text-zinc-500'}`}
+          className={`px-2 py-1 rounded text-xs transition-colors ${showAIOverlays ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'}`}
         >
           {showAIOverlays ? 'ON' : 'OFF'}
         </button>
       </div>
-      {tacticalAI?.assessment && (
-        <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+      {tacticalAI?.assessment && showAIOverlays && (
+        <div className="rounded border border-orange-500/30 bg-zinc-950/70 p-2 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs text-zinc-400">Threat Level</span>
             <NexusBadge tone={tacticalAI.assessment.overallThreat === 'CRITICAL' ? 'danger' : tacticalAI.assessment.overallThreat === 'HIGH' ? 'warning' : 'ok'}>
@@ -1179,9 +1165,9 @@ export default function TacticalMapPanel({
             <div>Engaged: {tacticalAI.assessment.engagedUnits}</div>
           </div>
           {tacticalAI.assessment.recommendations?.length > 0 && (
-            <div className="space-y-1 mt-2">
+            <div className="space-y-1 mt-2 pt-2 border-t border-zinc-800">
               <span className="text-xs text-zinc-400">Recommendations:</span>
-              {tacticalAI.assessment.recommendations.map((rec, idx) => (
+              {tacticalAI.assessment.recommendations.slice(0, 2).map((rec, idx) => (
                 <div key={idx} className="text-[11px] text-zinc-300 bg-zinc-900/60 rounded px-2 py-1">• {rec}</div>
               ))}
             </div>

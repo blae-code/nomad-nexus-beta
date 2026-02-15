@@ -370,7 +370,7 @@ export default function MapStageCanvas({
   return (
     <div
       ref={stageRef}
-      className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage ${
+      className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage transition-transform duration-100 ${
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
       data-dragging={isDragging ? 'true' : 'false'}
