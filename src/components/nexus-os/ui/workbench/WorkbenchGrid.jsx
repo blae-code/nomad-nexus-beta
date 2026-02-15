@@ -335,7 +335,18 @@ export default function WorkbenchGrid({
   );
   const maxRenderableRowSpan = viewportSize.height <= 980 ? 2 : 3;
   const effectiveRowHeightPx = useMemo(() => {
-    const budget = Math.max(340, viewportSize.height - 280);
+    // Get footer height from localStorage or use default
+    const footerHeight = (() => {
+      try {
+        const saved = localStorage.getItem('nexus.tacticalFooter.height');
+        return saved ? Number(saved) : 320;
+      } catch {
+        return 320;
+      }
+    })();
+    
+    // Budget accounts for header (56px), padding, and the tactical footer
+    const budget = Math.max(340, viewportSize.height - footerHeight - 140);
     const floor = viewportSize.height <= 800 ? 132 : viewportSize.height <= 940 ? 148 : 164;
     return Math.max(floor, Math.min(preset.minRowHeightPx, Math.floor(budget / maxRenderableRowSpan)));
   }, [maxRenderableRowSpan, preset.minRowHeightPx, viewportSize.height]);
