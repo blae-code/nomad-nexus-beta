@@ -43,6 +43,7 @@ import {
 import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import ComprehensiveTacticalFooter from '../ui/os/ComprehensiveTacticalFooter';
+import TacticalSidePanel from '../ui/panels/TacticalSidePanel';
 import { getActiveChannelId } from '../services/channelContextService';
 import { getCqbEventDiagnostics, listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
@@ -472,6 +473,16 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
+  const [leftPanelMetrics, setLeftPanelMetrics] = useState([
+    { label: 'Channels', value: '8' },
+    { label: 'Unread', value: '4' },
+    { label: 'Ping', value: '24ms' },
+  ]);
+  const [rightPanelMetrics, setRightPanelMetrics] = useState([
+    { label: 'Nets', value: '3' },
+    { label: 'Users', value: '12' },
+    { label: 'Quality', value: '98%' },
+  ]);
 
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
@@ -1281,28 +1292,29 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       {/* Main Content Area with Panels */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Text Comms (Full Height) */}
-        <aside
-          className="nexus-surface border-r border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col"
-          style={{ width: leftPanelCollapsed ? 0 : leftPanelWidth }}
+        <TacticalSidePanel
+          side="left"
+          width={leftPanelWidth}
+          collapsed={leftPanelCollapsed}
+          onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+          onResize={() => setIsResizingLeft(true)}
+          isResizing={isResizingLeft}
+          title="Text Comms"
+          icon={Radio}
+          statusMetrics={leftPanelMetrics}
+          onMaximize={() => setLeftPanelWidth(600)}
+          onMinimize={() => setLeftPanelWidth(280)}
         >
-          <div className="flex-1 overflow-hidden">
-            <CommsHub
-              operations={operations}
-              focusOperationId={focusOperationId}
-              activeAppId={activeAppLabel}
-              online={online}
-              bridgeId={bridgeId}
-              isExpanded={!leftPanelCollapsed}
-              onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-            />
-          </div>
-          {!leftPanelCollapsed && (
-            <div
-              className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors z-10"
-              onMouseDown={() => setIsResizingLeft(true)}
-            />
-          )}
-        </aside>
+          <CommsHub
+            operations={operations}
+            focusOperationId={focusOperationId}
+            activeAppId={activeAppLabel}
+            online={online}
+            bridgeId={bridgeId}
+            isExpanded={!leftPanelCollapsed}
+            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+          />
+        </TacticalSidePanel>
 
         {/* Main Content + Footer Wrapper */}
         <div className="flex-1 overflow-hidden flex flex-col">
@@ -1341,30 +1353,31 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </div>
 
         {/* Right Panel - Voice Comms (Full Height) */}
-        <aside
-          className="nexus-surface border-l border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col"
-          style={{ width: rightPanelCollapsed ? 0 : rightPanelWidth }}
+        <TacticalSidePanel
+          side="right"
+          width={rightPanelWidth}
+          collapsed={rightPanelCollapsed}
+          onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          onResize={() => setIsResizingRight(true)}
+          isResizing={isResizingRight}
+          title="Voice Comms"
+          icon={Signal}
+          statusMetrics={rightPanelMetrics}
+          onMaximize={() => setRightPanelWidth(600)}
+          onMinimize={() => setRightPanelWidth(280)}
         >
-          <div className="flex-1 overflow-hidden">
-            <VoiceCommsRail
-              voiceNets={[
-                { id: 'net1', code: 'COMMAND', label: 'Command Net' },
-                { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
-                { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
-              ]}
-              activeNetId="COMMAND"
-              participants={activeOp?.participants || []}
-              isExpanded={!rightPanelCollapsed}
-              onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-            />
-          </div>
-          {!rightPanelCollapsed && (
-            <div
-              className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors z-10"
-              onMouseDown={() => setIsResizingRight(true)}
-            />
-          )}
-        </aside>
+          <VoiceCommsRail
+            voiceNets={[
+              { id: 'net1', code: 'COMMAND', label: 'Command Net' },
+              { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
+              { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
+            ]}
+            activeNetId="COMMAND"
+            participants={activeOp?.participants || []}
+            isExpanded={!rightPanelCollapsed}
+            onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          />
+        </TacticalSidePanel>
       </div>
 
       <CommandFocus
