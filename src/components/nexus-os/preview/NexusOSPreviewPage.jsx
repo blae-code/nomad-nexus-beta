@@ -1263,7 +1263,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
       ]}
       activeNetId="COMMAND"
-      participants={activeOp?.participants || []}
+      participants={[]}
       isExpanded={voiceRailExpanded}
       onToggleExpand={() => setVoiceRailExpanded(!voiceRailExpanded)}
       />
