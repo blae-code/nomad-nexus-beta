@@ -1,50 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { ControlZone, TacticalLayerId } from '../../schemas/mapSchemas';
-import type { IntelRenderable } from '../../services/intelService';
-import type { MapCommsOverlay, MapCommsOverlayCallout, MapCommsOverlayLink } from '../../services/mapCommsOverlayService';
-import type { MapLogisticsLane, MapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
-import type {
-  MapRadialState,
-  MapCommsAnchor,
-  OpsOverlayNode,
-  RenderablePresence,
-  TacticalRenderableNode,
-  TacticalMapViewMode,
-} from './mapTypes';
-import RadialMenu, { type RadialMenuItem } from './RadialMenu';
+import RadialMenu from './RadialMenu';
 import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
 
-interface MapStageCanvasProps {
-  layerEnabled: (id: TacticalLayerId) => boolean;
-  opsOverlay: OpsOverlayNode[];
-  controlZones: ControlZone[];
-  visibleCommsLinks: MapCommsOverlayLink[];
-  commsOverlay: MapCommsOverlay;
-  commsAnchors: Record<string, MapCommsAnchor>;
-  visibleCommsCallouts: MapCommsOverlayCallout[];
-  logisticsOverlay: MapLogisticsOverlay;
-  visibleMapNodes: TacticalRenderableNode[];
-  presence: RenderablePresence[];
-  visibleIntel: IntelRenderable[];
-  mapViewMode: TacticalMapViewMode;
-  selectedNodeId?: string;
-  selectedNodeLabel?: string;
-  activeRadial: MapRadialState | null;
-  radialItems: RadialMenuItem[];
-  hasAnyOverlay: boolean;
-  onClearRadial: () => void;
-  onSelectZone: (zoneId: string) => void;
-  onSelectIntel: (intelId: string) => void;
-  onSetActiveRadial: (value: MapRadialState | null) => void;
-}
-
-function clamp(value: number, min: number, max: number): number {
+function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function clampViewportCenter(center: { x: number; y: number }, zoom: number): { x: number; y: number } {
+function clampViewportCenter(center, zoom) {
   const boundedZoom = clamp(zoom, 0.8, 2.2);
   const halfSpan = 50 / boundedZoom;
   return {
@@ -53,51 +17,51 @@ function clampViewportCenter(center: { x: number; y: number }, zoom: number): { 
   };
 }
 
-function confidenceBandToStroke(confidence: IntelRenderable['confidence']): number {
+function confidenceBandToStroke(confidence) {
   if (confidence === 'HIGH') return 0.65;
   if (confidence === 'MED') return 0.5;
   return 0.42;
 }
 
-function confidenceBandToColor(confidence: IntelRenderable['confidence']): string {
+function confidenceBandToColor(confidence) {
   if (confidence === 'HIGH') return 'rgba(118, 201, 140, 0.9)';
   if (confidence === 'MED') return 'rgba(201, 161, 94, 0.86)';
   return 'rgba(189, 104, 87, 0.82)';
 }
 
-function glyphFillForIntelType(type: IntelRenderable['type']): string {
+function glyphFillForIntelType(type) {
   if (type === 'PIN') return 'rgba(84, 146, 196, 0.24)';
   if (type === 'MARKER') return 'rgba(98, 162, 138, 0.22)';
   return 'rgba(122, 142, 164, 0.22)';
 }
 
-function keyForIntel(intel: IntelRenderable): string {
+function keyForIntel(intel) {
   return `${intel.id}:${intel.updatedAt}`;
 }
 
-function intelTooltip(intel: IntelRenderable): string {
+function intelTooltip(intel) {
   return `${intel.title} | ${intel.type} | ${intel.stratum} | ${intel.confidence} | ttl ${intel.ttl.remainingSeconds}s`;
 }
 
-function stateColor(state: RenderablePresence['displayState']): string {
+function stateColor(state) {
   if (state === 'DECLARED') return 'rgba(118, 201, 140, 0.86)';
   if (state === 'INFERRED') return 'rgba(201, 161, 94, 0.85)';
   return 'rgba(135, 128, 122, 0.72)';
 }
 
-function confidenceColor(confidenceBand: RenderablePresence['confidenceBand']): string {
+function confidenceColor(confidenceBand) {
   if (confidenceBand === 'HIGH') return 'rgba(118, 201, 140, 0.9)';
   if (confidenceBand === 'MED') return 'rgba(201, 161, 94, 0.85)';
   return 'rgba(189, 104, 87, 0.85)';
 }
 
-function commsPriorityColor(priority: string): string {
+function commsPriorityColor(priority) {
   if (priority === 'CRITICAL') return 'rgba(214, 83, 64, 0.92)';
   if (priority === 'HIGH') return 'rgba(201, 161, 94, 0.9)';
   return 'rgba(118, 172, 214, 0.84)';
 }
 
-function logisticsLaneColor(lane: MapLogisticsLane): string {
+function logisticsLaneColor(lane) {
   if (lane.stale) return 'rgba(126, 119, 112, 0.45)';
   if (lane.laneKind === 'EXTRACT') return 'rgba(118, 201, 140, 0.88)';
   if (lane.laneKind === 'HOLD') return 'rgba(201, 161, 94, 0.86)';
@@ -106,7 +70,7 @@ function logisticsLaneColor(lane: MapLogisticsLane): string {
   return 'rgba(118, 172, 214, 0.88)';
 }
 
-function nodeStrokeColor(category: string | undefined, isSystem: boolean): string {
+function nodeStrokeColor(category, isSystem) {
   if (isSystem) return 'rgba(235, 224, 146, 0.86)';
   if (category === 'planet') return 'rgba(142, 206, 172, 0.74)';
   if (category === 'moon') return 'rgba(154, 170, 186, 0.62)';
@@ -116,7 +80,7 @@ function nodeStrokeColor(category: string | undefined, isSystem: boolean): strin
   return 'rgba(124, 188, 160, 0.62)';
 }
 
-function nodeFillColor(category: string | undefined, isSystem: boolean): string {
+function nodeFillColor(category, isSystem) {
   if (isSystem) return 'rgba(214, 168, 94, 0.26)';
   if (category === 'planet') return 'rgba(70, 132, 108, 0.27)';
   if (category === 'moon') return 'rgba(74, 92, 104, 0.24)';
@@ -126,7 +90,7 @@ function nodeFillColor(category: string | undefined, isSystem: boolean): string 
   return 'rgba(64, 92, 82, 0.2)';
 }
 
-function shouldRenderLabel(node: TacticalRenderableNode, viewMode: TacticalMapViewMode, selectedNodeId?: string): boolean {
+function shouldRenderLabel(node, viewMode, selectedNodeId) {
   if (selectedNodeId && node.id === selectedNodeId) return true;
   if (node.kind === 'system' || node.category === 'planet') return true;
   if (viewMode === 'LOCAL') return node.category !== 'orbital-marker';
@@ -156,14 +120,14 @@ export default function MapStageCanvas({
   onSelectZone,
   onSelectIntel,
   onSetActiveRadial,
-}: MapStageCanvasProps) {
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const minimapRef = useRef<HTMLDivElement | null>(null);
-  const dragStateRef = useRef<{ pointerId: number; clientX: number; clientY: number } | null>(null);
+}) {
+  const stageRef = useRef(null);
+  const minimapRef = useRef(null);
+  const dragStateRef = useRef(null);
   const recenterKeyRef = useRef('');
   const [zoom, setZoom] = useState(1);
   const [viewportCenter, setViewportCenter] = useState({ x: 50, y: 50 });
-  const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [cursorCoords, setCursorCoords] = useState({ x: 50, y: 50 });
   const [isPointerActive, setIsPointerActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
@@ -246,7 +210,7 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x: node.x, y: node.y }, zoom));
   }, [selectedNodeId, mapViewMode, zoom]);
 
-  const handleCursorUpdate: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handleCursorUpdate = (event) => {
     if (!stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -259,9 +223,9 @@ export default function MapStageCanvas({
     setCursorCoords({ x, y });
   };
 
-  const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handlePointerDown = (event) => {
     if (event.button !== 0) return;
-    const target = event.target as HTMLElement;
+    const target = event.target;
     if (target.closest('[data-map-interactive="true"]')) return;
     if (!stageRef.current) return;
     stageRef.current.setPointerCapture(event.pointerId);
@@ -274,7 +238,7 @@ export default function MapStageCanvas({
     onClearRadial();
   };
 
-  const handlePointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handlePointerMove = (event) => {
     handleCursorUpdate(event);
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId || !stageRef.current) return;
@@ -300,7 +264,7 @@ export default function MapStageCanvas({
     );
   };
 
-  const handlePointerUp: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handlePointerUp = (event) => {
     if (stageRef.current && stageRef.current.hasPointerCapture(event.pointerId)) {
       stageRef.current.releasePointerCapture(event.pointerId);
     }
@@ -308,7 +272,7 @@ export default function MapStageCanvas({
     setIsDragging(false);
   };
 
-  const updateZoom = (updater: (value: number) => number) => {
+  const updateZoom = (updater) => {
     setZoom((prev) => {
       const next = clamp(updater(prev), 0.8, 2.2);
       setViewportCenter((center) => clampViewportCenter(center, next));
@@ -316,7 +280,7 @@ export default function MapStageCanvas({
     });
   };
 
-  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+  const handleWheel = (event) => {
     event.preventDefault();
     if (!stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
@@ -324,8 +288,7 @@ export default function MapStageCanvas({
 
     const pointerX = ((event.clientX - rect.left) / rect.width) * 100;
     const pointerY = ((event.clientY - rect.top) / rect.height) * 100;
-    // Smooth zoom with smaller increments
-    const zoomMultiplier = event.deltaY > 0 ? 0.95 : 1.05;
+    const zoomMultiplier = event.deltaY > 0 ? 0.9 : 1.1;
     const nextZoom = clamp(zoom * zoomMultiplier, 0.8, 2.2);
     const worldX = viewportCenter.x + (pointerX - 50) / zoom;
     const worldY = viewportCenter.y + (pointerY - 50) / zoom;
@@ -342,7 +305,7 @@ export default function MapStageCanvas({
     );
   };
 
-  const handleMinimapPointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handleMinimapPointerDown = (event) => {
     event.stopPropagation();
     if (!minimapRef.current) return;
     const rect = minimapRef.current.getBoundingClientRect();
@@ -352,7 +315,7 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x, y }, zoom));
   };
 
-  const radialAnchorFromPointer = (clientX: number, clientY: number): { x: number; y: number } => {
+  const radialAnchorFromPointer = (clientX, clientY) => {
     if (!stageRef.current) return { x: 50, y: 50 };
     const rect = stageRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return { x: 50, y: 50 };
@@ -362,7 +325,7 @@ export default function MapStageCanvas({
     };
   };
 
-  const radialAnchorFromNode = (x: number, y: number): { x: number; y: number } => ({
+  const radialAnchorFromNode = (x, y) => ({
     x: clamp(50 + (x - viewportCenter.x) * zoom, 6, 94),
     y: clamp(50 + (y - viewportCenter.y) * zoom, 6, 94),
   });
@@ -370,7 +333,7 @@ export default function MapStageCanvas({
   return (
     <div
       ref={stageRef}
-      className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage transition-transform duration-100 ${
+      className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage ${
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
       data-dragging={isDragging ? 'true' : 'false'}
@@ -395,13 +358,6 @@ export default function MapStageCanvas({
           <pattern id="zone-contested-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(201,152,96,0.3)" strokeWidth="1" />
           </pattern>
-          <filter id="ai-overlay-glow">
-            <feGaussianBlur stdDeviation="0.4" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
 
         <rect x="0" y="0" width="100" height="100" fill="rgba(5, 10, 13, 0.94)" />
@@ -883,9 +839,9 @@ export default function MapStageCanvas({
           className="nexus-map-zoom-btn"
           onClick={(event) => {
             event.stopPropagation();
-            updateZoom((prev) => prev + 0.1);
+            updateZoom((prev) => prev + 0.15);
           }}
-          title="Zoom in (or scroll up)"
+          title="Zoom in"
         >
           +
         </button>
@@ -894,9 +850,9 @@ export default function MapStageCanvas({
           className="nexus-map-zoom-btn"
           onClick={(event) => {
             event.stopPropagation();
-            updateZoom((prev) => prev - 0.1);
+            updateZoom((prev) => prev - 0.15);
           }}
-          title="Zoom out (or scroll down)"
+          title="Zoom out"
         >
           -
         </button>
@@ -908,7 +864,7 @@ export default function MapStageCanvas({
             setZoom(1);
             setViewportCenter({ x: 50, y: 50 });
           }}
-          title="Reset zoom and position"
+          title="Reset zoom"
         >
           R
         </button>
