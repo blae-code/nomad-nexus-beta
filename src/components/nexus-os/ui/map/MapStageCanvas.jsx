@@ -171,7 +171,7 @@ export default function MapStageCanvas({
             dashed: node.category !== 'moon',
           };
         })
-        .filter(Boolean) as Array<{ id: string; x: number; y: number; radius: number; dashed: boolean }>,
+        .filter(Boolean),
     [visibleMapNodes, mapViewMode]
   );
   const mapNodeIdSet = useMemo(() => new Set(visibleMapNodes.map((node) => node.id)), [visibleMapNodes]);
