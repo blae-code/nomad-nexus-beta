@@ -3,6 +3,7 @@ import { MapContainer, Marker, CircleMarker, Tooltip, useMapEvents } from 'react
 import L from 'leaflet';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { updateTacticalAI } from '../../services/tacticalAIService';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { NexusButton, NexusBadge } from '../primitives';
