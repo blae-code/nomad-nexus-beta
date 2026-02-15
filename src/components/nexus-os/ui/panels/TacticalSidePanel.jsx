@@ -30,7 +30,7 @@ export default function TacticalSidePanel({
   return (
     <aside
       className={`nexus-surface border-${isLeft ? 'r' : 'l'} border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
-      style={{ width: collapsed ? 0 : width }}
+      style={{ width: collapsed ? 48 : width }}
     >
       {/* Status Bar - Top */}
       {!collapsed && (
