@@ -120,13 +120,17 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
       isExpanded ? 'w-full' : 'w-12'
     }`}>
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-zinc-700/40 px-3 py-2">
+      <div className="nx-comms-header border-b border-zinc-700/40 p-3">
         <div className="flex items-center justify-between">
           {isExpanded ? (
             <>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-orange-500" />
+                <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
+              </div>
               <div className="flex items-center gap-1">
                 <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
-                  <Settings className="w-3.5 h-3.5" />
+                  <Settings className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
@@ -134,12 +138,8 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
                   className="text-zinc-500 hover:text-orange-500 transition-colors"
                   title="Collapse"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
-                <MessageSquare className="w-4 h-4 text-orange-500" />
               </div>
             </>
           ) : (
@@ -149,7 +149,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
               className="w-full flex items-center justify-center text-zinc-500 hover:text-orange-500 transition-colors"
               title="Expand"
             >
-              <MessageSquare className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -162,7 +162,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
         <div>
           <button
             onClick={() => toggleCategory('tactical')}
-            className="w-full flex items-center gap-1 px-2 py-1 text-xs font-bold text-zinc-400 hover:text-zinc-200 uppercase tracking-widest transition-colors"
+            className="w-full flex items-center gap-1 px-1.5 py-1 text-[10px] font-bold text-zinc-500 hover:text-zinc-200 uppercase tracking-wider transition-colors"
           >
             <ChevronDown
               className={`w-3 h-3 transition-transform ${expandedCategories.tactical ? '' : '-rotate-90'}`}
@@ -170,7 +170,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
             Tactical
           </button>
           {expandedCategories.tactical && (
-            <div className="space-y-1 ml-2">
+            <div className="space-y-1">
               {channels.tactical.map((ch) => (
                 <ChannelButton
                   key={ch.id}
@@ -188,7 +188,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
           <div>
             <button
               onClick={() => toggleCategory('operations')}
-              className="w-full flex items-center gap-1 px-2 py-1 text-xs font-bold text-zinc-400 hover:text-zinc-200 uppercase tracking-widest transition-colors"
+              className="w-full flex items-center gap-1 px-1.5 py-1 text-[10px] font-bold text-zinc-500 hover:text-zinc-200 uppercase tracking-wider transition-colors"
             >
               <ChevronDown
                 className={`w-3 h-3 transition-transform ${expandedCategories.operations ? '' : '-rotate-90'}`}
@@ -196,7 +196,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
               Operations
             </button>
             {expandedCategories.operations && (
-              <div className="space-y-1 ml-2">
+              <div className="space-y-1">
                 {channels.operational.map((ch) => (
                   <ChannelButton
                     key={ch.id}
@@ -214,7 +214,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
         <div>
           <button
             onClick={() => toggleCategory('social')}
-            className="w-full flex items-center gap-1 px-2 py-1 text-xs font-bold text-zinc-400 hover:text-zinc-200 uppercase tracking-widest transition-colors"
+            className="w-full flex items-center gap-1 px-1.5 py-1 text-[10px] font-bold text-zinc-500 hover:text-zinc-200 uppercase tracking-wider transition-colors"
           >
             <ChevronDown
               className={`w-3 h-3 transition-transform ${expandedCategories.social ? '' : '-rotate-90'}`}
@@ -222,7 +222,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
             Social
           </button>
           {expandedCategories.social && (
-            <div className="space-y-1 ml-2">
+            <div className="space-y-1">
               {channels.social.map((ch) => (
                 <ChannelButton
                   key={ch.id}
@@ -238,11 +238,11 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
         {/* Direct Messages */}
         {channels.direct.length > 0 && (
           <div>
-            <button className="w-full flex items-center gap-1 px-2 py-1 text-xs font-bold text-zinc-400 hover:text-zinc-200 uppercase tracking-widest transition-colors">
+            <button className="w-full flex items-center gap-1 px-1.5 py-1 text-[10px] font-bold text-zinc-500 hover:text-zinc-200 uppercase tracking-wider transition-colors">
               <ChevronDown className="w-3 h-3" />
               Direct
             </button>
-            <div className="space-y-1 ml-2">
+            <div className="space-y-1">
               {channels.direct.map((ch) => (
                 <ChannelButton
                   key={ch.id}
@@ -272,45 +272,49 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
           </div>
 
           {/* Channel Header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/40">
+          <div className="flex-shrink-0 flex items-center justify-between px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40">
             <div className="flex items-center gap-2">
               <Hash className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="text-xs font-semibold text-zinc-200">{selectedChannelData?.name}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200">{selectedChannelData?.name}</span>
             </div>
-            <button type="button" className="text-zinc-500 hover:text-orange-500">
+            <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
               <Bell className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
+          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
             {currentMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-zinc-500 text-xs gap-2">
-                <MessageSquare className="w-6 h-6 text-zinc-700" />
-                <div>No messages yet</div>
-                <div className="text-[10px] text-zinc-600">Send a message to start the conversation</div>
+              <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
+                <MessageSquare className="w-8 h-8 text-zinc-700/50" />
+                <div className="text-[10px] font-bold uppercase tracking-wider">No messages yet</div>
+                <div className="text-[9px] text-zinc-600">Send a message to start the conversation</div>
               </div>
             ) : (
               currentMessages.map((msg) => (
-                <div key={msg.id} className="group flex gap-2 rounded px-2 py-1 hover:bg-zinc-800/40 text-[11px]">
-                  <div className="text-zinc-600 text-[10px] min-w-10">{msg.timestamp}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-zinc-400 font-semibold truncate">{msg.author}</div>
-                    <div className="text-zinc-300">{msg.text}</div>
+                <div key={msg.id} className="group px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-orange-500/30 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-semibold text-zinc-300">{msg.author}</span>
+                        <span className="text-[9px] text-zinc-600">{msg.timestamp}</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400">{msg.text}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
                 </div>
               ))
             )}
           </div>
 
           {/* Message Input */}
-          <div className="flex-shrink-0 flex gap-1.5 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
+          <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
             <input
               type="text"
               placeholder="Type a message..."
@@ -319,23 +323,23 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && e.target.value.trim()) handleSendMessage();
               }}
-              className="flex-1 text-xs bg-zinc-800/60 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
+              className="flex-1 text-[10px] bg-zinc-800/60 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
             />
             <button
               type="button"
               onClick={handleSendMessage}
               disabled={!messageInput.trim()}
-              className="px-2 text-zinc-500 hover:text-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-6 px-2 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               title="Send message (Enter)"
             >
-              <Send className="w-3.5 h-3.5" />
+              <Send className="w-3 h-3" />
             </button>
           </div>
         </div>
       )}
       
       {isExpanded && !selectedChannel && (
-        <div className="flex-1 flex items-center justify-center text-zinc-600 text-xs">Select a channel</div>
+        <div className="flex-1 flex items-center justify-center text-zinc-600 text-[10px] font-bold uppercase tracking-wider">Select a channel</div>
       )}
     </div>
   );
@@ -345,17 +349,23 @@ function ChannelButton({ channel, isSelected, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-2 py-1 rounded text-xs transition-colors ${
+      className={`w-full text-left px-2 py-1.5 rounded transition-colors ${
         isSelected
-          ? 'bg-orange-600/30 text-orange-400 font-semibold'
-          : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200'
+          ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
+          : 'bg-zinc-900/40 border border-zinc-800 text-zinc-400 hover:bg-zinc-800/40'
       }`}
     >
-      <div className="flex items-center gap-2 min-w-0">
-        <channel.icon className="w-3 h-3 flex-shrink-0" />
-        <span className="truncate">{channel.name}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <channel.icon className="w-3 h-3 flex-shrink-0" />
+          <span className="text-[10px] font-bold uppercase tracking-wider truncate">{channel.name}</span>
+        </div>
+        {channel.unread > 0 && (
+          <div className="flex-shrink-0 px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[9px] font-bold">
+            {channel.unread}
+          </div>
+        )}
       </div>
-      {channel.unread > 0 && <NexusBadge tone="warning">{channel.unread}</NexusBadge>}
     </button>
   );
 }
