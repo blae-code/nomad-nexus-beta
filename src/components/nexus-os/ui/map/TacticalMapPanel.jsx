@@ -103,10 +103,10 @@ function mapPresence(estimates, viewerScope) {
         sourceType: estimate.primarySourceType,
       };
     })
-    .filter(Boolean) as RenderablePresence[];
+    .filter(Boolean);
 }
 
-function formatAge(seconds: number): string {
+function formatAge(seconds) {
   const safe = Math.max(0, Math.floor(seconds));
   if (safe < 60) return `${safe}s`;
   const minutes = Math.floor(safe / 60);
@@ -154,15 +154,15 @@ function signalWeightLabel(signal, nowMs) {
 function getErrorText(error) {
   if (typeof error === 'string') return error;
   if (error instanceof Error) return error.message || '';
-  const candidate = (error as any)?.message;
+  const candidate = error?.message;
   return typeof candidate === 'string' ? candidate : '';
 }
 
 function isFormTarget(target) {
   if (!target || typeof target !== 'object') return false;
-  const node = target as HTMLElement;
-  const tag = String((node as any).tagName || '').toLowerCase();
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || Boolean((node as any).isContentEditable);
+  const node = target;
+  const tag = String(node.tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || Boolean(node.isContentEditable);
 }
 
 export default function TacticalMapPanel({
@@ -282,7 +282,7 @@ export default function TacticalMapPanel({
     let active = true;
     let timerId = 0;
 
-    const scheduleNext = (delayMs: number) => {
+    const scheduleNext = (delayMs) => {
       window.clearTimeout(timerId);
       if (!active) return;
       timerId = window.setTimeout(() => {
@@ -293,7 +293,7 @@ export default function TacticalMapPanel({
     const loadComms = async () => {
       setCommsState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        let response: any;
+        let response;
         let usedFallback = false;
 
         if (commandSurfaceV2Enabled) {
@@ -361,7 +361,7 @@ export default function TacticalMapPanel({
           overlay,
         });
         scheduleNext(commsRetryDelayRef.current);
-      } catch (error: unknown) {
+      } catch (error) {
         if (!active) return;
         const errorText = getErrorText(error) || 'Comms topology unavailable.';
         const unavailable = /404|not found|unavailable|5\d\d|timeout/i.test(errorText);
@@ -416,9 +416,9 @@ export default function TacticalMapPanel({
   }, [intelObjects, selectedIntelId]);
   const selectedIntelComments = useMemo(() => (selectedIntel ? listIntelComments(selectedIntel.id) : []), [selectedIntel, intelVersion]);
 
-  const layerEnabled = (id: TacticalLayerId) => layers.find((entry) => entry.id === id)?.enabled === true;
+  const layerEnabled = (id) => layers.find((entry) => entry.id === id)?.enabled === true;
 
-  const opsOverlay = useMemo<OpsOverlayNode[]>(
+  const opsOverlay = useMemo(
     () =>
       operations
         .map((operation) => ({
@@ -475,7 +475,7 @@ export default function TacticalMapPanel({
     });
   }, [mapMode, showStations, showLagrange, showOmMarkers]);
   const priorityNodeIds = useMemo(() => {
-    const ids = new Set<string>();
+    const ids = new Set();
     for (const entry of presence) ids.add(entry.nodeId);
     for (const entry of visibleIntel) ids.add(entry.anchor.nodeId);
     for (const zone of controlZones) {
@@ -508,7 +508,7 @@ export default function TacticalMapPanel({
     if (mapViewMode === 'SYSTEM') {
       const focusSystemTag = selectedNode.systemTag;
       const focusSystemId = `system-${focusSystemTag.toLowerCase()}`;
-      const adjacentSystems = new Set<string>([focusSystemId]);
+      const adjacentSystems = new Set([focusSystemId]);
       for (const edge of TACTICAL_MAP_EDGES) {
         if (edge.kind !== 'jump') continue;
         if (edge.fromNodeId === focusSystemId) adjacentSystems.add(edge.toNodeId);
@@ -695,7 +695,7 @@ export default function TacticalMapPanel({
     : availabilityCopy(commsAvailability, commsState.error || undefined);
   const logisticsAvailability = resolveAvailabilityState({ count: layerEnabled('logistics') ? logisticsOverlay.lanes.length : undefined, staleCount: logisticsOverlay.lanes.filter((lane) => lane.stale).length });
 
-  const applyMapMode = (nextMode: TacticalMapMode) => {
+  const applyMapMode = (nextMode) => {
     setMapMode(nextMode);
     setLayers(createLayerState(mapModeLayerDefaults(nextMode)));
     const allowedDocks = tacticalMapDockIdsForMode(nextMode);
@@ -743,7 +743,7 @@ export default function TacticalMapPanel({
         lane: 'COMMAND',
       });
       setMacroExecutionMessage(Array.isArray(response?.effects) ? response.effects.join(' | ') : `Executed ${macroId}.`);
-    } catch (error: any) {
+    } catch (error) {
       const message = error?.message || 'Macro execution failed.';
       setMacroExecutionError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -772,7 +772,7 @@ export default function TacticalMapPanel({
       setQuickBroadcastMessage('');
       setMacroExecutionMessage(`Broadcast transmitted (${quickBroadcastPriority}).`);
       setCommsRefreshNonce((prev) => prev + 1);
-    } catch (error: unknown) {
+    } catch (error) {
       const message = getErrorText(error) || 'Broadcast failed.';
       setQuickBroadcastError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -791,7 +791,7 @@ export default function TacticalMapPanel({
     setAiInferenceError(null);
     setAiInferenceLoading(true);
     try {
-      const response: any = await invokeMemberFunction('commsAssistant', {
+      const response = await invokeMemberFunction('commsAssistant', {
         action: 'ask_comms',
         data: { eventId: scopedCommsOpId || null, query: buildMapAiPrompt(mapInference) },
       });
@@ -804,7 +804,7 @@ export default function TacticalMapPanel({
     }
   };
 
-  const addIntelComment = async (intelId: string, body: string) => {
+  const addIntelComment = async (intelId, body) => {
     await addComment(intelId, { by: actorId, body });
     setIntelVersion((prev) => prev + 1);
   };
@@ -840,7 +840,7 @@ export default function TacticalMapPanel({
   ];
 
   const radialItems = useMemo(() => {
-    if (!activeRadial) return [] as RadialMenuItem[];
+    if (!activeRadial) return [];
     if (activeRadial.type === 'node' && activeRadial.nodeId) return createNodeRadialItems(activeRadial.nodeId);
     if (activeRadial.type === 'intel' && activeRadial.intelId) return createIntelRadialItems(activeRadial.intelId);
     if (activeRadial.type === 'zone' && activeRadial.zoneId) return createZoneRadialItems(activeRadial.zoneId, activeRadial.nodeId);
@@ -1009,7 +1009,7 @@ export default function TacticalMapPanel({
       </div>
       {commsAvailability !== 'OK' || commsDegraded ? <div className="text-[11px] text-zinc-500">{commsStatusCopy}</div> : null}
       <div className="flex items-center gap-1.5 flex-wrap">
-        {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
+        {(['STANDARD', 'HIGH', 'CRITICAL']).map((entry) => (
           <NexusButton key={entry} size="sm" intent={commsPriorityFloor === entry ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setCommsPriorityFloor(entry)}>{entry === 'STANDARD' ? 'STD+' : entry}</NexusButton>
         ))}
         <NexusButton size="sm" intent={showCommsLinks ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setShowCommsLinks((prev) => !prev)}>Links</NexusButton>
@@ -1034,7 +1034,7 @@ export default function TacticalMapPanel({
           </NexusBadge>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
+          {(['STANDARD', 'HIGH', 'CRITICAL']).map((entry) => (
             <NexusButton
               key={`broadcast:${entry}`}
               size="sm"
@@ -1141,7 +1141,7 @@ export default function TacticalMapPanel({
 
   const legendTab = <MapLegend />;
 
-  const dockTabs: MapDockTab[] = [
+  const dockTabs = [
     { id: 'SUMMARY', label: 'Summary', count: mapInference.commandRiskScore, content: summaryTab },
     { id: 'COMMS', label: 'Comms', count: commsOverlay.nets.length, content: commsTab },
     { id: 'INTEL', label: 'Intel', count: visibleIntel.length, content: intelTab },
