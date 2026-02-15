@@ -82,15 +82,15 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
           {selectedTab === 'nets' ? (
             <>
               {activeNetId && (
-                <div className="px-3 py-2.5 rounded border border-green-500/30 bg-green-500/10">
+                <div className="px-2.5 py-2 rounded border border-green-500/30 bg-green-500/10">
                   <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
-                  <div className="text-sm font-bold text-green-300 mt-1">{activeNetId}</div>
-                  <div className="flex gap-1 mt-2">
-                    <button className="flex-1 h-7 text-[10px] px-2 rounded bg-green-500/20 hover:bg-green-500/30 text-green-300 transition-colors flex items-center justify-center gap-1">
+                  <div className="text-xs font-bold text-green-300 mt-1">{activeNetId}</div>
+                  <div className="flex gap-1 mt-1.5">
+                    <button className="flex-1 h-6 text-[10px] px-2 rounded bg-green-500/20 hover:bg-green-500/30 text-green-300 transition-colors flex items-center justify-center gap-1">
                       <Mic className="w-3 h-3" />
                       Mute
                     </button>
-                    <button className="flex-1 h-7 text-[10px] px-2 rounded bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400 transition-colors flex items-center justify-center gap-1">
+                    <button className="flex-1 h-6 text-[10px] px-2 rounded bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400 transition-colors flex items-center justify-center gap-1">
                       <Volume2 className="w-3 h-3" />
                       Vol
                     </button>
@@ -99,18 +99,18 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
               )}
 
               {voiceNets.length > 0 ? (
-                <div className="space-y-1.5">
-                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-2">Available</div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-1.5">Available Nets</div>
                   {voiceNets.map((net) => (
                     <button
                       key={net.id}
-                      className={`w-full text-left px-2.5 py-2 rounded transition-colors text-[10px] ${
+                      className={`w-full text-left px-2 py-1.5 rounded transition-colors ${
                         activeNetId === net.id
                           ? 'bg-green-500/20 border border-green-500/30 text-green-300'
                           : 'bg-zinc-900/40 border border-zinc-800 text-zinc-400 hover:bg-zinc-800/40'
                       }`}
                     >
-                      <div className="font-bold uppercase tracking-wider">{net.code}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider">{net.code}</div>
                       <div className="text-[9px] text-zinc-500 mt-0.5">{net.label}</div>
                     </button>
                   ))}
@@ -123,15 +123,15 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
             <>
               {participants.length > 0 ? (
                 <div className="space-y-1">
-                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-2">
-                    Participants ({participants.length})
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-1.5">
+                    Connected ({participants.length})
                   </div>
                   <div className="space-y-1">
                     {participants.map((p) => (
-                      <div key={p.id} className="px-2.5 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-green-500/30 transition-colors">
+                      <div key={p.id} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-green-500/30 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-semibold text-zinc-300">{p.callsign || p.name}</span>
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                         </div>
                       </div>
                     ))}
