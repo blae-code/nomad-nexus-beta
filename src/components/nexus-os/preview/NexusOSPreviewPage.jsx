@@ -1317,7 +1317,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </TacticalSidePanel>
 
         {/* Main Content + Footer Wrapper */}
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col px-3">
           {/* Main Content */}
           <main className="flex-1 overflow-hidden flex flex-col">
             {commandFeedback ? (
