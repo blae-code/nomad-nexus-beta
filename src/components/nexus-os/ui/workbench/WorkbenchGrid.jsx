@@ -4,6 +4,8 @@ import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp, Copy, GripVe
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { base44 } from '@/api/base44Client';
 import CollaborationPresence from './CollaborationPresence';
+import { getPanelPermissions, ACCESS_LEVELS } from '../../services/permissionService';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { getNexusCssVars } from '../tokens';
 import { NexusBadge, NexusButton, PanelFrame } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
@@ -258,7 +260,9 @@ export default function WorkbenchGrid({
 }) {
   const vars = getNexusCssVars();
   const reducedMotion = useReducedMotion();
+  const { user } = useAuth();
   const [isPanelDrawerOpen, setIsPanelDrawerOpen] = useState(false);
+  const [panelPermissions, setPanelPermissions] = useState({});
   const [panelSizes, setPanelSizes] = useState({});
   const [layoutHydrated, setLayoutHydrated] = useState(false);
   const [migrationNotice, setMigrationNotice] = useState('');
@@ -326,8 +330,16 @@ export default function WorkbenchGrid({
   }, [allPanels]);
 
   const activePanels = useMemo(() => {
-    return activePanelIds.map((id) => panelMap[id]).filter(Boolean);
-  }, [activePanelIds, panelMap]);
+    return activePanelIds
+      .map((id) => panelMap[id])
+      .filter((panel) => {
+        if (!panel) return false;
+        // Check permissions
+        const perm = panelPermissions[panel.id];
+        if (!perm) return true; // Allow if permissions not loaded yet
+        return perm.access_level !== ACCESS_LEVELS.NONE;
+      });
+  }, [activePanelIds, panelMap, panelPermissions]);
   const hasVisiblePanels = activePanels.length > 0;
   const maxPanelsPerPage = useMemo(() => {
     let base = 5;
@@ -363,8 +375,14 @@ export default function WorkbenchGrid({
   }, [maxRenderableRowSpan, preset.minRowHeightPx, viewportSize.height]);
 
   const inactivePanels = useMemo(() => {
-    return allPanels.filter((panel) => !activePanelIds.includes(panel.id));
-  }, [allPanels, activePanelIds]);
+    return allPanels.filter((panel) => {
+      if (activePanelIds.includes(panel.id)) return false;
+      // Check permissions for inactive panels too
+      const perm = panelPermissions[panel.id];
+      if (!perm) return true;
+      return perm.access_level !== ACCESS_LEVELS.NONE;
+    });
+  }, [allPanels, activePanelIds, panelPermissions]);
   const filteredPanels = useMemo(() => {
     const token = String(panelSearchQuery || '').trim().toLowerCase();
     if (!token) return allPanels;
@@ -1106,6 +1124,36 @@ export default function WorkbenchGrid({
   const activePanelSignature = useMemo(() => activePanelIds.join('|'), [activePanelIds]);
   const panelSizesSignature = useMemo(() => JSON.stringify(panelSizes), [panelSizes]);
 
+  // Load panel permissions
+  useEffect(() => {
+    if (!user) return;
+
+    let mounted = true;
+
+    async function loadPermissions() {
+      const permissions = {};
+      for (const panel of allPanels) {
+        try {
+          const perm = await getPanelPermissions(user, panel.id);
+          if (mounted) {
+            permissions[panel.id] = perm;
+          }
+        } catch (error) {
+          console.warn(`Failed to load permissions for panel ${panel.id}:`, error);
+        }
+      }
+      if (mounted) {
+        setPanelPermissions(permissions);
+      }
+    }
+
+    loadPermissions();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, allPanels]);
+
   useEffect(() => {
     if (!layoutHydrated || !persistenceEnabled || !layoutPersistenceScopeKey) return;
     const orderedPanels = activePanelIds
@@ -1595,6 +1643,7 @@ export default function WorkbenchGrid({
                                   onDeleteCustomWorkbenchWidget={deleteWidget}
                                   onDuplicateCustomWorkbenchWidget={duplicateWidget}
                                   onShareCustomWorkbenchWidget={copyWidgetShareCode}
+                                  panelPermissions={panelPermissions[panel.id]}
                                   {...panelComponentProps}
                                 />
                               </PanelFrame>

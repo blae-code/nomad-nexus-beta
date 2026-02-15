@@ -78,6 +78,7 @@ export default function CustomWorkbenchWidgetPanel({
   onDeleteCustomWorkbenchWidget,
   onDuplicateCustomWorkbenchWidget,
   onShareCustomWorkbenchWidget,
+  panelPermissions,
 }) {
   const widgetId = parseCustomWorkbenchWidgetPanelId(panelId);
   const widget = widgetId ? customWorkbenchWidgetMap[widgetId] : null;
@@ -185,42 +186,50 @@ export default function CustomWorkbenchWidgetPanel({
       ) : null}
 
       <div className="mt-auto flex items-center gap-2">
-        <NexusButton
-          size="sm"
-          intent="subtle"
-          onClick={() => onShareCustomWorkbenchWidget?.(widget.id)}
-          title="Copy widget share code"
-        >
-          <Copy className="w-3.5 h-3.5 mr-1" />
-          Share
-        </NexusButton>
-        <NexusButton
-          size="sm"
-          intent="subtle"
-          onClick={() => onDuplicateCustomWorkbenchWidget?.(widget.id)}
-          title="Duplicate this custom widget"
-        >
-          <Copy className="w-3.5 h-3.5 mr-1" />
-          Duplicate
-        </NexusButton>
-        <NexusButton
-          size="sm"
-          intent="subtle"
-          onClick={() => onEditCustomWorkbenchWidget?.(widget.id)}
-          title="Edit this custom widget"
-        >
-          <PenLine className="w-3.5 h-3.5 mr-1" />
-          Edit
-        </NexusButton>
-        <NexusButton
-          size="sm"
-          intent="subtle"
-          onClick={() => onDeleteCustomWorkbenchWidget?.(widget.id)}
-          title="Delete this custom widget"
-        >
-          <Trash2 className="w-3.5 h-3.5 mr-1" />
-          Delete
-        </NexusButton>
+        {panelPermissions?.feature_permissions?.can_share && (
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => onShareCustomWorkbenchWidget?.(widget.id)}
+            title="Copy widget share code"
+          >
+            <Copy className="w-3.5 h-3.5 mr-1" />
+            Share
+          </NexusButton>
+        )}
+        {panelPermissions?.access_level === 'edit' || panelPermissions?.access_level === 'admin' ? (
+          <>
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              onClick={() => onDuplicateCustomWorkbenchWidget?.(widget.id)}
+              title="Duplicate this custom widget"
+            >
+              <Copy className="w-3.5 h-3.5 mr-1" />
+              Duplicate
+            </NexusButton>
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              onClick={() => onEditCustomWorkbenchWidget?.(widget.id)}
+              title="Edit this custom widget"
+            >
+              <PenLine className="w-3.5 h-3.5 mr-1" />
+              Edit
+            </NexusButton>
+          </>
+        ) : null}
+        {panelPermissions?.feature_permissions?.can_delete && (
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => onDeleteCustomWorkbenchWidget?.(widget.id)}
+            title="Delete this custom widget"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" />
+            Delete
+          </NexusButton>
+        )}
       </div>
     </div>
   );

@@ -86,9 +86,10 @@ import Treasury from './pages/Treasury';
 import UXRoadmap from './pages/UXRoadmap';
 import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
+import UserSettings from './pages/UserSettings';
 import WarAcademy from './pages/WarAcademy';
 import Workspace from './pages/Workspace';
-import UserSettings from './pages/UserSettings';
+import RoleManagement from './pages/RoleManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -132,9 +133,10 @@ export const PAGES = {
     "UXRoadmap": UXRoadmap,
     "UniverseMap": UniverseMap,
     "UserDirectory": UserDirectory,
+    "UserSettings": UserSettings,
     "WarAcademy": WarAcademy,
     "Workspace": Workspace,
-    "UserSettings": UserSettings,
+    "RoleManagement": RoleManagement,
 }
 
 export const pagesConfig = {
