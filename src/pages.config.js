@@ -88,6 +88,7 @@ import UniverseMap from './pages/UniverseMap';
 import UserDirectory from './pages/UserDirectory';
 import WarAcademy from './pages/WarAcademy';
 import Workspace from './pages/Workspace';
+import UserSettings from './pages/UserSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -133,6 +134,7 @@ export const PAGES = {
     "UserDirectory": UserDirectory,
     "WarAcademy": WarAcademy,
     "Workspace": Workspace,
+    "UserSettings": UserSettings,
 }
 
 export const pagesConfig = {
