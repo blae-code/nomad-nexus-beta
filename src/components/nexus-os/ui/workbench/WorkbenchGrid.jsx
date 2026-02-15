@@ -151,6 +151,14 @@ function createWidgetFormState(overrides = {}) {
     createdBy: '',
     colSpan: DEFAULT_WIDGET_COL_SPAN,
     rowSpan: DEFAULT_WIDGET_ROW_SPAN,
+    enableVisualization: false,
+    vizChartType: 'line',
+    vizDataSource: 'static',
+    vizEntityName: '',
+    vizDataField: '',
+    vizLabelField: '',
+    vizRefreshInterval: 30000,
+    vizStaticData: '',
     ...overrides,
   };
 }
@@ -536,6 +544,7 @@ export default function WorkbenchGrid({
       const widget = customWidgetMap[widgetId];
       if (!widget) return;
       const currentSize = panelSizes[customWorkbenchWidgetPanelId(widget.id)] || {};
+      const vizConfig = widget.visualizationConfig || {};
       applyWidgetFormUpdate({
         editingWidgetId: widget.id,
         title: widget.title || '',
@@ -554,6 +563,14 @@ export default function WorkbenchGrid({
         createdBy: widget.createdBy || '',
         colSpan: clampColSpan(Number(currentSize.colSpan) || DEFAULT_WIDGET_COL_SPAN, preset.columns),
         rowSpan: clampRowSpan(Number(currentSize.rowSpan) || DEFAULT_WIDGET_ROW_SPAN),
+        enableVisualization: Boolean(widget.visualizationConfig),
+        vizChartType: vizConfig.chartType || 'line',
+        vizDataSource: vizConfig.dataSource || 'static',
+        vizEntityName: vizConfig.entityName || '',
+        vizDataField: vizConfig.dataField || '',
+        vizLabelField: vizConfig.labelField || '',
+        vizRefreshInterval: vizConfig.refreshInterval || 30000,
+        vizStaticData: vizConfig.staticData ? JSON.stringify(vizConfig.staticData, null, 2) : '',
       });
       setWidgetNotice(`Editing widget "${widget.title}".`);
       setIsPanelDrawerOpen(true);
@@ -577,6 +594,17 @@ export default function WorkbenchGrid({
 
   const saveWidget = useCallback(() => {
     try {
+      const visualizationConfig = widgetForm.enableVisualization ? {
+        chartType: widgetForm.vizChartType,
+        dataSource: widgetForm.vizDataSource,
+        entityName: widgetForm.vizEntityName || null,
+        dataField: widgetForm.vizDataField || null,
+        labelField: widgetForm.vizLabelField || null,
+        refreshInterval: Number(widgetForm.vizRefreshInterval) || 30000,
+        staticData: widgetForm.vizStaticData ? JSON.parse(widgetForm.vizStaticData) : [],
+        colors: ['#f97316', '#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'],
+      } : null;
+
       const created = upsertCustomWorkbenchWidget(widgetScopeKey, {
         id: widgetForm.editingWidgetId || undefined,
         title: widgetForm.title,
@@ -591,6 +619,7 @@ export default function WorkbenchGrid({
         tags: parseWidgetTags(widgetForm.tagsText),
         isPinned: Boolean(widgetForm.isPinned),
         createdBy: String(widgetForm.createdBy || workspaceUserDisplayName || '').trim() || undefined,
+        visualizationConfig,
       });
       setCustomWidgets(listCustomWorkbenchWidgets(widgetScopeKey));
       setActivePanelIds((prev) => {
@@ -1792,6 +1821,86 @@ export default function WorkbenchGrid({
                 />
                 Pin this widget in the library and panel listings
               </label>
+              <label className="flex items-center gap-2 text-[11px] text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={Boolean(widgetForm.enableVisualization)}
+                  onChange={(event) => applyWidgetFormUpdate({ enableVisualization: event.target.checked })}
+                />
+                Enable data visualization (charts)
+              </label>
+              {widgetForm.enableVisualization && (
+                <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-2 space-y-2">
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">Visualization Settings</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={widgetForm.vizChartType}
+                      onChange={(event) => applyWidgetFormUpdate({ vizChartType: event.target.value })}
+                      className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                      aria-label="Chart type"
+                    >
+                      <option value="line">Line Chart</option>
+                      <option value="bar">Bar Chart</option>
+                      <option value="area">Area Chart</option>
+                      <option value="pie">Pie Chart</option>
+                    </select>
+                    <select
+                      value={widgetForm.vizDataSource}
+                      onChange={(event) => applyWidgetFormUpdate({ vizDataSource: event.target.value })}
+                      className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                      aria-label="Data source"
+                    >
+                      <option value="static">Static Data</option>
+                      <option value="entity">Entity Data</option>
+                    </select>
+                  </div>
+                  {widgetForm.vizDataSource === 'entity' && (
+                    <div className="space-y-2">
+                      <input
+                        value={widgetForm.vizEntityName}
+                        onChange={(event) => applyWidgetFormUpdate({ vizEntityName: event.target.value })}
+                        placeholder="Entity name (e.g., PlayerStatus)"
+                        className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          value={widgetForm.vizDataField}
+                          onChange={(event) => applyWidgetFormUpdate({ vizDataField: event.target.value })}
+                          placeholder="Value field"
+                          className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                        />
+                        <input
+                          value={widgetForm.vizLabelField}
+                          onChange={(event) => applyWidgetFormUpdate({ vizLabelField: event.target.value })}
+                          placeholder="Label field (optional)"
+                          className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                        />
+                      </div>
+                      <input
+                        type="number"
+                        value={widgetForm.vizRefreshInterval / 1000}
+                        onChange={(event) => applyWidgetFormUpdate({ vizRefreshInterval: Number(event.target.value) * 1000 })}
+                        placeholder="Refresh interval (seconds)"
+                        min="5"
+                        className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+                      />
+                    </div>
+                  )}
+                  {widgetForm.vizDataSource === 'static' && (
+                    <textarea
+                      value={widgetForm.vizStaticData}
+                      onChange={(event) => applyWidgetFormUpdate({ vizStaticData: event.target.value })}
+                      placeholder='[{"name": "Week 1", "value": 100}, {"name": "Week 2", "value": 200}]'
+                      className="h-24 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 font-mono"
+                    />
+                  )}
+                  <div className="text-[10px] text-zinc-500">
+                    {widgetForm.vizDataSource === 'entity' 
+                      ? 'Real-time updates from entity records with automatic refresh and subscription.' 
+                      : 'Use JSON array format with "name" and "value" fields.'}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <label className="text-[11px] text-zinc-500 flex flex-col gap-1">
                   Width span
