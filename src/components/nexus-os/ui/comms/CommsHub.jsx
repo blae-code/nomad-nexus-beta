@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { MessageSquare, Send, Settings, Bell, Hash, AtSign, Trash2, ChevronDown, ChevronLeft } from 'lucide-react';
+import { MessageSquare, Send, Settings, Bell, Hash, AtSign, Trash2, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NexusButton, NexusBadge } from '../primitives';
 
 /**
@@ -14,9 +14,9 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
   const [messagePanelHeight, setMessagePanelHeight] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus.commsHub.messagePanelHeight');
-      return saved ? Number(saved) : 280;
+      return saved ? Number(saved) : 320;
     } catch {
-      return 280;
+      return 320;
     }
   });
   const [isResizing, setIsResizing] = useState(false);
@@ -101,7 +101,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
 
     const handleMouseMove = (moveEvent) => {
       const delta = moveEvent.clientY - startY;
-      const newHeight = Math.max(180, Math.min(500, startHeight + delta));
+      const newHeight = Math.max(200, Math.min(800, startHeight + delta));
       setMessagePanelHeight(newHeight);
     };
 
@@ -149,7 +149,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
               className="w-full flex items-center justify-center text-zinc-500 hover:text-orange-500 transition-colors"
               title="Expand"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           )}
         </div>
