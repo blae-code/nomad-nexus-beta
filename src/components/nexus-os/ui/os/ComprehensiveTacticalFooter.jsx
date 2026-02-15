@@ -521,103 +521,95 @@ export default function ComprehensiveTacticalFooter() {
 
     // Render React content into popout
     import('react-dom/client').then(({ createRoot }) => {
-      const root = createRoot(popoutWindow.document.getElementById('root'));
-      root.render(
-        <div style={{ width: '100%', height: '100%', background: '#09090b' }}>
-          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(249, 115, 22, 0.2)' }}>
-            <div style={{ flexShrink: 0, padding: '0.5rem 1rem', borderBottom: '1px solid rgba(249, 115, 22, 0.15)', background: 'rgba(24, 24, 27, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '1rem', height: '1rem', color: 'rgb(249, 115, 22)', flexShrink: 0 }}>
-                    <Map className="w-4 h-4 text-orange-500" />
-                  </div>
-                  <h3 style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Tactical Operations Center</h3>
+      const PopoutContent = () => {
+        const [popoutTab, setPopoutTab] = React.useState(activeTab);
+
+        return (
+          <div className="nexus-shell-root h-full bg-zinc-950 text-zinc-100 flex flex-col">
+            <div className="nexus-shell-sweep" />
+            <div className="nexus-shell-grid" />
+            <div className="nexus-shell-vignette" />
+
+            {/* Header */}
+            <div className="relative flex-shrink-0 px-4 py-2 border-b border-orange-500/15 bg-zinc-900/40 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-orange-500 shrink-0" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wide">Tactical Operations Center</h3>
                 </div>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <div className="flex gap-1">
                   <button
                     type="button"
-                    onClick={() => root.unmount()}
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.025em',
-                      borderRadius: '0.25rem',
-                      transition: 'colors',
-                      background: activeTab === 'map' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-                      color: activeTab === 'map' ? 'rgb(251, 146, 60)' : 'rgb(113, 113, 122)',
-                      border: activeTab === 'map' ? '1px solid rgba(249, 115, 22, 0.3)' : 'none',
-                      cursor: 'pointer'
-                    }}
+                    onClick={() => setPopoutTab('map')}
+                    className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                      popoutTab === 'map' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
                     Map
                   </button>
                   <button
                     type="button"
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.025em',
-                      borderRadius: '0.25rem',
-                      background: activeTab === 'operation' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-                      color: activeTab === 'operation' ? 'rgb(251, 146, 60)' : 'rgb(113, 113, 122)',
-                      border: activeTab === 'operation' ? '1px solid rgba(249, 115, 22, 0.3)' : 'none',
-                      cursor: 'pointer'
-                    }}
+                    onClick={() => setPopoutTab('operation')}
+                    className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                      popoutTab === 'operation' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
                     Operation
                   </button>
                   <button
                     type="button"
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.025em',
-                      borderRadius: '0.25rem',
-                      background: activeTab === 'team' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-                      color: activeTab === 'team' ? 'rgb(251, 146, 60)' : 'rgb(113, 113, 122)',
-                      border: activeTab === 'team' ? '1px solid rgba(249, 115, 22, 0.3)' : 'none',
-                      cursor: 'pointer'
-                    }}
+                    onClick={() => setPopoutTab('team')}
+                    className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                      popoutTab === 'team' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
                     Team
                   </button>
                 </div>
               </div>
             </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              {activeTab === 'map' ? (
+
+            {/* Content */}
+            <div className="relative flex-1 overflow-hidden">
+              {popoutTab === 'map' && (
                 <StarSystemMap markers={markers} playerStatuses={playerStatuses} />
-              ) : activeTab === 'operation' ? (
-                <div style={{ height: '100%', background: 'rgba(24, 24, 27, 0.2)' }}>
+              )}
+
+              {popoutTab === 'operation' && (
+                <div className="h-full bg-zinc-900/20">
                   <EventDashboard activeOp={activeOp} voiceNet={voiceNet} />
                 </div>
-              ) : (
-                <div style={{ height: '100%', padding: '1rem', background: 'rgba(24, 24, 27, 0.2)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', height: '100%' }}>
+              )}
+
+              {popoutTab === 'team' && (
+                <div className="h-full p-4 bg-zinc-900/20">
+                  <div className="grid grid-cols-4 gap-3 h-full">
                     {(activeOp?.participants || []).map((p) => (
-                      <div key={p.id} style={{ borderRadius: '0.25rem', border: '1px solid rgb(39, 39, 42)', background: 'rgba(24, 24, 27, 0.4)', padding: '0.75rem', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'rgb(251, 146, 60)' }}>{p.callsign || p.name || 'Unknown'}</div>
-                        <div style={{ fontSize: '10px', color: 'rgb(113, 113, 122)', marginTop: '0.25rem' }}>{p.role || 'Member'}</div>
-                        <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
-                          <div style={{ width: '100%', height: '0.25rem', borderRadius: '9999px', background: 'rgb(39, 39, 42)' }}>
-                            <div style={{ height: '100%', borderRadius: '9999px', background: 'rgb(34, 197, 94)', width: '80%' }} />
+                      <div key={p.id} className="rounded border border-zinc-800 bg-zinc-900/40 p-3 flex flex-col">
+                        <div className="text-xs font-bold text-orange-400 truncate">{p.callsign || p.name || 'Unknown'}</div>
+                        <div className="text-[10px] text-zinc-500 mt-1">{p.role || 'Member'}</div>
+                        <div className="mt-auto pt-2">
+                          <div className="w-full h-1 rounded-full bg-zinc-800">
+                            <div className="h-full rounded-full bg-green-500" style={{ width: '80%' }} />
                           </div>
                         </div>
                       </div>
                     ))}
+                    {(!activeOp?.participants || activeOp.participants.length === 0) && (
+                      <div className="col-span-4 flex items-center justify-center text-zinc-600 text-xs">
+                        No participants in active operation
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
-      );
+        );
+      };
+
+      const root = createRoot(popoutWindow.document.getElementById('root'));
+      root.render(<PopoutContent />);
     });
   }, [activeTab, markers, playerStatuses, activeOp, voiceNet]);
 
