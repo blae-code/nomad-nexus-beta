@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp, Copy, GripVertical, Minus, Plus, RotateCcw } from 'lucide-react';
+import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp, Copy, GripVertical, Minus, Plus, RotateCcw, MoreVertical, Move, Maximize2, Minimize2, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { getNexusCssVars } from '../tokens';
 import { NexusBadge, NexusButton, PanelFrame } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
@@ -1404,72 +1405,83 @@ export default function WorkbenchGrid({
                                 loading={Boolean(panel.loading)}
                                 loadingLabel={panel.loadingLabel}
                                 toolbar={
-                                  <div className="flex items-center gap-1.5 max-w-full overflow-hidden pr-1">
+                                  <div className="flex items-center gap-1 max-w-full overflow-hidden pr-1">
                                     <button
                                       type="button"
                                       {...dragProvided.dragHandleProps}
-                                      className="h-7 w-7 rounded border border-zinc-700 bg-zinc-900/70 text-zinc-300 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
+                                      className="h-7 w-7 rounded bg-zinc-900/70 border border-zinc-700/60 text-zinc-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-zinc-800/80 grid place-items-center transition-all"
                                       aria-label={`Reorder ${panel.title}`}
-                                      title={`Reorder ${panel.title} (drag or keyboard)`}
+                                      title="Drag to reorder"
                                     >
                                       <GripVertical className="w-3.5 h-3.5" />
                                     </button>
-                                    <button
-                                      type="button"
-                                      className="h-7 w-7 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
-                                      aria-label={`Move ${panel.title} up`}
-                                      onClick={() => movePanelByOffset(panel.id, -1)}
-                                    >
-                                      <ArrowUp className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="h-7 w-7 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
-                                      aria-label={`Move ${panel.title} down`}
-                                      onClick={() => movePanelByOffset(panel.id, 1)}
-                                    >
-                                      <ArrowDown className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="h-7 w-7 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
-                                      aria-label={`Decrease width of ${panel.title}`}
-                                      onClick={() => resizePanel(panel.id, 'col', -1)}
-                                      title={`Decrease width of ${panel.title}`}
-                                    >
-                                      <Minus className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="h-7 w-7 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
-                                      aria-label={`Increase width of ${panel.title}`}
-                                      onClick={() => resizePanel(panel.id, 'col', 1)}
-                                      title={`Increase width of ${panel.title}`}
-                                    >
-                                      <Plus className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="h-7 w-7 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
-                                      aria-label={`Decrease height of ${panel.title}`}
-                                      onClick={() => resizePanel(panel.id, 'row', -1)}
-                                      title={`Decrease height of ${panel.title}`}
-                                    >
-                                      <Minus className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="h-7 w-7 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 grid place-items-center"
-                                      aria-label={`Increase height of ${panel.title}`}
-                                      onClick={() => resizePanel(panel.id, 'row', 1)}
-                                      title={`Increase height of ${panel.title}`}
-                                    >
-                                      <Plus className="w-3.5 h-3.5" />
-                                    </button>
+                                    
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="h-7 w-7 rounded bg-zinc-900/70 border border-zinc-700/60 text-zinc-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-zinc-800/80 grid place-items-center transition-all"
+                                          aria-label="Panel controls"
+                                          title="Panel controls"
+                                        >
+                                          <Move className="w-3.5 h-3.5" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-700 text-zinc-200">
+                                        <DropdownMenuItem onClick={() => movePanelByOffset(panel.id, -1)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
+                                          <ArrowUp className="w-3 h-3 mr-2" />
+                                          Move Up
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => movePanelByOffset(panel.id, 1)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
+                                          <ArrowDown className="w-3 h-3 mr-2" />
+                                          Move Down
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="h-7 w-7 rounded bg-zinc-900/70 border border-zinc-700/60 text-zinc-400 hover:text-orange-400 hover:border-orange-500/40 hover:bg-zinc-800/80 grid place-items-center transition-all"
+                                          aria-label="Resize panel"
+                                          title="Resize panel"
+                                        >
+                                          <Maximize2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-700 text-zinc-200">
+                                        <DropdownMenuItem onClick={() => resizePanel(panel.id, 'col', 1)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
+                                          <Plus className="w-3 h-3 mr-2" />
+                                          Expand Width
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => resizePanel(panel.id, 'col', -1)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
+                                          <Minus className="w-3 h-3 mr-2" />
+                                          Shrink Width
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator className="bg-zinc-700" />
+                                        <DropdownMenuItem onClick={() => resizePanel(panel.id, 'row', 1)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
+                                          <Plus className="w-3 h-3 mr-2" />
+                                          Expand Height
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => resizePanel(panel.id, 'row', -1)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
+                                          <Minus className="w-3 h-3 mr-2" />
+                                          Shrink Height
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+
                                     {toolbar}
-                                    <NexusButton size="sm" intent="subtle" onClick={() => removePanel(panel.id)}>
-                                      Hide
-                                    </NexusButton>
+                                    
+                                    <button
+                                      type="button"
+                                      onClick={() => removePanel(panel.id)}
+                                      className="h-7 w-7 rounded bg-zinc-900/70 border border-zinc-700/60 text-zinc-500 hover:text-red-400 hover:border-red-500/40 hover:bg-red-950/30 grid place-items-center transition-all"
+                                      aria-label={`Close ${panel.title}`}
+                                      title="Close panel"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
                                   </div>
                                 }
                               >
