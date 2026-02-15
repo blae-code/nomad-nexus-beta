@@ -10,7 +10,7 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
   const [selectedTab, setSelectedTab] = useState('nets');
 
   return (
-    <div className={`nx-voice-rail flex flex-col h-full bg-zinc-950/80 border-r border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${
+    <div className={`flex flex-col h-full bg-zinc-950/80 transition-all duration-300 ease-out overflow-hidden ${
       isExpanded ? 'w-full' : 'w-12'
     }`}>
       {/* Header */}
