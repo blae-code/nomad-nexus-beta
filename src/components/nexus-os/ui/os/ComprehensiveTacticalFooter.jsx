@@ -57,6 +57,242 @@ function TacticalMapEvents({ onMapClick }) {
   return null;
 }
 
+// Star Citizen System Data
+const STAR_SYSTEMS = {
+  stanton: {
+    name: 'Stanton',
+    star: { x: 50, y: 50, size: 8, color: '#fbbf24' },
+    bodies: [
+      { name: 'Hurston', x: 65, y: 50, size: 5, color: '#92400e', type: 'planet' },
+      { name: 'Crusader', x: 50, y: 35, size: 7, color: '#60a5fa', type: 'planet' },
+      { name: 'microTech', x: 35, y: 50, size: 5, color: '#e0f2fe', type: 'planet' },
+      { name: 'ArcCorp', x: 50, y: 65, size: 4, color: '#9ca3af', type: 'planet' },
+    ],
+    lagrange: [
+      { name: 'HUR-L1', x: 58, y: 50, size: 2, parent: 'Hurston' },
+      { name: 'HUR-L2', x: 72, y: 50, size: 2, parent: 'Hurston' },
+      { name: 'CRU-L1', x: 50, y: 42, size: 2, parent: 'Crusader' },
+      { name: 'MIC-L1', x: 42, y: 50, size: 2, parent: 'microTech' },
+      { name: 'ARC-L1', x: 50, y: 58, size: 2, parent: 'ArcCorp' },
+    ],
+  },
+  pyro: {
+    name: 'Pyro',
+    star: { x: 150, y: 50, size: 10, color: '#dc2626' },
+    bodies: [
+      { name: 'Pyro I', x: 162, y: 50, size: 3, color: '#7c2d12', type: 'planet' },
+      { name: 'Pyro II', x: 150, y: 38, size: 4, color: '#991b1b', type: 'planet' },
+      { name: 'Pyro III', x: 138, y: 50, size: 5, color: '#b91c1c', type: 'planet' },
+      { name: 'Pyro IV', x: 150, y: 62, size: 4, color: '#7f1d1d', type: 'planet' },
+      { name: 'Pyro V', x: 165, y: 60, size: 6, color: '#450a0a', type: 'planet' },
+      { name: 'Pyro VI', x: 135, y: 40, size: 4, color: '#78350f', type: 'planet' },
+    ],
+    lagrange: [
+      { name: 'PY1-L1', x: 156, y: 50, size: 2, parent: 'Pyro I' },
+      { name: 'PY2-L1', x: 150, y: 44, size: 2, parent: 'Pyro II' },
+      { name: 'PY3-L1', x: 144, y: 50, size: 2, parent: 'Pyro III' },
+    ],
+  },
+  nyx: {
+    name: 'Nyx',
+    star: { x: 250, y: 50, size: 7, color: '#f97316' },
+    bodies: [
+      { name: 'Nyx I', x: 265, y: 50, size: 4, color: '#78350f', type: 'planet' },
+      { name: 'Nyx II (Delamar)', x: 250, y: 37, size: 5, color: '#57534e', type: 'planet' },
+      { name: 'Nyx III', x: 235, y: 50, size: 3, color: '#44403c', type: 'planet' },
+    ],
+    lagrange: [
+      { name: 'NY1-L1', x: 258, y: 50, size: 2, parent: 'Nyx I' },
+      { name: 'NY2-L1', x: 250, y: 44, size: 2, parent: 'Nyx II' },
+      { name: 'NY3-L1', x: 242, y: 50, size: 2, parent: 'Nyx III' },
+    ],
+  },
+};
+
+function StarSystemMap({ markers, playerStatuses }) {
+  const [selectedSystem, setSelectedSystem] = useState('stanton');
+  const [hoveredBody, setHoveredBody] = useState(null);
+  const svgRef = useRef(null);
+
+  const system = STAR_SYSTEMS[selectedSystem];
+
+  return (
+    <div className="h-full relative bg-zinc-950">
+      {/* System Selector */}
+      <div className="absolute top-2 left-2 z-40 flex gap-1">
+        {Object.keys(STAR_SYSTEMS).map((sysKey) => (
+          <button
+            key={sysKey}
+            onClick={() => setSelectedSystem(sysKey)}
+            className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded border transition-colors ${
+              selectedSystem === sysKey
+                ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
+                : 'bg-zinc-900/80 border-zinc-700 text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            {STAR_SYSTEMS[sysKey].name}
+          </button>
+        ))}
+      </div>
+
+      {/* Info Panel */}
+      {hoveredBody && (
+        <div className="absolute top-2 right-2 z-40 text-[10px] bg-zinc-900/95 border border-zinc-700 text-zinc-200 px-3 py-2 rounded min-w-32">
+          <div className="font-bold text-orange-400">{hoveredBody.name}</div>
+          <div className="text-zinc-500 text-[9px] mt-0.5">{hoveredBody.type || 'lagrange'}</div>
+        </div>
+      )}
+
+      {/* SVG Star Map */}
+      <svg
+        ref={svgRef}
+        viewBox="0 0 300 100"
+        className="w-full h-full"
+        style={{ background: 'radial-gradient(ellipse at center, rgba(24,24,27,0.8) 0%, rgba(9,9,11,1) 100%)' }}
+      >
+        {/* Grid */}
+        <defs>
+          <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(113,113,122,0.1)" strokeWidth="0.3" />
+          </pattern>
+        </defs>
+        <rect width="300" height="100" fill="url(#grid)" />
+
+        {/* Star */}
+        <circle
+          cx={system.star.x}
+          cy={system.star.y}
+          r={system.star.size}
+          fill={system.star.color}
+          opacity="0.9"
+        />
+        <circle
+          cx={system.star.x}
+          cy={system.star.y}
+          r={system.star.size + 2}
+          fill="none"
+          stroke={system.star.color}
+          strokeWidth="0.5"
+          opacity="0.3"
+        />
+
+        {/* Orbital Paths */}
+        {system.bodies.map((body, i) => {
+          const radius = Math.sqrt(
+            Math.pow(body.x - system.star.x, 2) + Math.pow(body.y - system.star.y, 2)
+          );
+          return (
+            <circle
+              key={`orbit-${i}`}
+              cx={system.star.x}
+              cy={system.star.y}
+              r={radius}
+              fill="none"
+              stroke="rgba(113,113,122,0.2)"
+              strokeWidth="0.3"
+              strokeDasharray="1,2"
+            />
+          );
+        })}
+
+        {/* Celestial Bodies */}
+        {system.bodies.map((body, i) => (
+          <g
+            key={`body-${i}`}
+            onMouseEnter={() => setHoveredBody(body)}
+            onMouseLeave={() => setHoveredBody(null)}
+            style={{ cursor: 'pointer' }}
+          >
+            <circle cx={body.x} cy={body.y} r={body.size} fill={body.color} opacity="0.85" />
+            <circle
+              cx={body.x}
+              cy={body.y}
+              r={body.size + 1}
+              fill="none"
+              stroke={body.color}
+              strokeWidth="0.4"
+              opacity="0.4"
+            />
+            <text
+              x={body.x}
+              y={body.y + body.size + 3}
+              fontSize="2.5"
+              fill="rgba(244,244,245,0.7)"
+              textAnchor="middle"
+              fontWeight="600"
+            >
+              {body.name}
+            </text>
+          </g>
+        ))}
+
+        {/* Lagrange Points */}
+        {system.lagrange.map((point, i) => (
+          <g
+            key={`lag-${i}`}
+            onMouseEnter={() => setHoveredBody(point)}
+            onMouseLeave={() => setHoveredBody(null)}
+            style={{ cursor: 'pointer' }}
+          >
+            <circle cx={point.x} cy={point.y} r={point.size} fill="#6366f1" opacity="0.6" />
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={point.size + 0.5}
+              fill="none"
+              stroke="#6366f1"
+              strokeWidth="0.3"
+              opacity="0.5"
+            />
+            <text
+              x={point.x}
+              y={point.y + point.size + 2.5}
+              fontSize="2"
+              fill="rgba(139,92,246,0.8)"
+              textAnchor="middle"
+              fontWeight="500"
+            >
+              {point.name}
+            </text>
+          </g>
+        ))}
+
+        {/* Player Markers (if applicable to current system) */}
+        {playerStatuses
+          .filter((status) => status.system === selectedSystem)
+          .map((status, i) => {
+            const coord = getCoordinate(status);
+            if (!coord) return null;
+            const [lat, lng] = coord;
+            const color = STATUS_COLORS[status.status] || '#38bdf8';
+            return (
+              <g key={`player-${i}`}>
+                <circle cx={lng} cy={lat} r={1.5} fill={color} opacity="0.9" />
+                <circle cx={lng} cy={lat} r={2.5} fill="none" stroke={color} strokeWidth="0.3" opacity="0.5" />
+              </g>
+            );
+          })}
+      </svg>
+
+      {/* Legend */}
+      <div className="absolute bottom-2 left-2 z-40 text-[9px] bg-zinc-900/80 border border-zinc-700 text-zinc-400 px-2 py-1.5 rounded space-y-0.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-yellow-500" />
+          <span>Star</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-gray-500" />
+          <span>Planet</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+          <span>Lagrange</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EventDashboard({ activeOp, voiceNet }) {
   if (!activeOp?.activeEvent) {
     return (
@@ -317,50 +553,7 @@ export default function ComprehensiveTacticalFooter() {
       {/* Tabbed Content - No scrolling needed */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'map' && (
-          <div className="h-full relative bg-zinc-950">
-            <div className="absolute top-2 left-2 z-40 text-[10px] bg-zinc-900/80 border border-zinc-700 text-zinc-400 px-2 py-1 rounded">
-              System Level · {markers.length} Markers
-            </div>
-            <MapContainer
-              crs={L.CRS.Simple}
-              center={[100, 100]}
-              zoom={0}
-              minZoom={-1}
-              maxZoom={2}
-              maxBounds={[[0, 0], [200, 200]]}
-              style={{ height: '100%', width: '100%', background: 'transparent' }}
-              className="tactical-map-compact"
-            >
-              <TacticalMapEvents onMapClick={() => {}} />
-
-              {markers
-                .filter((m) => m.type !== 'ping')
-                .map((marker) => {
-                  const coord = getCoordinate(marker);
-                  if (!coord) return null;
-                  return (
-                    <Marker key={marker.id} position={coord} icon={createMarkerIcon(marker.color)}>
-                      <Tooltip direction="top" offset={[0, -6]} opacity={1}>
-                        <div className="text-[10px] font-semibold text-orange-200">{marker.label}</div>
-                      </Tooltip>
-                    </Marker>
-                  );
-                })}
-
-              {playerStatuses.map((status) => {
-                const coord = getCoordinate(status);
-                if (!coord) return null;
-                const color = STATUS_COLORS[status.status] || '#38bdf8';
-                return (
-                  <CircleMarker key={status.id} center={coord} radius={5} pathOptions={{ color, fillColor: color }}>
-                    <Tooltip direction="top" offset={[0, -6]} opacity={1}>
-                      <div className="text-[10px] font-semibold text-white">{status.member_profile_id}</div>
-                    </Tooltip>
-                  </CircleMarker>
-                );
-              })}
-            </MapContainer>
-          </div>
+          <StarSystemMap markers={markers} playerStatuses={playerStatuses} />
         )}
 
         {activeTab === 'operation' && (
