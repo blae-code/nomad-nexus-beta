@@ -1357,8 +1357,16 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         </aside>
       </div>
 
-      {/* Fixed Footer */}
-      <ComprehensiveTacticalFooter />
+      {/* Fixed Footer - positioned between side panels */}
+      <div 
+        className="flex-shrink-0"
+        style={{ 
+          marginLeft: leftPanelCollapsed ? 0 : leftPanelWidth,
+          marginRight: rightPanelCollapsed ? 0 : rightPanelWidth 
+        }}
+      >
+        <ComprehensiveTacticalFooter />
+      </div>
 
       <CommandFocus
         open={Boolean(focusMode)}

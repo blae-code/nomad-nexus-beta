@@ -156,6 +156,7 @@ export default function ComprehensiveTacticalFooter() {
   const voiceNet = useVoiceNet();
 
   const [collapsed, setCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('map');
   const [markers, setMarkers] = useState([]);
   const [playerStatuses, setPlayerStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -227,7 +228,7 @@ export default function ComprehensiveTacticalFooter() {
 
   if (collapsed) {
     return (
-      <footer className="fixed bottom-0 left-0 right-0 z-[700] border-t border-orange-500/20 bg-black/95 backdrop-blur-xl">
+      <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/95 backdrop-blur-xl">
         <div className="px-4 py-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-[10px] font-mono flex-1 min-w-0">
             <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-900/60 border border-zinc-800 truncate">
@@ -256,7 +257,7 @@ export default function ComprehensiveTacticalFooter() {
   }
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-[700] border-t border-orange-500/20 bg-black/98 backdrop-blur-xl shadow-2xl shadow-orange-500/5 flex flex-col transition-all duration-200" style={{ height: `${height}px` }}>
+    <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/98 backdrop-blur-xl shadow-2xl shadow-orange-500/5 flex flex-col transition-all duration-200" style={{ height: `${height}px` }}>
       {/* Resize Handle */}
       <div
         ref={resizeRef}
@@ -269,11 +270,42 @@ export default function ComprehensiveTacticalFooter() {
         <div className="w-12 h-0.5 bg-orange-400/60 rounded-full" />
       </div>
 
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-2.5 border-b border-orange-500/15 bg-zinc-900/40 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <Map className="w-4 h-4 text-orange-500 shrink-0" />
-          <h3 className="text-xs font-bold text-white uppercase tracking-wide">Tactical Operations Center</h3>
+      {/* Header with Tabs */}
+      <div className="flex-shrink-0 px-4 py-2 border-b border-orange-500/15 bg-zinc-900/40 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-2">
+            <Map className="w-4 h-4 text-orange-500 shrink-0" />
+            <h3 className="text-xs font-bold text-white uppercase tracking-wide">Tactical Operations Center</h3>
+          </div>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('map')}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                activeTab === 'map' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Map
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('operation')}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                activeTab === 'operation' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Operation
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('team')}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                activeTab === 'team' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Team
+            </button>
+          </div>
         </div>
         <button
           type="button"
@@ -285,58 +317,83 @@ export default function ComprehensiveTacticalFooter() {
         </button>
       </div>
 
-      {/* Two-Column Content */}
-      <div className="flex-1 overflow-hidden flex">
-        {/* Left: Tactical Map (50%) */}
-        <div className="w-1/2 border-r border-orange-500/15 relative bg-zinc-950">
-          <div className="absolute top-2 left-2 z-40 text-[10px] bg-zinc-900/80 border border-zinc-700 text-zinc-400 px-2 py-1 rounded">
-            System Level
-          </div>
-          <MapContainer
-            crs={L.CRS.Simple}
-            center={[100, 100]}
-            zoom={0}
-            minZoom={-1}
-            maxZoom={2}
-            maxBounds={[[0, 0], [200, 200]]}
-            style={{ height: '100%', width: '100%', background: 'transparent' }}
-            className="tactical-map-compact"
-          >
-            <TacticalMapEvents onMapClick={() => {}} />
+      {/* Tabbed Content - No scrolling needed */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'map' && (
+          <div className="h-full relative bg-zinc-950">
+            <div className="absolute top-2 left-2 z-40 text-[10px] bg-zinc-900/80 border border-zinc-700 text-zinc-400 px-2 py-1 rounded">
+              System Level · {markers.length} Markers
+            </div>
+            <MapContainer
+              crs={L.CRS.Simple}
+              center={[100, 100]}
+              zoom={0}
+              minZoom={-1}
+              maxZoom={2}
+              maxBounds={[[0, 0], [200, 200]]}
+              style={{ height: '100%', width: '100%', background: 'transparent' }}
+              className="tactical-map-compact"
+            >
+              <TacticalMapEvents onMapClick={() => {}} />
 
-            {markers
-              .filter((m) => m.type !== 'ping')
-              .map((marker) => {
-                const coord = getCoordinate(marker);
+              {markers
+                .filter((m) => m.type !== 'ping')
+                .map((marker) => {
+                  const coord = getCoordinate(marker);
+                  if (!coord) return null;
+                  return (
+                    <Marker key={marker.id} position={coord} icon={createMarkerIcon(marker.color)}>
+                      <Tooltip direction="top" offset={[0, -6]} opacity={1}>
+                        <div className="text-[10px] font-semibold text-orange-200">{marker.label}</div>
+                      </Tooltip>
+                    </Marker>
+                  );
+                })}
+
+              {playerStatuses.map((status) => {
+                const coord = getCoordinate(status);
                 if (!coord) return null;
+                const color = STATUS_COLORS[status.status] || '#38bdf8';
                 return (
-                  <Marker key={marker.id} position={coord} icon={createMarkerIcon(marker.color)}>
+                  <CircleMarker key={status.id} center={coord} radius={5} pathOptions={{ color, fillColor: color }}>
                     <Tooltip direction="top" offset={[0, -6]} opacity={1}>
-                      <div className="text-[10px] font-semibold text-orange-200">{marker.label}</div>
+                      <div className="text-[10px] font-semibold text-white">{status.member_profile_id}</div>
                     </Tooltip>
-                  </Marker>
+                  </CircleMarker>
                 );
               })}
+            </MapContainer>
+          </div>
+        )}
 
-            {playerStatuses.map((status) => {
-              const coord = getCoordinate(status);
-              if (!coord) return null;
-              const color = STATUS_COLORS[status.status] || '#38bdf8';
-              return (
-                <CircleMarker key={status.id} center={coord} radius={5} pathOptions={{ color, fillColor: color }}>
-                  <Tooltip direction="top" offset={[0, -6]} opacity={1}>
-                    <div className="text-[10px] font-semibold text-white">{status.member_profile_id}</div>
-                  </Tooltip>
-                </CircleMarker>
-              );
-            })}
-          </MapContainer>
-        </div>
+        {activeTab === 'operation' && (
+          <div className="h-full bg-zinc-900/20">
+            <EventDashboard activeOp={activeOp} voiceNet={voiceNet} />
+          </div>
+        )}
 
-        {/* Right: Event Dashboard (50%) */}
-        <div className="w-1/2 bg-zinc-900/20 border-l border-orange-500/15">
-          <EventDashboard activeOp={activeOp} voiceNet={voiceNet} />
-        </div>
+        {activeTab === 'team' && (
+          <div className="h-full p-4 bg-zinc-900/20">
+            <div className="grid grid-cols-4 gap-3 h-full">
+              {(activeOp?.participants || []).map((p) => (
+                <div key={p.id} className="rounded border border-zinc-800 bg-zinc-900/40 p-3 flex flex-col">
+                  <div className="text-xs font-bold text-orange-400 truncate">{p.callsign || p.name || 'Unknown'}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">{p.role || 'Member'}</div>
+                  <div className="mt-auto pt-2">
+                    <div className="w-full h-1 rounded-full bg-zinc-800">
+                      <div className="h-full rounded-full bg-green-500" style={{ width: '80%' }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(!activeOp?.participants || activeOp.participants.length === 0) && (
+                <div className="col-span-4 flex items-center justify-center text-zinc-600 text-xs">
+                  No participants in active operation
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </footer>
   );
