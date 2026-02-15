@@ -3,6 +3,7 @@ import { Copy, ExternalLink, PenLine, Pin, Trash2 } from 'lucide-react';
 import { NexusButton } from '../primitives';
 import { parseCustomWorkbenchWidgetPanelId } from '../../services/customWorkbenchWidgetService';
 import { sanitizeExternalUrl } from '@/components/comms/urlSafety';
+import VisualizationWidget from './VisualizationWidget';
 
 function renderBody(widget, maxLines = 8) {
   const body = widget?.body || '';
@@ -98,6 +99,32 @@ export default function CustomWorkbenchWidgetPanel({
     return (
       <div className="h-full rounded border border-zinc-800 bg-zinc-950/40 p-3 text-xs text-zinc-500">
         Widget unavailable. It may have been removed from this workspace scope.
+      </div>
+    );
+  }
+
+  // Render visualization widget if configured
+  if (widget.visualizationConfig && widget.kind === 'METRIC') {
+    return (
+      <div className="h-full min-h-0 flex flex-col gap-2">
+        <div className="flex-shrink-0 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            {widget.description ? <p className="text-xs text-zinc-500 truncate">{widget.description}</p> : null}
+          </div>
+          <div className="flex items-center gap-1">
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              onClick={() => onEditCustomWorkbenchWidget?.(widget.id)}
+              title="Edit visualization settings"
+            >
+              <PenLine className="w-3 h-3" />
+            </NexusButton>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 rounded border border-zinc-800 bg-zinc-950/45 overflow-hidden">
+          <VisualizationWidget config={widget.visualizationConfig} />
+        </div>
       </div>
     );
   }
