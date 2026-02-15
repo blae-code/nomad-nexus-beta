@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp, Copy, GripVertical, Minus, Plus, RotateCcw } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { base44 } from '@/api/base44Client';
+import CollaborationPresence from './CollaborationPresence';
 import { getNexusCssVars } from '../tokens';
 import { NexusBadge, NexusButton, PanelFrame } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
@@ -263,6 +265,7 @@ export default function WorkbenchGrid({
   const [widgetPrompt, setWidgetPrompt] = useState('');
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [panelPage, setPanelPage] = useState(0);
+  const [remoteUpdateNotice, setRemoteUpdateNotice] = useState('');
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window === 'undefined' ? 1366 : window.innerWidth,
     height: typeof window === 'undefined' ? 768 : window.innerHeight,
@@ -1091,6 +1094,62 @@ export default function WorkbenchGrid({
     preset.id,
   ]);
 
+  // Real-time collaboration sync
+  useEffect(() => {
+    if (!persistenceEnabled || !layoutPersistenceScopeKey) return;
+
+    let mounted = true;
+    let lastRemoteUpdate = Date.now();
+
+    const unsubscribe = base44.entities.WorkspaceLayout.subscribe((event) => {
+      if (!mounted || event.type === 'delete') return;
+      
+      const layout = event.data;
+      if (!layout || layout.created_by === panelComponentProps?.actorId) return;
+
+      // Throttle updates to prevent rapid changes
+      const now = Date.now();
+      if (now - lastRemoteUpdate < 2000) return;
+      lastRemoteUpdate = now;
+
+      try {
+        if (layout.preset_id && layout.preset_id !== preset.id) {
+          onPresetChange?.(layout.preset_id);
+        }
+
+        const widgets = Array.isArray(layout.widgets) ? layout.widgets : [];
+        const layouts = layout.layouts || {};
+        const currentBreakpoint = 'lg';
+        const layoutConfig = layouts[currentBreakpoint] || [];
+
+        const nextActivePanelIds = layoutConfig.map((item) => item.i).filter(Boolean);
+        const nextPanelSizes = {};
+
+        layoutConfig.forEach((item) => {
+          if (item.i) {
+            nextPanelSizes[item.i] = {
+              colSpan: item.w || 1,
+              rowSpan: item.h || 2,
+            };
+          }
+        });
+
+        setActivePanelIds(nextActivePanelIds);
+        setPanelSizes(nextPanelSizes);
+        setRemoteUpdateNotice(`Layout synced from remote user.`);
+        
+        setTimeout(() => setRemoteUpdateNotice(''), 4000);
+      } catch (err) {
+        console.warn('[Collaboration] Failed to apply remote layout:', err);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, [persistenceEnabled, layoutPersistenceScopeKey, preset.id, onPresetChange, panelComponentProps?.actorId]);
+
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     const report = runWorkbenchHarness({
@@ -1161,6 +1220,11 @@ export default function WorkbenchGrid({
           <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 truncate">Workbench</h2>
           {bridgeId ? <NexusBadge tone="active">{bridgeId}</NexusBadge> : null}
           <span className="hidden sm:inline text-[11px] text-zinc-500 truncate">{preset.description}</span>
+          <CollaborationPresence 
+            scopeKey={layoutPersistenceScopeKey} 
+            currentUserId={panelComponentProps?.actorId}
+            currentUserName={workspaceUserDisplayName}
+          />
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {hasVisiblePanels ? (
@@ -1215,6 +1279,12 @@ export default function WorkbenchGrid({
       ) : null}
       {widgetNotice ? (
         <div className="px-3 py-1.5 text-[11px] text-zinc-400 border-b border-zinc-800 bg-zinc-900/40">{widgetNotice}</div>
+      ) : null}
+      {remoteUpdateNotice ? (
+        <div className="px-3 py-1.5 text-[11px] text-green-400 border-b border-green-500/20 bg-green-500/5 flex items-center gap-2">
+          <Eye className="w-3 h-3" />
+          {remoteUpdateNotice}
+        </div>
       ) : null}
 
       <div className={`flex-1 min-h-0 overflow-hidden p-3 ${minimalAtmosphere ? '' : 'bg-[radial-gradient(circle_at_top,rgba(102,162,212,0.06),transparent_36%)]'}`}>
