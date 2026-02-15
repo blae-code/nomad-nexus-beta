@@ -1232,6 +1232,17 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       }),
     [clockNowMs]
   );
+
+  const systemTimeUTCLabel = useMemo(
+    () =>
+      new Date(clockNowMs).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'UTC',
+      }),
+    [clockNowMs]
+  );
   const contextVisible = !compactShell || contextPanelOpen;
 
   return (
@@ -1279,6 +1290,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           <div className="nx-topbar-time">
             <Clock3 className="w-3.5 h-3.5" />
             <span>{systemTimeLabel}</span>
+            <span className="text-zinc-500 text-xs">UTC {systemTimeUTCLabel}</span>
           </div>
           <NexusButton size="sm" intent="subtle" onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}>
             Text
