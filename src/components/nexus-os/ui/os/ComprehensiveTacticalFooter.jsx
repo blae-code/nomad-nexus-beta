@@ -75,9 +75,9 @@ function EventDashboard({ activeOp, voiceNet }) {
   const participants = activeOp?.participants || [];
 
   return (
-    <div className="flex flex-col h-full p-3 space-y-3 overflow-y-auto">
+    <div className="flex flex-col h-full p-3 overflow-hidden">
       {/* Op Title & Status */}
-      <div className="space-y-2">
+      <div className="flex-shrink-0 space-y-2 mb-3">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wide truncate">
             {event.title}
@@ -91,10 +91,10 @@ function EventDashboard({ activeOp, voiceNet }) {
         )}
       </div>
 
-      <div className="h-px bg-zinc-800/40" />
+      <div className="flex-shrink-0 h-px bg-zinc-800/40 mb-3" />
 
       {/* Quick Metrics */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex-shrink-0 grid grid-cols-2 gap-2 mb-3">
         <div className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800/40">
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Participants</div>
           <div className="text-sm font-bold text-zinc-200">{participants.length}</div>
@@ -109,7 +109,7 @@ function EventDashboard({ activeOp, voiceNet }) {
 
       {/* Voice Net Status */}
       {voiceNet?.activeNetId && (
-        <div className="px-2.5 py-1.5 rounded border border-green-500/30 bg-green-500/5">
+        <div className="flex-shrink-0 px-2.5 py-1.5 rounded border border-green-500/30 bg-green-500/5 mb-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Radio className="w-3 h-3 text-green-400" />
@@ -120,25 +120,22 @@ function EventDashboard({ activeOp, voiceNet }) {
         </div>
       )}
 
-      {/* Participants List (minimalist) */}
+      {/* Participants List (flex-1 with internal scroll if needed) */}
       {participants.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Team</div>
-          <div className="space-y-1 max-h-24 overflow-y-auto">
-            {participants.slice(0, 6).map((p) => (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-shrink-0 text-[10px] font-bold text-zinc-400 uppercase tracking-wide mb-1.5">Team</div>
+          <div className="flex-1 overflow-y-auto space-y-1">
+            {participants.map((p) => (
               <div key={p.id} className="flex items-center justify-between text-[10px] px-1.5 py-1 rounded hover:bg-zinc-800/30">
                 <span className="text-zinc-300 truncate">{p.callsign || p.name || 'Unknown'}</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
               </div>
             ))}
-            {participants.length > 6 && (
-              <div className="text-[10px] text-zinc-600 text-center py-1">+{participants.length - 6} more</div>
-            )}
           </div>
         </div>
       )}
 
-      <div className="mt-auto pt-2 flex gap-1.5">
+      <div className="flex-shrink-0 mt-3 pt-2 flex gap-1.5 border-t border-zinc-800/40">
         <NexusButton size="sm" intent="subtle" className="flex-1 h-7 text-[10px]">
           <Users className="w-3 h-3" />
         </NexusButton>

@@ -1280,92 +1280,91 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
       {/* Main Content Area with Panels */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Text Comms */}
+        {/* Left Panel - Text Comms (Full Height) */}
         <aside
-          className="nexus-surface border-r border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300"
+          className="nexus-surface border-r border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col"
           style={{ width: leftPanelCollapsed ? 0 : leftPanelWidth }}
         >
-          <CommsHub
-            operations={operations}
-            focusOperationId={focusOperationId}
-            activeAppId={activeAppLabel}
-            online={online}
-            bridgeId={bridgeId}
-            isExpanded={!leftPanelCollapsed}
-            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-          />
+          <div className="flex-1 overflow-hidden">
+            <CommsHub
+              operations={operations}
+              focusOperationId={focusOperationId}
+              activeAppId={activeAppLabel}
+              online={online}
+              bridgeId={bridgeId}
+              isExpanded={!leftPanelCollapsed}
+              onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+            />
+          </div>
           {!leftPanelCollapsed && (
             <div
-              className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors"
+              className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors z-10"
               onMouseDown={() => setIsResizingLeft(true)}
             />
           )}
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-hidden flex flex-col">
-          {commandFeedback ? (
-            <section aria-live="polite" className="nx-inline-feedback nexus-console-text">
-              {commandFeedback}
-            </section>
-          ) : null}
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow">
-            <WorkbenchGrid
-              bridgeId={bridgeId}
-              panels={panelDescriptors}
-              presetId={presetId}
-              onPresetChange={setPresetId}
-              defaultActivationMode="empty"
-              enableOnboardingExperience={false}
-              workspaceUserDisplayName={workspaceDisplayCallsign}
-              layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
-              enableLayoutPersistence
-              atmosphereMode="minimal"
-              initialActivePanelIds={activePanelIds}
-              onActivePanelIdsChange={(next) =>
-                patchSnapshot({
-                  activePanelIds: next,
-                })
-              }
-              panelComponentProps={sharedPanelProps}
-            />
-          </div>
-        </main>
+        {/* Main Content + Footer Wrapper */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {/* Main Content */}
+          <main className="flex-1 overflow-hidden flex flex-col">
+            {commandFeedback ? (
+              <section aria-live="polite" className="nx-inline-feedback nexus-console-text">
+                {commandFeedback}
+              </section>
+            ) : null}
+            <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow">
+              <WorkbenchGrid
+                bridgeId={bridgeId}
+                panels={panelDescriptors}
+                presetId={presetId}
+                onPresetChange={setPresetId}
+                defaultActivationMode="empty"
+                enableOnboardingExperience={false}
+                workspaceUserDisplayName={workspaceDisplayCallsign}
+                layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
+                enableLayoutPersistence
+                atmosphereMode="minimal"
+                initialActivePanelIds={activePanelIds}
+                onActivePanelIdsChange={(next) =>
+                  patchSnapshot({
+                    activePanelIds: next,
+                  })
+                }
+                panelComponentProps={sharedPanelProps}
+              />
+            </div>
+          </main>
 
-        {/* Right Panel - Voice Comms */}
+          {/* Footer - sits at bottom between side panels */}
+          <ComprehensiveTacticalFooter />
+        </div>
+
+        {/* Right Panel - Voice Comms (Full Height) */}
         <aside
-          className="nexus-surface border-l border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300"
+          className="nexus-surface border-l border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col"
           style={{ width: rightPanelCollapsed ? 0 : rightPanelWidth }}
         >
-          <VoiceCommsRail
-            voiceNets={[
-              { id: 'net1', code: 'COMMAND', label: 'Command Net' },
-              { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
-              { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
-            ]}
-            activeNetId="COMMAND"
-            participants={activeOp?.participants || []}
-            isExpanded={!rightPanelCollapsed}
-            onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-          />
+          <div className="flex-1 overflow-hidden">
+            <VoiceCommsRail
+              voiceNets={[
+                { id: 'net1', code: 'COMMAND', label: 'Command Net' },
+                { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
+                { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
+              ]}
+              activeNetId="COMMAND"
+              participants={activeOp?.participants || []}
+              isExpanded={!rightPanelCollapsed}
+              onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+            />
+          </div>
           {!rightPanelCollapsed && (
             <div
-              className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors"
+              className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-orange-500/30 transition-colors z-10"
               onMouseDown={() => setIsResizingRight(true)}
             />
           )}
         </aside>
-      </div>
-
-      {/* Fixed Footer - positioned between side panels */}
-      <div 
-        className="flex-shrink-0"
-        style={{ 
-          marginLeft: leftPanelCollapsed ? 0 : leftPanelWidth,
-          marginRight: rightPanelCollapsed ? 0 : rightPanelWidth 
-        }}
-      >
-        <ComprehensiveTacticalFooter />
       </div>
 
       <CommandFocus
