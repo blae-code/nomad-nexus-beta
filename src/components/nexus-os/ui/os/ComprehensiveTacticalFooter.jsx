@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   Shield,
+  ExternalLink,
 } from 'lucide-react';
 
 const FOOTER_HEIGHT_KEY = 'nexus.tacticalFooter.height';
@@ -402,7 +403,9 @@ export default function ComprehensiveTacticalFooter() {
     }
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [isPoppedOut, setIsPoppedOut] = useState(false);
   const resizeRef = useRef(null);
+  const popoutWindowRef = useRef(null);
 
   const eventId = activeOp?.activeEvent?.id || null;
 
@@ -459,6 +462,174 @@ export default function ComprehensiveTacticalFooter() {
     loadData();
   }, [eventId]);
 
+  // Handle popout window
+  const handlePopout = useCallback(() => {
+    if (popoutWindowRef.current && !popoutWindowRef.current.closed) {
+      popoutWindowRef.current.focus();
+      return;
+    }
+
+    const popoutWindow = window.open(
+      '',
+      'TacticalFooter',
+      'width=1200,height=600,menubar=no,toolbar=no,location=no,status=no'
+    );
+
+    if (!popoutWindow) return;
+
+    popoutWindowRef.current = popoutWindow;
+    setIsPoppedOut(true);
+
+    // Write content to popout window
+    popoutWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Tactical Operations Center</title>
+          <style>
+            body { margin: 0; padding: 0; overflow: hidden; background: #09090b; }
+            #root { width: 100vw; height: 100vh; }
+          </style>
+        </head>
+        <body>
+          <div id="root"></div>
+        </body>
+      </html>
+    `);
+    popoutWindow.document.close();
+
+    // Copy styles from parent
+    const styles = document.querySelectorAll('style, link[rel="stylesheet"]');
+    styles.forEach((style) => {
+      if (style.tagName === 'STYLE') {
+        const newStyle = popoutWindow.document.createElement('style');
+        newStyle.textContent = style.textContent;
+        popoutWindow.document.head.appendChild(newStyle);
+      } else if (style.tagName === 'LINK') {
+        const newLink = popoutWindow.document.createElement('link');
+        newLink.rel = 'stylesheet';
+        newLink.href = style.href;
+        popoutWindow.document.head.appendChild(newLink);
+      }
+    });
+
+    // Handle window close
+    popoutWindow.addEventListener('beforeunload', () => {
+      setIsPoppedOut(false);
+      popoutWindowRef.current = null;
+    });
+
+    // Render React content into popout
+    import('react-dom/client').then(({ createRoot }) => {
+      const root = createRoot(popoutWindow.document.getElementById('root'));
+      root.render(
+        <div style={{ width: '100%', height: '100%', background: '#09090b' }}>
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(249, 115, 22, 0.2)' }}>
+            <div style={{ flexShrink: 0, padding: '0.5rem 1rem', borderBottom: '1px solid rgba(249, 115, 22, 0.15)', background: 'rgba(24, 24, 27, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '1rem', height: '1rem', color: 'rgb(249, 115, 22)', flexShrink: 0 }}>
+                    <Map className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <h3 style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Tactical Operations Center</h3>
+                </div>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => root.unmount()}
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.025em',
+                      borderRadius: '0.25rem',
+                      transition: 'colors',
+                      background: activeTab === 'map' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
+                      color: activeTab === 'map' ? 'rgb(251, 146, 60)' : 'rgb(113, 113, 122)',
+                      border: activeTab === 'map' ? '1px solid rgba(249, 115, 22, 0.3)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Map
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.025em',
+                      borderRadius: '0.25rem',
+                      background: activeTab === 'operation' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
+                      color: activeTab === 'operation' ? 'rgb(251, 146, 60)' : 'rgb(113, 113, 122)',
+                      border: activeTab === 'operation' ? '1px solid rgba(249, 115, 22, 0.3)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Operation
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.025em',
+                      borderRadius: '0.25rem',
+                      background: activeTab === 'team' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
+                      color: activeTab === 'team' ? 'rgb(251, 146, 60)' : 'rgb(113, 113, 122)',
+                      border: activeTab === 'team' ? '1px solid rgba(249, 115, 22, 0.3)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Team
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              {activeTab === 'map' ? (
+                <StarSystemMap markers={markers} playerStatuses={playerStatuses} />
+              ) : activeTab === 'operation' ? (
+                <div style={{ height: '100%', background: 'rgba(24, 24, 27, 0.2)' }}>
+                  <EventDashboard activeOp={activeOp} voiceNet={voiceNet} />
+                </div>
+              ) : (
+                <div style={{ height: '100%', padding: '1rem', background: 'rgba(24, 24, 27, 0.2)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', height: '100%' }}>
+                    {(activeOp?.participants || []).map((p) => (
+                      <div key={p.id} style={{ borderRadius: '0.25rem', border: '1px solid rgb(39, 39, 42)', background: 'rgba(24, 24, 27, 0.4)', padding: '0.75rem', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'rgb(251, 146, 60)' }}>{p.callsign || p.name || 'Unknown'}</div>
+                        <div style={{ fontSize: '10px', color: 'rgb(113, 113, 122)', marginTop: '0.25rem' }}>{p.role || 'Member'}</div>
+                        <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
+                          <div style={{ width: '100%', height: '0.25rem', borderRadius: '9999px', background: 'rgb(39, 39, 42)' }}>
+                            <div style={{ height: '100%', borderRadius: '9999px', background: 'rgb(34, 197, 94)', width: '80%' }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    });
+  }, [activeTab, markers, playerStatuses, activeOp, voiceNet]);
+
+  // Cleanup popout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (popoutWindowRef.current && !popoutWindowRef.current.closed) {
+        popoutWindowRef.current.close();
+      }
+    };
+  }, []);
+
   if (collapsed) {
     return (
       <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/95 backdrop-blur-xl">
@@ -476,11 +647,49 @@ export default function ComprehensiveTacticalFooter() {
               </div>
             )}
           </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={handlePopout}
+              className="p-1.5 text-zinc-500 hover:text-orange-400 transition-colors"
+              title="Open in separate window"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              className="p-1.5 text-zinc-500 hover:text-orange-400 transition-colors"
+              title="Expand tactical footer"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  if (isPoppedOut) {
+    return (
+      <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/95 backdrop-blur-xl">
+        <div className="px-4 py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-[10px] font-mono flex-1 min-w-0">
+            <div className="flex items-center gap-2 px-2 py-1 rounded bg-orange-500/10 border border-orange-500/30 truncate">
+              <ExternalLink className="w-3 h-3 text-orange-400 shrink-0" />
+              <span className="text-orange-300 truncate">Tactical view open in separate window</span>
+            </div>
+          </div>
           <button
             type="button"
-            onClick={() => setCollapsed(false)}
+            onClick={() => {
+              if (popoutWindowRef.current && !popoutWindowRef.current.closed) {
+                popoutWindowRef.current.close();
+              }
+              setIsPoppedOut(false);
+            }}
             className="p-1.5 text-zinc-500 hover:text-orange-400 transition-colors shrink-0"
-            title="Expand tactical footer"
+            title="Close popout and show here"
           >
             <ChevronUp className="w-4 h-4" />
           </button>
@@ -540,14 +749,24 @@ export default function ComprehensiveTacticalFooter() {
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setCollapsed(true)}
-          className="p-1.5 text-zinc-500 hover:text-orange-400 transition-colors"
-          title="Collapse tactical footer"
-        >
-          <ChevronDown className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handlePopout}
+            className="p-1.5 text-zinc-500 hover:text-orange-400 transition-colors"
+            title="Open in separate window"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            className="p-1.5 text-zinc-500 hover:text-orange-400 transition-colors"
+            title="Collapse tactical footer"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Tabbed Content - No scrolling needed */}
