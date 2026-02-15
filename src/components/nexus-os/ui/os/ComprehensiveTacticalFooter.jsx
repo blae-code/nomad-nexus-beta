@@ -23,7 +23,7 @@ import {
   Target,
   Activity,
 } from 'lucide-react';
-import { analyzeTacticalSituation, subscribeToTacticalAI, updateTacticalAI } from '../../services/tacticalAIService';
+import { analyzeTacticalSituation, subscribeToTacticalAI } from '../../services/tacticalAIService';
 
 const FOOTER_HEIGHT_KEY = 'nexus.tacticalFooter.height';
 const DEFAULT_HEIGHT = 320;
