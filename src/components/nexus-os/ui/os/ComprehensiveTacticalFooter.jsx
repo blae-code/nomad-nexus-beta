@@ -154,28 +154,47 @@ function StarSystemMap({ markers, playerStatuses }) {
         {/* Grid */}
         <defs>
           <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(113,113,122,0.1)" strokeWidth="0.3" />
+            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(113,113,122,0.08)" strokeWidth="0.2" />
           </pattern>
+          <pattern id="fine-grid" width="2" height="2" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.15" fill="rgba(251,191,36,0.15)" />
+          </pattern>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
         <rect width="300" height="100" fill="url(#grid)" />
+        <rect width="300" height="100" fill="url(#fine-grid)" opacity="0.3" />
 
-        {/* Star */}
-        <circle
-          cx={system.star.x}
-          cy={system.star.y}
-          r={system.star.size}
-          fill={system.star.color}
-          opacity="0.9"
-        />
-        <circle
-          cx={system.star.x}
-          cy={system.star.y}
-          r={system.star.size + 2}
-          fill="none"
-          stroke={system.star.color}
-          strokeWidth="0.5"
-          opacity="0.3"
-        />
+        {/* Star - Tactical Symbol */}
+        <g filter="url(#glow)">
+          <circle
+            cx={system.star.x}
+            cy={system.star.y}
+            r={2.5}
+            fill="none"
+            stroke={system.star.color}
+            strokeWidth="0.8"
+            opacity="0.9"
+          />
+          <circle
+            cx={system.star.x}
+            cy={system.star.y}
+            r={1}
+            fill={system.star.color}
+            opacity="0.8"
+          />
+          <path
+            d={`M ${system.star.x - 4} ${system.star.y} L ${system.star.x + 4} ${system.star.y} M ${system.star.x} ${system.star.y - 4} L ${system.star.x} ${system.star.y + 4}`}
+            stroke={system.star.color}
+            strokeWidth="0.4"
+            opacity="0.5"
+          />
+        </g>
 
         {/* Orbital Paths */}
         {system.bodies.map((body, i) => {
@@ -189,14 +208,14 @@ function StarSystemMap({ markers, playerStatuses }) {
               cy={system.star.y}
               r={radius}
               fill="none"
-              stroke="rgba(113,113,122,0.2)"
-              strokeWidth="0.3"
-              strokeDasharray="1,2"
+              stroke="rgba(113,113,122,0.15)"
+              strokeWidth="0.2"
+              strokeDasharray="2,3"
             />
           );
         })}
 
-        {/* Celestial Bodies */}
+        {/* Celestial Bodies - Tactical Icons */}
         {system.bodies.map((body, i) => (
           <g
             key={`body-${i}`}
@@ -204,30 +223,48 @@ function StarSystemMap({ markers, playerStatuses }) {
             onMouseLeave={() => setHoveredBody(null)}
             style={{ cursor: 'pointer' }}
           >
-            <circle cx={body.x} cy={body.y} r={body.size} fill={body.color} opacity="0.85" />
-            <circle
-              cx={body.x}
-              cy={body.y}
-              r={body.size + 1}
-              fill="none"
+            {/* Tactical Ring */}
+            <circle 
+              cx={body.x} 
+              cy={body.y} 
+              r={body.size + 1.5} 
+              fill="none" 
+              stroke={body.color} 
+              strokeWidth="0.3" 
+              opacity="0.3"
+              strokeDasharray="1,1.5"
+            />
+            {/* Core Symbol */}
+            <circle cx={body.x} cy={body.y} r={body.size * 0.6} fill="none" stroke={body.color} strokeWidth="0.5" opacity="0.8" />
+            <circle cx={body.x} cy={body.y} r={1.2} fill={body.color} opacity="0.6" />
+            {/* Crosshair */}
+            <path
+              d={`M ${body.x - body.size} ${body.y} L ${body.x - body.size * 0.3} ${body.y} M ${body.x + body.size * 0.3} ${body.y} L ${body.x + body.size} ${body.y}`}
               stroke={body.color}
-              strokeWidth="0.4"
-              opacity="0.4"
+              strokeWidth="0.3"
+              opacity="0.5"
+            />
+            <path
+              d={`M ${body.x} ${body.y - body.size} L ${body.x} ${body.y - body.size * 0.3} M ${body.x} ${body.y + body.size * 0.3} L ${body.x} ${body.y + body.size}`}
+              stroke={body.color}
+              strokeWidth="0.3"
+              opacity="0.5"
             />
             <text
               x={body.x}
-              y={body.y + body.size + 3}
-              fontSize="2.5"
-              fill="rgba(244,244,245,0.7)"
+              y={body.y + body.size + 3.5}
+              fontSize="2"
+              fill="rgba(244,244,245,0.8)"
               textAnchor="middle"
               fontWeight="600"
+              fontFamily="monospace"
             >
               {body.name}
             </text>
           </g>
         ))}
 
-        {/* Lagrange Points */}
+        {/* Lagrange Points - Tactical Markers */}
         {system.lagrange.map((point, i) => (
           <g
             key={`lag-${i}`}
@@ -235,30 +272,30 @@ function StarSystemMap({ markers, playerStatuses }) {
             onMouseLeave={() => setHoveredBody(null)}
             style={{ cursor: 'pointer' }}
           >
-            <circle cx={point.x} cy={point.y} r={point.size} fill="#6366f1" opacity="0.6" />
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r={point.size + 0.5}
+            {/* Diamond marker */}
+            <path
+              d={`M ${point.x} ${point.y - 2} L ${point.x + 1.5} ${point.y} L ${point.x} ${point.y + 2} L ${point.x - 1.5} ${point.y} Z`}
               fill="none"
               stroke="#6366f1"
-              strokeWidth="0.3"
-              opacity="0.5"
+              strokeWidth="0.4"
+              opacity="0.7"
             />
+            <circle cx={point.x} cy={point.y} r={0.5} fill="#6366f1" opacity="0.6" />
             <text
               x={point.x}
-              y={point.y + point.size + 2.5}
-              fontSize="2"
-              fill="rgba(139,92,246,0.8)"
+              y={point.y + 3.5}
+              fontSize="1.8"
+              fill="rgba(139,92,246,0.9)"
               textAnchor="middle"
               fontWeight="500"
+              fontFamily="monospace"
             >
               {point.name}
             </text>
           </g>
         ))}
 
-        {/* Player Markers (if applicable to current system) */}
+        {/* Player Markers - Tactical Icons */}
         {playerStatuses
           .filter((status) => status.system === selectedSystem)
           .map((status, i) => {
@@ -267,9 +304,21 @@ function StarSystemMap({ markers, playerStatuses }) {
             const [lat, lng] = coord;
             const color = STATUS_COLORS[status.status] || '#38bdf8';
             return (
-              <g key={`player-${i}`}>
-                <circle cx={lng} cy={lat} r={1.5} fill={color} opacity="0.9" />
-                <circle cx={lng} cy={lat} r={2.5} fill="none" stroke={color} strokeWidth="0.3" opacity="0.5" />
+              <g key={`player-${i}`} filter="url(#glow)">
+                {/* Triangle marker */}
+                <path
+                  d={`M ${lng} ${lat - 1.5} L ${lng + 1.2} ${lat + 1} L ${lng - 1.2} ${lat + 1} Z`}
+                  fill={color}
+                  opacity="0.8"
+                />
+                <path
+                  d={`M ${lng} ${lat - 1.5} L ${lng + 1.2} ${lat + 1} L ${lng - 1.2} ${lat + 1} Z`}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth="0.3"
+                  opacity="0.9"
+                />
+                <circle cx={lng} cy={lat} r={2.5} fill="none" stroke={color} strokeWidth="0.2" opacity="0.3" />
               </g>
             );
           })}
