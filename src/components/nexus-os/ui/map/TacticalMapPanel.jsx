@@ -152,15 +152,15 @@ function signalWeightLabel(signal, nowMs) {
 function getErrorText(error) {
   if (typeof error === 'string') return error;
   if (error instanceof Error) return error.message || '';
-  const candidate = (error as any)?.message;
+  const candidate = error?.message;
   return typeof candidate === 'string' ? candidate : '';
 }
 
 function isFormTarget(target) {
   if (!target || typeof target !== 'object') return false;
-  const node = target as HTMLElement;
-  const tag = String((node as any).tagName || '').toLowerCase();
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || Boolean((node as any).isContentEditable);
+  const node = target;
+  const tag = String(node.tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || Boolean(node.isContentEditable);
 }
 
 export default function TacticalMapPanel({
@@ -262,7 +262,7 @@ export default function TacticalMapPanel({
       {
         mode: mapMode,
         dockId: activeDockId,
-        layerDefaults: layers.reduce<Partial<Record<TacticalLayerId, boolean>>>((acc, layer) => {
+        layerDefaults: layers.reduce((acc, layer) => {
           acc[layer.id] = layer.enabled;
           return acc;
         }, {}),
@@ -280,7 +280,7 @@ export default function TacticalMapPanel({
     let active = true;
     let timerId = 0;
 
-    const scheduleNext = (delayMs: number) => {
+    const scheduleNext = (delayMs) => {
       window.clearTimeout(timerId);
       if (!active) return;
       timerId = window.setTimeout(() => {
@@ -291,7 +291,7 @@ export default function TacticalMapPanel({
     const loadComms = async () => {
       setCommsState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        let response: any;
+        let response;
         let usedFallback = false;
 
         if (commandSurfaceV2Enabled) {
@@ -332,7 +332,7 @@ export default function TacticalMapPanel({
         const alertsRaw = Array.isArray(response?.actionable_alerts) ? response.actionable_alerts : [];
         setRemoteMapAlerts(
           alertsRaw
-            .map((entry: any) => ({
+            .map((entry) => ({
               id: String(entry?.id || ''),
               level: String(entry?.level || 'LOW').toUpperCase() === 'HIGH'
                 ? 'HIGH'
@@ -341,9 +341,9 @@ export default function TacticalMapPanel({
                   : 'LOW',
               title: String(entry?.title || 'Map alert'),
               detail: String(entry?.detail || ''),
-              source: 'comms' as const,
+              source: 'comms',
             }))
-            .filter((entry: MapCommandAlert) => Boolean(entry.id && entry.title))
+            .filter((entry) => Boolean(entry.id && entry.title))
         );
         if (!commandSurfaceV2Enabled) {
           setRemoteMapAlerts([]);
@@ -414,9 +414,9 @@ export default function TacticalMapPanel({
   }, [intelObjects, selectedIntelId]);
   const selectedIntelComments = useMemo(() => (selectedIntel ? listIntelComments(selectedIntel.id) : []), [selectedIntel, intelVersion]);
 
-  const layerEnabled = (id: TacticalLayerId) => layers.find((entry) => entry.id === id)?.enabled === true;
+  const layerEnabled = (id) => layers.find((entry) => entry.id === id)?.enabled === true;
 
-  const opsOverlay = useMemo<OpsOverlayNode[]>(
+  const opsOverlay = useMemo(
     () =>
       operations
         .map((operation) => ({
@@ -443,8 +443,8 @@ export default function TacticalMapPanel({
   );
   const visibleCommsLinks = useMemo(() => (showCommsLinks ? commsOverlay.links : []), [showCommsLinks, commsOverlay.links]);
   const commsAnchors = useMemo(() => {
-    const byNetId: Record<string, MapCommsAnchor> = {};
-    const netsByNode = commsOverlay.nets.reduce<Record<string, MapCommsOverlayNet[]>>((acc, net) => {
+    const byNetId = {};
+    const netsByNode = commsOverlay.nets.reduce((acc, net) => {
       if (!acc[net.nodeId]) acc[net.nodeId] = [];
       acc[net.nodeId].push(net);
       return acc;
@@ -473,7 +473,7 @@ export default function TacticalMapPanel({
     });
   }, [mapMode, showStations, showLagrange, showOmMarkers]);
   const priorityNodeIds = useMemo(() => {
-    const ids = new Set<string>();
+    const ids = new Set();
     for (const entry of presence) ids.add(entry.nodeId);
     for (const entry of visibleIntel) ids.add(entry.anchor.nodeId);
     for (const zone of controlZones) {
@@ -506,7 +506,7 @@ export default function TacticalMapPanel({
     if (mapViewMode === 'SYSTEM') {
       const focusSystemTag = selectedNode.systemTag;
       const focusSystemId = `system-${focusSystemTag.toLowerCase()}`;
-      const adjacentSystems = new Set<string>([focusSystemId]);
+      const adjacentSystems = new Set([focusSystemId]);
       for (const edge of TACTICAL_MAP_EDGES) {
         if (edge.kind !== 'jump') continue;
         if (edge.fromNodeId === focusSystemId) adjacentSystems.add(edge.toNodeId);
@@ -574,7 +574,7 @@ export default function TacticalMapPanel({
   );
   const stageCommsLinks = useMemo(() => {
     if (!visibleCommsLinks.length) return [];
-    const netNodeById = commsOverlay.nets.reduce<Record<string, string>>((acc, net) => {
+    const netNodeById = commsOverlay.nets.reduce((acc, net) => {
       acc[net.id] = net.nodeId;
       return acc;
     }, {});
@@ -599,10 +599,10 @@ export default function TacticalMapPanel({
         stateLabel: entry.displayState === 'DECLARED' ? 'DECL' : entry.displayState === 'INFERRED' ? 'INFR' : 'STALE',
         stateTone:
           entry.displayState === 'DECLARED'
-            ? ('ok' as const)
+            ? 'ok'
             : entry.displayState === 'INFERRED'
-              ? ('warning' as const)
-              : ('neutral' as const),
+              ? 'warning'
+              : 'neutral',
         detail: `${entry.nodeId} · ${Math.round(entry.confidence * 100)}% · ${formatAge(entry.ageSeconds)}`,
       })),
     [stagePresence]
@@ -728,7 +728,7 @@ export default function TacticalMapPanel({
     setMacroExecutionError(null);
     setMacroExecutionMessage(null);
     try {
-      const response: any = await invokeMemberFunction('updateCommsConsole', {
+      const response = await invokeMemberFunction('updateCommsConsole', {
         action: 'execute_map_command_macro',
         macroId,
         eventId: scopedCommsOpId || undefined,
@@ -784,7 +784,7 @@ export default function TacticalMapPanel({
     setAiInferenceError(null);
     setAiInferenceLoading(true);
     try {
-      const response: any = await invokeMemberFunction('commsAssistant', {
+      const response = await invokeMemberFunction('commsAssistant', {
         action: 'ask_comms',
         data: { eventId: scopedCommsOpId || null, query: buildMapAiPrompt(mapInference) },
       });
@@ -797,7 +797,7 @@ export default function TacticalMapPanel({
     }
   };
 
-  const addIntelComment = async (intelId: string, body: string) => {
+  const addIntelComment = async (intelId, body) => {
     await addComment(intelId, { by: actorId, body });
     setIntelVersion((prev) => prev + 1);
   };
