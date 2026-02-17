@@ -15,11 +15,6 @@ import RadialMenu, { type RadialMenuItem } from './RadialMenu';
 import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
-import MapDrawingTools from './MapDrawingTools';
-import MapCollaborativeCursors from './MapCollaborativeCursors';
-import MapDrawingLayer from './MapDrawingLayer';
-import MapShareDialog from './MapShareDialog';
-import { useMapCollaboration } from '../../hooks/useMapCollaboration';
 
 interface MapStageCanvasProps {
   layerEnabled: (id: TacticalLayerId) => boolean;
@@ -39,8 +34,6 @@ interface MapStageCanvasProps {
   activeRadial: MapRadialState | null;
   radialItems: RadialMenuItem[];
   hasAnyOverlay: boolean;
-  operationId?: string;
-  actorId?: string;
   onClearRadial: () => void;
   onSelectZone: (zoneId: string) => void;
   onSelectIntel: (intelId: string) => void;
@@ -159,8 +152,6 @@ export default function MapStageCanvas({
   activeRadial,
   radialItems,
   hasAnyOverlay,
-  operationId,
-  actorId,
   onClearRadial,
   onSelectZone,
   onSelectIntel,
@@ -170,25 +161,13 @@ export default function MapStageCanvas({
   const minimapRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{ pointerId: number; clientX: number; clientY: number } | null>(null);
   const recenterKeyRef = useRef('');
-  const drawStartRef = useRef<{ x: number; y: number } | null>(null);
-  const pathPointsRef = useRef<Array<{ x: number; y: number }>>([]);
   const [zoom, setZoom] = useState(1);
   const [viewportCenter, setViewportCenter] = useState({ x: 50, y: 50 });
   const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [isPointerActive, setIsPointerActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [drawMode, setDrawMode] = useState<'zone' | 'marker' | 'path' | null>(null);
-  const [drawingPreview, setDrawingPreview] = useState<any>(null);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
   const mapScaleLabel = `${Math.max(1, Math.round(500_000 / zoom)).toLocaleString()} km`;
-
-  const collaboration = useMapCollaboration({
-    operationId: operationId || '',
-    actorId: actorId || '',
-    enabled: Boolean(operationId && actorId),
-  });
 
   const mapTransform = useMemo(() => {
     const scale = clamp(Number.isFinite(zoom) ? zoom : 1, 0.8, 2.2);
@@ -228,7 +207,7 @@ export default function MapStageCanvas({
             dashed: node.category !== 'moon',
           };
         })
-        .filter(Boolean) as Array<{ id: string; x: number; y: number; radius: number; dashed: boolean }>,
+        .filter(Boolean),
     [visibleMapNodes, mapViewMode]
   );
   const mapNodeIdSet = useMemo(() => new Set(visibleMapNodes.map((node) => node.id)), [visibleMapNodes]);
@@ -267,7 +246,7 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x: node.x, y: node.y }, zoom));
   }, [selectedNodeId, mapViewMode, zoom]);
 
-  const handleCursorUpdate: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handleCursorUpdate = (event) => {
     if (!stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -278,48 +257,12 @@ export default function MapStageCanvas({
     const x = clamp(viewportCenter.x + (centeredX - 50) / zoom, 0, 100);
     const y = clamp(viewportCenter.y + (centeredY - 50) / zoom, 0, 100);
     setCursorCoords({ x, y });
-    
-    // Update collaborative cursor
-    collaboration.updateCursor(x, y);
   };
 
-  const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handlePointerDown = (event) => {
     if (event.button !== 0) return;
-    const target = event.target as HTMLElement;
+    const target = event.target;
     if (target.closest('[data-map-interactive="true"]')) return;
-    
-    // Handle drawing modes
-    if (drawMode) {
-      event.stopPropagation();
-      
-      if (drawMode === 'marker') {
-        // Place marker immediately
-        collaboration.addElement({
-          type: 'marker',
-          data: {
-            x: cursorCoords.x,
-            y: cursorCoords.y,
-            fill: 'rgba(239, 68, 68, 0.7)',
-            stroke: 'rgba(239, 68, 68, 1)',
-            label: 'Marker',
-          },
-        });
-        setDrawMode(null);
-        return;
-      }
-      
-      if (drawMode === 'zone') {
-        drawStartRef.current = { x: cursorCoords.x, y: cursorCoords.y };
-        return;
-      }
-      
-      if (drawMode === 'path') {
-        pathPointsRef.current.push({ x: cursorCoords.x, y: cursorCoords.y });
-        setDrawingPreview({ type: 'path', points: [...pathPointsRef.current] });
-        return;
-      }
-    }
-    
     if (!stageRef.current) return;
     stageRef.current.setPointerCapture(event.pointerId);
     dragStateRef.current = {
@@ -331,23 +274,8 @@ export default function MapStageCanvas({
     onClearRadial();
   };
 
-  const handlePointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handlePointerMove = (event) => {
     handleCursorUpdate(event);
-    
-    // Handle zone drawing preview
-    if (drawMode === 'zone' && drawStartRef.current) {
-      const dx = cursorCoords.x - drawStartRef.current.x;
-      const dy = cursorCoords.y - drawStartRef.current.y;
-      const radius = Math.sqrt(dx * dx + dy * dy);
-      setDrawingPreview({
-        type: 'zone',
-        cx: drawStartRef.current.x,
-        cy: drawStartRef.current.y,
-        radius,
-      });
-      return;
-    }
-    
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId || !stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
@@ -372,26 +300,7 @@ export default function MapStageCanvas({
     );
   };
 
-  const handlePointerUp: React.PointerEventHandler<HTMLDivElement> = (event) => {
-    // Complete zone drawing
-    if (drawMode === 'zone' && drawStartRef.current && drawingPreview) {
-      collaboration.addElement({
-        type: 'circle',
-        data: {
-          cx: drawingPreview.cx,
-          cy: drawingPreview.cy,
-          radius: drawingPreview.radius,
-          fill: 'rgba(59, 130, 246, 0.2)',
-          stroke: 'rgba(59, 130, 246, 0.8)',
-          strokeWidth: 0.4,
-        },
-      });
-      drawStartRef.current = null;
-      setDrawingPreview(null);
-      setDrawMode(null);
-      return;
-    }
-    
+  const handlePointerUp = (event) => {
     if (stageRef.current && stageRef.current.hasPointerCapture(event.pointerId)) {
       stageRef.current.releasePointerCapture(event.pointerId);
     }
@@ -399,7 +308,7 @@ export default function MapStageCanvas({
     setIsDragging(false);
   };
 
-  const updateZoom = (updater: (value: number) => number) => {
+  const updateZoom = (updater) => {
     setZoom((prev) => {
       const next = clamp(updater(prev), 0.8, 2.2);
       setViewportCenter((center) => clampViewportCenter(center, next));
@@ -407,7 +316,7 @@ export default function MapStageCanvas({
     });
   };
 
-  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+  const handleWheel = (event) => {
     event.preventDefault();
     if (!stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
@@ -432,7 +341,7 @@ export default function MapStageCanvas({
     );
   };
 
-  const handleMinimapPointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+  const handleMinimapPointerDown = (event) => {
     event.stopPropagation();
     if (!minimapRef.current) return;
     const rect = minimapRef.current.getBoundingClientRect();
@@ -442,7 +351,7 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x, y }, zoom));
   };
 
-  const radialAnchorFromPointer = (clientX: number, clientY: number): { x: number; y: number } => {
+  const radialAnchorFromPointer = (clientX, clientY) => {
     if (!stageRef.current) return { x: 50, y: 50 };
     const rect = stageRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return { x: 50, y: 50 };
@@ -452,56 +361,22 @@ export default function MapStageCanvas({
     };
   };
 
-  const radialAnchorFromNode = (x: number, y: number): { x: number; y: number } => ({
+  const radialAnchorFromNode = (x, y) => ({
     x: clamp(50 + (x - viewportCenter.x) * zoom, 6, 94),
     y: clamp(50 + (y - viewportCenter.y) * zoom, 6, 94),
   });
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (drawMode === 'path' && event.key === 'Enter') {
-      // Complete path
-      if (pathPointsRef.current.length >= 2) {
-        collaboration.addElement({
-          type: 'path',
-          data: {
-            points: [...pathPointsRef.current],
-            stroke: 'rgba(251, 191, 36, 0.8)',
-            strokeWidth: 0.3,
-          },
-        });
-      }
-      pathPointsRef.current = [];
-      setDrawingPreview(null);
-      setDrawMode(null);
-    } else if (drawMode && event.key === 'Escape') {
-      // Cancel drawing
-      drawStartRef.current = null;
-      pathPointsRef.current = [];
-      setDrawingPreview(null);
-      setDrawMode(null);
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [drawMode, collaboration]);
 
   return (
     <div
       ref={stageRef}
       className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage ${
-        isDragging ? 'cursor-grabbing' : drawMode ? 'cursor-crosshair' : 'cursor-grab'
+        isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
       data-dragging={isDragging ? 'true' : 'false'}
-      onClick={(e) => {
-        if (!drawMode) onClearRadial();
-      }}
+      onClick={onClearRadial}
       onDoubleClick={() => {
-        if (!drawMode) {
-          setZoom(1);
-          setViewportCenter({ x: 50, y: 50 });
-        }
+        setZoom(1);
+        setViewportCenter({ x: 50, y: 50 });
       }}
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
@@ -976,80 +851,11 @@ export default function MapStageCanvas({
               );
             })
           : null}
-
-        {/* Collaborative drawn elements */}
-        <MapDrawingLayer 
-          elements={collaboration.elements}
-          mapTransform=""
-          onSelectElement={setSelectedElementId}
-        />
-
-        {/* Drawing preview */}
-        {drawingPreview && drawingPreview.type === 'zone' && (
-          <circle
-            cx={drawingPreview.cx}
-            cy={drawingPreview.cy}
-            r={drawingPreview.radius}
-            fill="rgba(59, 130, 246, 0.15)"
-            stroke="rgba(59, 130, 246, 0.6)"
-            strokeWidth={0.3}
-            strokeDasharray="1 1"
-          />
-        )}
-        {drawingPreview && drawingPreview.type === 'path' && drawingPreview.points?.length > 0 && (
-          <path
-            d={drawingPreview.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
-            fill="none"
-            stroke="rgba(251, 191, 36, 0.6)"
-            strokeWidth={0.25}
-            strokeDasharray="0.8 0.8"
-          />
-        )}
-
-        {/* Collaborative cursors */}
-        <MapCollaborativeCursors
-          participants={collaboration.participants}
-          currentUserId={actorId}
-          mapTransform=""
-        />
         </g>
       </svg>
 
       <div className="pointer-events-none absolute inset-0 nexus-map-crt-overlay" />
       <div className="pointer-events-none absolute inset-0 nexus-map-noise-overlay" />
-
-      <MapDrawingTools
-        drawMode={drawMode}
-        onChangeDrawMode={setDrawMode}
-        onSaveLayout={() => {
-          const code = collaboration.exportLayout();
-          if (code) {
-            navigator.clipboard.writeText(code);
-            alert('Map layout copied to clipboard!');
-          }
-        }}
-        onShareLayout={() => setShareDialogOpen(true)}
-        onImportLayout={() => setShareDialogOpen(true)}
-        onClearElements={() => {
-          if (confirm('Clear all drawn elements?')) {
-            collaboration.clearAllElements();
-          }
-        }}
-        elementCount={collaboration.elements.length}
-        sessionActive={Boolean(collaboration.session)}
-        participants={collaboration.participants}
-      />
-
-      <MapShareDialog
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        layoutCode={collaboration.exportLayout()}
-        onImport={(code) => {
-          collaboration.importLayout(code);
-          setShareDialogOpen(false);
-        }}
-        elementCount={collaboration.elements.length}
-      />
 
       <div className="absolute top-3 left-3 nexus-map-hud-panel text-[11px] z-[12]">
         <div className="nexus-map-hud-title">Stanton Tactical Ops</div>
