@@ -1,14 +1,57 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import RadialMenu from './RadialMenu';
+import type { ControlZone, TacticalLayerId } from '../../schemas/mapSchemas';
+import type { IntelRenderable } from '../../services/intelService';
+import type { MapCommsOverlay, MapCommsOverlayCallout, MapCommsOverlayLink } from '../../services/mapCommsOverlayService';
+import type { MapLogisticsLane, MapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
+import type {
+  MapRadialState,
+  MapCommsAnchor,
+  OpsOverlayNode,
+  RenderablePresence,
+  TacticalRenderableNode,
+  TacticalMapViewMode,
+} from './mapTypes';
+import RadialMenu, { type RadialMenuItem } from './RadialMenu';
 import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
+import MapDrawingTools from './MapDrawingTools';
+import MapCollaborativeCursors from './MapCollaborativeCursors';
+import MapDrawingLayer from './MapDrawingLayer';
+import MapShareDialog from './MapShareDialog';
+import { useMapCollaboration } from '../../hooks/useMapCollaboration';
 
-function clamp(value, min, max) {
+interface MapStageCanvasProps {
+  layerEnabled: (id: TacticalLayerId) => boolean;
+  opsOverlay: OpsOverlayNode[];
+  controlZones: ControlZone[];
+  visibleCommsLinks: MapCommsOverlayLink[];
+  commsOverlay: MapCommsOverlay;
+  commsAnchors: Record<string, MapCommsAnchor>;
+  visibleCommsCallouts: MapCommsOverlayCallout[];
+  logisticsOverlay: MapLogisticsOverlay;
+  visibleMapNodes: TacticalRenderableNode[];
+  presence: RenderablePresence[];
+  visibleIntel: IntelRenderable[];
+  mapViewMode: TacticalMapViewMode;
+  selectedNodeId?: string;
+  selectedNodeLabel?: string;
+  activeRadial: MapRadialState | null;
+  radialItems: RadialMenuItem[];
+  hasAnyOverlay: boolean;
+  operationId?: string;
+  actorId?: string;
+  onClearRadial: () => void;
+  onSelectZone: (zoneId: string) => void;
+  onSelectIntel: (intelId: string) => void;
+  onSetActiveRadial: (value: MapRadialState | null) => void;
+}
+
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function clampViewportCenter(center, zoom) {
+function clampViewportCenter(center: { x: number; y: number }, zoom: number): { x: number; y: number } {
   const boundedZoom = clamp(zoom, 0.8, 2.2);
   const halfSpan = 50 / boundedZoom;
   return {
@@ -17,51 +60,51 @@ function clampViewportCenter(center, zoom) {
   };
 }
 
-function confidenceBandToStroke(confidence) {
+function confidenceBandToStroke(confidence: IntelRenderable['confidence']): number {
   if (confidence === 'HIGH') return 0.65;
   if (confidence === 'MED') return 0.5;
   return 0.42;
 }
 
-function confidenceBandToColor(confidence) {
+function confidenceBandToColor(confidence: IntelRenderable['confidence']): string {
   if (confidence === 'HIGH') return 'rgba(118, 201, 140, 0.9)';
   if (confidence === 'MED') return 'rgba(201, 161, 94, 0.86)';
   return 'rgba(189, 104, 87, 0.82)';
 }
 
-function glyphFillForIntelType(type) {
+function glyphFillForIntelType(type: IntelRenderable['type']): string {
   if (type === 'PIN') return 'rgba(84, 146, 196, 0.24)';
   if (type === 'MARKER') return 'rgba(98, 162, 138, 0.22)';
   return 'rgba(122, 142, 164, 0.22)';
 }
 
-function keyForIntel(intel) {
+function keyForIntel(intel: IntelRenderable): string {
   return `${intel.id}:${intel.updatedAt}`;
 }
 
-function intelTooltip(intel) {
+function intelTooltip(intel: IntelRenderable): string {
   return `${intel.title} | ${intel.type} | ${intel.stratum} | ${intel.confidence} | ttl ${intel.ttl.remainingSeconds}s`;
 }
 
-function stateColor(state) {
+function stateColor(state: RenderablePresence['displayState']): string {
   if (state === 'DECLARED') return 'rgba(118, 201, 140, 0.86)';
   if (state === 'INFERRED') return 'rgba(201, 161, 94, 0.85)';
   return 'rgba(135, 128, 122, 0.72)';
 }
 
-function confidenceColor(confidenceBand) {
+function confidenceColor(confidenceBand: RenderablePresence['confidenceBand']): string {
   if (confidenceBand === 'HIGH') return 'rgba(118, 201, 140, 0.9)';
   if (confidenceBand === 'MED') return 'rgba(201, 161, 94, 0.85)';
   return 'rgba(189, 104, 87, 0.85)';
 }
 
-function commsPriorityColor(priority) {
+function commsPriorityColor(priority: string): string {
   if (priority === 'CRITICAL') return 'rgba(214, 83, 64, 0.92)';
   if (priority === 'HIGH') return 'rgba(201, 161, 94, 0.9)';
   return 'rgba(118, 172, 214, 0.84)';
 }
 
-function logisticsLaneColor(lane) {
+function logisticsLaneColor(lane: MapLogisticsLane): string {
   if (lane.stale) return 'rgba(126, 119, 112, 0.45)';
   if (lane.laneKind === 'EXTRACT') return 'rgba(118, 201, 140, 0.88)';
   if (lane.laneKind === 'HOLD') return 'rgba(201, 161, 94, 0.86)';
@@ -70,7 +113,7 @@ function logisticsLaneColor(lane) {
   return 'rgba(118, 172, 214, 0.88)';
 }
 
-function nodeStrokeColor(category, isSystem) {
+function nodeStrokeColor(category: string | undefined, isSystem: boolean): string {
   if (isSystem) return 'rgba(235, 224, 146, 0.86)';
   if (category === 'planet') return 'rgba(142, 206, 172, 0.74)';
   if (category === 'moon') return 'rgba(154, 170, 186, 0.62)';
@@ -80,7 +123,7 @@ function nodeStrokeColor(category, isSystem) {
   return 'rgba(124, 188, 160, 0.62)';
 }
 
-function nodeFillColor(category, isSystem) {
+function nodeFillColor(category: string | undefined, isSystem: boolean): string {
   if (isSystem) return 'rgba(214, 168, 94, 0.26)';
   if (category === 'planet') return 'rgba(70, 132, 108, 0.27)';
   if (category === 'moon') return 'rgba(74, 92, 104, 0.24)';
@@ -90,7 +133,7 @@ function nodeFillColor(category, isSystem) {
   return 'rgba(64, 92, 82, 0.2)';
 }
 
-function shouldRenderLabel(node, viewMode, selectedNodeId) {
+function shouldRenderLabel(node: TacticalRenderableNode, viewMode: TacticalMapViewMode, selectedNodeId?: string): boolean {
   if (selectedNodeId && node.id === selectedNodeId) return true;
   if (node.kind === 'system' || node.category === 'planet') return true;
   if (viewMode === 'LOCAL') return node.category !== 'orbital-marker';
@@ -116,27 +159,36 @@ export default function MapStageCanvas({
   activeRadial,
   radialItems,
   hasAnyOverlay,
+  operationId,
+  actorId,
   onClearRadial,
   onSelectZone,
   onSelectIntel,
   onSetActiveRadial,
-}) {
-  const stageRef = useRef(null);
-  const minimapRef = useRef(null);
-  const dragStateRef = useRef(null);
+}: MapStageCanvasProps) {
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const minimapRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{ pointerId: number; clientX: number; clientY: number } | null>(null);
   const recenterKeyRef = useRef('');
+  const drawStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pathPointsRef = useRef<Array<{ x: number; y: number }>>([]);
   const [zoom, setZoom] = useState(1);
   const [viewportCenter, setViewportCenter] = useState({ x: 50, y: 50 });
-  const [cursorCoords, setCursorCoords] = useState({ x: 50, y: 50 });
+  const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [isPointerActive, setIsPointerActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [hoveredObject, setHoveredObject] = useState(null);
-  const [drawingMode, setDrawingMode] = useState(null);
-  const [drawStart, setDrawStart] = useState(null);
-  const [drawCurrent, setDrawCurrent] = useState(null);
-  const [drawnShapes, setDrawnShapes] = useState([]);
+  const [drawMode, setDrawMode] = useState<'zone' | 'marker' | 'path' | null>(null);
+  const [drawingPreview, setDrawingPreview] = useState<any>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
   const mapScaleLabel = `${Math.max(1, Math.round(500_000 / zoom)).toLocaleString()} km`;
+
+  const collaboration = useMapCollaboration({
+    operationId: operationId || '',
+    actorId: actorId || '',
+    enabled: Boolean(operationId && actorId),
+  });
 
   const mapTransform = useMemo(() => {
     const scale = clamp(Number.isFinite(zoom) ? zoom : 1, 0.8, 2.2);
@@ -176,7 +228,7 @@ export default function MapStageCanvas({
             dashed: node.category !== 'moon',
           };
         })
-        .filter(Boolean),
+        .filter(Boolean) as Array<{ id: string; x: number; y: number; radius: number; dashed: boolean }>,
     [visibleMapNodes, mapViewMode]
   );
   const mapNodeIdSet = useMemo(() => new Set(visibleMapNodes.map((node) => node.id)), [visibleMapNodes]);
@@ -215,7 +267,7 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x: node.x, y: node.y }, zoom));
   }, [selectedNodeId, mapViewMode, zoom]);
 
-  const handleCursorUpdate = (event) => {
+  const handleCursorUpdate: React.PointerEventHandler<HTMLDivElement> = (event) => {
     if (!stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -226,25 +278,49 @@ export default function MapStageCanvas({
     const x = clamp(viewportCenter.x + (centeredX - 50) / zoom, 0, 100);
     const y = clamp(viewportCenter.y + (centeredY - 50) / zoom, 0, 100);
     setCursorCoords({ x, y });
+    
+    // Update collaborative cursor
+    collaboration.updateCursor(x, y);
   };
 
-  const handlePointerDown = (event) => {
+  const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
     if (event.button !== 0) return;
-    const target = event.target;
+    const target = event.target as HTMLElement;
     if (target.closest('[data-map-interactive="true"]')) return;
-    if (!stageRef.current) return;
     
-    if (drawingMode) {
-      const rect = stageRef.current.getBoundingClientRect();
-      const relativeX = (event.clientX - rect.left) / rect.width;
-      const relativeY = (event.clientY - rect.top) / rect.height;
-      const x = clamp(viewportCenter.x + (relativeX * 100 - 50) / zoom, 0, 100);
-      const y = clamp(viewportCenter.y + (relativeY * 100 - 50) / zoom, 0, 100);
-      setDrawStart({ x, y });
-      setDrawCurrent({ x, y });
-      return;
+    // Handle drawing modes
+    if (drawMode) {
+      event.stopPropagation();
+      
+      if (drawMode === 'marker') {
+        // Place marker immediately
+        collaboration.addElement({
+          type: 'marker',
+          data: {
+            x: cursorCoords.x,
+            y: cursorCoords.y,
+            fill: 'rgba(239, 68, 68, 0.7)',
+            stroke: 'rgba(239, 68, 68, 1)',
+            label: 'Marker',
+          },
+        });
+        setDrawMode(null);
+        return;
+      }
+      
+      if (drawMode === 'zone') {
+        drawStartRef.current = { x: cursorCoords.x, y: cursorCoords.y };
+        return;
+      }
+      
+      if (drawMode === 'path') {
+        pathPointsRef.current.push({ x: cursorCoords.x, y: cursorCoords.y });
+        setDrawingPreview({ type: 'path', points: [...pathPointsRef.current] });
+        return;
+      }
     }
     
+    if (!stageRef.current) return;
     stageRef.current.setPointerCapture(event.pointerId);
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -255,16 +331,20 @@ export default function MapStageCanvas({
     onClearRadial();
   };
 
-  const handlePointerMove = (event) => {
+  const handlePointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
     handleCursorUpdate(event);
     
-    if (drawingMode && drawStart && stageRef.current) {
-      const rect = stageRef.current.getBoundingClientRect();
-      const relativeX = (event.clientX - rect.left) / rect.width;
-      const relativeY = (event.clientY - rect.top) / rect.height;
-      const x = clamp(viewportCenter.x + (relativeX * 100 - 50) / zoom, 0, 100);
-      const y = clamp(viewportCenter.y + (relativeY * 100 - 50) / zoom, 0, 100);
-      setDrawCurrent({ x, y });
+    // Handle zone drawing preview
+    if (drawMode === 'zone' && drawStartRef.current) {
+      const dx = cursorCoords.x - drawStartRef.current.x;
+      const dy = cursorCoords.y - drawStartRef.current.y;
+      const radius = Math.sqrt(dx * dx + dy * dy);
+      setDrawingPreview({
+        type: 'zone',
+        cx: drawStartRef.current.x,
+        cy: drawStartRef.current.y,
+        radius,
+      });
       return;
     }
     
@@ -292,24 +372,23 @@ export default function MapStageCanvas({
     );
   };
 
-  const handlePointerUp = (event) => {
-    if (drawingMode && drawStart && drawCurrent) {
-      const dx = Math.abs(drawCurrent.x - drawStart.x);
-      const dy = Math.abs(drawCurrent.y - drawStart.y);
-      if (dx > 1 || dy > 1) {
-        setDrawnShapes((prev) => [
-          ...prev,
-          {
-            id: `drawn-${Date.now()}`,
-            type: drawingMode,
-            start: drawStart,
-            end: drawCurrent,
-            timestamp: Date.now(),
-          },
-        ]);
-      }
-      setDrawStart(null);
-      setDrawCurrent(null);
+  const handlePointerUp: React.PointerEventHandler<HTMLDivElement> = (event) => {
+    // Complete zone drawing
+    if (drawMode === 'zone' && drawStartRef.current && drawingPreview) {
+      collaboration.addElement({
+        type: 'circle',
+        data: {
+          cx: drawingPreview.cx,
+          cy: drawingPreview.cy,
+          radius: drawingPreview.radius,
+          fill: 'rgba(59, 130, 246, 0.2)',
+          stroke: 'rgba(59, 130, 246, 0.8)',
+          strokeWidth: 0.4,
+        },
+      });
+      drawStartRef.current = null;
+      setDrawingPreview(null);
+      setDrawMode(null);
       return;
     }
     
@@ -320,7 +399,7 @@ export default function MapStageCanvas({
     setIsDragging(false);
   };
 
-  const updateZoom = (updater) => {
+  const updateZoom = (updater: (value: number) => number) => {
     setZoom((prev) => {
       const next = clamp(updater(prev), 0.8, 2.2);
       setViewportCenter((center) => clampViewportCenter(center, next));
@@ -328,7 +407,7 @@ export default function MapStageCanvas({
     });
   };
 
-  const handleWheel = (event) => {
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
     if (!stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
@@ -353,7 +432,7 @@ export default function MapStageCanvas({
     );
   };
 
-  const handleMinimapPointerDown = (event) => {
+  const handleMinimapPointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
     event.stopPropagation();
     if (!minimapRef.current) return;
     const rect = minimapRef.current.getBoundingClientRect();
@@ -363,7 +442,7 @@ export default function MapStageCanvas({
     setViewportCenter(clampViewportCenter({ x, y }, zoom));
   };
 
-  const radialAnchorFromPointer = (clientX, clientY) => {
+  const radialAnchorFromPointer = (clientX: number, clientY: number): { x: number; y: number } => {
     if (!stageRef.current) return { x: 50, y: 50 };
     const rect = stageRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return { x: 50, y: 50 };
@@ -373,22 +452,56 @@ export default function MapStageCanvas({
     };
   };
 
-  const radialAnchorFromNode = (x, y) => ({
+  const radialAnchorFromNode = (x: number, y: number): { x: number; y: number } => ({
     x: clamp(50 + (x - viewportCenter.x) * zoom, 6, 94),
     y: clamp(50 + (y - viewportCenter.y) * zoom, 6, 94),
   });
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (drawMode === 'path' && event.key === 'Enter') {
+      // Complete path
+      if (pathPointsRef.current.length >= 2) {
+        collaboration.addElement({
+          type: 'path',
+          data: {
+            points: [...pathPointsRef.current],
+            stroke: 'rgba(251, 191, 36, 0.8)',
+            strokeWidth: 0.3,
+          },
+        });
+      }
+      pathPointsRef.current = [];
+      setDrawingPreview(null);
+      setDrawMode(null);
+    } else if (drawMode && event.key === 'Escape') {
+      // Cancel drawing
+      drawStartRef.current = null;
+      pathPointsRef.current = [];
+      setDrawingPreview(null);
+      setDrawMode(null);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [drawMode, collaboration]);
 
   return (
     <div
       ref={stageRef}
       className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage ${
-        isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        isDragging ? 'cursor-grabbing' : drawMode ? 'cursor-crosshair' : 'cursor-grab'
       }`}
       data-dragging={isDragging ? 'true' : 'false'}
-      onClick={onClearRadial}
+      onClick={(e) => {
+        if (!drawMode) onClearRadial();
+      }}
       onDoubleClick={() => {
-        setZoom(1);
-        setViewportCenter({ x: 50, y: 50 });
+        if (!drawMode) {
+          setZoom(1);
+          setViewportCenter({ x: 50, y: 50 });
+        }
       }}
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
@@ -406,13 +519,6 @@ export default function MapStageCanvas({
           <pattern id="zone-contested-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(201,152,96,0.3)" strokeWidth="1" />
           </pattern>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="0.5" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
 
         <rect x="0" y="0" width="100" height="100" fill="rgba(5, 10, 13, 0.94)" />
@@ -666,7 +772,6 @@ export default function MapStageCanvas({
             : isLagrange
               ? node.label.replace(/^.*\sL/, 'L')
               : node.label;
-          const isHovered = hoveredObject?.type === 'node' && hoveredObject?.id === node.id;
           return (
             <g
               key={node.id}
@@ -692,8 +797,6 @@ export default function MapStageCanvas({
                   nodeId: node.id,
                 });
               }}
-              onPointerEnter={() => setHoveredObject({ type: 'node', id: node.id, data: node })}
-              onPointerLeave={() => setHoveredObject(null)}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return;
                 event.preventDefault();
@@ -735,7 +838,6 @@ export default function MapStageCanvas({
                 stroke={nodeStrokeColor(node.category, isSystem)}
                 strokeWidth={isSystem ? 0.92 : isOm ? 0.26 : isStation ? 0.38 : 0.46}
                 opacity={isOm ? 0.7 : 1}
-                filter={isHovered ? 'url(#glow)' : undefined}
               />
               <TacticalNodeGlyph
                 category={node.category}
@@ -770,24 +872,9 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = node.x + ((index % 3) - 1) * 1.9;
               const y = node.y - node.radius - 2.2 - ((index % 2) * 1.2);
-              const isHovered = hoveredObject?.type === 'presence' && hoveredObject?.id === entry.id;
               return (
-                <g 
-                  key={entry.id}
-                  data-map-interactive="true"
-                  onPointerEnter={() => setHoveredObject({ type: 'presence', id: entry.id, data: entry })}
-                  onPointerLeave={() => setHoveredObject(null)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <circle 
-                    cx={x} 
-                    cy={y} 
-                    r={0.9} 
-                    fill={stateColor(entry.displayState)} 
-                    stroke={confidenceColor(entry.confidenceBand)} 
-                    strokeWidth={0.28}
-                    filter={isHovered ? 'url(#glow)' : undefined}
-                  />
+                <g key={entry.id}>
+                  <circle cx={x} cy={y} r={0.9} fill={stateColor(entry.displayState)} stroke={confidenceColor(entry.confidenceBand)} strokeWidth={0.28} />
                   <text
                     x={x + 1.8}
                     y={y + 0.34}
@@ -814,7 +901,6 @@ export default function MapStageCanvas({
               const opacity = intel.ttl.stale ? 0.18 : Math.max(0.24, Math.min(0.9, intel.ttl.decayRatio));
               const stroke = confidenceBandToColor(intel.confidence);
               const fill = glyphFillForIntelType(intel.type);
-              const isHovered = hoveredObject?.type === 'intel' && hoveredObject?.id === intel.id;
               return (
                 <g
                   key={keyForIntel(intel)}
@@ -842,8 +928,6 @@ export default function MapStageCanvas({
                       nodeId: intel.anchor.nodeId,
                     });
                   }}
-                  onPointerEnter={() => setHoveredObject({ type: 'intel', id: intel.id, data: intel })}
-                  onPointerLeave={() => setHoveredObject(null)}
                   onKeyDown={(event) => {
                     if (event.key !== 'Enter' && event.key !== ' ') return;
                     event.preventDefault();
@@ -858,7 +942,7 @@ export default function MapStageCanvas({
                   }}
                   role="button"
                   tabIndex={0}
-                  style={{ cursor: 'pointer', opacity: isHovered ? Math.min(1, opacity + 0.2) : opacity }}
+                  style={{ cursor: 'pointer', opacity }}
                 >
                   <title>{intelTooltip(intel)}</title>
                   {intel.type === 'PIN' ? (
@@ -867,7 +951,6 @@ export default function MapStageCanvas({
                       fill={fill}
                       stroke={stroke}
                       strokeWidth={strokeWidth}
-                      filter={isHovered ? 'url(#glow)' : undefined}
                     />
                   ) : null}
                   {intel.type === 'MARKER' ? (
@@ -876,7 +959,6 @@ export default function MapStageCanvas({
                       fill={fill}
                       stroke={stroke}
                       strokeWidth={strokeWidth}
-                      filter={isHovered ? 'url(#glow)' : undefined}
                     />
                   ) : null}
                   {intel.type === 'NOTE' ? (
@@ -888,79 +970,86 @@ export default function MapStageCanvas({
                       fill={fill}
                       stroke={stroke}
                       strokeWidth={strokeWidth}
-                      filter={isHovered ? 'url(#glow)' : undefined}
                     />
                   ) : null}
                 </g>
-                );
-                })
-                : null}
+              );
+            })
+          : null}
 
-                {drawnShapes.map((shape) => {
-                if (shape.type === 'zone') {
-                const cx = (shape.start.x + shape.end.x) / 2;
-                const cy = (shape.start.y + shape.end.y) / 2;
-                const rx = Math.abs(shape.end.x - shape.start.x) / 2;
-                const ry = Math.abs(shape.end.y - shape.start.y) / 2;
-                return (
-                <ellipse
-                key={shape.id}
-                cx={cx}
-                cy={cy}
-                rx={rx}
-                ry={ry}
-                fill="rgba(118, 198, 158, 0.12)"
-                stroke="rgba(118, 198, 158, 0.68)"
-                strokeWidth={0.42}
-                strokeDasharray="1.2 1"
-                />
-                );
-                }
-                if (shape.type === 'marker') {
-                return (
-                <circle
-                key={shape.id}
-                cx={shape.start.x}
-                cy={shape.start.y}
-                r={1.5}
-                fill="rgba(214, 168, 94, 0.24)"
-                stroke="rgba(214, 168, 94, 0.88)"
-                strokeWidth={0.38}
-                />
-                );
-                }
-                return null;
-                })}
+        {/* Collaborative drawn elements */}
+        <MapDrawingLayer 
+          elements={collaboration.elements}
+          mapTransform=""
+          onSelectElement={setSelectedElementId}
+        />
 
-                {drawStart && drawCurrent && drawingMode === 'zone' ? (
-                <ellipse
-                cx={(drawStart.x + drawCurrent.x) / 2}
-                cy={(drawStart.y + drawCurrent.y) / 2}
-                rx={Math.abs(drawCurrent.x - drawStart.x) / 2}
-                ry={Math.abs(drawCurrent.y - drawStart.y) / 2}
-                fill="rgba(118, 198, 158, 0.08)"
-                stroke="rgba(118, 198, 158, 0.88)"
-                strokeWidth={0.38}
-                strokeDasharray="1 1"
-                />
-                ) : null}
+        {/* Drawing preview */}
+        {drawingPreview && drawingPreview.type === 'zone' && (
+          <circle
+            cx={drawingPreview.cx}
+            cy={drawingPreview.cy}
+            r={drawingPreview.radius}
+            fill="rgba(59, 130, 246, 0.15)"
+            stroke="rgba(59, 130, 246, 0.6)"
+            strokeWidth={0.3}
+            strokeDasharray="1 1"
+          />
+        )}
+        {drawingPreview && drawingPreview.type === 'path' && drawingPreview.points?.length > 0 && (
+          <path
+            d={drawingPreview.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+            fill="none"
+            stroke="rgba(251, 191, 36, 0.6)"
+            strokeWidth={0.25}
+            strokeDasharray="0.8 0.8"
+          />
+        )}
 
-                {drawStart && drawCurrent && drawingMode === 'marker' ? (
-                <circle
-                cx={drawStart.x}
-                cy={drawStart.y}
-                r={1.5}
-                fill="rgba(214, 168, 94, 0.18)"
-                stroke="rgba(214, 168, 94, 0.88)"
-                strokeWidth={0.38}
-                strokeDasharray="0.8 0.8"
-                />
-                ) : null}
-                </g>
-                </svg>
+        {/* Collaborative cursors */}
+        <MapCollaborativeCursors
+          participants={collaboration.participants}
+          currentUserId={actorId}
+          mapTransform=""
+        />
+        </g>
+      </svg>
 
       <div className="pointer-events-none absolute inset-0 nexus-map-crt-overlay" />
       <div className="pointer-events-none absolute inset-0 nexus-map-noise-overlay" />
+
+      <MapDrawingTools
+        drawMode={drawMode}
+        onChangeDrawMode={setDrawMode}
+        onSaveLayout={() => {
+          const code = collaboration.exportLayout();
+          if (code) {
+            navigator.clipboard.writeText(code);
+            alert('Map layout copied to clipboard!');
+          }
+        }}
+        onShareLayout={() => setShareDialogOpen(true)}
+        onImportLayout={() => setShareDialogOpen(true)}
+        onClearElements={() => {
+          if (confirm('Clear all drawn elements?')) {
+            collaboration.clearAllElements();
+          }
+        }}
+        elementCount={collaboration.elements.length}
+        sessionActive={Boolean(collaboration.session)}
+        participants={collaboration.participants}
+      />
+
+      <MapShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        layoutCode={collaboration.exportLayout()}
+        onImport={(code) => {
+          collaboration.importLayout(code);
+          setShareDialogOpen(false);
+        }}
+        elementCount={collaboration.elements.length}
+      />
 
       <div className="absolute top-3 left-3 nexus-map-hud-panel text-[11px] z-[12]">
         <div className="nexus-map-hud-title">Stanton Tactical Ops</div>
@@ -1071,106 +1160,7 @@ export default function MapStageCanvas({
           <span>Comms</span>
           <strong>{visibleCommsCallouts.length}</strong>
         </div>
-        <div className="flex gap-1 mt-2">
-          <button
-            type="button"
-            className={`px-2 py-1 text-[10px] rounded border transition-colors ${
-              drawingMode === 'zone'
-                ? 'border-emerald-500/70 bg-emerald-950/60 text-emerald-300'
-                : 'border-zinc-700 bg-zinc-900/60 text-zinc-400 hover:border-emerald-500/40'
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setDrawingMode((prev) => (prev === 'zone' ? null : 'zone'));
-            }}
-            title="Draw zone (click and drag)"
-          >
-            Zone
-          </button>
-          <button
-            type="button"
-            className={`px-2 py-1 text-[10px] rounded border transition-colors ${
-              drawingMode === 'marker'
-                ? 'border-amber-500/70 bg-amber-950/60 text-amber-300'
-                : 'border-zinc-700 bg-zinc-900/60 text-zinc-400 hover:border-amber-500/40'
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setDrawingMode((prev) => (prev === 'marker' ? null : 'marker'));
-            }}
-            title="Place marker (click)"
-          >
-            Mark
-          </button>
-          {drawnShapes.length > 0 ? (
-            <button
-              type="button"
-              className="px-2 py-1 text-[10px] rounded border border-red-700/60 bg-red-950/50 text-red-300 hover:border-red-600/70"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDrawnShapes([]);
-              }}
-              title="Clear all drawn shapes"
-            >
-              Clear
-            </button>
-          ) : null}
-        </div>
       </div>
-
-      {hoveredObject && (
-        <div
-          className="absolute pointer-events-none z-[15] px-2.5 py-1.5 rounded border border-zinc-700 bg-zinc-900/95 backdrop-blur-sm text-[11px] text-zinc-200 shadow-lg"
-          style={{
-            left: `${cursorCoords.x}%`,
-            top: `${Math.max(5, cursorCoords.y - 8)}%`,
-            transform: 'translate(-50%, -100%)',
-          }}
-        >
-          {hoveredObject.type === 'node' && (
-            <div className="space-y-0.5">
-              <div className="font-semibold text-emerald-300">{hoveredObject.data.label}</div>
-              <div className="text-zinc-400 text-[10px]">
-                Type: <span className="text-zinc-300">{hoveredObject.data.category || hoveredObject.data.kind}</span>
-              </div>
-              <div className="text-zinc-400 text-[10px]">
-                Coords: <span className="text-zinc-300">{hoveredObject.data.x.toFixed(1)}, {hoveredObject.data.y.toFixed(1)}</span>
-              </div>
-            </div>
-          )}
-          {hoveredObject.type === 'presence' && (
-            <div className="space-y-0.5">
-              <div className="font-semibold text-sky-300">{hoveredObject.data.subjectId}</div>
-              <div className="text-zinc-400 text-[10px]">
-                State: <span className="text-zinc-300">{hoveredObject.data.displayState}</span>
-              </div>
-              <div className="text-zinc-400 text-[10px]">
-                Confidence: <span className="text-zinc-300">{Math.round(hoveredObject.data.confidence * 100)}%</span>
-              </div>
-              <div className="text-zinc-400 text-[10px]">
-                Source: <span className="text-zinc-300">{hoveredObject.data.sourceType}</span>
-              </div>
-            </div>
-          )}
-          {hoveredObject.type === 'intel' && (
-            <div className="space-y-0.5">
-              <div className="font-semibold text-amber-300">{hoveredObject.data.title}</div>
-              <div className="text-zinc-400 text-[10px]">
-                Type: <span className="text-zinc-300">{hoveredObject.data.type}</span>
-              </div>
-              <div className="text-zinc-400 text-[10px]">
-                Stratum: <span className="text-zinc-300">{hoveredObject.data.stratum}</span>
-              </div>
-              <div className="text-zinc-400 text-[10px]">
-                Confidence: <span className="text-zinc-300">{hoveredObject.data.confidence}</span>
-              </div>
-              <div className="text-zinc-400 text-[10px]">
-                TTL: <span className="text-zinc-300">{hoveredObject.data.ttl.stale ? 'STALE' : `${hoveredObject.data.ttl.remainingSeconds}s`}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       <RadialMenu
         open={Boolean(activeRadial)}
