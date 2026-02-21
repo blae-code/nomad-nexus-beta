@@ -10,7 +10,21 @@ const CHANNEL_CATEGORIES = ['tactical', 'operations', 'social', 'direct'];
 /**
  * CommsHub — Integrated text comms panel with page-capped lists.
  */
-export default function CommsHub({ operations = [], focusOperationId, activeAppId, online, bridgeId, isExpanded = true, onToggleExpand }) {
+export default function CommsHub({
+  operations = [],
+  focusOperationId,
+  activeAppId,
+  online,
+  bridgeId,
+  actorId = '',
+  eventMessagesByChannel = {},
+  unreadByChannel = {},
+  channelVoiceMap = {},
+  voiceState = null,
+  onRouteVoiceNet,
+  isExpanded = true,
+  onToggleExpand,
+}) {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [messages, setMessages] = useState({});
   const [expandedCategories, setExpandedCategories] = useState({
@@ -35,11 +49,19 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
   const [showAiFeatures, setShowAiFeatures] = useState(true);
   const [selectedMessageForResponse, setSelectedMessageForResponse] = useState(null);
 
+  const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
+
   const channels = useMemo(() => {
+    const unreadCount = (channelId, fallback = 0) => {
+      const direct = Number(unreadByChannel[channelId]);
+      if (Number.isFinite(direct) && direct >= 0) return direct;
+      return fallback;
+    };
+
     const tactical = [
-      { id: 'command', name: 'Command Net', icon: Hash, category: 'tactical', unread: 3 },
-      { id: 'alpha-squad', name: 'Alpha Squad', icon: Hash, category: 'tactical', unread: 0 },
-      { id: 'logistics', name: 'Logistics', icon: Hash, category: 'tactical', unread: 1 },
+      { id: 'command', name: 'Command Net', icon: Hash, category: 'tactical', unread: unreadCount('command', 0) },
+      { id: 'alpha-squad', name: 'Alpha Squad', icon: Hash, category: 'tactical', unread: unreadCount('alpha-squad', 0) },
+      { id: 'logistics', name: 'Logistics', icon: Hash, category: 'tactical', unread: unreadCount('logistics', 0) },
     ];
 
     const operational = operations.slice(0, 12).map((op) => ({
@@ -47,7 +69,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
       name: op.name || 'Unnamed Op',
       icon: Hash,
       category: 'operations',
-      unread: focusOperationId && focusOperationId === op.id ? 1 : 0,
+      unread: unreadCount(`op-${op.id}`, focusOperationId && focusOperationId === op.id ? 1 : 0),
     }));
 
     const social = [
@@ -56,12 +78,12 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
     ];
 
     const direct = [
-      { id: 'dm-command', name: 'Command Officer', icon: AtSign, category: 'direct', unread: online ? 1 : 0 },
-      { id: 'dm-ops', name: `${bridgeId} Ops Desk`, icon: AtSign, category: 'direct', unread: 0 },
+      { id: 'dm-command', name: 'Command Officer', icon: AtSign, category: 'direct', unread: unreadCount('dm-command', online ? 1 : 0) },
+      { id: 'dm-ops', name: `${bridgeId} Ops Desk`, icon: AtSign, category: 'direct', unread: unreadCount('dm-ops', 0) },
     ];
 
     return { tactical, operations: operational, social, direct };
-  }, [operations, focusOperationId, online, bridgeId]);
+  }, [operations, focusOperationId, online, bridgeId, unreadByChannel]);
 
   const categoryPageCounts = useMemo(() => {
     return CHANNEL_CATEGORIES.reduce((acc, category) => {
@@ -86,8 +108,22 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
     });
   }, [categoryPageCounts]);
 
-  const currentMessages = messages[selectedChannel] || [];
-  const orderedMessages = useMemo(() => [...currentMessages].reverse(), [currentMessages]);
+  useEffect(() => {
+    if (selectedChannel) return;
+    const fallback = channels.tactical?.[0]?.id || channels.operations?.[0]?.id || channels.social?.[0]?.id || channels.direct?.[0]?.id || null;
+    if (fallback) setSelectedChannel(fallback);
+  }, [selectedChannel, channels]);
+
+  const currentMessages = useMemo(() => {
+    if (!selectedChannel) return [];
+    const runtimeFeed = Array.isArray(eventMessagesByChannel[selectedChannel]) ? eventMessagesByChannel[selectedChannel] : [];
+    const localFeed = Array.isArray(messages[selectedChannel]) ? messages[selectedChannel] : [];
+    return [...runtimeFeed, ...localFeed]
+      .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
+      .slice(0, 48);
+  }, [selectedChannel, eventMessagesByChannel, messages]);
+
+  const orderedMessages = currentMessages;
   const messagePageCount = Math.max(1, Math.ceil(orderedMessages.length / MESSAGE_PAGE_SIZE));
   const pagedMessages = useMemo(
     () => orderedMessages.slice(messagePage * MESSAGE_PAGE_SIZE, messagePage * MESSAGE_PAGE_SIZE + MESSAGE_PAGE_SIZE),
@@ -130,12 +166,15 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
 
   const handleSendMessage = useCallback(() => {
     if (!messageInput.trim() || !selectedChannel) return;
+    const nowMs = Date.now();
 
     const newMessage = {
       id: Date.now(),
       text: messageInput,
-      author: 'You',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      author: actorId || 'You',
+      timestamp: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAtMs: nowMs,
+      source: 'local',
     };
 
     setMessages((prev) => ({
@@ -150,7 +189,7 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
         setMessageAnalyses((prev) => ({ ...prev, [newMessage.id]: analysis }));
       });
     }
-  }, [messageInput, selectedChannel, showAiFeatures]);
+  }, [messageInput, selectedChannel, showAiFeatures, actorId]);
 
   const handleAiSearch = async (query) => {
     if (!query.trim() || !currentMessages.length) return;
@@ -299,6 +338,25 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
                   </button>
                 </div>
 
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider">
+                    <NexusBadge tone={online ? 'ok' : 'danger'}>{online ? 'Link' : 'Offline'}</NexusBadge>
+                    <NexusBadge tone={voiceState?.connectionState === 'CONNECTED' ? 'active' : voiceState?.connectionState === 'ERROR' ? 'danger' : 'neutral'}>
+                      {voiceState?.connectionState || 'IDLE'}
+                    </NexusBadge>
+                    {selectedVoiceNetId ? <NexusBadge tone="neutral">{selectedVoiceNetId}</NexusBadge> : null}
+                  </div>
+                  {selectedVoiceNetId && onRouteVoiceNet ? (
+                    <button
+                      type="button"
+                      onClick={() => onRouteVoiceNet(selectedChannel)}
+                      className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
+                    >
+                      Route Voice
+                    </button>
+                  ) : null}
+                </div>
+
                 {showAiFeatures ? (
                   <div className="relative">
                     <input
@@ -356,6 +414,11 @@ export default function CommsHub({ operations = [], focusOperationId, activeAppI
                             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                               <span className="text-[10px] font-semibold text-zinc-300">{message.author}</span>
                               <span className="text-[9px] text-zinc-600">{message.timestamp}</span>
+                              {message.source === 'event' ? (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-blue-500/20 text-blue-300">
+                                  Feed
+                                </span>
+                              ) : null}
                               {showAiFeatures && analysis ? (
                                 <>
                                   {analysis.priority === 'critical' ? (

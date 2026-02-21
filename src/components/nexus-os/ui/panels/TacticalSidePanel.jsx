@@ -23,6 +23,10 @@ export default function TacticalSidePanel({
   statusMetrics = [],
   metricHistory = {},
   logEntries = [],
+  headerStatusLabel = 'ACTIVE',
+  headerStatusTone = 'ok',
+  headerSignalValue = '100%',
+  headerSignalTone = 'neutral',
   onMaximize,
   onMinimize,
   className = '',
@@ -56,6 +60,23 @@ export default function TacticalSidePanel({
     [logEntries, logsPage]
   );
 
+  const statusToneClasses = {
+    ok: { dot: 'bg-green-500', text: 'text-green-400' },
+    warning: { dot: 'bg-amber-500', text: 'text-amber-400' },
+    danger: { dot: 'bg-red-500', text: 'text-red-400' },
+    neutral: { dot: 'bg-zinc-500', text: 'text-zinc-400' },
+  };
+
+  const signalToneClasses = {
+    ok: 'text-green-400',
+    warning: 'text-amber-400',
+    danger: 'text-red-400',
+    neutral: 'text-zinc-500',
+  };
+
+  const headerStatusClass = statusToneClasses[headerStatusTone] || statusToneClasses.neutral;
+  const headerSignalClass = signalToneClasses[headerSignalTone] || signalToneClasses.neutral;
+
   return (
     <aside
       className={`nexus-surface border-${isLeft ? 'r' : 'l'} border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
@@ -73,13 +94,13 @@ export default function TacticalSidePanel({
             {Icon ? <Icon className="w-3 h-3 text-orange-400" /> : null}
             <span className="text-[9px] font-bold uppercase tracking-wider text-orange-400">{title}</span>
             <div className="flex items-center gap-1">
-              <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[8px] text-green-400 font-mono">ACTIVE</span>
+              <div className={`w-1 h-1 rounded-full animate-pulse ${headerStatusClass.dot}`} />
+              <span className={`text-[8px] font-mono ${headerStatusClass.text}`}>{headerStatusLabel}</span>
             </div>
           </div>
           <div className="flex items-center gap-1 relative z-10">
-            <Signal className="w-2.5 h-2.5 text-zinc-500" />
-            <span className="text-[8px] font-mono text-zinc-500">100%</span>
+            <Signal className={`w-2.5 h-2.5 ${headerSignalClass}`} />
+            <span className={`text-[8px] font-mono ${headerSignalClass}`}>{headerSignalValue}</span>
           </div>
         </div>
       )}

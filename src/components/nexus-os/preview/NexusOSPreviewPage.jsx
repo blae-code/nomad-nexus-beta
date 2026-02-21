@@ -29,6 +29,7 @@ import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import TacticalSidePanel from '../ui/panels/TacticalSidePanel';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import useNexusSidePanelRuntime from './useNexusSidePanelRuntime';
 import { getActiveChannelId } from '../services/channelContextService';
 import { listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
@@ -173,15 +174,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
-  
-  const [metricHistory, setMetricHistory] = useState({
-    Channels: Array.from({ length: 20 }, () => ({ value: 8 + Math.random() * 2 - 1 })),
-    Unread: Array.from({ length: 20 }, () => ({ value: 4 + Math.random() * 3 - 1.5 })),
-    Ping: Array.from({ length: 20 }, () => ({ value: 24 + Math.random() * 10 - 5 })),
-    Nets: Array.from({ length: 20 }, () => ({ value: 3 + Math.random() * 0.5 - 0.25 })),
-    Users: Array.from({ length: 20 }, () => ({ value: 12 + Math.random() * 4 - 2 })),
-    Quality: Array.from({ length: 20 }, () => ({ value: 98 + Math.random() * 2 - 1 })),
-  });
 
   const lifecycle = useNexusAppLifecycle(FOCUS_APP_CATALOG.map((entry) => entry.id));
   const reducedMotion = useReducedMotion();
@@ -560,60 +552,60 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     [voiceNet]
   );
 
-  const panelLogEntries = useMemo(() => {
-    const levelForEvent = (eventTypeRaw) => {
-      const eventType = String(eventTypeRaw || '').toUpperCase();
-      if (eventType.includes('ERROR') || eventType.includes('ABORT')) return 'error';
-      if (eventType.includes('WARN') || eventType.includes('HOLD') || eventType.includes('DEGRADE')) return 'warning';
-      if (eventType.includes('ACK') || eventType.includes('COMPLETE') || eventType.includes('CONFIRM')) return 'success';
-      return 'info';
-    };
+  const channelVoiceMap = useMemo(() => {
+    const map = {};
+    const findByMatch = (matcher) => effectiveVoiceNets.find((net) => matcher(String(net?.id || ''), String(net?.code || ''), String(net?.label || net?.name || ''), String(net?.event_id || net?.eventId || '')));
 
-    const operationLogs = operations.slice(0, 6).map((operation) => ({
-      timestamp: Date.parse(operation.updatedAt || operation.createdAt || '') || clockNowMs,
-      level: operation.status === 'ACTIVE' ? 'success' : operation.status === 'WRAPPING' ? 'warning' : 'info',
-      message: `${operation.name || 'Operation'} · ${operation.status}`,
-    }));
+    const commandNet = findByMatch((id, code, label) => {
+      const inspect = `${id} ${code} ${label}`.toLowerCase();
+      return inspect.includes('command') || inspect.includes('-cmd');
+    });
+    if (commandNet?.id) map.command = commandNet.id;
 
-    const eventLogs = events.slice(-18).map((event) => ({
-      timestamp: Date.parse(event.createdAt || '') || clockNowMs,
-      level: levelForEvent(event.eventType),
-      message: `${String(event.eventType || 'EVENT').replace(/_/g, ' ')} · ${event.authorId || 'unknown'}`,
-    }));
+    const squadNet = findByMatch((_id, code, label) => `${code} ${label}`.toLowerCase().includes('squad') || code.toLowerCase().includes('-sq'));
+    if (squadNet?.id) map['alpha-squad'] = squadNet.id;
 
-    const connectionLog = {
-      timestamp: clockNowMs,
-      level: online ? 'success' : 'warning',
-      message: online ? `${bridgeId} uplink stable` : `${bridgeId} uplink degraded`,
-    };
+    const logisticsNet = findByMatch((_id, code, label) => `${code} ${label}`.toLowerCase().includes('logistics') || code.toLowerCase().includes('-log'));
+    if (logisticsNet?.id) map.logistics = logisticsNet.id;
 
-    return [connectionLog, ...eventLogs, ...operationLogs]
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 28);
-  }, [events, operations, online, bridgeId, clockNowMs]);
+    operations.forEach((operation) => {
+      const opId = String(operation.id || '').trim();
+      if (!opId) return;
+      const opNet = effectiveVoiceNets.find((net) => {
+        const netId = String(net?.id || '');
+        const eventId = String(net?.event_id || net?.eventId || '');
+        return eventId === opId || netId === `net:${opId}`;
+      });
+      if (opNet?.id) map[`op-${opId}`] = opNet.id;
+    });
 
-  const leftPanelMetrics = useMemo(() => {
-    const recentUnread = events.filter((event) => {
-      const ageMs = clockNowMs - (Date.parse(event.createdAt || '') || 0);
-      return ageMs <= 10 * 60 * 1000 && event.authorId !== actorId;
-    }).length;
-    const channelCount = 6 + Math.min(6, operations.length);
-    const pingMs = online ? Math.max(18, 20 + Math.min(65, Math.round(events.length / 2))) : 0;
-    return [
-      { label: 'Channels', value: String(channelCount) },
-      { label: 'Unread', value: String(recentUnread) },
-      { label: 'Ping', value: online ? `${pingMs}ms` : '--' },
-    ];
-  }, [operations.length, events, clockNowMs, actorId, online]);
+    if (!map.command && activeVoiceNetId) map.command = activeVoiceNetId;
+    return map;
+  }, [effectiveVoiceNets, operations, activeVoiceNetId]);
 
-  const rightPanelMetrics = useMemo(() => {
-    const qualityPct = online ? Math.max(74, 100 - Math.min(24, Math.round(events.length / 3))) : 0;
-    return [
-      { label: 'Nets', value: String(effectiveVoiceNets.length) },
-      { label: 'Users', value: String(effectiveVoiceParticipants.length) },
-      { label: 'Quality', value: online ? `${qualityPct}%` : '--' },
-    ];
-  }, [effectiveVoiceNets.length, effectiveVoiceParticipants.length, online, events.length]);
+  const routeVoiceForChannel = useCallback(
+    async (channelId) => {
+      const netId = channelVoiceMap[channelId];
+      if (!netId) {
+        setCommandFeedback('No mapped voice lane for selected text channel.');
+        return;
+      }
+      await setTransmitVoiceNet(netId);
+    },
+    [channelVoiceMap, setTransmitVoiceNet]
+  );
+
+  const sidePanelRuntime = useNexusSidePanelRuntime({
+    events,
+    operations,
+    online,
+    bridgeId,
+    clockNowMs,
+    actorId,
+    effectiveVoiceNets,
+    effectiveVoiceParticipants,
+    voiceNet,
+  });
 
   const runNexusCommand = (rawCommand) => {
     const input = String(rawCommand || '').trim();
@@ -656,24 +648,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   useEffect(() => {
     const timerId = window.setInterval(() => setClockNowMs(Date.now()), 1000);
     return () => window.clearInterval(timerId);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetricHistory((prev) => {
-        const updated = {};
-        Object.keys(prev).forEach((key) => {
-          const history = [...prev[key]];
-          const lastValue = history[history.length - 1]?.value || 0;
-          const newValue = lastValue + (Math.random() * 2 - 1);
-          history.push({ value: Math.max(0, newValue) });
-          if (history.length > 20) history.shift();
-          updated[key] = history;
-        });
-        return updated;
-      });
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -787,9 +761,13 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           isResizing={isResizingLeft}
           title="Text Comms"
           icon={Radio}
-          statusMetrics={leftPanelMetrics}
-          metricHistory={metricHistory}
-          logEntries={panelLogEntries}
+          statusMetrics={sidePanelRuntime.leftPanelMetrics}
+          metricHistory={sidePanelRuntime.metricHistory}
+          logEntries={sidePanelRuntime.panelLogEntries}
+          headerStatusLabel={sidePanelRuntime.leftPanelHeader.label}
+          headerStatusTone={sidePanelRuntime.leftPanelHeader.tone}
+          headerSignalValue={sidePanelRuntime.leftPanelHeader.signal}
+          headerSignalTone={sidePanelRuntime.leftPanelHeader.signalTone}
           onMaximize={() => setLeftPanelWidth(600)}
           onMinimize={() => setLeftPanelWidth(280)}
         >
@@ -799,6 +777,12 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             activeAppId="comms"
             online={online}
             bridgeId={bridgeId}
+            actorId={actorId}
+            eventMessagesByChannel={sidePanelRuntime.eventMessagesByChannel}
+            unreadByChannel={sidePanelRuntime.unreadByChannel}
+            channelVoiceMap={channelVoiceMap}
+            voiceState={sidePanelRuntime.voiceState}
+            onRouteVoiceNet={routeVoiceForChannel}
             isExpanded={!leftPanelCollapsed}
             onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
           />
@@ -831,9 +815,13 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           isResizing={isResizingRight}
           title="Voice Comms"
           icon={Signal}
-          statusMetrics={rightPanelMetrics}
-          metricHistory={metricHistory}
-          logEntries={panelLogEntries}
+          statusMetrics={sidePanelRuntime.rightPanelMetrics}
+          metricHistory={sidePanelRuntime.metricHistory}
+          logEntries={sidePanelRuntime.panelLogEntries}
+          headerStatusLabel={sidePanelRuntime.rightPanelHeader.label}
+          headerStatusTone={sidePanelRuntime.rightPanelHeader.tone}
+          headerSignalValue={sidePanelRuntime.rightPanelHeader.signal}
+          headerSignalTone={sidePanelRuntime.rightPanelHeader.signalTone}
           onMaximize={() => setRightPanelWidth(600)}
           onMinimize={() => setRightPanelWidth(280)}
         >
