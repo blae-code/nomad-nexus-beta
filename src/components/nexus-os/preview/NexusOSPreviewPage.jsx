@@ -1,33 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import {
   BRIDGE_DEFAULT_PRESET,
   getBridgeThemeCssVars,
-  CommandFocus,
   CommsNetworkConsole,
-  CommsPeekPanel,
   CqbCommandConsole,
-  CqbFeedPanel,
-  CqbMacroPad,
   buildDevControlSignals,
   buildDevLocationEstimates,
   DEV_CQB_ROSTER,
   FittingForceDesignFocusApp,
   MobileArCompanionFocusApp,
-  MobileCompanionPanel,
   OperationFocusApp,
   ReportsFocusApp,
   NexusBadge,
-  NexusButton,
-  RustPulseIndicator,
   TacticalMapFocusApp,
-  TacticalMapPanel,
-  TeamTilesCqbMode,
-  WorkbenchGrid,
-  availabilityCopy,
-  availabilityLabel,
-  availabilityTone,
-  resolveAvailabilityState,
   getNexusCssVars,
   NexusBootOverlay,
   NexusCommandDeck,
@@ -43,12 +29,9 @@ import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import TacticalSidePanel from '../ui/panels/TacticalSidePanel';
 import { getActiveChannelId } from '../services/channelContextService';
-import { getCqbEventDiagnostics, listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
+import { listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
-import { getIntelObjectTTLState, listAllIntelObjectsForDev } from '../services/intelService';
 import { getFocusOperationId, listOperationsForUser, subscribeOperations } from '../services/operationService';
-import { subscribeOperationEnhancements } from '../services/operationEnhancementService';
-import { runNexusOSInvariantChecks, summarizeInvariantWarnings } from '../diagnostics';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
 import {
   AlertTriangle,
@@ -65,11 +48,6 @@ import {
   Smartphone,
   Wrench,
 } from 'lucide-react';
-import {
-  formatGameplayLoopVariantId,
-  isGameplayLoopVariantToken,
-  normalizeGameplayLoopVariantId,
-} from '../ui/cqb/gameplayLoopLanguage';
 import '../ui/theme/nexus-shell.css';
 
 const FOCUS_APP_CATALOG = [
@@ -138,34 +116,6 @@ function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onCl
   );
 }
 
-function SystemHealthPanel() {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between rounded border border-zinc-700 bg-zinc-900/60 px-3 py-2">
-        <span className="text-xs text-zinc-400">Shell Integrity</span>
-        <NexusBadge tone="ok">Stable</NexusBadge>
-      </div>
-      <div className="flex items-center justify-between rounded border border-zinc-700 bg-zinc-900/60 px-3 py-2">
-        <span className="text-xs text-zinc-400">Gameplay Event Stream</span>
-        <RustPulseIndicator active label="Listening" />
-      </div>
-    </div>
-  );
-}
-
-function CqbConsoleLauncherPanel({ onOpenCqbConsole, bridgeId, onOpenCommsNetwork, onOpenMapFocus }) {
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-zinc-400">Bridge: <span className="text-zinc-200 font-semibold">{bridgeId}</span></p>
-      <div className="flex items-center gap-2 flex-wrap">
-        <NexusButton size="sm" intent="primary" onClick={onOpenCqbConsole}>Open Action Console</NexusButton>
-        <NexusButton size="sm" intent="subtle" onClick={onOpenCommsNetwork}>Open Comms Network</NexusButton>
-        <NexusButton size="sm" intent="subtle" onClick={onOpenMapFocus}>Open Tactical Map</NexusButton>
-      </div>
-    </div>
-  );
-}
-
 export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const { user } = useAuth();
   const vars = getNexusCssVars();
@@ -174,7 +124,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const workspaceDisplayCallsign = user?.member_profile_data?.display_callsign || user?.member_profile_data?.callsign || user?.callsign || 'Operator';
   const sessionScopeKey = `${isWorkspaceMode ? 'workspace-canvas-v2' : 'dev'}:${workspaceActorId || 'anon'}`;
   
-  const { snapshot: osSession, hydrated, patchSnapshot, reset: resetSession } = useNexusWorkspaceSession(sessionScopeKey, {
+  const { snapshot: osSession, hydrated, patchSnapshot } = useNexusWorkspaceSession(sessionScopeKey, {
     bridgeId: 'OPS',
     presetId: BRIDGE_DEFAULT_PRESET.OPS,
     variantId: 'CQB-01',
@@ -198,7 +148,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const focusMode = osSession.focusMode;
   const forceDesignOpId = osSession.forceDesignOpId;
   const reportsOpId = osSession.reportsOpId;
-  const activePanelIds = osSession.activePanelIds || [];
 
   const [commandDeckOpen, setCommandDeckOpen] = useState(false);
   const [commandFeedback, setCommandFeedback] = useState('');
@@ -232,14 +181,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     Quality: Array.from({ length: 20 }, () => ({ value: 98 + Math.random() * 2 - 1 })),
   });
 
-  const [logEntries, setLogEntries] = useState([
-    { timestamp: Date.now() - 120000, level: 'info', message: 'Text comms channel initialized' },
-    { timestamp: Date.now() - 90000, level: 'success', message: 'Voice net COMMAND connected' },
-    { timestamp: Date.now() - 60000, level: 'warning', message: 'High latency detected on net ALPHA' },
-    { timestamp: Date.now() - 30000, level: 'info', message: '3 new participants joined' },
-    { timestamp: Date.now() - 5000, level: 'success', message: 'All systems operational' },
-  ]);
-
   const lifecycle = useNexusAppLifecycle(FOCUS_APP_CATALOG.map((entry) => entry.id));
   const reducedMotion = useReducedMotion();
   const [bootSessionUpdatedAt, setBootSessionUpdatedAt] = useState(null);
@@ -262,8 +203,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const setBridgeId = (nextBridgeId) => patchSnapshot({ bridgeId: nextBridgeId });
   const setPresetId = (nextPresetId) => patchSnapshot({ presetId: nextPresetId });
-  const setVariantId = (nextVariantId) => patchSnapshot({ variantId: normalizeGameplayLoopVariantId(nextVariantId) || 'CQB-01' });
-  const setOpId = (nextOpId) => patchSnapshot({ opId: nextOpId });
   const setForceDesignOpId = (nextOpId) => patchSnapshot({ forceDesignOpId: nextOpId });
   const setReportsOpId = (nextOpId) => patchSnapshot({ reportsOpId: nextOpId });
 
@@ -329,6 +268,11 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     if (!focusMode || !FOCUS_APP_IDS.has(focusMode)) return;
     lifecycle.markForeground(focusMode);
   }, [focusMode]);
+
+  useEffect(() => {
+    if (focusMode || lifecycle.foregroundAppId) return;
+    lifecycle.markForeground('cqb');
+  }, [focusMode, lifecycle.foregroundAppId]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -438,17 +382,98 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     },
   };
 
-  const panelDescriptors = useMemo(() => {
+  const workbenchFocusMode = focusMode || lifecycle.foregroundAppId || 'cqb';
+
+  const voiceNets = useMemo(() => {
+    const opNets = operations.slice(0, 6).map((operation) => {
+      const fallbackCode = String(operation.id || '').replace(/^op[_-]?/i, '').slice(0, 8).toUpperCase();
+      const displayCode = String(operation.name || fallbackCode || 'OP')
+        .replace(/[^A-Za-z0-9]+/g, '')
+        .toUpperCase()
+        .slice(0, 8);
+      return {
+        id: `net:${operation.id}`,
+        code: displayCode || fallbackCode || 'OP',
+        label: `${operation.status} · ${operation.name || 'Operation'}`,
+      };
+    });
+    return [{ id: 'net:command', code: 'COMMAND', label: `${bridgeId} Command Net` }, ...opNets];
+  }, [operations, bridgeId]);
+
+  const activeVoiceNetId = useMemo(() => {
+    if (!voiceNets.length) return '';
+    const focusScoped = focusOperationId ? `net:${focusOperationId}` : '';
+    return voiceNets.some((entry) => entry.id === focusScoped) ? focusScoped : voiceNets[0].id;
+  }, [voiceNets, focusOperationId]);
+
+  const voiceParticipants = useMemo(() => {
+    const actorFirst = [...activeRoster].sort((a, b) => {
+      if (a.id === actorId) return -1;
+      if (b.id === actorId) return 1;
+      return String(a.callsign || a.id).localeCompare(String(b.callsign || b.id));
+    });
+    return actorFirst.map((entry, index) => ({
+      id: entry.id,
+      callsign: entry.callsign || entry.id,
+      element: entry.element || 'GCE',
+      state: index < 5 ? 'READY' : 'MONITOR',
+    }));
+  }, [activeRoster, actorId]);
+
+  const panelLogEntries = useMemo(() => {
+    const levelForEvent = (eventTypeRaw) => {
+      const eventType = String(eventTypeRaw || '').toUpperCase();
+      if (eventType.includes('ERROR') || eventType.includes('ABORT')) return 'error';
+      if (eventType.includes('WARN') || eventType.includes('HOLD') || eventType.includes('DEGRADE')) return 'warning';
+      if (eventType.includes('ACK') || eventType.includes('COMPLETE') || eventType.includes('CONFIRM')) return 'success';
+      return 'info';
+    };
+
+    const operationLogs = operations.slice(0, 6).map((operation) => ({
+      timestamp: Date.parse(operation.updatedAt || operation.createdAt || '') || clockNowMs,
+      level: operation.status === 'ACTIVE' ? 'success' : operation.status === 'WRAPPING' ? 'warning' : 'info',
+      message: `${operation.name || 'Operation'} · ${operation.status}`,
+    }));
+
+    const eventLogs = events.slice(-18).map((event) => ({
+      timestamp: Date.parse(event.createdAt || '') || clockNowMs,
+      level: levelForEvent(event.eventType),
+      message: `${String(event.eventType || 'EVENT').replace(/_/g, ' ')} · ${event.authorId || 'unknown'}`,
+    }));
+
+    const connectionLog = {
+      timestamp: clockNowMs,
+      level: online ? 'success' : 'warning',
+      message: online ? `${bridgeId} uplink stable` : `${bridgeId} uplink degraded`,
+    };
+
+    return [connectionLog, ...eventLogs, ...operationLogs]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 28);
+  }, [events, operations, online, bridgeId, clockNowMs]);
+
+  const leftPanelMetrics = useMemo(() => {
+    const recentUnread = events.filter((event) => {
+      const ageMs = clockNowMs - (Date.parse(event.createdAt || '') || 0);
+      return ageMs <= 10 * 60 * 1000 && event.authorId !== actorId;
+    }).length;
+    const channelCount = 6 + Math.min(6, operations.length);
+    const pingMs = online ? Math.max(18, 20 + Math.min(65, Math.round(events.length / 2))) : 0;
     return [
-      { id: 'panel-loop-teamtiles', title: 'TeamTiles Loop Mode', component: TeamTilesCqbMode, status: 'Live', statusTone: 'ok', live: true, defaultSize: { colSpan: 1, rowSpan: 2 } },
-      { id: 'panel-loop-feed', title: 'Loop Feed', component: CqbFeedPanel, status: 'Live', statusTone: 'ok', live: true, defaultSize: { colSpan: 1, rowSpan: 2 } },
-      { id: 'panel-loop-macropad', title: 'Gameplay MacroPad', component: CqbMacroPad, status: formatGameplayLoopVariantId(variantId), statusTone: 'warning', live: false, defaultSize: { colSpan: 1, rowSpan: 2 } },
-      { id: 'panel-tactical-map', title: 'Tactical Map', component: TacticalMapPanel, status: 'MVP', statusTone: 'warning', live: true, defaultSize: { colSpan: 2, rowSpan: 2 } },
-      { id: 'panel-action-console', title: 'Command Focus', component: CqbConsoleLauncherPanel, status: 'Ready', statusTone: 'active', live: false, defaultSize: { colSpan: 1, rowSpan: 1 } },
-      { id: 'panel-comms-peek', title: 'Comms Peek', component: CommsPeekPanel, status: 'Network', statusTone: 'active', live: true, defaultSize: { colSpan: 1, rowSpan: 1 } },
-      { id: 'panel-system-health', title: 'System Health', component: SystemHealthPanel, status: 'Live', statusTone: 'ok', live: true, defaultSize: { colSpan: 1, rowSpan: 1 } },
+      { label: 'Channels', value: String(channelCount) },
+      { label: 'Unread', value: String(recentUnread) },
+      { label: 'Ping', value: online ? `${pingMs}ms` : '--' },
     ];
-  }, [variantId]);
+  }, [operations.length, events, clockNowMs, actorId, online]);
+
+  const rightPanelMetrics = useMemo(() => {
+    const qualityPct = online ? Math.max(74, 100 - Math.min(24, Math.round(events.length / 3))) : 0;
+    return [
+      { label: 'Nets', value: String(voiceNets.length) },
+      { label: 'Users', value: String(voiceParticipants.length) },
+      { label: 'Quality', value: online ? `${qualityPct}%` : '--' },
+    ];
+  }, [voiceNets.length, voiceParticipants.length, online, events.length]);
 
   const runNexusCommand = (rawCommand) => {
     const input = String(rawCommand || '').trim();
@@ -474,7 +499,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
     if (keyword === 'close') {
       closeFocusApp();
-      return 'Focus overlay closed.';
+      return 'Focus app returned to standby.';
     }
 
     return `Unknown command "${input}".`;
@@ -564,18 +589,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     [clockNowMs]
   );
 
-  const leftPanelMetrics = [
-    { label: 'Channels', value: '8' },
-    { label: 'Unread', value: '4' },
-    { label: 'Ping', value: '24ms' },
-  ];
-
-  const rightPanelMetrics = [
-    { label: 'Nets', value: '3' },
-    { label: 'Users', value: '12' },
-    { label: 'Quality', value: '98%' },
-  ];
-
   return (
     <div
       className="nexus-shell-root nexus-layout-quiet nx-app-shell fixed inset-0 flex flex-col"
@@ -636,7 +649,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           icon={Radio}
           statusMetrics={leftPanelMetrics}
           metricHistory={metricHistory}
-          logEntries={logEntries}
+          logEntries={panelLogEntries}
           onMaximize={() => setLeftPanelWidth(600)}
           onMinimize={() => setLeftPanelWidth(280)}
         >
@@ -658,20 +671,13 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             </section>
           )}
           <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow">
-            <WorkbenchGrid
-              bridgeId={bridgeId}
-              panels={panelDescriptors}
-              presetId={presetId}
-              onPresetChange={setPresetId}
-              defaultActivationMode="empty"
-              enableOnboardingExperience={false}
-              workspaceUserDisplayName={workspaceDisplayCallsign}
-              layoutPersistenceScopeKey={`${sessionScopeKey}:workbench:${bridgeId}`}
-              enableLayoutPersistence
-              atmosphereMode="minimal"
-              initialActivePanelIds={activePanelIds}
-              onActivePanelIdsChange={(next) => patchSnapshot({ activePanelIds: next })}
-              panelComponentProps={sharedPanelProps}
+            <FocusShell
+              mode={workbenchFocusMode}
+              sharedPanelProps={sharedPanelProps}
+              forceDesignOpId={forceDesignOpId}
+              reportsOpId={reportsOpId}
+              onClose={closeFocusApp}
+              reducedMotion={reducedMotion}
             />
           </div>
         </main>
@@ -687,18 +693,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           icon={Signal}
           statusMetrics={rightPanelMetrics}
           metricHistory={metricHistory}
-          logEntries={logEntries}
+          logEntries={panelLogEntries}
           onMaximize={() => setRightPanelWidth(600)}
           onMinimize={() => setRightPanelWidth(280)}
         >
           <VoiceCommsRail
-            voiceNets={[
-              { id: 'net1', code: 'COMMAND', label: 'Command Net' },
-              { id: 'net2', code: 'ALPHA', label: 'Squad Alpha' },
-              { id: 'net3', code: 'BRAVO', label: 'Squad Bravo' },
-            ]}
-            activeNetId="COMMAND"
-            participants={[]}
+            voiceNets={voiceNets}
+            activeNetId={activeVoiceNetId}
+            participants={voiceParticipants}
             isExpanded={!rightPanelCollapsed}
             onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
           />
@@ -708,7 +710,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <footer className="nx-shell-bottom flex-shrink-0">
         <NexusTaskbar
           bridgeId={bridgeId}
-          activeAppId={focusMode || lifecycle.foregroundAppId}
+          activeAppId={workbenchFocusMode}
           appEntries={lifecycle.entries}
           appCatalog={FOCUS_APP_CATALOG}
           online={online}
@@ -727,7 +729,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             const entry = FOCUS_APP_CATALOG.find((candidate) => candidate.id === appId);
             if (!entry) return null;
             const Icon = FOCUS_APP_ICON_BY_ID[entry.id] || Radar;
-            const active = focusMode === appId;
+            const active = workbenchFocusMode === appId;
             return (
               <button
                 key={`mobile:${entry.id}`}
@@ -747,21 +749,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           </button>
         </nav>
       </footer>
-
-      <CommandFocus
-        open={Boolean(focusMode)}
-        onClose={closeFocusApp}
-        FocusApp={() => (
-          <FocusShell
-            mode={focusMode}
-            sharedPanelProps={sharedPanelProps}
-            forceDesignOpId={forceDesignOpId}
-            reportsOpId={reportsOpId}
-            onClose={closeFocusApp}
-            reducedMotion={reducedMotion}
-          />
-        )}
-      />
 
       <NexusCommandDeck
         open={commandDeckOpen}
