@@ -7,6 +7,7 @@ import { updateTacticalAI } from '../../services/tacticalAIService';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { NexusButton, NexusBadge } from '../primitives';
+import { useFocusMode } from '@/components/providers/FocusModeContext';
 import {
   Map,
   Calendar,
@@ -644,9 +645,15 @@ export default function ComprehensiveTacticalFooter() {
   const { user: authUser } = useAuth();
   const activeOp = useActiveOp();
   const voiceNet = useVoiceNet();
+  const { setFocusMode } = useFocusMode();
 
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('map');
+  
+  // Sync focus mode when tab changes
+  React.useEffect(() => {
+    setFocusMode(activeTab);
+  }, [activeTab, setFocusMode]);
   const [markers, setMarkers] = useState([]);
   const [playerStatuses, setPlayerStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -834,16 +841,16 @@ export default function ComprehensiveTacticalFooter() {
                       popoutTab === 'operation' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
-                    Operation
+                    Ops
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPopoutTab('team')}
+                    onClick={() => setPopoutTab('comms')}
                     className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
-                      popoutTab === 'team' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+                      popoutTab === 'comms' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
-                    Team
+                    Comms
                   </button>
                 </div>
               </div>
@@ -861,26 +868,9 @@ export default function ComprehensiveTacticalFooter() {
                 </div>
               )}
 
-              {popoutTab === 'team' && (
-                <div className="h-full p-4 bg-zinc-900/20">
-                  <div className="grid grid-cols-4 gap-3 h-full">
-                    {(activeOp?.participants || []).map((p) => (
-                      <div key={p.id} className="rounded border border-zinc-800 bg-zinc-900/40 p-3 flex flex-col">
-                        <div className="text-xs font-bold text-orange-400 truncate">{p.callsign || p.name || 'Unknown'}</div>
-                        <div className="text-[10px] text-zinc-500 mt-1">{p.role || 'Member'}</div>
-                        <div className="mt-auto pt-2">
-                          <div className="w-full h-1 rounded-full bg-zinc-800">
-                            <div className="h-full rounded-full bg-green-500" style={{ width: '80%' }} />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {(!activeOp?.participants || activeOp.participants.length === 0) && (
-                      <div className="col-span-4 flex items-center justify-center text-zinc-600 text-xs">
-                        No participants in active operation
-                      </div>
-                    )}
-                  </div>
+              {popoutTab === 'comms' && (
+                <div className="h-full flex items-center justify-center bg-zinc-900/20">
+                  <div className="text-xs text-zinc-500">Comms interface enabled in main workspace</div>
                 </div>
               )}
             </div>
@@ -1008,16 +998,16 @@ export default function ComprehensiveTacticalFooter() {
                 activeTab === 'operation' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              Operation
+              Ops
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('team')}
+              onClick={() => setActiveTab('comms')}
               className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
-                activeTab === 'team' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
+                activeTab === 'comms' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              Team
+              Comms
             </button>
           </div>
         </div>
@@ -1059,26 +1049,9 @@ export default function ComprehensiveTacticalFooter() {
           </div>
         )}
 
-        {activeTab === 'team' && (
-          <div className="h-full p-4 bg-zinc-900/20">
-            <div className="grid grid-cols-4 gap-3 h-full">
-              {(activeOp?.participants || []).map((p) => (
-                <div key={p.id} className="rounded border border-zinc-800 bg-zinc-900/40 p-3 flex flex-col">
-                  <div className="text-xs font-bold text-orange-400 truncate">{p.callsign || p.name || 'Unknown'}</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">{p.role || 'Member'}</div>
-                  <div className="mt-auto pt-2">
-                    <div className="w-full h-1 rounded-full bg-zinc-800">
-                      <div className="h-full rounded-full bg-green-500" style={{ width: '80%' }} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {(!activeOp?.participants || activeOp.participants.length === 0) && (
-                <div className="col-span-4 flex items-center justify-center text-zinc-600 text-xs">
-                  No participants in active operation
-                </div>
-              )}
-            </div>
+        {activeTab === 'comms' && (
+          <div className="h-full bg-zinc-900/20 flex items-center justify-center">
+            <div className="text-xs text-zinc-500">Comms interface enabled in workspace above</div>
           </div>
         )}
       </div>

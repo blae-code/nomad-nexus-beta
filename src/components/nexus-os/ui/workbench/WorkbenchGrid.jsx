@@ -11,6 +11,10 @@ import { NexusBadge, NexusButton, PanelFrame } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import PanelErrorBoundary from './PanelErrorBoundary';
 import CustomWorkbenchWidgetPanel from './CustomWorkbenchWidgetPanel';
+import { useFocusMode } from '@/components/providers/FocusModeContext';
+import CommsModeFocus from '../focus-modes/CommsModeFocus';
+import MapModeFocus from '../focus-modes/MapModeFocus';
+import OperationModeFocus from '../focus-modes/OperationModeFocus';
 import { DEFAULT_WORKBENCH_PRESET_ID, WORKBENCH_PRESETS } from './presets';
 import { reorderPanelIds, resolvePanelSizeForLayout } from './layoutEngine';
 import {
@@ -261,6 +265,7 @@ export default function WorkbenchGrid({
   const vars = getNexusCssVars();
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
+  const { focusMode } = useFocusMode();
   const [isPanelDrawerOpen, setIsPanelDrawerOpen] = useState(false);
   const [panelPermissions, setPanelPermissions] = useState({});
   const [panelSizes, setPanelSizes] = useState({});
@@ -1364,8 +1369,15 @@ export default function WorkbenchGrid({
       ) : null}
 
       <div className={`flex-1 min-h-0 overflow-hidden p-3 ${minimalAtmosphere ? '' : 'bg-[radial-gradient(circle_at_top,rgba(102,162,212,0.06),transparent_36%)]'}`}>
-        <AnimatedMount show durationMs={reducedMotion ? 0 : motionTokens.duration.fast} fromOpacity={0.92} toOpacity={1} fromY={3} toY={0} className="h-full min-h-0">
-          <DragDropContext
+        {focusMode === 'comms' ? (
+          <CommsModeFocus />
+        ) : focusMode === 'map' ? (
+          <MapModeFocus {...panelComponentProps} />
+        ) : focusMode === 'operation' ? (
+          <OperationModeFocus />
+        ) : (
+          <AnimatedMount show durationMs={reducedMotion ? 0 : motionTokens.duration.fast} fromOpacity={0.92} toOpacity={1} fromY={3} toY={0} className="h-full min-h-0">
+            <DragDropContext
             onDragEnd={(result) => {
               if (!result.destination) return;
               setActivePanelIds((prev) =>
@@ -1665,8 +1677,9 @@ export default function WorkbenchGrid({
                 </div>
               )}
             </Droppable>
-          </DragDropContext>
-        </AnimatedMount>
+            </DragDropContext>
+          </AnimatedMount>
+        )}
       </div>
 
       <Sheet open={isPanelDrawerOpen} onOpenChange={setIsPanelDrawerOpen}>
