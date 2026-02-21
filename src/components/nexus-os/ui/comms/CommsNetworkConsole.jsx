@@ -2,22 +2,18 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { GitBranch, Mic, Plus, Radio, RefreshCcw, Signal, Users, Zap } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
-import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
-
-function nodeFill(node: CommsGraphNode): string {
+function nodeFill(node) {
   if (node.type === 'channel') return 'rgba(34,197,94,0.15)';
   if (node.type === 'voice') return 'rgba(59,130,246,0.15)';
   if (node.type === 'user') return 'rgba(139,92,246,0.12)';
   return 'rgba(110,110,110,0.12)';
 }
 
-function nodeBorder(node: CommsGraphNode): string {
+function nodeBorder(node) {
   if (node.type === 'channel') return 'rgba(34,197,94,0.6)';
   if (node.type === 'voice') return 'rgba(59,130,246,0.6)';
   if (node.type === 'user') return 'rgba(139,92,246,0.5)';
@@ -28,7 +24,7 @@ export default function CommsNetworkConsole({
   variantId,
   opId,
   roster,
-}: CommsNetworkConsoleProps) {
+}) {
   const reducedMotion = useReducedMotion();
   const voiceNet = useVoiceNet() as any;
   const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
@@ -121,7 +117,7 @@ export default function CommsNetworkConsole({
           </defs>
           <rect width="100" height="100" fill="url(#grid)" />
 
-          {edges.map((edge: CommsGraphEdge) => {
+          {edges.map((edge) => {
             const source = nodeMap[edge.sourceId];
             const target = nodeMap[edge.targetId];
             if (!source || !target) return null;
