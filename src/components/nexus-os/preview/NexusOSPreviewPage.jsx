@@ -834,7 +834,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <footer className="nx-shell-bottom flex-shrink-0">
         <NexusTaskbar
           activeAppId={workbenchFocusMode}
-          appEntries={lifecycle.entries}
+          appEntries={lifecycle.entries || {}}
           appCatalog={FOCUS_APP_CATALOG}
           onActivateApp={openFocusApp}
         />
