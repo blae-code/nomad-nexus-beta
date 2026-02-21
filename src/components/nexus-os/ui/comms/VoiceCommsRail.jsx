@@ -46,12 +46,16 @@ export default function VoiceCommsRail({
   onStopPTT,
   onSetDisciplineMode,
   onRequestToSpeak,
+  focusMode = '',
 }) {
   const [displayMode, setDisplayMode] = useState('standard');
   const [selectedTab, setSelectedTab] = useState('nets');
   const [quickPage, setQuickPage] = useState(0);
   const [netsPage, setNetsPage] = useState(0);
   const [rosterPage, setRosterPage] = useState(0);
+
+  const isCommsFocus = String(focusMode || '').toLowerCase() === 'comms';
+  const quickPageSize = isCommsFocus ? 3 : QUICK_NET_PAGE_SIZE;
 
   const monitoredSet = useMemo(
     () => new Set((Array.isArray(monitoredNetIds) ? monitoredNetIds : []).map((id) => String(id || ''))),
@@ -77,7 +81,7 @@ export default function VoiceCommsRail({
     return [activeNet, ...voiceNets.filter((entry) => netIdentity(entry) !== netIdentity(activeNet))];
   }, [voiceNets, activeNet]);
 
-  const quickPageCount = Math.max(1, Math.ceil(quickNets.length / QUICK_NET_PAGE_SIZE));
+  const quickPageCount = Math.max(1, Math.ceil(quickNets.length / quickPageSize));
   const netsPageCount = Math.max(1, Math.ceil(voiceNets.length / PAGE_SIZE));
   const rosterPageCount = Math.max(1, Math.ceil(participants.length / PAGE_SIZE));
 
@@ -93,9 +97,17 @@ export default function VoiceCommsRail({
     setRosterPage((current) => Math.min(current, rosterPageCount - 1));
   }, [rosterPageCount]);
 
+  useEffect(() => {
+    setDisplayMode((current) => {
+      if (isCommsFocus) return 'standard';
+      if (current === 'standard') return 'command';
+      return current;
+    });
+  }, [isCommsFocus]);
+
   const quickVisibleNets = useMemo(
-    () => quickNets.slice(quickPage * QUICK_NET_PAGE_SIZE, quickPage * QUICK_NET_PAGE_SIZE + QUICK_NET_PAGE_SIZE),
-    [quickNets, quickPage]
+    () => quickNets.slice(quickPage * quickPageSize, quickPage * quickPageSize + quickPageSize),
+    [quickNets, quickPage, quickPageSize]
   );
 
   const pagedNets = useMemo(
@@ -106,6 +118,15 @@ export default function VoiceCommsRail({
   const pagedParticipants = useMemo(
     () => participants.slice(rosterPage * PAGE_SIZE, rosterPage * PAGE_SIZE + PAGE_SIZE),
     [participants, rosterPage]
+  );
+  const speakingParticipants = useMemo(
+    () =>
+      participants.filter((participant) => {
+        if (participant?.isSpeaking) return true;
+        const state = String(participant?.state || '').toUpperCase();
+        return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
+      }).slice(0, 3),
+    [participants]
   );
 
   const connectionTone =
@@ -138,6 +159,58 @@ export default function VoiceCommsRail({
       <Volume2 className="w-3 h-3" />
       {pttActive ? 'TX' : 'PTT'}
     </button>
+  );
+
+  const renderGlobalControlCluster = () => (
+    <div className="px-2.5 py-2 rounded border border-zinc-800 bg-zinc-900/35 space-y-1.5">
+      <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide">
+        <span className="text-zinc-500">Global Voice Controls</span>
+        <span className="text-zinc-600">{participants.length} online</span>
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        <button
+          type="button"
+          onClick={() => onSetMicEnabled?.(!micEnabled)}
+          className={`h-7 text-[10px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
+            micEnabled ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'
+          }`}
+          title={micEnabled ? 'Mute microphone' : 'Enable microphone'}
+        >
+          {micEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
+          {micEnabled ? 'Mic' : 'Muted'}
+        </button>
+        {renderPTTButton()}
+        <button
+          type="button"
+          onClick={() => onRequestToSpeak?.()}
+          className="h-7 text-[10px] px-2 rounded border border-zinc-700 text-zinc-400 hover:border-orange-500/40 transition-colors flex items-center justify-center gap-1"
+          title="Request transmit privilege"
+        >
+          <Zap className="w-3 h-3" />
+          Request
+        </button>
+      </div>
+      <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-wide">
+        <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>
+          {String(transmitNetId || '') ? `TX ${transmitNetId}` : 'TX NONE'}
+        </span>
+        <span className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-500">MON {monitoredSet.size}</span>
+      </div>
+      <div className="flex items-center gap-1 flex-wrap">
+        {speakingParticipants.length > 0 ? (
+          speakingParticipants.map((participant) => (
+            <span
+              key={participant.id || participant.userId || participant.clientId || participant.callsign}
+              className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[9px] uppercase tracking-wide"
+            >
+              {participant.callsign || participant.name || participant.id}
+            </span>
+          ))
+        ) : (
+          <span className="text-[9px] text-zinc-600 uppercase tracking-wide">No active speakers</span>
+        )}
+      </div>
+    </div>
   );
 
   const renderQuickNetCard = (net) => {
@@ -214,6 +287,15 @@ export default function VoiceCommsRail({
                 <Radio className="w-4 h-4 text-green-500" />
                 <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Comms</h3>
                 <span className={`text-[9px] font-semibold uppercase tracking-wider ${connectionTone}`}>{connectionState}</span>
+                <span
+                  className={`text-[8px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded border ${
+                    isCommsFocus
+                      ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300'
+                      : 'border-zinc-700 bg-zinc-900/70 text-zinc-400'
+                  }`}
+                >
+                  {isCommsFocus ? 'Complement' : 'Persistent'}
+                </span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <button
@@ -248,6 +330,12 @@ export default function VoiceCommsRail({
 
       {isExpanded ? (
         <div className="mx-2 px-1 py-2 flex-1 min-h-0 overflow-hidden space-y-2">
+          <div className="px-2.5 py-1.5 rounded border border-zinc-800 bg-zinc-900/35 text-[10px] text-zinc-500 uppercase tracking-wide">
+            {isCommsFocus
+              ? 'Comms focus owns visual voice workspace; this rail keeps global control.'
+              : 'Voice control stays active while you work in other focus modules.'}
+          </div>
+          {renderGlobalControlCluster()}
           {displayMode === 'standard' ? (
             <>
               {activeNet ? (
@@ -259,27 +347,6 @@ export default function VoiceCommsRail({
                     <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') === netIdentity(activeNet) ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>TX</span>
                     <span className={`px-1.5 py-0.5 rounded border ${isMonitoredNet(netIdentity(activeNet)) ? 'border-blue-500/40 text-blue-300 bg-blue-500/20' : 'border-zinc-700 text-zinc-500'}`}>MON</span>
                     <span className="text-zinc-500">{participants.length} online</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => onSetMicEnabled?.(!micEnabled)}
-                      className={`h-7 text-[10px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
-                        micEnabled ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'
-                      }`}
-                    >
-                      {micEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
-                      {micEnabled ? 'Mic' : 'Muted'}
-                    </button>
-                    {renderPTTButton()}
-                    <button
-                      type="button"
-                      onClick={() => onRequestToSpeak?.()}
-                      className="h-7 text-[10px] px-2 rounded border border-zinc-700 text-zinc-400 hover:border-orange-500/40 transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Zap className="w-3 h-3" />
-                      Request
-                    </button>
                   </div>
                 </div>
               ) : null}

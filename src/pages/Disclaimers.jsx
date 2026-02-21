@@ -24,7 +24,7 @@ const glowStyle = `
 `;
 
 export default function Disclaimers() {
-  const { user } = useAuth();
+  const { user, refreshAuth } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [acceptedPWA, setAcceptedPWA] = useState(false);
@@ -61,6 +61,7 @@ export default function Disclaimers() {
         ai_use_history: aiDefaults,
       });
 
+      await refreshAuth();
       navigateToPage('Onboarding');
     } catch (error) {
       console.error('Disclaimer error:', error);

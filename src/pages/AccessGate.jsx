@@ -6,10 +6,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Zap, Trash2, Shield, Signal } from 'lucide-react';
 import { navigateToPage } from '@/utils';
 import RouteGuard from '@/components/auth/RouteGuard';
+import { useAuth } from '@/components/providers/AuthProvider';
 import PageTransition from '@/components/transitions/PageTransition';
 import AsyncLoadingOverlay from '@/components/transitions/AsyncLoadingOverlay';
 
 export default function AccessGate() {
+  const { refreshAuth } = useAuth();
   const [accessCode, setAccessCode] = useState('');
   const [callsign, setCallsign] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -136,9 +138,11 @@ export default function AccessGate() {
                 nextPage = isAdmin ? 'Hub' : 'Disclaimers';
               }
 
+              await refreshAuth();
+
               setTimeout(() => {
                 navigateToPage(nextPage);
-              }, 1000);
+              }, 300);
               } catch (authErr) {
                 setVerifyingAuth(false);
                 setMessage(`Authentication setup failed: ${authErr.message}. Please try again or contact an administrator.`);

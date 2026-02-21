@@ -14,7 +14,7 @@ import {
 } from '@/components/nexus-os/services/workspaceConfigurationService';
 
 export default function Onboarding() {
-  const { user } = useAuth();
+  const { user, refreshAuth } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [activityNotice, setActivityNotice] = useState('');
@@ -127,6 +127,7 @@ export default function Onboarding() {
         console.warn('Unable to save workspace activity preference:', prefErr);
       }
 
+      await refreshAuth();
       navigateToPage('Hub');
     } catch (error) {
       console.error('Onboarding error:', error);

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ArrowRight,
   AlertCircle,
   AtSign,
   Bell,
@@ -23,6 +24,7 @@ const CHANNEL_PAGE_SIZE = 6;
 const MESSAGE_PAGE_SIZE = 6;
 const STANDARD_CHANNEL_PAGE_SIZE = 7;
 const CHANNEL_CATEGORIES = ['tactical', 'operations', 'social', 'direct'];
+const MESSAGE_FILTERS = ['all', 'event', 'local'];
 
 /**
  * CommsHub — streamlined comms surface with Standard and Command modes.
@@ -39,6 +41,7 @@ export default function CommsHub({
   channelVoiceMap = {},
   voiceState = null,
   onRouteVoiceNet,
+  focusMode = '',
   isExpanded = true,
   onToggleExpand,
 }) {
@@ -59,6 +62,9 @@ export default function CommsHub({
   const [messagePage, setMessagePage] = useState(0);
   const [standardChannelPage, setStandardChannelPage] = useState(0);
   const [messageInput, setMessageInput] = useState('');
+  const [panelFeedback, setPanelFeedback] = useState('');
+  const [messageFilter, setMessageFilter] = useState('all');
+  const [acknowledgedUnreadByChannel, setAcknowledgedUnreadByChannel] = useState({});
 
   const [displayMode, setDisplayMode] = useState('standard');
   const [showAiFeatures, setShowAiFeatures] = useState(false);
@@ -69,13 +75,15 @@ export default function CommsHub({
   const [selectedMessageForResponse, setSelectedMessageForResponse] = useState(null);
 
   const aiEnabled = showAiFeatures;
+  const isCommsFocus = String(focusMode || '').toLowerCase() === 'comms';
   const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
 
   const channels = useMemo(() => {
     const unreadCount = (channelId, fallback = 0) => {
       const direct = Number(unreadByChannel[channelId]);
-      if (Number.isFinite(direct) && direct >= 0) return direct;
-      return fallback;
+      const baseCount = Number.isFinite(direct) && direct >= 0 ? direct : fallback;
+      const acknowledgedCount = Number(acknowledgedUnreadByChannel[channelId] || 0);
+      return Math.max(0, baseCount - acknowledgedCount);
     };
 
     const tactical = [
@@ -103,7 +111,7 @@ export default function CommsHub({
     ];
 
     return { tactical, operations: operational, social, direct };
-  }, [operations, focusOperationId, online, bridgeId, unreadByChannel]);
+  }, [operations, focusOperationId, online, bridgeId, unreadByChannel, acknowledgedUnreadByChannel]);
 
   const allChannels = useMemo(() => Object.values(channels).flat(), [channels]);
 
@@ -174,7 +182,10 @@ export default function CommsHub({
       .slice(0, 48);
   }, [selectedChannel, eventMessagesByChannel, messages]);
 
-  const orderedMessages = currentMessages;
+  const orderedMessages = useMemo(() => {
+    if (messageFilter === 'all') return currentMessages;
+    return currentMessages.filter((message) => message.source === messageFilter);
+  }, [currentMessages, messageFilter]);
   const messagePageCount = Math.max(1, Math.ceil(orderedMessages.length / MESSAGE_PAGE_SIZE));
   const pagedMessages = useMemo(
     () => orderedMessages.slice(messagePage * MESSAGE_PAGE_SIZE, messagePage * MESSAGE_PAGE_SIZE + MESSAGE_PAGE_SIZE),
@@ -196,6 +207,72 @@ export default function CommsHub({
     () => allChannels.find((entry) => entry.id === selectedChannel),
     [allChannels, selectedChannel]
   );
+  const totalUnread = useMemo(
+    () => allChannels.reduce((sum, channel) => sum + Number(channel.unread || 0), 0),
+    [allChannels]
+  );
+  const channelsWithUnread = useMemo(
+    () => allChannels.filter((channel) => Number(channel.unread || 0) > 0),
+    [allChannels]
+  );
+  const priorityChannels = useMemo(
+    () =>
+      [...channelsWithUnread]
+        .sort((a, b) => Number(b.unread || 0) - Number(a.unread || 0))
+        .slice(0, 3),
+    [channelsWithUnread]
+  );
+  const selectedChannelUnread = Number(selectedChannelData?.unread || 0);
+  const commandIntent = useMemo(() => {
+    if (!online) {
+      return {
+        tone: 'danger',
+        label: 'Link Degraded',
+        detail: 'Prepare contingency text burst when transport returns.',
+        actionLabel: 'Prime Contingency',
+        action: 'prime-contingency',
+      };
+    }
+    if (selectedChannelUnread >= 3) {
+      return {
+        tone: 'warning',
+        label: 'Unread Surge',
+        detail: `${selectedChannelUnread} pending in ${selectedChannelData?.name || 'active channel'}.`,
+        actionLabel: 'Acknowledge Queue',
+        action: 'ack-channel',
+      };
+    }
+    if (!selectedVoiceNetId && onRouteVoiceNet) {
+      return {
+        tone: 'active',
+        label: 'Voice Link Missing',
+        detail: 'Selected channel is not mapped to a live voice lane.',
+        actionLabel: 'Route Voice Lane',
+        action: 'route-voice',
+      };
+    }
+    return {
+      tone: 'ok',
+      label: 'Channel Ready',
+      detail: 'Push a short check-in to maintain cadence.',
+      actionLabel: 'Prime Check-In',
+      action: 'prime-checkin',
+    };
+  }, [online, selectedChannelUnread, selectedChannelData?.name, selectedVoiceNetId, onRouteVoiceNet]);
+
+  useEffect(() => {
+    setDisplayMode((current) => {
+      if (isCommsFocus) return current === 'standard' ? 'command' : current;
+      if (current === 'command') return 'standard';
+      return current;
+    });
+  }, [isCommsFocus]);
+
+  useEffect(() => {
+    if (!panelFeedback) return undefined;
+    const timer = window.setTimeout(() => setPanelFeedback(''), 3200);
+    return () => window.clearTimeout(timer);
+  }, [panelFeedback]);
 
   const toggleCategory = useCallback((category) => {
     setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
@@ -214,6 +291,58 @@ export default function CommsHub({
   const pickChannel = useCallback((channelId) => {
     setSelectedChannel(channelId);
   }, []);
+
+  const acknowledgeChannel = useCallback((channelId = selectedChannel) => {
+    if (!channelId) return;
+    const channel = allChannels.find((entry) => entry.id === channelId);
+    const pendingCount = Number(channel?.unread || 0);
+    if (pendingCount <= 0) {
+      setPanelFeedback(`${channel?.name || channelId} already clear.`);
+      return;
+    }
+    setAcknowledgedUnreadByChannel((prev) => ({
+      ...prev,
+      [channelId]: Number(prev[channelId] || 0) + pendingCount,
+    }));
+    setPanelFeedback(`${channel?.name || channelId} marked reviewed.`);
+  }, [selectedChannel, allChannels]);
+
+  const primeMessage = useCallback((channelId, text, feedback) => {
+    if (channelId) setSelectedChannel(channelId);
+    setMessageInput(text);
+    setPanelFeedback(feedback);
+  }, []);
+
+  const executeCommandIntent = useCallback(() => {
+    if (!selectedChannel) return;
+    if (commandIntent.action === 'route-voice') {
+      onRouteVoiceNet?.(selectedChannel);
+      setPanelFeedback('Voice lane route requested.');
+      return;
+    }
+    if (commandIntent.action === 'ack-channel') {
+      acknowledgeChannel(selectedChannel);
+      primeMessage(
+        selectedChannel,
+        'Command copy. Reviewing backlog now. Stand by for updates.',
+        'Acknowledgement draft primed.'
+      );
+      return;
+    }
+    if (commandIntent.action === 'prime-contingency') {
+      primeMessage(
+        selectedChannel,
+        'Contingency broadcast: Data link degraded. Maintain radio discipline and await restore signal.',
+        'Contingency draft primed.'
+      );
+      return;
+    }
+    primeMessage(
+      selectedChannel,
+      'Status check-in: maintain comms discipline, report anomalies immediately.',
+      'Check-in draft primed.'
+    );
+  }, [selectedChannel, commandIntent.action, onRouteVoiceNet, acknowledgeChannel, primeMessage]);
 
   const handleSendMessage = useCallback(() => {
     if (!messageInput.trim() || !selectedChannel) return;
@@ -240,7 +369,8 @@ export default function CommsHub({
         setMessageAnalyses((prev) => ({ ...prev, [newMessage.id]: analysis }));
       });
     }
-  }, [messageInput, selectedChannel, aiEnabled, actorId]);
+    setPanelFeedback(`Message sent to ${selectedChannelData?.name || selectedChannel}.`);
+  }, [messageInput, selectedChannel, aiEnabled, actorId, selectedChannelData?.name]);
 
   const handleAiSearch = async (query) => {
     if (!query.trim() || !currentMessages.length) return;
@@ -336,6 +466,9 @@ export default function CommsHub({
                 <MessageSquare className="w-4 h-4 text-orange-500" />
                 <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider truncate">Text Comms</h3>
                 <NexusBadge tone={online ? 'ok' : 'danger'}>{online ? 'Linked' : 'Offline'}</NexusBadge>
+                <NexusBadge tone={isCommsFocus ? 'active' : 'neutral'}>
+                  {isCommsFocus ? 'Primary' : 'Persistent'}
+                </NexusBadge>
                 <NexusBadge tone={voiceState?.connectionState === 'CONNECTED' ? 'active' : 'neutral'}>
                   {voiceState?.connectionState || 'IDLE'}
                 </NexusBadge>
@@ -383,6 +516,46 @@ export default function CommsHub({
       {isExpanded ? (
         <>
           <div className="flex-shrink-0 p-2 border-b border-zinc-700/40 bg-zinc-900/20">
+            <div className="mb-2 p-2 rounded border border-zinc-800 bg-zinc-900/35 space-y-1.5">
+              <div className="grid grid-cols-3 gap-1">
+                <div className="rounded border border-zinc-800 px-2 py-1 text-center">
+                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Channels</div>
+                  <div className="text-[10px] font-semibold text-zinc-300">{allChannels.length}</div>
+                </div>
+                <div className="rounded border border-zinc-800 px-2 py-1 text-center">
+                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Unread</div>
+                  <div className={`text-[10px] font-semibold ${totalUnread > 0 ? 'text-orange-300' : 'text-zinc-300'}`}>{totalUnread}</div>
+                </div>
+                <div className="rounded border border-zinc-800 px-2 py-1 text-center">
+                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Mode</div>
+                  <div className="text-[10px] font-semibold text-zinc-300">{displayMode === 'command' ? 'Cmd' : 'Std'}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => acknowledgeChannel()}
+                  className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
+                >
+                  Mark Reviewed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => primeMessage('command', 'Command priority broadcast: report status by exception only.', 'Priority broadcast draft primed.')}
+                  className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
+                >
+                  Priority Broadcast
+                </button>
+                {priorityChannels.length > 0 ? (
+                  <span className="text-[9px] uppercase tracking-wide text-zinc-600 truncate">
+                    Hot: {priorityChannels.map((channel) => channel.name).join(' / ')}
+                  </span>
+                ) : (
+                  <span className="text-[9px] uppercase tracking-wide text-zinc-600">No hot channels</span>
+                )}
+              </div>
+            </div>
+
             {displayMode === 'command' ? (
               <div className="space-y-1.5">
                 {renderCategory('tactical', 'Tactical')}
@@ -443,6 +616,7 @@ export default function CommsHub({
                     <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread} unread</NexusBadge> : null}
                     {selectedVoiceNetId ? <NexusBadge tone="neutral">{selectedVoiceNetId}</NexusBadge> : null}
                     {selectedVoiceNetId && onRouteVoiceNet ? (
                       <button
@@ -457,6 +631,25 @@ export default function CommsHub({
                       <Bell className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                </div>
+
+                <div className="p-2 rounded border border-zinc-800 bg-zinc-900/45">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wide text-zinc-500">Command Intent</div>
+                      <div className="text-[10px] font-semibold text-zinc-200">{commandIntent.label}</div>
+                    </div>
+                    <NexusBadge tone={commandIntent.tone}>{isCommsFocus ? 'Focused' : 'Aux'}</NexusBadge>
+                  </div>
+                  <p className="text-[9px] text-zinc-500 mt-1">{commandIntent.detail}</p>
+                  <button
+                    type="button"
+                    onClick={executeCommandIntent}
+                    className="mt-1.5 h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors inline-flex items-center gap-1"
+                  >
+                    {commandIntent.actionLabel}
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
                 </div>
 
                 {showAiFeatures ? (
@@ -502,6 +695,26 @@ export default function CommsHub({
               </div>
 
               <div className="flex-1 min-h-0 p-2 space-y-1 overflow-hidden">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Feed Filter</div>
+                  <div className="flex items-center gap-1">
+                    {MESSAGE_FILTERS.map((filterId) => (
+                      <button
+                        key={filterId}
+                        type="button"
+                        onClick={() => setMessageFilter(filterId)}
+                        className={`h-5 px-1.5 rounded text-[8px] font-bold uppercase tracking-wide border ${
+                          messageFilter === filterId
+                            ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
+                            : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        {filterId}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {pagedMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
                     <MessageSquare className="w-8 h-8 text-zinc-700/50" />
@@ -637,6 +850,12 @@ export default function CommsHub({
                   <Send className="w-3 h-3" />
                 </button>
               </div>
+
+              {panelFeedback ? (
+                <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/30 bg-zinc-900/20 text-[9px] text-zinc-500">
+                  {panelFeedback}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-zinc-600 text-[10px] font-bold uppercase tracking-wider">Select a channel</div>

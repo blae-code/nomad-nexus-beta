@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, Radio, RefreshCcw, UserCheck } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Radio, RefreshCcw, Signal, UserCheck, Users, Zap } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
@@ -60,6 +60,12 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m`;
   return `${Math.floor(minutes / 60)}h`;
+}
+
+function isParticipantSpeaking(participant: any): boolean {
+  if (participant?.isSpeaking) return true;
+  const state = String(participant?.state || '').toUpperCase();
+  return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
 export default function CommsNetworkConsole({
@@ -146,6 +152,18 @@ export default function CommsNetworkConsole({
     () => sortCommsIncidents(incidentCandidates, incidentStatusById),
     [incidentCandidates, incidentStatusById]
   );
+  const degradedChannelCount = useMemo(
+    () => channelHealth.filter((entry) => entry.discipline !== 'CLEAR').length,
+    [channelHealth]
+  );
+  const unresolvedIncidentCount = useMemo(
+    () => incidents.filter((incident) => incident.status !== 'RESOLVED').length,
+    [incidents]
+  );
+  const criticalIncidentCount = useMemo(
+    () => incidents.filter((incident) => incident.priority === 'CRITICAL' && incident.status !== 'RESOLVED').length,
+    [incidents]
+  );
 
   const healthPageCount = Math.max(1, Math.ceil(channelHealth.length / LIST_PAGE_SIZE));
   const visibleHealth = channelHealth.slice(healthPage * LIST_PAGE_SIZE, healthPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
@@ -179,9 +197,70 @@ export default function CommsNetworkConsole({
     () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id: unknown) => String(id || ''))),
     [voiceNet.monitoredNetIds]
   );
+  const voiceParticipants = useMemo(
+    () => (Array.isArray(voiceNet.participants) ? voiceNet.participants : []),
+    [voiceNet.participants]
+  );
+  const activeSpeakers = useMemo(
+    () => voiceParticipants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
+    [voiceParticipants]
+  );
   const activeVoiceNetId = String(voiceNet.activeNetId || voiceNet.transmitNetId || '').trim();
   const activeVoiceDiscipline = activeVoiceNetId ? (voiceNet.disciplineModeByNet?.[activeVoiceNetId] || 'PTT') : 'PTT';
   const secureModeEnabled = Boolean(activeVoiceNetId && voiceNet.secureModeByNet?.[activeVoiceNetId]?.enabled);
+
+  const commandRecommendation = useMemo(() => {
+    if (selectedIncident) {
+      if (selectedIncident.status === 'NEW') {
+        return {
+          label: 'Acknowledge Incident',
+          detail: 'Confirm ownership before dispatching reroutes.',
+          action: 'ACK' as const,
+        };
+      }
+      if (selectedIncident.status === 'ACKED') {
+        return {
+          label: 'Assign Resolution Element',
+          detail: 'Lock responsible team and begin mitigation.',
+          action: 'ASSIGN' as const,
+        };
+      }
+      if (selectedIncident.status === 'ASSIGNED') {
+        return {
+          label: 'Issue Reroute Directive',
+          detail: 'Reduce traffic pressure while recovery executes.',
+          action: 'REROUTE' as const,
+        };
+      }
+      return {
+        label: 'Incident Resolved',
+        detail: 'Run check-in broadcast to confirm net stability.',
+        action: 'CHECKIN' as const,
+      };
+    }
+
+    if (criticalIncidentCount > 0) {
+      return {
+        label: 'Prioritize Critical Queue',
+        detail: 'Select a critical incident and acknowledge immediately.',
+        action: 'FOCUS_CRITICAL' as const,
+      };
+    }
+
+    if (degradedChannelCount > 0) {
+      return {
+        label: 'Stabilize Degraded Lanes',
+        detail: 'Issue restriction directive to protect command traffic.',
+        action: 'RESTRICT' as const,
+      };
+    }
+
+    return {
+      label: 'Maintain Readiness',
+      detail: 'Run periodic check-in to verify net discipline.',
+      action: 'CHECKIN' as const,
+    };
+  }, [selectedIncident, criticalIncidentCount, degradedChannelCount]);
 
   useEffect(() => {
     setHealthPage((prev) => Math.min(prev, healthPageCount - 1));
@@ -289,6 +368,38 @@ export default function CommsNetworkConsole({
     [channelHealth, selectedIncident, emitMacro, actorId]
   );
 
+  const executeRecommendation = useCallback(() => {
+    if (commandRecommendation.action === 'ACK') {
+      transitionIncident('ACKED');
+      return;
+    }
+    if (commandRecommendation.action === 'ASSIGN') {
+      transitionIncident('ASSIGNED');
+      return;
+    }
+    if (commandRecommendation.action === 'REROUTE') {
+      dispatchDirective('REROUTE');
+      return;
+    }
+    if (commandRecommendation.action === 'RESTRICT') {
+      dispatchDirective('RESTRICT');
+      return;
+    }
+    if (commandRecommendation.action === 'CHECKIN') {
+      dispatchDirective('CHECKIN');
+      return;
+    }
+    if (commandRecommendation.action === 'FOCUS_CRITICAL') {
+      const critical = incidents.find((incident) => incident.priority === 'CRITICAL' && incident.status !== 'RESOLVED');
+      if (critical) {
+        setSelectedIncidentId(critical.id);
+        setFeedback('Critical incident focused.');
+      } else {
+        setFeedback('No critical incident available.');
+      }
+    }
+  }, [commandRecommendation, transitionIncident, dispatchDirective, incidents]);
+
   const joinVoiceNet = useCallback(
     async (netId: string, monitorOnly = false) => {
       if (!netId) return;
@@ -349,68 +460,6 @@ export default function CommsNetworkConsole({
     [voiceNet]
   );
 
-  const setVoiceDiscipline = useCallback(
-    async (mode: string) => {
-      try {
-        const response = await voiceNet.setDisciplineMode?.(mode, activeVoiceNetId || undefined);
-        if (response?.success === false) {
-          setFeedback('Unable to update discipline mode.');
-          return;
-        }
-        setFeedback(`Discipline: ${mode}`);
-      } catch (err: any) {
-        setFeedback(err?.message || 'Unable to update discipline mode.');
-      }
-    },
-    [voiceNet, activeVoiceNetId]
-  );
-
-  const requestVoiceTransmit = useCallback(async () => {
-    try {
-      const response = await voiceNet.requestToSpeak?.({ netId: activeVoiceNetId || undefined, reason: 'Comms command request' });
-      if (response?.success === false) {
-        setFeedback('Request-to-speak denied.');
-        return;
-      }
-      setFeedback('Request-to-speak submitted.');
-    } catch (err: any) {
-      setFeedback(err?.message || 'Request-to-speak failed.');
-    }
-  }, [voiceNet, activeVoiceNetId]);
-
-  const triggerVoicePriority = useCallback(async () => {
-    try {
-      const response = await voiceNet.triggerPriorityOverride?.({
-        netId: activeVoiceNetId || undefined,
-        priority: 'CRITICAL',
-        message: 'Priority override from Comms command console',
-      });
-      if (response?.success === false) {
-        setFeedback('Priority override failed.');
-        return;
-      }
-      setFeedback('Priority override sent.');
-    } catch (err: any) {
-      setFeedback(err?.message || 'Priority override failed.');
-    }
-  }, [voiceNet, activeVoiceNetId]);
-
-  const toggleSecureMode = useCallback(async () => {
-    if (!activeVoiceNetId) {
-      setFeedback('Set an active transmit lane first.');
-      return;
-    }
-    try {
-      await voiceNet.setSecureMode?.({
-        netId: activeVoiceNetId,
-        enabled: !secureModeEnabled,
-      });
-      setFeedback(secureModeEnabled ? 'Secure mode disabled.' : 'Secure mode enabled.');
-    } catch (err: any) {
-      setFeedback(err?.message || 'Secure mode update failed.');
-    }
-  }, [voiceNet, activeVoiceNetId, secureModeEnabled]);
-
   if (loading) {
     return <PanelLoadingState label="Loading comms graph..." />;
   }
@@ -444,27 +493,101 @@ export default function CommsNetworkConsole({
         <NexusBadge tone="active">Channels {channels.length}</NexusBadge>
         <NexusBadge tone="neutral">Nodes {nodes.length}</NexusBadge>
         <NexusBadge tone="neutral">Edges {edges.length}</NexusBadge>
-        <NexusBadge tone={incidents.some((incident) => incident.priority === 'CRITICAL' && incident.status !== 'RESOLVED') ? 'danger' : 'neutral'}>
-          Open Incidents {incidents.filter((incident) => incident.status !== 'RESOLVED').length}
+        <NexusBadge tone={criticalIncidentCount > 0 ? 'danger' : 'neutral'}>
+          Open Incidents {unresolvedIncidentCount}
         </NexusBadge>
       </div>
+
+      <section className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+        <div className="rounded border border-orange-500/35 bg-gradient-to-br from-orange-500/20 to-zinc-950/60 px-2.5 py-2">
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-orange-300">
+            Net Health
+            <Activity className="w-3.5 h-3.5" />
+          </div>
+          <div className="mt-1 text-lg font-semibold text-zinc-100">{Math.max(0, channels.length - degradedChannelCount)}/{channels.length}</div>
+          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">clear channels</div>
+        </div>
+        <div className="rounded border border-amber-500/30 bg-gradient-to-br from-amber-500/16 to-zinc-950/60 px-2.5 py-2">
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-amber-300">
+            Degraded
+            <Signal className="w-3.5 h-3.5" />
+          </div>
+          <div className="mt-1 text-lg font-semibold text-zinc-100">{degradedChannelCount}</div>
+          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">channels flagged</div>
+        </div>
+        <div className="rounded border border-red-500/30 bg-gradient-to-br from-red-500/16 to-zinc-950/60 px-2.5 py-2">
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-red-300">
+            Critical
+            <AlertTriangle className="w-3.5 h-3.5" />
+          </div>
+          <div className="mt-1 text-lg font-semibold text-zinc-100">{criticalIncidentCount}</div>
+          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">active incidents</div>
+        </div>
+        <div className="rounded border border-sky-500/30 bg-gradient-to-br from-sky-500/16 to-zinc-950/60 px-2.5 py-2">
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-sky-300">
+            Operators
+            <Users className="w-3.5 h-3.5" />
+          </div>
+          <div className="mt-1 text-lg font-semibold text-zinc-100">{voiceParticipants.length}</div>
+          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">voice participants</div>
+        </div>
+      </section>
+
+      <section className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="rounded border border-orange-500/30 bg-gradient-to-r from-orange-500/14 via-zinc-900/55 to-zinc-950/70 px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-orange-300">Command Intent</div>
+              <div className="text-sm font-semibold text-zinc-100 mt-0.5">{commandRecommendation.label}</div>
+              <div className="text-[10px] text-zinc-400 mt-0.5">{commandRecommendation.detail}</div>
+            </div>
+            <NexusButton size="sm" intent="primary" className="shrink-0" onClick={executeRecommendation}>
+              Execute
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </NexusButton>
+          </div>
+        </div>
+        <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[10px] uppercase tracking-wide text-zinc-400">Live Speaker Activity</div>
+            <NexusBadge tone={activeSpeakers.length > 0 ? 'warning' : 'neutral'}>
+              <Zap className="w-3 h-3 mr-1" />
+              {activeSpeakers.length}
+            </NexusBadge>
+          </div>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            {activeSpeakers.length > 0 ? (
+              activeSpeakers.map((participant: any, index: number) => (
+                <div key={`speaker:${participant.id || participant.callsign || index}`} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
+                  <div className="text-[10px] text-zinc-200 truncate">{participant.callsign || participant.name || participant.id || 'Operator'}</div>
+                  <div className="text-[9px] text-zinc-500 uppercase tracking-wide">{participant.state || 'Speaking'}</div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-2 rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5 text-[10px] text-zinc-500">
+                No active speakers detected.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
             <Radio className="w-3.5 h-3.5 text-orange-400" />
-            Voice Control Plane
+            Voice Situational Matrix
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <NexusBadge tone={voiceNet.connectionState === 'CONNECTED' ? 'ok' : voiceNet.connectionState === 'ERROR' ? 'danger' : 'warning'}>
               {voiceNet.connectionState || 'IDLE'}
             </NexusBadge>
             <NexusBadge tone={activeVoiceNetId ? 'active' : 'neutral'}>{activeVoiceNetId || 'NO TX'}</NexusBadge>
-            <NexusBadge tone={secureModeEnabled ? 'warning' : 'neutral'}>{secureModeEnabled ? 'SECURE' : 'OPEN'}</NexusBadge>
+            <NexusBadge tone="neutral">Monitored {monitoredVoiceSet.size}</NexusBadge>
           </div>
         </div>
 
-        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
             {visibleVoiceNets.map((net: any) => {
               const netId = String(net?.id || net?.code || '').trim();
@@ -486,7 +609,7 @@ export default function CommsNetworkConsole({
                     {isMonitored ? (
                       <>
                         <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => setTransmitVoiceNet(netId)}>
-                          TX
+                          Route TX
                         </NexusButton>
                         <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => leaveVoiceNet(netId)}>
                           Leave
@@ -513,41 +636,29 @@ export default function CommsNetworkConsole({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-start justify-end gap-1.5">
-            <NexusButton
-              size="sm"
-              intent={voiceNet.pttActive ? 'primary' : 'subtle'}
-              className="text-[10px] h-7 px-2"
-              onMouseDown={() => voiceNet.startPTT?.()}
-              onMouseUp={() => voiceNet.stopPTT?.()}
-              onMouseLeave={() => voiceNet.stopPTT?.()}
-              onTouchStart={() => voiceNet.startPTT?.()}
-              onTouchEnd={() => voiceNet.stopPTT?.()}
-              onTouchCancel={() => voiceNet.stopPTT?.()}
-            >
-              PTT
-            </NexusButton>
-            <NexusButton size="sm" intent={voiceNet.micEnabled ? 'subtle' : 'danger'} className="text-[10px] h-7 px-2" onClick={() => voiceNet.setMicEnabled?.(!voiceNet.micEnabled)}>
-              {voiceNet.micEnabled ? 'Mic On' : 'Mic Off'}
-            </NexusButton>
-            <NexusButton size="sm" intent={activeVoiceDiscipline === 'OPEN' ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={() => setVoiceDiscipline('OPEN')}>
-              Open
-            </NexusButton>
-            <NexusButton size="sm" intent={activeVoiceDiscipline === 'PTT' ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={() => setVoiceDiscipline('PTT')}>
-              PTT Mode
-            </NexusButton>
-            <NexusButton size="sm" intent={activeVoiceDiscipline === 'REQUEST_TO_SPEAK' ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={() => setVoiceDiscipline('REQUEST_TO_SPEAK')}>
-              Request Mode
-            </NexusButton>
-            <NexusButton size="sm" intent="subtle" className="text-[10px] h-7 px-2" onClick={requestVoiceTransmit}>
-              Request TX
-            </NexusButton>
-            <NexusButton size="sm" intent="subtle" className="text-[10px] h-7 px-2" onClick={triggerVoicePriority}>
-              Priority
-            </NexusButton>
-            <NexusButton size="sm" intent={secureModeEnabled ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={toggleSecureMode}>
-              {secureModeEnabled ? 'Secure On' : 'Secure Off'}
-            </NexusButton>
+          <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Persistent Rail Controls</div>
+            <div className="mt-1.5 space-y-1 text-[11px]">
+              <div className="flex items-center justify-between gap-2 text-zinc-300">
+                <span>Mic</span>
+                <NexusBadge tone={voiceNet.micEnabled ? 'ok' : 'danger'}>{voiceNet.micEnabled ? 'LIVE' : 'MUTED'}</NexusBadge>
+              </div>
+              <div className="flex items-center justify-between gap-2 text-zinc-300">
+                <span>PTT</span>
+                <NexusBadge tone={voiceNet.pttActive ? 'warning' : 'neutral'}>{voiceNet.pttActive ? 'TX' : 'IDLE'}</NexusBadge>
+              </div>
+              <div className="flex items-center justify-between gap-2 text-zinc-300">
+                <span>Discipline</span>
+                <NexusBadge tone="neutral">{activeVoiceDiscipline}</NexusBadge>
+              </div>
+              <div className="flex items-center justify-between gap-2 text-zinc-300">
+                <span>Secure</span>
+                <NexusBadge tone={secureModeEnabled ? 'warning' : 'neutral'}>{secureModeEnabled ? 'ON' : 'OFF'}</NexusBadge>
+              </div>
+            </div>
+            <div className="mt-2 text-[10px] text-zinc-500 leading-snug">
+              Full mic, PTT, discipline, and roster control remains in the persistent right voice rail across all focus modes.
+            </div>
           </div>
         </div>
 

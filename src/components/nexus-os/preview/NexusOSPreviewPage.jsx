@@ -811,6 +811,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             channelVoiceMap={channelVoiceMap}
             voiceState={sidePanelRuntime.voiceState}
             onRouteVoiceNet={routeVoiceForChannel}
+            focusMode={workbenchFocusMode}
             isExpanded={!leftPanelCollapsed}
             onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
           />
@@ -861,6 +862,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             micEnabled={voiceNet.micEnabled !== false}
             pttActive={Boolean(voiceNet.pttActive)}
             disciplineMode={activeDisciplineMode}
+            focusMode={workbenchFocusMode}
             onJoinNet={(netId) => joinVoiceNet(netId, false)}
             onMonitorNet={(netId) => joinVoiceNet(netId, true)}
             onSetTransmitNet={setTransmitVoiceNet}
