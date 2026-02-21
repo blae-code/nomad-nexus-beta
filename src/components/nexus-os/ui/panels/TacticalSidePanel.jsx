@@ -1,14 +1,32 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, MoreVertical, Activity, Signal, TrendingUp } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Activity, ChevronLeft, ChevronRight, Maximize2, Minimize2, Signal, TrendingUp } from 'lucide-react';
 import MetricSparkline from './MetricSparkline';
 
 const PAGE_SIZE = 6;
 
+const STATUS_TONE_CLASSES = {
+  ok: { dot: 'bg-green-500', text: 'text-green-400' },
+  warning: { dot: 'bg-amber-500', text: 'text-amber-400' },
+  danger: { dot: 'bg-red-500', text: 'text-red-400' },
+  neutral: { dot: 'bg-zinc-500', text: 'text-zinc-400' },
+};
+
+const SIGNAL_TONE_CLASSES = {
+  ok: 'text-green-400',
+  warning: 'text-amber-400',
+  danger: 'text-red-400',
+  neutral: 'text-zinc-500',
+};
+
+function formatLogTimestamp(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '--:--';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 /**
- * TacticalSidePanel — Enhanced OS-like side panel wrapper.
- * Keeps panel sections page-capped to avoid internal scrolling.
+ * TacticalSidePanel — streamlined side-panel shell with Standard and Command diagnostics modes.
+ * Keeps the content area stable and diagnostics page-capped to avoid inline scrolling.
  */
 export default function TacticalSidePanel({
   side = 'left',
@@ -32,12 +50,12 @@ export default function TacticalSidePanel({
   className = '',
 }) {
   const [panelMode, setPanelMode] = useState('standard');
-  const [showMetrics, setShowMetrics] = useState(true);
-  const [activeTab, setActiveTab] = useState('status');
+  const [diagnosticTab, setDiagnosticTab] = useState('metrics');
   const [metricsPage, setMetricsPage] = useState(0);
   const [logsPage, setLogsPage] = useState(0);
+
   const isLeft = side === 'left';
-  const compact = panelMode === 'compact';
+  const borderSideClass = isLeft ? 'border-r' : 'border-l';
 
   const metricsPageCount = Math.max(1, Math.ceil(statusMetrics.length / PAGE_SIZE));
   const logsPageCount = Math.max(1, Math.ceil(logEntries.length / PAGE_SIZE));
@@ -60,305 +78,255 @@ export default function TacticalSidePanel({
     [logEntries, logsPage]
   );
 
-  const statusToneClasses = {
-    ok: { dot: 'bg-green-500', text: 'text-green-400' },
-    warning: { dot: 'bg-amber-500', text: 'text-amber-400' },
-    danger: { dot: 'bg-red-500', text: 'text-red-400' },
-    neutral: { dot: 'bg-zinc-500', text: 'text-zinc-400' },
-  };
-
-  const signalToneClasses = {
-    ok: 'text-green-400',
-    warning: 'text-amber-400',
-    danger: 'text-red-400',
-    neutral: 'text-zinc-500',
-  };
-
-  const headerStatusClass = statusToneClasses[headerStatusTone] || statusToneClasses.neutral;
-  const headerSignalClass = signalToneClasses[headerSignalTone] || signalToneClasses.neutral;
+  const headerStatusClass = STATUS_TONE_CLASSES[headerStatusTone] || STATUS_TONE_CLASSES.neutral;
+  const headerSignalClass = SIGNAL_TONE_CLASSES[headerSignalTone] || SIGNAL_TONE_CLASSES.neutral;
 
   return (
     <aside
-      className={`nexus-surface border-${isLeft ? 'r' : 'l'} border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
-      style={{ width: collapsed ? 48 : width }}
+      className={`nexus-surface ${borderSideClass} border-zinc-800 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
+      style={{ width: collapsed ? 52 : width }}
     >
-      {!collapsed && (
-        <div className="flex-shrink-0 h-8 border-b border-orange-500/20 bg-gradient-to-r from-zinc-950 via-zinc-900/80 to-zinc-950 flex items-center justify-between px-3 relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-30 pointer-events-none"
-            style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, rgba(251,146,60,0.03) 0px, transparent 1px, transparent 2px)',
-            }}
-          />
-          <div className="flex items-center gap-2 relative z-10">
-            {Icon ? <Icon className="w-3 h-3 text-orange-400" /> : null}
-            <span className="text-[9px] font-bold uppercase tracking-wider text-orange-400">{title}</span>
-            <div className="flex items-center gap-1">
-              <div className={`w-1 h-1 rounded-full animate-pulse ${headerStatusClass.dot}`} />
-              <span className={`text-[8px] font-mono ${headerStatusClass.text}`}>{headerStatusLabel}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 relative z-10">
-            <Signal className={`w-2.5 h-2.5 ${headerSignalClass}`} />
-            <span className={`text-[8px] font-mono ${headerSignalClass}`}>{headerSignalValue}</span>
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-hidden relative">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          <TabsList className="w-full justify-start rounded-none border-b border-zinc-800/60 bg-zinc-900/40 p-0 h-8 flex-shrink-0">
-            <TabsTrigger
-              value="status"
-              className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent text-[10px] px-3"
-            >
-              <Activity className="w-3 h-3 mr-1" />
-              Status
-            </TabsTrigger>
-            <TabsTrigger
-              value="metrics"
-              className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent text-[10px] px-3"
-            >
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Metrics
-            </TabsTrigger>
-            <TabsTrigger
-              value="logs"
-              className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent text-[10px] px-3"
-            >
-              Logs
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="status" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
-            {children}
-          </TabsContent>
-
-          <TabsContent value="metrics" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
-            <div className="h-full min-h-0 p-2 space-y-2 flex flex-col">
-              <div className="grid gap-2">
-                {pagedMetrics.length > 0 ? (
-                  pagedMetrics.map((metric, index) => {
-                    const history = metricHistory[metric.label] || [];
-                    const trend = history.length > 1 ? history[history.length - 1].value - history[0].value : 0;
-                    const trendColor = trend > 0 ? 'text-green-400' : trend < 0 ? 'text-red-400' : 'text-zinc-400';
-                    return (
-                      <div key={`${metric.label}:${index}`} className={`rounded border border-zinc-800 bg-zinc-900/40 ${compact ? 'p-2' : 'p-3'}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{metric.label}</span>
-                          <span className={`text-[10px] font-mono font-semibold ${trendColor}`}>
-                            {trend > 0 ? '+' : ''}
-                            {trend.toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="flex items-end justify-between gap-2">
-                          <span className={`${compact ? 'text-lg' : 'text-2xl'} text-zinc-200 font-mono font-bold`}>{metric.value}</span>
-                          <div className="flex-1 min-w-0">
-                            <MetricSparkline data={history} color={trend >= 0 ? '#22c55e' : '#ef4444'} height={compact ? 28 : 36} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-8 text-zinc-600 text-xs">No metrics available</div>
-                )}
-              </div>
-
-              <div className="rounded border border-zinc-800 bg-zinc-900/30 p-2">
-                <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Performance Overview</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded border border-zinc-800 bg-zinc-900/40 p-2">
-                    <div className="text-[9px] text-zinc-500 uppercase">Avg Response</div>
-                    <div className="text-sm text-zinc-200 font-mono font-semibold">142ms</div>
-                  </div>
-                  <div className="rounded border border-zinc-800 bg-zinc-900/40 p-2">
-                    <div className="text-[9px] text-zinc-500 uppercase">Uptime</div>
-                    <div className="text-sm text-zinc-200 font-mono font-semibold">99.8%</div>
-                  </div>
-                  <div className="rounded border border-zinc-800 bg-zinc-900/40 p-2">
-                    <div className="text-[9px] text-zinc-500 uppercase">Throughput</div>
-                    <div className="text-sm text-zinc-200 font-mono font-semibold">1.2k/s</div>
-                  </div>
-                  <div className="rounded border border-zinc-800 bg-zinc-900/40 p-2">
-                    <div className="text-[9px] text-zinc-500 uppercase">Errors</div>
-                    <div className="text-sm text-zinc-200 font-mono font-semibold">0.02%</div>
-                  </div>
-                </div>
-              </div>
-
-              {metricsPageCount > 1 ? (
-                <div className="mt-auto flex items-center justify-end gap-2 text-[10px] text-zinc-500">
-                  <button
-                    type="button"
-                    onClick={() => setMetricsPage((prev) => Math.max(0, prev - 1))}
-                    disabled={metricsPage === 0}
-                    className="px-2 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                  >
-                    Prev
-                  </button>
-                  <span>{metricsPage + 1}/{metricsPageCount}</span>
-                  <button
-                    type="button"
-                    onClick={() => setMetricsPage((prev) => Math.min(metricsPageCount - 1, prev + 1))}
-                    disabled={metricsPage >= metricsPageCount - 1}
-                    className="px-2 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                  >
-                    Next
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="logs" className="flex-1 overflow-hidden mt-0 p-2 data-[state=inactive]:hidden">
-            <div className="h-full min-h-0 flex flex-col gap-2">
-              <div className="space-y-1">
-                {pagedLogs.length > 0 ? (
-                  pagedLogs.map((log, index) => (
-                    <div key={`${log.timestamp}:${index}`} className="rounded border border-zinc-800 bg-zinc-900/40 p-2 text-xs font-mono">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-zinc-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            log.level === 'error'
-                              ? 'bg-red-500/20 text-red-400'
-                              : log.level === 'warning'
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : log.level === 'success'
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-blue-500/20 text-blue-400'
-                          }`}
-                        >
-                          {log.level}
-                        </span>
-                      </div>
-                      <div className="text-zinc-300 text-[10px]">{log.message}</div>
+      {!collapsed ? (
+        <>
+          <header className="flex-shrink-0 border-b border-zinc-800 bg-zinc-950/85">
+            <div className="h-10 px-3 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex items-center gap-2">
+                {Icon ? <Icon className="w-3.5 h-3.5 text-orange-400" /> : null}
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-orange-400 truncate">{title}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${headerStatusClass.dot}`} />
+                      <span className={`text-[8px] font-mono uppercase ${headerStatusClass.text}`}>{headerStatusLabel}</span>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-zinc-600 text-xs">No log entries</div>
-                )}
+                    <div className="flex items-center gap-1">
+                      <Signal className={`w-2.5 h-2.5 ${headerSignalClass}`} />
+                      <span className={`text-[8px] font-mono ${headerSignalClass}`}>{headerSignalValue}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {logsPageCount > 1 ? (
-                <div className="mt-auto flex items-center justify-end gap-2 text-[10px] text-zinc-500">
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPanelMode('standard')}
+                  className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wide border ${
+                    panelMode === 'standard'
+                      ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
+                      : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Std
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelMode('command')}
+                  className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wide border ${
+                    panelMode === 'command'
+                      ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
+                      : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Cmd
+                </button>
+                {panelMode === 'command' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onMinimize}
+                      className="text-zinc-500 hover:text-orange-400 transition-colors"
+                      title="Minimize panel width"
+                    >
+                      <Minimize2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onMaximize}
+                      className="text-zinc-500 hover:text-orange-400 transition-colors"
+                      title="Maximize panel width"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={onToggleCollapse}
+                  className="text-zinc-500 hover:text-orange-400 transition-colors"
+                  title="Collapse panel"
+                >
+                  {isLeft ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+
+            {panelMode === 'command' ? (
+              <section className="flex-shrink-0 min-h-[184px] max-h-[42%] border-t border-zinc-800 bg-zinc-950/90 p-2 flex flex-col gap-2 overflow-hidden">
+                <div className="flex items-center gap-1 rounded border border-zinc-800 bg-zinc-900/50 p-0.5">
                   <button
                     type="button"
-                    onClick={() => setLogsPage((prev) => Math.max(0, prev - 1))}
-                    disabled={logsPage === 0}
-                    className="px-2 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                    onClick={() => setDiagnosticTab('metrics')}
+                    className={`flex-1 h-6 rounded text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-1 ${
+                      diagnosticTab === 'metrics' ? 'bg-zinc-800 text-orange-300' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
-                    Prev
+                    <TrendingUp className="w-3 h-3" />
+                    Metrics
                   </button>
-                  <span>{logsPage + 1}/{logsPageCount}</span>
                   <button
                     type="button"
-                    onClick={() => setLogsPage((prev) => Math.min(logsPageCount - 1, prev + 1))}
-                    disabled={logsPage >= logsPageCount - 1}
-                    className="px-2 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                    onClick={() => setDiagnosticTab('logs')}
+                    className={`flex-1 h-6 rounded text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-1 ${
+                      diagnosticTab === 'logs' ? 'bg-zinc-800 text-orange-300' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
-                    Next
+                    <Activity className="w-3 h-3" />
+                    Logs
                   </button>
                 </div>
-              ) : null}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
 
-      {!collapsed && showMetrics && statusMetrics.length > 0 ? (
-        <div className="flex-shrink-0 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-sm">
-          <div className="grid grid-cols-3 divide-x divide-zinc-800">
-            {statusMetrics.slice(0, 3).map((metric, index) => (
-              <div key={`${metric.label}:${index}`} className="px-2 py-1.5 flex flex-col items-center">
-                <span className="text-[8px] text-zinc-600 uppercase tracking-wider font-bold">{metric.label}</span>
-                <span className="text-[10px] font-mono text-orange-400 font-bold">{metric.value}</span>
-              </div>
-            ))}
+                {diagnosticTab === 'metrics' ? (
+                  <>
+                    <div className="flex-1 min-h-0 overflow-hidden space-y-1">
+                      {pagedMetrics.length > 0 ? (
+                        pagedMetrics.map((metric, index) => {
+                          const history = metricHistory[metric.label] || [];
+                          return (
+                            <div key={`${metric.label}:${index}`} className="rounded border border-zinc-800 bg-zinc-900/35 p-2">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">{metric.label}</span>
+                                <span className="text-xs font-mono text-zinc-200">{metric.value}</span>
+                              </div>
+                              {history.length > 1 ? (
+                                <div className="mt-1.5">
+                                  <MetricSparkline data={history} color="#f97316" height={24} />
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="h-full rounded border border-zinc-800 bg-zinc-900/30 grid place-items-center text-[10px] text-zinc-600">
+                          No metrics available
+                        </div>
+                      )}
+                    </div>
+                    {metricsPageCount > 1 ? (
+                      <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                        <button
+                          type="button"
+                          onClick={() => setMetricsPage((prev) => Math.max(0, prev - 1))}
+                          disabled={metricsPage === 0}
+                          className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                        >
+                          Prev
+                        </button>
+                        <span>{metricsPage + 1}/{metricsPageCount}</span>
+                        <button
+                          type="button"
+                          onClick={() => setMetricsPage((prev) => Math.min(metricsPageCount - 1, prev + 1))}
+                          disabled={metricsPage >= metricsPageCount - 1}
+                          className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 min-h-0 overflow-hidden space-y-1">
+                      {pagedLogs.length > 0 ? (
+                        pagedLogs.map((log, index) => (
+                          <div key={`${log.timestamp}:${index}`} className="rounded border border-zinc-800 bg-zinc-900/35 p-2">
+                            <div className="flex items-center justify-between gap-2 text-[9px]">
+                              <span className="text-zinc-500 font-mono">{formatLogTimestamp(log.timestamp)}</span>
+                              <span
+                                className={`uppercase font-bold ${
+                                  log.level === 'error'
+                                    ? 'text-red-400'
+                                    : log.level === 'warning'
+                                      ? 'text-amber-400'
+                                      : log.level === 'success'
+                                        ? 'text-green-400'
+                                        : 'text-blue-400'
+                                }`}
+                              >
+                                {log.level || 'info'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-zinc-300 truncate mt-1">{log.message || 'Log entry'}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="h-full rounded border border-zinc-800 bg-zinc-900/30 grid place-items-center text-[10px] text-zinc-600">
+                          No log entries
+                        </div>
+                      )}
+                    </div>
+                    {logsPageCount > 1 ? (
+                      <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                        <button
+                          type="button"
+                          onClick={() => setLogsPage((prev) => Math.max(0, prev - 1))}
+                          disabled={logsPage === 0}
+                          className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                        >
+                          Prev
+                        </button>
+                        <span>{logsPage + 1}/{logsPageCount}</span>
+                        <button
+                          type="button"
+                          onClick={() => setLogsPage((prev) => Math.min(logsPageCount - 1, prev + 1))}
+                          disabled={logsPage >= logsPageCount - 1}
+                          className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </section>
+            ) : null}
           </div>
-        </div>
-      ) : null}
 
-      {!collapsed && (
-        <div className={`absolute top-10 ${isLeft ? 'right-0' : 'left-0'} flex flex-col gap-0.5 z-20`}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="h-7 w-5 bg-zinc-900/95 border border-zinc-700/60 hover:border-orange-500/40 hover:bg-zinc-800 text-zinc-400 hover:text-orange-400 flex items-center justify-center transition-all"
-                style={{
-                  borderRadius: isLeft ? '0 4px 4px 0' : '4px 0 0 4px',
-                  borderLeft: isLeft ? 'none' : undefined,
-                  borderRight: isLeft ? undefined : 'none',
-                }}
-                title="Panel controls"
-              >
-                <MoreVertical className="w-3 h-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align={isLeft ? 'start' : 'end'} className="w-48 bg-zinc-900 border-zinc-700 text-zinc-200">
-              <DropdownMenuItem onClick={() => setPanelMode('standard')} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
-                Standard View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setPanelMode('compact')} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
-                Compact View
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-zinc-700" />
-              <DropdownMenuItem onClick={() => setShowMetrics((prev) => !prev)} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
-                {showMetrics ? 'Hide' : 'Show'} Metrics
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onMaximize} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
-                <Maximize2 className="w-3 h-3 mr-2" />
-                Maximize Panel
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onMinimize} className="text-xs focus:bg-zinc-800 focus:text-orange-400">
-                <Minimize2 className="w-3 h-3 mr-2" />
-                Minimize Panel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {statusMetrics.length > 0 ? (
+            <footer className="flex-shrink-0 border-t border-zinc-800 bg-zinc-950/95">
+              <div className="grid grid-cols-3 divide-x divide-zinc-800">
+                {statusMetrics.slice(0, 3).map((metric, index) => (
+                  <div key={`${metric.label}:${index}`} className="px-2 py-1.5 flex flex-col items-center">
+                    <span className="text-[8px] text-zinc-600 uppercase tracking-wider font-bold">{metric.label}</span>
+                    <span className="text-[10px] font-mono text-orange-400 font-bold">{metric.value}</span>
+                  </div>
+                ))}
+              </div>
+            </footer>
+          ) : null}
 
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="h-7 w-5 bg-zinc-900/95 border border-zinc-700/60 hover:border-orange-500/40 hover:bg-zinc-800 text-zinc-400 hover:text-orange-400 flex items-center justify-center transition-all"
-            style={{
-              borderRadius: isLeft ? '0 4px 4px 0' : '4px 0 0 4px',
-              borderLeft: isLeft ? 'none' : undefined,
-              borderRight: isLeft ? undefined : 'none',
-            }}
-            title={collapsed ? 'Expand panel' : 'Collapse panel'}
+          <div
+            className={`absolute top-0 ${isLeft ? 'right-0' : 'left-0'} w-1 h-full cursor-col-resize transition-colors z-10 ${
+              isResizing ? 'bg-orange-500/45' : 'hover:bg-orange-500/35'
+            }`}
+            onMouseDown={onResize}
           >
-            {isLeft ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          </button>
-        </div>
-      )}
-
-      {!collapsed && (
-        <div
-          className={`absolute top-0 ${isLeft ? 'right-0' : 'left-0'} w-1 h-full cursor-col-resize hover:bg-orange-500/40 transition-colors z-10 group`}
-          onMouseDown={onResize}
-        >
-          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-orange-500/20 group-hover:bg-orange-500/60 transition-colors" />
-        </div>
-      )}
-
-      {collapsed && (
-        <div className="h-full flex flex-col items-center justify-center gap-4 w-12 relative">
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-orange-500/20" />
+          </div>
+        </>
+      ) : (
+        <div className="h-full w-[52px] flex flex-col items-center justify-between py-3">
           <div className="flex flex-col items-center gap-2">
             {Icon ? <Icon className="w-4 h-4 text-orange-400" /> : null}
             <span className="text-[9px] font-bold uppercase tracking-wider text-orange-400 [writing-mode:vertical-lr] rotate-180">
               {title}
             </span>
           </div>
-
-          <div className="flex flex-col gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-            <div className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
-          </div>
-
+          <div className={`w-2 h-2 rounded-full ${headerStatusClass.dot}`} />
           <button
             type="button"
             onClick={onToggleCollapse}
