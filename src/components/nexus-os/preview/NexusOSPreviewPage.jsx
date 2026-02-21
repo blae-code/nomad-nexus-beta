@@ -36,19 +36,16 @@ import { computeControlZones } from '../services/controlZoneService';
 import { getFocusOperationId, listOperationsForUser, subscribeOperations } from '../services/operationService';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
 import {
+  Activity,
   AlertTriangle,
   ClipboardList,
   Clock3,
   Compass,
-  Crosshair,
-  FileText,
   Radio,
   Radar,
   Search,
   Shield,
   Signal,
-  Smartphone,
-  Wrench,
 } from 'lucide-react';
 import '../ui/theme/nexus-shell.css';
 
@@ -717,6 +714,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             <Signal className="w-3 h-3 mr-1" />
             {online ? 'LINK' : 'DEGRADED'}
           </NexusBadge>
+          <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
+          <NexusBadge tone={workbenchFocusMode ? 'ok' : 'neutral'}>
+            Focus {workbenchFocusMode ? FOCUS_APP_LABEL_BY_ID[workbenchFocusMode] || workbenchFocusMode : 'None'}
+          </NexusBadge>
+          <NexusBadge tone={pulseCount > 0 ? 'warning' : 'neutral'}>
+            <Activity className="w-3 h-3 mr-1" />
+            Pulse {pulseCount}
+          </NexusBadge>
           <NexusBadge tone={tray.unreadCount > 0 ? 'warning' : 'neutral'}>
             <AlertTriangle className="w-3 h-3 mr-1" />
             {tray.unreadCount > 0 ? `${tray.unreadCount} ALERTS` : 'CLEAR'}
@@ -828,20 +833,10 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
       <footer className="nx-shell-bottom flex-shrink-0">
         <NexusTaskbar
-          bridgeId={bridgeId}
           activeAppId={workbenchFocusMode}
           appEntries={lifecycle.entries}
           appCatalog={FOCUS_APP_CATALOG}
-          online={online}
-          eventPulseCount={pulseCount}
-          notifications={tray.notifications}
-          unreadNotifications={tray.unreadCount}
           onActivateApp={openFocusApp}
-          onSuspendApp={suspendFocusApp}
-          onOpenCommandDeck={() => setCommandDeckOpen(true)}
-          onMarkNotificationRead={tray.markNotificationRead}
-          onMarkAllNotificationsRead={tray.markAllNotificationsRead}
-          onClearNotifications={tray.clearNotifications}
         />
         <nav className="nx-mobile-nav">
           {MOBILE_NAV_APP_IDS.map((appId) => {
