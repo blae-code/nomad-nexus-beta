@@ -144,8 +144,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [commandFeedback, setCommandFeedback] = useState('');
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
-  const [forceDesignOpId] = useState('');
-  const [reportsOpId] = useState('');
 
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
     if (typeof window === 'undefined') return 320;
