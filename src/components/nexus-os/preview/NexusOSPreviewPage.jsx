@@ -53,45 +53,33 @@ import {
 import '../ui/theme/nexus-shell.css';
 
 const FOCUS_APP_CATALOG = [
-  { id: 'cqb', label: 'Action', hotkey: 'Alt+1' },
-  { id: 'comms', label: 'Comms', hotkey: 'Alt+2' },
-  { id: 'map', label: 'Map', hotkey: 'Alt+3' },
-  { id: 'mobile', label: 'Mobile', hotkey: 'Alt+4' },
-  { id: 'ops', label: 'Ops', hotkey: 'Alt+5' },
-  { id: 'force', label: 'Force', hotkey: 'Alt+6' },
-  { id: 'reports', label: 'Reports', hotkey: 'Alt+7' },
+  { id: 'map', label: 'Map', hotkey: 'Alt+1' },
+  { id: 'ops', label: 'Ops', hotkey: 'Alt+2' },
+  { id: 'comms', label: 'Comms', hotkey: 'Alt+3' },
 ];
 
 const FOCUS_APP_IDS = new Set(FOCUS_APP_CATALOG.map((entry) => entry.id));
 const FOCUS_APP_LABEL_BY_ID = Object.fromEntries(FOCUS_APP_CATALOG.map((entry) => [entry.id, entry.label]));
 const FOCUS_APP_ICON_BY_ID = {
-  cqb: Crosshair,
-  comms: Radio,
   map: Compass,
-  mobile: Smartphone,
   ops: ClipboardList,
-  force: Wrench,
-  reports: FileText,
+  comms: Radio,
 };
-const MOBILE_NAV_APP_IDS = ['cqb', 'comms', 'map', 'ops'];
+const MOBILE_NAV_APP_IDS = ['map', 'ops', 'comms'];
 
-function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onClose, reducedMotion }) {
-  const [mountedModes, setMountedModes] = useState(() => mode ? { [mode]: true } : { cqb: true });
+function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
+  const [mountedModes, setMountedModes] = useState(() => mode ? { [mode]: true } : { map: true });
 
   useEffect(() => {
     if (!mode) return;
     setMountedModes((prev) => (prev[mode] ? prev : { ...prev, [mode]: true }));
   }, [mode]);
 
-  const activeMode = mode || 'cqb';
+  const activeMode = mode || 'map';
   const modeComponent = {
     map: <TacticalMapFocusApp {...sharedPanelProps} onClose={onClose} />,
-    mobile: <MobileArCompanionFocusApp {...sharedPanelProps} onClose={onClose} />,
     comms: <CommsNetworkConsole {...sharedPanelProps} onClose={onClose} />,
     ops: <OperationFocusApp {...sharedPanelProps} onClose={onClose} />,
-    force: <FittingForceDesignFocusApp {...sharedPanelProps} initialOpId={forceDesignOpId} onClose={onClose} />,
-    reports: <ReportsFocusApp {...sharedPanelProps} initialOpId={reportsOpId} onClose={onClose} />,
-    cqb: <CqbCommandConsole {...sharedPanelProps} onClose={onClose} />,
   };
 
   return (
@@ -156,6 +144,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const [commandFeedback, setCommandFeedback] = useState('');
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
+  const [forceDesignOpId] = useState('');
+  const [reportsOpId] = useState('');
 
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
     if (typeof window === 'undefined') return 320;
@@ -265,7 +255,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   useEffect(() => {
     if (focusMode || lifecycle.foregroundAppId) return;
-    lifecycle.markForeground('cqb');
+    lifecycle.markForeground('map');
   }, [focusMode, lifecycle.foregroundAppId]);
 
   useEffect(() => {
@@ -285,7 +275,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         return;
       }
 
-      if (event.altKey && /^[1-7]$/.test(event.key)) {
+      if (event.altKey && /^[1-3]$/.test(event.key)) {
         event.preventDefault();
         const index = Number(event.key) - 1;
         const appId = FOCUS_APP_CATALOG[index]?.id;
@@ -361,22 +351,12 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     operations,
     focusOperationId,
     onCreateMacroEvent: createMacroEvent,
-    onOpenCqbConsole: () => openFocusApp('cqb'),
     onOpenCommsNetwork: () => openFocusApp('comms'),
     onOpenMapFocus: () => openFocusApp('map'),
-    onOpenMobileCompanion: () => openFocusApp('mobile'),
     onOpenOperationFocus: () => openFocusApp('ops'),
-    onOpenForceDesign: (nextOpId) => {
-      if (nextOpId) setForceDesignOpId(nextOpId);
-      openFocusApp('force');
-    },
-    onOpenReports: (nextOpId) => {
-      if (nextOpId) setReportsOpId(nextOpId);
-      openFocusApp('reports');
-    },
   };
 
-  const workbenchFocusMode = focusMode || lifecycle.foregroundAppId || 'cqb';
+  const workbenchFocusMode = focusMode || lifecycle.foregroundAppId || 'map';
 
   const fallbackVoiceNets = useMemo(() => {
     const opNets = operations.slice(0, 6).map((operation) => {
@@ -798,8 +778,6 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
-              forceDesignOpId={forceDesignOpId}
-              reportsOpId={reportsOpId}
               onClose={closeFocusApp}
               reducedMotion={reducedMotion}
             />
