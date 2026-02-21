@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/components/base44/nexusBase44Client';
 import { Users, Eye } from 'lucide-react';
 
 /**

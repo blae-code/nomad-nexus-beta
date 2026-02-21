@@ -70,7 +70,7 @@ const DEFAULT_VISIBLE_STRATA = Object.freeze({
   COMMAND_ASSESSED: false,
 });
 
-const SUMMARY_PAGE_SIZE = 4;
+const SUMMARY_PAGE_SIZE = 5;
 
 function createLayerState(defaults) {
   return [
@@ -219,6 +219,8 @@ export default function TacticalMapPanel({
   const [quickBroadcastError, setQuickBroadcastError] = useState(null);
   const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
   const [summaryCommsPage, setSummaryCommsPage] = useState(0);
+  const [commsNetsPage, setCommsNetsPage] = useState(0);
+  const [commsCalloutsPage, setCommsCalloutsPage] = useState(0);
   const commsRetryDelayRef = useRef(20_000);
 
   const scopedCommsOpId = focusOperationId || opId || '';
@@ -649,6 +651,8 @@ export default function TacticalMapPanel({
   );
   const summaryOrderPageCount = Math.max(1, Math.ceil(timeline.visibleEntries.length / SUMMARY_PAGE_SIZE));
   const summaryCommsPageCount = Math.max(1, Math.ceil(stageCommsCallouts.length / SUMMARY_PAGE_SIZE));
+  const commsNetsPageCount = Math.max(1, Math.ceil(stageCommsNets.length / SUMMARY_PAGE_SIZE));
+  const commsCalloutsPageCount = Math.max(1, Math.ceil(stageCommsCallouts.length / SUMMARY_PAGE_SIZE));
   const summaryOrders = useMemo(
     () =>
       timeline.visibleEntries.slice(
@@ -665,6 +669,22 @@ export default function TacticalMapPanel({
       ),
     [stageCommsCallouts, summaryCommsPage]
   );
+  const pagedCommsNets = useMemo(
+    () =>
+      stageCommsNets.slice(
+        commsNetsPage * SUMMARY_PAGE_SIZE,
+        commsNetsPage * SUMMARY_PAGE_SIZE + SUMMARY_PAGE_SIZE
+      ),
+    [stageCommsNets, commsNetsPage]
+  );
+  const pagedCommsCallouts = useMemo(
+    () =>
+      stageCommsCallouts.slice(
+        commsCalloutsPage * SUMMARY_PAGE_SIZE,
+        commsCalloutsPage * SUMMARY_PAGE_SIZE + SUMMARY_PAGE_SIZE
+      ),
+    [stageCommsCallouts, commsCalloutsPage]
+  );
 
   useEffect(() => {
     setSummaryOrdersPage((prev) => Math.min(prev, summaryOrderPageCount - 1));
@@ -673,6 +693,14 @@ export default function TacticalMapPanel({
   useEffect(() => {
     setSummaryCommsPage((prev) => Math.min(prev, summaryCommsPageCount - 1));
   }, [summaryCommsPageCount]);
+
+  useEffect(() => {
+    setCommsNetsPage((prev) => Math.min(prev, commsNetsPageCount - 1));
+  }, [commsNetsPageCount]);
+
+  useEffect(() => {
+    setCommsCalloutsPage((prev) => Math.min(prev, commsCalloutsPageCount - 1));
+  }, [commsCalloutsPageCount]);
 
   const hasPresence = layerEnabled('presence') && presence.length > 0;
   const hasControl = layerEnabled('controlZones') && controlZones.length > 0;
@@ -735,6 +763,7 @@ export default function TacticalMapPanel({
         netId: commsOverlay.nets[0]?.id || undefined,
         lane: 'COMMAND',
       });
+      setCommsRefreshNonce((prev) => prev + 1);
       setMacroExecutionMessage(Array.isArray(response?.effects) ? response.effects.join(' | ') : `Executed ${macroId}.`);
       } catch (error) {
       const message = error?.message || 'Macro execution failed.';
@@ -1007,18 +1036,65 @@ export default function TacticalMapPanel({
         ))}
         <NexusButton size="sm" intent={showCommsLinks ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setShowCommsLinks((prev) => !prev)}>Links</NexusButton>
       </div>
-      {stageCommsNets.slice(0, 4).map((net) => (
+      {pagedCommsNets.map((net) => (
         <div key={net.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
           <div className="flex items-center justify-between gap-2"><span className="text-zinc-200 truncate">{net.label}</span><NexusBadge tone={commsQualityTone(net.quality)}>{net.quality}</NexusBadge></div>
           <div className="mt-1 text-zinc-500">{net.discipline} · P {net.participants} · TX {net.speaking}</div>
         </div>
       ))}
-      {stageCommsCallouts.slice(0, 4).map((callout) => (
+      {commsNetsPageCount > 1 ? (
+        <div className="flex items-center justify-between gap-2">
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            className="text-[10px]"
+            disabled={commsNetsPage === 0}
+            onClick={() => setCommsNetsPage((prev) => Math.max(0, prev - 1))}
+          >
+            Prev Nets
+          </NexusButton>
+          <span className="text-[10px] text-zinc-500">{commsNetsPage + 1}/{commsNetsPageCount}</span>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            className="text-[10px]"
+            disabled={commsNetsPage >= commsNetsPageCount - 1}
+            onClick={() => setCommsNetsPage((prev) => Math.min(commsNetsPageCount - 1, prev + 1))}
+          >
+            Next Nets
+          </NexusButton>
+        </div>
+      ) : null}
+      {stageCommsNets.length === 0 ? <div className="text-[11px] text-zinc-500">No comms nets in current view scope.</div> : null}
+      {pagedCommsCallouts.map((callout) => (
         <div key={callout.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
           <div className="flex items-center justify-between gap-2"><span style={{ color: commsPriorityColor(callout.priority) }}>{callout.priority}</span><NexusBadge tone={commsPriorityTone(callout.priority)}>{callout.stale ? 'STALE' : `${formatAge(callout.ageSeconds)} ago`}</NexusBadge></div>
           <div className="mt-1 text-zinc-300">{callout.message}</div>
         </div>
       ))}
+      {commsCalloutsPageCount > 1 ? (
+        <div className="flex items-center justify-between gap-2">
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            className="text-[10px]"
+            disabled={commsCalloutsPage === 0}
+            onClick={() => setCommsCalloutsPage((prev) => Math.max(0, prev - 1))}
+          >
+            Prev Calls
+          </NexusButton>
+          <span className="text-[10px] text-zinc-500">{commsCalloutsPage + 1}/{commsCalloutsPageCount}</span>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            className="text-[10px]"
+            disabled={commsCalloutsPage >= commsCalloutsPageCount - 1}
+            onClick={() => setCommsCalloutsPage((prev) => Math.min(commsCalloutsPageCount - 1, prev + 1))}
+          >
+            Next Calls
+          </NexusButton>
+        </div>
+      ) : null}
       <section className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Quick Broadcast</div>

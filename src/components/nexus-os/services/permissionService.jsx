@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/components/base44/nexusBase44Client';
 
 /**
  * Permission Service — Granular RBAC for panels and features

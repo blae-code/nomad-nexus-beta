@@ -191,7 +191,7 @@ export function MapLegend({ compact = false }) {
 
   if (compact) {
     return (
-      <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2 max-h-[400px] overflow-y-auto">
+      <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
         <div className="flex items-center gap-2">
           <Info className="w-3 h-3 text-zinc-400" />
           <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Map Legend</h4>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { MapContainer, Marker, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/components/base44/nexusBase44Client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { updateTacticalAI } from '../../services/tacticalAIService';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';

@@ -3,7 +3,7 @@
  * Real-time collaborative drawing and interaction tracking for tactical maps
  */
 
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/components/base44/nexusBase44Client';
 
 /**
  * Create a new map collaboration session

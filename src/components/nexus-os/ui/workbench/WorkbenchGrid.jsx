@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp, Copy, Eye, GripVertical, Minus, Plus, RotateCcw } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/components/base44/nexusBase44Client';
 import CollaborationPresence from './CollaborationPresence';
 import { getPanelPermissions, ACCESS_LEVELS } from '../../services/permissionService';
 import { useAuth } from '@/components/providers/AuthProvider';

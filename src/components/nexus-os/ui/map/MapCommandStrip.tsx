@@ -42,7 +42,7 @@ function layerLabel(id: TacticalLayerId): string {
   return 'Presence';
 }
 
-const ROSTER_PAGE_SIZE = 4;
+const ROSTER_PAGE_SIZE = 5;
 
 export default function MapCommandStrip({
   mode,

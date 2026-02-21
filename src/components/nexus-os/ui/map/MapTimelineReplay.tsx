@@ -18,7 +18,7 @@ export default function MapTimelineReplay({
   onChangeOffsetMinutes,
 }: MapTimelineReplayProps) {
   const [page, setPage] = React.useState(0);
-  const itemsPerPage = 8;
+  const itemsPerPage = 5;
   const pageCount = Math.max(1, Math.ceil(timeline.visibleEntries.length / itemsPerPage));
   const visibleEntries = timeline.visibleEntries.slice(page * itemsPerPage, page * itemsPerPage + itemsPerPage);
 
