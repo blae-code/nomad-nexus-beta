@@ -162,9 +162,9 @@ export default function VoiceCommsRail({
   );
 
   const renderGlobalControlCluster = () => (
-    <div className="px-2.5 py-2 rounded border border-zinc-800 bg-zinc-900/35 space-y-1.5">
-      <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide">
-        <span className="text-zinc-500">Global Voice Controls</span>
+    <div className="px-2 py-1.5 rounded border border-zinc-700/40 bg-zinc-900/40 space-y-1.5">
+      <div className="flex items-center justify-between gap-2 text-[9px] uppercase tracking-wide">
+        <span className="text-zinc-500">Voice Controls</span>
         <span className="text-zinc-600">{participants.length} online</span>
       </div>
       <div className="grid grid-cols-3 gap-1">
@@ -222,8 +222,8 @@ export default function VoiceCommsRail({
     return (
       <div
         key={id}
-        className={`w-full px-2.5 py-2 rounded border text-[10px] ${
-          isActive ? 'bg-green-500/20 border-green-500/30 text-green-300' : 'bg-zinc-900/40 border-zinc-800 text-zinc-400'
+        className={`w-full px-2 py-1.5 rounded border text-[10px] ${
+          isActive ? 'bg-green-500/20 border-green-500/30 text-green-300' : 'bg-zinc-900/40 border-zinc-700/40 text-zinc-400'
         }`}
       >
         <div className="flex items-center justify-between gap-2">
@@ -278,45 +278,27 @@ export default function VoiceCommsRail({
   };
 
   return (
-    <div className={`nx-voice-rail flex flex-col h-full bg-zinc-950/80 border-r border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
-      <div className="px-3 py-3 nx-voice-header border-b border-zinc-700/40">
+    <div className={`nx-voice-rail flex flex-col h-full bg-zinc-950/80 border-l border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
+      <div className="px-2 py-1.5 nx-voice-header border-b border-zinc-700/40 bg-zinc-900/20">
         <div className="flex items-center justify-between gap-2">
           {isExpanded ? (
             <>
-              <div className="flex items-center gap-2 min-w-0">
-                <Radio className="w-4 h-4 text-green-500" />
-                <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Comms</h3>
-                <span className={`text-[9px] font-semibold uppercase tracking-wider ${connectionTone}`}>{connectionState}</span>
-                <span
-                  className={`text-[8px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded border ${
-                    isCommsFocus
-                      ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300'
-                      : 'border-zinc-700 bg-zinc-900/70 text-zinc-400'
-                  }`}
-                >
-                  {isCommsFocus ? 'Complement' : 'Persistent'}
-                </span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Radio className="w-3.5 h-3.5 text-green-500" />
+                <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Comms</h3>
+                <span className={`text-[8px] font-mono uppercase ${connectionTone}`}>{connectionState}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setDisplayMode('standard')}
-                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${displayMode === 'standard' ? 'bg-green-500/20 border-green-500/40 text-green-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                  onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
+                  className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
+                  title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
                 >
-                  Standard
+                  {displayMode === 'standard' ? 'Std' : 'Cmd'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setDisplayMode('command')}
-                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${displayMode === 'command' ? 'bg-green-500/20 border-green-500/40 text-green-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
-                >
-                  Command
-                </button>
-                <button type="button" className="text-zinc-500 hover:text-green-500 transition-colors" title="Voice settings">
-                  <Settings className="w-4 h-4" />
-                </button>
-                <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-green-500 transition-colors" title="Collapse">
-                  <ChevronRight className="w-4 h-4" />
+                <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-green-500 transition-colors" title="Collapse">
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </>
@@ -329,8 +311,8 @@ export default function VoiceCommsRail({
       </div>
 
       {isExpanded ? (
-        <div className="mx-2 px-1 py-2 flex-1 min-h-0 overflow-hidden space-y-2">
-          <div className="px-2.5 py-1.5 rounded border border-zinc-800 bg-zinc-900/35 text-[10px] text-zinc-500 uppercase tracking-wide">
+        <div className="px-2 py-2 flex-1 min-h-0 overflow-hidden space-y-2">
+          <div className="px-2 py-1.5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[9px] text-zinc-500 uppercase tracking-wide">
             {isCommsFocus
               ? 'Comms focus owns visual voice workspace; this rail keeps global control.'
               : 'Voice control stays active while you work in other focus modules.'}
@@ -339,10 +321,10 @@ export default function VoiceCommsRail({
           {displayMode === 'standard' ? (
             <>
               {activeNet ? (
-                <div className="px-3 py-2.5 rounded border border-green-500/30 bg-green-500/10">
-                  <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
-                  <div className="text-sm font-bold text-green-300 mt-1 truncate">{activeNet.code || activeNet.id || activeNet.name}</div>
-                  <div className="text-[10px] text-zinc-400 mt-0.5 truncate">{activeNet.label || 'Voice lane active'}</div>
+                <div className="px-2 py-2 rounded border border-green-500/30 bg-green-500/10">
+                  <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
+                  <div className="text-[11px] font-bold text-green-300 mt-1 truncate">{activeNet.code || activeNet.id || activeNet.name}</div>
+                  <div className="text-[9px] text-zinc-400 mt-0.5 truncate">{activeNet.label || 'Voice lane active'}</div>
                   <div className="mt-1 flex items-center gap-1.5 text-[9px] uppercase tracking-wider">
                     <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') === netIdentity(activeNet) ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>TX</span>
                     <span className={`px-1.5 py-0.5 rounded border ${isMonitoredNet(netIdentity(activeNet)) ? 'border-blue-500/40 text-blue-300 bg-blue-500/20' : 'border-zinc-700 text-zinc-500'}`}>MON</span>
@@ -382,12 +364,12 @@ export default function VoiceCommsRail({
             </>
           ) : (
             <>
-              <div className="flex border-b border-zinc-700/40 bg-zinc-900/40">
+              <div className="flex border-b border-zinc-700/40 bg-zinc-900/40 rounded">
                 <button
                   type="button"
                   onClick={() => setSelectedTab('nets')}
-                  className={`flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-                    selectedTab === 'nets' ? 'text-green-400 border-green-500 bg-zinc-900/60' : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                  className={`flex-1 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-colors ${
+                    selectedTab === 'nets' ? 'text-green-400 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
                   <Radio className="w-3 h-3 inline mr-1" />
@@ -396,8 +378,8 @@ export default function VoiceCommsRail({
                 <button
                   type="button"
                   onClick={() => setSelectedTab('roster')}
-                  className={`flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-                    selectedTab === 'roster' ? 'text-green-400 border-green-500 bg-zinc-900/60' : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                  className={`flex-1 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-colors ${
+                    selectedTab === 'roster' ? 'text-green-400 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
                   <Users className="w-3 h-3 inline mr-1" />
@@ -408,10 +390,10 @@ export default function VoiceCommsRail({
               {selectedTab === 'nets' ? (
                 <>
                   {activeNet ? (
-                    <div className="px-3 py-2.5 rounded border border-green-500/30 bg-green-500/10">
-                      <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
-                      <div className="text-sm font-bold text-green-300 mt-1">{activeNet.code || activeNet.id || activeNet.name}</div>
-                      <div className="text-[10px] text-zinc-400 mt-0.5">{activeNet.label || 'Voice lane active'}</div>
+                    <div className="px-2 py-2 rounded border border-green-500/30 bg-green-500/10">
+                      <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
+                      <div className="text-[11px] font-bold text-green-300 mt-1">{activeNet.code || activeNet.id || activeNet.name}</div>
+                      <div className="text-[9px] text-zinc-400 mt-0.5">{activeNet.label || 'Voice lane active'}</div>
                       <div className="mt-1 flex items-center gap-1.5 text-[9px] uppercase tracking-wider">
                         <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') === netIdentity(activeNet) ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>TX</span>
                         <span className={`px-1.5 py-0.5 rounded border ${isMonitoredNet(netIdentity(activeNet)) ? 'border-blue-500/40 text-blue-300 bg-blue-500/20' : 'border-zinc-700 text-zinc-500'}`}>MON</span>
@@ -508,11 +490,11 @@ export default function VoiceCommsRail({
                     <div className="space-y-1">
                       <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-2">Participants ({participants.length})</div>
                       {pagedParticipants.map((participant) => (
-                        <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2.5 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-green-500/30 transition-colors">
+                        <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-700/40 hover:border-green-500/30 transition-colors">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-semibold text-zinc-300 truncate">{participant.callsign || participant.name}</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-[9px] text-zinc-500 uppercase">{participant.isSpeaking ? 'TALK' : participant.state || 'READY'}</span>
+                              <span className="text-[8px] text-zinc-500 uppercase">{participant.isSpeaking ? 'TALK' : participant.state || 'READY'}</span>
                               <div className={`w-2 h-2 rounded-full ${participant.isSpeaking ? 'bg-orange-500' : 'bg-green-500'}`} />
                             </div>
                           </div>
