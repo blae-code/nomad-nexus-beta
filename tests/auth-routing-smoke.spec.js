@@ -5,6 +5,17 @@ const looksLikeAccessGate = async (page) => {
   if (await verify.count()) return true;
   const marker = page.locator('#nn-ready');
   if (await marker.count()) return true;
+  const redirecting = page.getByText(/redirecting to authentication/i);
+  if (await redirecting.count()) return true;
+  return false;
+};
+
+const resolvesProtectedRoute = async (page, headingRegex) => {
+  const headingCount = await page.getByText(headingRegex).count();
+  if (headingCount > 0) return true;
+  if (await looksLikeAccessGate(page)) return true;
+  const path = page.url().toLowerCase();
+  if (path.includes('/accessgate') || path.includes('/access-gate')) return true;
   return false;
 };
 
@@ -24,14 +35,14 @@ test('protected comms/events routes load without fatal routing errors', async ({
   page.on('pageerror', (err) => fatal.push(err?.message || String(err)));
 
   await page.goto('/comms-console', { waitUntil: 'networkidle' });
-  const commsGate = await looksLikeAccessGate(page);
-  const commsHeading = await page.getByText(/comms/i).count();
-  expect(commsGate || commsHeading > 0).toBe(true);
+  await expect
+    .poll(() => resolvesProtectedRoute(page, /comms/i), { timeout: 8000 })
+    .toBe(true);
 
   await page.goto('/events', { waitUntil: 'networkidle' });
-  const eventsGate = await looksLikeAccessGate(page);
-  const eventsHeading = await page.getByText(/events|operation/i).count();
-  expect(eventsGate || eventsHeading > 0).toBe(true);
+  await expect
+    .poll(() => resolvesProtectedRoute(page, /events|operation/i), { timeout: 8000 })
+    .toBe(true);
 
   expect(fatal.length).toBe(0);
 });

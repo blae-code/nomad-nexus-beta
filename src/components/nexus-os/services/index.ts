@@ -5,6 +5,7 @@ export * from './channelContextService';
 export * from './locationEstimateService';
 export * from './commandIntentService';
 export * from './commsGraphService';
+export * from './commsFocusDirectiveService';
 export * from './base44CommsReadAdapter';
 export * from './mapCommsOverlayService';
 export * from './mapLogisticsOverlayService';

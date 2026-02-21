@@ -1,5 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Radio, RefreshCcw, Signal, UserCheck, Users, Zap } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  ClipboardList,
+  Radio,
+  RefreshCcw,
+  Send,
+  Signal,
+  UserCheck,
+  Users,
+  Zap,
+} from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
@@ -10,8 +23,19 @@ import {
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
+  type CommsIncidentRecord,
   type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
+import {
+  buildCommsDirectiveThreads,
+  buildCommsDisciplineAlerts,
+  createDirectiveDispatchRecord,
+  reconcileDirectiveDispatches,
+  type CommsDirectiveThreadLane,
+  type DirectiveDeliveryState,
+  type DisciplineAlert,
+  type DirectiveDispatchRecord,
+} from '../../services/commsFocusDirectiveService';
 import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
@@ -22,6 +46,7 @@ interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
 
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
+const THREAD_LIST_PAGE_SIZE = 5;
 
 const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
@@ -68,6 +93,24 @@ function isParticipantSpeaking(participant: any): boolean {
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
+function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
+  if (severity === 'critical') return 'danger';
+  if (severity === 'warning') return 'warning';
+  return 'neutral';
+}
+
+function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
+  if (status === 'QUEUED') return 'warning';
+  if (status === 'PERSISTED') return 'active';
+  return 'ok';
+}
+
+function directiveByThreadAction(action: CommsDirectiveThreadLane['nextAction']): 'REROUTE' | 'RESTRICT' | 'CHECKIN' {
+  if (action === 'REROUTE') return 'REROUTE';
+  if (action === 'RESTRICT') return 'RESTRICT';
+  return 'CHECKIN';
+}
+
 export default function CommsNetworkConsole({
   variantId,
   opId,
@@ -91,6 +134,10 @@ export default function CommsNetworkConsole({
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
+  const [threadPage, setThreadPage] = useState(0);
+  const [selectedThreadId, setSelectedThreadId] = useState('');
+  const [rightPanelView, setRightPanelView] = useState<'incidents' | 'threads'>('incidents');
+  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -164,6 +211,38 @@ export default function CommsNetworkConsole({
     () => incidents.filter((incident) => incident.priority === 'CRITICAL' && incident.status !== 'RESOLVED').length,
     [incidents]
   );
+  const directiveThreads = useMemo(
+    () => buildCommsDirectiveThreads({ channelHealth, incidents, events, nowMs }),
+    [channelHealth, incidents, events, nowMs]
+  );
+  const threadPageCount = Math.max(1, Math.ceil(directiveThreads.length / THREAD_LIST_PAGE_SIZE));
+  const visibleThreads = useMemo(
+    () =>
+      directiveThreads.slice(
+        threadPage * THREAD_LIST_PAGE_SIZE,
+        threadPage * THREAD_LIST_PAGE_SIZE + THREAD_LIST_PAGE_SIZE
+      ),
+    [directiveThreads, threadPage]
+  );
+  const selectedThread = directiveThreads.find((lane) => lane.id === selectedThreadId) || null;
+  const deliverySurface = useMemo(
+    () =>
+      reconcileDirectiveDispatches({
+        dispatches: directiveDispatches,
+        events,
+        incidents,
+        nowMs,
+      }),
+    [directiveDispatches, events, incidents, nowMs]
+  );
+  const deliveryStats = useMemo(() => {
+    const total = deliverySurface.length;
+    const queued = deliverySurface.filter((entry) => entry.status === 'QUEUED').length;
+    const persisted = deliverySurface.filter((entry) => entry.status === 'PERSISTED').length;
+    const acked = deliverySurface.filter((entry) => entry.status === 'ACKED').length;
+    const confidencePct = total > 0 ? Math.round((acked / total) * 100) : 100;
+    return { total, queued, persisted, acked, confidencePct };
+  }, [deliverySurface]);
 
   const healthPageCount = Math.max(1, Math.ceil(channelHealth.length / LIST_PAGE_SIZE));
   const visibleHealth = channelHealth.slice(healthPage * LIST_PAGE_SIZE, healthPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
@@ -204,6 +283,17 @@ export default function CommsNetworkConsole({
   const activeSpeakers = useMemo(
     () => voiceParticipants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
     [voiceParticipants]
+  );
+  const disciplineAlerts = useMemo(
+    () =>
+      buildCommsDisciplineAlerts({
+        events,
+        incidents,
+        nowMs,
+        activeSpeakers: activeSpeakers.length,
+        degradedChannelCount,
+      }),
+    [events, incidents, nowMs, activeSpeakers.length, degradedChannelCount]
   );
   const activeVoiceNetId = String(voiceNet.activeNetId || voiceNet.transmitNetId || '').trim();
   const activeVoiceDiscipline = activeVoiceNetId ? (voiceNet.disciplineModeByNet?.[activeVoiceNetId] || 'PTT') : 'PTT';
@@ -275,6 +365,10 @@ export default function CommsNetworkConsole({
   }, [voicePageCount]);
 
   useEffect(() => {
+    setThreadPage((prev) => Math.min(prev, threadPageCount - 1));
+  }, [threadPageCount]);
+
+  useEffect(() => {
     if (!incidents.length) {
       setSelectedIncidentId('');
       return;
@@ -285,12 +379,59 @@ export default function CommsNetworkConsole({
     setSelectedIncidentId(firstUnresolved?.id || incidents[0].id);
   }, [incidents, selectedIncidentId]);
 
+  useEffect(() => {
+    if (!directiveThreads.length) {
+      setSelectedThreadId('');
+      return;
+    }
+    const exists = directiveThreads.some((lane) => lane.id === selectedThreadId);
+    if (exists) return;
+    setSelectedThreadId(directiveThreads[0].id);
+  }, [directiveThreads, selectedThreadId]);
+
   const emitMacro = useCallback(
     (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
       if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
       setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
     },
     [onCreateMacroEvent]
+  );
+
+  const emitDirectiveMacro = useCallback(
+    (input: {
+      eventType: CqbEventType;
+      channelId: string;
+      directive: string;
+      successMessage: string;
+      incidentId?: string;
+      laneId?: string;
+      payload?: Record<string, unknown>;
+    }) => {
+      const dispatch = createDirectiveDispatchRecord({
+        channelId: input.channelId,
+        laneId: input.laneId,
+        directive: input.directive,
+        eventType: input.eventType,
+        incidentId: input.incidentId,
+        nowMs,
+      });
+      setDirectiveDispatches((prev) => [dispatch, ...prev].slice(0, 18));
+      emitMacro(
+        input.eventType,
+        {
+          channelId: input.channelId,
+          dispatchId: dispatch.dispatchId,
+          directive: input.directive,
+          laneId: input.laneId || dispatch.laneId,
+          incidentId: input.incidentId || null,
+          source: 'comms-network-console',
+          actorId,
+          ...(input.payload || {}),
+        },
+        input.successMessage
+      );
+    },
+    [emitMacro, nowMs, actorId]
   );
 
   const transitionIncident = useCallback(
@@ -300,72 +441,97 @@ export default function CommsNetworkConsole({
 
       setIncidentStatusById((prev) => ({ ...prev, [selectedIncident.id]: nextStatus }));
       const scopedChannelId = selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : undefined;
-      emitMacro(
-        INCIDENT_EVENT_BY_STATUS[nextStatus],
-        {
-          channelId: scopedChannelId,
-          incidentId: selectedIncident.id,
+      emitDirectiveMacro({
+        eventType: INCIDENT_EVENT_BY_STATUS[nextStatus],
+        channelId: scopedChannelId || 'UNSCOPED',
+        incidentId: selectedIncident.id,
+        directive: `INCIDENT_${nextStatus}`,
+        successMessage: `Incident ${nextStatus.toLowerCase()}`,
+        payload: {
           priority: selectedIncident.priority,
           incidentStatus: nextStatus,
-          source: 'comms-network-console',
-          actorId,
         },
-        `Incident ${nextStatus.toLowerCase()}`
-      );
+      });
     },
-    [selectedIncident, emitMacro, actorId]
+    [selectedIncident, emitDirectiveMacro]
   );
 
   const dispatchDirective = useCallback(
-    (directive: 'REROUTE' | 'RESTRICT' | 'CHECKIN') => {
+    (
+      directive: 'REROUTE' | 'RESTRICT' | 'CHECKIN',
+      options?: { channelId?: string; laneId?: string; incidentId?: string }
+    ) => {
       const fallbackChannelId = channelHealth[0]?.channelId;
       const incidentChannelId = selectedIncident?.channelId && selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : '';
-      const channelId = incidentChannelId || fallbackChannelId || '';
+      const threadChannelId = selectedThread?.channelId && selectedThread.channelId !== 'UNSCOPED' ? selectedThread.channelId : '';
+      const channelId = options?.channelId || incidentChannelId || threadChannelId || fallbackChannelId || '';
       if (!channelId) return;
+      const incidentId = options?.incidentId || selectedIncident?.id || '';
+      const laneId = options?.laneId || selectedThread?.id || '';
 
       if (directive === 'REROUTE') {
-        emitMacro(
-          'MOVE_OUT',
-          {
-            channelId,
-            directive: 'REROUTE_TRAFFIC',
-            incidentId: selectedIncident?.id || null,
-            source: 'comms-network-console',
-            actorId,
-          },
-          'Reroute directive sent'
-        );
+        emitDirectiveMacro({
+          eventType: 'MOVE_OUT',
+          channelId,
+          laneId,
+          incidentId,
+          directive: 'REROUTE_TRAFFIC',
+          successMessage: 'Reroute directive sent',
+        });
         return;
       }
 
       if (directive === 'RESTRICT') {
-        emitMacro(
-          'HOLD',
-          {
-            channelId,
-            directive: 'RESTRICT_NON_ESSENTIAL',
-            incidentId: selectedIncident?.id || null,
-            source: 'comms-network-console',
-            actorId,
-          },
-          'Net restriction directive sent'
-        );
+        emitDirectiveMacro({
+          eventType: 'HOLD',
+          channelId,
+          laneId,
+          incidentId,
+          directive: 'RESTRICT_NON_ESSENTIAL',
+          successMessage: 'Net restriction directive sent',
+        });
         return;
       }
 
-      emitMacro(
-        'SELF_CHECK',
-        {
-          channelId,
-          directive: 'CHECK_IN_REQUEST',
-          incidentId: selectedIncident?.id || null,
-          source: 'comms-network-console',
-          actorId,
-        },
-        'Check-in request broadcast'
-      );
+      emitDirectiveMacro({
+        eventType: 'SELF_CHECK',
+        channelId,
+        laneId,
+        incidentId,
+        directive: 'CHECK_IN_REQUEST',
+        successMessage: 'Check-in request broadcast',
+      });
     },
-    [channelHealth, selectedIncident, emitMacro, actorId]
+    [channelHealth, selectedIncident, selectedThread, emitDirectiveMacro]
+  );
+
+  const createActionOrder = useCallback(() => {
+    const channelId =
+      (selectedIncident?.channelId && selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : '') ||
+      (selectedThread?.channelId && selectedThread.channelId !== 'UNSCOPED' ? selectedThread.channelId : '') ||
+      channelHealth[0]?.channelId ||
+      '';
+    if (!channelId) return;
+    emitDirectiveMacro({
+      eventType: 'MOVE_OUT',
+      channelId,
+      laneId: selectedThread?.id || '',
+      incidentId: selectedIncident?.id || '',
+      directive: 'CREATE_ACTION_ORDER',
+      successMessage: 'Action order created',
+      payload: {
+        orderType: 'COMMS_STABILIZATION',
+      },
+    });
+  }, [selectedIncident, selectedThread, channelHealth, emitDirectiveMacro]);
+
+  const executeThreadAction = useCallback(
+    (lane: CommsDirectiveThreadLane) => {
+      if (!lane) return;
+      const directive = directiveByThreadAction(lane.nextAction);
+      dispatchDirective(directive, { channelId: lane.channelId, laneId: lane.id });
+    },
+    [dispatchDirective]
   );
 
   const executeRecommendation = useCallback(() => {
@@ -496,6 +662,12 @@ export default function CommsNetworkConsole({
         <NexusBadge tone={criticalIncidentCount > 0 ? 'danger' : 'neutral'}>
           Open Incidents {unresolvedIncidentCount}
         </NexusBadge>
+        <NexusBadge tone={disciplineAlerts.some((entry) => entry.severity === 'critical') ? 'danger' : disciplineAlerts.length > 0 ? 'warning' : 'neutral'}>
+          Discipline Alerts {disciplineAlerts.length}
+        </NexusBadge>
+        <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : deliveryStats.confidencePct >= 40 ? 'warning' : 'danger'}>
+          Delivery {deliveryStats.confidencePct}%
+        </NexusBadge>
       </div>
 
       <section className="grid grid-cols-2 xl:grid-cols-4 gap-2">
@@ -573,6 +745,20 @@ export default function CommsNetworkConsole({
       </section>
 
       <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2">
+        {disciplineAlerts.length > 0 ? (
+          <div className="mb-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5">
+            {disciplineAlerts.slice(0, 3).map((alert) => (
+              <div key={alert.id} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{alert.title}</div>
+                  <NexusBadge tone={disciplineAlertTone(alert.severity)}>{alert.severity}</NexusBadge>
+                </div>
+                <div className="mt-0.5 text-[10px] text-zinc-500">{alert.detail}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
             <Radio className="w-3.5 h-3.5 text-orange-400" />
@@ -801,71 +987,158 @@ export default function CommsNetworkConsole({
 
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
-              Priority Queue
-            </div>
             <div className="flex items-center gap-1.5">
-              <NexusButton size="sm" intent="subtle" onClick={() => setIncidentPage((prev) => Math.max(0, prev - 1))} disabled={incidentPage === 0}>
-                Prev
+              <NexusButton size="sm" intent={rightPanelView === 'incidents' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('incidents')}>
+                <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                Priority Queue
               </NexusButton>
-              <NexusBadge tone="neutral">
-                {incidentPage + 1}/{incidentPageCount}
-              </NexusBadge>
-              <NexusButton
-                size="sm"
-                intent="subtle"
-                onClick={() => setIncidentPage((prev) => Math.min(incidentPageCount - 1, prev + 1))}
-                disabled={incidentPage >= incidentPageCount - 1}
-              >
-                Next
+              <NexusButton size="sm" intent={rightPanelView === 'threads' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('threads')}>
+                <ClipboardList className="w-3.5 h-3.5 mr-1" />
+                Mission Threads
               </NexusButton>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-1.5">
-            {visibleIncidents.map((incident) => {
-              const active = incident.id === selectedIncidentId;
-              return (
-                <button
-                  key={incident.id}
-                  type="button"
-                  className={`text-left rounded border px-2 py-1.5 transition-colors ${
-                    active ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55 hover:border-zinc-700'
-                  }`}
-                  onClick={() => setSelectedIncidentId(incident.id)}
+            {rightPanelView === 'incidents' ? (
+              <div className="flex items-center gap-1.5">
+                <NexusButton size="sm" intent="subtle" onClick={() => setIncidentPage((prev) => Math.max(0, prev - 1))} disabled={incidentPage === 0}>
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {incidentPage + 1}/{incidentPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setIncidentPage((prev) => Math.min(incidentPageCount - 1, prev + 1))}
+                  disabled={incidentPage >= incidentPageCount - 1}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-zinc-200 truncate">{incident.title}</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <NexusBadge tone={incidentPriorityTone(incident.priority)}>{incident.priority}</NexusBadge>
-                      <NexusBadge tone={incidentStatusTone(incident.status)}>{incident.status}</NexusBadge>
-                    </div>
-                  </div>
-                  <div className="mt-1 text-[10px] text-zinc-500 truncate">{incident.detail}</div>
-                </button>
-              );
-            })}
-            {visibleIncidents.length === 0 ? (
-              <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
-                No priority incidents in scope.
+                  Next
+                </NexusButton>
               </div>
-            ) : null}
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <NexusButton size="sm" intent="subtle" onClick={() => setThreadPage((prev) => Math.max(0, prev - 1))} disabled={threadPage === 0}>
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {threadPage + 1}/{threadPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setThreadPage((prev) => Math.min(threadPageCount - 1, prev + 1))}
+                  disabled={threadPage >= threadPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            )}
           </div>
 
-          {selectedIncident ? (
-            <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-[11px] text-zinc-200 truncate">{selectedIncident.title}</div>
-                <span className="text-[10px] text-zinc-500">{formatAge(nowMs, selectedIncident.createdAtMs)} ago</span>
+          {rightPanelView === 'incidents' ? (
+            <>
+              <div className="grid grid-cols-1 gap-1.5">
+                {visibleIncidents.map((incident) => {
+                  const active = incident.id === selectedIncidentId;
+                  return (
+                    <button
+                      key={incident.id}
+                      type="button"
+                      className={`text-left rounded border px-2 py-1.5 transition-colors ${
+                        active ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55 hover:border-zinc-700'
+                      }`}
+                      onClick={() => setSelectedIncidentId(incident.id)}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-zinc-200 truncate">{incident.title}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <NexusBadge tone={incidentPriorityTone(incident.priority)}>{incident.priority}</NexusBadge>
+                          <NexusBadge tone={incidentStatusTone(incident.status)}>{incident.status}</NexusBadge>
+                        </div>
+                      </div>
+                      <div className="mt-1 text-[10px] text-zinc-500 truncate">{incident.detail}</div>
+                    </button>
+                  );
+                })}
+                {visibleIncidents.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
+                    No priority incidents in scope.
+                  </div>
+                ) : null}
               </div>
-              <div className="mt-1 text-[10px] text-zinc-500">{selectedIncident.detail}</div>
-              <div className="mt-1 text-[10px] text-zinc-500">Recommended: {selectedIncident.recommendedAction}</div>
-            </div>
+
+              {selectedIncident ? (
+                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-zinc-200 truncate">{selectedIncident.title}</div>
+                    <span className="text-[10px] text-zinc-500">{formatAge(nowMs, selectedIncident.createdAtMs)} ago</span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-zinc-500">{selectedIncident.detail}</div>
+                  <div className="mt-1 text-[10px] text-zinc-500">Recommended: {selectedIncident.recommendedAction}</div>
+                </div>
+              ) : (
+                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
+                  Select an incident to issue deterministic actions.
+                </div>
+              )}
+            </>
           ) : (
-            <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
-              Select an incident to issue deterministic actions.
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-1.5">
+                {visibleThreads.map((lane) => {
+                  const active = lane.id === selectedThreadId;
+                  return (
+                    <button
+                      key={lane.id}
+                      type="button"
+                      className={`text-left rounded border px-2 py-1.5 transition-colors ${
+                        active ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55 hover:border-zinc-700'
+                      }`}
+                      onClick={() => setSelectedThreadId(lane.id)}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-zinc-200 truncate uppercase tracking-wide">{lane.label}</span>
+                        <NexusBadge tone={lane.criticalCount > 0 ? 'danger' : lane.unresolvedCount > 0 ? 'warning' : 'neutral'}>
+                          {lane.nextAction}
+                        </NexusBadge>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                        <NexusBadge tone="neutral">Q {lane.qualityPct}%</NexusBadge>
+                        <NexusBadge tone="neutral">Inc {lane.unresolvedCount}</NexusBadge>
+                        <NexusBadge tone={lane.criticalCount > 0 ? 'danger' : 'neutral'}>Crit {lane.criticalCount}</NexusBadge>
+                        <NexusBadge tone="active">Dir {lane.directiveVolume}</NexusBadge>
+                      </div>
+                    </button>
+                  );
+                })}
+                {visibleThreads.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
+                    No mission thread lanes in scope.
+                  </div>
+                ) : null}
+              </div>
+
+              {selectedThread ? (
+                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-zinc-200 uppercase tracking-wide truncate">{selectedThread.label}</div>
+                    <span className="text-[10px] text-zinc-500">{formatAge(nowMs, selectedThread.lastActivityMs)} ago</span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-zinc-500">
+                    Next lane action: {selectedThread.nextAction} · unresolved {selectedThread.unresolvedCount}
+                  </div>
+                  <div className="mt-1.5">
+                    <NexusButton size="sm" intent="primary" onClick={() => executeThreadAction(selectedThread)}>
+                      Execute Lane Action
+                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </NexusButton>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
+                  Select a lane to issue mission-thread directives.
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
@@ -911,7 +1184,37 @@ export default function CommsNetworkConsole({
             <NexusButton size="sm" intent="subtle" onClick={() => dispatchDirective('CHECKIN')}>
               Broadcast Check-In
             </NexusButton>
+            <NexusButton size="sm" intent="subtle" onClick={createActionOrder}>
+              <Send className="w-3.5 h-3.5 mr-1" />
+              Create Order
+            </NexusButton>
           </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <NexusBadge tone={deliveryStats.queued > 0 ? 'warning' : 'neutral'}>Queued {deliveryStats.queued}</NexusBadge>
+            <NexusBadge tone={deliveryStats.persisted > 0 ? 'active' : 'neutral'}>Persisted {deliveryStats.persisted}</NexusBadge>
+            <NexusBadge tone={deliveryStats.acked > 0 ? 'ok' : 'neutral'}>Acked {deliveryStats.acked}</NexusBadge>
+            <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : deliveryStats.confidencePct >= 40 ? 'warning' : 'danger'}>
+              Confidence {deliveryStats.confidencePct}%
+            </NexusBadge>
+          </div>
+        </div>
+        <div className="mt-1.5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-1.5">
+          {deliverySurface.slice(0, 4).map((dispatch) => (
+            <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{dispatch.directive}</span>
+                <NexusBadge tone={deliveryTone(dispatch.status)}>{dispatch.status}</NexusBadge>
+              </div>
+              <div className="mt-0.5 text-[10px] text-zinc-500 truncate">
+                {dispatch.channelId} · {formatAge(nowMs, dispatch.issuedAtMs)} ago
+              </div>
+            </div>
+          ))}
+          {deliverySurface.length === 0 ? (
+            <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[10px] text-zinc-500 md:col-span-2 xl:col-span-4">
+              No directives dispatched yet in this session.
+            </div>
+          ) : null}
         </div>
         {feedback ? <div className="mt-1 text-[10px] text-orange-300">{feedback}</div> : null}
       </div>

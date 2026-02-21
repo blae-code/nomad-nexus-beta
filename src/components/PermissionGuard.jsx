@@ -27,6 +27,14 @@ export default function PermissionGuard({
   const { user: authUser, loading } = useAuth();
   const user = authUser?.member_profile_data || authUser;
 
+  React.useEffect(() => {
+    if (loading) return;
+    if (user) return;
+    if (typeof window !== 'undefined') {
+      navigateToPage('AccessGate');
+    }
+  }, [loading, user]);
+
   // Still loading auth
   if (loading) {
     return (
@@ -38,9 +46,6 @@ export default function PermissionGuard({
 
   // No user - redirect to login
   if (!user) {
-    if (typeof window !== 'undefined') {
-      navigateToPage('AccessGate');
-    }
     return fallback || (
       <div className="p-4 text-center text-orange-500">
         Redirecting to authentication...
