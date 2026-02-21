@@ -36,8 +36,6 @@ import { computeControlZones } from '../services/controlZoneService';
 import { getFocusOperationId, listOperationsForUser, subscribeOperations } from '../services/operationService';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
 import {
-  Activity,
-  AlertTriangle,
   ClipboardList,
   Clock3,
   Compass,
@@ -61,6 +59,19 @@ const FOCUS_APP_ICON_BY_ID = {
   map: Compass,
   ops: ClipboardList,
   comms: Radio,
+};
+const FOCUS_APP_ALIASES = {
+  map: 'map',
+  maps: 'map',
+  tactical: 'map',
+  ops: 'ops',
+  op: 'ops',
+  operation: 'ops',
+  operations: 'ops',
+  comms: 'comms',
+  comm: 'comms',
+  communications: 'comms',
+  voice: 'comms',
 };
 const MOBILE_NAV_APP_IDS = ['map', 'ops', 'comms'];
 
@@ -582,37 +593,73 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     voiceNet,
   });
 
+  const availableBridgeIds = useMemo(() => Object.keys(BRIDGE_DEFAULT_PRESET), []);
+
   const runNexusCommand = (rawCommand) => {
     const input = String(rawCommand || '').trim();
     if (!input) return 'No command provided.';
     const [command, ...rest] = input.split(/\s+/);
     const keyword = command.toLowerCase();
     const arg = rest.join(' ').trim();
+    const normalizedArg = arg.toLowerCase();
 
-    if (keyword === 'open') {
-      const appId = FOCUS_APP_IDS.has(arg) ? arg : null;
-      if (!appId) return `Unknown app "${arg}".`;
+    if (keyword === 'help' || keyword === '?') {
+      return 'Commands: help, status, open <map|ops|comms>, bridge <id|next|prev>, close.';
+    }
+
+    if (keyword === 'status') {
+      const focusLabel = workbenchFocusMode ? FOCUS_APP_LABEL_BY_ID[workbenchFocusMode] || workbenchFocusMode : 'Standby';
+      return `Link ${online ? 'UP' : 'DOWN'} · Bridge ${bridgeId} · Focus ${focusLabel} · Alerts ${tray.unreadCount}.`;
+    }
+
+    if (keyword === 'open' || keyword === 'focus') {
+      const appId = FOCUS_APP_ALIASES[normalizedArg] || (FOCUS_APP_IDS.has(normalizedArg) ? normalizedArg : null);
+      if (!appId) return `Unknown app "${arg}". Use: map, ops, comms.`;
       openFocusApp(appId);
       return `Opened ${FOCUS_APP_LABEL_BY_ID[appId] || appId.toUpperCase()}.`;
     }
 
     if (keyword === 'bridge') {
+      if (!arg) return `Bridge ${bridgeId}. Available: ${availableBridgeIds.join(', ')}.`;
+
+      if (normalizedArg === 'next' || normalizedArg === 'prev') {
+        const currentIndex = Math.max(0, availableBridgeIds.indexOf(bridgeId));
+        const delta = normalizedArg === 'next' ? 1 : -1;
+        const nextIndex = (currentIndex + delta + availableBridgeIds.length) % availableBridgeIds.length;
+        const nextBridge = availableBridgeIds[nextIndex];
+        setBridgeId(nextBridge);
+        setPresetId(BRIDGE_DEFAULT_PRESET[nextBridge] || presetId);
+        return `Bridge switched to ${nextBridge}.`;
+      }
+
       const nextBridge = arg.toUpperCase();
-      if (!BRIDGE_DEFAULT_PRESET[nextBridge]) return `Unknown bridge "${arg}".`;
+      if (!BRIDGE_DEFAULT_PRESET[nextBridge]) return `Unknown bridge "${arg}". Available: ${availableBridgeIds.join(', ')}.`;
       setBridgeId(nextBridge);
       setPresetId(BRIDGE_DEFAULT_PRESET[nextBridge] || presetId);
       return `Bridge switched to ${nextBridge}.`;
     }
 
-    if (keyword === 'close') {
+    if (keyword === 'close' || keyword === 'standby') {
       closeFocusApp();
       return 'Focus app returned to standby.';
     }
 
-    return `Unknown command "${input}".`;
+    return `Unknown command "${input}". Use "help" for supported commands.`;
   };
 
-  const pulseCount = events.filter((event) => Date.now() - new Date(event.createdAt).getTime() <= 20000).length;
+  const commandCatalog = useMemo(
+    () => [
+      { id: 'cmd-help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
+      { id: 'cmd-status', label: 'System Status', command: 'status', detail: 'Report live bridge/link/focus state.' },
+      { id: 'cmd-open-map', label: 'Focus Map', command: 'open map', detail: 'Bring tactical map to foreground.' },
+      { id: 'cmd-open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Bring operations workspace to foreground.' },
+      { id: 'cmd-open-comms', label: 'Focus Comms', command: 'open comms', detail: 'Bring comms workspace to foreground.' },
+      { id: 'cmd-bridge-next', label: 'Bridge Next', command: 'bridge next', detail: `Cycle bridge (current ${bridgeId}).` },
+      { id: 'cmd-bridge-current', label: 'Bridge Info', command: 'bridge', detail: 'Display current and available bridge IDs.' },
+      { id: 'cmd-close', label: 'Standby Focus', command: 'close', detail: 'Return focus workspace to standby.' },
+    ],
+    [bridgeId]
+  );
 
   useEffect(() => {
     if (!commandFeedback) return undefined;
@@ -677,6 +724,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     () => new Date(clockNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     [clockNowMs]
   );
+  const focusStatusLabel = workbenchFocusMode ? FOCUS_APP_LABEL_BY_ID[workbenchFocusMode] || workbenchFocusMode : 'Standby';
+  const alertStatusLabel = tray.unreadCount > 0 ? `${tray.unreadCount} Alerts` : 'Alerts Clear';
 
   return (
     <div
@@ -694,8 +743,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             <Shield className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <div className="nx-topbar-kicker">Redscar Nomads Command Intranet</div>
-            <h1 className="nx-topbar-title">{isWorkspaceMode ? 'NexusOS Tactical Workspace' : 'NexusOS Gameplay Sandbox'}</h1>
+            <h1 className="nx-topbar-title">NexusOS Command Surface</h1>
+            <div className="nx-topbar-subline">
+              <span className="nx-topbar-mode">{isWorkspaceMode ? 'Workspace' : 'Sandbox'}</span>
+              <span className="nx-topbar-dot" />
+              <span className="nx-topbar-meta">{workspaceDisplayCallsign}</span>
+              <span className="nx-topbar-dot nx-hide-lg" />
+              <span className="nx-topbar-meta nx-hide-lg">Bridge {bridgeId}</span>
+            </div>
           </div>
         </div>
         <button
@@ -705,28 +760,18 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           title="Open command palette (Ctrl+Shift+P)"
         >
           <Search className="w-3.5 h-3.5" />
-          <span>Command Palette</span>
+          <span>Command Deck</span>
+          <span className="nx-command-entry-hint">help | status | open map</span>
           <span className="nx-hotkey">Ctrl+Shift+P</span>
         </button>
         <div className="nx-topbar-right">
-          {isWorkspaceMode ? <NexusBadge tone="active">WORKSPACE</NexusBadge> : <NexusBadge tone="warning">DEV</NexusBadge>}
-          <NexusBadge tone={online ? 'ok' : 'danger'}>
+          <NexusBadge tone={online ? 'ok' : 'danger'} className="nx-topbar-badge">
             <Signal className="w-3 h-3 mr-1" />
-            {online ? 'LINK' : 'DEGRADED'}
+            {online ? 'Link Stable' : 'Link Degraded'}
           </NexusBadge>
-          <NexusBadge tone="active">Bridge {bridgeId}</NexusBadge>
-          <NexusBadge tone={workbenchFocusMode ? 'ok' : 'neutral'}>
-            Focus {workbenchFocusMode ? FOCUS_APP_LABEL_BY_ID[workbenchFocusMode] || workbenchFocusMode : 'None'}
+          <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="nx-topbar-badge nx-hide-md">
+            Focus {focusStatusLabel}
           </NexusBadge>
-          <NexusBadge tone={pulseCount > 0 ? 'warning' : 'neutral'}>
-            <Activity className="w-3 h-3 mr-1" />
-            Pulse {pulseCount}
-          </NexusBadge>
-          <NexusBadge tone={tray.unreadCount > 0 ? 'warning' : 'neutral'}>
-            <AlertTriangle className="w-3 h-3 mr-1" />
-            {tray.unreadCount > 0 ? `${tray.unreadCount} ALERTS` : 'CLEAR'}
-          </NexusBadge>
-          <NexusBadge tone="neutral">{workspaceDisplayCallsign}</NexusBadge>
           <div className="nx-topbar-time">
             <Clock3 className="w-3.5 h-3.5" />
             <span>{systemTimeLabel}</span>
@@ -836,7 +881,14 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           activeAppId={workbenchFocusMode}
           appEntries={lifecycle.entries || {}}
           appCatalog={FOCUS_APP_CATALOG}
+          notifications={tray.notifications}
+          unreadNotifications={tray.unreadCount}
           onActivateApp={openFocusApp}
+          onSuspendApp={suspendFocusApp}
+          onOpenCommandDeck={() => setCommandDeckOpen(true)}
+          onMarkNotificationRead={tray.markNotificationRead}
+          onMarkAllNotificationsRead={tray.markAllNotificationsRead}
+          onClearNotifications={tray.clearNotifications}
         />
         <nav className="nx-mobile-nav">
           {MOBILE_NAV_APP_IDS.map((appId) => {
@@ -859,7 +911,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           })}
           <button type="button" className="nx-mobile-nav-button" onClick={() => setCommandDeckOpen(true)}>
             <Search className="w-4 h-4" />
-            <span>More</span>
+            <span>Deck</span>
           </button>
         </nav>
       </footer>
@@ -867,6 +919,8 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <NexusCommandDeck
         open={commandDeckOpen}
         onClose={() => setCommandDeckOpen(false)}
+        commandCatalog={commandCatalog}
+        contextSummary={`Bridge ${bridgeId} · Focus ${focusStatusLabel} · ${online ? 'Link up' : 'Link down'} · ${alertStatusLabel}`}
         onRunCommand={(command) => {
           const result = runNexusCommand(command);
           setCommandFeedback(result);
