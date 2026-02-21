@@ -22,6 +22,45 @@ type AuthOptions = {
 
 const MAX_MEMBER_TOKEN_LENGTH = 4096;
 const MEMBER_TOKEN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 90; // 90 days
+const DEFAULT_SYSTEM_ADMIN_IDENTIFIERS = ['blae@katrasoluta.com'];
+
+function normalizeIdentifier(value: unknown): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getSystemAdminIdentifierSet() {
+  const configured = String(Deno.env.get('SYSTEM_ADMIN_IDENTIFIERS') || '');
+  const configuredList = configured
+    .split(',')
+    .map((entry) => normalizeIdentifier(entry))
+    .filter(Boolean);
+  return new Set([
+    ...DEFAULT_SYSTEM_ADMIN_IDENTIFIERS.map((entry) => normalizeIdentifier(entry)),
+    ...configuredList,
+  ]);
+}
+
+function collectActorIdentifiers(actor: any): string[] {
+  if (!actor) return [];
+  const identifiers = [
+    actor?.email,
+    actor?.full_name,
+    actor?.callsign,
+    actor?.display_callsign,
+    actor?.login_callsign,
+    actor?.username,
+  ]
+    .map((entry) => normalizeIdentifier(entry))
+    .filter(Boolean);
+  return Array.from(new Set(identifiers));
+}
+
+function hasSystemAdminIdentity(actor: any): boolean {
+  if (!actor) return false;
+  const allowlist = getSystemAdminIdentifierSet();
+  const identifiers = collectActorIdentifiers(actor);
+  return identifiers.some((entry) => allowlist.has(entry));
+}
 
 function normalizeSessionTokenField(value: unknown, maxLength: number, casing: 'upper' | 'lower' | 'none' = 'none'): string {
   const raw = String(value || '').trim().slice(0, maxLength);
@@ -54,7 +93,11 @@ export async function getAdminUser(req: Request) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user && typeof user.role === 'string' && user.role.toLowerCase() === 'admin') {
+    if (!user) return null;
+    if (typeof user.role === 'string' && user.role.toLowerCase() === 'admin') {
+      return user;
+    }
+    if (hasSystemAdminIdentity(user)) {
       return user;
     }
   } catch {
@@ -65,6 +108,7 @@ export async function getAdminUser(req: Request) {
 
 export function isAdminMember(memberProfile: any) {
   if (!memberProfile) return false;
+  if (hasSystemAdminIdentity(memberProfile)) return true;
   const rank = (memberProfile.rank || '').toString().toUpperCase();
   const roles = Array.isArray(memberProfile.roles)
     ? memberProfile.roles.map((r) => r.toString().toLowerCase())

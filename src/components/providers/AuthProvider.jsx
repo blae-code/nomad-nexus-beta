@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { navigateToPage } from '@/utils';
+import { navigateToPage, isAdminUser } from '@/utils';
 
 const AuthContext = createContext(null);
 
@@ -74,16 +74,20 @@ export function AuthProvider({ children }) {
 
               const rank = (memberProfile.rank || '').toString().toUpperCase();
               const roles = (memberProfile.roles || []).map((r) => r.toString().toLowerCase());
-              const isAdmin = rank === 'PIONEER' || rank === 'FOUNDER' || roles.includes('admin');
-              setUser({
+              const seedAdmin = rank === 'PIONEER' || rank === 'FOUNDER' || roles.includes('admin');
+              const nextUser = {
                 id: memberProfile.id,
                 member_profile_id: memberProfile.id,
                 member_profile_data: memberProfileForUI,
-                is_admin: isAdmin,
+                is_admin: seedAdmin,
                 email: null,
                 full_name: memberProfileForUI.callsign,
                 callsign: memberProfileForUI.callsign,
                 authType: 'member'
+              };
+              setUser({
+                ...nextUser,
+                is_admin: isAdminUser(nextUser),
               });
               setDisclaimersCompleted(!!memberProfile.accepted_pwa_disclaimer_at);
               setOnboardingCompleted(!!memberProfile.onboarding_completed);
@@ -106,7 +110,7 @@ export function AuthProvider({ children }) {
         if (isMounted) {
           try {
             const adminUser = await base44.auth.me();
-            if (adminUser && adminUser.role === 'admin') {
+            if (adminUser && isAdminUser(adminUser)) {
               const adminCallsign = adminUser.callsign || adminUser.full_name || adminUser.email || 'System Admin';
               const adminRoles = Array.isArray(adminUser.roles)
                 ? adminUser.roles
@@ -123,7 +127,7 @@ export function AuthProvider({ children }) {
                 membership: adminUser.membership || 'MEMBER',
               };
 
-              setUser({
+              const nextUser = {
                 ...adminUser,
                 is_admin: true,
                 callsign: adminCallsign,
@@ -132,6 +136,10 @@ export function AuthProvider({ children }) {
                 rank: adminProfile.rank,
                 roles: adminRoles,
                 authType: 'admin'
+              };
+              setUser({
+                ...nextUser,
+                is_admin: isAdminUser(nextUser),
               });
               setDisclaimersCompleted(true);
               setOnboardingCompleted(true);

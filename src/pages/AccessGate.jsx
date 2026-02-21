@@ -20,6 +20,12 @@ export default function AccessGate() {
   const [hasSavedLogin, setHasSavedLogin] = useState(false);
   const [authState, setAuthState] = useState(null);
 
+  const isAdminGrant = (member, fallbackRank = '') => {
+    const rank = (member?.rank || fallbackRank || '').toString().toUpperCase();
+    const roles = (member?.roles || []).map((r) => r.toString().toLowerCase());
+    return rank === 'PIONEER' || rank === 'FOUNDER' || roles.includes('admin');
+  };
+
   // Debug marker
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -104,9 +110,7 @@ export default function AccessGate() {
               emitReadyBeacon('authenticated');
 
               const resolveNextPage = (member, fallbackRank) => {
-                const normalizedRank = (member?.rank || fallbackRank || '').toString().toUpperCase();
-                const roles = (member?.roles || []).map((r) => r.toString().toLowerCase());
-                const isAdmin = normalizedRank === 'PIONEER' || normalizedRank === 'FOUNDER' || roles.includes('admin');
+                const isAdmin = isAdminGrant(member, fallbackRank);
                 if (isAdmin) return 'Hub';
                 if (!member?.accepted_pwa_disclaimer_at) return 'Disclaimers';
                 if (!member?.onboarding_completed) return 'Onboarding';
@@ -123,12 +127,12 @@ export default function AccessGate() {
                 if (verify?.data?.success && verify?.data?.member) {
                   nextPage = resolveNextPage(verify.data.member, grantedRank);
                 } else {
-                  const isAdmin = (grantedRank || '').toString().toUpperCase() === 'PIONEER';
+                  const isAdmin = isAdminGrant(null, grantedRank);
                   nextPage = isAdmin ? 'Hub' : 'Disclaimers';
                 }
               } catch (verifyErr) {
                 console.warn('verifyMemberSession fallback:', verifyErr?.message);
-                const isAdmin = (grantedRank || '').toString().toUpperCase() === 'PIONEER';
+                const isAdmin = isAdminGrant(null, grantedRank);
                 nextPage = isAdmin ? 'Hub' : 'Disclaimers';
               }
 

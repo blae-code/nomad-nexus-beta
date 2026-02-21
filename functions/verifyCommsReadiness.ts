@@ -3,7 +3,7 @@
  * Checks: env vars, LiveKit connectivity, token minting capability.
  * Returns: { isReady: boolean, reason: string }
  */
-import { getAuthContext, readJson } from './_shared/memberAuth.ts';
+import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { enforceJsonPost } from './_shared/security.ts';
 
 Deno.serve(async (req) => {
@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       }, { status: methodCheck.status });
     }
     const payload = await readJson(req);
-    const { actorType } = await getAuthContext(req, payload, {
+    const { actorType, memberProfile } = await getAuthContext(req, payload, {
       allowAdmin: true,
       allowMember: true,
     });
@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
         reason: 'Unauthorized',
       }, { status: 401 });
     }
+    const canAccessDiagnostics = actorType === 'admin' || isAdminMember(memberProfile);
 
     const loopbackHosts = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0']);
     const getLoopbackInfo = () => {
@@ -55,7 +56,7 @@ Deno.serve(async (req) => {
       const warning = isLoopbackRequest
         ? 'Local loopback detected. LiveKit env vars are missing, so LIVE comms are disabled.'
         : 'LiveKit env vars are missing. Configure LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET.';
-      if (actorType !== 'admin') {
+      if (!canAccessDiagnostics) {
         return Response.json({
           isReady: false,
           reason: 'LiveKit environment not configured',
@@ -83,7 +84,7 @@ Deno.serve(async (req) => {
       clearTimeout(timeoutId);
 
       if (!healthResponse?.ok) {
-        if (actorType !== 'admin') {
+        if (!canAccessDiagnostics) {
           return Response.json({
             isReady: false,
             reason: 'LiveKit server unreachable',
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
         });
       }
     } catch (error) {
-      if (actorType !== 'admin') {
+      if (!canAccessDiagnostics) {
         return Response.json({
           isReady: false,
           reason: 'LiveKit connectivity check failed',

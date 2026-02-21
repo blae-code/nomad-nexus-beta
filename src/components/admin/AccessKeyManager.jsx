@@ -80,8 +80,27 @@ export default function AccessKeyManager() {
   const loadKeys = async () => {
     try {
       setLoading(true);
-      const keyList = await base44.entities.AccessKey.list();
-      setKeys(keyList || []);
+      let keyList = [];
+      let loadedViaFunction = false;
+      try {
+        const response = await invokeMemberFunction('listAccessKeys', {
+          includeRevoked: true,
+          limit: 1000,
+        });
+        if (Array.isArray(response?.data?.keys)) {
+          keyList = response.data.keys;
+          loadedViaFunction = true;
+        }
+      } catch (functionErr) {
+        console.warn('[AccessKeyManager] listAccessKeys function failed, falling back to entity list:', functionErr?.message);
+      }
+
+      if (!loadedViaFunction) {
+        const fallbackList = await base44.entities.AccessKey.list();
+        keyList = Array.isArray(fallbackList) ? fallbackList : [];
+      }
+
+      setKeys(keyList);
       setError(null);
     } catch (err) {
       setError(`Failed to load keys: ${err.message}`);
@@ -166,9 +185,10 @@ export default function AccessKeyManager() {
     }
 
     try {
-      await base44.entities.AccessKey.update(keyId, {
-        status: 'REVOKED',
-      });
+      const revokeResponse = await invokeMemberFunction('revokeAccessKey', { keyId });
+      if (!revokeResponse?.data?.success) {
+        throw new Error(revokeResponse?.data?.error || 'Revoke request failed');
+      }
       // Log audit trail
       await invokeMemberFunction('logAccessKeyAudit', {
         access_key_id: keyId,
@@ -195,20 +215,17 @@ export default function AccessKeyManager() {
     try {
       const keysArray = Array.from(selectedKeys);
       await Promise.all(
-        keysArray.map((keyId) =>
-          base44.entities.AccessKey.update(keyId, { status: 'REVOKED' })
-        )
-      );
-      
-      // Log each revocation
-      await Promise.all(
-        keysArray.map((keyId) =>
-          invokeMemberFunction('logAccessKeyAudit', {
+        keysArray.map(async (keyId) => {
+          const revokeResponse = await invokeMemberFunction('revokeAccessKey', { keyId });
+          if (!revokeResponse?.data?.success) {
+            throw new Error(revokeResponse?.data?.error || `Revoke failed for key ${keyId}`);
+          }
+          return invokeMemberFunction('logAccessKeyAudit', {
             access_key_id: keyId,
             action: 'REVOKE',
             details: { reason: 'Bulk revocation' },
-          })
-        )
+          });
+        })
       );
 
       setSuccess(`${selectedKeys.size} key(s) revoked`);
