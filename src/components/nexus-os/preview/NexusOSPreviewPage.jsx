@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import {
   BRIDGE_DEFAULT_PRESET,
@@ -28,6 +28,7 @@ import {
 import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import TacticalSidePanel from '../ui/panels/TacticalSidePanel';
+import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { getActiveChannelId } from '../services/channelContextService';
 import { listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
 import { computeControlZones } from '../services/controlZoneService';
@@ -118,6 +119,7 @@ function FocusShell({ mode, sharedPanelProps, forceDesignOpId, reportsOpId, onCl
 
 export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const { user } = useAuth();
+  const voiceNet = useVoiceNet();
   const vars = getNexusCssVars();
   const isWorkspaceMode = mode === 'workspace';
   const workspaceActorId = user?.member_profile_id || user?.id || 'workspace-operator';
@@ -384,7 +386,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   const workbenchFocusMode = focusMode || lifecycle.foregroundAppId || 'cqb';
 
-  const voiceNets = useMemo(() => {
+  const fallbackVoiceNets = useMemo(() => {
     const opNets = operations.slice(0, 6).map((operation) => {
       const fallbackCode = String(operation.id || '').replace(/^op[_-]?/i, '').slice(0, 8).toUpperCase();
       const displayCode = String(operation.name || fallbackCode || 'OP')
@@ -400,13 +402,13 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     return [{ id: 'net:command', code: 'COMMAND', label: `${bridgeId} Command Net` }, ...opNets];
   }, [operations, bridgeId]);
 
-  const activeVoiceNetId = useMemo(() => {
-    if (!voiceNets.length) return '';
+  const fallbackActiveVoiceNetId = useMemo(() => {
+    if (!fallbackVoiceNets.length) return '';
     const focusScoped = focusOperationId ? `net:${focusOperationId}` : '';
-    return voiceNets.some((entry) => entry.id === focusScoped) ? focusScoped : voiceNets[0].id;
-  }, [voiceNets, focusOperationId]);
+    return fallbackVoiceNets.some((entry) => entry.id === focusScoped) ? focusScoped : fallbackVoiceNets[0].id;
+  }, [fallbackVoiceNets, focusOperationId]);
 
-  const voiceParticipants = useMemo(() => {
+  const fallbackVoiceParticipants = useMemo(() => {
     const actorFirst = [...activeRoster].sort((a, b) => {
       if (a.id === actorId) return -1;
       if (b.id === actorId) return 1;
@@ -419,6 +421,144 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       state: index < 5 ? 'READY' : 'MONITOR',
     }));
   }, [activeRoster, actorId]);
+
+  const effectiveVoiceNets = useMemo(
+    () => (Array.isArray(voiceNet.voiceNets) && voiceNet.voiceNets.length > 0 ? voiceNet.voiceNets : fallbackVoiceNets),
+    [voiceNet.voiceNets, fallbackVoiceNets]
+  );
+
+  const activeVoiceNetId = useMemo(() => {
+    const liveId = String(voiceNet.activeNetId || voiceNet.transmitNetId || '').trim();
+    if (liveId) return liveId;
+    return fallbackActiveVoiceNetId;
+  }, [voiceNet.activeNetId, voiceNet.transmitNetId, fallbackActiveVoiceNetId]);
+
+  const effectiveVoiceParticipants = useMemo(
+    () => (Array.isArray(voiceNet.participants) && voiceNet.participants.length > 0 ? voiceNet.participants : fallbackVoiceParticipants),
+    [voiceNet.participants, fallbackVoiceParticipants]
+  );
+
+  const voiceRuntimeUser = useMemo(() => {
+    const profile = user?.member_profile_data || {};
+    const id = profile.id || user?.member_profile_id || user?.id || actorId || workspaceActorId || '';
+    if (!id) return null;
+    const roles = Array.isArray(profile.roles)
+      ? profile.roles
+      : Array.isArray(user?.roles)
+        ? user.roles
+        : [];
+    return {
+      ...profile,
+      id,
+      callsign: profile.callsign || user?.callsign || workspaceDisplayCallsign || 'Operator',
+      rank: profile.rank || user?.rank || '',
+      roles,
+      membership: profile.membership || profile.tier || 'MEMBER',
+    };
+  }, [user, actorId, workspaceActorId, workspaceDisplayCallsign]);
+
+  const activeDisciplineMode = useMemo(() => {
+    const currentNetId = String(voiceNet.transmitNetId || voiceNet.activeNetId || '').trim();
+    if (!currentNetId) return 'PTT';
+    return voiceNet.disciplineModeByNet?.[currentNetId] || 'PTT';
+  }, [voiceNet.transmitNetId, voiceNet.activeNetId, voiceNet.disciplineModeByNet]);
+
+  const withVoiceUser = useCallback(
+    () => {
+      if (voiceRuntimeUser?.id) return voiceRuntimeUser;
+      setCommandFeedback('Voice identity unavailable.');
+      return null;
+    },
+    [voiceRuntimeUser]
+  );
+
+  const joinVoiceNet = useCallback(
+    async (netId, monitorOnly = false) => {
+      if (!netId) return;
+      const runtimeUser = withVoiceUser();
+      if (!runtimeUser) return;
+      try {
+        const response = monitorOnly
+          ? await (voiceNet.monitorNet?.(netId, runtimeUser) || voiceNet.joinNet?.(netId, runtimeUser, { monitorOnly: true }))
+          : await voiceNet.joinNet?.(netId, runtimeUser);
+        if (response?.requiresConfirmation) {
+          setCommandFeedback('Focused net confirmation requested.');
+          return;
+        }
+        if (!response?.success) {
+          setCommandFeedback(response?.error || 'Voice join failed.');
+          return;
+        }
+        setCommandFeedback(monitorOnly ? `Monitoring ${netId}` : `Joined ${netId}`);
+      } catch (error) {
+        setCommandFeedback(error?.message || 'Voice join failed.');
+      }
+    },
+    [voiceNet, withVoiceUser]
+  );
+
+  const setTransmitVoiceNet = useCallback(
+    async (netId) => {
+      if (!netId) return;
+      const runtimeUser = withVoiceUser();
+      if (!runtimeUser) return;
+      try {
+        const response = await voiceNet.setTransmitNet?.(netId, runtimeUser);
+        if (response?.success === false) {
+          setCommandFeedback(response?.error || 'Unable to set transmit net.');
+          return;
+        }
+        setCommandFeedback(`Transmit lane set: ${netId}`);
+      } catch (error) {
+        setCommandFeedback(error?.message || 'Unable to set transmit net.');
+      }
+    },
+    [voiceNet, withVoiceUser]
+  );
+
+  const leaveVoiceNet = useCallback(
+    async (netId) => {
+      try {
+        await voiceNet.leaveNet?.(netId);
+        setCommandFeedback(netId ? `Left ${netId}` : 'Disconnected from voice nets.');
+      } catch (error) {
+        setCommandFeedback(error?.message || 'Unable to leave voice net.');
+      }
+    },
+    [voiceNet]
+  );
+
+  const setVoiceDiscipline = useCallback(
+    async (mode) => {
+      try {
+        const response = await voiceNet.setDisciplineMode?.(mode);
+        if (response?.success === false) {
+          setCommandFeedback('Unable to change voice discipline.');
+          return;
+        }
+        setCommandFeedback(`Voice discipline: ${mode}`);
+      } catch (error) {
+        setCommandFeedback(error?.message || 'Unable to change voice discipline.');
+      }
+    },
+    [voiceNet]
+  );
+
+  const requestVoiceTransmit = useCallback(
+    async () => {
+      try {
+        const response = await voiceNet.requestToSpeak?.({ reason: 'NexusOS panel request' });
+        if (response?.success === false) {
+          setCommandFeedback('Request-to-speak denied.');
+          return;
+        }
+        setCommandFeedback('Request-to-speak submitted.');
+      } catch (error) {
+        setCommandFeedback(error?.message || 'Request-to-speak failed.');
+      }
+    },
+    [voiceNet]
+  );
 
   const panelLogEntries = useMemo(() => {
     const levelForEvent = (eventTypeRaw) => {
@@ -469,11 +609,11 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const rightPanelMetrics = useMemo(() => {
     const qualityPct = online ? Math.max(74, 100 - Math.min(24, Math.round(events.length / 3))) : 0;
     return [
-      { label: 'Nets', value: String(voiceNets.length) },
-      { label: 'Users', value: String(voiceParticipants.length) },
+      { label: 'Nets', value: String(effectiveVoiceNets.length) },
+      { label: 'Users', value: String(effectiveVoiceParticipants.length) },
       { label: 'Quality', value: online ? `${qualityPct}%` : '--' },
     ];
-  }, [voiceNets.length, voiceParticipants.length, online, events.length]);
+  }, [effectiveVoiceNets.length, effectiveVoiceParticipants.length, online, events.length]);
 
   const runNexusCommand = (rawCommand) => {
     const input = String(rawCommand || '').trim();
@@ -698,9 +838,24 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           onMinimize={() => setRightPanelWidth(280)}
         >
           <VoiceCommsRail
-            voiceNets={voiceNets}
+            voiceNets={effectiveVoiceNets}
             activeNetId={activeVoiceNetId}
-            participants={voiceParticipants}
+            transmitNetId={voiceNet.transmitNetId || activeVoiceNetId}
+            monitoredNetIds={voiceNet.monitoredNetIds || []}
+            participants={effectiveVoiceParticipants}
+            connectionState={voiceNet.connectionState || 'IDLE'}
+            micEnabled={voiceNet.micEnabled !== false}
+            pttActive={Boolean(voiceNet.pttActive)}
+            disciplineMode={activeDisciplineMode}
+            onJoinNet={(netId) => joinVoiceNet(netId, false)}
+            onMonitorNet={(netId) => joinVoiceNet(netId, true)}
+            onSetTransmitNet={setTransmitVoiceNet}
+            onLeaveNet={leaveVoiceNet}
+            onSetMicEnabled={(enabled) => voiceNet.setMicEnabled?.(enabled)}
+            onStartPTT={() => voiceNet.startPTT?.()}
+            onStopPTT={() => voiceNet.stopPTT?.()}
+            onSetDisciplineMode={setVoiceDiscipline}
+            onRequestToSpeak={requestVoiceTransmit}
             isExpanded={!rightPanelCollapsed}
             onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
           />

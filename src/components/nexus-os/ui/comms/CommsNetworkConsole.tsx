@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Radio, RefreshCcw, UserCheck } from 'lucide-react';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
 import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
@@ -19,6 +21,7 @@ import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
 
 const LIST_PAGE_SIZE = 5;
+const VOICE_LIST_PAGE_SIZE = 4;
 
 const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
@@ -68,6 +71,8 @@ export default function CommsNetworkConsole({
   onCreateMacroEvent,
 }: CommsNetworkConsoleProps) {
   const reducedMotion = useReducedMotion();
+  const { user } = useAuth();
+  const voiceNet = useVoiceNet() as any;
   const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +84,7 @@ export default function CommsNetworkConsole({
   const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [voicePage, setVoicePage] = useState(0);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -147,6 +153,36 @@ export default function CommsNetworkConsole({
   const visibleIncidents = incidents.slice(incidentPage * LIST_PAGE_SIZE, incidentPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
   const selectedIncident = incidents.find((incident) => incident.id === selectedIncidentId) || null;
 
+  const voiceRuntimeUser = useMemo(() => {
+    const profile = user?.member_profile_data || {};
+    const resolvedId = profile.id || user?.member_profile_id || user?.id || actorId || '';
+    if (!resolvedId) return null;
+    const roles = Array.isArray(profile.roles)
+      ? profile.roles
+      : Array.isArray(user?.roles)
+        ? user.roles
+        : [];
+    return {
+      ...profile,
+      id: resolvedId,
+      callsign: profile.callsign || user?.callsign || resolvedId,
+      rank: profile.rank || user?.rank || '',
+      roles,
+      membership: profile.membership || profile.tier || 'MEMBER',
+    };
+  }, [user, actorId]);
+
+  const voiceNets = useMemo(() => (Array.isArray(voiceNet.voiceNets) ? voiceNet.voiceNets : []), [voiceNet.voiceNets]);
+  const voicePageCount = Math.max(1, Math.ceil(voiceNets.length / VOICE_LIST_PAGE_SIZE));
+  const visibleVoiceNets = voiceNets.slice(voicePage * VOICE_LIST_PAGE_SIZE, voicePage * VOICE_LIST_PAGE_SIZE + VOICE_LIST_PAGE_SIZE);
+  const monitoredVoiceSet = useMemo(
+    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id: unknown) => String(id || ''))),
+    [voiceNet.monitoredNetIds]
+  );
+  const activeVoiceNetId = String(voiceNet.activeNetId || voiceNet.transmitNetId || '').trim();
+  const activeVoiceDiscipline = activeVoiceNetId ? (voiceNet.disciplineModeByNet?.[activeVoiceNetId] || 'PTT') : 'PTT';
+  const secureModeEnabled = Boolean(activeVoiceNetId && voiceNet.secureModeByNet?.[activeVoiceNetId]?.enabled);
+
   useEffect(() => {
     setHealthPage((prev) => Math.min(prev, healthPageCount - 1));
   }, [healthPageCount]);
@@ -154,6 +190,10 @@ export default function CommsNetworkConsole({
   useEffect(() => {
     setIncidentPage((prev) => Math.min(prev, incidentPageCount - 1));
   }, [incidentPageCount]);
+
+  useEffect(() => {
+    setVoicePage((prev) => Math.min(prev, voicePageCount - 1));
+  }, [voicePageCount]);
 
   useEffect(() => {
     if (!incidents.length) {
@@ -249,6 +289,128 @@ export default function CommsNetworkConsole({
     [channelHealth, selectedIncident, emitMacro, actorId]
   );
 
+  const joinVoiceNet = useCallback(
+    async (netId: string, monitorOnly = false) => {
+      if (!netId) return;
+      if (!voiceRuntimeUser?.id) {
+        setFeedback('Voice profile unavailable.');
+        return;
+      }
+      try {
+        const response = monitorOnly
+          ? await (voiceNet.monitorNet?.(netId, voiceRuntimeUser) || voiceNet.joinNet?.(netId, voiceRuntimeUser, { monitorOnly: true }))
+          : await voiceNet.joinNet?.(netId, voiceRuntimeUser);
+        if (response?.requiresConfirmation) {
+          setFeedback('Focused voice net requires confirmation.');
+          return;
+        }
+        if (response?.success === false) {
+          setFeedback(response?.error || 'Voice join failed.');
+          return;
+        }
+        setFeedback(monitorOnly ? `Monitoring ${netId}` : `Joined ${netId}`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Voice join failed.');
+      }
+    },
+    [voiceNet, voiceRuntimeUser]
+  );
+
+  const setTransmitVoiceNet = useCallback(
+    async (netId: string) => {
+      if (!netId) return;
+      if (!voiceRuntimeUser?.id) {
+        setFeedback('Voice profile unavailable.');
+        return;
+      }
+      try {
+        const response = await voiceNet.setTransmitNet?.(netId, voiceRuntimeUser);
+        if (response?.success === false) {
+          setFeedback(response?.error || 'Unable to set transmit net.');
+          return;
+        }
+        setFeedback(`TX lane set: ${netId}`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Unable to set transmit net.');
+      }
+    },
+    [voiceNet, voiceRuntimeUser]
+  );
+
+  const leaveVoiceNet = useCallback(
+    async (netId: string) => {
+      try {
+        await voiceNet.leaveNet?.(netId);
+        setFeedback(`Left ${netId}`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Unable to leave net.');
+      }
+    },
+    [voiceNet]
+  );
+
+  const setVoiceDiscipline = useCallback(
+    async (mode: string) => {
+      try {
+        const response = await voiceNet.setDisciplineMode?.(mode, activeVoiceNetId || undefined);
+        if (response?.success === false) {
+          setFeedback('Unable to update discipline mode.');
+          return;
+        }
+        setFeedback(`Discipline: ${mode}`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Unable to update discipline mode.');
+      }
+    },
+    [voiceNet, activeVoiceNetId]
+  );
+
+  const requestVoiceTransmit = useCallback(async () => {
+    try {
+      const response = await voiceNet.requestToSpeak?.({ netId: activeVoiceNetId || undefined, reason: 'Comms command request' });
+      if (response?.success === false) {
+        setFeedback('Request-to-speak denied.');
+        return;
+      }
+      setFeedback('Request-to-speak submitted.');
+    } catch (err: any) {
+      setFeedback(err?.message || 'Request-to-speak failed.');
+    }
+  }, [voiceNet, activeVoiceNetId]);
+
+  const triggerVoicePriority = useCallback(async () => {
+    try {
+      const response = await voiceNet.triggerPriorityOverride?.({
+        netId: activeVoiceNetId || undefined,
+        priority: 'CRITICAL',
+        message: 'Priority override from Comms command console',
+      });
+      if (response?.success === false) {
+        setFeedback('Priority override failed.');
+        return;
+      }
+      setFeedback('Priority override sent.');
+    } catch (err: any) {
+      setFeedback(err?.message || 'Priority override failed.');
+    }
+  }, [voiceNet, activeVoiceNetId]);
+
+  const toggleSecureMode = useCallback(async () => {
+    if (!activeVoiceNetId) {
+      setFeedback('Set an active transmit lane first.');
+      return;
+    }
+    try {
+      await voiceNet.setSecureMode?.({
+        netId: activeVoiceNetId,
+        enabled: !secureModeEnabled,
+      });
+      setFeedback(secureModeEnabled ? 'Secure mode disabled.' : 'Secure mode enabled.');
+    } catch (err: any) {
+      setFeedback(err?.message || 'Secure mode update failed.');
+    }
+  }, [voiceNet, activeVoiceNetId, secureModeEnabled]);
+
   if (loading) {
     return <PanelLoadingState label="Loading comms graph..." />;
   }
@@ -258,7 +420,7 @@ export default function CommsNetworkConsole({
   }
 
   return (
-    <div className="h-full min-h-0 grid grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3">
+    <div className="h-full min-h-0 grid grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] gap-3">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Command</h3>
@@ -286,6 +448,126 @@ export default function CommsNetworkConsole({
           Open Incidents {incidents.filter((incident) => incident.status !== 'RESOLVED').length}
         </NexusBadge>
       </div>
+
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
+            <Radio className="w-3.5 h-3.5 text-orange-400" />
+            Voice Control Plane
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <NexusBadge tone={voiceNet.connectionState === 'CONNECTED' ? 'ok' : voiceNet.connectionState === 'ERROR' ? 'danger' : 'warning'}>
+              {voiceNet.connectionState || 'IDLE'}
+            </NexusBadge>
+            <NexusBadge tone={activeVoiceNetId ? 'active' : 'neutral'}>{activeVoiceNetId || 'NO TX'}</NexusBadge>
+            <NexusBadge tone={secureModeEnabled ? 'warning' : 'neutral'}>{secureModeEnabled ? 'SECURE' : 'OPEN'}</NexusBadge>
+          </div>
+        </div>
+
+        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+            {visibleVoiceNets.map((net: any) => {
+              const netId = String(net?.id || net?.code || '').trim();
+              const isMonitored = monitoredVoiceSet.has(netId);
+              const isTransmit = netId === String(voiceNet.transmitNetId || '');
+              return (
+                <div key={netId} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[11px] text-zinc-200 truncate">{net?.code || netId}</div>
+                      <div className="text-[10px] text-zinc-500 truncate">{net?.label || net?.name || 'Voice lane'}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {isTransmit ? <NexusBadge tone="active">TX</NexusBadge> : null}
+                      {isMonitored ? <NexusBadge tone="ok">MON</NexusBadge> : null}
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1">
+                    {isMonitored ? (
+                      <>
+                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => setTransmitVoiceNet(netId)}>
+                          TX
+                        </NexusButton>
+                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => leaveVoiceNet(netId)}>
+                          Leave
+                        </NexusButton>
+                      </>
+                    ) : (
+                      <>
+                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => joinVoiceNet(netId, false)}>
+                          Join
+                        </NexusButton>
+                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => joinVoiceNet(netId, true)}>
+                          Monitor
+                        </NexusButton>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {visibleVoiceNets.length === 0 ? (
+              <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500 md:col-span-2">
+                No voice nets available in current scope.
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-start justify-end gap-1.5">
+            <NexusButton
+              size="sm"
+              intent={voiceNet.pttActive ? 'primary' : 'subtle'}
+              className="text-[10px] h-7 px-2"
+              onMouseDown={() => voiceNet.startPTT?.()}
+              onMouseUp={() => voiceNet.stopPTT?.()}
+              onMouseLeave={() => voiceNet.stopPTT?.()}
+              onTouchStart={() => voiceNet.startPTT?.()}
+              onTouchEnd={() => voiceNet.stopPTT?.()}
+              onTouchCancel={() => voiceNet.stopPTT?.()}
+            >
+              PTT
+            </NexusButton>
+            <NexusButton size="sm" intent={voiceNet.micEnabled ? 'subtle' : 'danger'} className="text-[10px] h-7 px-2" onClick={() => voiceNet.setMicEnabled?.(!voiceNet.micEnabled)}>
+              {voiceNet.micEnabled ? 'Mic On' : 'Mic Off'}
+            </NexusButton>
+            <NexusButton size="sm" intent={activeVoiceDiscipline === 'OPEN' ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={() => setVoiceDiscipline('OPEN')}>
+              Open
+            </NexusButton>
+            <NexusButton size="sm" intent={activeVoiceDiscipline === 'PTT' ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={() => setVoiceDiscipline('PTT')}>
+              PTT Mode
+            </NexusButton>
+            <NexusButton size="sm" intent={activeVoiceDiscipline === 'REQUEST_TO_SPEAK' ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={() => setVoiceDiscipline('REQUEST_TO_SPEAK')}>
+              Request Mode
+            </NexusButton>
+            <NexusButton size="sm" intent="subtle" className="text-[10px] h-7 px-2" onClick={requestVoiceTransmit}>
+              Request TX
+            </NexusButton>
+            <NexusButton size="sm" intent="subtle" className="text-[10px] h-7 px-2" onClick={triggerVoicePriority}>
+              Priority
+            </NexusButton>
+            <NexusButton size="sm" intent={secureModeEnabled ? 'primary' : 'subtle'} className="text-[10px] h-7 px-2" onClick={toggleSecureMode}>
+              {secureModeEnabled ? 'Secure On' : 'Secure Off'}
+            </NexusButton>
+          </div>
+        </div>
+
+        <div className="mt-2 flex items-center justify-end gap-1.5">
+          <NexusButton size="sm" intent="subtle" onClick={() => setVoicePage((prev) => Math.max(0, prev - 1))} disabled={voicePage === 0}>
+            Prev
+          </NexusButton>
+          <NexusBadge tone="neutral">
+            {voicePage + 1}/{voicePageCount}
+          </NexusBadge>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => setVoicePage((prev) => Math.min(voicePageCount - 1, prev + 1))}
+            disabled={voicePage >= voicePageCount - 1}
+          >
+            Next
+          </NexusButton>
+        </div>
+      </section>
 
       <div className="min-h-0 grid gap-3 xl:grid-cols-[minmax(0,1.32fr)_minmax(0,1fr)]">
         <section className="min-h-0 flex flex-col gap-2">

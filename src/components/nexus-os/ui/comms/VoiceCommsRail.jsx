@@ -1,20 +1,51 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Radio, ChevronRight, ChevronLeft, Settings, Mic, Users, Volume2 } from 'lucide-react';
+import { Radio, ChevronRight, ChevronLeft, Settings, Mic, MicOff, Users, Volume2, Signal, Zap } from 'lucide-react';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 5;
+const DISCIPLINE_MODES = [
+  { id: 'OPEN', label: 'Open' },
+  { id: 'PTT', label: 'PTT' },
+  { id: 'REQUEST_TO_SPEAK', label: 'Req' },
+  { id: 'COMMAND_ONLY', label: 'Cmd' },
+];
 
 /**
  * VoiceCommsRail — Voice comms control panel for NexusOS.
  * Uses capped lists with pagination to avoid panel scrolling.
  */
-export default function VoiceCommsRail({ voiceNets = [], activeNetId, participants = [], isExpanded = true, onToggleExpand }) {
+export default function VoiceCommsRail({
+  voiceNets = [],
+  activeNetId,
+  transmitNetId = '',
+  monitoredNetIds = [],
+  participants = [],
+  connectionState = 'IDLE',
+  micEnabled = true,
+  pttActive = false,
+  disciplineMode = 'PTT',
+  isExpanded = true,
+  onToggleExpand,
+  onJoinNet,
+  onMonitorNet,
+  onSetTransmitNet,
+  onLeaveNet,
+  onSetMicEnabled,
+  onStartPTT,
+  onStopPTT,
+  onSetDisciplineMode,
+  onRequestToSpeak,
+}) {
   const [selectedTab, setSelectedTab] = useState('nets');
   const [netsPage, setNetsPage] = useState(0);
   const [rosterPage, setRosterPage] = useState(0);
+  const monitoredSet = useMemo(() => new Set((Array.isArray(monitoredNetIds) ? monitoredNetIds : []).map((id) => String(id))), [monitoredNetIds]);
+
+  const netIdentity = (entry) => String(entry?.id || entry?.code || '').trim();
+  const isMonitoredNet = (entryId) => monitoredSet.has(String(entryId || ''));
 
   const activeNet = useMemo(
-    () => voiceNets.find((entry) => entry.id === activeNetId) || voiceNets[0] || null,
-    [voiceNets, activeNetId]
+    () => voiceNets.find((entry) => netIdentity(entry) === String(activeNetId || '')) || voiceNets.find((entry) => netIdentity(entry) === String(transmitNetId || '')) || voiceNets[0] || null,
+    [voiceNets, activeNetId, transmitNetId]
   );
 
   const netsPageCount = Math.max(1, Math.ceil(voiceNets.length / PAGE_SIZE));
@@ -47,6 +78,9 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
               <div className="flex items-center gap-2">
                 <Radio className="w-4 h-4 text-green-500" />
                 <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider">Voice Comms</h3>
+                <span className={`text-[9px] font-semibold uppercase tracking-wider ${connectionState === 'CONNECTED' ? 'text-green-400' : connectionState === 'ERROR' ? 'text-red-400' : 'text-zinc-500'}`}>
+                  {connectionState}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <button type="button" className="text-zinc-500 hover:text-green-500 transition-colors">
@@ -96,16 +130,83 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
                 {activeNet ? (
                   <div className="px-3 py-2.5 rounded border border-green-500/30 bg-green-500/10">
                     <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
-                    <div className="text-sm font-bold text-green-300 mt-1">{activeNet.code || activeNet.id}</div>
+                    <div className="text-sm font-bold text-green-300 mt-1">{activeNet.code || activeNet.id || activeNet.name}</div>
                     <div className="text-[10px] text-zinc-400 mt-0.5">{activeNet.label || 'Voice lane active'}</div>
+                    <div className="mt-1 flex items-center gap-1.5 text-[9px] uppercase tracking-wider">
+                      <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') === netIdentity(activeNet) ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>TX</span>
+                      <span className={`px-1.5 py-0.5 rounded border ${isMonitoredNet(netIdentity(activeNet)) ? 'border-blue-500/40 text-blue-300 bg-blue-500/20' : 'border-zinc-700 text-zinc-500'}`}>MON</span>
+                      <span className="text-zinc-500">{participants.length} online</span>
+                    </div>
                     <div className="flex gap-1 mt-2">
-                      <button type="button" className="flex-1 h-7 text-[10px] px-2 rounded bg-green-500/20 hover:bg-green-500/30 text-green-300 transition-colors flex items-center justify-center gap-1">
-                        <Mic className="w-3 h-3" />
-                        Mute
+                      <button
+                        type="button"
+                        onClick={() => onSetMicEnabled?.(!micEnabled)}
+                        className={`flex-1 h-7 text-[10px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
+                          micEnabled ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'
+                        }`}
+                      >
+                        {micEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
+                        {micEnabled ? 'Mic' : 'Muted'}
                       </button>
-                      <button type="button" className="flex-1 h-7 text-[10px] px-2 rounded bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400 transition-colors flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          onStartPTT?.();
+                        }}
+                        onMouseUp={(event) => {
+                          event.preventDefault();
+                          onStopPTT?.();
+                        }}
+                        onMouseLeave={() => onStopPTT?.()}
+                        onTouchStart={() => onStartPTT?.()}
+                        onTouchEnd={() => onStopPTT?.()}
+                        onTouchCancel={() => onStopPTT?.()}
+                        className={`flex-1 h-7 text-[10px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
+                          pttActive ? 'bg-orange-500/25 hover:bg-orange-500/35 text-orange-200' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'
+                        }`}
+                        title="Hold to transmit"
+                      >
                         <Volume2 className="w-3 h-3" />
-                        Vol
+                        {pttActive ? 'TX' : 'PTT'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 mt-2">
+                      {DISCIPLINE_MODES.map((mode) => (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => onSetDisciplineMode?.(mode.id)}
+                          className={`h-6 text-[9px] px-1 rounded border transition-colors ${
+                            disciplineMode === mode.id
+                              ? 'border-green-500/40 bg-green-500/20 text-green-300'
+                              : 'border-zinc-700 bg-zinc-900/60 text-zinc-500 hover:border-zinc-500'
+                          }`}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => onSetTransmitNet?.(netIdentity(activeNet))}
+                        className={`flex-1 h-6 text-[9px] px-2 rounded border transition-colors ${
+                          String(transmitNetId || '') === netIdentity(activeNet)
+                            ? 'border-green-500/40 text-green-300 bg-green-500/20'
+                            : 'border-zinc-700 text-zinc-400 hover:border-green-500/40'
+                        }`}
+                      >
+                        <Signal className="w-3 h-3 inline mr-1" />
+                        TX
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRequestToSpeak?.()}
+                        className="flex-1 h-6 text-[9px] px-2 rounded border border-zinc-700 text-zinc-400 hover:border-orange-500/40 transition-colors"
+                      >
+                        <Zap className="w-3 h-3 inline mr-1" />
+                        Request
                       </button>
                     </div>
                   </div>
@@ -115,16 +216,64 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
                   <div className="space-y-1.5">
                     <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-2">Available</div>
                     {pagedNets.map((net) => (
-                      <button
-                        key={net.id}
-                        type="button"
-                        className={`w-full text-left px-2.5 py-2 rounded transition-colors text-[10px] ${
-                          activeNet?.id === net.id ? 'bg-green-500/20 border border-green-500/30 text-green-300' : 'bg-zinc-900/40 border border-zinc-800 text-zinc-400 hover:bg-zinc-800/40'
+                      <div
+                        key={netIdentity(net)}
+                        className={`w-full px-2.5 py-2 rounded transition-colors text-[10px] ${
+                          netIdentity(activeNet) === netIdentity(net) ? 'bg-green-500/20 border border-green-500/30 text-green-300' : 'bg-zinc-900/40 border border-zinc-800 text-zinc-400'
                         }`}
                       >
-                        <div className="font-bold uppercase tracking-wider">{net.code || net.id}</div>
-                        <div className="text-[9px] text-zinc-500 mt-0.5">{net.label || 'Voice lane'}</div>
-                      </button>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-bold uppercase tracking-wider truncate">{net.code || net.id || net.name}</div>
+                            <div className="text-[9px] text-zinc-500 mt-0.5 truncate">{net.label || net.description || 'Voice lane'}</div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {String(transmitNetId || '') === netIdentity(net) ? (
+                              <span className="px-1 py-0.5 rounded border border-green-500/40 bg-green-500/20 text-green-300 text-[8px]">TX</span>
+                            ) : null}
+                            {isMonitoredNet(netIdentity(net)) ? (
+                              <span className="px-1 py-0.5 rounded border border-blue-500/40 bg-blue-500/20 text-blue-300 text-[8px]">MON</span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex gap-1 mt-1.5">
+                          {isMonitoredNet(netIdentity(net)) ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => onSetTransmitNet?.(netIdentity(net))}
+                                className="flex-1 h-6 rounded border border-zinc-700 text-[9px] hover:border-green-500/40"
+                              >
+                                TX
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onLeaveNet?.(netIdentity(net))}
+                                className="flex-1 h-6 rounded border border-zinc-700 text-[9px] hover:border-red-500/40"
+                              >
+                                Leave
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => onJoinNet?.(netIdentity(net))}
+                                className="flex-1 h-6 rounded border border-zinc-700 text-[9px] hover:border-green-500/40"
+                              >
+                                Join
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onMonitorNet?.(netIdentity(net))}
+                                className="flex-1 h-6 rounded border border-zinc-700 text-[9px] hover:border-blue-500/40"
+                              >
+                                Monitor
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     ))}
 
                     {netsPageCount > 1 ? (
@@ -159,12 +308,12 @@ export default function VoiceCommsRail({ voiceNets = [], activeNetId, participan
                   <div className="space-y-1">
                     <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider px-2">Participants ({participants.length})</div>
                     {pagedParticipants.map((participant) => (
-                      <div key={participant.id} className="px-2.5 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-green-500/30 transition-colors">
+                      <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2.5 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-green-500/30 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-semibold text-zinc-300">{participant.callsign || participant.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] text-zinc-500 uppercase">{participant.state || 'READY'}</span>
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="text-[9px] text-zinc-500 uppercase">{participant.isSpeaking ? 'TALK' : participant.state || 'READY'}</span>
+                            <div className={`w-2 h-2 rounded-full ${participant.isSpeaking ? 'bg-orange-500' : 'bg-green-500'}`} />
                           </div>
                         </div>
                       </div>
