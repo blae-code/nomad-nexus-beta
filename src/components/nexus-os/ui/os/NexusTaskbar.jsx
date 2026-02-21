@@ -28,10 +28,13 @@ export default function NexusTaskbar({
   const [appPage, setAppPage] = React.useState(0);
   const appsPerPage = 6;
 
-  const appPageCount = Math.max(1, Math.ceil(appCatalog.length / appsPerPage));
+  const safeCatalog = appCatalog || [];
+  const safeEntries = appEntries || {};
+
+  const appPageCount = Math.max(1, Math.ceil(safeCatalog.length / appsPerPage));
   const shownApps = React.useMemo(
-    () => appCatalog.slice(appPage * appsPerPage, appPage * appsPerPage + appsPerPage),
-    [appCatalog, appPage, appsPerPage]
+    () => safeCatalog.slice(appPage * appsPerPage, appPage * appsPerPage + appsPerPage),
+    [safeCatalog, appPage, appsPerPage]
   );
 
   React.useEffect(() => {
@@ -55,7 +58,7 @@ export default function NexusTaskbar({
         ) : null}
         <div className="nx-taskbar-app-grid">
           {shownApps.map((app) => {
-            const state = appEntries[app.id]?.state || 'closed';
+            const state = safeEntries[app.id]?.state || 'closed';
             const active = activeAppId === app.id;
             return (
               <button
