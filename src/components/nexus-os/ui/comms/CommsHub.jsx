@@ -1,14 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { MessageSquare, Send, Settings, Bell, Hash, AtSign, Trash2, ChevronDown, ChevronLeft, ChevronRight, Sparkles, AlertCircle, TrendingUp, Zap, Lightbulb, X } from 'lucide-react';
+import {
+  AlertCircle,
+  AtSign,
+  Bell,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Hash,
+  MessageSquare,
+  Send,
+  Settings,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  X,
+  Zap,
+} from 'lucide-react';
 import { NexusBadge } from '../primitives';
-import { queueMessageAnalysis, generateResponseSuggestions, smartSearch } from '../../services/commsAIService';
+import { generateResponseSuggestions, queueMessageAnalysis, smartSearch } from '../../services/commsAIService';
 
 const CHANNEL_PAGE_SIZE = 6;
 const MESSAGE_PAGE_SIZE = 6;
+const STANDARD_CHANNEL_PAGE_SIZE = 7;
 const CHANNEL_CATEGORIES = ['tactical', 'operations', 'social', 'direct'];
 
 /**
- * CommsHub — Integrated text comms panel with page-capped lists.
+ * CommsHub — streamlined comms surface with Standard and Command modes.
  */
 export default function CommsHub({
   operations = [],
@@ -30,8 +47,8 @@ export default function CommsHub({
   const [expandedCategories, setExpandedCategories] = useState({
     tactical: true,
     operations: true,
-    social: true,
-    direct: true,
+    social: false,
+    direct: false,
   });
   const [channelPages, setChannelPages] = useState({
     tactical: 0,
@@ -40,15 +57,18 @@ export default function CommsHub({
     direct: 0,
   });
   const [messagePage, setMessagePage] = useState(0);
+  const [standardChannelPage, setStandardChannelPage] = useState(0);
   const [messageInput, setMessageInput] = useState('');
 
+  const [displayMode, setDisplayMode] = useState('standard');
+  const [showAiFeatures, setShowAiFeatures] = useState(false);
   const [messageAnalyses, setMessageAnalyses] = useState({});
   const [aiSearchActive, setAiSearchActive] = useState(false);
   const [aiSearchResults, setAiSearchResults] = useState(null);
   const [responseSuggestions, setResponseSuggestions] = useState([]);
-  const [showAiFeatures, setShowAiFeatures] = useState(true);
   const [selectedMessageForResponse, setSelectedMessageForResponse] = useState(null);
 
+  const aiEnabled = showAiFeatures;
   const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
 
   const channels = useMemo(() => {
@@ -73,8 +93,8 @@ export default function CommsHub({
     }));
 
     const social = [
-      { id: 'general', name: 'General', icon: Hash, category: 'social', unread: 0 },
-      { id: 'random', name: 'Random', icon: Hash, category: 'social', unread: 0 },
+      { id: 'general', name: 'General', icon: Hash, category: 'social', unread: unreadCount('general', 0) },
+      { id: 'random', name: 'Random', icon: Hash, category: 'social', unread: unreadCount('random', 0) },
     ];
 
     const direct = [
@@ -84,6 +104,33 @@ export default function CommsHub({
 
     return { tactical, operations: operational, social, direct };
   }, [operations, focusOperationId, online, bridgeId, unreadByChannel]);
+
+  const allChannels = useMemo(() => Object.values(channels).flat(), [channels]);
+
+  const standardChannels = useMemo(() => {
+    const selected = allChannels.find((entry) => entry.id === selectedChannel);
+    const unreadPriority = allChannels.filter((entry) => entry.unread > 0 && entry.id !== selectedChannel);
+    const tacticalPriority = allChannels.filter((entry) => entry.category === 'tactical' && entry.unread === 0 && entry.id !== selectedChannel);
+    const operationPriority = allChannels.filter((entry) => entry.category === 'operations' && entry.unread === 0 && entry.id !== selectedChannel);
+    const tail = allChannels.filter(
+      (entry) =>
+        entry.id !== selectedChannel &&
+        !unreadPriority.some((target) => target.id === entry.id) &&
+        !tacticalPriority.some((target) => target.id === entry.id) &&
+        !operationPriority.some((target) => target.id === entry.id)
+    );
+
+    return [selected, ...unreadPriority, ...tacticalPriority, ...operationPriority, ...tail].filter(Boolean).slice(0, 28);
+  }, [allChannels, selectedChannel]);
+
+  const standardChannelPageCount = Math.max(1, Math.ceil(standardChannels.length / STANDARD_CHANNEL_PAGE_SIZE));
+  const standardVisibleChannels = useMemo(
+    () => standardChannels.slice(
+      standardChannelPage * STANDARD_CHANNEL_PAGE_SIZE,
+      standardChannelPage * STANDARD_CHANNEL_PAGE_SIZE + STANDARD_CHANNEL_PAGE_SIZE
+    ),
+    [standardChannels, standardChannelPage]
+  );
 
   const categoryPageCounts = useMemo(() => {
     return CHANNEL_CATEGORIES.reduce((acc, category) => {
@@ -114,6 +161,10 @@ export default function CommsHub({
     if (fallback) setSelectedChannel(fallback);
   }, [selectedChannel, channels]);
 
+  useEffect(() => {
+    setStandardChannelPage((current) => Math.min(current, standardChannelPageCount - 1));
+  }, [standardChannelPageCount]);
+
   const currentMessages = useMemo(() => {
     if (!selectedChannel) return [];
     const runtimeFeed = Array.isArray(eventMessagesByChannel[selectedChannel]) ? eventMessagesByChannel[selectedChannel] : [];
@@ -142,8 +193,8 @@ export default function CommsHub({
   }, [selectedChannel]);
 
   const selectedChannelData = useMemo(
-    () => Object.values(channels).flat().find((entry) => entry.id === selectedChannel),
-    [channels, selectedChannel]
+    () => allChannels.find((entry) => entry.id === selectedChannel),
+    [allChannels, selectedChannel]
   );
 
   const toggleCategory = useCallback((category) => {
@@ -184,12 +235,12 @@ export default function CommsHub({
     setMessageInput('');
     setMessagePage(0);
 
-    if (showAiFeatures) {
+    if (aiEnabled) {
       queueMessageAnalysis(newMessage).then((analysis) => {
         setMessageAnalyses((prev) => ({ ...prev, [newMessage.id]: analysis }));
       });
     }
-  }, [messageInput, selectedChannel, showAiFeatures, actorId]);
+  }, [messageInput, selectedChannel, aiEnabled, actorId]);
 
   const handleAiSearch = async (query) => {
     if (!query.trim() || !currentMessages.length) return;
@@ -278,29 +329,42 @@ export default function CommsHub({
   return (
     <div className={`flex flex-col h-full bg-zinc-950/80 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
       <div className="nx-comms-header border-b border-zinc-700/40 p-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           {isExpanded ? (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <MessageSquare className="w-4 h-4 text-orange-500" />
-                <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
-                {showAiFeatures ? (
-                  <NexusBadge tone="active" className="text-[9px] px-1.5 py-0.5">
-                    <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                    AI
-                  </NexusBadge>
-                ) : null}
+                <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wider truncate">Text Comms</h3>
+                <NexusBadge tone={online ? 'ok' : 'danger'}>{online ? 'Linked' : 'Offline'}</NexusBadge>
+                <NexusBadge tone={voiceState?.connectionState === 'CONNECTED' ? 'active' : 'neutral'}>
+                  {voiceState?.connectionState || 'IDLE'}
+                </NexusBadge>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode('standard')}
+                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${displayMode === 'standard' ? 'bg-orange-500/20 border-orange-500/40 text-orange-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode('command')}
+                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${displayMode === 'command' ? 'bg-orange-500/20 border-orange-500/40 text-orange-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  Command
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowAiFeatures((prev) => !prev)}
-                  className={`text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-400' : ''}`}
-                  title={showAiFeatures ? 'Disable AI features' : 'Enable AI features'}
+                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border flex items-center gap-1 ${showAiFeatures ? 'bg-orange-500/20 border-orange-500/40 text-orange-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                  title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3 h-3" />
+                  Assist
                 </button>
-                <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
+                <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors" title="Comms settings">
                   <Settings className="w-4 h-4" />
                 </button>
                 <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse">
@@ -318,81 +382,121 @@ export default function CommsHub({
 
       {isExpanded ? (
         <>
-          <div className="flex-shrink-0 p-2 space-y-1.5 border-b border-zinc-700/40">
-            {renderCategory('tactical', 'Tactical')}
-            {renderCategory('operations', 'Operations')}
-            {renderCategory('social', 'Social')}
-            {renderCategory('direct', 'Direct')}
+          <div className="flex-shrink-0 p-2 border-b border-zinc-700/40 bg-zinc-900/20">
+            {displayMode === 'command' ? (
+              <div className="space-y-1.5">
+                {renderCategory('tactical', 'Tactical')}
+                {renderCategory('operations', 'Operations')}
+                {renderCategory('social', 'Social')}
+                {renderCategory('direct', 'Direct')}
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
+                  <span className="text-zinc-500 font-bold">Active Channels</span>
+                  <span className="text-zinc-600">{standardChannels.length}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  {standardVisibleChannels.map((channel) => (
+                    <ChannelButton
+                      key={channel.id}
+                      channel={channel}
+                      isSelected={selectedChannel === channel.id}
+                      onClick={() => pickChannel(channel.id)}
+                    />
+                  ))}
+                  {standardVisibleChannels.length === 0 ? (
+                    <div className="px-2 py-1 text-[10px] text-zinc-600 border border-zinc-800 rounded">No channels</div>
+                  ) : null}
+                </div>
+                {standardChannelPageCount > 1 ? (
+                  <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                    <button
+                      type="button"
+                      onClick={() => setStandardChannelPage((prev) => Math.max(0, prev - 1))}
+                      disabled={standardChannelPage === 0}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                    >
+                      Prev
+                    </button>
+                    <span>{standardChannelPage + 1}/{standardChannelPageCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setStandardChannelPage((prev) => Math.min(standardChannelPageCount - 1, prev + 1))}
+                      disabled={standardChannelPage >= standardChannelPageCount - 1}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                    >
+                      Next
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
 
           {selectedChannel ? (
             <div className="flex-1 min-h-0 flex flex-col border-t border-zinc-700/40">
               <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Hash className="w-3.5 h-3.5 text-zinc-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200">{selectedChannelData?.name}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
                   </div>
-                  <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors">
-                    <Bell className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider">
-                    <NexusBadge tone={online ? 'ok' : 'danger'}>{online ? 'Link' : 'Offline'}</NexusBadge>
-                    <NexusBadge tone={voiceState?.connectionState === 'CONNECTED' ? 'active' : voiceState?.connectionState === 'ERROR' ? 'danger' : 'neutral'}>
-                      {voiceState?.connectionState || 'IDLE'}
-                    </NexusBadge>
+                  <div className="flex items-center gap-2 shrink-0">
                     {selectedVoiceNetId ? <NexusBadge tone="neutral">{selectedVoiceNetId}</NexusBadge> : null}
-                  </div>
-                  {selectedVoiceNetId && onRouteVoiceNet ? (
-                    <button
-                      type="button"
-                      onClick={() => onRouteVoiceNet(selectedChannel)}
-                      className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
-                    >
-                      Route Voice
+                    {selectedVoiceNetId && onRouteVoiceNet ? (
+                      <button
+                        type="button"
+                        onClick={() => onRouteVoiceNet(selectedChannel)}
+                        className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
+                      >
+                        Route Voice
+                      </button>
+                    ) : null}
+                    <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors" title="Channel notifications">
+                      <Bell className="w-3.5 h-3.5" />
                     </button>
-                  ) : null}
+                  </div>
                 </div>
 
                 {showAiFeatures ? (
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="AI-powered search (natural language)..."
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' && event.currentTarget.value.trim()) {
-                          handleAiSearch(event.currentTarget.value);
-                        }
-                      }}
-                      className="w-full bg-zinc-800/60 border border-zinc-700/40 rounded pl-7 pr-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40"
-                    />
-                    <Sparkles className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-400" />
-                    {aiSearchActive ? (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                        <div className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Assistant search (natural language)..."
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && event.currentTarget.value.trim()) {
+                            handleAiSearch(event.currentTarget.value);
+                          }
+                        }}
+                        className="w-full bg-zinc-800/60 border border-zinc-700/40 rounded pl-7 pr-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40"
+                      />
+                      <Sparkles className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-400" />
+                      {aiSearchActive ? (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <div className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {aiSearchResults ? (
+                      <div className="p-2 rounded border border-orange-500/30 bg-orange-500/5">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] text-orange-400 font-semibold uppercase">Assistant Results</span>
+                          <button type="button" onClick={() => setAiSearchResults(null)} className="text-zinc-500 hover:text-zinc-300">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <p className="text-[9px] text-zinc-400 mb-1">{aiSearchResults.summary}</p>
+                        {(aiSearchResults.results || []).slice(0, 3).map((result) => (
+                          <div key={result.messageId} className="text-[9px] text-zinc-300 p-1 rounded hover:bg-zinc-800/50 mt-1">
+                            <span className="text-orange-400">{Math.round(result.relevanceScore * 100)}%</span>
+                            <span className="text-zinc-500 ml-1">{result.reasoning}</span>
+                          </div>
+                        ))}
                       </div>
                     ) : null}
-                  </div>
-                ) : null}
-
-                {aiSearchResults ? (
-                  <div className="p-2 rounded border border-orange-500/30 bg-orange-500/5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] text-orange-400 font-semibold uppercase">AI Results</span>
-                      <button type="button" onClick={() => setAiSearchResults(null)} className="text-zinc-500 hover:text-zinc-300">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <p className="text-[9px] text-zinc-400 mb-1">{aiSearchResults.summary}</p>
-                    {(aiSearchResults.results || []).slice(0, 3).map((result) => (
-                      <div key={result.messageId} className="text-[9px] text-zinc-300 p-1 rounded hover:bg-zinc-800/50 cursor-pointer mt-1">
-                        <span className="text-orange-400">{Math.round(result.relevanceScore * 100)}%</span>
-                        <span className="text-zinc-500 ml-1">{result.reasoning}</span>
-                      </div>
-                    ))}
                   </div>
                 ) : null}
               </div>
@@ -402,11 +506,12 @@ export default function CommsHub({
                   <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
                     <MessageSquare className="w-8 h-8 text-zinc-700/50" />
                     <div className="text-[10px] font-bold uppercase tracking-wider">No messages yet</div>
-                    <div className="text-[9px] text-zinc-600">Send a message to start the conversation</div>
+                    <div className="text-[9px] text-zinc-600">Send a message to initialize channel traffic</div>
                   </div>
                 ) : (
                   pagedMessages.map((message) => {
                     const analysis = messageAnalyses[message.id];
+                    const showAnalysis = aiEnabled && (displayMode === 'command' || showAiFeatures) && analysis;
                     return (
                       <div key={message.id} className="group px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-orange-500/30 transition-colors">
                         <div className="flex items-start justify-between gap-2">
@@ -419,7 +524,7 @@ export default function CommsHub({
                                   Feed
                                 </span>
                               ) : null}
-                              {showAiFeatures && analysis ? (
+                              {showAnalysis ? (
                                 <>
                                   {analysis.priority === 'critical' ? (
                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-red-500/20 text-red-400 flex items-center gap-0.5">
@@ -439,32 +544,19 @@ export default function CommsHub({
                                       Urgent
                                     </span>
                                   ) : null}
-                                  <span
-                                    className={`px-1.5 py-0.5 rounded text-[8px] uppercase ${
-                                      analysis.category === 'tactical'
-                                        ? 'bg-blue-500/20 text-blue-400'
-                                        : analysis.category === 'operational'
-                                        ? 'bg-purple-500/20 text-purple-400'
-                                        : analysis.category === 'urgent'
-                                        ? 'bg-red-500/20 text-red-400'
-                                        : 'bg-zinc-500/20 text-zinc-400'
-                                    }`}
-                                  >
-                                    {analysis.category}
-                                  </span>
                                 </>
                               ) : null}
                             </div>
 
                             <div className="text-[10px] text-zinc-400">{message.text}</div>
 
-                            {showAiFeatures && analysis?.requiresResponse ? (
+                            {aiEnabled && (displayMode === 'command' || showAiFeatures) && analysis?.requiresResponse ? (
                               <button
                                 type="button"
                                 onClick={() => handleGenerateSuggestions(message)}
                                 className="mt-1 text-[9px] text-orange-400 hover:text-orange-300 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                <Lightbulb className="w-3 h-3" />
+                                <Sparkles className="w-3 h-3" />
                                 Suggest responses
                               </button>
                             ) : null}
@@ -492,7 +584,7 @@ export default function CommsHub({
                               </div>
                             ) : null}
                           </div>
-                          <button type="button" className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all">
+                          <button type="button" className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-all" title="Archive message preview">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>

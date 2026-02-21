@@ -1,16 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Users, Target, Clock, CheckCircle2, MessageSquare, Radio } from 'lucide-react';
-import { NexusBadge, NexusButton } from '../primitives';
+import { Calendar, CheckCircle2, Clock, MessageSquare, Radio, Target, Users } from 'lucide-react';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
+import { NexusBadge, NexusButton } from '../primitives';
+
+const PAGE_SIZE = 6;
+
+function pageSlice(items, page, pageSize = PAGE_SIZE) {
+  return items.slice(page * pageSize, page * pageSize + pageSize);
+}
+
+function pageCount(items, pageSize = PAGE_SIZE) {
+  return Math.max(1, Math.ceil(items.length / pageSize));
+}
+
+function Pager({ page, totalPages, onPrev, onNext }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-end gap-1.5">
+      <NexusButton size="sm" intent="subtle" onClick={onPrev} disabled={page === 0}>
+        Prev
+      </NexusButton>
+      <NexusBadge tone="neutral">{page + 1}/{totalPages}</NexusBadge>
+      <NexusButton size="sm" intent="subtle" onClick={onNext} disabled={page >= totalPages - 1}>
+        Next
+      </NexusButton>
+    </div>
+  );
+}
 
 export default function OperationModeFocus() {
   const activeOp = useActiveOp();
   const [tasks, setTasks] = useState([]);
+  const [phase, setPhase] = useState('brief');
+  const [surfaceMode, setSurfaceMode] = useState('standard');
+
+  const [objectivePage, setObjectivePage] = useState(0);
+  const [taskPage, setTaskPage] = useState(0);
+  const [teamPage, setTeamPage] = useState(0);
 
   useEffect(() => {
-    if (!activeOp?.activeEvent?.id) return;
-    
+    if (!activeOp?.activeEvent?.id) {
+      setTasks([]);
+      return;
+    }
+
     const loadOpData = async () => {
       try {
         const taskList = await base44.entities.Task?.filter({ operation_id: activeOp.activeEvent.id }).catch(() => []);
@@ -23,7 +57,35 @@ export default function OperationModeFocus() {
     loadOpData();
   }, [activeOp?.activeEvent?.id]);
 
-  if (!activeOp?.activeEvent) {
+  const event = activeOp?.activeEvent || null;
+  const participants = activeOp?.participants || [];
+  const objectives = Array.isArray(event?.objectives) ? event.objectives : [];
+  const completedTasks = tasks.filter((task) => task.status === 'completed').length;
+  const totalTasks = tasks.length;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const commsScopeLabel = participants.length > 0 ? 'Team scoped' : 'Unassigned';
+
+  const objectivePages = pageCount(objectives);
+  const taskPages = pageCount(tasks);
+  const teamPages = pageCount(participants);
+
+  useEffect(() => {
+    setObjectivePage((current) => Math.min(current, objectivePages - 1));
+  }, [objectivePages]);
+
+  useEffect(() => {
+    setTaskPage((current) => Math.min(current, taskPages - 1));
+  }, [taskPages]);
+
+  useEffect(() => {
+    setTeamPage((current) => Math.min(current, teamPages - 1));
+  }, [teamPages]);
+
+  const visibleObjectives = useMemo(() => pageSlice(objectives, objectivePage), [objectives, objectivePage]);
+  const visibleTasks = useMemo(() => pageSlice(tasks, taskPage), [tasks, taskPage]);
+  const visibleTeam = useMemo(() => pageSlice(participants, teamPage), [participants, teamPage]);
+
+  if (!event) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center space-y-3">
@@ -37,170 +99,216 @@ export default function OperationModeFocus() {
     );
   }
 
-  const event = activeOp.activeEvent;
-  const participants = activeOp?.participants || [];
-  const completedTasks = tasks.filter(t => t.status === 'completed').length;
-  const totalTasks = tasks.length;
-  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
   return (
-    <div className="h-full flex gap-3">
-      {/* Main Operation Overview */}
-      <div className="flex-1 rounded-lg border border-zinc-800/60 bg-zinc-950/80 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-3 border-b border-zinc-800/60 bg-zinc-900/40">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-orange-400 uppercase tracking-wide">{event.title}</h2>
-              <p className="text-xs text-zinc-400 mt-1">{event.description || 'No description'}</p>
-            </div>
-            <NexusBadge tone="active" className="text-xs">
-              {event.phase || 'ACTIVE'}
-            </NexusBadge>
+    <div className="h-full flex flex-col gap-3">
+      <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/80 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-orange-400 uppercase tracking-wide truncate">{event.title}</h2>
+            <p className="text-xs text-zinc-400 truncate">{event.description || 'No description'}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <NexusBadge tone="active">{event.phase || 'ACTIVE'}</NexusBadge>
+            <button
+              type="button"
+              onClick={() => setSurfaceMode('standard')}
+              className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${surfaceMode === 'standard' ? 'bg-orange-500/20 border-orange-500/40 text-orange-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Standard
+            </button>
+            <button
+              type="button"
+              onClick={() => setSurfaceMode('command')}
+              className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${surfaceMode === 'command' ? 'bg-orange-500/20 border-orange-500/40 text-orange-300' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Command
+            </button>
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="px-4 py-3 border-b border-zinc-800/40 grid grid-cols-4 gap-3">
+        <div className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-2">
           <div className="rounded border border-zinc-800/60 bg-zinc-900/30 px-3 py-2">
-            <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-wider mb-1">
-              <Users className="w-3 h-3" />
-              Team
+            <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] uppercase tracking-wider mb-0.5">
+              <Users className="w-3 h-3" /> Team
             </div>
-            <div className="text-xl font-bold text-zinc-100">{participants.length}</div>
+            <div className="text-lg font-bold text-zinc-100">{participants.length}</div>
           </div>
           <div className="rounded border border-zinc-800/60 bg-zinc-900/30 px-3 py-2">
-            <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-wider mb-1">
-              <Target className="w-3 h-3" />
-              Tasks
+            <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] uppercase tracking-wider mb-0.5">
+              <Target className="w-3 h-3" /> Objectives
             </div>
-            <div className="text-xl font-bold text-zinc-100">{completedTasks}/{totalTasks}</div>
+            <div className="text-lg font-bold text-zinc-100">{objectives.length}</div>
           </div>
           <div className="rounded border border-zinc-800/60 bg-zinc-900/30 px-3 py-2">
-            <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-wider mb-1">
-              <Target className="w-3 h-3" />
-              Progress
+            <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] uppercase tracking-wider mb-0.5">
+              <CheckCircle2 className="w-3 h-3" /> Progress
             </div>
-            <div className="text-xl font-bold text-zinc-100">{progress}%</div>
+            <div className="text-lg font-bold text-zinc-100">{progress}%</div>
           </div>
           <div className="rounded border border-zinc-800/60 bg-zinc-900/30 px-3 py-2">
-            <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-wider mb-1">
-              <Clock className="w-3 h-3" />
-              Duration
+            <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] uppercase tracking-wider mb-0.5">
+              <Clock className="w-3 h-3" /> Duration
             </div>
-            <div className="text-xl font-bold text-zinc-100">
-              {event.start_time ? Math.round((Date.now() - new Date(event.start_time).getTime()) / 60000) : '0'}m
+            <div className="text-lg font-bold text-zinc-100">
+              {event.start_time ? Math.round((Date.now() - new Date(event.start_time).getTime()) / 60000) : 0}m
             </div>
-          </div>
-        </div>
-
-        {/* Objectives */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="px-4 py-2 border-b border-zinc-800/40 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Objectives</h3>
-            <NexusButton size="sm" intent="subtle">Add Objective</NexusButton>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {(event.objectives || []).map((obj, i) => (
-              <div key={obj.id || i} className="rounded border border-zinc-800/60 bg-zinc-900/40 p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2 flex-1 min-w-0">
-                    {obj.is_completed ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-zinc-600 flex-shrink-0 mt-0.5" />
-                    )}
-                    <div className="min-w-0">
-                      <p className={`text-sm ${obj.is_completed ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
-                        {obj.text}
-                      </p>
-                      {obj.sub_tasks?.length > 0 && (
-                        <div className="mt-2 space-y-1 pl-2 border-l border-zinc-800">
-                          {obj.sub_tasks.map((sub, j) => (
-                            <div key={sub.id || j} className="flex items-center gap-2">
-                              {sub.is_completed ? (
-                                <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
-                              ) : (
-                                <div className="w-3 h-3 rounded-full border border-zinc-600 flex-shrink-0" />
-                              )}
-                              <span className={`text-xs ${sub.is_completed ? 'text-zinc-600 line-through' : 'text-zinc-400'}`}>
-                                {sub.text}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {(!event.objectives || event.objectives.length === 0) && (
-              <div className="text-center py-8 text-zinc-600 text-xs">
-                No objectives defined
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Side Panel - Team & Tasks */}
-      <div className="w-80 flex-shrink-0 rounded-lg border border-zinc-800/60 bg-zinc-950/80 flex flex-col overflow-hidden">
-        {/* Team */}
-        <div className="flex-shrink-0 border-b border-zinc-800/60">
-          <div className="px-3 py-2 bg-zinc-900/40">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Team ({participants.length})</h3>
-          </div>
-          <div className="p-2 space-y-1">
-            {participants.slice(0, 8).map(p => (
-              <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-zinc-800/40 transition-colors">
-                <span className="text-xs text-zinc-300 truncate">{p.callsign || p.name || 'Unknown'}</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-zinc-500">{p.role || 'Member'}</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/80 px-3 py-2 flex items-center gap-1.5 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setPhase('brief')}
+          className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded ${phase === 'brief' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border border-zinc-700'}`}
+        >
+          Brief
+        </button>
+        <button
+          type="button"
+          onClick={() => setPhase('execute')}
+          className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded ${phase === 'execute' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border border-zinc-700'}`}
+        >
+          Execute
+        </button>
+        <button
+          type="button"
+          onClick={() => setPhase('comms')}
+          className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded ${phase === 'comms' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border border-zinc-700'}`}
+        >
+          Comms
+        </button>
+      </div>
 
-        {/* Recent Tasks */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="px-3 py-2 border-b border-zinc-800/40 bg-zinc-900/30">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Tasks</h3>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {tasks.slice(0, 10).map(task => (
-              <div key={task.id} className="rounded border border-zinc-800/60 bg-zinc-900/30 px-2 py-1.5">
-                <div className="flex items-start gap-2">
-                  {task.status === 'completed' ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <div className="w-3.5 h-3.5 rounded-full border border-zinc-600 flex-shrink-0 mt-0.5" />
-                  )}
-                  <div className="min-w-0">
-                    <p className={`text-xs ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
-                      {task.title}
-                    </p>
-                    {task.priority && (
-                      <NexusBadge 
-                        tone={task.priority === 'critical' ? 'danger' : task.priority === 'high' ? 'warning' : 'neutral'} 
-                        className="text-[9px] mt-1"
-                      >
-                        {task.priority}
-                      </NexusBadge>
-                    )}
+      <div className={`flex-1 min-h-0 grid gap-3 ${surfaceMode === 'command' ? 'xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]' : 'grid-cols-1'}`}>
+        <section className="rounded-lg border border-zinc-800/60 bg-zinc-950/80 p-3 flex flex-col gap-2 min-h-0">
+          {phase === 'brief' ? (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Mission Objectives</h3>
+                <Pager
+                  page={objectivePage}
+                  totalPages={objectivePages}
+                  onPrev={() => setObjectivePage((current) => Math.max(0, current - 1))}
+                  onNext={() => setObjectivePage((current) => Math.min(objectivePages - 1, current + 1))}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {visibleObjectives.map((objective, index) => (
+                  <div key={objective.id || `${objective.text}-${index}`} className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2">
+                    <div className="flex items-start gap-2">
+                      {objective.is_completed ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5" />
+                      ) : (
+                        <div className="w-3.5 h-3.5 rounded-full border border-zinc-600 mt-0.5" />
+                      )}
+                      <div className="text-xs text-zinc-300">{objective.text || 'Objective'}</div>
+                    </div>
                   </div>
-                </div>
+                ))}
+                {visibleObjectives.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 text-xs text-zinc-500">
+                    No objectives defined.
+                  </div>
+                ) : null}
               </div>
-            ))}
-            {tasks.length === 0 && (
-              <div className="text-center py-6 text-zinc-600 text-xs">
-                No tasks yet
+            </>
+          ) : null}
+
+          {phase === 'execute' ? (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Execution Tasks</h3>
+                <Pager
+                  page={taskPage}
+                  totalPages={taskPages}
+                  onPrev={() => setTaskPage((current) => Math.max(0, current - 1))}
+                  onNext={() => setTaskPage((current) => Math.min(taskPages - 1, current + 1))}
+                />
               </div>
-            )}
-          </div>
-        </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {visibleTasks.map((task) => (
+                  <div key={task.id} className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className={`text-xs ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{task.title || 'Untitled task'}</div>
+                        <div className="text-[10px] text-zinc-500 mt-0.5">{task.assignee || 'Unassigned'}</div>
+                      </div>
+                      {task.priority ? (
+                        <NexusBadge tone={task.priority === 'critical' ? 'danger' : task.priority === 'high' ? 'warning' : 'neutral'}>
+                          {task.priority}
+                        </NexusBadge>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+                {visibleTasks.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 text-xs text-zinc-500">
+                    No tasks currently queued.
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          {phase === 'comms' ? (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Operation Team Net</h3>
+                <Pager
+                  page={teamPage}
+                  totalPages={teamPages}
+                  onPrev={() => setTeamPage((current) => Math.max(0, current - 1))}
+                  onNext={() => setTeamPage((current) => Math.min(teamPages - 1, current + 1))}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {visibleTeam.map((member) => (
+                  <div key={member.id} className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs text-zinc-200 truncate">{member.callsign || member.name || 'Unknown'}</div>
+                      <div className="text-[10px] text-zinc-500 truncate">{member.role || 'Member'}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-zinc-500" />
+                      <span className="text-[10px] text-zinc-400">Assigned</span>
+                    </div>
+                  </div>
+                ))}
+                {visibleTeam.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 text-xs text-zinc-500">
+                    Team roster unavailable.
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+        </section>
+
+        {surfaceMode === 'command' ? (
+          <aside className="rounded-lg border border-zinc-800/60 bg-zinc-950/80 p-3 flex flex-col gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Command Actions</h3>
+            <div className="grid grid-cols-1 gap-1.5">
+              <NexusButton size="sm" intent="subtle" disabled>Issue Tactical Order</NexusButton>
+              <NexusButton size="sm" intent="subtle" disabled>Broadcast Check-In</NexusButton>
+              <NexusButton size="sm" intent="subtle" disabled>Sync Voice Lanes</NexusButton>
+              <NexusButton size="sm" intent="subtle" disabled>Open Ops Report</NexusButton>
+            </div>
+            <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 text-[11px] text-zinc-500">
+              Command mode exposes high-frequency controls. Standard mode keeps this surface clean for at-a-glance operation flow.
+            </div>
+            <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 text-[11px] text-zinc-400">
+              <div className="flex items-center justify-between gap-2"><span>Open tasks</span><span className="text-zinc-200">{Math.max(0, totalTasks - completedTasks)}</span></div>
+              <div className="flex items-center justify-between gap-2"><span>Completed</span><span className="text-zinc-200">{completedTasks}</span></div>
+              <div className="flex items-center justify-between gap-2"><span>Participants</span><span className="text-zinc-200">{participants.length}</span></div>
+              <div className="flex items-center justify-between gap-2"><span>Comms scope</span><span className="text-zinc-200">{commsScopeLabel}</span></div>
+            </div>
+            <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2 text-[11px] text-zinc-500 flex items-center gap-2">
+              <MessageSquare className="w-3.5 h-3.5 text-orange-400" />
+              Keep comms discipline in sync with current phase before issuing escalations.
+            </div>
+          </aside>
+        ) : null}
       </div>
     </div>
   );
