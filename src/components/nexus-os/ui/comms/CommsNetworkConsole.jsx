@@ -1859,7 +1859,15 @@ export default function CommsNetworkConsole({
                 ) : null}
               </div>
             </div>
-          ) : rightPanelView === 'schema' ? (
+          </section>
+
+        <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
+              <ClipboardList className="w-3.5 h-3.5 text-orange-400" />
+              Fleet Schema
+            </div>
+          </div>
             <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
               <button
                 type="button"
