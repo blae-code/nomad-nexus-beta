@@ -43,8 +43,7 @@ import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
-import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
+import RadialMenu from '../map/RadialMenu';
 import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
 import {
   channelStatusTokenIcon,
