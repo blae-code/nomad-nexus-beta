@@ -1370,7 +1370,7 @@ export default function WorkbenchGrid({
 
       <div className={`flex-1 min-h-0 overflow-hidden p-3 ${minimalAtmosphere ? '' : 'bg-[radial-gradient(circle_at_top,rgba(102,162,212,0.06),transparent_36%)]'}`}>
         {focusMode === 'comms' ? (
-          <CommsModeFocus />
+          <CommsModeFocus {...panelComponentProps} />
         ) : focusMode === 'map' ? (
           <MapModeFocus {...panelComponentProps} />
         ) : focusMode === 'operation' ? (

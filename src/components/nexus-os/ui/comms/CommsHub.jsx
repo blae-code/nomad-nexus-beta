@@ -24,6 +24,7 @@ import {
 import { NexusBadge } from '../primitives';
 import { generateResponseSuggestions, queueMessageAnalysis, smartSearch } from '../../services/commsAIService';
 import RadialMenu from '../map/RadialMenu';
+import { tokenAssets } from '../tokens';
 
 const CHANNEL_PAGE_SIZE = 6;
 const MESSAGE_PAGE_SIZE = 6;
@@ -35,6 +36,21 @@ const MESSAGE_FILTERS = ['all', 'event', 'local'];
 
 function clampPct(value) {
   return Math.max(3, Math.min(97, value));
+}
+
+function categoryTokenIcon(category) {
+  if (category === 'tactical') return tokenAssets.comms.role.command;
+  if (category === 'operations') return tokenAssets.map.node.objective;
+  if (category === 'social') return tokenAssets.comms.role.default;
+  if (category === 'direct') return tokenAssets.comms.operatorStatus.onNet;
+  return tokenAssets.comms.channel;
+}
+
+function channelTokenIcon(channel) {
+  if (!channel) return tokenAssets.comms.channel;
+  if (channel.category === 'direct') return tokenAssets.comms.role.command;
+  if (channel.category === 'operations') return tokenAssets.map.node.objective;
+  return tokenAssets.comms.channel;
 }
 
 /**
@@ -527,6 +543,7 @@ export default function CommsHub({
         >
           <div className="flex items-center gap-1.5">
             <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
+            <img src={categoryTokenIcon(category)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
             <span className="uppercase tracking-wider">{label}</span>
             <span className="text-zinc-600 font-normal">({items.length})</span>
           </div>
@@ -556,7 +573,7 @@ export default function CommsHub({
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Hash className="w-3 h-3 flex-shrink-0" />
+                    <img src={channelTokenIcon(channel)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 flex-shrink-0" />
                     <span className="text-[10px] font-medium truncate">{channel.name}</span>
                   </div>
                   {channel.unread > 0 ? (
@@ -608,7 +625,7 @@ export default function CommsHub({
       ) : (
         <div className="flex w-full h-full overflow-hidden">
           {/* Channel Tree Panel */}
-          <div className="flex flex-col w-64 flex-shrink-0 border-r border-zinc-700/40 h-full overflow-hidden">(
+          <div className="flex flex-col w-64 flex-shrink-0 border-r border-zinc-700/40 h-full overflow-hidden">
             <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
@@ -702,7 +719,7 @@ export default function CommsHub({
                 <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Hash className="w-3.5 h-3.5 text-zinc-500" />
+                      <img src={channelTokenIcon(selectedChannelData)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                       <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">

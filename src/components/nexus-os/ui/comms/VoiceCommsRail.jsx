@@ -35,6 +35,7 @@ import {
   reconcileDirectiveDispatches,
 } from '../../services/commsFocusDirectiveService';
 import { NexusBadge, NexusButton } from '../primitives';
+import { tokenAssets } from '../tokens';
 
 const PAGE_SIZE = 5;
 const QUICK_NET_PAGE_SIZE = 4;
@@ -76,6 +77,20 @@ function isParticipantSpeaking(participant) {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
+}
+
+function participantStatusLabel(participant) {
+  if (isParticipantSpeaking(participant)) return 'TX';
+  if (participant?.muted || String(participant?.state || '').toUpperCase().includes('MUTE')) return 'MUTED';
+  if (participant) return 'ON-NET';
+  return 'OFF-NET';
+}
+
+function participantStatusIcon(status) {
+  if (status === 'TX') return tokenAssets.comms.operatorStatus.tx;
+  if (status === 'ON-NET') return tokenAssets.comms.operatorStatus.onNet;
+  if (status === 'MUTED') return tokenAssets.comms.operatorStatus.muted;
+  return tokenAssets.comms.operatorStatus.offNet;
 }
 
 const INCIDENT_EVENT_BY_STATUS = {
@@ -482,18 +497,23 @@ export default function VoiceCommsRail({
         </button>
       </div>
       <div className="flex items-center gap-1.5 text-[8px] uppercase tracking-wide">
-        <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>
+        <span className={`px-1.5 py-0.5 rounded border inline-flex items-center gap-1 ${String(transmitNetId || '') ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>
+          <img src={tokenAssets.comms.operatorStatus.tx} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
           {String(transmitNetId || '') ? `TX ${transmitNetId}` : 'TX NONE'}
         </span>
-        <span className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-500">MON {monitoredSet.size}</span>
+        <span className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-500 inline-flex items-center gap-1">
+          <img src={tokenAssets.comms.vehicleStatus.mixed} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+          MON {monitoredSet.size}
+        </span>
       </div>
       {speakingParticipants.length > 0 ? (
         <div className="flex items-center gap-1 flex-wrap">
           {speakingParticipants.map((participant) => (
             <span
               key={participant.id || participant.userId || participant.clientId || participant.callsign}
-              className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[8px] uppercase tracking-wide"
+              className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[8px] uppercase tracking-wide inline-flex items-center gap-1"
             >
+              <img src={tokenAssets.comms.operatorStatus.tx} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
               {participant.callsign || participant.name || participant.id}
             </span>
           ))}
@@ -517,7 +537,10 @@ export default function VoiceCommsRail({
       >
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <div className="font-bold uppercase tracking-wider truncate">{net.code || net.id || net.name}</div>
+            <div className="font-bold uppercase tracking-wider truncate inline-flex items-center gap-1">
+              <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+              {net.code || net.id || net.name}
+            </div>
             <div className="text-[9px] text-zinc-500 mt-0.5 truncate">{net.label || net.description || 'Voice lane'}</div>
           </div>
           <div className="flex items-center gap-1">
@@ -961,10 +984,23 @@ export default function VoiceCommsRail({
                     {pagedParticipants.map((participant) => (
                       <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-700/40 hover:border-green-500/30 transition-colors">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-zinc-300 truncate">{participant.callsign || participant.name}</span>
+                          <span className="text-[10px] font-semibold text-zinc-300 truncate inline-flex items-center gap-1">
+                            <img src={tokenAssets.comms.role.default} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            {participant.callsign || participant.name}
+                          </span>
                           <div className="flex items-center gap-2">
-                            <span className="text-[8px] text-zinc-500 uppercase">{participant.isSpeaking ? 'TALK' : participant.state || 'READY'}</span>
-                            <div className={`w-2 h-2 rounded-full ${participant.isSpeaking ? 'bg-orange-500' : 'bg-green-500'}`} />
+                            {(() => {
+                              const status = participantStatusLabel(participant);
+                              return (
+                                <>
+                                  <span className="text-[8px] text-zinc-500 uppercase inline-flex items-center gap-1">
+                                    <img src={participantStatusIcon(status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                    {status}
+                                  </span>
+                                  <div className={`w-2 h-2 rounded-full ${status === 'TX' ? 'bg-orange-500' : status === 'MUTED' ? 'bg-zinc-500' : status === 'OFF-NET' ? 'bg-red-500' : 'bg-green-500'}`} />
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

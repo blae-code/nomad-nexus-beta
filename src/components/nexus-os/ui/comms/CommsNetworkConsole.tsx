@@ -45,6 +45,7 @@ import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
+import { getNumberTokenAssetUrl, tokenAssets } from '../tokens';
 
 interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
 interface TopologyBridgeEdge {
@@ -60,6 +61,7 @@ const VOICE_LIST_PAGE_SIZE = 4;
 const THREAD_LIST_PAGE_SIZE = 5;
 const ORDER_LIST_PAGE_SIZE = 5;
 const SCHEMA_CHANNEL_PAGE_SIZE = 5;
+const CREW_CARD_PAGE_SIZE = 4;
 
 const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
@@ -186,12 +188,85 @@ function resolveVehicleBucket(member: { role: string; element: string; callsign:
   };
 }
 
+function operatorStatusTone(status: string): 'warning' | 'ok' | 'neutral' | 'danger' {
+  if (status === 'TX') return 'warning';
+  if (status === 'ON-NET') return 'ok';
+  if (status === 'MUTED') return 'neutral';
+  return 'danger';
+}
+
+function operatorStatusTokenIcon(status: string): string {
+  if (status === 'TX') return tokenAssets.comms.operatorStatus.tx;
+  if (status === 'ON-NET') return tokenAssets.comms.operatorStatus.onNet;
+  if (status === 'MUTED') return tokenAssets.comms.operatorStatus.muted;
+  return tokenAssets.comms.operatorStatus.offNet;
+}
+
+function vehicleStatusTone(status: string): 'danger' | 'warning' | 'active' | 'ok' {
+  if (status === 'DEGRADED') return 'danger';
+  if (status === 'ACTIVE') return 'warning';
+  if (status === 'MIXED') return 'active';
+  return 'ok';
+}
+
+function vehicleStatusTokenIcon(status: string): string {
+  if (status === 'DEGRADED') return tokenAssets.comms.vehicleStatus.degraded;
+  if (status === 'ACTIVE') return tokenAssets.comms.vehicleStatus.active;
+  if (status === 'MIXED') return tokenAssets.comms.vehicleStatus.mixed;
+  return tokenAssets.comms.vehicleStatus.ready;
+}
+
+function roleTokenIcon(role: string): string {
+  const token = toToken(role);
+  if (token.includes('lead') || token.includes('command') || token.includes('signal')) return tokenAssets.comms.role.command;
+  if (token.includes('pilot') || token.includes('flight') || token.includes('gunship')) return tokenAssets.comms.role.flight;
+  if (token.includes('medic') || token.includes('medical')) return tokenAssets.comms.role.medical;
+  if (token.includes('log') || token.includes('maint') || token.includes('mech')) return tokenAssets.comms.role.support;
+  return tokenAssets.comms.role.default;
+}
+
+function topologyNodeTokenIcon(node: CommsGraphNode): string {
+  if (node.type === 'channel') return tokenAssets.comms.channel;
+  if (node.type === 'team') return tokenAssets.comms.vehicle;
+  return tokenAssets.comms.role.default;
+}
+
+function wingTokenIcon(wingId: string): string {
+  if (wingId === 'CE') return getNumberTokenAssetUrl(1, 'yellow');
+  if (wingId === 'ACE') return getNumberTokenAssetUrl(2, 'cyan');
+  return getNumberTokenAssetUrl(3, 'green');
+}
+
+function squadTokenIcon(label: string): string {
+  const token = toToken(label);
+  if (token.includes('alpha')) return getNumberTokenAssetUrl(1, 'yellow');
+  if (token.includes('bravo')) return getNumberTokenAssetUrl(2, 'yellow');
+  if (token.includes('command')) return tokenAssets.comms.role.command;
+  if (token.includes('log')) return tokenAssets.comms.role.support;
+  return tokenAssets.comms.role.default;
+}
+
+function channelStatusTokenIcon(status: string): string {
+  const token = toToken(status);
+  if (token.includes('saturated') || token.includes('degraded')) return tokenAssets.comms.vehicleStatus.degraded;
+  if (token.includes('busy') || token.includes('active')) return tokenAssets.comms.vehicleStatus.active;
+  if (token.includes('clear') || token.includes('ready')) return tokenAssets.comms.vehicleStatus.ready;
+  return tokenAssets.comms.vehicleStatus.mixed;
+}
+
+function operatorStatusPriority(status: string): number {
+  if (status === 'TX') return 0;
+  if (status === 'ON-NET') return 1;
+  if (status === 'MUTED') return 2;
+  return 3;
+}
+
 export default function CommsNetworkConsole({
-  variantId,
+  variantId = 'CQB-01',
   opId,
-  roster,
+  roster = [],
   events = [],
-  actorId,
+  actorId = '',
   onCreateMacroEvent,
 }: CommsNetworkConsoleProps) {
   const reducedMotion = useReducedMotion();
@@ -211,8 +286,9 @@ export default function CommsNetworkConsole({
   const [voicePage, setVoicePage] = useState(0);
   const [threadPage, setThreadPage] = useState(0);
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
+  const [crewCardPage, setCrewCardPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [rightPanelView, setRightPanelView] = useState<'schema' | 'incidents' | 'threads'>('schema');
+  const [rightPanelView, setRightPanelView] = useState<'cards' | 'schema' | 'incidents' | 'threads'>('cards');
   const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
   const [ordersPage, setOrdersPage] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState('');
@@ -640,6 +716,76 @@ export default function CommsNetworkConsole({
     participantByMemberId,
     channelHealthById,
   ]);
+  const crewCards = useMemo(() => {
+    const cards: Array<{
+      id: string;
+      wingId: string;
+      wingLabel: string;
+      squadLabel: string;
+      channelId: string;
+      channelLabel: string;
+      channelStatus: string;
+      vehicleLabel: string;
+      vehicleStatus: string;
+      crewCount: number;
+      operators: Array<{ id: string; callsign: string; role: string; status: string }>;
+    }> = [];
+
+    for (const wing of schemaTree) {
+      for (const squad of wing.squads) {
+        for (const channel of squad.channels) {
+          if (!Array.isArray(channel.vehicles) || channel.vehicles.length === 0) {
+            cards.push({
+              id: `card:${wing.id}:${squad.id}:${channel.id}:empty`,
+              wingId: wing.id,
+              wingLabel: wing.label,
+              squadLabel: squad.label,
+              channelId: channel.id,
+              channelLabel: channel.label,
+              channelStatus: channel.status,
+              vehicleLabel: 'Unassigned Platform',
+              vehicleStatus: 'READY',
+              crewCount: 0,
+              operators: [],
+            });
+            continue;
+          }
+
+          for (const vehicle of channel.vehicles) {
+            const sortedOperators = [...vehicle.operators].sort((a: any, b: any) => {
+              const priorityDelta = operatorStatusPriority(a.status) - operatorStatusPriority(b.status);
+              if (priorityDelta !== 0) return priorityDelta;
+              return String(a.callsign || a.id).localeCompare(String(b.callsign || b.id));
+            });
+            cards.push({
+              id: `card:${wing.id}:${squad.id}:${channel.id}:${vehicle.id}`,
+              wingId: wing.id,
+              wingLabel: wing.label,
+              squadLabel: squad.label,
+              channelId: channel.id,
+              channelLabel: channel.label,
+              channelStatus: channel.status,
+              vehicleLabel: vehicle.label,
+              vehicleStatus: vehicle.basicStatus,
+              crewCount: Number(vehicle.crewCount || vehicle.operators.length || 0),
+              operators: sortedOperators.slice(0, 3),
+            });
+          }
+        }
+      }
+    }
+
+    return cards.slice(0, 32);
+  }, [schemaTree]);
+  const crewCardPageCount = Math.max(1, Math.ceil(crewCards.length / CREW_CARD_PAGE_SIZE));
+  const visibleCrewCards = useMemo(
+    () =>
+      crewCards.slice(
+        crewCardPage * CREW_CARD_PAGE_SIZE,
+        crewCardPage * CREW_CARD_PAGE_SIZE + CREW_CARD_PAGE_SIZE
+      ),
+    [crewCards, crewCardPage]
+  );
 
   const commandRecommendation = useMemo(() => {
     if (selectedIncident) {
@@ -713,6 +859,10 @@ export default function CommsNetworkConsole({
   useEffect(() => {
     setSchemaChannelPage((prev) => Math.min(prev, schemaChannelPageCount - 1));
   }, [schemaChannelPageCount]);
+
+  useEffect(() => {
+    setCrewCardPage((prev) => Math.min(prev, crewCardPageCount - 1));
+  }, [crewCardPageCount]);
 
   useEffect(() => {
     setOrdersPage((prev) => Math.min(prev, ordersPageCount - 1));
@@ -1309,7 +1459,14 @@ export default function CommsNetworkConsole({
               activeSpeakers.map((participant: any, index: number) => (
                 <div key={`speaker:${participant.id || participant.callsign || index}`} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
                   <div className="text-[10px] text-zinc-200 truncate">{participant.callsign || participant.name || participant.id || 'Operator'}</div>
-                  <div className="text-[9px] text-zinc-500 uppercase tracking-wide">{participant.state || 'Speaking'}</div>
+                  <div className="text-[9px] text-zinc-500 uppercase tracking-wide inline-flex items-center gap-1">
+                    <img
+                      src={operatorStatusTokenIcon(isParticipantSpeaking(participant) ? 'TX' : isMutedParticipant(participant) ? 'MUTED' : 'ON-NET')}
+                      alt=""
+                      className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65"
+                    />
+                    {isParticipantSpeaking(participant) ? 'TX' : isMutedParticipant(participant) ? 'MUTED' : participant.state || 'ON-NET'}
+                  </div>
                 </div>
               ))
             ) : (
@@ -1360,7 +1517,10 @@ export default function CommsNetworkConsole({
                 <div key={netId} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-[11px] text-zinc-200 truncate">{net?.code || netId}</div>
+                      <div className="text-[11px] text-zinc-200 truncate inline-flex items-center gap-1">
+                        <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                        {net?.code || netId}
+                      </div>
                       <div className="text-[10px] text-zinc-500 truncate">{net?.label || net?.name || 'Voice lane'}</div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -1562,7 +1722,10 @@ export default function CommsNetworkConsole({
                       }}
                       title={`${node.label}${node.type === 'channel' ? ` · activity ${Math.round(node.intensity * 100)}%` : ''}`}
                     >
-                      <div className="font-semibold uppercase tracking-wide">{node.label}</div>
+                      <div className="font-semibold uppercase tracking-wide inline-flex items-center justify-center gap-1">
+                        <img src={topologyNodeTokenIcon(node)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                        <span>{node.label}</span>
+                      </div>
                       {node.type === 'channel' ? <div className="text-[9px] text-zinc-300">{Math.round(node.intensity * 100)}%</div> : null}
                     </div>
                   </div>
@@ -1641,7 +1804,11 @@ export default function CommsNetworkConsole({
 
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <NexusButton size="sm" intent={rightPanelView === 'cards' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('cards')}>
+                <Users className="w-3.5 h-3.5 mr-1" />
+                Crew Cards
+              </NexusButton>
               <NexusButton size="sm" intent={rightPanelView === 'schema' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('schema')}>
                 <ClipboardList className="w-3.5 h-3.5 mr-1" />
                 Fleet Schema
@@ -1655,7 +1822,29 @@ export default function CommsNetworkConsole({
                 Mission Threads
               </NexusButton>
             </div>
-            {rightPanelView === 'schema' ? (
+            {rightPanelView === 'cards' ? (
+              <div className="flex items-center gap-1.5">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
+                  disabled={crewCardPage === 0}
+                >
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {crewCardPage + 1}/{crewCardPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
+                  disabled={crewCardPage >= crewCardPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            ) : rightPanelView === 'schema' ? (
               <div className="flex items-center gap-1.5">
                 <NexusButton
                   size="sm"
@@ -1714,7 +1903,70 @@ export default function CommsNetworkConsole({
             )}
           </div>
 
-          {rightPanelView === 'schema' ? (
+          {rightPanelView === 'cards' ? (
+            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-1.5">
+                {visibleCrewCards.map((card) => (
+                  <article key={card.id} className="rounded border border-zinc-800 bg-zinc-950/70 px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <img src={tokenAssets.comms.vehicle} alt="" className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.vehicleLabel}</div>
+                          <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate inline-flex items-center gap-1">
+                            <img src={wingTokenIcon(card.wingId)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <img src={squadTokenIcon(card.squadLabel)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <span>{card.wingLabel} · {card.squadLabel}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <img src={vehicleStatusTokenIcon(card.vehicleStatus)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        <NexusBadge tone={vehicleStatusTone(card.vehicleStatus)}>{card.vehicleStatus}</NexusBadge>
+                      </div>
+                    </div>
+
+                    <div className="mt-1 flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        <span className="text-[9px] text-zinc-300 truncate">{card.channelLabel}</span>
+                        {bridgedChannelIds.has(card.channelId) ? <NexusBadge tone="active">BR</NexusBadge> : null}
+                      </div>
+                      <span className="text-[8px] text-zinc-500 uppercase tracking-wide shrink-0">Crew {card.crewCount}</span>
+                    </div>
+                    <div className="mt-0.5 text-[8px] text-zinc-500 truncate">{card.channelStatus}</div>
+
+                    <div className="mt-1 grid grid-cols-1 gap-0.5">
+                      {card.operators.length > 0 ? (
+                        card.operators.map((operator) => (
+                          <div key={operator.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                              <span className="text-[9px] text-zinc-200 truncate">{operator.callsign}</span>
+                              <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{operator.role}</span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <img src={operatorStatusTokenIcon(operator.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                              <NexusBadge tone={operatorStatusTone(operator.status)}>{operator.status}</NexusBadge>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5 text-[9px] text-zinc-500">
+                          No operators assigned to voice lane.
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                ))}
+                {visibleCrewCards.length === 0 ? (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500 2xl:col-span-2">
+                    No crew cards available for this channel page.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : rightPanelView === 'schema' ? (
             <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
               <button
                 type="button"
@@ -1722,6 +1974,7 @@ export default function CommsNetworkConsole({
                 onClick={() => toggleSchemaExpanded('fleet:redscar', true)}
               >
                 {isSchemaExpanded('fleet:redscar', true) ? <ChevronDown className="w-3 h-3 text-zinc-400" /> : <ChevronRight className="w-3 h-3 text-zinc-400" />}
+                <img src={tokenAssets.map.node.comms} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                 <span className="text-[10px] text-zinc-200 uppercase tracking-wide">REDSCAR Fleet</span>
                 <NexusBadge tone="neutral" className="ml-auto">
                   Wing {schemaTree.filter((wing) => wing.squads.length > 0).length}
@@ -1745,6 +1998,7 @@ export default function CommsNetworkConsole({
                           ) : (
                             <ChevronRight className="w-3 h-3 text-zinc-400" />
                           )}
+                          <img src={wingTokenIcon(wing.id)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                           <span className="text-[10px] text-zinc-200 uppercase tracking-wide">{wing.label}</span>
                           <NexusBadge tone="neutral" className="ml-auto">
                             Squad {wing.squads.length}
@@ -1767,6 +2021,7 @@ export default function CommsNetworkConsole({
                                     ) : (
                                       <ChevronRight className="w-3 h-3 text-zinc-500" />
                                     )}
+                                    <img src={squadTokenIcon(squad.label)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                                     <span className="text-[10px] text-zinc-300 uppercase tracking-wide">{squad.label}</span>
                                     <span className="ml-auto text-[9px] text-zinc-500">Channel {squad.channels.length}</span>
                                   </button>
@@ -1787,12 +2042,16 @@ export default function CommsNetworkConsole({
                                               ) : (
                                                 <ChevronRight className="w-3 h-3 text-zinc-500" />
                                               )}
+                                              <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                                               <span className="text-[10px] text-zinc-200 truncate">{channel.label}</span>
                                               <NexusBadge tone={bridgedChannelIds.has(channel.id) ? 'active' : 'neutral'} className="ml-auto">
                                                 {bridgedChannelIds.has(channel.id) ? 'BRIDGED' : 'LINK'}
                                               </NexusBadge>
                                             </button>
-                                            <div className="pl-4 text-[9px] text-zinc-500">{channel.status}</div>
+                                            <div className="pl-4 text-[9px] text-zinc-500 flex items-center gap-1.5">
+                                              <img src={channelStatusTokenIcon(channel.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                              <span className="truncate">{channel.status}</span>
+                                            </div>
 
                                             {isSchemaExpanded(channelKey, false) ? (
                                               <div className="space-y-1 pl-3 pt-0.5">
@@ -1811,8 +2070,10 @@ export default function CommsNetworkConsole({
                                                           ) : (
                                                             <ChevronRight className="w-3 h-3 text-zinc-500" />
                                                           )}
+                                                          <img src={tokenAssets.comms.vehicle} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                                                           <span className="text-[10px] text-zinc-300">{vehicle.label}</span>
-                                                          <NexusBadge tone={vehicle.basicStatus === 'DEGRADED' ? 'danger' : vehicle.basicStatus === 'ACTIVE' ? 'warning' : 'ok'} className="ml-auto">
+                                                          <img src={vehicleStatusTokenIcon(vehicle.basicStatus)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 ml-auto" />
+                                                          <NexusBadge tone={vehicleStatusTone(vehicle.basicStatus)}>
                                                             {vehicle.basicStatus}
                                                           </NexusBadge>
                                                         </button>
@@ -1821,15 +2082,17 @@ export default function CommsNetworkConsole({
                                                           <div className="space-y-0.5 pl-4">
                                                             {vehicle.operators.map((operator: any) => (
                                                               <div key={operator.id} className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-950/45 px-2 py-0.5">
-                                                                <div className="min-w-0">
-                                                                  <div className="text-[9px] text-zinc-200 truncate">{operator.callsign}</div>
-                                                                  <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{operator.role}</div>
+                                                                <div className="min-w-0 flex items-center gap-1.5">
+                                                                  <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 shrink-0" />
+                                                                  <div className="min-w-0">
+                                                                    <div className="text-[9px] text-zinc-200 truncate">{operator.callsign}</div>
+                                                                    <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{operator.role}</div>
+                                                                  </div>
                                                                 </div>
-                                                                <NexusBadge
-                                                                  tone={operator.status === 'TX' ? 'warning' : operator.status === 'OFF-NET' ? 'danger' : operator.status === 'MUTED' ? 'neutral' : 'ok'}
-                                                                >
-                                                                  {operator.status}
-                                                                </NexusBadge>
+                                                                <div className="flex items-center gap-1">
+                                                                  <img src={operatorStatusTokenIcon(operator.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                                                  <NexusBadge tone={operatorStatusTone(operator.status)}>{operator.status}</NexusBadge>
+                                                                </div>
                                                               </div>
                                                             ))}
                                                           </div>
