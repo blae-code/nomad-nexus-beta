@@ -1764,8 +1764,8 @@ export default function CommsNetworkConsole({
                   No channels in current graph snapshot.
                 </div>
               ) : null}
-            </div>
-          </div>
+              </div>
+              </section>
         </section>
 
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
