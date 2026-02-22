@@ -16,71 +16,60 @@ import {
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
-import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
-  type CommsIncidentRecord,
-  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
-  type CommsDirectiveThreadLane,
-  type DirectiveDeliveryState,
-  type DisciplineAlert,
-  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
-import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
-
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
 
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const THREAD_LIST_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
+const INCIDENT_EVENT_BY_STATUS = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node: CommsGraphNode): string {
+function nodeFill(node) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node: CommsGraphNode): string {
+function nodeBorder(node) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function incidentPriorityTone(priority: string): 'danger' | 'warning' | 'active' {
+function incidentPriorityTone(priority) {
   if (priority === 'CRITICAL') return 'danger';
   if (priority === 'HIGH') return 'warning';
   return 'active';
 }
 
-function incidentStatusTone(status: CommsIncidentStatus): 'warning' | 'active' | 'ok' | 'neutral' {
+function incidentStatusTone(status) {
   if (status === 'NEW') return 'warning';
   if (status === 'ACKED') return 'active';
   if (status === 'ASSIGNED') return 'ok';
   return 'neutral';
 }
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -88,25 +77,25 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant: any): boolean {
+function isParticipantSpeaking(participant) {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
+function disciplineAlertTone(severity) {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
+function deliveryTone(status) {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function directiveByThreadAction(action: CommsDirectiveThreadLane['nextAction']): 'REROUTE' | 'RESTRICT' | 'CHECKIN' {
+function directiveByThreadAction(action) {
   if (action === 'REROUTE') return 'REROUTE';
   if (action === 'RESTRICT') return 'RESTRICT';
   return 'CHECKIN';
@@ -119,26 +108,26 @@ export default function CommsNetworkConsole({
   events = [],
   actorId,
   onCreateMacroEvent,
-}: CommsNetworkConsoleProps) {
+}) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
-  const voiceNet = useVoiceNet() as any;
-  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
+  const voiceNet = useVoiceNet();
+  const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(false);
   const [healthPage, setHealthPage] = useState(0);
   const [incidentPage, setIncidentPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
+  const [incidentStatusById, setIncidentStatusById] = useState({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
   const [threadPage, setThreadPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [rightPanelView, setRightPanelView] = useState<'incidents' | 'threads'>('incidents');
-  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
+  const [rightPanelView, setRightPanelView] = useState('incidents');
+  const [directiveDispatches, setDirectiveDispatches] = useState([]);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -151,7 +140,7 @@ export default function CommsNetworkConsole({
         roster,
       });
       setSnapshot(next);
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.message || 'Failed to load comms graph.');
     } finally {
       setLoading(false);
@@ -177,7 +166,7 @@ export default function CommsNetworkConsole({
   const edges = snapshot?.edges || [];
   const nodeMap = useMemo(
     () =>
-      nodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
+      nodes.reduce((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
@@ -391,7 +380,7 @@ export default function CommsNetworkConsole({
   }, [directiveThreads, selectedThreadId]);
 
   const emitMacro = useCallback(
-    (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
+    (eventType, payload, successMessage) => {
       if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
       setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
     },
@@ -399,15 +388,7 @@ export default function CommsNetworkConsole({
   );
 
   const emitDirectiveMacro = useCallback(
-    (input: {
-      eventType: CqbEventType;
-      channelId: string;
-      directive: string;
-      successMessage: string;
-      incidentId?: string;
-      laneId?: string;
-      payload?: Record<string, unknown>;
-    }) => {
+    (input) => {
       const dispatch = createDirectiveDispatchRecord({
         channelId: input.channelId,
         laneId: input.laneId,
@@ -444,7 +425,7 @@ export default function CommsNetworkConsole({
   );
 
   const transitionIncident = useCallback(
-    (nextStatus: 'ACKED' | 'ASSIGNED' | 'RESOLVED') => {
+    (nextStatus) => {
       if (!selectedIncident) return;
       if (!canTransitionIncidentStatus(selectedIncident.status, nextStatus)) return;
 
@@ -466,10 +447,7 @@ export default function CommsNetworkConsole({
   );
 
   const dispatchDirective = useCallback(
-    (
-      directive: 'REROUTE' | 'RESTRICT' | 'CHECKIN',
-      options?: { channelId?: string; laneId?: string; incidentId?: string }
-    ) => {
+    (directive, options = {}) => {
       const fallbackChannelId = channelHealth[0]?.channelId;
       const incidentChannelId = selectedIncident?.channelId && selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : '';
       const threadChannelId = selectedThread?.channelId && selectedThread.channelId !== 'UNSCOPED' ? selectedThread.channelId : '';
@@ -535,7 +513,7 @@ export default function CommsNetworkConsole({
   }, [selectedIncident, selectedThread, channelHealth, emitDirectiveMacro]);
 
   const executeThreadAction = useCallback(
-    (lane: CommsDirectiveThreadLane) => {
+    (lane) => {
       if (!lane) return;
       const directive = directiveByThreadAction(lane.nextAction);
       dispatchDirective(directive, { channelId: lane.channelId, laneId: lane.id });
@@ -576,7 +554,7 @@ export default function CommsNetworkConsole({
   }, [commandRecommendation, transitionIncident, dispatchDirective, incidents]);
 
   const joinVoiceNet = useCallback(
-    async (netId: string, monitorOnly = false) => {
+    async (netId, monitorOnly = false) => {
       if (!netId) return;
       if (!voiceRuntimeUser?.id) {
         setFeedback('Voice profile unavailable.');
@@ -603,7 +581,7 @@ export default function CommsNetworkConsole({
   );
 
   const setTransmitVoiceNet = useCallback(
-    async (netId: string) => {
+    async (netId) => {
       if (!netId) return;
       if (!voiceRuntimeUser?.id) {
         setFeedback('Voice profile unavailable.');
@@ -616,7 +594,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(`TX lane set: ${netId}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Unable to set transmit net.');
       }
     },
@@ -624,11 +602,11 @@ export default function CommsNetworkConsole({
   );
 
   const leaveVoiceNet = useCallback(
-    async (netId: string) => {
+    async (netId) => {
       try {
         await voiceNet.leaveNet?.(netId);
         setFeedback(`Left ${netId}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Unable to leave net.');
       }
     },
@@ -738,7 +716,7 @@ export default function CommsNetworkConsole({
           </div>
           <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             {activeSpeakers.length > 0 ? (
-              activeSpeakers.map((participant: any, index: number) => (
+              activeSpeakers.map((participant, index) => (
                 <div key={`speaker:${participant.id || participant.callsign || index}`} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
                   <div className="text-[10px] text-zinc-200 truncate">{participant.callsign || participant.name || participant.id || 'Operator'}</div>
                   <div className="text-[9px] text-zinc-500 uppercase tracking-wide">{participant.state || 'Speaking'}</div>
@@ -784,7 +762,7 @@ export default function CommsNetworkConsole({
 
         <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-            {visibleVoiceNets.map((net: any) => {
+            {visibleVoiceNets.map((net) => {
               const netId = String(net?.id || net?.code || '').trim();
               const isMonitored = monitoredVoiceSet.has(netId);
               const isTransmit = netId === String(voiceNet.transmitNetId || '');
@@ -879,7 +857,7 @@ export default function CommsNetworkConsole({
         <section className="min-h-0 flex flex-col gap-2">
           <div className="flex-1 min-h-[220px] rounded border border-zinc-800 bg-zinc-950/65 p-6 relative overflow-hidden">
             <svg viewBox="-5 -5 110 110" preserveAspectRatio="xMidYMid meet" className="absolute inset-6 w-[calc(100%-3rem)] h-[calc(100%-3rem)]">
-              {edges.map((edge: CommsGraphEdge) => {
+              {edges.map((edge) => {
                 const source = nodeMap[edge.sourceId];
                 const target = nodeMap[edge.targetId];
                 if (!source || !target) return null;
