@@ -185,9 +185,8 @@ export default function NexusTaskbar({
           <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
         </button>
 
-        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 nx-taskbar-command-btn">
-          <AppWindow className="w-3.5 h-3.5 mr-1" />
-          Deck
+        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 nx-taskbar-command-btn" title="Command Deck (Ctrl+Shift+P)">
+          <AppWindow className="w-3.5 h-3.5" />
         </NexusButton>
       </div>
 
