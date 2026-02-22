@@ -202,7 +202,6 @@ export default function CommsNetworkConsole({
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
-  const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [crewCardPage, setCrewCardPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
   const [showTokenAtlas, setShowTokenAtlas] = useState(false);
