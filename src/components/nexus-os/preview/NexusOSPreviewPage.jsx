@@ -801,11 +801,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         </button>
 
         <div className="flex items-center gap-2 ml-auto">
-          <div
-            className="bg-zinc-900/40 px-3 py-1 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
-            title="System Time: Local and UTC">
+          <div className="bg-zinc-900/40 pr-3 pl-3 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
+
+          title="System Time: Local and UTC">
             <Clock3 className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
-            <div className="flex items-center gap-4">
+            <div className="mx-auto flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
                 <span className="text-[13px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
