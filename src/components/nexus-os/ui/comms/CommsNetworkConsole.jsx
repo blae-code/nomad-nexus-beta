@@ -59,15 +59,6 @@ import {
   squadTokenIcon,
 } from './commsTokenSemantics';
 
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
-interface TopologyBridgeEdge {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  status: 'active' | 'degraded';
-  createdAtMs: number;
-}
-
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const ORDER_LIST_PAGE_SIZE = 5;
