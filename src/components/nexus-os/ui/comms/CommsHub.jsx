@@ -458,51 +458,47 @@ export default function CommsHub({
 
   return (
     <div className={`flex flex-col h-full bg-zinc-950/80 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
-      <div className="nx-comms-header border-b border-zinc-700/40 px-2 py-1.5">
-        <div className="flex items-center justify-between gap-2">
-          {isExpanded ? (
-            <>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
-                <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
-                {totalUnread > 0 ? (
-                  <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
-                    {totalUnread}
-                  </div>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
-                  className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
-                  title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
-                >
-                  {displayMode === 'standard' ? 'Std' : 'Cmd'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAiFeatures((prev) => !prev)}
-                  className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-400' : ''}`}
-                  title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                </button>
-                <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse">
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </>
-          ) : (
-            <button type="button" onClick={onToggleExpand} className="w-full flex items-center justify-center text-zinc-500 hover:text-orange-500 transition-colors" title="Expand">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          )}
+      {!isExpanded ? (
+        <div className="flex items-center justify-center py-2 border-b border-zinc-700/40">
+          <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Expand">
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
-      </div>
-
-      {isExpanded ? (
+      ) : (
         <>
+          <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
+              <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
+              {totalUnread > 0 ? (
+                <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
+                  {totalUnread}
+                </div>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
+                className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
+                title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
+              >
+                {displayMode === 'standard' ? 'Std' : 'Cmd'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAiFeatures((prev) => !prev)}
+                className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-400' : ''}`}
+                title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+              </button>
+              <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse">
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
           <div className="flex-shrink-0 p-2 border-b border-zinc-700/40 bg-zinc-900/20">
             <div className="mb-2 p-2 rounded border border-zinc-800 bg-zinc-900/35 space-y-1.5">
               <div className="grid grid-cols-3 gap-1">
@@ -849,7 +845,7 @@ export default function CommsHub({
             <div className="flex-1 flex items-center justify-center text-zinc-600 text-[10px] font-bold uppercase tracking-wider">Select a channel</div>
           )}
         </>
-      ) : null}
+      )}
     </div>
   );
 }
