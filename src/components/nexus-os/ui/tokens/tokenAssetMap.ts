@@ -5,8 +5,8 @@
  * do not hardcode raw paths into UI components.
  */
 
-type NumberToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
-type NumberTokenFamily = `number-${NumberToken}`;
+export type NumberToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+export type NumberTokenFamily = `number-${NumberToken}`;
 
 type BaseTokenFamily =
   | 'ammunition'
@@ -27,7 +27,18 @@ type BaseTokenFamily =
 
 export type TokenFamily = BaseTokenFamily | NumberTokenFamily;
 export type TokenColor = 'blue' | 'cyan' | 'green' | 'grey' | 'orange' | 'purple' | 'red' | 'yellow' | 'violet';
-type NumberTokenColor = 'blue' | 'cyan' | 'green' | 'purple' | 'red' | 'yellow';
+export type NumberTokenColor = 'blue' | 'cyan' | 'green' | 'purple' | 'red' | 'yellow';
+export type TokenVariant = 'base' | 'v1' | 'v2';
+
+interface TokenAssetOptions {
+  variant?: TokenVariant;
+}
+
+const NUMBER_TOKEN_VALUES: readonly NumberToken[] = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+const NUMBER_TOKEN_PURPLE_VARIANT_BY_KEY: Readonly<Record<Exclude<TokenVariant, 'base'>, string>> = Object.freeze({
+  v1: 'purple-1',
+  v2: 'purple-2',
+});
 
 const TOKEN_FAMILY_COLORS: Record<TokenFamily, readonly TokenColor[]> = {
   ammunition: ['blue', 'cyan', 'green', 'grey', 'orange', 'purple', 'red', 'yellow'],
@@ -78,19 +89,79 @@ function nearestCompatibleColor(family: TokenFamily, preferred: TokenColor): Tok
   return next || available[0];
 }
 
-export function getTokenAssetUrl(family: TokenFamily, preferredColor: TokenColor = 'grey'): string {
+function isNumberTokenFamily(family: TokenFamily): family is NumberTokenFamily {
+  return family.startsWith('number-');
+}
+
+function resolveTokenFileName(family: TokenFamily, color: TokenColor, variant: TokenVariant): string {
+  if (variant !== 'base' && color === 'purple' && isNumberTokenFamily(family)) {
+    const variantKey = NUMBER_TOKEN_PURPLE_VARIANT_BY_KEY[variant as Exclude<TokenVariant, 'base'>];
+    if (variantKey) return `token-${family}-${variantKey}.png`;
+  }
+  return `token-${family}-${color}.png`;
+}
+
+export function getTokenAssetUrl(
+  family: TokenFamily,
+  preferredColor: TokenColor = 'grey',
+  options: TokenAssetOptions = {}
+): string {
   const color = nearestCompatibleColor(family, preferredColor);
-  const cacheKey = `${family}:${color}`;
+  const variant = options.variant || 'base';
+  const cacheKey = `${family}:${color}:${variant}`;
   const cached = tokenUrlCache.get(cacheKey);
   if (cached) return cached;
-  const url = tokenAssetPath(`token-${family}-${color}.png`);
+  const url = tokenAssetPath(resolveTokenFileName(family, color, variant));
   tokenUrlCache.set(cacheKey, url);
   return url;
 }
 
-export function getNumberTokenAssetUrl(value: number, preferredColor: NumberTokenColor = 'yellow'): string {
+export function getNumberTokenAssetUrl(
+  value: number,
+  preferredColor: NumberTokenColor = 'yellow',
+  options: TokenAssetOptions = {}
+): string {
   const clamped = Math.max(0, Math.min(13, Math.round(value))) as NumberToken;
-  return getTokenAssetUrl(`number-${clamped}`, preferredColor);
+  return getTokenAssetUrl(`number-${clamped}`, preferredColor, options);
+}
+
+export function getNumberTokenVariantByState(statusLike: string): TokenVariant {
+  const token = String(statusLike || '').trim().toLowerCase();
+  if (!token) return 'base';
+  if (token.includes('secure') || token.includes('encrypt') || token.includes('harden') || token.includes('auth')) return 'v1';
+  if (token.includes('escalat') || token.includes('critical') || token.includes('degrad') || token.includes('jam')) return 'v2';
+  return 'base';
+}
+
+function buildTokenCatalogEntries(): Array<{
+  family: TokenFamily;
+  color: TokenColor;
+  variant: TokenVariant;
+  fileName: string;
+}> {
+  const rows: Array<{ family: TokenFamily; color: TokenColor; variant: TokenVariant; fileName: string }> = [];
+  const families = Object.keys(TOKEN_FAMILY_COLORS) as TokenFamily[];
+  for (const family of families) {
+    const colors = TOKEN_FAMILY_COLORS[family];
+    for (const color of colors) {
+      rows.push({ family, color, variant: 'base', fileName: resolveTokenFileName(family, color, 'base') });
+      if (isNumberTokenFamily(family) && color === 'purple') {
+        rows.push({ family, color, variant: 'v1', fileName: resolveTokenFileName(family, color, 'v1') });
+        rows.push({ family, color, variant: 'v2', fileName: resolveTokenFileName(family, color, 'v2') });
+      }
+    }
+  }
+  return rows;
+}
+
+const TOKEN_CATALOG_ENTRIES = Object.freeze(buildTokenCatalogEntries());
+const TOKEN_CATALOG_FILE_SET = Object.freeze(new Set(TOKEN_CATALOG_ENTRIES.map((entry) => entry.fileName)));
+
+function buildNumberTokenByValue(): Record<NumberToken, NumberTokenFamily> {
+  return NUMBER_TOKEN_VALUES.reduce((acc, value) => {
+    acc[value] = `number-${value}`;
+    return acc;
+  }, {} as Record<NumberToken, NumberTokenFamily>);
 }
 
 export const tokenAssets = Object.freeze({
@@ -156,5 +227,8 @@ export const tokenAssets = Object.freeze({
 export const tokenCatalog = Object.freeze({
   families: Object.keys(TOKEN_FAMILY_COLORS) as TokenFamily[],
   colorsByFamily: TOKEN_FAMILY_COLORS,
+  entries: TOKEN_CATALOG_ENTRIES,
+  fileNames: [...TOKEN_CATALOG_FILE_SET],
+  byNumberValue: buildNumberTokenByValue(),
+  variants: ['base', 'v1', 'v2'] as readonly TokenVariant[],
 });
-
