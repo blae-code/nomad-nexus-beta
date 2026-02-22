@@ -553,15 +553,6 @@ export default function CommsNetworkConsole({
     }
     return map;
   }, [channels, roster]);
-  const schemaChannelPageCount = Math.max(1, Math.ceil(channels.length / SCHEMA_CHANNEL_PAGE_SIZE));
-  const visibleSchemaChannels = useMemo(
-    () =>
-      channels.slice(
-        schemaChannelPage * SCHEMA_CHANNEL_PAGE_SIZE,
-        schemaChannelPage * SCHEMA_CHANNEL_PAGE_SIZE + SCHEMA_CHANNEL_PAGE_SIZE
-      ),
-    [channels, schemaChannelPage]
-  );
   const schemaTree = useMemo(() => {
     const wings = [
       { id: 'CE', label: wingLabelByElement('CE') },
