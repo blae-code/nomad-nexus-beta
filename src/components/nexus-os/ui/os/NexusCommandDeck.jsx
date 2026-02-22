@@ -3,33 +3,11 @@ import { BookOpen, ChevronLeft, ChevronRight, Command, History, Sparkles, Termin
 import { NexusButton } from '../primitives';
 import NexusTutorialSystem from '../tutorial/NexusTutorialSystem';
 
-interface NexusCommandCatalogItem {
-  id: string;
-  label: string;
-  command: string;
-  detail?: string;
-}
-
-interface NexusCommandDeckProps {
-  open: boolean;
-  onClose: () => void;
-  onRunCommand: (command: string) => string;
-  commandCatalog?: NexusCommandCatalogItem[];
-  contextSummary?: string;
-}
-
-interface CommandResultEntry {
-  id: string;
-  command: string;
-  result: string;
-  timestamp: string;
-}
-
 const CATALOG_PAGE_SIZE = 6;
 const OUTPUT_PAGE_SIZE = 4;
 const HISTORY_PAGE_SIZE = 4;
 
-const DEFAULT_CATALOG: NexusCommandCatalogItem[] = [
+const DEFAULT_CATALOG = [
   { id: 'help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
   { id: 'tutorial', label: 'Tutorials', command: 'tutorial', detail: 'Open interactive training modules.' },
   { id: 'status', label: 'System Status', command: 'status', detail: 'Show bridge/link/focus status.' },
@@ -51,11 +29,11 @@ export default function NexusCommandDeck({
   onRunCommand,
   commandCatalog = DEFAULT_CATALOG,
   contextSummary = 'Execute workspace controls and bridge commands.',
-}: NexusCommandDeckProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+}) {
+  const inputRef = useRef(null);
   const [command, setCommand] = useState('');
-  const [results, setResults] = useState<CommandResultEntry[]>([]);
-  const [history, setHistory] = useState<string[]>([]);
+  const [results, setResults] = useState([]);
+  const [history, setHistory] = useState([]);
   const [historyCursor, setHistoryCursor] = useState(-1);
   const [catalogPage, setCatalogPage] = useState(0);
   const [outputPage, setOutputPage] = useState(0);
@@ -143,7 +121,7 @@ export default function NexusCommandDeck({
     setCommand('');
   };
 
-  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const onInputKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       executeCommand();
