@@ -182,7 +182,7 @@ export default function CommsNetworkConsole({
   const [showUsers, setShowUsers] = useState(true);
   const [healthPage, setHealthPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
+  const [incidentStatusById, setIncidentStatusById] = useState({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
