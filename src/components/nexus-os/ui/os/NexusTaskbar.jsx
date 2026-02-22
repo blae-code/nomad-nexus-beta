@@ -1,24 +1,8 @@
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
-import type { NexusAppLifecycleEntry } from './appLifecycle';
-import type { NexusTrayNotification } from './trayNotifications';
 
-interface NexusTaskbarProps {
-  activeAppId: string | null;
-  appEntries: Record<string, NexusAppLifecycleEntry>;
-  appCatalog: Array<{ id: string; label: string; hotkey?: string }>;
-  notifications: NexusTrayNotification[];
-  unreadNotifications: number;
-  onActivateApp: (appId: string) => void;
-  onSuspendApp: (appId: string) => void;
-  onOpenCommandDeck: () => void;
-  onMarkNotificationRead: (notificationId: string) => void;
-  onMarkAllNotificationsRead: () => void;
-  onClearNotifications: () => void;
-}
-
-function toneForNotificationLevel(level: NexusTrayNotification['level']) {
+function toneForNotificationLevel(level) {
   if (level === 'critical') return 'danger';
   if (level === 'warning') return 'warning';
   if (level === 'success') return 'ok';
