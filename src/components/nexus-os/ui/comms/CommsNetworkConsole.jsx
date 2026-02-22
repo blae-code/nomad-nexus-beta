@@ -2026,9 +2026,9 @@ export default function CommsNetworkConsole({
                 </div>
               ) : null}
             </div>
-          ) : null}
+            </section>
 
-          <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+            <section className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[11px] text-zinc-300 uppercase tracking-wide flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-orange-400" />
