@@ -768,12 +768,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-orange-500/20 bg-orange-500/5">
             <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0" />
             <div className="min-w-0">
-              <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-white leading-none">
-                NexusOS
-              </h1>
-              <div className="text-[8px] text-zinc-400 uppercase tracking-[0.2em] leading-none mt-0.5">
-                Command Surface
-              </div>
+              <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-white leading-none">NexusOS</h1>
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.2em] leading-none mt-0.5">Command Surface</p>
             </div>
           </div>
 
@@ -788,36 +784,28 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
           <div className="flex items-center gap-1.5">
             <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px] font-semibold">
-              {online ? 'Link Ready' : 'Link Down'}
-            </NexusBadge>
+            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px] font-semibold">{online ? 'Link Ready' : 'Link Down'}</NexusBadge>
           </div>
         </div>
 
         <button
-          type="button" className="bg-zinc-900/40 pr-2 pl-2 rounded-lg flex items-center gap-2 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
-
+          type="button"
+          className="bg-zinc-900/40 px-2 py-1 rounded-lg flex items-center gap-2 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
           onClick={() => setCommandDeckOpen(true)}
-          title="Open command deck"
-          aria-label="Open command deck (Ctrl+Shift+P)"
+          title="Open command deck (Ctrl+Shift+P)"
+          aria-label="Open command deck"
           aria-keyshortcuts="Control+Shift+P">
-
           <Search className="w-4 h-4 text-zinc-400 group-hover:text-orange-400 transition-colors" />
-          <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
-            Command Deck
-          </span>
-          <kbd className="bg-zinc-800/80 text-orange-300 ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded hidden xl:inline-flex items-center gap-0.5 border border-orange-500/40">
-            Ctrl+Shift+P
-          </kbd>
+          <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">Command Deck</span>
+          <kbd className="bg-zinc-800/80 text-orange-300 ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded hidden xl:inline-flex items-center gap-0.5 border border-orange-500/40">Ctrl+Shift+P</kbd>
         </button>
 
         <div className="flex items-center gap-2 ml-auto">
-          <div className="bg-zinc-900/40 pr-2 pb-1 pl-2 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
-
-          title="System Time: Local and UTC">
-
+          <div
+            className="bg-zinc-900/40 px-3 py-1 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
+            title="System Time: Local and UTC">
             <Clock3 className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
-            <div className="mx-auto flex items-center gap-4">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
                 <span className="text-[13px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
@@ -838,9 +826,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             type="button"
             className="flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
             onClick={() => setSettingsPanelOpen(true)}
-            title="Open settings console"
+            title="Open settings (preferences, keybinds, themes)"
             aria-label="Open settings console">
-
             <Settings className="w-5 h-5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
           </button>
         </div>
