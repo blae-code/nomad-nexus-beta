@@ -241,16 +241,13 @@ export default function NexusTaskbar({
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-zinc-200 truncate">{notice.title}</span>
                     <div className="shrink-0 flex items-center gap-1">
-                      <NexusBadge tone={toneForNotificationLevel(notice.level)}>
-                        {notice.level.slice(0, 3).toUpperCase()}
+                      <NexusBadge tone={toneForNotificationLevel(notice.level)} className="text-[9px]">
+                        {notice.level.slice(0, 3)}
                       </NexusBadge>
                       <span className="text-[10px] text-zinc-500">{ageLabel(notice.createdAt)}</span>
                     </div>
                   </div>
                   {notice.detail ? <div className="mt-1 text-[11px] text-zinc-500 truncate">{notice.detail}</div> : null}
-                  <div className="mt-1 text-[10px] text-zinc-600">
-                    {notice.source || 'system'} · {notice.read ? 'read' : 'unread'}
-                  </div>
                 </button>
               ))}
 
