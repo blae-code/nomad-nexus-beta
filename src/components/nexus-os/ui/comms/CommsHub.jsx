@@ -16,6 +16,9 @@ import {
   TrendingUp,
   X,
   Zap,
+  Plus,
+  Users,
+  FolderPlus,
 } from 'lucide-react';
 import { NexusBadge } from '../primitives';
 import { generateResponseSuggestions, queueMessageAnalysis, smartSearch } from '../../services/commsAIService';
@@ -54,6 +57,8 @@ export default function CommsHub({
   onToggleExpand,
 }) {
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [hoveredChannel, setHoveredChannel] = useState(null);
   const [messages, setMessages] = useState({});
   const [expandedCategories, setExpandedCategories] = useState({
     tactical: true,
@@ -61,6 +66,9 @@ export default function CommsHub({
     social: false,
     direct: false,
   });
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [customCategories, setCustomCategories] = useState([]);
   const [channelPages, setChannelPages] = useState({
     tactical: 0,
     operations: 0,
@@ -290,7 +298,46 @@ export default function CommsHub({
 
   const pickChannel = useCallback((channelId) => {
     setSelectedChannel(channelId);
+    setChatPanelOpen(true);
   }, []);
+
+  const createCategory = useCallback(() => {
+    if (!newCategoryName.trim()) return;
+    const categoryId = newCategoryName.toLowerCase().replace(/\s+/g, '-');
+    setCustomCategories((prev) => [...prev, { id: categoryId, name: newCategoryName, channels: [] }]);
+    setExpandedCategories((prev) => ({ ...prev, [categoryId]: true }));
+    setNewCategoryName('');
+    setShowCreateMenu(false);
+    setPanelFeedback(`Category "${newCategoryName}" created.`);
+  }, [newCategoryName]);
+
+  const createDirectMessage = useCallback(() => {
+    const dmId = `dm-${Date.now()}`;
+    const dmChannel = {
+      id: dmId,
+      name: 'New DM',
+      icon: AtSign,
+      category: 'direct',
+      unread: 0,
+    };
+    setShowCreateMenu(false);
+    pickChannel(dmId);
+    setPanelFeedback('Direct message started.');
+  }, [pickChannel]);
+
+  const createGroupMessage = useCallback(() => {
+    const groupId = `group-${Date.now()}`;
+    const groupChannel = {
+      id: groupId,
+      name: 'New Group',
+      icon: Users,
+      category: 'social',
+      unread: 0,
+    };
+    setShowCreateMenu(false);
+    pickChannel(groupId);
+    setPanelFeedback('Group message created.');
+  }, [pickChannel]);
 
   const acknowledgeChannel = useCallback((channelId = selectedChannel) => {
     if (!channelId) return;
@@ -397,7 +444,7 @@ export default function CommsHub({
 
   const renderCategory = (category, label) => {
     const items = channels[category] || [];
-    if (!items.length && category !== 'operations') return null;
+    if (!items.length && category !== 'operations' && !customCategories.find(c => c.id === category)) return null;
 
     const page = channelPages[category] || 0;
     const pageCount = categoryPageCounts[category] || 1;
@@ -405,7 +452,7 @@ export default function CommsHub({
     const categoryUnread = items.reduce((sum, ch) => sum + Number(ch.unread || 0), 0);
 
     return (
-      <div key={category} className="mb-1">
+      <div key={category} className="mb-0.5">
         <button
           type="button"
           onClick={() => toggleCategory(category)}
@@ -431,10 +478,14 @@ export default function CommsHub({
                   key={channel.id}
                   type="button"
                   onClick={() => pickChannel(channel.id)}
-                  className={`w-full text-left px-2 py-1.5 rounded transition-colors flex items-center justify-between gap-2 ${
+                  onMouseEnter={() => setHoveredChannel(channel.id)}
+                  onMouseLeave={() => setHoveredChannel(null)}
+                  className={`w-full text-left px-2 py-1.5 rounded transition-all flex items-center justify-between gap-2 ${
                     selectedChannel === channel.id 
                       ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300' 
-                      : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                      : hoveredChannel === channel.id
+                        ? 'bg-zinc-800/60 text-zinc-200 border border-zinc-700/60'
+                        : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -480,71 +531,133 @@ export default function CommsHub({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-zinc-950/80 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
+    <div className={`flex h-full bg-zinc-950/80 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
       {!isExpanded ? (
-        <div className="flex items-center justify-center py-2 border-b border-zinc-700/40">
+        <div className="flex items-center justify-center py-2 border-r border-zinc-700/40">
           <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Expand">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       ) : (
-        <>
-          <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
-              <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider">Text Comms</h3>
-              {totalUnread > 0 ? (
-                <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
-                  {totalUnread}
-                </div>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowAiFeatures((prev) => !prev)}
-                className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-400' : ''}`}
-                title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-              </button>
-              <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse">
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-shrink-0 p-2 border-b border-zinc-700/40 bg-zinc-900/20">
-            <div className="space-y-1">
-              {renderCategory('tactical', 'Tactical')}
-              {renderCategory('operations', 'Operations')}
-              {renderCategory('social', 'Social')}
-              {renderCategory('direct', 'Direct')}
-            </div>
-          </div>
-
-          {selectedChannel ? (
-            <div className="flex-1 min-h-0 flex flex-col border-t border-zinc-700/40">
-              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Hash className="w-3.5 h-3.5 text-zinc-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
+        <div className="flex w-full h-full overflow-hidden">
+          {/* Channel Tree Panel */}
+          <div className="flex flex-col w-64 flex-shrink-0 border-r border-zinc-700/40 h-full overflow-hidden">(
+            <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
+                <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider">Channels</h3>
+                {totalUnread > 0 ? (
+                  <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
+                    {totalUnread}
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread}</NexusBadge> : null}
-                    {selectedVoiceNetId && onRouteVoiceNet ? (
+                ) : null}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateMenu((prev) => !prev)}
+                  className="p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors"
+                  title="Create new"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse">
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {showCreateMenu ? (
+              <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40 p-2 space-y-1.5">
+                <div className="text-[9px] uppercase tracking-wide text-zinc-500 mb-1">Create New</div>
+                <button
+                  type="button"
+                  onClick={createDirectMessage}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[10px] text-zinc-300 hover:bg-zinc-800/50 transition-colors"
+                >
+                  <AtSign className="w-3.5 h-3.5 text-cyan-400" />
+                  Direct Message
+                </button>
+                <button
+                  type="button"
+                  onClick={createGroupMessage}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[10px] text-zinc-300 hover:bg-zinc-800/50 transition-colors"
+                >
+                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  Group Message
+                </button>
+                <div className="pt-1 border-t border-zinc-800">
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      placeholder="Category name..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') createCategory();
+                        if (e.key === 'Escape') setShowCreateMenu(false);
+                      }}
+                      className="flex-1 bg-zinc-800/60 border border-zinc-700/40 rounded px-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={createCategory}
+                      disabled={!newCategoryName.trim()}
+                      className="px-2 py-1 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Create category"
+                    >
+                      <FolderPlus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex-1 min-h-0 overflow-y-auto p-2">
+              <div className="space-y-1">
+                {renderCategory('tactical', 'Tactical')}
+                {renderCategory('operations', 'Operations')}
+                {renderCategory('social', 'Social')}
+                {renderCategory('direct', 'Direct')}
+                {customCategories.map((cat) => renderCategory(cat.id, cat.name))}
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Panel - slides in when channel selected */}
+          <div
+            className={`flex flex-col flex-1 border-l border-zinc-700/40 bg-zinc-900/60 transition-all duration-300 overflow-hidden ${
+              chatPanelOpen && selectedChannel ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {selectedChannel ? (
+              <>
+                <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Hash className="w-3.5 h-3.5 text-zinc-500" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread}</NexusBadge> : null}
                       <button
                         type="button"
-                        onClick={() => onRouteVoiceNet(selectedChannel)}
-                        className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
-                        title="Route voice to this channel"
+                        onClick={() => setShowAiFeatures((prev) => !prev)}
+                        className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-400' : ''}`}
+                        title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
                       >
-                        Route Voice
+                        <Sparkles className="w-3.5 h-3.5" />
                       </button>
-                    ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setChatPanelOpen(false)}
+                        className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
+                        title="Close chat"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
 
                 <div className="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -764,16 +877,15 @@ export default function CommsHub({
                 </button>
               </div>
 
-              {panelFeedback ? (
-                <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/30 bg-zinc-900/20 text-[9px] text-zinc-500">
-                  {panelFeedback}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-zinc-600 text-[10px] font-bold uppercase tracking-wider">Select a channel</div>
-          )}
-        </>
+                {panelFeedback ? (
+                  <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/30 bg-zinc-900/20 text-[9px] text-zinc-500">
+                    {panelFeedback}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        </div>
       )}
     </div>
   );
