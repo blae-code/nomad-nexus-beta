@@ -813,21 +813,21 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         <div className="flex items-center gap-2 ml-auto">
           <div
-            className="hidden xl:flex items-center gap-3 px-3 py-2 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
+            className="hidden xl:flex items-center gap-4 px-3 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
             title="System Time: Local and UTC">
 
             <Clock3 className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
-            <div className="flex items-baseline gap-2">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
-                <span className="text-[14px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
+                <span className="text-[13px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
                   {new Date(clockNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                 </span>
               </div>
-              <div className="w-px h-12 bg-zinc-700/30" />
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">UTC</span>
-                <span className="text-[12px] font-mono text-zinc-300 group-hover:text-zinc-100 transition-colors leading-none font-bold">
+              <div className="w-px h-8 bg-zinc-700/30" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">UTC</span>
+                <span className="text-[11px] font-mono text-zinc-300 group-hover:text-zinc-100 transition-colors leading-none font-bold">
                   {new Date(clockNowMs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' })}Z
                 </span>
               </div>
