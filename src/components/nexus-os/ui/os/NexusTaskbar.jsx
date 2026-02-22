@@ -232,56 +232,58 @@ export default function NexusTaskbar({
           </div>
 
           {filteredNotifications.length === 0 ? (
-            <div className="rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-500">
-              No alerts available.
+            <div className="p-4 text-center">
+              <div className="text-[11px] text-zinc-500 uppercase tracking-wide">No alerts</div>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="px-2 py-1 space-y-0.5">
               {shownNotifications.map((notice) => (
                 <button
                   key={notice.id}
                   type="button"
                   onClick={() => onMarkNotificationRead(notice.id)}
-                  className="nx-taskbar-notice-row"
+                  className={`w-full text-left rounded border px-2.5 py-2 transition-all text-[11px] hover:bg-zinc-900/60 ${
+                    notice.read ? 'border-zinc-800/40 bg-zinc-900/20' : 'border-orange-500/30 bg-orange-500/5'
+                  }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-zinc-200 truncate">{notice.title}</span>
-                    <div className="shrink-0 flex items-center gap-1">
-                      <NexusBadge tone={toneForNotificationLevel(notice.level)}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-semibold text-zinc-100 truncate flex-1">{notice.title}</span>
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      <NexusBadge tone={toneForNotificationLevel(notice.level)} className="text-[9px]">
                         {notice.level.slice(0, 3).toUpperCase()}
                       </NexusBadge>
                       <span className="text-[10px] text-zinc-500">{ageLabel(notice.createdAt)}</span>
                     </div>
                   </div>
-                  {notice.detail ? <div className="mt-1 text-[11px] text-zinc-500 truncate">{notice.detail}</div> : null}
-                  <div className="mt-1 text-[10px] text-zinc-600">
+                  {notice.detail && <div className="text-[10px] text-zinc-400 truncate">{notice.detail}</div>}
+                  <div className="mt-1 text-[9px] text-zinc-600">
                     {notice.source || 'system'} · {notice.read ? 'read' : 'unread'}
                   </div>
                 </button>
               ))}
 
               {noticePageCount > 1 ? (
-                <div className="pt-1 flex items-center justify-end gap-1.5">
+                <div className="pt-1.5 flex items-center justify-end gap-1">
                   <button
                     type="button"
-                    className="nx-taskbar-nav-btn"
+                    className="flex items-center justify-center w-5 h-5 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 disabled:opacity-40 transition-all"
                     onClick={() => setNoticePage((prev) => Math.max(0, prev - 1))}
                     disabled={noticePage === 0}
                     aria-label="Previous alert page"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <ChevronLeft className="w-3 h-3 text-zinc-400" />
                   </button>
-                  <NexusBadge tone="neutral">
+                  <NexusBadge tone="neutral" className="text-[9px]">
                     {noticePage + 1}/{noticePageCount}
                   </NexusBadge>
                   <button
                     type="button"
-                    className="nx-taskbar-nav-btn"
+                    className="flex items-center justify-center w-5 h-5 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 disabled:opacity-40 transition-all"
                     onClick={() => setNoticePage((prev) => Math.min(noticePageCount - 1, prev + 1))}
                     disabled={noticePage >= noticePageCount - 1}
                     aria-label="Next alert page"
                   >
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3 h-3 text-zinc-400" />
                   </button>
                 </div>
               ) : null}
