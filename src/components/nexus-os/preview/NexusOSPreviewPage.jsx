@@ -789,9 +789,9 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden lg:flex items-center gap-1.5">
-            <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="text-[9px] font-semibold">
-              {focusStatusLabel}
-            </NexusBadge>
+            
+
+
             <div className="h-3 w-px bg-zinc-700/50" />
           </div>
 
@@ -802,10 +802,10 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             </NexusBadge>
           </div>
 
-          <div 
+          <div
             className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
-            title="System Time: Local and UTC"
-          >
+            title="System Time: Local and UTC">
+
             <Clock3 className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
             <div className="flex flex-col gap-0.5">
               <div className="flex items-baseline gap-1.5">
