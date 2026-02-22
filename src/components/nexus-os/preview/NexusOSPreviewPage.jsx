@@ -655,6 +655,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const commandCatalog = useMemo(
     () => [
       { id: 'cmd-help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
+      { id: 'cmd-tutorial', label: 'Tutorials', command: 'tutorial', detail: 'Open interactive training modules.' },
       { id: 'cmd-status', label: 'System Status', command: 'status', detail: 'Report live bridge/link/focus state.' },
       { id: 'cmd-open-map', label: 'Focus Map', command: 'open map', detail: 'Bring tactical map to foreground.' },
       { id: 'cmd-open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Bring operations workspace to foreground.' },
