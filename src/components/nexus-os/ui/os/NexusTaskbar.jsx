@@ -194,7 +194,7 @@ export default function NexusTaskbar({
         <div className="nx-taskbar-tray">
           <div className="nx-taskbar-tray-header">
             <div className="text-[11px] text-zinc-400 uppercase tracking-wide">
-              Alerts Center
+              Alerts
               <span className="text-zinc-600 ml-1">
                 {filteredNotifications.length}/{notifications.length}
               </span>
@@ -204,7 +204,7 @@ export default function NexusTaskbar({
                 size="sm"
                 intent={trayFilter === 'UNREAD' ? 'primary' : 'subtle'}
                 onClick={() => setTrayFilter('UNREAD')}
-                title="Show unread alerts"
+                title="Unread only"
               >
                 Unread
               </NexusButton>
@@ -212,14 +212,14 @@ export default function NexusTaskbar({
                 size="sm"
                 intent={trayFilter === 'ALL' ? 'primary' : 'subtle'}
                 onClick={() => setTrayFilter('ALL')}
-                title="Show all alerts"
+                title="All alerts"
               >
                 All
               </NexusButton>
-              <NexusButton size="sm" intent="subtle" onClick={onMarkAllNotificationsRead} title="Mark all notifications as read">
+              <NexusButton size="sm" intent="subtle" onClick={onMarkAllNotificationsRead} title="Mark all read" aria-label="Mark all read">
                 <CheckCheck className="w-3.5 h-3.5" />
               </NexusButton>
-              <NexusButton size="sm" intent="subtle" onClick={onClearNotifications} title="Clear notifications">
+              <NexusButton size="sm" intent="subtle" onClick={onClearNotifications} title="Clear all" aria-label="Clear all">
                 <Trash2 className="w-3.5 h-3.5" />
               </NexusButton>
             </div>
