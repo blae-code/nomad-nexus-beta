@@ -85,37 +85,41 @@ export default function NexusTaskbar({
     : 'None';
 
   return (
-    <section className="relative nx-taskbar-strip">
-      <div className="nx-taskbar-block nx-taskbar-meta">
-        <div className="nx-taskbar-dock-chip">
-          <Sparkles className="w-3 h-3" />
-          <span>Dock</span>
-        </div>
-        <NexusBadge tone="neutral" className="nx-taskbar-count-badge">
-          {appCatalog.length} modules
-        </NexusBadge>
-        {appPageCount > 1 ? (
-          <NexusBadge tone="neutral" className="nx-taskbar-count-badge hidden md:inline-flex">
-            {appPage + 1}/{appPageCount}
+    <section className="relative nx-taskbar-strip bg-zinc-950/95 backdrop-blur-sm border-t border-zinc-800/60">
+      {/* Dock Header */}
+      <div className="nx-taskbar-block nx-taskbar-meta px-3 py-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/40 bg-zinc-900/40">
+            <Sparkles className="w-3 h-3 text-orange-500" />
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-300">Dock</span>
+          </div>
+          <NexusBadge tone="neutral" className="text-[9px]">
+            {appCatalog.length} modules
           </NexusBadge>
-        ) : null}
+          {appPageCount > 1 ? (
+            <NexusBadge tone="neutral" className="text-[9px] hidden md:inline-flex">
+              {appPage + 1}/{appPageCount}
+            </NexusBadge>
+          ) : null}
+        </div>
       </div>
 
-      <div className="nx-taskbar-launcher">
+      {/* App Launcher */}
+      <div className="nx-taskbar-launcher px-2 py-1.5 flex items-center gap-1.5">
         {appPageCount > 1 ? (
           <button
             type="button"
-            className="nx-taskbar-nav-btn"
+            className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => setAppPage((prev) => Math.max(0, prev - 1))}
             disabled={appPage === 0}
             aria-label="Previous app set"
             title="Previous app set"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ChevronLeft className="w-3 h-3 text-zinc-400" />
           </button>
         ) : null}
 
-        <div className="nx-taskbar-app-grid">
+        <div className="flex-1 flex items-center gap-1 min-w-0">
           {shownApps.map((app) => {
             const state = appEntries[app.id]?.state || 'closed';
             const active = activeAppId === app.id;
@@ -124,11 +128,15 @@ export default function NexusTaskbar({
                 key={app.id}
                 type="button"
                 onClick={() => onActivateApp(app.id)}
-                className={`nx-taskbar-app ${active ? 'is-active' : ''}`}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded border transition-all text-[10px] font-semibold uppercase tracking-wide flex-shrink-0 ${
+                  active
+                    ? 'border-orange-500/60 bg-orange-500/10 text-orange-300'
+                    : 'border-zinc-700/40 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-800/60 hover:border-orange-500/40'
+                }`}
                 title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
               >
-                <span className={`h-2 w-2 rounded-full ${dotForState(state)}`} />
-                <span className="truncate">{compactLabel(app.label, 11)}</span>
+                <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${dotForState(state)}`} />
+                <span className="truncate">{compactLabel(app.label, 10)}</span>
               </button>
             );
           })}
@@ -137,13 +145,13 @@ export default function NexusTaskbar({
         {appPageCount > 1 ? (
           <button
             type="button"
-            className="nx-taskbar-nav-btn"
+            className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => setAppPage((prev) => Math.min(appPageCount - 1, prev + 1))}
             disabled={appPage >= appPageCount - 1}
             aria-label="Next app set"
             title="Next app set"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3 h-3 text-zinc-400" />
           </button>
         ) : null}
       </div>
