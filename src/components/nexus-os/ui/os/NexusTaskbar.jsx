@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
+// JSX-only, no TypeScript types
 
 function toneForNotificationLevel(level) {
   if (level === 'critical') return 'danger';
