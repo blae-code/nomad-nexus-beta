@@ -739,10 +739,12 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     };
   }, [isResizingRight]);
 
-  const systemTimeLabel = useMemo(
-    () => new Date(clockNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    [clockNowMs]
-  );
+  const systemTimeLabel = useMemo(() => {
+    const now = new Date(clockNowMs);
+    const local = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const utc = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' });
+    return `${local} · ${utc}Z`;
+  }, [clockNowMs]);
   const focusStatusLabel = workbenchFocusMode ? FOCUS_APP_LABEL_BY_ID[workbenchFocusMode] || workbenchFocusMode : 'Standby';
   const alertStatusLabel = tray.unreadCount > 0 ? `${tray.unreadCount} Alerts` : 'Alerts Clear';
 
