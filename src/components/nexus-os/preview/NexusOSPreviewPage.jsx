@@ -794,26 +794,24 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
-            onClick={() => setCommandDeckOpen(true)}
-            title="Open command deck"
-            aria-label="Open command deck (Ctrl+Shift+P)"
-            aria-keyshortcuts="Control+Shift+P">
+        <button
+          type="button"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
+          onClick={() => setCommandDeckOpen(true)}
+          title="Open command deck"
+          aria-label="Open command deck (Ctrl+Shift+P)"
+          aria-keyshortcuts="Control+Shift+P">
 
-            <Search className="w-4 h-4 text-zinc-400 group-hover:text-orange-400 transition-colors" />
-            <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
-              Command Deck
-            </span>
-            <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50 ml-auto">
-              <span>⌃</span>
-              <span>⇧</span>
-              <span>P</span>
-            </kbd>
-          </button>
-        </div>
+          <Search className="w-4 h-4 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+          <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
+            Command Deck
+          </span>
+          <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50 ml-auto">
+            <span>⌃</span>
+            <span>⇧</span>
+            <span>P</span>
+          </kbd>
+        </button>
 
         <div className="flex items-center gap-2 ml-auto">
           <div
