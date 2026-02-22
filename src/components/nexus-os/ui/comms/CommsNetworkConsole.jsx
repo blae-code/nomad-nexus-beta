@@ -16,60 +16,71 @@ import {
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
+  type CommsIncidentRecord,
+  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
+  type CommsDirectiveThreadLane,
+  type DirectiveDeliveryState,
+  type DisciplineAlert,
+  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
+import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+
+interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
 
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const THREAD_LIST_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS = {
+const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node) {
+function nodeFill(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node) {
+function nodeBorder(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function incidentPriorityTone(priority) {
+function incidentPriorityTone(priority: string): 'danger' | 'warning' | 'active' {
   if (priority === 'CRITICAL') return 'danger';
   if (priority === 'HIGH') return 'warning';
   return 'active';
 }
 
-function incidentStatusTone(status) {
+function incidentStatusTone(status: CommsIncidentStatus): 'warning' | 'active' | 'ok' | 'neutral' {
   if (status === 'NEW') return 'warning';
   if (status === 'ACKED') return 'active';
   if (status === 'ASSIGNED') return 'ok';
   return 'neutral';
 }
 
-function formatAge(nowMs, createdAtMs) {
+function formatAge(nowMs: number, createdAtMs: number): string {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -77,25 +88,25 @@ function formatAge(nowMs, createdAtMs) {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant) {
+function isParticipantSpeaking(participant: any): boolean {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity) {
+function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status) {
+function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function directiveByThreadAction(action) {
+function directiveByThreadAction(action: CommsDirectiveThreadLane['nextAction']): 'REROUTE' | 'RESTRICT' | 'CHECKIN' {
   if (action === 'REROUTE') return 'REROUTE';
   if (action === 'RESTRICT') return 'RESTRICT';
   return 'CHECKIN';
@@ -108,26 +119,26 @@ export default function CommsNetworkConsole({
   events = [],
   actorId,
   onCreateMacroEvent,
-}) {
+}: CommsNetworkConsoleProps) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
-  const voiceNet = useVoiceNet();
-  const [snapshot, setSnapshot] = useState(null);
+  const voiceNet = useVoiceNet() as any;
+  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(false);
   const [healthPage, setHealthPage] = useState(0);
   const [incidentPage, setIncidentPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState({});
+  const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
   const [threadPage, setThreadPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [rightPanelView, setRightPanelView] = useState('incidents');
-  const [directiveDispatches, setDirectiveDispatches] = useState([]);
+  const [rightPanelView, setRightPanelView] = useState<'incidents' | 'threads'>('incidents');
+  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -140,7 +151,7 @@ export default function CommsNetworkConsole({
         roster,
       });
       setSnapshot(next);
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'Failed to load comms graph.');
     } finally {
       setLoading(false);
@@ -166,7 +177,7 @@ export default function CommsNetworkConsole({
   const edges = snapshot?.edges || [];
   const nodeMap = useMemo(
     () =>
-      nodes.reduce((acc, node) => {
+      nodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
@@ -263,7 +274,7 @@ export default function CommsNetworkConsole({
   const voicePageCount = Math.max(1, Math.ceil(voiceNets.length / VOICE_LIST_PAGE_SIZE));
   const visibleVoiceNets = voiceNets.slice(voicePage * VOICE_LIST_PAGE_SIZE, voicePage * VOICE_LIST_PAGE_SIZE + VOICE_LIST_PAGE_SIZE);
   const monitoredVoiceSet = useMemo(
-    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id) => String(id || ''))),
+    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id: unknown) => String(id || ''))),
     [voiceNet.monitoredNetIds]
   );
   const voiceParticipants = useMemo(
@@ -271,7 +282,7 @@ export default function CommsNetworkConsole({
     [voiceNet.participants]
   );
   const activeSpeakers = useMemo(
-    () => voiceParticipants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 4),
+    () => voiceParticipants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
     [voiceParticipants]
   );
   const disciplineAlerts = useMemo(
@@ -295,27 +306,27 @@ export default function CommsNetworkConsole({
         return {
           label: 'Acknowledge Incident',
           detail: 'Confirm ownership before dispatching reroutes.',
-          action: 'ACK',
+          action: 'ACK' as const,
         };
       }
       if (selectedIncident.status === 'ACKED') {
         return {
           label: 'Assign Resolution Element',
           detail: 'Lock responsible team and begin mitigation.',
-          action: 'ASSIGN',
+          action: 'ASSIGN' as const,
         };
       }
       if (selectedIncident.status === 'ASSIGNED') {
         return {
           label: 'Issue Reroute Directive',
           detail: 'Reduce traffic pressure while recovery executes.',
-          action: 'REROUTE',
+          action: 'REROUTE' as const,
         };
       }
       return {
         label: 'Incident Resolved',
         detail: 'Run check-in broadcast to confirm net stability.',
-        action: 'CHECKIN',
+        action: 'CHECKIN' as const,
       };
     }
 
@@ -323,7 +334,7 @@ export default function CommsNetworkConsole({
       return {
         label: 'Prioritize Critical Queue',
         detail: 'Select a critical incident and acknowledge immediately.',
-        action: 'FOCUS_CRITICAL',
+        action: 'FOCUS_CRITICAL' as const,
       };
     }
 
@@ -331,14 +342,14 @@ export default function CommsNetworkConsole({
       return {
         label: 'Stabilize Degraded Lanes',
         detail: 'Issue restriction directive to protect command traffic.',
-        action: 'RESTRICT',
+        action: 'RESTRICT' as const,
       };
     }
 
     return {
       label: 'Maintain Readiness',
       detail: 'Run periodic check-in to verify net discipline.',
-      action: 'CHECKIN',
+      action: 'CHECKIN' as const,
     };
   }, [selectedIncident, criticalIncidentCount, degradedChannelCount]);
 
@@ -380,7 +391,7 @@ export default function CommsNetworkConsole({
   }, [directiveThreads, selectedThreadId]);
 
   const emitMacro = useCallback(
-    (eventType, payload, successMessage) => {
+    (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
       if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
       setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
     },
@@ -388,7 +399,15 @@ export default function CommsNetworkConsole({
   );
 
   const emitDirectiveMacro = useCallback(
-    (input) => {
+    (input: {
+      eventType: CqbEventType;
+      channelId: string;
+      directive: string;
+      successMessage: string;
+      incidentId?: string;
+      laneId?: string;
+      payload?: Record<string, unknown>;
+    }) => {
       const dispatch = createDirectiveDispatchRecord({
         channelId: input.channelId,
         laneId: input.laneId,
@@ -425,7 +444,7 @@ export default function CommsNetworkConsole({
   );
 
   const transitionIncident = useCallback(
-    (nextStatus) => {
+    (nextStatus: 'ACKED' | 'ASSIGNED' | 'RESOLVED') => {
       if (!selectedIncident) return;
       if (!canTransitionIncidentStatus(selectedIncident.status, nextStatus)) return;
 
@@ -447,7 +466,10 @@ export default function CommsNetworkConsole({
   );
 
   const dispatchDirective = useCallback(
-    (directive, options = {}) => {
+    (
+      directive: 'REROUTE' | 'RESTRICT' | 'CHECKIN',
+      options?: { channelId?: string; laneId?: string; incidentId?: string }
+    ) => {
       const fallbackChannelId = channelHealth[0]?.channelId;
       const incidentChannelId = selectedIncident?.channelId && selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : '';
       const threadChannelId = selectedThread?.channelId && selectedThread.channelId !== 'UNSCOPED' ? selectedThread.channelId : '';
@@ -513,7 +535,7 @@ export default function CommsNetworkConsole({
   }, [selectedIncident, selectedThread, channelHealth, emitDirectiveMacro]);
 
   const executeThreadAction = useCallback(
-    (lane) => {
+    (lane: CommsDirectiveThreadLane) => {
       if (!lane) return;
       const directive = directiveByThreadAction(lane.nextAction);
       dispatchDirective(directive, { channelId: lane.channelId, laneId: lane.id });
@@ -554,7 +576,7 @@ export default function CommsNetworkConsole({
   }, [commandRecommendation, transitionIncident, dispatchDirective, incidents]);
 
   const joinVoiceNet = useCallback(
-    async (netId, monitorOnly = false) => {
+    async (netId: string, monitorOnly = false) => {
       if (!netId) return;
       if (!voiceRuntimeUser?.id) {
         setFeedback('Voice profile unavailable.');
@@ -573,7 +595,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(monitorOnly ? `Monitoring ${netId}` : `Joined ${netId}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Voice join failed.');
       }
     },
@@ -581,7 +603,7 @@ export default function CommsNetworkConsole({
   );
 
   const setTransmitVoiceNet = useCallback(
-    async (netId) => {
+    async (netId: string) => {
       if (!netId) return;
       if (!voiceRuntimeUser?.id) {
         setFeedback('Voice profile unavailable.');
@@ -594,7 +616,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(`TX lane set: ${netId}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Unable to set transmit net.');
       }
     },
@@ -602,11 +624,11 @@ export default function CommsNetworkConsole({
   );
 
   const leaveVoiceNet = useCallback(
-    async (netId) => {
+    async (netId: string) => {
       try {
         await voiceNet.leaveNet?.(netId);
         setFeedback(`Left ${netId}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Unable to leave net.');
       }
     },
@@ -614,50 +636,67 @@ export default function CommsNetworkConsole({
   );
 
   if (loading) {
-    return <PanelLoadingState label="Loading comms graph..." />;
+    return <PanelLoadingState label="Loading comms map..." />;
   }
 
-  if (error || !snapshot) {
-    return <DegradedStateCard state="OFFLINE" reason={error || 'Comms graph data unavailable.'} actionLabel="Retry" onAction={loadGraph} />;
+  if (error) {
+    return <DegradedStateCard state="OFFLINE" reason={error} actionLabel="Retry" onAction={() => setError(null)} />;
   }
 
   return (
-    <div className="h-full min-h-0 grid grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] gap-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="h-full min-h-0 flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Command</h3>
-          <p className="text-xs text-zinc-500 truncate">Template: {snapshot.templateId} · Deterministic incident flow</p>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Map</h3>
+          <p className="text-xs text-zinc-500 truncate">2D tactical communications visualization</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <NexusButton size="sm" intent={showMonitoring ? 'primary' : 'subtle'} onClick={() => setShowMonitoring((prev) => !prev)}>
-            Monitoring
+          <NexusButton size="sm" intent={showVoiceLinks ? 'primary' : 'subtle'} onClick={() => setShowVoiceLinks((prev) => !prev)}>
+            <Signal className="w-3.5 h-3.5 mr-1" />
+            Voice
           </NexusButton>
-          <NexusButton size="sm" intent={showUsers ? 'primary' : 'subtle'} onClick={() => setShowUsers((prev) => !prev)}>
-            Users
-          </NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={loadGraph}>
-            <RefreshCcw className="w-3.5 h-3.5 mr-1" />
-            Refresh
+          <NexusButton size="sm" intent={showTextLinks ? 'primary' : 'subtle'} onClick={() => setShowTextLinks((prev) => !prev)}>
+            <Radio className="w-3.5 h-3.5 mr-1" />
+            Text
           </NexusButton>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap text-[11px] text-zinc-500">
-        <NexusBadge tone="active">Channels {channels.length}</NexusBadge>
-        <NexusBadge tone="neutral">Nodes {nodes.length}</NexusBadge>
-        <NexusBadge tone="neutral">Edges {edges.length}</NexusBadge>
-        <NexusBadge tone={criticalIncidentCount > 0 ? 'danger' : 'neutral'}>
-          Open Incidents {unresolvedIncidentCount}
+      <div className="flex items-center gap-2 flex-wrap text-[11px] shrink-0">
+        <NexusBadge tone="active">Voice Nets {voiceNets.length}</NexusBadge>
+        <NexusBadge tone="neutral">Roster {roster.length}</NexusBadge>
+        <NexusBadge tone={activeSpeakers.length > 0 ? 'warning' : 'neutral'}>
+          <Zap className="w-3 h-3 mr-1" />
+          Active {activeSpeakers.length}
         </NexusBadge>
-        <NexusBadge tone={disciplineAlerts.some((entry) => entry.severity === 'critical') ? 'danger' : disciplineAlerts.length > 0 ? 'warning' : 'neutral'}>
-          Discipline Alerts {disciplineAlerts.length}
-        </NexusBadge>
-        <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : deliveryStats.confidencePct >= 40 ? 'warning' : 'danger'}>
-          Delivery {deliveryStats.confidencePct}%
+        <NexusBadge tone={activeVoiceNetId ? 'active' : 'neutral'}>
+          TX {activeVoiceNetId || 'None'}
         </NexusBadge>
       </div>
 
-      <section className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+      <div className="flex-1 min-h-0 relative">
+        <MapStageCanvas
+          nodes={commsNetNodes}
+          edges={[]}
+          commsLinks={commsLinks}
+          controlSignals={controlSignals}
+          locationEstimates={locationEstimates}
+          showCommsLayer={true}
+          showPresenceLayer={true}
+          onNodeClick={(node) => setFeedback(`Selected: ${node.label || node.id}`)}
+        />
+      </div>
+
+      {feedback && (
+        <div className="shrink-0 rounded border border-orange-500/30 bg-orange-500/10 px-3 py-2">
+          <p className="text-xs text-orange-200">{feedback}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+{/* REMOVED DEPRECATED CODE - replaced with 2D map-based comms interface */}
         <div className="rounded border border-orange-500/35 bg-gradient-to-br from-orange-500/20 to-zinc-950/60 px-2.5 py-2">
           <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-orange-300">
             Net Health
@@ -716,7 +755,7 @@ export default function CommsNetworkConsole({
           </div>
           <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             {activeSpeakers.length > 0 ? (
-              activeSpeakers.map((participant, index) => (
+              activeSpeakers.map((participant: any, index: number) => (
                 <div key={`speaker:${participant.id || participant.callsign || index}`} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
                   <div className="text-[10px] text-zinc-200 truncate">{participant.callsign || participant.name || participant.id || 'Operator'}</div>
                   <div className="text-[9px] text-zinc-500 uppercase tracking-wide">{participant.state || 'Speaking'}</div>
@@ -762,7 +801,7 @@ export default function CommsNetworkConsole({
 
         <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-            {visibleVoiceNets.map((net) => {
+            {visibleVoiceNets.map((net: any) => {
               const netId = String(net?.id || net?.code || '').trim();
               const isMonitored = monitoredVoiceSet.has(netId);
               const isTransmit = netId === String(voiceNet.transmitNetId || '');
@@ -855,9 +894,9 @@ export default function CommsNetworkConsole({
 
       <div className="min-h-0 grid gap-3 xl:grid-cols-[minmax(0,1.32fr)_minmax(0,1fr)]">
         <section className="min-h-0 flex flex-col gap-2">
-          <div className="flex-1 min-h-[220px] rounded border border-zinc-800 bg-zinc-950/65 p-6 relative overflow-hidden">
-            <svg viewBox="-5 -5 110 110" preserveAspectRatio="xMidYMid meet" className="absolute inset-6 w-[calc(100%-3rem)] h-[calc(100%-3rem)]">
-              {edges.map((edge) => {
+          <div className="flex-1 min-h-[220px] rounded border border-zinc-800 bg-zinc-950/65 p-2 relative overflow-hidden">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+              {edges.map((edge: CommsGraphEdge) => {
                 const source = nodeMap[edge.sourceId];
                 const target = nodeMap[edge.targetId];
                 if (!source || !target) return null;
