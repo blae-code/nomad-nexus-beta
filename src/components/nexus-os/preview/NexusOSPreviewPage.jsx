@@ -785,15 +785,6 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               <span className="text-[9px] uppercase tracking-wider text-zinc-300">{bridgeId}</span>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="hidden lg:flex items-center gap-1.5">
-
-
-
-            <div className="h-3 w-px bg-zinc-700/50" />
-          </div>
 
           <div className="flex items-center gap-1.5">
             <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
@@ -801,7 +792,9 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               {online ? 'Link Ready' : 'Link Down'}
             </NexusBadge>
           </div>
+        </div>
 
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
