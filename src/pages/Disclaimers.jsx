@@ -73,20 +73,20 @@ export default function Disclaimers() {
 
   return (
     <RouteGuard requiredAuth="authenticated">
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+    <div className="min-h-screen bg-zinc-950 relative overflow-hidden">
       <style>{glowStyle}</style>
       
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black opacity-100" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(200,68,50,0.05)_1px,transparent_1px),linear-gradient(rgba(200,68,50,0.05)_1px,transparent_1px)] bg-[length:40px_40px] opacity-30" />
-      <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15)_0px,rgba(0,0,0,0.15)_1px,transparent_1px,transparent_2px)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-black to-zinc-950" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[length:48px_48px] opacity-40" />
+      <div className="absolute inset-0 scanline-overlay bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.12)_0px,rgba(0,0,0,0.12)_1px,transparent_1px,transparent_2px)]" />
       
-      <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-red-500/40 opacity-50" />
-      <div className="absolute top-0 right-0 w-40 h-40 border-t-2 border-r-2 border-red-500/40 opacity-50" />
-      <div className="absolute bottom-0 left-0 w-40 h-40 border-b-2 border-l-2 border-red-500/40 opacity-50" />
-      <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-red-500/40 opacity-50" />
+      <div className="absolute top-0 left-0 w-48 h-48 border-t border-l border-red-500/30" />
+      <div className="absolute top-0 right-0 w-48 h-48 border-t border-r border-red-500/30" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 border-b border-l border-red-500/30" />
+      <div className="absolute bottom-0 right-0 w-48 h-48 border-b border-r border-red-500/30" />
       
-      <div className="absolute top-1/3 -left-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
-      <div className="absolute bottom-1/3 -right-40 w-80 h-80 bg-red-600/5 rounded-full blur-3xl opacity-15" />
+      <div className="absolute top-1/3 -left-40 w-96 h-96 bg-red-600/8 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/3 -right-40 w-96 h-96 bg-red-600/8 rounded-full blur-3xl" />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
@@ -104,86 +104,114 @@ export default function Disclaimers() {
             </div>
           </div>
 
-          {/* Step 1: PWA Installation Disclaimer */}
           {step === 1 && (
-            <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
-              <div className="flex items-center gap-3 mb-6">
-                <Download className="w-8 h-8 text-red-600" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
-                  Nomad Nexus Installation
-                </h2>
-              </div>
+           <div className="border border-red-700/40 bg-zinc-900/50 backdrop-blur-xl p-10 shadow-2xl shadow-red-900/40 rounded-lg glow-box">
+             <div className="flex items-center gap-4 mb-8">
+               <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30">
+                 <Download className="w-7 h-7 text-red-400" />
+               </div>
+               <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">
+                 Nomad Nexus Installation
+               </h2>
+             </div>
 
-              <div className="bg-slate-900/50 border-l-4 border-red-500 p-5 mb-6">
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  <span className="text-red-400 font-bold">Nomad Nexus</span> is optimized as a <span className="text-red-400 font-bold">Progressive Web App (PWA)</span>—a web application you can install directly on your device. It works best in <span className="font-bold">full-screen mode on a dedicated monitor</span> for tactical operations and situational awareness.
+              <div className="bg-zinc-950/60 border-l-4 border-red-500/70 p-6 mb-8 rounded">
+                <p className="text-sm text-zinc-200 leading-relaxed">
+                  <span className="text-red-400 font-bold">Nomad Nexus</span> is optimized as a <span className="text-red-400 font-semibold">Progressive Web App (PWA)</span>—a web application you can install directly on your device. It works best in <span className="font-semibold text-zinc-100">full-screen mode on a dedicated monitor</span> for tactical operations and situational awareness.
                 </p>
               </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="bg-slate-900/40 border border-slate-800 p-4 rounded">
-                  <div className="flex items-start gap-3 mb-2">
+              <div className="space-y-3 mb-8">
+                <div className="bg-zinc-900/60 border border-zinc-800/60 p-5 rounded-lg">
+                  <div className="flex items-start gap-3.5">
                     <Download className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-bold text-white mb-2">How to Install</h3>
-                      <ul className="text-sm text-slate-400 space-y-1 ml-2">
-                        <li>• <span className="text-slate-300">Look for the <span className="font-mono text-orange-400">⬇️ Install</span> button in your browser's address bar</span></li>
-                        <li>• <span className="text-slate-300">Click to add <span className="text-red-400 font-bold">Nomad Nexus</span> to your home screen or desktop</span></li>
-                        <li>• <span className="text-slate-300">Launch like any other application</span></li>
-                        <li>• <span className="text-slate-300">Works offline with cached data</span></li>
+                      <h3 className="font-bold text-zinc-100 mb-2.5 text-sm">How to Install</h3>
+                      <ul className="text-sm text-zinc-300 space-y-1.5">
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-400 mt-0.5">•</span>
+                          <span>Look for the <span className="font-mono text-orange-400 bg-zinc-950/50 px-1.5 py-0.5 rounded">Install</span> button in your browser's address bar</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-400 mt-0.5">•</span>
+                          <span>Click to add <span className="text-red-400 font-semibold">Nomad Nexus</span> to your desktop</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-400 mt-0.5">•</span>
+                          <span>Launch like any other application</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-400 mt-0.5">•</span>
+                          <span>Works offline with cached data</span>
+                        </li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-900/40 border border-slate-800 p-4 rounded">
-                  <div className="flex items-start gap-3 mb-2">
+                <div className="bg-zinc-900/60 border border-zinc-800/60 p-5 rounded-lg">
+                  <div className="flex items-start gap-3.5">
                     <Zap className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-bold text-white mb-2">Advantages of Installing</h3>
-                      <ul className="text-sm text-slate-400 space-y-1 ml-2">
-                        <li>• <span className="text-slate-300">Faster load times and smoother performance</span></li>
-                        <li>• <span className="text-slate-300">Full-screen immersion without browser UI clutter</span></li>
-                        <li>• <span className="text-slate-300">Dedicated application icon in your taskbar/dock</span></li>
-                        <li>• <span className="text-slate-300">Push notifications for ops and mission alerts</span></li>
-                        <li>• <span className="text-slate-300">Works offline with data synchronization when reconnected</span></li>
+                      <h3 className="font-bold text-zinc-100 mb-2.5 text-sm">Advantages of Installing</h3>
+                      <ul className="text-sm text-zinc-300 space-y-1.5">
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-400 mt-0.5">•</span>
+                          <span>Faster load times and smoother performance</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-400 mt-0.5">•</span>
+                          <span>Full-screen immersion without browser UI clutter</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-400 mt-0.5">•</span>
+                          <span>Dedicated application icon in your taskbar/dock</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-400 mt-0.5">•</span>
+                          <span>Push notifications for ops and mission alerts</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-400 mt-0.5">•</span>
+                          <span>Works offline with data synchronization when reconnected</span>
+                        </li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-amber-950/40 border border-amber-900/60 p-4 rounded">
-                  <div className="flex items-start gap-3">
-                    <Lock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="bg-amber-950/30 border border-amber-900/50 p-5 rounded-lg">
+                  <div className="flex items-start gap-3.5">
+                    <Lock className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-bold text-white mb-2">Security & Trust</h3>
-                      <p className="text-sm text-slate-400 leading-relaxed">
+                      <h3 className="font-bold text-zinc-100 mb-2.5 text-sm">Security & Trust</h3>
+                      <p className="text-sm text-zinc-300 leading-relaxed">
                         This PWA is served over encrypted HTTPS. Your data never leaves our secure servers. We use industry-standard encryption for all communications. Installing as a PWA does not grant any special access to your device—it's simply a packaged version of the web application. You maintain full control and can uninstall at any time like any other app.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-900/40 border border-slate-800 p-4 rounded">
-                  <div className="flex items-start gap-3">
+                <div className="bg-zinc-900/60 border border-zinc-800/60 p-5 rounded-lg">
+                  <div className="flex items-start gap-3.5">
                     <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-bold text-white mb-2">Mobile & Tablet Coming Soon</h3>
-                      <p className="text-sm text-slate-400 leading-relaxed">
-                        <span className="text-red-400 font-bold">Mobile and tablet support</span> is currently in development. For now, the PWA is optimized for desktop and laptop displays in full-screen mode. Using it on mobile/tablet will still work, but the layout may not be optimal for those screen sizes.
+                      <h3 className="font-bold text-zinc-100 mb-2.5 text-sm">Mobile & Tablet Coming Soon</h3>
+                      <p className="text-sm text-zinc-300 leading-relaxed">
+                        <span className="text-red-400 font-semibold">Mobile and tablet support</span> is currently in development. For now, the PWA is optimized for desktop and laptop displays in full-screen mode. Using it on mobile/tablet will still work, but the layout may not be optimal for those screen sizes.
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
+                </div>
 
-              <label className="flex items-start gap-3 mb-6 cursor-pointer group">
-                <div className={`mt-0.5 w-5 h-5 border-2 flex items-center justify-center transition-all ${
+              <label className="flex items-start gap-3.5 mb-8 cursor-pointer group">
+                <div className={`mt-0.5 w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
                   acceptedPWA 
                     ? 'border-red-500 bg-red-500/20' 
-                    : 'border-slate-700 group-hover:border-slate-600'
+                    : 'border-zinc-700 group-hover:border-zinc-600'
                 }`}>
-                  {acceptedPWA && <Check className="w-3 h-3 text-red-500" />}
+                  {acceptedPWA && <Check className="w-3.5 h-3.5 text-red-400" />}
                 </div>
                 <div className="flex-1">
                   <input
@@ -192,36 +220,35 @@ export default function Disclaimers() {
                     onChange={(e) => setAcceptedPWA(e.target.checked)}
                     className="sr-only"
                   />
-                  <span className="text-sm text-white">
-                    I understand that <span className="text-red-400 font-bold">Nomad Nexus</span> is optimized for PWA installation and desktop use, and that mobile support is coming soon.
+                  <span className="text-sm text-zinc-100 leading-relaxed">
+                    I understand that <span className="text-red-400 font-semibold">Nomad Nexus</span> is optimized for PWA installation and desktop use, and that mobile support is coming soon.
                   </span>
                 </div>
               </label>
 
-              <div className="flex gap-3">
-                <Button onClick={handleNext} disabled={!acceptedPWA} className="flex-1">
-                  Accept & Continue <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
+              <Button onClick={handleNext} disabled={!acceptedPWA} className="w-full h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
+                Accept & Continue <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
           )}
 
-          {/* Step 2: Data & Privacy Disclaimer */}
           {step === 2 && (
-            <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
-              <div className="flex items-center gap-3 mb-6">
-                <Database className="w-8 h-8 text-red-600" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
-                  Data & Privacy
-                </h2>
-              </div>
+           <div className="border border-red-700/40 bg-zinc-900/50 backdrop-blur-xl p-10 shadow-2xl shadow-red-900/40 rounded-lg glow-box">
+             <div className="flex items-center gap-4 mb-8">
+               <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30">
+                 <Database className="w-7 h-7 text-red-400" />
+               </div>
+               <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">
+                 Data & Privacy
+               </h2>
+             </div>
 
-              <div className="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2">
-                <div className="bg-slate-900/40 border border-slate-800 p-4 rounded">
-                  <div className="flex items-start gap-3">
+             <div className="space-y-3 mb-8 max-h-96 overflow-y-auto pr-2">
+                <div className="bg-zinc-900/60 border border-zinc-800/60 p-5 rounded-lg">
+                  <div className="flex items-start gap-3.5">
                     <Server className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-bold text-white mb-2">What Data We Collect</h3>
+                      <h3 className="font-bold text-zinc-100 mb-2.5 text-sm">What Data We Collect</h3>
                       <p className="text-sm text-slate-400 leading-relaxed mb-2">
                         When you use Nomad Nexus, we collect and store:
                       </p>
@@ -298,55 +325,56 @@ export default function Disclaimers() {
                 </div>
               </div>
 
-              <label className="flex items-start gap-3 mb-6 cursor-pointer group">
-                <div className={`mt-0.5 w-5 h-5 border-2 flex items-center justify-center transition-all ${
-                  acceptedData 
-                    ? 'border-red-500 bg-red-500/20' 
-                    : 'border-slate-700 group-hover:border-slate-600'
-                }`}>
-                  {acceptedData && <Check className="w-3 h-3 text-red-500" />}
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="checkbox"
-                    checked={acceptedData}
-                    onChange={(e) => setAcceptedData(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <span className="text-sm text-white">
-                    I understand how my data is collected, stored, and protected, and I accept the data practices of Nomad Nexus.
-                  </span>
-                </div>
+              <label className="flex items-start gap-3.5 mb-8 cursor-pointer group">
+              <div className={`mt-0.5 w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
+                acceptedData 
+                  ? 'border-red-500 bg-red-500/20' 
+                  : 'border-zinc-700 group-hover:border-zinc-600'
+              }`}>
+                {acceptedData && <Check className="w-3.5 h-3.5 text-red-400" />}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="checkbox"
+                  checked={acceptedData}
+                  onChange={(e) => setAcceptedData(e.target.checked)}
+                  className="sr-only"
+                />
+                <span className="text-sm text-zinc-100 leading-relaxed">
+                  I understand how my data is collected, stored, and protected, and I accept the data practices of Nomad Nexus.
+                </span>
+              </div>
               </label>
 
               <div className="flex gap-3">
-                <Button onClick={handleBack} variant="outline" className="flex-1">
-                  Back
-                </Button>
-                <Button onClick={handleNext} disabled={!acceptedData} className="flex-1">
-                  Accept & Continue <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+              <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
+                Back
+              </Button>
+              <Button onClick={handleNext} disabled={!acceptedData} className="flex-1 h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
+                Accept & Continue <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: AI Disclaimer */}
           {step === 3 && (
-            <div className="border-2 border-red-700/70 bg-black/95 backdrop-blur-xl p-8 shadow-2xl shadow-red-700/30 glow-box">
-              <div className="flex items-center gap-3 mb-6">
-                <Brain className="w-8 h-8 text-red-600" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-white">
-                  AI-Powered Features
-                </h2>
-              </div>
+           <div className="border border-red-700/40 bg-zinc-900/50 backdrop-blur-xl p-10 shadow-2xl shadow-red-900/40 rounded-lg glow-box">
+             <div className="flex items-center gap-4 mb-8">
+               <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30">
+                 <Brain className="w-7 h-7 text-red-400" />
+               </div>
+               <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">
+                 AI-Powered Features
+               </h2>
+             </div>
 
-              <div className="bg-slate-900/50 border-l-4 border-red-500 p-5 mb-6">
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  <span className="text-red-400 font-bold">Nomad Nexus</span> uses AI to enhance your tactical operations with intelligent insights, analysis, and assistance. <span className="text-red-400 font-bold">All AI features are optional and customizable.</span>
+              <div className="bg-zinc-950/60 border-l-4 border-red-500/70 p-6 mb-8 rounded">
+                <p className="text-sm text-zinc-200 leading-relaxed">
+                  <span className="text-red-400 font-semibold">Nomad Nexus</span> uses AI to enhance your tactical operations with intelligent insights, analysis, and assistance. <span className="text-red-400 font-semibold">All AI features are optional and customizable.</span>
                 </p>
               </div>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 mb-8">
                 <div className="bg-slate-900/40 border border-slate-800 p-4 rounded">
                   <div className="flex items-start gap-3 mb-2">
                     <Zap className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
@@ -465,10 +493,10 @@ export default function Disclaimers() {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleBack} variant="outline" className="flex-1">
+                <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
                   Back
                 </Button>
-                <Button onClick={handleProceedToOnboarding} disabled={!acceptedAI || loading} className="flex-1">
+                <Button onClick={handleProceedToOnboarding} disabled={!acceptedAI || loading} className="flex-1 h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
                   {loading ? 'Finalizing...' : 'Accept & Proceed to Onboarding'}
                 </Button>
               </div>

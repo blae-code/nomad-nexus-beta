@@ -142,109 +142,131 @@ export default function Onboarding() {
     <div className="nexus-immersive-screen min-h-screen relative overflow-hidden">
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-3xl w-full">
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex justify-between mb-2">
+          <div className="mb-10">
+            <div className="flex items-center gap-2 mb-3">
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
-                  className={`w-full h-1.5 transition-all duration-300 ${s <= step ? 'bg-gradient-to-r from-red-700 to-red-600' : 'bg-slate-800'} ${s < 5 ? 'mr-2' : ''}`}
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                    s < step 
+                      ? 'bg-green-500/80' 
+                      : s === step 
+                        ? 'bg-gradient-to-r from-red-600 to-red-500 shadow-lg shadow-red-500/40' 
+                        : 'bg-zinc-800/60'
+                  }`}
                 />
               ))}
             </div>
-            <div className="text-xs text-slate-600 text-center font-mono uppercase tracking-widest">
-              ▼ Step {step} of 5 ▼
+            <div className="flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.2em]">
+              <div className="h-px w-6 bg-red-700/40" />
+              <span className="text-zinc-500 font-bold">Step {step} of 5</span>
+              <div className="h-px w-6 bg-red-700/40" />
             </div>
           </div>
 
-          {/* Step 1: Welcome */}
           {step === 1 && (
-           <div className="nexus-immersive-panel p-8">
-             <div className="flex items-center justify-center mb-6">
+           <div className="nexus-immersive-panel p-10 rounded-lg shadow-2xl shadow-red-900/30">
+             <div className="flex items-center justify-center mb-8 relative">
+               <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-28 h-28 rounded-full bg-red-500/10 animate-pulse" />
+               </div>
                <img 
                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
                  alt="Redscar Nomads"
-                 className="w-20 h-20 drop-shadow-lg"
+                 className="w-24 h-24 drop-shadow-2xl relative z-10"
                />
               </div>
-              <h1 className="nexus-section-title text-4xl font-black uppercase tracking-widest text-center text-white mb-4">
+              <h1 className="text-4xl font-black uppercase tracking-[0.25em] text-center text-white mb-6 drop-shadow-lg">
                 Welcome, Wanderer
               </h1>
-              <p className="text-center text-slate-400 text-sm mb-8 leading-relaxed">
-                You have been granted passage to join <span className="text-red-400 font-bold">Redscar Nomads</span>, 
-                a band of wanderers united by <span className="text-red-400">The Eternal Voyage</span>. 
+              <p className="text-center text-zinc-300 text-sm mb-8 leading-relaxed max-w-xl mx-auto">
+                You have been granted passage to join <span className="text-red-400 font-semibold">Redscar Nomads</span>, 
+                a band of wanderers united by <span className="text-red-400 font-semibold">The Eternal Voyage</span>. 
                 Together, we explore the new and exotic of the 'verse, building real-world friendships 
                 and carving our path among the stars.
               </p>
-              <div className="bg-slate-900/50 border-l-4 border-red-500 p-4 mb-6">
-                <p className="text-xs text-slate-400 italic">
+              <div className="bg-zinc-950/60 border-l-4 border-red-500/70 p-5 mb-8 rounded max-w-xl mx-auto">
+                <p className="text-xs text-zinc-400 italic leading-relaxed">
                   "Members always know they have a bonfire to come back to, no matter how long they have been gone."
                 </p>
               </div>
-              <Button onClick={handleNext} className="w-full">
+              <Button onClick={handleNext} className="w-full h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
                 Begin Journey <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           )}
 
-          {/* Step 2: Identity */}
           {step === 2 && (
-           <div className="nexus-immersive-panel p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <Compass className="w-8 h-8 text-red-600" />
-                <h2 className="nexus-section-title text-2xl font-black uppercase tracking-widest text-white">
+           <div className="nexus-immersive-panel p-10 rounded-lg shadow-2xl shadow-red-900/30">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30">
+                  <Compass className="w-7 h-7 text-red-400" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">
                   Establish Identity
                 </h2>
               </div>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-5 mb-8">
                 <div>
-                  <label className="nexus-label block text-red-300 mb-2">
-                    ◆ RSI Callsign (Verified)
+                  <label className="block text-xs font-bold uppercase tracking-[0.15em] text-amber-300/90 mb-2.5">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-1 h-1 bg-amber-400/70 rounded-full" />
+                      RSI Callsign (Verified)
+                    </span>
                   </label>
                   <Input
                     value={formData.rsiCallsign}
                     disabled
-                    className="border-red-500/35 text-slate-400 cursor-not-allowed"
+                    className="h-11 bg-zinc-950/40 border-amber-500/30 text-zinc-400 cursor-not-allowed"
                   />
-                  <p className="text-xs text-slate-600 mt-1">This is your verified Star Citizen identity</p>
+                  <p className="text-xs text-zinc-600 mt-1.5">This is your verified Star Citizen identity</p>
                 </div>
 
                 <div>
-                  <label className="nexus-label block text-red-300 mb-2">
-                    ◆ Nomad Nexus Callsign (Display Name)
+                  <label className="block text-xs font-bold uppercase tracking-[0.15em] text-emerald-300/90 mb-2.5">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-1 h-1 bg-emerald-400/70 rounded-full" />
+                      Nomad Nexus Callsign (Display Name)
+                    </span>
                   </label>
                   <Input
                     placeholder="Choose your display name..."
                     value={formData.nomadCallsign}
                     onChange={(e) => setFormData({ ...formData, nomadCallsign: e.target.value })}
-                    className="border-red-500/35"
+                    className="h-11 bg-zinc-950/40 border-emerald-500/40 focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/30 transition-all"
                   />
-                  <p className="text-xs text-slate-600 mt-1">
+                  <p className="text-xs text-zinc-600 mt-1.5">
                     This is how you'll appear to other Nomads. Can be changed anytime.
                   </p>
                 </div>
 
                 <div>
-                  <label className="nexus-label block text-red-300 mb-2">
-                    ◆ Bio (Optional)
+                  <label className="block text-xs font-bold uppercase tracking-[0.15em] text-cyan-300/90 mb-2.5">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-1 h-1 bg-cyan-400/70 rounded-full" />
+                      Bio (Optional)
+                    </span>
                   </label>
                   <Textarea
                     placeholder="Tell us your story, wanderer..."
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    className="h-24 border-red-500/35"
+                    className="h-24 bg-zinc-950/40 border-cyan-500/40 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/30 transition-all resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="nexus-label block text-red-300 mb-2">
-                    ◆ Preferred Activity Themes (Up to 3)
+                  <label className="block text-xs font-bold uppercase tracking-[0.15em] text-violet-300/90 mb-2.5">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-1 h-1 bg-violet-400/70 rounded-full" />
+                      Preferred Activity Themes (Up to 3)
+                    </span>
                   </label>
-                  <p className="text-xs text-slate-500 mb-2">
+                  <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
                     Your selections drive preconfigured NexusOS workspace packs when you first enter the app.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {WORKSPACE_ACTIVITY_OPTIONS.map((option) => {
                       const selected = formData.preferredActivities.includes(option.id);
                       return (
@@ -252,44 +274,45 @@ export default function Onboarding() {
                           key={option.id}
                           type="button"
                           onClick={() => toggleActivity(option.id)}
-                          className={`text-left rounded border px-3 py-2 transition ${
+                          className={`text-left rounded-lg border px-3.5 py-3 transition-all ${
                             selected
-                              ? 'border-red-500/60 bg-red-500/10'
-                              : 'border-slate-700 bg-slate-900/40 hover:border-slate-600'
+                              ? 'border-red-500/60 bg-red-500/15 shadow-lg shadow-red-500/20'
+                              : 'border-zinc-700/70 bg-zinc-900/40 hover:border-zinc-600 hover:bg-zinc-800/50'
                           }`}
                         >
-                          <div className="text-sm font-semibold text-white">{option.label}</div>
-                          <div className="text-[11px] text-slate-400">{option.description}</div>
+                          <div className="text-sm font-semibold text-zinc-100">{option.label}</div>
+                          <div className="text-[11px] text-zinc-500 mt-0.5 leading-snug">{option.description}</div>
                         </button>
                       );
                     })}
                   </div>
-                  {activityNotice ? <p className="text-xs text-amber-400 mt-2">{activityNotice}</p> : null}
+                  {activityNotice ? <p className="text-xs text-amber-400 mt-2.5 font-medium">{activityNotice}</p> : null}
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleBack} variant="outline" className="flex-1">
+                <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
                   Back
                 </Button>
-                <Button onClick={handleNext} className="flex-1">
+                <Button onClick={handleNext} className="flex-1 h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
                   Continue <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: The Code */}
           {step === 3 && (
-           <div className="nexus-immersive-panel p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <Shield className="w-8 h-8 text-red-600" />
-                <h2 className="nexus-section-title text-2xl font-black uppercase tracking-widest text-white">
+           <div className="nexus-immersive-panel p-10 rounded-lg shadow-2xl shadow-red-900/30">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30">
+                  <Shield className="w-7 h-7 text-red-400" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">
                   The Redscar Code
                 </h2>
               </div>
 
-              <div className="bg-slate-900/50 border-2 border-slate-800 p-6 mb-6 space-y-3 max-h-64 overflow-y-auto">
+              <div className="bg-zinc-950/60 border border-zinc-800/60 p-6 mb-8 space-y-3 max-h-64 overflow-y-auto rounded-lg">
                 <div className="text-sm text-slate-300 space-y-2">
                   <p className="text-red-400 font-bold">Rules to be followed by all who wander with us:</p>
                   <p>1. <span className="text-red-400">Help First. Combat Second.</span> Redscar will always try to help wanderers, no matter background or status.</p>
@@ -302,13 +325,13 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <label className="flex items-start gap-3 mb-6 cursor-pointer group">
-                <div className={`mt-0.5 w-5 h-5 border-2 flex items-center justify-center transition-all ${
+              <label className="flex items-start gap-3.5 mb-8 cursor-pointer group">
+                <div className={`mt-0.5 w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
                   formData.acceptedCode 
                     ? 'border-red-500 bg-red-500/20' 
-                    : 'border-slate-700 group-hover:border-slate-600'
+                    : 'border-zinc-700 group-hover:border-zinc-600'
                 }`}>
-                  {formData.acceptedCode && <Check className="w-3 h-3 text-red-500" />}
+                  {formData.acceptedCode && <Check className="w-3.5 h-3.5 text-red-400" />}
                 </div>
                 <div className="flex-1">
                   <input
@@ -317,34 +340,35 @@ export default function Onboarding() {
                     onChange={(e) => setFormData({ ...formData, acceptedCode: e.target.checked })}
                     className="sr-only"
                   />
-                  <span className="text-sm text-white">
-                    I accept and will abide by <span className="text-red-400 font-bold">The Redscar Code</span>
+                  <span className="text-sm text-zinc-100 leading-relaxed">
+                    I accept and will abide by <span className="text-red-400 font-semibold">The Redscar Code</span>
                   </span>
                 </div>
               </label>
 
               <div className="flex gap-3">
-                <Button onClick={handleBack} variant="outline" className="flex-1">
+                <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
                   Back
                 </Button>
-                <Button onClick={handleNext} disabled={!formData.acceptedCode} className="flex-1">
+                <Button onClick={handleNext} disabled={!formData.acceptedCode} className="flex-1 h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
                   Accept & Continue <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 4: AI Consent */}
           {step === 4 && (
-           <div className="nexus-immersive-panel p-8">
-             <div className="flex items-center gap-3 mb-6">
-               <Brain className="w-8 h-8 text-red-600" />
-                <h2 className="nexus-section-title text-2xl font-black uppercase tracking-widest text-white">
-                  AI Capabilities & Preferences
+           <div className="nexus-immersive-panel p-10 rounded-lg shadow-2xl shadow-red-900/30">
+             <div className="flex items-center gap-4 mb-8">
+               <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30">
+                 <Brain className="w-7 h-7 text-red-400" />
+               </div>
+                <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">
+                  AI Capabilities
                 </h2>
               </div>
 
-              <div className="bg-slate-900/50 border-l-4 border-red-500 p-4 mb-6">
+              <div className="bg-zinc-950/60 border-l-4 border-red-500/70 p-5 mb-8 rounded">
                 <p className="text-sm text-slate-300 mb-2">
                   Redscar Nomads optionally uses AI to enhance your experience with tactical analysis, 
                   mission insights, and comms assistance. <span className="text-red-400 font-bold">All AI features are optional.</span>
@@ -439,37 +463,39 @@ export default function Onboarding() {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleBack} variant="outline" className="flex-1">
+                <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
                   Back
                 </Button>
-                <Button onClick={handleNext} className="flex-1">
+                <Button onClick={handleNext} className="flex-1 h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all">
                   Continue <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 5: Confirmation */}
           {step === 5 && (
-           <div className="nexus-immersive-panel p-8">
-             <div className="flex items-center justify-center mb-6">
+           <div className="nexus-immersive-panel p-10 rounded-lg shadow-2xl shadow-red-900/30">
+             <div className="flex items-center justify-center mb-8 relative">
+               <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-28 h-28 rounded-full bg-red-500/10 animate-pulse" />
+               </div>
                <img 
                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
                  alt="Redscar Nomads"
-                 className="w-16 h-16 drop-shadow-lg"
+                 className="w-20 h-20 drop-shadow-2xl relative z-10"
                />
              </div>
               
-              <h2 className="nexus-section-title text-3xl font-black uppercase tracking-widest text-center text-white mb-4">
+              <h2 className="text-4xl font-black uppercase tracking-[0.25em] text-center text-white mb-6 drop-shadow-lg">
                 Welcome to the Bonfire
               </h2>
               
-              <p className="text-center text-slate-400 mb-8">
-                You are now a <span className="text-red-400 font-bold">Vagrant</span> of Redscar Nomads. 
+              <p className="text-center text-zinc-300 mb-10 text-sm leading-relaxed">
+                You are now a <span className="text-red-400 font-semibold">Vagrant</span> of Redscar Nomads. 
                 Your journey on The Eternal Voyage begins now.
               </p>
 
-              <div className="bg-slate-900/50 border-2 border-slate-800 p-6 mb-6 space-y-3">
+              <div className="bg-zinc-950/60 border border-zinc-800/60 p-6 mb-8 space-y-3 rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 font-bold uppercase tracking-wide">RSI Callsign:</span>
                   <span className="text-white font-mono">{formData.rsiCallsign}</span>
@@ -498,19 +524,20 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="bg-red-500/10 border-l-4 border-red-500 p-4 mb-6">
-                <p className="text-xs text-slate-300 italic">
+              <div className="bg-red-950/30 border-l-4 border-red-500/70 p-5 mb-8 rounded">
+                <p className="text-xs text-zinc-300 italic leading-relaxed">
                   "The nomadic theme runs deep. Not only in our playstyle of constant motion, 
                   but also in real life. Members always knowing they have a bonfire to come back to."
                 </p>
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleBack} variant="outline" className="flex-1">
+                <Button onClick={handleBack} variant="outline" className="flex-1 h-11">
                   Back
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading} className="flex-1">
-                  {loading ? 'Finalizing...' : 'Enter the Nexus'}
+                <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-11 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold uppercase tracking-wide shadow-lg shadow-red-500/30 hover:shadow-red-400/40 transition-all relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700" />
+                  <span className="relative z-10">{loading ? 'Finalizing...' : 'Enter the Nexus'}</span>
                 </Button>
               </div>
             </div>
