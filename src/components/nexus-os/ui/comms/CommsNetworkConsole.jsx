@@ -298,8 +298,8 @@ export default function CommsNetworkConsole({
       return;
     }
     setNodePositionOverrides((prev) => {
-      let changed = false;
-      const next: Record<string, { x: number; y: number }> = {};
+    let changed = false;
+    const next = {};
       for (const node of nodes) {
         const prior = prev[node.id];
         const resolvedX = clampPct(prior?.x ?? node.x);
