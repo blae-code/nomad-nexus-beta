@@ -9,7 +9,7 @@ function toneForNotificationLevel(level) {
   return 'active';
 }
 
-function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
+function dotForState(state) {
   if (state === 'foreground') return 'bg-emerald-400';
   if (state === 'background') return 'bg-sky-400';
   if (state === 'suspended') return 'bg-amber-400';
