@@ -25,6 +25,7 @@ import {
   useNexusWorkspaceSession,
   useReducedMotion } from
 '../ui';
+import NexusSettingsPanel from '../ui/os/NexusSettingsPanel';
 import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import TacticalSidePanel from '../ui/panels/TacticalSidePanel';
@@ -42,6 +43,7 @@ import {
   Radio,
   Radar,
   Search,
+  Settings,
   Shield,
   Signal } from
 'lucide-react';
@@ -150,6 +152,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const reportsOpId = osSession.reportsOpId;
 
   const [commandDeckOpen, setCommandDeckOpen] = useState(false);
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
   const [commandFeedback, setCommandFeedback] = useState('');
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
@@ -743,6 +746,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const focusStatusLabel = workbenchFocusMode ? FOCUS_APP_LABEL_BY_ID[workbenchFocusMode] || workbenchFocusMode : 'Standby';
   const alertStatusLabel = tray.unreadCount > 0 ? `${tray.unreadCount} Alerts` : 'Alerts Clear';
 
+  const handleUpdateSetting = (key, value) => {
+    console.log('[NexusOS] Setting updated:', key, value);
+    setCommandFeedback(`Setting updated: ${key}`);
+  };
+
   return (
     <div
       className="nexus-shell-root nexus-layout-quiet nx-app-shell fixed inset-0 flex flex-col"
@@ -778,12 +786,12 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          
-
-
-
-
-
+          <div className="hidden lg:flex items-center gap-1.5">
+            <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="text-[9px]">
+              {focusStatusLabel}
+            </NexusBadge>
+            <div className="h-3 w-px bg-zinc-700/50" />
+          </div>
           
           <div className="flex items-center gap-1.5">
             <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
@@ -797,24 +805,39 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             <span className="text-[9px] font-mono text-zinc-400">{systemTimeLabel}</span>
           </div>
 
-          <button
-            type="button"
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
-            onClick={() => setCommandDeckOpen(true)}
-            title="Open command deck"
-            aria-label="Open command deck (Ctrl+Shift+P)"
-            aria-keyshortcuts="Control+Shift+P">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
+              onClick={() => setCommandDeckOpen(true)}
+              title="Open command deck"
+              aria-label="Open command deck (Ctrl+Shift+P)"
+              aria-keyshortcuts="Control+Shift+P">
 
-            <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
-            <span className="hidden sm:inline text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors uppercase tracking-wide">
-              Deck
-            </span>
-            <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-600 bg-zinc-800/60 border border-zinc-700/50">
-              <span>⌃</span>
-              <span>⇧</span>
-              <span>P</span>
-            </kbd>
-          </button>
+              <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+              <span className="hidden sm:inline text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors uppercase tracking-wide">
+                Deck
+              </span>
+              <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-600 bg-zinc-800/60 border border-zinc-700/50">
+                <span>⌃</span>
+                <span>⇧</span>
+                <span>P</span>
+              </kbd>
+            </button>
+
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
+              onClick={() => setSettingsPanelOpen(true)}
+              title="Open settings console"
+              aria-label="Open settings console">
+
+              <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+              <span className="hidden lg:inline text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors uppercase tracking-wide">
+                Settings
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -969,6 +992,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           return result;
         }} />
 
+      <NexusSettingsPanel
+        open={settingsPanelOpen}
+        onClose={() => setSettingsPanelOpen(false)}
+        user={user}
+        onUpdateSetting={handleUpdateSetting} />
 
       <NexusBootOverlay
         visible={bootState.visible}
