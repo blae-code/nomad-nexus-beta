@@ -42,7 +42,14 @@ UI access anchors:
 
 - `src/pages/NexusOSWorkspace.jsx` (authenticated workspace shell)
 - `src/pages/NexusOSPreview.jsx` (ungated Base44 UI refinement route)
+- `src/pages/CommsConsole.jsx` (legacy route hard-cut to canonical NexusOS comms focus)
 - `src/components/nexus-os/base44/uiRefinementManifest.ts` (stable machine-readable UI map)
+
+Canonical comms focus surfaces:
+
+- `src/components/nexus-os/ui/comms/CommsNetworkConsole.tsx`
+- `src/components/nexus-os/ui/comms/VoiceCommsRail.jsx`
+- `src/components/nexus-os/ui/comms/CommsHub.jsx`
 
 ## Anti-Drift Gate
 
