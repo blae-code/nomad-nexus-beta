@@ -42,7 +42,7 @@ export default function NexusTaskbar({
   onMarkNotificationRead,
   onMarkAllNotificationsRead,
   onClearNotifications,
-}: NexusTaskbarProps) {
+}) {
   const [trayOpen, setTrayOpen] = React.useState(false);
   const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
   const [appPage, setAppPage] = React.useState(0);
