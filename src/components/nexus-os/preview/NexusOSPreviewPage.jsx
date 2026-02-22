@@ -23,8 +23,8 @@ import {
   useNexusBootStateMachine,
   useNexusTrayNotifications,
   useNexusWorkspaceSession,
-  useReducedMotion,
-} from '../ui';
+  useReducedMotion } from
+'../ui';
 import CommsHub from '../ui/comms/CommsHub';
 import VoiceCommsRail from '../ui/comms/VoiceCommsRail';
 import TacticalSidePanel from '../ui/panels/TacticalSidePanel';
@@ -43,22 +43,22 @@ import {
   Radar,
   Search,
   Shield,
-  Signal,
-} from 'lucide-react';
+  Signal } from
+'lucide-react';
 import '../ui/theme/nexus-shell.css';
 
 const FOCUS_APP_CATALOG = [
-  { id: 'map', label: 'Map', hotkey: 'Alt+1' },
-  { id: 'ops', label: 'Ops', hotkey: 'Alt+2' },
-  { id: 'comms', label: 'Comms', hotkey: 'Alt+3' },
-];
+{ id: 'map', label: 'Map', hotkey: 'Alt+1' },
+{ id: 'ops', label: 'Ops', hotkey: 'Alt+2' },
+{ id: 'comms', label: 'Comms', hotkey: 'Alt+3' }];
+
 
 const FOCUS_APP_IDS = new Set(FOCUS_APP_CATALOG.map((entry) => entry.id));
 const FOCUS_APP_LABEL_BY_ID = Object.fromEntries(FOCUS_APP_CATALOG.map((entry) => [entry.id, entry.label]));
 const FOCUS_APP_ICON_BY_ID = {
   map: Compass,
   ops: ClipboardList,
-  comms: Radio,
+  comms: Radio
 };
 const FOCUS_APP_ALIASES = {
   map: 'map',
@@ -71,7 +71,7 @@ const FOCUS_APP_ALIASES = {
   comms: 'comms',
   comm: 'comms',
   communications: 'comms',
-  voice: 'comms',
+  voice: 'comms'
 };
 const MOBILE_NAV_APP_IDS = ['map', 'ops', 'comms'];
 
@@ -80,14 +80,14 @@ function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
 
   useEffect(() => {
     if (!mode) return;
-    setMountedModes((prev) => (prev[mode] ? prev : { ...prev, [mode]: true }));
+    setMountedModes((prev) => prev[mode] ? prev : { ...prev, [mode]: true });
   }, [mode]);
 
   const activeMode = mode || 'map';
   const modeComponent = {
     map: <TacticalMapFocusApp {...sharedPanelProps} onClose={onClose} />,
     comms: <CommsNetworkConsole {...sharedPanelProps} onClose={onClose} />,
-    ops: <OperationFocusApp {...sharedPanelProps} onClose={onClose} />,
+    ops: <OperationFocusApp {...sharedPanelProps} onClose={onClose} />
   };
 
   return (
@@ -103,15 +103,15 @@ function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
               opacity: active ? 1 : 0,
               pointerEvents: active ? 'auto' : 'none',
               transform: reducedMotion ? 'none' : active ? 'translateY(0px) scale(1)' : 'translateY(10px) scale(0.996)',
-              transition: reducedMotion ? 'opacity 90ms linear' : 'opacity 220ms cubic-bezier(0.18, 0.67, 0.25, 1), transform 220ms cubic-bezier(0.18, 0.67, 0.25, 1)',
-            }}
-          >
+              transition: reducedMotion ? 'opacity 90ms linear' : 'opacity 220ms cubic-bezier(0.18, 0.67, 0.25, 1), transform 220ms cubic-bezier(0.18, 0.67, 0.25, 1)'
+            }}>
+
             {component}
-          </div>
-        );
+          </div>);
+
       })}
-    </div>
-  );
+    </div>);
+
 }
 
 export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }) {
@@ -122,7 +122,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const workspaceActorId = user?.member_profile_id || user?.id || 'workspace-operator';
   const workspaceDisplayCallsign = user?.member_profile_data?.display_callsign || user?.member_profile_data?.callsign || user?.callsign || 'Operator';
   const sessionScopeKey = `${isWorkspaceMode ? 'workspace-canvas-v2' : 'dev'}:${workspaceActorId || 'anon'}`;
-  
+
   const { snapshot: osSession, hydrated, patchSnapshot } = useNexusWorkspaceSession(sessionScopeKey, {
     bridgeId: 'OPS',
     presetId: BRIDGE_DEFAULT_PRESET.OPS,
@@ -134,7 +134,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     forceDesignOpId: '',
     reportsOpId: '',
     activePanelIds: [],
-    workspaceOnboardingCompleted: true,
+    workspaceOnboardingCompleted: true
   });
 
   const bridgeId = osSession.bridgeId;
@@ -151,7 +151,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
   const [commandDeckOpen, setCommandDeckOpen] = useState(false);
   const [commandFeedback, setCommandFeedback] = useState('');
-  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
 
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
@@ -181,7 +181,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     entries: lifecycle.entries,
     enabled: import.meta.env.DEV,
     sampleLimit: 24,
-    slowThresholdMs: reducedMotion ? 24 : 18,
+    slowThresholdMs: reducedMotion ? 24 : 18
   });
   const { profileSync } = backgroundPerformance;
 
@@ -189,7 +189,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     enabled: true,
     hydrated,
     reducedMotion,
-    lastSessionUpdatedAt: bootSessionUpdatedAt,
+    lastSessionUpdatedAt: bootSessionUpdatedAt
   });
 
   const setBridgeId = (nextBridgeId) => patchSnapshot({ bridgeId: nextBridgeId });
@@ -209,7 +209,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       title: `Opened ${label}`,
       detail: 'Focus app moved to foreground.',
       source: 'taskbar',
-      level: 'info',
+      level: 'info'
     });
   };
 
@@ -278,11 +278,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     const onKeyDown = (event) => {
       const target = event.target;
       if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
-      ) return;
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLElement && target.isContentEditable)
+      return;
 
       const isCmd = event.ctrlKey || event.metaKey;
       if (isCmd && event.shiftKey && event.key.toLowerCase() === 'p') {
@@ -317,7 +317,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       eventType,
       channelId,
       confidence: 0.9,
-      payload: nextPayload,
+      payload: nextPayload
     });
   };
 
@@ -337,7 +337,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       id,
       callsign: id === workspaceActorId ? workspaceDisplayCallsign : id,
       element: id === workspaceActorId ? 'CE' : 'GCE',
-      role: id === workspaceActorId ? 'Operator' : 'Roster TBD',
+      role: id === workspaceActorId ? 'Operator' : 'Roster TBD'
     }));
   }, [isWorkspaceMode, events, workspaceActorId, workspaceDisplayCallsign]);
 
@@ -350,7 +350,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     () => isWorkspaceMode ? [] : buildDevControlSignals({ events, roster: activeRoster, opId: resolvedOpId, locationEstimates }),
     [isWorkspaceMode, events, activeRoster, resolvedOpId, locationEstimates]
   );
-  
+
   const controlZones = useMemo(() => computeControlZones(controlSignals, Date.now()), [controlSignals]);
 
   const sharedPanelProps = {
@@ -369,7 +369,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     onCreateMacroEvent: createMacroEvent,
     onOpenCommsNetwork: () => openFocusApp('comms'),
     onOpenMapFocus: () => openFocusApp('map'),
-    onOpenOperationFocus: () => openFocusApp('ops'),
+    onOpenOperationFocus: () => openFocusApp('ops')
   };
 
   const workbenchFocusMode = lockedFocusMode || focusMode || lifecycle.foregroundAppId || 'map';
@@ -377,14 +377,14 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const fallbackVoiceNets = useMemo(() => {
     const opNets = operations.slice(0, 6).map((operation) => {
       const fallbackCode = String(operation.id || '').replace(/^op[_-]?/i, '').slice(0, 8).toUpperCase();
-      const displayCode = String(operation.name || fallbackCode || 'OP')
-        .replace(/[^A-Za-z0-9]+/g, '')
-        .toUpperCase()
-        .slice(0, 8);
+      const displayCode = String(operation.name || fallbackCode || 'OP').
+      replace(/[^A-Za-z0-9]+/g, '').
+      toUpperCase().
+      slice(0, 8);
       return {
         id: `net:${operation.id}`,
         code: displayCode || fallbackCode || 'OP',
-        label: `${operation.status} · ${operation.name || 'Operation'}`,
+        label: `${operation.status} · ${operation.name || 'Operation'}`
       };
     });
     return [{ id: 'net:command', code: 'COMMAND', label: `${bridgeId} Command Net` }, ...opNets];
@@ -406,12 +406,12 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       id: entry.id,
       callsign: entry.callsign || entry.id,
       element: entry.element || 'GCE',
-      state: index < 5 ? 'READY' : 'MONITOR',
+      state: index < 5 ? 'READY' : 'MONITOR'
     }));
   }, [activeRoster, actorId]);
 
   const effectiveVoiceNets = useMemo(
-    () => (Array.isArray(voiceNet.voiceNets) && voiceNet.voiceNets.length > 0 ? voiceNet.voiceNets : fallbackVoiceNets),
+    () => Array.isArray(voiceNet.voiceNets) && voiceNet.voiceNets.length > 0 ? voiceNet.voiceNets : fallbackVoiceNets,
     [voiceNet.voiceNets, fallbackVoiceNets]
   );
 
@@ -422,7 +422,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   }, [voiceNet.activeNetId, voiceNet.transmitNetId, fallbackActiveVoiceNetId]);
 
   const effectiveVoiceParticipants = useMemo(
-    () => (Array.isArray(voiceNet.participants) && voiceNet.participants.length > 0 ? voiceNet.participants : fallbackVoiceParticipants),
+    () => Array.isArray(voiceNet.participants) && voiceNet.participants.length > 0 ? voiceNet.participants : fallbackVoiceParticipants,
     [voiceNet.participants, fallbackVoiceParticipants]
   );
 
@@ -430,18 +430,18 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     const profile = user?.member_profile_data || {};
     const id = profile.id || user?.member_profile_id || user?.id || actorId || workspaceActorId || '';
     if (!id) return null;
-    const roles = Array.isArray(profile.roles)
-      ? profile.roles
-      : Array.isArray(user?.roles)
-        ? user.roles
-        : [];
+    const roles = Array.isArray(profile.roles) ?
+    profile.roles :
+    Array.isArray(user?.roles) ?
+    user.roles :
+    [];
     return {
       ...profile,
       id,
       callsign: profile.callsign || user?.callsign || workspaceDisplayCallsign || 'Operator',
       rank: profile.rank || user?.rank || '',
       roles,
-      membership: profile.membership || profile.tier || 'MEMBER',
+      membership: profile.membership || profile.tier || 'MEMBER'
     };
   }, [user, actorId, workspaceActorId, workspaceDisplayCallsign]);
 
@@ -466,9 +466,9 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       const runtimeUser = withVoiceUser();
       if (!runtimeUser) return;
       try {
-        const response = monitorOnly
-          ? await (voiceNet.monitorNet?.(netId, runtimeUser) || voiceNet.joinNet?.(netId, runtimeUser, { monitorOnly: true }))
-          : await voiceNet.joinNet?.(netId, runtimeUser);
+        const response = monitorOnly ?
+        await (voiceNet.monitorNet?.(netId, runtimeUser) || voiceNet.joinNet?.(netId, runtimeUser, { monitorOnly: true })) :
+        await voiceNet.joinNet?.(netId, runtimeUser);
         if (response?.requiresConfirmation) {
           setCommandFeedback('Focused net confirmation requested.');
           return;
@@ -601,7 +601,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     effectiveVoiceNets,
     effectiveVoiceParticipants,
     voiceNet,
-    roster: activeRoster,
+    roster: activeRoster
   });
 
   const availableBridgeIds = useMemo(() => Object.keys(BRIDGE_DEFAULT_PRESET), []);
@@ -664,16 +664,16 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
   const commandCatalog = useMemo(
     () => [
-      { id: 'cmd-help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
-      { id: 'cmd-tutorial', label: 'Tutorials', command: 'tutorial', detail: 'Open interactive training modules.' },
-      { id: 'cmd-status', label: 'System Status', command: 'status', detail: 'Report live bridge/link/focus state.' },
-      { id: 'cmd-open-map', label: 'Focus Map', command: 'open map', detail: 'Bring tactical map to foreground.' },
-      { id: 'cmd-open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Bring operations workspace to foreground.' },
-      { id: 'cmd-open-comms', label: 'Focus Comms', command: 'open comms', detail: 'Bring comms workspace to foreground.' },
-      { id: 'cmd-bridge-next', label: 'Bridge Next', command: 'bridge next', detail: `Cycle bridge (current ${bridgeId}).` },
-      { id: 'cmd-bridge-current', label: 'Bridge Info', command: 'bridge', detail: 'Display current and available bridge IDs.' },
-      { id: 'cmd-close', label: 'Standby Focus', command: 'close', detail: 'Return focus workspace to standby.' },
-    ],
+    { id: 'cmd-help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
+    { id: 'cmd-tutorial', label: 'Tutorials', command: 'tutorial', detail: 'Open interactive training modules.' },
+    { id: 'cmd-status', label: 'System Status', command: 'status', detail: 'Report live bridge/link/focus state.' },
+    { id: 'cmd-open-map', label: 'Focus Map', command: 'open map', detail: 'Bring tactical map to foreground.' },
+    { id: 'cmd-open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Bring operations workspace to foreground.' },
+    { id: 'cmd-open-comms', label: 'Focus Comms', command: 'open comms', detail: 'Bring comms workspace to foreground.' },
+    { id: 'cmd-bridge-next', label: 'Bridge Next', command: 'bridge next', detail: `Cycle bridge (current ${bridgeId}).` },
+    { id: 'cmd-bridge-current', label: 'Bridge Info', command: 'bridge', detail: 'Display current and available bridge IDs.' },
+    { id: 'cmd-close', label: 'Standby Focus', command: 'close', detail: 'Return focus workspace to standby.' }],
+
     [bridgeId]
   );
 
@@ -700,17 +700,17 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
   useEffect(() => {
     if (!isResizingLeft) return;
-    
+
     const handleMouseMove = (e) => {
       const newWidth = Math.max(280, Math.min(600, e.clientX));
       setLeftPanelWidth(newWidth);
     };
-    
+
     const handleMouseUp = () => setIsResizingLeft(false);
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -719,17 +719,17 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
   useEffect(() => {
     if (!isResizingRight) return;
-    
+
     const handleMouseMove = (e) => {
       const newWidth = Math.max(280, Math.min(600, window.innerWidth - e.clientX));
       setRightPanelWidth(newWidth);
     };
-    
+
     const handleMouseUp = () => setIsResizingRight(false);
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -747,14 +747,14 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     <div
       className="nexus-shell-root nexus-layout-quiet nx-app-shell fixed inset-0 flex flex-col"
       data-bridge-id={bridgeId}
-      style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}
-    >
+      style={{ ...vars, ...bridgeThemeVars, backgroundColor: 'var(--nx-shell-bg)' }}>
+
       <div className="nexus-shell-sweep" />
       <div className="nexus-shell-grid" />
       <div className="nexus-shell-vignette" />
 
       <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="my-2 flex items-center gap-2 min-w-0">
           <Shield className="w-4 h-4 text-orange-500 shrink-0" />
           <div className="min-w-0">
             <h1 className="text-[11px] font-bold uppercase tracking-wider text-zinc-100 leading-none">NexusOS Command Surface</h1>
@@ -770,8 +770,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           type="button"
           className="flex items-center gap-2 px-3 py-1.5 rounded border border-zinc-700/30 bg-zinc-900/20 hover:bg-zinc-800/40 hover:border-zinc-600/40 transition-all group"
           onClick={() => setCommandDeckOpen(true)}
-          title="Open command palette (Ctrl+Shift+P)"
-        >
+          title="Open command palette (Ctrl+Shift+P)">
+
           <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
           <span className="text-[10px] text-zinc-400 group-hover:text-zinc-200 transition-colors">Command Deck</span>
           <span className="hidden lg:inline text-[9px] text-zinc-600 font-mono">Ctrl+Shift+P</span>
@@ -810,8 +810,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           headerSignalValue={sidePanelRuntime.leftPanelHeader.signal}
           headerSignalTone={sidePanelRuntime.leftPanelHeader.signalTone}
           onMaximize={() => setLeftPanelWidth(600)}
-          onMinimize={() => setLeftPanelWidth(280)}
-        >
+          onMinimize={() => setLeftPanelWidth(280)}>
+
           <CommsHub
             operations={operations}
             focusOperationId={focusOperationId}
@@ -827,23 +827,23 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             onIssueCommsOrder={(eventType, payload = {}) => createMacroEvent(eventType, payload)}
             focusMode={workbenchFocusMode}
             isExpanded={!leftPanelCollapsed}
-            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-          />
+            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)} />
+
         </TacticalSidePanel>
 
         <main className="flex-1 overflow-hidden flex flex-col px-3 py-3">
-          {commandFeedback && (
-            <section aria-live="polite" className="nx-inline-feedback nexus-console-text mb-2">
+          {commandFeedback &&
+          <section aria-live="polite" className="nx-inline-feedback nexus-console-text mb-2">
               {commandFeedback}
             </section>
-          )}
+          }
           <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40">
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
               onClose={closeFocusApp}
-              reducedMotion={reducedMotion}
-            />
+              reducedMotion={reducedMotion} />
+
           </div>
         </main>
 
@@ -864,8 +864,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           headerSignalValue={sidePanelRuntime.rightPanelHeader.signal}
           headerSignalTone={sidePanelRuntime.rightPanelHeader.signalTone}
           onMaximize={() => setRightPanelWidth(600)}
-          onMinimize={() => setRightPanelWidth(280)}
-        >
+          onMinimize={() => setRightPanelWidth(280)}>
+
           <VoiceCommsRail
             voiceNets={effectiveVoiceNets}
             activeNetId={activeVoiceNetId}
@@ -887,8 +887,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             onSetDisciplineMode={setVoiceDiscipline}
             onRequestToSpeak={requestVoiceTransmit}
             isExpanded={!rightPanelCollapsed}
-            onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-          />
+            onToggleExpand={() => setRightPanelCollapsed(!rightPanelCollapsed)} />
+
         </TacticalSidePanel>
       </div>
 
@@ -904,8 +904,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           onOpenCommandDeck={() => setCommandDeckOpen(true)}
           onMarkNotificationRead={tray.markNotificationRead}
           onMarkAllNotificationsRead={tray.markAllNotificationsRead}
-          onClearNotifications={tray.clearNotifications}
-        />
+          onClearNotifications={tray.clearNotifications} />
+
         <nav className="nx-mobile-nav">
           {MOBILE_NAV_APP_IDS.map((appId) => {
             const entry = FOCUS_APP_CATALOG.find((candidate) => candidate.id === appId);
@@ -918,12 +918,12 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
                 type="button"
                 className={`nx-mobile-nav-button ${active ? 'is-active' : ''}`}
                 onClick={() => openFocusApp(entry.id)}
-                aria-label={entry.label}
-              >
+                aria-label={entry.label}>
+
                 <Icon className="w-4 h-4" />
                 <span>{entry.label}</span>
-              </button>
-            );
+              </button>);
+
           })}
           <button type="button" className="nx-mobile-nav-button" onClick={() => setCommandDeckOpen(true)}>
             <Search className="w-4 h-4" />
@@ -941,15 +941,15 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           const result = runNexusCommand(command);
           setCommandFeedback(result);
           return result;
-        }}
-      />
+        }} />
+
 
       <NexusBootOverlay
         visible={bootState.visible}
         mode={bootState.mode}
         phaseLabel={bootState.label}
-        progress={bootState.progress}
-      />
-    </div>
-  );
+        progress={bootState.progress} />
+
+    </div>);
+
 }
