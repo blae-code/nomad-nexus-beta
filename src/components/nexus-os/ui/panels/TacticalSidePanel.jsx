@@ -46,31 +46,8 @@ export default function TacticalSidePanel({
   onMinimize,
   className = '',
 }) {
-  // Diagnostics removed—focus on content only
-
   const isLeft = side === 'left';
   const borderSideClass = isLeft ? 'border-r' : 'border-l';
-
-  const metricsPageCount = Math.max(1, Math.ceil(statusMetrics.length / PAGE_SIZE));
-  const logsPageCount = Math.max(1, Math.ceil(logEntries.length / PAGE_SIZE));
-
-  useEffect(() => {
-    setMetricsPage((prev) => Math.min(prev, metricsPageCount - 1));
-  }, [metricsPageCount]);
-
-  useEffect(() => {
-    setLogsPage((prev) => Math.min(prev, logsPageCount - 1));
-  }, [logsPageCount]);
-
-  const pagedMetrics = useMemo(
-    () => statusMetrics.slice(metricsPage * PAGE_SIZE, metricsPage * PAGE_SIZE + PAGE_SIZE),
-    [statusMetrics, metricsPage]
-  );
-
-  const pagedLogs = useMemo(
-    () => logEntries.slice(logsPage * PAGE_SIZE, logsPage * PAGE_SIZE + PAGE_SIZE),
-    [logEntries, logsPage]
-  );
 
   const headerStatusClass = STATUS_TONE_CLASSES[headerStatusTone] || STATUS_TONE_CLASSES.neutral;
   const headerSignalClass = SIGNAL_TONE_CLASSES[headerSignalTone] || SIGNAL_TONE_CLASSES.neutral;
