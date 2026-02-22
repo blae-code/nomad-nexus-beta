@@ -1,8 +1,6 @@
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
-import type { NexusAppLifecycleEntry } from './appLifecycle';
-import type { NexusTrayNotification } from './trayNotifications';
 
 interface NexusTaskbarProps {
   activeAppId: string | null;
