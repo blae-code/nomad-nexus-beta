@@ -515,7 +515,7 @@ export default function CommsNetworkConsole({
     return map;
   }, [edges]);
   const fallbackChannelMembersById = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map();
     for (const channel of channels) {
       const token = toToken(`${channel.id} ${channel.label}`);
       const memberIds = roster
