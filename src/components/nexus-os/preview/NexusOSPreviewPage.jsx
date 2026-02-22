@@ -747,7 +747,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
         <div className="flex items-center gap-2 min-w-0">
           <Shield className="w-4 h-4 text-orange-500 shrink-0" />
           <div className="min-w-0">
-            <h1 className="text-[11px] font-bold uppercase tracking-wider text-zinc-100 leading-none">NexusOS</h1>
+            <h1 className="text-[11px] font-bold uppercase tracking-wider text-zinc-100 leading-none">NexusOS Command Surface</h1>
             <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 mt-0.5">
               <span>{workspaceDisplayCallsign}</span>
               <span className="text-zinc-700">·</span>
@@ -814,6 +814,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
             channelVoiceMap={channelVoiceMap}
             voiceState={sidePanelRuntime.voiceState}
             onRouteVoiceNet={routeVoiceForChannel}
+            onIssueCommsOrder={(eventType, payload = {}) => createMacroEvent(eventType, payload)}
             focusMode={workbenchFocusMode}
             isExpanded={!leftPanelCollapsed}
             onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}

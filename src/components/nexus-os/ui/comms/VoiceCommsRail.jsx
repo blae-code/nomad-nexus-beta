@@ -457,7 +457,7 @@ export default function VoiceCommsRail({
   const renderGlobalControlCluster = () => (
     <div className="px-2 py-1.5 rounded border border-zinc-700/40 bg-zinc-900/40 space-y-1.5">
       <div className="flex items-center justify-between gap-2 text-[9px] uppercase tracking-wide">
-        <span className="text-zinc-500">Voice Controls</span>
+        <span className="text-zinc-500">Global Voice Controls</span>
         <span className="text-zinc-600">{participants.length} online</span>
       </div>
       <div className="grid grid-cols-3 gap-1">

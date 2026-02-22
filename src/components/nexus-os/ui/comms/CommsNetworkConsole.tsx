@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   ClipboardList,
   Radio,
   RefreshCcw,
@@ -42,12 +44,22 @@ import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
 
 interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
+interface TopologyBridgeEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  status: 'active' | 'degraded';
+  createdAtMs: number;
+}
 
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const THREAD_LIST_PAGE_SIZE = 5;
+const ORDER_LIST_PAGE_SIZE = 5;
+const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 
 const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
@@ -112,6 +124,68 @@ function directiveByThreadAction(action: CommsDirectiveThreadLane['nextAction'])
   return 'CHECKIN';
 }
 
+function clampPct(value: number): number {
+  return Math.max(3, Math.min(97, value));
+}
+
+function extractChannelId(node: CommsGraphNode | null | undefined): string {
+  if (!node) return '';
+  const explicit = String((node.meta as any)?.channelId || '').trim();
+  if (explicit) return explicit;
+  if (node.id.startsWith('channel:')) return node.id.replace('channel:', '');
+  return '';
+}
+
+function toToken(value: unknown): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isMutedParticipant(participant: any): boolean {
+  if (participant?.muted === true) return true;
+  return String(participant?.state || '').toUpperCase().includes('MUTE');
+}
+
+function wingLabelByElement(element: string): string {
+  if (element === 'CE') return 'Command Wing';
+  if (element === 'ACE') return 'Aerospace Wing';
+  return 'Ground Wing';
+}
+
+function resolveSquadLabel(channelId: string, channelLabel: string): string {
+  const token = `${toToken(channelId)} ${toToken(channelLabel)}`;
+  if (token.includes('alpha')) return 'Squad Alpha';
+  if (token.includes('bravo')) return 'Squad Bravo';
+  if (token.includes('coord') || token.includes('command')) return 'Command Cell';
+  if (token.includes('log')) return 'Logistics Cell';
+  return 'Operations Cell';
+}
+
+function resolveVehicleBucket(member: { role: string; element: string; callsign: string }, channelId: string): { id: string; label: string } {
+  const roleToken = toToken(member.role);
+  if (member.element === 'ACE' || roleToken.includes('pilot') || roleToken.includes('gunship')) {
+    return {
+      id: `${channelId}:vehicle:flight`,
+      label: 'Flight Element',
+    };
+  }
+  if (roleToken.includes('medic') || roleToken.includes('medical')) {
+    return {
+      id: `${channelId}:vehicle:medevac`,
+      label: 'Medevac Platform',
+    };
+  }
+  if (member.element === 'CE' || roleToken.includes('lead') || roleToken.includes('signal') || roleToken.includes('command')) {
+    return {
+      id: `${channelId}:vehicle:c2`,
+      label: 'Command Relay',
+    };
+  }
+  return {
+    id: `${channelId}:vehicle:assault`,
+    label: 'Assault Transport',
+  };
+}
+
 export default function CommsNetworkConsole({
   variantId,
   opId,
@@ -127,7 +201,7 @@ export default function CommsNetworkConsole({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
-  const [showUsers, setShowUsers] = useState(false);
+  const [showUsers, setShowUsers] = useState(true);
   const [healthPage, setHealthPage] = useState(0);
   const [incidentPage, setIncidentPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
@@ -136,9 +210,30 @@ export default function CommsNetworkConsole({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
   const [threadPage, setThreadPage] = useState(0);
+  const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [rightPanelView, setRightPanelView] = useState<'incidents' | 'threads'>('incidents');
+  const [rightPanelView, setRightPanelView] = useState<'schema' | 'incidents' | 'threads'>('schema');
   const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
+  const [ordersPage, setOrdersPage] = useState(0);
+  const [selectedNodeId, setSelectedNodeId] = useState('');
+  const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
+  const [bridgeEdges, setBridgeEdges] = useState<TopologyBridgeEdge[]>([]);
+  const [schemaExpandedById, setSchemaExpandedById] = useState<Record<string, boolean>>({
+    'fleet:redscar': true,
+    'wing:CE': true,
+    'squad:CE:Command Cell': true,
+  });
+  const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+  const [radialOpen, setRadialOpen] = useState(false);
+  const [radialAnchor, setRadialAnchor] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const topologyRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    nodeId: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -173,15 +268,86 @@ export default function CommsNetworkConsole({
     return () => window.clearTimeout(timerId);
   }, [feedback]);
 
+  useEffect(() => {
+    if (!bridgeDraftSourceId) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setBridgeDraftSourceId('');
+      setFeedback('Bridge target mode cleared.');
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [bridgeDraftSourceId]);
+
   const nodes = snapshot?.nodes || [];
   const edges = snapshot?.edges || [];
+
+  useEffect(() => {
+    if (!nodes.length) {
+      setNodePositionOverrides({});
+      setBridgeEdges([]);
+      setSelectedNodeId('');
+      setBridgeDraftSourceId('');
+      return;
+    }
+    setNodePositionOverrides((prev) => {
+      let changed = false;
+      const next: Record<string, { x: number; y: number }> = {};
+      for (const node of nodes) {
+        if (prev[node.id]) {
+          next[node.id] = prev[node.id];
+          continue;
+        }
+        next[node.id] = { x: node.x, y: node.y };
+        changed = true;
+      }
+      if (Object.keys(prev).length !== Object.keys(next).length) changed = true;
+      return changed ? next : prev;
+    });
+    setBridgeEdges((prev) => {
+      const nodeIds = new Set(nodes.map((node) => node.id));
+      const filtered = prev.filter((edge) => nodeIds.has(edge.sourceId) && nodeIds.has(edge.targetId));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [nodes]);
+
+  const displayNodes = useMemo(
+    () =>
+      nodes.map((node) => {
+        const override = nodePositionOverrides[node.id];
+        if (!override) return node;
+        return {
+          ...node,
+          x: override.x,
+          y: override.y,
+        };
+      }),
+    [nodes, nodePositionOverrides]
+  );
+
+  const renderedEdges = useMemo(
+    () => [
+      ...edges,
+      ...bridgeEdges.map((edge) => ({
+        id: edge.id,
+        sourceId: edge.sourceId,
+        targetId: edge.targetId,
+        type: 'monitoring' as const,
+        intensity: edge.status === 'degraded' ? 0.52 : 0.9,
+        dashed: edge.status === 'degraded',
+      })),
+    ],
+    [edges, bridgeEdges]
+  );
+
   const nodeMap = useMemo(
     () =>
-      nodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
+      displayNodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
-    [nodes]
+    [displayNodes]
   );
 
   const channels = snapshot?.channels || [];
@@ -244,12 +410,27 @@ export default function CommsNetworkConsole({
     const confidencePct = total > 0 ? Math.round((acked / total) * 100) : 100;
     return { total, queued, persisted, acked, confidencePct };
   }, [deliverySurface]);
+  const ordersPageCount = Math.max(1, Math.ceil(deliverySurface.length / ORDER_LIST_PAGE_SIZE));
+  const visibleOrders = useMemo(
+    () => deliverySurface.slice(ordersPage * ORDER_LIST_PAGE_SIZE, ordersPage * ORDER_LIST_PAGE_SIZE + ORDER_LIST_PAGE_SIZE),
+    [deliverySurface, ordersPage]
+  );
 
   const healthPageCount = Math.max(1, Math.ceil(channelHealth.length / LIST_PAGE_SIZE));
   const visibleHealth = channelHealth.slice(healthPage * LIST_PAGE_SIZE, healthPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
   const incidentPageCount = Math.max(1, Math.ceil(incidents.length / LIST_PAGE_SIZE));
   const visibleIncidents = incidents.slice(incidentPage * LIST_PAGE_SIZE, incidentPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
   const selectedIncident = incidents.find((incident) => incident.id === selectedIncidentId) || null;
+  const bridgedChannelIds = useMemo(() => {
+    const result = new Set<string>();
+    for (const edge of bridgeEdges) {
+      const sourceId = extractChannelId(nodeMap[edge.sourceId]);
+      const targetId = extractChannelId(nodeMap[edge.targetId]);
+      if (sourceId) result.add(sourceId);
+      if (targetId) result.add(targetId);
+    }
+    return result;
+  }, [bridgeEdges, nodeMap]);
 
   const voiceRuntimeUser = useMemo(() => {
     const profile = user?.member_profile_data || {};
@@ -299,6 +480,166 @@ export default function CommsNetworkConsole({
   const activeVoiceNetId = String(voiceNet.activeNetId || voiceNet.transmitNetId || '').trim();
   const activeVoiceDiscipline = activeVoiceNetId ? (voiceNet.disciplineModeByNet?.[activeVoiceNetId] || 'PTT') : 'PTT';
   const secureModeEnabled = Boolean(activeVoiceNetId && voiceNet.secureModeByNet?.[activeVoiceNetId]?.enabled);
+  const channelHealthById = useMemo(
+    () =>
+      channelHealth.reduce<Record<string, (typeof channelHealth)[number]>>((acc, entry) => {
+        acc[entry.channelId] = entry;
+        return acc;
+      }, {}),
+    [channelHealth]
+  );
+  const participantByMemberId = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const participant of voiceParticipants) {
+      const id = String(participant?.memberProfileId || participant?.userId || participant?.id || '').trim();
+      if (!id) continue;
+      map.set(id, participant);
+    }
+    return map;
+  }, [voiceParticipants]);
+  const explicitChannelMembersById = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const edge of edges) {
+      if (edge.type !== 'membership') continue;
+      if (!edge.sourceId.startsWith('user:') || !edge.targetId.startsWith('channel:')) continue;
+      const memberId = edge.sourceId.replace('user:', '');
+      const channelId = edge.targetId.replace('channel:', '');
+      if (!memberId || !channelId) continue;
+      const next = map.get(channelId) || [];
+      if (!next.includes(memberId)) next.push(memberId);
+      map.set(channelId, next);
+    }
+    return map;
+  }, [edges]);
+  const fallbackChannelMembersById = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const channel of channels) {
+      const token = toToken(`${channel.id} ${channel.label}`);
+      const memberIds = roster
+        .filter((member) => {
+          const roleToken = toToken(member.role);
+          if (token.includes('command') || token.includes('coord')) {
+            return member.element === 'CE' || roleToken.includes('lead') || roleToken.includes('signal');
+          }
+          if (token.includes('log')) {
+            return member.element === 'ACE' || roleToken.includes('logistic') || roleToken.includes('medic');
+          }
+          if (token.includes('alpha') || token.includes('bravo') || token.includes('squad')) {
+            return member.element === 'GCE';
+          }
+          return true;
+        })
+        .map((member) => member.id);
+      map.set(channel.id, memberIds);
+    }
+    return map;
+  }, [channels, roster]);
+  const schemaChannelPageCount = Math.max(1, Math.ceil(channels.length / SCHEMA_CHANNEL_PAGE_SIZE));
+  const visibleSchemaChannels = useMemo(
+    () =>
+      channels.slice(
+        schemaChannelPage * SCHEMA_CHANNEL_PAGE_SIZE,
+        schemaChannelPage * SCHEMA_CHANNEL_PAGE_SIZE + SCHEMA_CHANNEL_PAGE_SIZE
+      ),
+    [channels, schemaChannelPage]
+  );
+  const schemaTree = useMemo(() => {
+    const wings = [
+      { id: 'CE', label: wingLabelByElement('CE') },
+      { id: 'ACE', label: wingLabelByElement('ACE') },
+      { id: 'GCE', label: wingLabelByElement('GCE') },
+    ];
+    return wings.map((wing) => {
+      const squadByLabel = new Map<string, any>();
+      for (const channel of visibleSchemaChannels) {
+        const channelId = channel.id;
+        const explicitIds = explicitChannelMembersById.get(channelId) || [];
+        const fallbackIds = fallbackChannelMembersById.get(channelId) || [];
+        const resolvedMemberIds = explicitIds.length > 0 ? explicitIds : fallbackIds;
+        const channelMembers = roster.filter((member) => resolvedMemberIds.includes(member.id) && member.element === wing.id);
+        if (!channelMembers.length && wing.id !== 'CE') continue;
+
+        const squadLabel = resolveSquadLabel(channel.id, channel.label);
+        const squadKey = `${wing.id}:${squadLabel}`;
+        const squad =
+          squadByLabel.get(squadKey) ||
+          {
+            id: squadKey,
+            label: squadLabel,
+            channels: [],
+          };
+
+        const vehiclesById = new Map<string, any>();
+        for (const member of channelMembers) {
+          const vehicle = resolveVehicleBucket(member, channel.id);
+          const bucket =
+            vehiclesById.get(vehicle.id) ||
+            {
+              id: vehicle.id,
+              label: vehicle.label,
+              operators: [],
+            };
+          const participant = participantByMemberId.get(member.id);
+          const status = isParticipantSpeaking(participant)
+            ? 'TX'
+            : isMutedParticipant(participant)
+              ? 'MUTED'
+              : participant
+                ? 'ON-NET'
+                : 'OFF-NET';
+          bucket.operators.push({
+            id: member.id,
+            callsign: member.callsign,
+            role: member.role,
+            status,
+          });
+          vehiclesById.set(vehicle.id, bucket);
+        }
+
+        const vehicles = [...vehiclesById.values()].map((vehicle) => {
+          const txCount = vehicle.operators.filter((entry: any) => entry.status === 'TX').length;
+          const mutedCount = vehicle.operators.filter((entry: any) => entry.status === 'MUTED').length;
+          const channelState = channelHealthById[channelId];
+          const basicStatus =
+            channelState?.discipline === 'SATURATED'
+              ? 'DEGRADED'
+              : txCount > 0
+                ? 'ACTIVE'
+                : mutedCount > 0
+                  ? 'MIXED'
+                  : 'READY';
+          return {
+            ...vehicle,
+            basicStatus,
+            crewCount: vehicle.operators.length,
+          };
+        });
+        const channelState = channelHealthById[channel.id];
+        const channelStatus = channelState
+          ? `${channelState.discipline} · Q${channelState.qualityPct}% · ${channelState.latencyMs}ms`
+          : 'No health telemetry';
+        squad.channels.push({
+          id: channel.id,
+          label: channel.label,
+          status: channelStatus,
+          membershipCount: channel.membershipCount,
+          vehicles,
+        });
+        squadByLabel.set(squadKey, squad);
+      }
+      return {
+        ...wing,
+        squads: [...squadByLabel.values()],
+      };
+    });
+  }, [
+    visibleSchemaChannels,
+    explicitChannelMembersById,
+    fallbackChannelMembersById,
+    roster,
+    participantByMemberId,
+    channelHealthById,
+  ]);
 
   const commandRecommendation = useMemo(() => {
     if (selectedIncident) {
@@ -370,6 +711,14 @@ export default function CommsNetworkConsole({
   }, [threadPageCount]);
 
   useEffect(() => {
+    setSchemaChannelPage((prev) => Math.min(prev, schemaChannelPageCount - 1));
+  }, [schemaChannelPageCount]);
+
+  useEffect(() => {
+    setOrdersPage((prev) => Math.min(prev, ordersPageCount - 1));
+  }, [ordersPageCount]);
+
+  useEffect(() => {
     if (!incidents.length) {
       setSelectedIncidentId('');
       return;
@@ -389,6 +738,16 @@ export default function CommsNetworkConsole({
     if (exists) return;
     setSelectedThreadId(directiveThreads[0].id);
   }, [directiveThreads, selectedThreadId]);
+
+  useEffect(() => {
+    if (!displayNodes.length) {
+      setSelectedNodeId('');
+      return;
+    }
+    if (selectedNodeId && displayNodes.some((node) => node.id === selectedNodeId)) return;
+    const firstChannel = displayNodes.find((node) => node.type === 'channel');
+    setSelectedNodeId(firstChannel?.id || displayNodes[0].id);
+  }, [displayNodes, selectedNodeId]);
 
   const emitMacro = useCallback(
     (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
@@ -635,6 +994,212 @@ export default function CommsNetworkConsole({
     [voiceNet]
   );
 
+  const selectedNode = useMemo(
+    () => displayNodes.find((node) => node.id === selectedNodeId) || null,
+    [displayNodes, selectedNodeId]
+  );
+
+  const applyBridgeOrder = useCallback(
+    (sourceNodeId: string, targetNodeId: string) => {
+      if (!sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId) return;
+      const sourceNode = nodeMap[sourceNodeId];
+      const targetNode = nodeMap[targetNodeId];
+      if (!sourceNode || !targetNode) return;
+      if (sourceNode.type !== 'channel' || targetNode.type !== 'channel') {
+        setFeedback('Bridge actions require two channel nodes.');
+        return;
+      }
+      const sourceChannelId = extractChannelId(sourceNode);
+      const targetChannelId = extractChannelId(targetNode);
+      if (!sourceChannelId || !targetChannelId) return;
+
+      const bridgeId = `bridge:${sourceNodeId}->${targetNodeId}`;
+      setBridgeEdges((prev) => {
+        const filtered = prev.filter((edge) => edge.id !== bridgeId);
+        return [{ id: bridgeId, sourceId: sourceNodeId, targetId: targetNodeId, status: 'active', createdAtMs: Date.now() }, ...filtered].slice(0, 18);
+      });
+      emitDirectiveMacro({
+        eventType: 'MOVE_OUT',
+        channelId: sourceChannelId,
+        directive: 'BRIDGE_NETS',
+        successMessage: `Bridge ${sourceNode.label} -> ${targetNode.label} established`,
+        payload: {
+          orderType: 'COMMS_BRIDGE',
+          sourceChannelId,
+          targetChannelId,
+          targetNodeId,
+        },
+      });
+      setBridgeDraftSourceId('');
+    },
+    [nodeMap, emitDirectiveMacro]
+  );
+
+  const updateNodeFromClientPoint = useCallback((nodeId: string, clientX: number, clientY: number) => {
+    const host = topologyRef.current;
+    if (!host || !nodeId) return;
+    const rect = host.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = clampPct(((clientX - rect.left) / rect.width) * 100);
+    const y = clampPct(((clientY - rect.top) / rect.height) * 100);
+    setNodePositionOverrides((prev) => ({
+      ...prev,
+      [nodeId]: { x, y },
+    }));
+  }, []);
+
+  const handleNodePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
+    if (event.button !== 0) return;
+    dragRef.current = {
+      nodeId,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
+    setSelectedNodeId(nodeId);
+    setRadialOpen(false);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handleNodePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
+    const current = dragRef.current;
+    if (!current || current.nodeId !== nodeId || current.pointerId !== event.pointerId) return;
+    const movedX = Math.abs(event.clientX - current.startX);
+    const movedY = Math.abs(event.clientY - current.startY);
+    if (movedX > 2 || movedY > 2) {
+      current.moved = true;
+      updateNodeFromClientPoint(nodeId, event.clientX, event.clientY);
+    }
+  }, [updateNodeFromClientPoint]);
+
+  const handleNodePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
+    const current = dragRef.current;
+    if (!current || current.nodeId !== nodeId || current.pointerId !== event.pointerId) return;
+    if (!current.moved) {
+      if (bridgeDraftSourceId) {
+        applyBridgeOrder(bridgeDraftSourceId, nodeId);
+      } else {
+        setSelectedNodeId(nodeId);
+      }
+    }
+    dragRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }, [applyBridgeOrder, bridgeDraftSourceId]);
+
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>, nodeId: string) => {
+    event.preventDefault();
+    const host = topologyRef.current;
+    if (!host) return;
+    const rect = host.getBoundingClientRect();
+    const x = clampPct(((event.clientX - rect.left) / rect.width) * 100);
+    const y = clampPct(((event.clientY - rect.top) / rect.height) * 100);
+    setSelectedNodeId(nodeId);
+    setRadialAnchor({ x, y });
+    setRadialOpen(true);
+  }, []);
+
+  const cancelBridgeDraft = useCallback(() => {
+    setBridgeDraftSourceId('');
+    setFeedback('Bridge target mode cleared.');
+  }, []);
+
+  const radialItems = useMemo<RadialMenuItem[]>(() => {
+    if (!selectedNode) return [];
+    const channelId = extractChannelId(selectedNode);
+    const canCommandChannel = selectedNode.type === 'channel' && Boolean(channelId);
+
+    const items: RadialMenuItem[] = [
+      {
+        id: 'reroute',
+        label: 'Reroute',
+        icon: 'depart',
+        tone: 'standard',
+        disabled: !canCommandChannel,
+        onSelect: () => {
+          if (!channelId) return;
+          dispatchDirective('REROUTE', { channelId });
+          setRadialOpen(false);
+        },
+      },
+      {
+        id: 'restrict',
+        label: 'Restrict',
+        icon: 'challenge',
+        tone: 'warning',
+        disabled: !canCommandChannel,
+        onSelect: () => {
+          if (!channelId) return;
+          dispatchDirective('RESTRICT', { channelId });
+          setRadialOpen(false);
+        },
+      },
+      {
+        id: 'checkin',
+        label: 'Check-In',
+        icon: 'endorse',
+        tone: 'standard',
+        disabled: !canCommandChannel,
+        onSelect: () => {
+          if (!channelId) return;
+          dispatchDirective('CHECKIN', { channelId });
+          setRadialOpen(false);
+        },
+      },
+      {
+        id: 'bridge',
+        label: bridgeDraftSourceId === selectedNode.id ? 'Cancel Bridge' : 'Bridge Target',
+        icon: 'link-op',
+        tone: bridgeDraftSourceId === selectedNode.id ? 'danger' : 'standard',
+        disabled: selectedNode.type !== 'channel',
+        onSelect: () => {
+          if (selectedNode.type !== 'channel') return;
+          if (bridgeDraftSourceId === selectedNode.id) {
+            setBridgeDraftSourceId('');
+            setFeedback('Bridge target mode cleared.');
+          } else {
+            setBridgeDraftSourceId(selectedNode.id);
+            setFeedback(`Target-select active from ${selectedNode.label}. Click another channel node to bridge.`);
+          }
+          setRadialOpen(false);
+        },
+      },
+    ];
+
+    if (bridgeDraftSourceId) {
+      items.push({
+        id: 'cancel-bridge',
+        label: 'Abort Target',
+        icon: 'attach-intel',
+        tone: 'danger',
+        onSelect: () => {
+          cancelBridgeDraft();
+          setRadialOpen(false);
+        },
+      });
+    }
+
+    return items;
+  }, [selectedNode, bridgeDraftSourceId, dispatchDirective, cancelBridgeDraft]);
+
+  const isSchemaExpanded = useCallback(
+    (id: string, fallback = false) => {
+      if (Object.prototype.hasOwnProperty.call(schemaExpandedById, id)) return Boolean(schemaExpandedById[id]);
+      return fallback;
+    },
+    [schemaExpandedById]
+  );
+
+  const toggleSchemaExpanded = useCallback((id: string, fallback = false) => {
+    setSchemaExpandedById((prev) => {
+      const current = Object.prototype.hasOwnProperty.call(prev, id) ? Boolean(prev[id]) : fallback;
+      return {
+        ...prev,
+        [id]: !current,
+      };
+    });
+  }, []);
+
   if (loading) {
     return <PanelLoadingState label="Loading comms graph..." />;
   }
@@ -648,7 +1213,7 @@ export default function CommsNetworkConsole({
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Command</h3>
-          <p className="text-xs text-zinc-500 truncate">Template: {snapshot.templateId} · Deterministic incident flow</p>
+          <p className="text-xs text-zinc-500 truncate">Template: {snapshot.templateId} · Drag nodes · Right-click radial command · Target-click bridge</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <NexusButton size="sm" intent={showMonitoring ? 'primary' : 'subtle'} onClick={() => setShowMonitoring((prev) => !prev)}>
@@ -667,7 +1232,7 @@ export default function CommsNetworkConsole({
       <div className="flex items-center gap-2 flex-wrap text-[11px] text-zinc-500">
         <NexusBadge tone="active">Channels {channels.length}</NexusBadge>
         <NexusBadge tone="neutral">Nodes {nodes.length}</NexusBadge>
-        <NexusBadge tone="neutral">Edges {edges.length}</NexusBadge>
+        <NexusBadge tone="neutral">Edges {renderedEdges.length}</NexusBadge>
         <NexusBadge tone={criticalIncidentCount > 0 ? 'danger' : 'neutral'}>
           Open Incidents {unresolvedIncidentCount}
         </NexusBadge>
@@ -676,6 +1241,9 @@ export default function CommsNetworkConsole({
         </NexusBadge>
         <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : deliveryStats.confidencePct >= 40 ? 'warning' : 'danger'}>
           Delivery {deliveryStats.confidencePct}%
+        </NexusBadge>
+        <NexusBadge tone={bridgeDraftSourceId ? 'warning' : 'neutral'}>
+          Bridge Target {bridgeDraftSourceId ? 'ARMED' : 'IDLE'}
         </NexusBadge>
       </div>
 
@@ -875,19 +1443,35 @@ export default function CommsNetworkConsole({
         </div>
       </section>
 
-      <div className="min-h-0 grid gap-3 xl:grid-cols-[minmax(0,1.32fr)_minmax(0,1fr)]">
+      <div className="min-h-0 grid gap-3 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="min-h-0 flex flex-col gap-2">
-          <div className="flex-1 min-h-[220px] rounded border border-zinc-800 bg-zinc-950/65 p-2 relative overflow-hidden">
+          <div
+            ref={topologyRef}
+            className="flex-1 min-h-[220px] rounded border border-zinc-800 bg-zinc-950/65 p-2 relative overflow-hidden"
+            onContextMenu={(event) => event.preventDefault()}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setRadialOpen(false);
+              }
+            }}
+          >
+            <div className="absolute inset-0 opacity-[0.18]" style={{
+              backgroundImage:
+                'linear-gradient(rgba(179,90,47,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(179,90,47,0.18) 1px, transparent 1px)',
+              backgroundSize: '22px 22px',
+            }} />
+
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-              {edges.map((edge: CommsGraphEdge) => {
+              {renderedEdges.map((edge: CommsGraphEdge) => {
                 const source = nodeMap[edge.sourceId];
                 const target = nodeMap[edge.targetId];
                 if (!source || !target) return null;
 
+                const isBridgeEdge = edge.id.startsWith('bridge:');
                 const isMonitoring = edge.type === 'monitoring';
-                const visible = isMonitoring ? showMonitoring : true;
-                const width = 1 + edge.intensity * 2.2;
-                const opacity = visible ? 0.3 + edge.intensity * 0.7 : 0;
+                const visible = isBridgeEdge ? true : isMonitoring ? showMonitoring : true;
+                const width = isBridgeEdge ? 2.2 : 1 + edge.intensity * 2.2;
+                const opacity = visible ? (isBridgeEdge ? 0.95 : 0.3 + edge.intensity * 0.7) : 0;
                 return (
                   <line
                     key={edge.id}
@@ -895,9 +1479,9 @@ export default function CommsNetworkConsole({
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke={isMonitoring ? 'rgba(180,150,120,0.62)' : 'rgba(179,90,47,0.72)'}
+                    stroke={isBridgeEdge ? 'rgba(251,146,60,0.9)' : isMonitoring ? 'rgba(180,150,120,0.62)' : 'rgba(179,90,47,0.72)'}
                     strokeWidth={width}
-                    strokeDasharray={isMonitoring ? '2.5 2.5' : undefined}
+                    strokeDasharray={isBridgeEdge ? '3.2 1.2' : isMonitoring ? '2.5 2.5' : undefined}
                     style={{
                       opacity,
                       transition: `opacity ${reducedMotion ? 0 : motionTokens.duration.fast}ms ${motionTokens.easing.standard}`,
@@ -907,9 +1491,16 @@ export default function CommsNetworkConsole({
               })}
             </svg>
 
-            {nodes.map((node, index) => {
+            {displayNodes.map((node, index) => {
               const isUser = node.type === 'user';
               const visible = isUser ? showUsers : true;
+              const isSelected = node.id === selectedNodeId;
+              const isBridgeSource = node.id === bridgeDraftSourceId;
+              const isBridgeTarget = Boolean(
+                bridgeDraftSourceId &&
+                bridgeDraftSourceId !== node.id &&
+                node.type === 'channel'
+              );
               const glow = node.intensity > 0 ? 8 + node.intensity * 18 : 0;
               const sizePx = Math.round(26 + node.size * 0.6);
 
@@ -931,11 +1522,42 @@ export default function CommsNetworkConsole({
                     }}
                   >
                     <div
-                      className="rounded-md border px-2 py-1 text-[10px] text-zinc-100 text-center whitespace-nowrap"
+                      role="button"
+                      tabIndex={0}
+                      onPointerDown={(event) => handleNodePointerDown(event, node.id)}
+                      onPointerMove={(event) => handleNodePointerMove(event, node.id)}
+                      onPointerUp={(event) => handleNodePointerUp(event, node.id)}
+                      onPointerCancel={() => {
+                        dragRef.current = null;
+                      }}
+                      onContextMenu={(event) => handleNodeContextMenu(event, node.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          if (bridgeDraftSourceId) {
+                            applyBridgeOrder(bridgeDraftSourceId, node.id);
+                          } else {
+                            setSelectedNodeId(node.id);
+                          }
+                        }
+                        if (event.key.toLowerCase() === 'r') {
+                          event.preventDefault();
+                          setRadialAnchor({ x: node.x, y: node.y });
+                          setSelectedNodeId(node.id);
+                          setRadialOpen(true);
+                        }
+                      }}
+                      className="rounded-md border px-2 py-1 text-[10px] text-zinc-100 text-center whitespace-nowrap cursor-grab active:cursor-grabbing outline-none focus-visible:ring-1 focus-visible:ring-orange-300/70"
                       style={{
                         minWidth: `${sizePx}px`,
                         background: nodeFill(node),
-                        borderColor: nodeBorder(node),
+                        borderColor: isBridgeSource
+                          ? 'rgba(251,191,36,0.95)'
+                          : isSelected
+                            ? 'rgba(251,146,60,0.9)'
+                            : isBridgeTarget
+                              ? 'rgba(250,204,21,0.65)'
+                              : nodeBorder(node),
                         boxShadow: glow > 0 ? `0 0 ${glow}px rgba(179,90,47,0.42)` : 'none',
                       }}
                       title={`${node.label}${node.type === 'channel' ? ` · activity ${Math.round(node.intensity * 100)}%` : ''}`}
@@ -947,6 +1569,26 @@ export default function CommsNetworkConsole({
                 </AnimatedMount>
               );
             })}
+
+            {bridgeDraftSourceId ? (
+              <div className="absolute left-2 top-2 rounded border border-amber-400/50 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-200">
+                Bridge targeting active. Select destination channel.
+              </div>
+            ) : null}
+
+            {selectedNode ? (
+              <div className="absolute right-2 top-2 rounded border border-zinc-700 bg-zinc-950/85 px-2 py-1 text-[10px] text-zinc-300 max-w-[180px] truncate">
+                Selected: {selectedNode.label}
+              </div>
+            ) : null}
+
+            <RadialMenu
+              open={radialOpen}
+              title={selectedNode ? `${selectedNode.label} Command` : 'Node Command'}
+              anchor={radialAnchor}
+              items={radialItems}
+              onClose={() => setRadialOpen(false)}
+            />
           </div>
 
           <div className="rounded border border-zinc-800 bg-zinc-900/40 p-2">
@@ -978,9 +1620,12 @@ export default function CommsNetworkConsole({
                 <div key={entry.channelId} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-zinc-200 truncate">{entry.label}</span>
-                    <NexusBadge tone={entry.discipline === 'SATURATED' ? 'danger' : entry.discipline === 'BUSY' ? 'warning' : 'ok'}>
-                      {entry.discipline}
-                    </NexusBadge>
+                    <div className="flex items-center gap-1.5">
+                      {bridgedChannelIds.has(entry.channelId) ? <NexusBadge tone="active">BRIDGED</NexusBadge> : null}
+                      <NexusBadge tone={entry.discipline === 'SATURATED' ? 'danger' : entry.discipline === 'BUSY' ? 'warning' : 'ok'}>
+                        {entry.discipline}
+                      </NexusBadge>
+                    </div>
                   </div>
                   <div className="mt-1 text-zinc-500">Q {entry.qualityPct}% · {entry.latencyMs}ms · M {entry.membershipCount}</div>
                 </div>
@@ -997,6 +1642,10 @@ export default function CommsNetworkConsole({
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
+              <NexusButton size="sm" intent={rightPanelView === 'schema' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('schema')}>
+                <ClipboardList className="w-3.5 h-3.5 mr-1" />
+                Fleet Schema
+              </NexusButton>
               <NexusButton size="sm" intent={rightPanelView === 'incidents' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('incidents')}>
                 <AlertTriangle className="w-3.5 h-3.5 mr-1" />
                 Priority Queue
@@ -1006,7 +1655,29 @@ export default function CommsNetworkConsole({
                 Mission Threads
               </NexusButton>
             </div>
-            {rightPanelView === 'incidents' ? (
+            {rightPanelView === 'schema' ? (
+              <div className="flex items-center gap-1.5">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))}
+                  disabled={schemaChannelPage === 0}
+                >
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {schemaChannelPage + 1}/{schemaChannelPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
+                  disabled={schemaChannelPage >= schemaChannelPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            ) : rightPanelView === 'incidents' ? (
               <div className="flex items-center gap-1.5">
                 <NexusButton size="sm" intent="subtle" onClick={() => setIncidentPage((prev) => Math.max(0, prev - 1))} disabled={incidentPage === 0}>
                   Prev
@@ -1043,7 +1714,153 @@ export default function CommsNetworkConsole({
             )}
           </div>
 
-          {rightPanelView === 'incidents' ? (
+          {rightPanelView === 'schema' ? (
+            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+              <button
+                type="button"
+                className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"
+                onClick={() => toggleSchemaExpanded('fleet:redscar', true)}
+              >
+                {isSchemaExpanded('fleet:redscar', true) ? <ChevronDown className="w-3 h-3 text-zinc-400" /> : <ChevronRight className="w-3 h-3 text-zinc-400" />}
+                <span className="text-[10px] text-zinc-200 uppercase tracking-wide">REDSCAR Fleet</span>
+                <NexusBadge tone="neutral" className="ml-auto">
+                  Wing {schemaTree.filter((wing) => wing.squads.length > 0).length}
+                </NexusBadge>
+              </button>
+
+              {isSchemaExpanded('fleet:redscar', true) ? (
+                <div className="space-y-1">
+                  {schemaTree.map((wing) => {
+                    if (!wing.squads.length) return null;
+                    const wingKey = `wing:${wing.id}`;
+                    return (
+                      <div key={wing.id} className="pl-2">
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1"
+                          onClick={() => toggleSchemaExpanded(wingKey, wing.id === 'CE')}
+                        >
+                          {isSchemaExpanded(wingKey, wing.id === 'CE') ? (
+                            <ChevronDown className="w-3 h-3 text-zinc-400" />
+                          ) : (
+                            <ChevronRight className="w-3 h-3 text-zinc-400" />
+                          )}
+                          <span className="text-[10px] text-zinc-200 uppercase tracking-wide">{wing.label}</span>
+                          <NexusBadge tone="neutral" className="ml-auto">
+                            Squad {wing.squads.length}
+                          </NexusBadge>
+                        </button>
+
+                        {isSchemaExpanded(wingKey, wing.id === 'CE') ? (
+                          <div className="space-y-1 pl-2">
+                            {wing.squads.map((squad) => {
+                              const squadKey = `squad:${squad.id}`;
+                              return (
+                                <div key={squad.id}>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/25 px-2 py-1"
+                                    onClick={() => toggleSchemaExpanded(squadKey, squad.label === 'Command Cell')}
+                                  >
+                                    {isSchemaExpanded(squadKey, squad.label === 'Command Cell') ? (
+                                      <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                    ) : (
+                                      <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                    )}
+                                    <span className="text-[10px] text-zinc-300 uppercase tracking-wide">{squad.label}</span>
+                                    <span className="ml-auto text-[9px] text-zinc-500">Channel {squad.channels.length}</span>
+                                  </button>
+
+                                  {isSchemaExpanded(squadKey, squad.label === 'Command Cell') ? (
+                                    <div className="space-y-1 pl-2">
+                                      {squad.channels.map((channel: any) => {
+                                        const channelKey = `channel:${wing.id}:${channel.id}`;
+                                        return (
+                                          <div key={channel.id}>
+                                            <button
+                                              type="button"
+                                              className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1"
+                                              onClick={() => toggleSchemaExpanded(channelKey, false)}
+                                            >
+                                              {isSchemaExpanded(channelKey, false) ? (
+                                                <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                              ) : (
+                                                <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                              )}
+                                              <span className="text-[10px] text-zinc-200 truncate">{channel.label}</span>
+                                              <NexusBadge tone={bridgedChannelIds.has(channel.id) ? 'active' : 'neutral'} className="ml-auto">
+                                                {bridgedChannelIds.has(channel.id) ? 'BRIDGED' : 'LINK'}
+                                              </NexusBadge>
+                                            </button>
+                                            <div className="pl-4 text-[9px] text-zinc-500">{channel.status}</div>
+
+                                            {isSchemaExpanded(channelKey, false) ? (
+                                              <div className="space-y-1 pl-3 pt-0.5">
+                                                {channel.vehicles.length > 0 ? (
+                                                  channel.vehicles.map((vehicle: any) => {
+                                                    const vehicleKey = `vehicle:${channel.id}:${vehicle.id}`;
+                                                    return (
+                                                      <div key={vehicle.id}>
+                                                        <button
+                                                          type="button"
+                                                          className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1"
+                                                          onClick={() => toggleSchemaExpanded(vehicleKey, true)}
+                                                        >
+                                                          {isSchemaExpanded(vehicleKey, true) ? (
+                                                            <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                                          ) : (
+                                                            <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                                          )}
+                                                          <span className="text-[10px] text-zinc-300">{vehicle.label}</span>
+                                                          <NexusBadge tone={vehicle.basicStatus === 'DEGRADED' ? 'danger' : vehicle.basicStatus === 'ACTIVE' ? 'warning' : 'ok'} className="ml-auto">
+                                                            {vehicle.basicStatus}
+                                                          </NexusBadge>
+                                                        </button>
+
+                                                        {isSchemaExpanded(vehicleKey, true) ? (
+                                                          <div className="space-y-0.5 pl-4">
+                                                            {vehicle.operators.map((operator: any) => (
+                                                              <div key={operator.id} className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-950/45 px-2 py-0.5">
+                                                                <div className="min-w-0">
+                                                                  <div className="text-[9px] text-zinc-200 truncate">{operator.callsign}</div>
+                                                                  <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{operator.role}</div>
+                                                                </div>
+                                                                <NexusBadge
+                                                                  tone={operator.status === 'TX' ? 'warning' : operator.status === 'OFF-NET' ? 'danger' : operator.status === 'MUTED' ? 'neutral' : 'ok'}
+                                                                >
+                                                                  {operator.status}
+                                                                </NexusBadge>
+                                                              </div>
+                                                            ))}
+                                                          </div>
+                                                        ) : null}
+                                                      </div>
+                                                    );
+                                                  })
+                                                ) : (
+                                                  <div className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[9px] text-zinc-500">
+                                                    No vehicle crews scoped to this channel page.
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : rightPanelView === 'incidents' ? (
             <>
               <div className="grid grid-cols-1 gap-1.5">
                 {visibleIncidents.map((incident) => {
@@ -1207,8 +2024,27 @@ export default function CommsNetworkConsole({
             </NexusBadge>
           </div>
         </div>
-        <div className="mt-1.5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-1.5">
-          {deliverySurface.slice(0, 4).map((dispatch) => (
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Orders Feed</div>
+          <div className="flex items-center gap-1.5">
+            <NexusButton size="sm" intent="subtle" onClick={() => setOrdersPage((prev) => Math.max(0, prev - 1))} disabled={ordersPage === 0}>
+              Prev
+            </NexusButton>
+            <NexusBadge tone="neutral">
+              {ordersPage + 1}/{ordersPageCount}
+            </NexusBadge>
+            <NexusButton
+              size="sm"
+              intent="subtle"
+              onClick={() => setOrdersPage((prev) => Math.min(ordersPageCount - 1, prev + 1))}
+              disabled={ordersPage >= ordersPageCount - 1}
+            >
+              Next
+            </NexusButton>
+          </div>
+        </div>
+        <div className="mt-1.5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-1.5">
+          {visibleOrders.map((dispatch) => (
             <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{dispatch.directive}</span>
@@ -1220,7 +2056,7 @@ export default function CommsNetworkConsole({
             </div>
           ))}
           {deliverySurface.length === 0 ? (
-            <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[10px] text-zinc-500 md:col-span-2 xl:col-span-4">
+            <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[10px] text-zinc-500 md:col-span-2 xl:col-span-5">
               No directives dispatched yet in this session.
             </div>
           ) : null}
