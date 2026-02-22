@@ -19,6 +19,7 @@ import {
   Volume2,
   Zap,
 } from 'lucide-react';
+import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
 import { useAuth } from '@/components/providers/AuthProvider';
 import {
   buildCommsChannelHealth,
@@ -125,6 +126,7 @@ export default function VoiceCommsRail({
   const [directiveDispatches, setDirectiveDispatches] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [showNetCreator, setShowNetCreator] = useState(false);
 
   const isCommsFocus = String(focusMode || '').toLowerCase() === 'comms';
   const quickPageSize = isCommsFocus ? 3 : QUICK_NET_PAGE_SIZE;
@@ -716,9 +718,19 @@ export default function VoiceCommsRail({
                   ) : null}
 
                   {voiceNets.length > 0 ? (
-                    <div className="space-y-1">
-                      <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2">Available Nets</div>
-                      {pagedNets.map(renderQuickNetCard)}
+                   <div className="space-y-1">
+                     <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2 flex items-center justify-between">
+                       <span>Available Nets</span>
+                       <button
+                         type="button"
+                         onClick={() => setShowNetCreator(true)}
+                         className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-400 hover:border-green-500/60 hover:text-green-400 transition-colors flex items-center gap-1"
+                         title="Create new voice net"
+                       >
+                         <Plus className="w-2.5 h-2.5" />
+                       </button>
+                     </div>
+                     {pagedNets.map(renderQuickNetCard)}
 
                       {netsPageCount > 1 ? (
                         <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
@@ -991,6 +1003,20 @@ export default function VoiceCommsRail({
             </div>
           ) : null}
           </div>
+
+          {showNetCreator && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-lg p-4 m-4 shadow-2xl">
+                <VoiceNetCreator
+                  onSuccess={() => {
+                    setShowNetCreator(false);
+                    setFeedback('Voice net created successfully');
+                  }}
+                  onCancel={() => setShowNetCreator(false)}
+                />
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
