@@ -485,7 +485,7 @@ export default function CommsNetworkConsole({
   const secureModeEnabled = Boolean(activeVoiceNetId && voiceNet.secureModeByNet?.[activeVoiceNetId]?.enabled);
   const channelHealthById = useMemo(
     () =>
-      channelHealth.reduce<Record<string, (typeof channelHealth)[number]>>((acc, entry) => {
+      channelHealth.reduce((acc, entry) => {
         acc[entry.channelId] = entry;
         return acc;
       }, {}),
