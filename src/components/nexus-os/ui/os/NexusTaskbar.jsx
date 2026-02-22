@@ -179,10 +179,9 @@ export default function NexusTaskbar({
           type="button"
           onClick={() => setTrayOpen((prev) => !prev)}
           className={`nx-taskbar-alert-btn ${trayOpen ? 'is-open' : ''}`}
-          title="Alerts center"
+          title={`${unreadNotifications > 0 ? unreadNotifications : notifications.length} alerts`}
         >
           {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
-          <span className="hidden md:inline">Alerts</span>
           <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
         </button>
 
