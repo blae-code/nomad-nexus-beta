@@ -174,10 +174,10 @@ export default function CommsNetworkConsole({
 }) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
-  const voiceNet = useVoiceNet() as any;
-  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
+  const voiceNet = useVoiceNet();
+  const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(true);
   const [healthPage, setHealthPage] = useState(0);
