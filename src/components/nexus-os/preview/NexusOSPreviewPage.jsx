@@ -753,42 +753,68 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       <div className="nexus-shell-grid" />
       <div className="nexus-shell-vignette" />
 
-      <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0">
-        <div className="my-2 flex items-center gap-2 min-w-0">
-          <Shield className="w-4 h-4 text-orange-500 shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-[11px] font-bold uppercase tracking-wider text-zinc-100 leading-none">NexusOS Command Surface</h1>
-            <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 mt-0.5">
-              <span>{workspaceDisplayCallsign}</span>
-              <span className="text-zinc-700">·</span>
-              <span>Bridge {bridgeId}</span>
+      <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0" role="banner">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-orange-500/20 bg-orange-500/5">
+            <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-100 leading-none">
+                NexusOS
+              </h1>
+              <div className="text-[8px] text-zinc-600 uppercase tracking-[0.2em] leading-none mt-0.5">
+                Command Surface
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-center gap-1.5">
+            <div className="h-3 w-px bg-zinc-700/50" />
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/30 bg-zinc-900/30">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">{workspaceDisplayCallsign}</span>
+              <span className="text-[8px] text-zinc-700">•</span>
+              <span className="text-[9px] uppercase tracking-wider text-zinc-500">{bridgeId}</span>
             </div>
           </div>
         </div>
 
-        <button
-          type="button"
-          className="flex items-center gap-2 px-3 py-1.5 rounded border border-zinc-700/30 bg-zinc-900/20 hover:bg-zinc-800/40 hover:border-zinc-600/40 transition-all group"
-          onClick={() => setCommandDeckOpen(true)}
-          title="Open command palette (Ctrl+Shift+P)">
-
-          <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
-          <span className="text-[10px] text-zinc-400 group-hover:text-zinc-200 transition-colors">Command Deck</span>
-          <span className="hidden lg:inline text-[9px] text-zinc-600 font-mono">Ctrl+Shift+P</span>
-        </button>
-
         <div className="flex items-center gap-2 shrink-0">
-          <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'}>
-            {focusStatusLabel}
-          </NexusBadge>
-          <NexusBadge tone={online ? 'ok' : 'danger'}>
-            <Signal className="w-3 h-3 mr-1" />
-            {online ? 'Link' : 'Down'}
-          </NexusBadge>
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
-            <Clock3 className="w-3.5 h-3.5" />
-            <span>{systemTimeLabel}</span>
+          <div className="hidden lg:flex items-center gap-1.5">
+            <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="text-[9px]">
+              {focusStatusLabel}
+            </NexusBadge>
+            <div className="h-3 w-px bg-zinc-700/50" />
           </div>
+          
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px]">
+              {online ? 'Link Ready' : 'Link Down'}
+            </NexusBadge>
+          </div>
+
+          <div className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/30 bg-zinc-900/30">
+            <Clock3 className="w-3 h-3 text-zinc-600" />
+            <span className="text-[9px] font-mono text-zinc-400">{systemTimeLabel}</span>
+          </div>
+
+          <button
+            type="button"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
+            onClick={() => setCommandDeckOpen(true)}
+            title="Open command deck"
+            aria-label="Open command deck (Ctrl+Shift+P)"
+            aria-keyshortcuts="Control+Shift+P">
+
+            <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+            <span className="hidden sm:inline text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors uppercase tracking-wide">
+              Deck
+            </span>
+            <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-600 bg-zinc-800/60 border border-zinc-700/50">
+              <span>⌃</span>
+              <span>⇧</span>
+              <span>P</span>
+            </kbd>
+          </button>
         </div>
       </header>
 
