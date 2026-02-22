@@ -19,6 +19,7 @@ import {
   Plus,
   Users,
   FolderPlus,
+  CornerDownRight,
 } from 'lucide-react';
 import { NexusBadge } from '../primitives';
 import { generateResponseSuggestions, queueMessageAnalysis, smartSearch } from '../../services/commsAIService';
@@ -60,6 +61,9 @@ export default function CommsHub({
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [hoveredChannel, setHoveredChannel] = useState(null);
   const [messages, setMessages] = useState({});
+  const [threads, setThreads] = useState({});
+  const [activeThread, setActiveThread] = useState(null);
+  const [threadInput, setThreadInput] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({
     tactical: true,
     operations: true,
@@ -338,6 +342,69 @@ export default function CommsHub({
     pickChannel(groupId);
     setPanelFeedback('Group message created.');
   }, [pickChannel]);
+
+  const createThread = useCallback((parentMessage) => {
+    if (!parentMessage || !selectedChannel) return;
+    const threadId = `thread-${parentMessage.id}`;
+    setThreads((prev) => ({
+      ...prev,
+      [threadId]: {
+        id: threadId,
+        parentMessageId: parentMessage.id,
+        channelId: selectedChannel,
+        messages: [],
+      },
+    }));
+    setActiveThread(threadId);
+    setPanelFeedback(`Thread started on message.`);
+  }, [selectedChannel]);
+
+  const closeThread = useCallback(() => {
+    setActiveThread(null);
+    setThreadInput('');
+  }, []);
+
+  const sendThreadReply = useCallback(() => {
+    if (!threadInput.trim() || !activeThread) return;
+    const nowMs = Date.now();
+    const newReply = {
+      id: `reply-${nowMs}`,
+      text: threadInput,
+      author: actorId || 'You',
+      timestamp: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAtMs: nowMs,
+    };
+
+    setThreads((prev) => {
+      const thread = prev[activeThread];
+      if (!thread) return prev;
+      return {
+        ...prev,
+        [activeThread]: {
+          ...thread,
+          messages: [...thread.messages, newReply],
+        },
+      };
+    });
+
+    setMessages((prev) => {
+      const channelId = threads[activeThread]?.channelId;
+      if (!channelId) return prev;
+      const channelMessages = prev[channelId] || [];
+      const parentId = threads[activeThread]?.parentMessageId;
+      return {
+        ...prev,
+        [channelId]: channelMessages.map((msg) =>
+          msg.id === parentId
+            ? { ...msg, threadCount: (msg.threadCount || 0) + 1 }
+            : msg
+        ),
+      };
+    });
+
+    setThreadInput('');
+    setPanelFeedback('Reply sent to thread.');
+  }, [threadInput, activeThread, actorId, threads]);
 
   const acknowledgeChannel = useCallback((channelId = selectedChannel) => {
     if (!channelId) return;
@@ -751,6 +818,9 @@ export default function CommsHub({
                   pagedMessages.map((message) => {
                     const analysis = messageAnalyses[message.id];
                     const showAnalysis = aiEnabled && showAiFeatures && analysis;
+                    const threadId = `thread-${message.id}`;
+                    const threadData = threads[threadId];
+                    const threadCount = message.threadCount || threadData?.messages?.length || 0;
                     return (
                       <div key={message.id} className="group px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-orange-500/30 transition-colors">
                         <div className="flex items-start justify-between gap-2">
@@ -787,16 +857,39 @@ export default function CommsHub({
                               ) : null}
                             </div>
 
-                            <div className="text-[10px] text-zinc-400">{message.text}</div>
+                            <div className="text-[10px] text-zinc-400 leading-relaxed">{message.text}</div>
 
-                            {aiEnabled && showAiFeatures && analysis?.requiresResponse ? (
+                            <div className="mt-1.5 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 type="button"
-                                onClick={() => handleGenerateSuggestions(message)}
-                                className="mt-1 text-[9px] text-orange-400 hover:text-orange-300 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => createThread(message)}
+                                className="text-[9px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                                title="Start thread"
                               >
-                                <Sparkles className="w-3 h-3" />
-                                Suggest responses
+                                <CornerDownRight className="w-3 h-3" />
+                                Reply in thread
+                              </button>
+                              {aiEnabled && showAiFeatures && analysis?.requiresResponse ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleGenerateSuggestions(message)}
+                                  className="text-[9px] text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                                >
+                                  <Sparkles className="w-3 h-3" />
+                                  Suggest
+                                </button>
+                              ) : null}
+                            </div>
+
+                            {threadCount > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => setActiveThread(threadId)}
+                                className="mt-1.5 flex items-center gap-1.5 px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/15 transition-colors"
+                              >
+                                <MessageSquare className="w-3 h-3 text-cyan-400" />
+                                <span className="text-[9px] text-cyan-300 font-semibold">{threadCount} {threadCount === 1 ? 'reply' : 'replies'}</span>
+                                <ChevronRight className="w-3 h-3 text-cyan-400" />
                               </button>
                             ) : null}
 
@@ -885,6 +978,82 @@ export default function CommsHub({
               </>
             ) : null}
           </div>
+
+          {/* Thread Panel - slides over chat panel */}
+          {activeThread && threads[activeThread] ? (
+            <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-sm flex flex-col z-10 animate-in slide-in-from-right duration-300">
+              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Thread</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeThread}
+                    className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {(() => {
+                  const parentId = threads[activeThread].parentMessageId;
+                  const parentMsg = currentMessages.find((m) => m.id === parentId);
+                  return parentMsg ? (
+                    <div className="px-2 py-1.5 rounded bg-zinc-900/60 border border-cyan-500/30">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-semibold text-cyan-300">{parentMsg.author}</span>
+                        <span className="text-[9px] text-zinc-600">{parentMsg.timestamp}</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400 leading-relaxed">{parentMsg.text}</div>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+
+              <div className="flex-1 min-h-0 p-2 space-y-1.5 overflow-y-auto">
+                {threads[activeThread].messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
+                    <CornerDownRight className="w-8 h-8 text-cyan-700/50" />
+                    <div className="text-[10px] font-bold uppercase tracking-wider">No replies yet</div>
+                    <div className="text-[9px] text-zinc-600">Start the conversation</div>
+                  </div>
+                ) : (
+                  threads[activeThread].messages.map((reply) => (
+                    <div key={reply.id} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-semibold text-zinc-300">{reply.author}</span>
+                        <span className="text-[9px] text-zinc-600">{reply.timestamp}</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400 leading-relaxed">{reply.text}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
+                <input
+                  type="text"
+                  placeholder="Reply to thread..."
+                  value={threadInput}
+                  onChange={(event) => setThreadInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && event.currentTarget.value.trim()) sendThreadReply();
+                  }}
+                  className="flex-1 text-[10px] bg-zinc-800/60 border border-cyan-500/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={sendThreadReply}
+                  disabled={!threadInput.trim()}
+                  className="h-6 px-2 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  title="Send reply (Enter)"
+                >
+                  <Send className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
