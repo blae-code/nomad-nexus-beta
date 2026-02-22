@@ -209,17 +209,11 @@ export default function CommsNetworkConsole({
     'wing:CE': true,
     'squad:CE:Command Cell': true,
   });
-  const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+  const [nodePositionOverrides, setNodePositionOverrides] = useState({});
   const [radialOpen, setRadialOpen] = useState(false);
-  const [radialAnchor, setRadialAnchor] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
-  const topologyRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<{
-    nodeId: string;
-    pointerId: number;
-    startX: number;
-    startY: number;
-    moved: boolean;
-  } | null>(null);
+  const [radialAnchor, setRadialAnchor] = useState({ x: 50, y: 50 });
+  const topologyRef = useRef(null);
+  const dragRef = useRef(null);
   const activeEventId = useMemo(() => {
     const token = String(opId || '').trim();
     return token || null;
