@@ -768,10 +768,10 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-orange-500/20 bg-orange-500/5">
             <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0" />
             <div className="min-w-0">
-              <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-100 leading-none">
+              <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-white leading-none">
                 NexusOS
               </h1>
-              <div className="text-[8px] text-zinc-600 uppercase tracking-[0.2em] leading-none mt-0.5">
+              <div className="text-[8px] text-zinc-400 uppercase tracking-[0.2em] leading-none mt-0.5">
                 Command Surface
               </div>
             </div>
@@ -780,24 +780,24 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           <div className="hidden md:flex items-center gap-1.5">
             <div className="h-3 w-px bg-zinc-700/50" />
             <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/30 bg-zinc-900/30">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">{workspaceDisplayCallsign}</span>
-              <span className="text-[8px] text-zinc-700">•</span>
-              <span className="text-[9px] uppercase tracking-wider text-zinc-500">{bridgeId}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-200">{workspaceDisplayCallsign}</span>
+              <span className="text-[8px] text-zinc-600">•</span>
+              <span className="text-[9px] uppercase tracking-wider text-zinc-300">{bridgeId}</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden lg:flex items-center gap-1.5">
-            <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="text-[9px]">
+            <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="text-[9px] font-semibold">
               {focusStatusLabel}
             </NexusBadge>
             <div className="h-3 w-px bg-zinc-700/50" />
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px]">
+            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px] font-semibold">
               {online ? 'Link Ready' : 'Link Down'}
             </NexusBadge>
           </div>
@@ -832,11 +832,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               aria-label="Open command deck (Ctrl+Shift+P)"
               aria-keyshortcuts="Control+Shift+P">
 
-              <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
-              <span className="hidden sm:inline text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors uppercase tracking-wide">
+              <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+              <span className="hidden sm:inline text-[10px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
                 Deck
               </span>
-              <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-600 bg-zinc-800/60 border border-zinc-700/50">
+              <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">
                 <span>⌃</span>
                 <span>⇧</span>
                 <span>P</span>
@@ -850,8 +850,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               title="Open settings console"
               aria-label="Open settings console">
 
-              <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
-              <span className="hidden lg:inline text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors uppercase tracking-wide">
+              <Settings className="w-3.5 h-3.5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+              <span className="hidden lg:inline text-[10px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
                 Settings
               </span>
             </button>
