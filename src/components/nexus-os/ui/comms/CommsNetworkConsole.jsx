@@ -38,9 +38,6 @@ import {
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
-  type DirectiveDeliveryState,
-  type DisciplineAlert,
-  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
 import type { CqbEventType } from '../../schemas/coreSchemas';
