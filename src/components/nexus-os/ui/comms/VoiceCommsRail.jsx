@@ -566,40 +566,37 @@ export default function VoiceCommsRail({
 
   return (
     <div className={`nx-voice-rail flex flex-col h-full bg-zinc-950/80 border-l border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
-      <div className="px-2 py-1.5 nx-voice-header border-b border-zinc-700/40 bg-zinc-900/20 flex-shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          {isExpanded ? (
-            <>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Radio className="w-3.5 h-3.5 text-green-500" />
-                <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Command</h3>
-                <span className={`text-[8px] font-mono uppercase ${connectionTone}`}>{connectionState}</span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
-                  className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
-                  title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
-                >
-                  {displayMode === 'standard' ? 'Std' : 'Cmd'}
-                </button>
-                <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-green-500 transition-colors" title="Collapse">
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </>
-          ) : (
-            <button type="button" onClick={onToggleExpand} className="w-full flex items-center justify-center text-zinc-500 hover:text-green-500 transition-colors" title="Expand">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          )}
+      {!isExpanded ? (
+        <div className="flex items-center justify-center py-2 border-b border-zinc-700/40">
+          <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-green-500 transition-colors" title="Expand">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex-shrink-0 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Radio className="w-3.5 h-3.5 text-green-500" />
+              <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Command</h3>
+              <span className={`text-[8px] font-mono uppercase ${connectionTone}`}>{connectionState}</span>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
+                className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
+                title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
+              >
+                {displayMode === 'standard' ? 'Std' : 'Cmd'}
+              </button>
+              <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-green-500 transition-colors" title="Collapse">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
 
-      {isExpanded ? (
-        <div className="px-2 py-2 flex-1 min-h-0 overflow-y-auto space-y-2">
-          {renderGlobalControlCluster()}
+          <div className="px-2 py-2 flex-1 min-h-0 overflow-y-auto space-y-2">
+            {renderGlobalControlCluster()}
 
           {displayMode === 'standard' ? (
             <>
@@ -993,8 +990,9 @@ export default function VoiceCommsRail({
               {feedback}
             </div>
           ) : null}
-        </div>
-      ) : null}
+          </div>
+        </>
+      )}
     </div>
   );
 }
