@@ -591,6 +591,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     effectiveVoiceNets,
     effectiveVoiceParticipants,
     voiceNet,
+    roster: activeRoster,
   });
 
   const availableBridgeIds = useMemo(() => Object.keys(BRIDGE_DEFAULT_PRESET), []);
