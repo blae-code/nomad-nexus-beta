@@ -795,8 +795,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         </div>
 
         <button
-          type="button"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
+          type="button" className="bg-zinc-900/40 pr-2 pl-2 rounded-lg flex items-center gap-2 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
+
           onClick={() => setCommandDeckOpen(true)}
           title="Open command deck"
           aria-label="Open command deck (Ctrl+Shift+P)"
@@ -812,9 +812,9 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         </button>
 
         <div className="flex items-center gap-2 ml-auto">
-          <div
-            className="hidden xl:flex items-center gap-4 px-3 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
-            title="System Time: Local and UTC">
+          <div className="bg-zinc-900/40 pr-2 pl-2 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
+
+          title="System Time: Local and UTC">
 
             <Clock3 className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
             <div className="flex items-center gap-4">
