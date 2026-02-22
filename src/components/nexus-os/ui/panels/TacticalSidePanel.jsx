@@ -121,7 +121,7 @@ export default function TacticalSidePanel({
                     <button
                       type="button"
                       onClick={onMinimize}
-                      className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
+                      className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
                       title="Minimize panel width"
                     >
                       <Minimize2 className="w-3.5 h-3.5" />
@@ -129,7 +129,7 @@ export default function TacticalSidePanel({
                     <button
                       type="button"
                       onClick={onMaximize}
-                      className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
+                      className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
                       title="Maximize panel width"
                     >
                       <Maximize2 className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export default function TacticalSidePanel({
                 <button
                   type="button"
                   onClick={onToggleCollapse}
-                  className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
+                  className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
                   title="Collapse panel"
                 >
                   {isLeft ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
