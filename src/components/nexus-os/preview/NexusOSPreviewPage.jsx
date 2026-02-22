@@ -763,7 +763,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       <div className="nexus-shell-grid" />
       <div className="nexus-shell-vignette" />
 
-      <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0" role="banner">
+      <header className="pt-1 pb-1 nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0" role="banner">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-orange-500/20 bg-orange-500/5">
             <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0" />
@@ -806,18 +806,18 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
             Command Deck
           </span>
-          <kbd className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono text-orange-300 bg-zinc-800/80 border border-orange-500/40 ml-auto">
+          <kbd className="bg-zinc-800/80 text-orange-300 ml-auto pt-1 pb-1 font-mono rounded hidden xl:inline-flex items-center gap-1 border border-orange-500/40">
             Ctrl+Shift+P
           </kbd>
         </button>
 
         <div className="flex items-center gap-2 ml-auto">
-          <div className="bg-zinc-900/40 pr-2 pl-2 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
+          <div className="bg-zinc-900/40 pr-2 pb-1 pl-2 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
 
           title="System Time: Local and UTC">
 
             <Clock3 className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
-            <div className="flex items-center gap-4">
+            <div className="mx-auto flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
                 <span className="text-[13px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
