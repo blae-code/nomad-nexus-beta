@@ -789,7 +789,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden lg:flex items-center gap-1.5">
-            
+
 
 
             <div className="h-3 w-px bg-zinc-700/50" />
@@ -823,39 +823,36 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
-              onClick={() => setCommandDeckOpen(true)}
-              title="Open command deck"
-              aria-label="Open command deck (Ctrl+Shift+P)"
-              aria-keyshortcuts="Control+Shift+P">
+          <button
+            type="button"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
+            onClick={() => setCommandDeckOpen(true)}
+            title="Open command deck"
+            aria-label="Open command deck (Ctrl+Shift+P)"
+            aria-keyshortcuts="Control+Shift+P">
 
-              <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
-              <span className="hidden sm:inline text-[10px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
-                Deck
-              </span>
-              <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">
-                <span>⌃</span>
-                <span>⇧</span>
-                <span>P</span>
-              </kbd>
-            </button>
+            <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+            <span className="hidden sm:inline text-[10px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
+              Deck
+            </span>
+            <kbd className="hidden xl:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">
+              <span>⌃</span>
+              <span>⇧</span>
+              <span>P</span>
+            </kbd>
+          </button>
+        </div>
 
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
-              onClick={() => setSettingsPanelOpen(true)}
-              title="Open settings console"
-              aria-label="Open settings console">
+        <div className="flex items-center ml-auto">
+          <button
+            type="button"
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
+            onClick={() => setSettingsPanelOpen(true)}
+            title="Open settings console"
+            aria-label="Open settings console">
 
-              <Settings className="w-3.5 h-3.5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
-              <span className="hidden lg:inline text-[10px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
-                Settings
-              </span>
-            </button>
-          </div>
+            <Settings className="w-5 h-5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+          </button>
         </div>
       </header>
 
