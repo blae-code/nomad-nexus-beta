@@ -2,14 +2,14 @@ import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
 
-function toneForNotificationLevel(level: NexusTrayNotification['level']) {
+function toneForNotificationLevel(level) {
   if (level === 'critical') return 'danger';
   if (level === 'warning') return 'warning';
   if (level === 'success') return 'ok';
   return 'active';
 }
 
-function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
+function dotForState(state) {
   if (state === 'foreground') return 'bg-emerald-400';
   if (state === 'background') return 'bg-sky-400';
   if (state === 'suspended') return 'bg-amber-400';
@@ -17,14 +17,14 @@ function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string 
   return 'bg-zinc-600';
 }
 
-function ageLabel(timestamp: string): string {
+function ageLabel(timestamp) {
   const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
   if (ageSeconds < 60) return `${ageSeconds}s`;
   if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m`;
   return `${Math.floor(ageSeconds / 3600)}h`;
 }
 
-function compactLabel(value: string, max = 10): string {
+function compactLabel(value, max = 10) {
   const clean = String(value || '').trim();
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}...`;
@@ -42,7 +42,7 @@ export default function NexusTaskbar({
   onMarkNotificationRead,
   onMarkAllNotificationsRead,
   onClearNotifications,
-}) {
+}: NexusTaskbarProps) {
   const [trayOpen, setTrayOpen] = React.useState(false);
   const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
   const [appPage, setAppPage] = React.useState(0);
@@ -87,9 +87,12 @@ export default function NexusTaskbar({
   return (
     <section className="relative nx-taskbar-strip">
       <div className="nx-taskbar-block nx-taskbar-meta">
+        <div className="nx-taskbar-dock-chip">
+          <Sparkles className="w-3 h-3" />
+          <span>Dock</span>
+        </div>
         <NexusBadge tone="neutral" className="nx-taskbar-count-badge">
-          <Sparkles className="w-3 h-3 mr-1" />
-          {appCatalog.length}
+          {appCatalog.length} modules
         </NexusBadge>
         {appPageCount > 1 ? (
           <NexusBadge tone="neutral" className="nx-taskbar-count-badge hidden md:inline-flex">
@@ -163,14 +166,16 @@ export default function NexusTaskbar({
           type="button"
           onClick={() => setTrayOpen((prev) => !prev)}
           className={`nx-taskbar-alert-btn ${trayOpen ? 'is-open' : ''}`}
-          title={`${unreadNotifications > 0 ? unreadNotifications : notifications.length} alerts`}
+          title="Alerts center"
         >
           {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+          <span className="hidden md:inline">Alerts</span>
           <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
         </button>
 
-        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 nx-taskbar-command-btn" title="Command Deck (Ctrl+Shift+P)">
-          <AppWindow className="w-3.5 h-3.5" />
+        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 nx-taskbar-command-btn">
+          <AppWindow className="w-3.5 h-3.5 mr-1" />
+          Deck
         </NexusButton>
       </div>
 
@@ -178,7 +183,7 @@ export default function NexusTaskbar({
         <div className="nx-taskbar-tray">
           <div className="nx-taskbar-tray-header">
             <div className="text-[11px] text-zinc-400 uppercase tracking-wide">
-              Alerts
+              Alerts Center
               <span className="text-zinc-600 ml-1">
                 {filteredNotifications.length}/{notifications.length}
               </span>
@@ -188,7 +193,7 @@ export default function NexusTaskbar({
                 size="sm"
                 intent={trayFilter === 'UNREAD' ? 'primary' : 'subtle'}
                 onClick={() => setTrayFilter('UNREAD')}
-                title="Unread only"
+                title="Show unread alerts"
               >
                 Unread
               </NexusButton>
@@ -196,14 +201,14 @@ export default function NexusTaskbar({
                 size="sm"
                 intent={trayFilter === 'ALL' ? 'primary' : 'subtle'}
                 onClick={() => setTrayFilter('ALL')}
-                title="All alerts"
+                title="Show all alerts"
               >
                 All
               </NexusButton>
-              <NexusButton size="sm" intent="subtle" onClick={onMarkAllNotificationsRead} title="Mark all read" aria-label="Mark all read">
+              <NexusButton size="sm" intent="subtle" onClick={onMarkAllNotificationsRead} title="Mark all notifications as read">
                 <CheckCheck className="w-3.5 h-3.5" />
               </NexusButton>
-              <NexusButton size="sm" intent="subtle" onClick={onClearNotifications} title="Clear all" aria-label="Clear all">
+              <NexusButton size="sm" intent="subtle" onClick={onClearNotifications} title="Clear notifications">
                 <Trash2 className="w-3.5 h-3.5" />
               </NexusButton>
             </div>
@@ -225,13 +230,16 @@ export default function NexusTaskbar({
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-zinc-200 truncate">{notice.title}</span>
                     <div className="shrink-0 flex items-center gap-1">
-                      <NexusBadge tone={toneForNotificationLevel(notice.level)} className="text-[9px]">
-                        {notice.level.slice(0, 3)}
+                      <NexusBadge tone={toneForNotificationLevel(notice.level)}>
+                        {notice.level.slice(0, 3).toUpperCase()}
                       </NexusBadge>
                       <span className="text-[10px] text-zinc-500">{ageLabel(notice.createdAt)}</span>
                     </div>
                   </div>
                   {notice.detail ? <div className="mt-1 text-[11px] text-zinc-500 truncate">{notice.detail}</div> : null}
+                  <div className="mt-1 text-[10px] text-zinc-600">
+                    {notice.source || 'system'} · {notice.read ? 'read' : 'unread'}
+                  </div>
                 </button>
               ))}
 
