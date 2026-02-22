@@ -17,7 +17,7 @@ function dotForState(state) {
   return 'bg-zinc-600';
 }
 
-function ageLabel(timestamp: string): string {
+function ageLabel(timestamp) {
   const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
   if (ageSeconds < 60) return `${ageSeconds}s`;
   if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m`;
