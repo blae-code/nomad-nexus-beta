@@ -26,18 +26,13 @@ import {
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
-  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
-  type CommsDirectiveThreadLane,
-  type DirectiveDeliveryState,
-  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
-import type { CqbEventType } from '../../schemas/coreSchemas';
 import { NexusBadge, NexusButton } from '../primitives';
 
 const PAGE_SIZE = 5;
@@ -49,26 +44,26 @@ const DISCIPLINE_MODES = [
   { id: 'COMMAND_ONLY', label: 'Cmd' },
 ];
 
-function incidentPriorityTone(priority: string): 'danger' | 'warning' | 'active' {
+function incidentPriorityTone(priority) {
   if (priority === 'CRITICAL') return 'danger';
   if (priority === 'HIGH') return 'warning';
   return 'active';
 }
 
-function incidentStatusTone(status: CommsIncidentStatus): 'warning' | 'active' | 'ok' | 'neutral' {
+function incidentStatusTone(status) {
   if (status === 'NEW') return 'warning';
   if (status === 'ACKED') return 'active';
   if (status === 'ASSIGNED') return 'ok';
   return 'neutral';
 }
 
-function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
+function deliveryTone(status) {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -76,13 +71,13 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant: any): boolean {
+function isParticipantSpeaking(participant) {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
+const INCIDENT_EVENT_BY_STATUS = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
@@ -125,9 +120,9 @@ export default function VoiceCommsRail({
   const [threadPage, setThreadPage] = useState(0);
   const [healthPage, setHealthPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
+  const [incidentStatusById, setIncidentStatusById] = useState({});
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -184,7 +179,7 @@ export default function VoiceCommsRail({
     [incidents]
   );
   const activeSpeakers = useMemo(
-    () => participants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
+    () => participants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 4),
     [participants]
   );
   const disciplineAlerts = useMemo(
@@ -332,7 +327,7 @@ export default function VoiceCommsRail({
   const selectedThread = directiveThreads.find((lane) => lane.id === selectedThreadId) || null;
 
   const emitMacro = useCallback(
-    (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
+    (eventType, payload, successMessage) => {
       if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
       setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
     },
@@ -340,15 +335,7 @@ export default function VoiceCommsRail({
   );
 
   const emitDirectiveMacro = useCallback(
-    (input: {
-      eventType: CqbEventType;
-      channelId: string;
-      directive: string;
-      successMessage: string;
-      incidentId?: string;
-      laneId?: string;
-      payload?: Record<string, unknown>;
-    }) => {
+    (input) => {
       const dispatch = createDirectiveDispatchRecord({
         channelId: input.channelId,
         laneId: input.laneId,
@@ -377,7 +364,7 @@ export default function VoiceCommsRail({
   );
 
   const transitionIncident = useCallback(
-    (nextStatus: 'ACKED' | 'ASSIGNED' | 'RESOLVED') => {
+    (nextStatus) => {
       if (!selectedIncident) return;
       if (!canTransitionIncidentStatus(selectedIncident.status, nextStatus)) return;
 
@@ -399,7 +386,7 @@ export default function VoiceCommsRail({
   );
 
   const dispatchDirective = useCallback(
-    (directive: 'REROUTE' | 'RESTRICT' | 'CHECKIN') => {
+    (directive) => {
       const channelId = channelHealth[0]?.channelId || '';
       if (!channelId) return;
 
