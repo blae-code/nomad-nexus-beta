@@ -739,43 +739,42 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       <div className="nexus-shell-vignette" />
 
       <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0">
-        <div className="nx-topbar-left">
-          <div className="nx-topbar-mark">
-            <Shield className="w-3.5 h-3.5" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="nx-topbar-title">NexusOS Command Surface</h1>
-            <div className="nx-topbar-subline">
-              <span className="nx-topbar-mode">{isWorkspaceMode ? 'Workspace' : 'Sandbox'}</span>
-              <span className="nx-topbar-dot" />
-              <span className="nx-topbar-meta">{workspaceDisplayCallsign}</span>
-              <span className="nx-topbar-dot nx-hide-lg" />
-              <span className="nx-topbar-meta nx-hide-lg">Bridge {bridgeId}</span>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-zinc-700/40 bg-zinc-900/40">
+            <Shield className="w-4 h-4 text-orange-500 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-[11px] font-bold uppercase tracking-wider text-zinc-100">NexusOS</h1>
+              <div className="flex items-center gap-1.5 text-[9px] text-zinc-500">
+                <span>{workspaceDisplayCallsign}</span>
+                <span className="text-zinc-700">·</span>
+                <span>Bridge {bridgeId}</span>
+              </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            className="flex items-center gap-2 px-3 py-1.5 rounded border border-zinc-700/40 bg-zinc-900/40 hover:border-orange-500/40 transition-colors group"
+            onClick={() => setCommandDeckOpen(true)}
+            title="Open command palette (Ctrl+Shift+P)"
+          >
+            <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+            <span className="text-[10px] text-zinc-400 group-hover:text-zinc-300">Command Deck</span>
+            <span className="hidden lg:inline text-[9px] text-zinc-600 px-1.5 py-0.5 rounded bg-zinc-800/60">Ctrl+Shift+P</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="nx-command-entry"
-          onClick={() => setCommandDeckOpen(true)}
-          title="Open command palette (Ctrl+Shift+P)"
-        >
-          <Search className="w-3.5 h-3.5" />
-          <span>Command Deck</span>
-          <span className="nx-command-entry-hint">help | status | open map</span>
-          <span className="nx-hotkey">Ctrl+Shift+P</span>
-        </button>
-        <div className="nx-topbar-right">
-          <NexusBadge tone={online ? 'ok' : 'danger'} className="nx-topbar-badge">
+
+        <div className="flex items-center gap-2 shrink-0">
+          <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'}>
+            {focusStatusLabel}
+          </NexusBadge>
+          <NexusBadge tone={online ? 'ok' : 'danger'}>
             <Signal className="w-3 h-3 mr-1" />
-            {online ? 'Link Stable' : 'Link Degraded'}
+            {online ? 'Link' : 'Down'}
           </NexusBadge>
-          <NexusBadge tone={workbenchFocusMode ? 'active' : 'neutral'} className="nx-topbar-badge nx-hide-md">
-            Focus {focusStatusLabel}
-          </NexusBadge>
-          <div className="nx-topbar-time">
-            <Clock3 className="w-3.5 h-3.5" />
-            <span>{systemTimeLabel}</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/40 bg-zinc-900/40">
+            <Clock3 className="w-3.5 h-3.5 text-zinc-500" />
+            <span className="text-[10px] font-mono text-zinc-300">{systemTimeLabel}</span>
           </div>
         </div>
       </header>
