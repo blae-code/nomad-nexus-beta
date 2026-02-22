@@ -1,8 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, ChevronLeft, ChevronRight, Maximize2, Minimize2, Signal, TrendingUp } from 'lucide-react';
-import MetricSparkline from './MetricSparkline';
-
-const PAGE_SIZE = 6;
+import React from 'react';
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Signal } from 'lucide-react';
 
 const STATUS_TONE_CLASSES = {
   ok: { dot: 'bg-green-500', text: 'text-green-400' },
