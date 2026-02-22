@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertTriangle, CheckCircle2, Clock3, Database, RefreshCw, ShieldAlert, Siren, TimerReset } from 'lucide-react';
-import { readSchedulerTelemetry } from '@/components/admin/dataOpsScheduler';
+import {
+  readSchedulerTelemetry,
+  readVoiceLifecycleFallbackEnabled,
+  setVoiceLifecycleFallbackEnabled,
+} from '@/components/admin/dataOpsScheduler';
 
 const LANE_META = {
   reference: {
@@ -82,6 +86,7 @@ export default function DataOpsPanel() {
   const [health, setHealth] = useState({ lanes: {} });
   const [orchestrating, setOrchestrating] = useState('');
   const [schedulerTelemetry, setSchedulerTelemetry] = useState(null);
+  const [voiceLifecycleFallbackEnabled, setVoiceLifecycleFallbackEnabledState] = useState(false);
   const [sourceConfigs, setSourceConfigs] = useState({
     reference: normalizeLaneConfig('reference', null),
     market: normalizeLaneConfig('market', null),
@@ -113,6 +118,7 @@ export default function DataOpsPanel() {
       setHealth(payload?.health || { lanes: {} });
       if (typeof window !== 'undefined') {
         setSchedulerTelemetry(readSchedulerTelemetry(window.localStorage, Date.now()));
+        setVoiceLifecycleFallbackEnabledState(readVoiceLifecycleFallbackEnabled(window.localStorage));
       }
     } catch (err) {
       setError(err?.data?.error || err?.message || 'Failed to load data operations state.');
@@ -300,6 +306,27 @@ export default function DataOpsPanel() {
             </div>
           </div>
         )}
+        <div className="mt-3 border border-zinc-700/70 rounded p-2 bg-zinc-950/50 space-y-2">
+          <div className="text-zinc-500 uppercase text-[10px] tracking-widest">Voice Lifecycle Fallback</div>
+          <label className="flex items-center gap-2 text-xs text-zinc-300">
+            <input
+              type="checkbox"
+              checked={voiceLifecycleFallbackEnabled}
+              onChange={(event) => {
+                const enabled = event.target.checked;
+                if (typeof window !== 'undefined') {
+                  setVoiceLifecycleFallbackEnabled(window.localStorage, enabled);
+                }
+                setVoiceLifecycleFallbackEnabledState(enabled);
+              }}
+              className="h-4 w-4 rounded border-zinc-600 bg-zinc-950"
+            />
+            Enable `sweepVoiceNetLifecycle` fallback in data-ops scheduler loop
+          </label>
+          <div className="text-[11px] text-zinc-500">
+            Default is disabled. Enable only when cron/external automation for voice lifecycle is unavailable.
+          </div>
+        </div>
       </section>
 
       {error && (

@@ -50,6 +50,8 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
   await expect(page.getByText(/Command Intent/i).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Crew Cards/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Fleet Schema/i })).toBeVisible();
+  await expect(page.getByText(/Net Control/i).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Create Temp/i })).toBeVisible();
 
   await clickButtonDirect(page, /Reroute Net/i);
   await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(0);

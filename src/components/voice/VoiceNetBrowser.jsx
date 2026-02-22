@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Radio, Plus, Trash2, Power, Users, Lock, Shield } from 'lucide-react';
+import { Radio, Plus, XCircle, Power, Lock, Shield } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canJoinVoiceNet } from '@/components/utils/voiceAccessPolicy';
 import { EmptyState, LoadingState } from '@/components/common/UIStates';
 import { isAdminUser } from '@/utils';
 import { FocusedNetConfirmationSheet } from '@/components/voice/FocusedNetConfirmation';
+import { closeManagedVoiceNet, listManagedVoiceNets } from '@/components/voice/voiceNetGovernanceClient';
 
 export default function VoiceNetBrowser({ onCreateNew }) {
   const [voiceNets, setVoiceNets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { user: authUser } = useAuth();
   const user = authUser?.member_profile_data || authUser;
   const isAdmin = isAdminUser(authUser);
@@ -23,24 +24,29 @@ export default function VoiceNetBrowser({ onCreateNew }) {
 
   const loadVoiceNets = async () => {
     setLoading(true);
+    setError('');
     try {
-      const nets = await base44.entities.VoiceNet.filter({ status: 'active' }, '-priority');
-      setVoiceNets(nets);
-    } catch (error) {
-      console.error('Failed to load voice nets:', error);
+      const result = await listManagedVoiceNets();
+      const activeRows = (result?.nets || []).filter((entry) => String(entry.status || '').toLowerCase() === 'active');
+      setVoiceNets(activeRows);
+      if (result?.error && !result?.success) {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err?.message || 'Failed to load voice nets');
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteVoiceNet = async (netId) => {
-    if (!confirm('Delete this voice net? This cannot be undone.')) return;
+  const closeVoiceNet = async (netId) => {
+    if (!confirm('Close this voice net? This cannot be undone.')) return;
 
     try {
-      await base44.entities.VoiceNet.delete(netId);
+      await closeManagedVoiceNet(netId, 'browser_close');
       loadVoiceNets();
-    } catch (error) {
-      alert(`Failed to delete voice net: ${error.message}`);
+    } catch (err) {
+      alert(`Failed to close voice net: ${err?.message || 'Unknown error'}`);
     }
   };
 
@@ -77,6 +83,10 @@ export default function VoiceNetBrowser({ onCreateNew }) {
         )}
       </div>
 
+      {error ? (
+        <div className="text-xs text-amber-300 border border-amber-500/30 bg-amber-500/10 rounded px-2 py-1.5">{error}</div>
+      ) : null}
+
       {voiceNets.length === 0 ? (
         <EmptyState
           icon={Radio}
@@ -87,15 +97,14 @@ export default function VoiceNetBrowser({ onCreateNew }) {
         <div className="grid gap-3">
           {voiceNets.map((net) => {
             const hasAccess = canJoinVoiceNet(user, net);
-            const isActive = voiceNet.activeNetId === net.id || voiceNet.activeNetId === net.code;
+            const identity = net.id || net.code;
+            const isActive = voiceNet.activeNetId === identity || voiceNet.activeNetId === net.code;
 
             return (
               <div
-                key={net.id}
+                key={identity}
                 className={`p-4 border transition-all ${
-                  isActive
-                    ? 'bg-orange-500/20 border-orange-500'
-                    : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                  isActive ? 'bg-orange-500/20 border-orange-500' : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -106,15 +115,18 @@ export default function VoiceNetBrowser({ onCreateNew }) {
                         {net.code}
                       </span>
                       {getDisciplineIcon(net.discipline)}
+                      {net.lifecycle_scope ? (
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase border border-zinc-700 text-zinc-400">
+                          {String(net.lifecycle_scope).replace('_', ' ')}
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
                       <div className="flex items-center gap-1">
                         <span className="capitalize">{net.type}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        Priority {net.priority}
-                      </div>
+                      <div className="flex items-center gap-1">Priority {net.priority}</div>
                       {net.discipline === 'focused' && (
                         <div className="flex items-center gap-1 text-orange-400">
                           <Lock className="w-3 h-3" />
@@ -140,7 +152,7 @@ export default function VoiceNetBrowser({ onCreateNew }) {
                           if (isActive) {
                             voiceNet.leaveNet();
                           } else {
-                            voiceNet.joinNet(net.id || net.code, user);
+                            voiceNet.joinNet(identity, user);
                           }
                         }}
                       >
@@ -153,10 +165,10 @@ export default function VoiceNetBrowser({ onCreateNew }) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteVoiceNet(net.id)}
+                        onClick={() => closeVoiceNet(net.id)}
                         className="text-red-400 hover:text-red-300"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <XCircle className="w-3 h-3" />
                       </Button>
                     )}
                   </div>
@@ -172,10 +184,7 @@ export default function VoiceNetBrowser({ onCreateNew }) {
       </div>
 
       {voiceNet.focusedConfirmation?.needsConfirmation && (
-        <FocusedNetConfirmationSheet
-          onConfirm={() => voiceNet.confirmFocusedJoin?.()}
-          onCancel={() => voiceNet.cancelFocusedJoin?.()}
-        />
+        <FocusedNetConfirmationSheet onConfirm={() => voiceNet.confirmFocusedJoin?.()} onCancel={() => voiceNet.cancelFocusedJoin?.()} />
       )}
     </div>
   );

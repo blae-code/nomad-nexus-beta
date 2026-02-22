@@ -5,6 +5,7 @@ import {
   canRunDataOpsScheduler,
   DATA_OPS_SCHEDULER_CONFIG,
   ensureSchedulerTabId,
+  readVoiceLifecycleFallbackEnabled,
   readSchedulerTelemetry,
   recordSchedulerError,
   recordSchedulerRun,
@@ -64,6 +65,14 @@ export default function FittingDataOpsScheduler() {
         if (!payload?.success) {
           recordSchedulerError(storage, payload?.error || 'run_due_syncs failed', Date.now());
           return;
+        }
+        if (readVoiceLifecycleFallbackEnabled(storage)) {
+          await invokeMemberFunction('sweepVoiceNetLifecycle', {
+            reason: 'scheduler_fallback',
+            mode: 'auto',
+          }).catch((error) => {
+            console.warn('[FittingDataOpsScheduler] Voice lifecycle fallback sweep failed:', error?.message || error);
+          });
         }
         recordSchedulerRun(storage, summarizeDueSyncPayload(payload), Date.now());
       } catch (error) {

@@ -6,15 +6,25 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  Plus,
   Radio,
   RefreshCcw,
   Send,
   UserCheck,
+  UserCog,
   Users,
+  XCircle,
   Zap,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
+import {
+  closeManagedVoiceNet,
+  createManagedVoiceNet,
+  listManagedVoiceNets,
+  transferManagedVoiceNetOwner,
+  updateManagedVoiceNet,
+} from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
 import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
@@ -70,6 +80,7 @@ const VOICE_LIST_PAGE_SIZE = 4;
 const ORDER_LIST_PAGE_SIZE = 5;
 const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
+const NET_CONTROL_PAGE_SIZE = 5;
 
 const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
@@ -196,6 +207,14 @@ export default function CommsNetworkConsole({
   const [selectedThreadId, setSelectedThreadId] = useState('');
   const [rightPanelView, setRightPanelView] = useState<'cards' | 'schema'>('cards');
   const [showTokenAtlas, setShowTokenAtlas] = useState(false);
+  const [managedNets, setManagedNets] = useState<any[]>([]);
+  const [plannedManagedNets, setPlannedManagedNets] = useState<any[]>([]);
+  const [managedVoicePolicy, setManagedVoicePolicy] = useState<Record<string, any>>({});
+  const [netControlLoading, setNetControlLoading] = useState(false);
+  const [netControlError, setNetControlError] = useState('');
+  const [plannedNetPage, setPlannedNetPage] = useState(0);
+  const [permanentNetPage, setPermanentNetPage] = useState(0);
+  const [temporaryNetPage, setTemporaryNetPage] = useState(0);
   const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
   const [ordersPage, setOrdersPage] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState('');
@@ -217,6 +236,10 @@ export default function CommsNetworkConsole({
     startY: number;
     moved: boolean;
   } | null>(null);
+  const activeEventId = useMemo(() => {
+    const token = String(opId || '').trim();
+    return token || null;
+  }, [opId]);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -251,6 +274,28 @@ export default function CommsNetworkConsole({
     return () => window.clearTimeout(timerId);
   }, [feedback]);
 
+  const loadManagedNets = useCallback(async () => {
+    setNetControlLoading(true);
+    setNetControlError('');
+    try {
+      const response = await listManagedVoiceNets({ eventId: activeEventId });
+      setManagedNets(Array.isArray(response?.nets) ? response.nets : []);
+      setPlannedManagedNets(Array.isArray(response?.plannedNets) ? response.plannedNets : []);
+      setManagedVoicePolicy(response?.policy && typeof response.policy === 'object' ? response.policy : {});
+      if (response?.error && !response?.success) {
+        setNetControlError(String(response.error));
+      }
+    } catch (err: any) {
+      setNetControlError(err?.message || 'Failed to load managed voice nets.');
+    } finally {
+      setNetControlLoading(false);
+    }
+  }, [activeEventId]);
+
+  useEffect(() => {
+    loadManagedNets();
+  }, [loadManagedNets]);
+
   useEffect(() => {
     if (!bridgeDraftSourceId) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -278,14 +323,23 @@ export default function CommsNetworkConsole({
       let changed = false;
       const next: Record<string, { x: number; y: number }> = {};
       for (const node of nodes) {
-        if (prev[node.id]) {
-          next[node.id] = prev[node.id];
+        const prior = prev[node.id];
+        const resolvedX = clampPct(prior?.x ?? node.x);
+        const resolvedY = clampPct(prior?.y ?? node.y);
+        next[node.id] = { x: resolvedX, y: resolvedY };
+        if (!prior) {
+          changed = true;
           continue;
         }
-        next[node.id] = { x: node.x, y: node.y };
-        changed = true;
+        if (prior.x !== resolvedX || prior.y !== resolvedY) changed = true;
+        if (resolvedX !== node.x || resolvedY !== node.y) changed = true;
       }
-      if (Object.keys(prev).length !== Object.keys(next).length) changed = true;
+      for (const key of Object.keys(prev)) {
+        if (!next[key]) {
+          changed = true;
+          break;
+        }
+      }
       return changed ? next : prev;
     });
     setBridgeEdges((prev) => {
@@ -422,7 +476,6 @@ export default function CommsNetworkConsole({
       membership: profile.membership || profile.tier || 'MEMBER',
     };
   }, [user, actorId]);
-
   const voiceNets = useMemo(() => (Array.isArray(voiceNet.voiceNets) ? voiceNet.voiceNets : []), [voiceNet.voiceNets]);
   const voicePageCount = Math.max(1, Math.ceil(voiceNets.length / VOICE_LIST_PAGE_SIZE));
   const visibleVoiceNets = voiceNets.slice(voicePage * VOICE_LIST_PAGE_SIZE, voicePage * VOICE_LIST_PAGE_SIZE + VOICE_LIST_PAGE_SIZE);
@@ -682,6 +735,79 @@ export default function CommsNetworkConsole({
       ),
     [crewCards, crewCardPage]
   );
+  const activeManagedNets = useMemo(
+    () => managedNets.filter((entry) => String(entry?.status || '').toLowerCase() !== 'closed'),
+    [managedNets]
+  );
+  const permanentManagedNets = useMemo(
+    () => activeManagedNets.filter((entry) => String(entry?.lifecycle_scope || '').toLowerCase() === 'permanent'),
+    [activeManagedNets]
+  );
+  const temporaryManagedNets = useMemo(
+    () =>
+      activeManagedNets.filter((entry) => {
+        const scope = String(entry?.lifecycle_scope || '').toLowerCase();
+        return scope === 'temp_adhoc' || scope === 'temp_operation';
+      }),
+    [activeManagedNets]
+  );
+  const plannedOperationNets = useMemo(() => {
+    const managedPlanned = activeManagedNets.filter((entry) => String(entry?.status || '').toLowerCase() === 'planned');
+    const combined = [...managedPlanned, ...plannedManagedNets];
+    const byId = new Map<string, any>();
+    for (const net of combined) {
+      const id = String(net?.id || `${net?.event_id || 'event'}:${net?.code || net?.label || Math.random()}`);
+      if (!byId.has(id)) byId.set(id, net);
+    }
+    return [...byId.values()];
+  }, [activeManagedNets, plannedManagedNets]);
+  const plannedNetPageCount = Math.max(1, Math.ceil(plannedOperationNets.length / NET_CONTROL_PAGE_SIZE));
+  const permanentNetPageCount = Math.max(1, Math.ceil(permanentManagedNets.length / NET_CONTROL_PAGE_SIZE));
+  const temporaryNetPageCount = Math.max(1, Math.ceil(temporaryManagedNets.length / NET_CONTROL_PAGE_SIZE));
+  const visiblePlannedNets = useMemo(
+    () =>
+      plannedOperationNets.slice(
+        plannedNetPage * NET_CONTROL_PAGE_SIZE,
+        plannedNetPage * NET_CONTROL_PAGE_SIZE + NET_CONTROL_PAGE_SIZE
+      ),
+    [plannedOperationNets, plannedNetPage]
+  );
+  const visiblePermanentNets = useMemo(
+    () =>
+      permanentManagedNets.slice(
+        permanentNetPage * NET_CONTROL_PAGE_SIZE,
+        permanentNetPage * NET_CONTROL_PAGE_SIZE + NET_CONTROL_PAGE_SIZE
+      ),
+    [permanentManagedNets, permanentNetPage]
+  );
+  const visibleTemporaryNets = useMemo(
+    () =>
+      temporaryManagedNets.slice(
+        temporaryNetPage * NET_CONTROL_PAGE_SIZE,
+        temporaryNetPage * NET_CONTROL_PAGE_SIZE + NET_CONTROL_PAGE_SIZE
+      ),
+    [temporaryManagedNets, temporaryNetPage]
+  );
+  const nextPlannedActivation = useMemo(() => {
+    const candidates = plannedOperationNets
+      .map((entry) => {
+        const activation = String(entry?.planned_activation_at || '').trim();
+        if (!activation) return null;
+        const atMs = new Date(activation).getTime();
+        if (!Number.isFinite(atMs)) return null;
+        return { atMs, activation };
+      })
+      .filter(Boolean) as Array<{ atMs: number; activation: string }>;
+    if (!candidates.length) return null;
+    const sorted = [...candidates].sort((a, b) => a.atMs - b.atMs);
+    return sorted[0];
+  }, [plannedOperationNets]);
+  const pendingActivationMinutes = useMemo(() => {
+    if (!nextPlannedActivation) return null;
+    return Math.round((nextPlannedActivation.atMs - nowMs) / 60000);
+  }, [nextPlannedActivation, nowMs]);
+  const actorMemberProfileId = String(voiceRuntimeUser?.id || actorId || '').trim() || null;
+  const hasVoiceGlobalOverride = Boolean(managedVoicePolicy?.hasGlobalOverride || managedVoicePolicy?.canCreatePermanent);
 
   const commandRecommendation = useMemo(() => {
     if (selectedIncident) {
@@ -755,6 +881,18 @@ export default function CommsNetworkConsole({
   useEffect(() => {
     setOrdersPage((prev) => Math.min(prev, ordersPageCount - 1));
   }, [ordersPageCount]);
+
+  useEffect(() => {
+    setPlannedNetPage((prev) => Math.min(prev, plannedNetPageCount - 1));
+  }, [plannedNetPageCount]);
+
+  useEffect(() => {
+    setPermanentNetPage((prev) => Math.min(prev, permanentNetPageCount - 1));
+  }, [permanentNetPageCount]);
+
+  useEffect(() => {
+    setTemporaryNetPage((prev) => Math.min(prev, temporaryNetPageCount - 1));
+  }, [temporaryNetPageCount]);
 
   useEffect(() => {
     if (!incidents.length) {
@@ -909,6 +1047,120 @@ export default function CommsNetworkConsole({
       });
     },
     [channelHealth, selectedIncident, selectedThread, emitDirectiveMacro]
+  );
+
+  const emitVoiceGovernanceOrder = useCallback(
+    (directive: string, net: any, detailMessage: string) => {
+      const channelId =
+        String(net?.event_id || '').trim() ||
+        String(net?.code || '').trim() ||
+        selectedThread?.channelId ||
+        channelHealth[0]?.channelId ||
+        'voice-governance';
+      emitDirectiveMacro({
+        eventType: 'MOVE_OUT',
+        channelId,
+        laneId: 'voice-governance',
+        directive,
+        successMessage: detailMessage,
+        payload: {
+          orderType: 'VOICE_NET_GOVERNANCE',
+          netId: String(net?.id || ''),
+          netCode: String(net?.code || ''),
+          lifecycleScope: String(net?.lifecycle_scope || ''),
+        },
+      });
+    },
+    [channelHealth, emitDirectiveMacro, selectedThread?.channelId]
+  );
+
+  const createManagedNetAction = useCallback(
+    async (scope: 'permanent' | 'temp_adhoc' | 'temp_operation') => {
+      const canCreatePermanent = Boolean(managedVoicePolicy?.canCreatePermanent || managedVoicePolicy?.hasGlobalOverride);
+      if (scope === 'permanent' && !canCreatePermanent) {
+        setFeedback('Permanent net creation requires System Admin or Pioneer.');
+        return;
+      }
+      if (scope === 'temp_operation' && !activeEventId) {
+        setFeedback('No active operation selected for operation voice net creation.');
+        return;
+      }
+
+      const stamp = Date.now().toString().slice(-4);
+      const prefix = scope === 'permanent' ? 'PERM' : scope === 'temp_operation' ? 'OP' : 'TEMP';
+      const code = `${prefix}-${stamp}`;
+      const label =
+        scope === 'permanent'
+          ? `Permanent ${stamp}`
+          : scope === 'temp_operation'
+            ? `Operation Lane ${stamp}`
+            : `Temporary Lane ${stamp}`;
+
+      try {
+        const result = await createManagedVoiceNet({
+          scope,
+          temporary: scope !== 'permanent',
+          eventId: scope === 'temp_operation' ? activeEventId : undefined,
+          code,
+          label,
+          type: scope === 'permanent' ? 'general' : 'squad',
+          discipline: scope === 'temp_operation' ? 'focused' : 'casual',
+          priority: scope === 'permanent' ? 2 : 3,
+        });
+        await Promise.all([loadManagedNets(), loadGraph()]);
+        emitVoiceGovernanceOrder('VOICE_NET_CREATE', result?.net || { code, lifecycle_scope: scope }, `${code} created`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Failed to create voice net.');
+      }
+    },
+    [activeEventId, loadGraph, loadManagedNets, managedVoicePolicy?.canCreatePermanent, managedVoicePolicy?.hasGlobalOverride, emitVoiceGovernanceOrder]
+  );
+
+  const closeManagedNetAction = useCallback(
+    async (net: any) => {
+      if (!net?.id) return;
+      try {
+        await closeManagedVoiceNet(net.id, 'comms_focus_close');
+        await Promise.all([loadManagedNets(), loadGraph()]);
+        emitVoiceGovernanceOrder('VOICE_NET_CLOSE', net, `${net.code || net.label} closed`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Failed to close voice net.');
+      }
+    },
+    [emitVoiceGovernanceOrder, loadGraph, loadManagedNets]
+  );
+
+  const toggleManagedNetDiscipline = useCallback(
+    async (net: any) => {
+      if (!net?.id) return;
+      const nextDiscipline = String(net?.discipline || 'casual').toLowerCase() === 'focused' ? 'casual' : 'focused';
+      try {
+        await updateManagedVoiceNet(net.id, { discipline: nextDiscipline });
+        await loadManagedNets();
+        emitVoiceGovernanceOrder('VOICE_NET_EDIT', net, `${net.code || net.label} set ${nextDiscipline}`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Failed to update voice net discipline.');
+      }
+    },
+    [emitVoiceGovernanceOrder, loadManagedNets]
+  );
+
+  const transferManagedNetOwnerAction = useCallback(
+    async (net: any) => {
+      if (!net?.id) return;
+      if (typeof window === 'undefined') return;
+      const initial = actorMemberProfileId || String(net?.owner_member_profile_id || '');
+      const targetOwnerId = window.prompt('Transfer owner to member profile ID:', initial || '');
+      if (!targetOwnerId) return;
+      try {
+        await transferManagedVoiceNetOwner(net.id, targetOwnerId.trim());
+        await loadManagedNets();
+        emitVoiceGovernanceOrder('VOICE_NET_TRANSFER_OWNER', net, `${net.code || net.label} owner updated`);
+      } catch (err: any) {
+        setFeedback(err?.message || 'Failed to transfer voice net owner.');
+      }
+    },
+    [actorMemberProfileId, emitVoiceGovernanceOrder, loadManagedNets]
   );
 
   const createActionOrder = useCallback(() => {
@@ -1288,6 +1540,12 @@ export default function CommsNetworkConsole({
         </NexusBadge>
         <NexusBadge tone={bridgeDraftSourceId ? 'warning' : 'neutral'}>
           Bridge Target {bridgeDraftSourceId ? 'ARMED' : 'IDLE'}
+        </NexusBadge>
+        <NexusBadge tone={plannedOperationNets.length > 0 ? 'warning' : 'neutral'}>
+          Pending Voice {plannedOperationNets.length}
+          {pendingActivationMinutes != null
+            ? ` · ${pendingActivationMinutes > 0 ? `T-${pendingActivationMinutes}m` : 'Activating'}`
+            : ''}
         </NexusBadge>
       </div>
 
@@ -1694,16 +1952,17 @@ export default function CommsNetworkConsole({
 
                                   {isSchemaExpanded(squadKey, squad.label === 'Command Cell') ? (
                                     <div className="space-y-1 pl-2">
-                                      {squad.channels.map((channel: any) => {
+                                      {squad.channels.map((channel: any, channelIndex: number) => {
                                         const channelKey = `channel:${wing.id}:${channel.id}`;
+                                        const defaultChannelExpanded = channelIndex === 0;
                                         return (
                                           <div key={channel.id}>
                                             <button
                                               type="button"
                                               className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1"
-                                              onClick={() => toggleSchemaExpanded(channelKey, false)}
+                                              onClick={() => toggleSchemaExpanded(channelKey, defaultChannelExpanded)}
                                             >
-                                              {isSchemaExpanded(channelKey, false) ? (
+                                              {isSchemaExpanded(channelKey, defaultChannelExpanded) ? (
                                                 <ChevronDown className="w-3 h-3 text-zinc-500" />
                                               ) : (
                                                 <ChevronRight className="w-3 h-3 text-zinc-500" />
@@ -1719,19 +1978,20 @@ export default function CommsNetworkConsole({
                                               <span className="truncate">{channel.status}</span>
                                             </div>
 
-                                            {isSchemaExpanded(channelKey, false) ? (
+                                            {isSchemaExpanded(channelKey, defaultChannelExpanded) ? (
                                               <div className="space-y-1 pl-3 pt-0.5">
                                                 {channel.vehicles.length > 0 ? (
-                                                  channel.vehicles.map((vehicle: any) => {
+                                                  channel.vehicles.map((vehicle: any, vehicleIndex: number) => {
                                                     const vehicleKey = `vehicle:${channel.id}:${vehicle.id}`;
+                                                    const defaultVehicleExpanded = vehicleIndex === 0;
                                                     return (
                                                       <div key={vehicle.id}>
                                                         <button
                                                           type="button"
                                                           className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1"
-                                                          onClick={() => toggleSchemaExpanded(vehicleKey, true)}
+                                                          onClick={() => toggleSchemaExpanded(vehicleKey, defaultVehicleExpanded)}
                                                         >
-                                                          {isSchemaExpanded(vehicleKey, true) ? (
+                                                          {isSchemaExpanded(vehicleKey, defaultVehicleExpanded) ? (
                                                             <ChevronDown className="w-3 h-3 text-zinc-500" />
                                                           ) : (
                                                             <ChevronRight className="w-3 h-3 text-zinc-500" />
@@ -1744,7 +2004,7 @@ export default function CommsNetworkConsole({
                                                           </NexusBadge>
                                                         </button>
 
-                                                        {isSchemaExpanded(vehicleKey, true) ? (
+                                                        {isSchemaExpanded(vehicleKey, defaultVehicleExpanded) ? (
                                                           <div className="space-y-0.5 pl-4">
                                                             {vehicle.operators.map((operator: any) => (
                                                               <div key={operator.id} className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-950/45 px-2 py-0.5">
@@ -1790,6 +2050,214 @@ export default function CommsNetworkConsole({
               ) : null}
             </div>
           ) : null}
+
+          <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[11px] text-zinc-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-orange-400" />
+                Net Control
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                <NexusButton size="sm" intent="subtle" onClick={() => createManagedNetAction('temp_adhoc')}>
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Create Temp
+                </NexusButton>
+                {hasVoiceGlobalOverride ? (
+                  <NexusButton size="sm" intent="subtle" onClick={() => createManagedNetAction('permanent')}>
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Create Permanent
+                  </NexusButton>
+                ) : null}
+                {activeEventId ? (
+                  <NexusButton size="sm" intent="subtle" onClick={() => createManagedNetAction('temp_operation')}>
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Create Op Net
+                  </NexusButton>
+                ) : null}
+              </div>
+            </div>
+
+            {plannedOperationNets.length > 0 ? (
+              <div className="text-[10px] text-amber-300 border border-amber-500/30 bg-amber-500/10 rounded px-2 py-1">
+                Recommended channels pending activation
+                {pendingActivationMinutes != null
+                  ? ` · ${pendingActivationMinutes > 0 ? `T-${pendingActivationMinutes}m` : 'Activating now'}`
+                  : ''}
+              </div>
+            ) : null}
+
+            {netControlLoading ? <div className="text-[10px] text-zinc-500">Loading managed nets...</div> : null}
+            {netControlError ? (
+              <div className="text-[10px] text-amber-300 border border-amber-500/30 bg-amber-500/10 rounded px-2 py-1">
+                {netControlError}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-2">
+              <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="text-[10px] uppercase tracking-wide text-zinc-300">Planned Operation Nets</div>
+                  <div className="flex items-center gap-1.5">
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setPlannedNetPage((prev) => Math.max(0, prev - 1))}
+                      disabled={plannedNetPage === 0}
+                    >
+                      Prev
+                    </NexusButton>
+                    <NexusBadge tone="neutral">
+                      {plannedNetPage + 1}/{plannedNetPageCount}
+                    </NexusBadge>
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setPlannedNetPage((prev) => Math.min(plannedNetPageCount - 1, prev + 1))}
+                      disabled={plannedNetPage >= plannedNetPageCount - 1}
+                    >
+                      Next
+                    </NexusButton>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {visiblePlannedNets.map((net) => (
+                    <div key={`planned-${net.id || net.code}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px]">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-zinc-200 truncate">{net.label || net.code}</span>
+                        <NexusBadge tone="warning">{String(net.status || 'planned').toUpperCase()}</NexusBadge>
+                      </div>
+                      <div className="mt-0.5 text-zinc-500 truncate">
+                        {net.code} · {net.event_id || 'operation'}
+                        {net.planned_activation_at ? ` · ${new Date(net.planned_activation_at).toLocaleTimeString()}` : ''}
+                      </div>
+                    </div>
+                  ))}
+                  {visiblePlannedNets.length === 0 ? (
+                    <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px] text-zinc-500">
+                      No planned operation lanes.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="text-[10px] uppercase tracking-wide text-zinc-300">Active Permanent Nets</div>
+                  <div className="flex items-center gap-1.5">
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setPermanentNetPage((prev) => Math.max(0, prev - 1))}
+                      disabled={permanentNetPage === 0}
+                    >
+                      Prev
+                    </NexusButton>
+                    <NexusBadge tone="neutral">
+                      {permanentNetPage + 1}/{permanentNetPageCount}
+                    </NexusBadge>
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setPermanentNetPage((prev) => Math.min(permanentNetPageCount - 1, prev + 1))}
+                      disabled={permanentNetPage >= permanentNetPageCount - 1}
+                    >
+                      Next
+                    </NexusButton>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {visiblePermanentNets.map((net) => (
+                    <div key={net.id || net.code} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px]">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-zinc-200 truncate">{net.label || net.code}</span>
+                        <div className="flex items-center gap-1">
+                          <NexusBadge tone="ok">{String(net.status || 'active').toUpperCase()}</NexusBadge>
+                          {hasVoiceGlobalOverride ? (
+                            <NexusButton size="sm" intent="subtle" onClick={() => closeManagedNetAction(net)}>
+                              <XCircle className="w-3 h-3" />
+                            </NexusButton>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="mt-0.5 text-zinc-500 truncate">{net.code} · owner {net.owner_member_profile_id || 'SYSTEM'}</div>
+                    </div>
+                  ))}
+                  {visiblePermanentNets.length === 0 ? (
+                    <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px] text-zinc-500">
+                      No permanent nets visible.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="text-[10px] uppercase tracking-wide text-zinc-300">Active Temporary Nets</div>
+                  <div className="flex items-center gap-1.5">
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setTemporaryNetPage((prev) => Math.max(0, prev - 1))}
+                      disabled={temporaryNetPage === 0}
+                    >
+                      Prev
+                    </NexusButton>
+                    <NexusBadge tone="neutral">
+                      {temporaryNetPage + 1}/{temporaryNetPageCount}
+                    </NexusBadge>
+                    <NexusButton
+                      size="sm"
+                      intent="subtle"
+                      onClick={() => setTemporaryNetPage((prev) => Math.min(temporaryNetPageCount - 1, prev + 1))}
+                      disabled={temporaryNetPage >= temporaryNetPageCount - 1}
+                    >
+                      Next
+                    </NexusButton>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {visibleTemporaryNets.map((net) => {
+                    const scope = String(net.lifecycle_scope || '').toLowerCase();
+                    const isOwner = Boolean(actorMemberProfileId && net.owner_member_profile_id && actorMemberProfileId === net.owner_member_profile_id);
+                    const canManage = hasVoiceGlobalOverride || isOwner || Boolean(net?.can_manage || net?.canManage);
+                    return (
+                      <div key={net.id || net.code} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-zinc-200 truncate">{net.label || net.code}</span>
+                          <div className="flex items-center gap-1">
+                            <NexusBadge tone={scope === 'temp_operation' ? 'active' : 'warning'}>
+                              {scope === 'temp_operation' ? 'OP TEMP' : 'TEMP'}
+                            </NexusBadge>
+                            {canManage ? (
+                              <>
+                                <NexusButton size="sm" intent="subtle" onClick={() => toggleManagedNetDiscipline(net)}>
+                                  Edit
+                                </NexusButton>
+                                <NexusButton size="sm" intent="subtle" onClick={() => transferManagedNetOwnerAction(net)}>
+                                  <UserCog className="w-3 h-3" />
+                                </NexusButton>
+                                <NexusButton size="sm" intent="subtle" onClick={() => closeManagedNetAction(net)}>
+                                  <XCircle className="w-3 h-3" />
+                                </NexusButton>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="mt-0.5 text-zinc-500 truncate">
+                          {net.code} · owner {net.owner_member_profile_id || 'unassigned'} · {String(net.status || 'active').toUpperCase()}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {visibleTemporaryNets.length === 0 ? (
+                    <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px] text-zinc-500">
+                      No temporary nets active.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
 

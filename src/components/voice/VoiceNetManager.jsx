@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Radio, Plus, Trash2, Power, PowerOff, Users, Shield, Target } from 'lucide-react';
+import { Radio, Plus, XCircle, Power, PowerOff, Users, Shield, Target } from 'lucide-react';
 import { EmptyState } from '@/components/common/UIStates';
 import VoiceNetCreator from './VoiceNetCreator';
+import { closeManagedVoiceNet, listManagedVoiceNets, updateManagedVoiceNet } from '@/components/voice/voiceNetGovernanceClient';
 
 export default function VoiceNetManager({ eventId = null }) {
   const [nets, setNets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreator, setShowCreator] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadNets();
@@ -16,40 +17,43 @@ export default function VoiceNetManager({ eventId = null }) {
 
   const loadNets = async () => {
     setLoading(true);
+    setError('');
     try {
-      const filter = eventId ? { event_id: eventId } : {};
-      const netsList = await base44.entities.VoiceNet.filter(filter, '-created_date');
-      setNets(netsList);
-    } catch (error) {
-      console.error('Failed to load voice nets:', error);
+      const result = await listManagedVoiceNets({ eventId: eventId || null });
+      setNets(result?.nets || []);
+      if (result?.error && !result?.success) {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err?.message || 'Failed to load voice nets');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreated = (newNet) => {
-    setNets([newNet, ...nets]);
+  const handleCreated = () => {
     setShowCreator(false);
+    loadNets();
   };
 
-  const handleDelete = async (netId) => {
-    if (!confirm('Delete this voice net? Active sessions will be disconnected.')) return;
-    
+  const handleClose = async (netId) => {
+    if (!confirm('Close this voice net? Active sessions will be disconnected.')) return;
+
     try {
-      await base44.entities.VoiceNet.delete(netId);
-      setNets(nets.filter((n) => n.id !== netId));
-    } catch (error) {
-      console.error('Failed to delete voice net:', error);
+      await closeManagedVoiceNet(netId, 'manager_close');
+      setNets((prev) => prev.filter((entry) => entry.id !== netId));
+    } catch (err) {
+      alert(`Failed to close voice net: ${err?.message || 'Unknown error'}`);
     }
   };
 
   const toggleStatus = async (net) => {
-    const newStatus = net.status === 'active' ? 'inactive' : 'active';
+    const nextStatus = net.status === 'active' ? 'inactive' : 'active';
     try {
-      await base44.entities.VoiceNet.update(net.id, { status: newStatus });
-      setNets(nets.map((n) => (n.id === net.id ? { ...n, status: newStatus } : n)));
-    } catch (error) {
-      console.error('Failed to toggle net status:', error);
+      const result = await updateManagedVoiceNet(net.id, { status: nextStatus });
+      setNets((prev) => prev.map((entry) => (entry.id === net.id ? result.net : entry)));
+    } catch (err) {
+      console.error('Failed to toggle net status:', err);
     }
   };
 
@@ -73,11 +77,7 @@ export default function VoiceNetManager({ eventId = null }) {
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-8 text-zinc-500 text-sm">
-        Loading voice nets...
-      </div>
-    );
+    return <div className="text-center py-8 text-zinc-500 text-sm">Loading voice nets...</div>;
   }
 
   return (
@@ -88,10 +88,10 @@ export default function VoiceNetManager({ eventId = null }) {
             {eventId ? 'Operation Voice Nets' : 'Global Voice Nets'}
           </h3>
           <p className="text-xs text-zinc-500 mt-0.5">
-            {eventId ? 'Temporary nets for this operation' : 'Persistent voice channels'}
+            {eventId ? 'Temporary nets for this operation' : 'Persistent and temporary voice channels'}
           </p>
         </div>
-        <Button size="sm" onClick={() => setShowCreator(!showCreator)}>
+        <Button size="sm" onClick={() => setShowCreator((prev) => !prev)}>
           <Plus className="w-3 h-3 mr-1" />
           Create Net
         </Button>
@@ -100,12 +100,18 @@ export default function VoiceNetManager({ eventId = null }) {
       {showCreator && (
         <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded">
           <VoiceNetCreator
-            eventId={eventId}
+            eventId={eventId || null}
             onCreated={handleCreated}
             onCancel={() => setShowCreator(false)}
           />
         </div>
       )}
+
+      {error ? (
+        <div className="text-xs text-amber-300 border border-amber-500/30 bg-amber-500/10 rounded px-2 py-1.5">
+          {error}
+        </div>
+      ) : null}
 
       {nets.length === 0 ? (
         <EmptyState
@@ -121,11 +127,9 @@ export default function VoiceNetManager({ eventId = null }) {
 
             return (
               <div
-                key={net.id}
+                key={net.id || net.code}
                 className={`p-4 border rounded transition-all ${
-                  isActive
-                    ? 'bg-zinc-800/50 border-zinc-700'
-                    : 'bg-zinc-900/30 border-zinc-800 opacity-60'
+                  isActive ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-900/30 border-zinc-800 opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -142,9 +146,11 @@ export default function VoiceNetManager({ eventId = null }) {
                       </div>
 
                       <div className="flex flex-wrap gap-2 text-[10px]">
-                        <span className={`px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded uppercase font-bold ${
-                          net.discipline === 'casual' ? 'text-blue-400' : 'text-orange-400'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded uppercase font-bold ${
+                            net.discipline === 'casual' ? 'text-blue-400' : 'text-orange-400'
+                          }`}
+                        >
                           {net.discipline}
                         </span>
 
@@ -152,19 +158,23 @@ export default function VoiceNetManager({ eventId = null }) {
                           {net.type}
                         </span>
 
-                        <span className={`px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded uppercase font-bold ${getPriorityColor(net.priority)}`}>
+                        <span
+                          className={`px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded uppercase font-bold ${getPriorityColor(
+                            net.priority
+                          )}`}
+                        >
                           P{net.priority}
                         </span>
 
-                        {net.stage_mode && (
-                          <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/50 rounded text-purple-300 uppercase font-bold">
-                            Stage
+                        {net.lifecycle_scope ? (
+                          <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 uppercase">
+                            {net.lifecycle_scope.replace('_', ' ')}
                           </span>
-                        )}
+                        ) : null}
 
                         {!isActive && (
                           <span className="px-2 py-0.5 bg-red-500/20 border border-red-500/50 rounded text-red-300 uppercase font-bold">
-                            Offline
+                            {net.status}
                           </span>
                         )}
                       </div>
@@ -180,13 +190,8 @@ export default function VoiceNetManager({ eventId = null }) {
                     >
                       {isActive ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(net.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-3 h-3" />
+                    <Button size="sm" variant="ghost" onClick={() => handleClose(net.id)} className="text-red-400 hover:text-red-300">
+                      <XCircle className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>

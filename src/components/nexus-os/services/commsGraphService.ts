@@ -120,26 +120,37 @@ export function getCqbChannelTraffic(options: Pick<CommsGraphOptions, 'variantId
   };
 }
 
+function distributeXPositions(ids: string[], minX: number, maxX: number): Record<string, { x: number }> {
+  const clampedMin = Math.max(0, Math.min(100, minX));
+  const clampedMax = Math.max(clampedMin, Math.min(100, maxX));
+  const span = clampedMax - clampedMin;
+  const step = ids.length > 1 ? span / (ids.length - 1) : 0;
+  return ids.reduce<Record<string, { x: number }>>((acc, id, index) => {
+    acc[id] = { x: ids.length === 1 ? 50 : clampedMin + index * step };
+    return acc;
+  }, {});
+}
+
 function createChannelNodePositions(channelIds: string[]) {
-  const step = channelIds.length > 1 ? 100 / (channelIds.length - 1) : 0;
-  return channelIds.reduce<Record<string, { x: number; y: number }>>((acc, id, index) => {
-    acc[id] = { x: channelIds.length === 1 ? 50 : index * step, y: 44 };
+  const x = distributeXPositions(channelIds, 14, 86);
+  return channelIds.reduce<Record<string, { x: number; y: number }>>((acc, id) => {
+    acc[id] = { x: x[id]?.x ?? 50, y: 48 };
     return acc;
   }, {});
 }
 
 function createTeamNodePositions(teamIds: string[]) {
-  const step = teamIds.length > 1 ? 100 / (teamIds.length - 1) : 0;
-  return teamIds.reduce<Record<string, { x: number; y: number }>>((acc, id, index) => {
-    acc[id] = { x: teamIds.length === 1 ? 50 : index * step, y: 10 };
+  const x = distributeXPositions(teamIds, 18, 82);
+  return teamIds.reduce<Record<string, { x: number; y: number }>>((acc, id) => {
+    acc[id] = { x: x[id]?.x ?? 50, y: 16 };
     return acc;
   }, {});
 }
 
 function createUserNodePositions(userIds: string[]) {
-  const step = userIds.length > 1 ? 100 / (userIds.length - 1) : 0;
-  return userIds.reduce<Record<string, { x: number; y: number }>>((acc, id, index) => {
-    acc[id] = { x: userIds.length === 1 ? 50 : index * step, y: 82 };
+  const x = distributeXPositions(userIds, 20, 80);
+  return userIds.reduce<Record<string, { x: number; y: number }>>((acc, id) => {
+    acc[id] = { x: x[id]?.x ?? 50, y: 80 };
     return acc;
   }, {});
 }

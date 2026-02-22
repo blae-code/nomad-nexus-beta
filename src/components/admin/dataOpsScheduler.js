@@ -4,6 +4,7 @@ export const DATA_OPS_SCHEDULER_KEYS = {
   lastRunAt: 'nexus.fitting_data_ops.scheduler.last_run_at',
   lastResult: 'nexus.fitting_data_ops.scheduler.last_result',
   lastError: 'nexus.fitting_data_ops.scheduler.last_error',
+  voiceLifecycleFallbackEnabled: 'nexus.voice.lifecycle.scheduler.enabled',
 };
 
 export const DATA_OPS_SCHEDULER_CONFIG = {
@@ -120,6 +121,7 @@ export function readSchedulerTelemetry(storage, nowMs = Date.now()) {
   const lease = getLeaderLease(storage);
   const result = safeParseJson(safeGetItem(storage, DATA_OPS_SCHEDULER_KEYS.lastResult), null);
   const error = safeParseJson(safeGetItem(storage, DATA_OPS_SCHEDULER_KEYS.lastError), null);
+  const voiceLifecycleFallbackEnabled = safeGetItem(storage, DATA_OPS_SCHEDULER_KEYS.voiceLifecycleFallbackEnabled) === 'true';
   const runDue = !lastRunAt || (nowMs - lastRunAt) >= DATA_OPS_SCHEDULER_CONFIG.minRunIntervalMs;
   const leaderActive = Boolean(lease?.ownerId) && Number(lease?.leaseUntil || 0) > nowMs;
   return {
@@ -130,7 +132,21 @@ export function readSchedulerTelemetry(storage, nowMs = Date.now()) {
     leaderActive,
     lastResult: result,
     lastError: error,
+    voiceLifecycleFallbackEnabled,
   };
+}
+
+export function readVoiceLifecycleFallbackEnabled(storage) {
+  return safeGetItem(storage, DATA_OPS_SCHEDULER_KEYS.voiceLifecycleFallbackEnabled) === 'true';
+}
+
+export function setVoiceLifecycleFallbackEnabled(storage, enabled) {
+  if (!storage) return false;
+  return safeSetItem(
+    storage,
+    DATA_OPS_SCHEDULER_KEYS.voiceLifecycleFallbackEnabled,
+    enabled ? 'true' : 'false'
+  );
 }
 
 export function recordSchedulerRun(storage, summary, nowMs = Date.now()) {
