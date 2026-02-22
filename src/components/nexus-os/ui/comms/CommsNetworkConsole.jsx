@@ -492,7 +492,7 @@ export default function CommsNetworkConsole({
     [channelHealth]
   );
   const participantByMemberId = useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map();
     for (const participant of voiceParticipants) {
       const id = String(participant?.memberProfileId || participant?.userId || participant?.id || '').trim();
       if (!id) continue;
