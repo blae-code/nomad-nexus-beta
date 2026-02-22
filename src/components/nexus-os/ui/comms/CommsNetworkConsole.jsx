@@ -358,7 +358,7 @@ export default function CommsNetworkConsole({
 
   const nodeMap = useMemo(
     () =>
-      displayNodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
+      displayNodes.reduce((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
