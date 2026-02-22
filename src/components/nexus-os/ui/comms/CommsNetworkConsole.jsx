@@ -26,24 +26,31 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
+  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
+  type DirectiveDeliveryState,
+  type DisciplineAlert,
+  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
+import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import RadialMenu from '../map/RadialMenu';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
 import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
 import {
   channelStatusTokenIcon,
@@ -59,6 +66,15 @@ import {
   squadTokenIcon,
 } from './commsTokenSemantics';
 
+interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
+interface TopologyBridgeEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  status: 'active' | 'degraded';
+  createdAtMs: number;
+}
+
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const ORDER_LIST_PAGE_SIZE = 5;
@@ -66,25 +82,25 @@ const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
 const NET_CONTROL_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS = {
+const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node) {
+function nodeFill(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node) {
+function nodeBorder(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function formatAge(nowMs, createdAtMs) {
+function formatAge(nowMs: number, createdAtMs: number): string {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -92,46 +108,46 @@ function formatAge(nowMs, createdAtMs) {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant) {
+function isParticipantSpeaking(participant: any): boolean {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity) {
+function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status) {
+function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function clampPct(value) {
+function clampPct(value: number): number {
   return Math.max(3, Math.min(97, value));
 }
 
-function extractChannelId(node) {
+function extractChannelId(node: CommsGraphNode | null | undefined): string {
   if (!node) return '';
-  const explicit = String((node.meta)?.channelId || '').trim();
+  const explicit = String((node.meta as any)?.channelId || '').trim();
   if (explicit) return explicit;
   if (node.id.startsWith('channel:')) return node.id.replace('channel:', '');
   return '';
 }
 
-function toToken(value) {
+function toToken(value: unknown): string {
   return String(value || '').trim().toLowerCase();
 }
 
-function isMutedParticipant(participant) {
+function isMutedParticipant(participant: any): boolean {
   if (participant?.muted === true) return true;
   return String(participant?.state || '').toUpperCase().includes('MUTE');
 }
 
-function resolveVehicleBucket(member, channelId) {
+function resolveVehicleBucket(member: { role: string; element: string; callsign: string }, channelId: string): { id: string; label: string } {
   const roleToken = toToken(member.role);
   if (member.element === 'ACE' || roleToken.includes('pilot') || roleToken.includes('gunship')) {
     return {
@@ -157,7 +173,7 @@ function resolveVehicleBucket(member, channelId) {
   };
 }
 
-function operatorStatusPriority(status) {
+function operatorStatusPriority(status: string): number {
   if (status === 'TX') return 0;
   if (status === 'ON-NET') return 1;
   if (status === 'MUTED') return 2;
@@ -171,49 +187,54 @@ export default function CommsNetworkConsole({
   events = [],
   actorId = '',
   onCreateMacroEvent,
-}) {
+}: CommsNetworkConsoleProps) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
-  const voiceNet = useVoiceNet();
-  const [snapshot, setSnapshot] = useState(null);
+  const voiceNet = useVoiceNet() as any;
+  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(true);
   const [healthPage, setHealthPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState({});
+  const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [crewCardPage, setCrewCardPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-
   const [showTokenAtlas, setShowTokenAtlas] = useState(false);
-  const [managedNets, setManagedNets] = useState([]);
-  const [plannedManagedNets, setPlannedManagedNets] = useState([]);
-  const [managedVoicePolicy, setManagedVoicePolicy] = useState({});
+  const [managedNets, setManagedNets] = useState<any[]>([]);
+  const [plannedManagedNets, setPlannedManagedNets] = useState<any[]>([]);
+  const [managedVoicePolicy, setManagedVoicePolicy] = useState<Record<string, any>>({});
   const [netControlLoading, setNetControlLoading] = useState(false);
   const [netControlError, setNetControlError] = useState('');
   const [plannedNetPage, setPlannedNetPage] = useState(0);
   const [permanentNetPage, setPermanentNetPage] = useState(0);
   const [temporaryNetPage, setTemporaryNetPage] = useState(0);
-  const [directiveDispatches, setDirectiveDispatches] = useState([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
   const [ordersPage, setOrdersPage] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
-  const [bridgeEdges, setBridgeEdges] = useState([]);
-  const [schemaExpandedById, setSchemaExpandedById] = useState({
+  const [bridgeEdges, setBridgeEdges] = useState<TopologyBridgeEdge[]>([]);
+  const [schemaExpandedById, setSchemaExpandedById] = useState<Record<string, boolean>>({
     'fleet:redscar': true,
     'wing:CE': true,
     'squad:CE:Command Cell': true,
   });
-  const [nodePositionOverrides, setNodePositionOverrides] = useState({});
+  const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const [radialOpen, setRadialOpen] = useState(false);
-  const [radialAnchor, setRadialAnchor] = useState({ x: 50, y: 50 });
-  const topologyRef = useRef(null);
-  const dragRef = useRef(null);
+  const [radialAnchor, setRadialAnchor] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const topologyRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    nodeId: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
   const activeEventId = useMemo(() => {
     const token = String(opId || '').trim();
     return token || null;
@@ -298,8 +319,8 @@ export default function CommsNetworkConsole({
       return;
     }
     setNodePositionOverrides((prev) => {
-    let changed = false;
-    const next = {};
+      let changed = false;
+      const next: Record<string, { x: number; y: number }> = {};
       for (const node of nodes) {
         const prior = prev[node.id];
         const resolvedX = clampPct(prior?.x ?? node.x);
@@ -358,7 +379,7 @@ export default function CommsNetworkConsole({
 
   const nodeMap = useMemo(
     () =>
-      displayNodes.reduce((acc, node) => {
+      displayNodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
@@ -485,14 +506,14 @@ export default function CommsNetworkConsole({
   const secureModeEnabled = Boolean(activeVoiceNetId && voiceNet.secureModeByNet?.[activeVoiceNetId]?.enabled);
   const channelHealthById = useMemo(
     () =>
-      channelHealth.reduce((acc, entry) => {
+      channelHealth.reduce<Record<string, (typeof channelHealth)[number]>>((acc, entry) => {
         acc[entry.channelId] = entry;
         return acc;
       }, {}),
     [channelHealth]
   );
   const participantByMemberId = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, any>();
     for (const participant of voiceParticipants) {
       const id = String(participant?.memberProfileId || participant?.userId || participant?.id || '').trim();
       if (!id) continue;
@@ -501,7 +522,7 @@ export default function CommsNetworkConsole({
     return map;
   }, [voiceParticipants]);
   const explicitChannelMembersById = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, string[]>();
     for (const edge of edges) {
       if (edge.type !== 'membership') continue;
       if (!edge.sourceId.startsWith('user:') || !edge.targetId.startsWith('channel:')) continue;
@@ -515,7 +536,7 @@ export default function CommsNetworkConsole({
     return map;
   }, [edges]);
   const fallbackChannelMembersById = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, string[]>();
     for (const channel of channels) {
       const token = toToken(`${channel.id} ${channel.label}`);
       const memberIds = roster
@@ -1742,42 +1763,73 @@ export default function CommsNetworkConsole({
                   No channels in current graph snapshot.
                 </div>
               ) : null}
-              </div>
-              </section>
+            </div>
+          </div>
         </section>
 
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-orange-400" />
-              Crew Cards
-            </div>
-            <div className="flex items-center gap-1.5">
-              <NexusButton
-                size="sm"
-                intent="subtle"
-                onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
-                disabled={crewCardPage === 0}
-              >
-                Prev
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <NexusButton size="sm" intent={rightPanelView === 'cards' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('cards')}>
+                <Users className="w-3.5 h-3.5 mr-1" />
+                Crew Cards
               </NexusButton>
-              <NexusBadge tone="neutral">
-                {crewCardPage + 1}/{crewCardPageCount}
-              </NexusBadge>
-              <NexusButton
-                size="sm"
-                intent="subtle"
-                onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
-                disabled={crewCardPage >= crewCardPageCount - 1}
-              >
-                Next
+              <NexusButton size="sm" intent={rightPanelView === 'schema' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('schema')}>
+                <ClipboardList className="w-3.5 h-3.5 mr-1" />
+                Fleet Schema
               </NexusButton>
             </div>
+            {rightPanelView === 'cards' ? (
+              <div className="flex items-center gap-1.5">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
+                  disabled={crewCardPage === 0}
+                >
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {crewCardPage + 1}/{crewCardPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
+                  disabled={crewCardPage >= crewCardPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))}
+                  disabled={schemaChannelPage === 0}
+                >
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {schemaChannelPage + 1}/{schemaChannelPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
+                  disabled={schemaChannelPage >= schemaChannelPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            )}
           </div>
 
-          <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
-            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-1.5">
-              {visibleCrewCards.map((card) => (
+          {rightPanelView === 'cards' ? (
+            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-1.5">
+                {visibleCrewCards.map((card) => (
                   <article key={card.id} className="rounded border border-zinc-800 bg-zinc-950/70 px-2 py-1.5">
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -1837,15 +1889,7 @@ export default function CommsNetworkConsole({
                 ) : null}
               </div>
             </div>
-          </section>
-
-        <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
-              <ClipboardList className="w-3.5 h-3.5 text-orange-400" />
-              Fleet Schema
-            </div>
-          </div>
+          ) : rightPanelView === 'schema' ? (
             <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
               <button
                 type="button"
@@ -2004,9 +2048,9 @@ export default function CommsNetworkConsole({
                 </div>
               ) : null}
             </div>
-            </section>
+          ) : null}
 
-            <section className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+          <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[11px] text-zinc-300 uppercase tracking-wide flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-orange-400" />
