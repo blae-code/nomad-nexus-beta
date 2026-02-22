@@ -755,7 +755,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
       <header className="nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0" role="banner">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-orange-500/20 bg-orange-500/5">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-orange-500/20 bg-orange-500/5">
             <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0" />
             <div className="min-w-0">
               <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-100 leading-none">
