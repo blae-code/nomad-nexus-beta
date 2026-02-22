@@ -1,15 +1,31 @@
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
+import type { NexusAppLifecycleEntry } from './appLifecycle';
+import type { NexusTrayNotification } from './trayNotifications';
 
-function toneForNotificationLevel(level) {
+interface NexusTaskbarProps {
+  activeAppId: string | null;
+  appEntries: Record<string, NexusAppLifecycleEntry>;
+  appCatalog: Array<{ id: string; label: string; hotkey?: string }>;
+  notifications: NexusTrayNotification[];
+  unreadNotifications: number;
+  onActivateApp: (appId: string) => void;
+  onSuspendApp: (appId: string) => void;
+  onOpenCommandDeck: () => void;
+  onMarkNotificationRead: (notificationId: string) => void;
+  onMarkAllNotificationsRead: () => void;
+  onClearNotifications: () => void;
+}
+
+function toneForNotificationLevel(level: NexusTrayNotification['level']) {
   if (level === 'critical') return 'danger';
   if (level === 'warning') return 'warning';
   if (level === 'success') return 'ok';
   return 'active';
 }
 
-function dotForState(state) {
+function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
   if (state === 'foreground') return 'bg-emerald-400';
   if (state === 'background') return 'bg-sky-400';
   if (state === 'suspended') return 'bg-amber-400';
@@ -17,14 +33,14 @@ function dotForState(state) {
   return 'bg-zinc-600';
 }
 
-function ageLabel(timestamp) {
+function ageLabel(timestamp: string): string {
   const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
   if (ageSeconds < 60) return `${ageSeconds}s`;
   if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m`;
   return `${Math.floor(ageSeconds / 3600)}h`;
 }
 
-function compactLabel(value, max = 10) {
+function compactLabel(value: string, max = 10): string {
   const clean = String(value || '').trim();
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}...`;
@@ -42,9 +58,9 @@ export default function NexusTaskbar({
   onMarkNotificationRead,
   onMarkAllNotificationsRead,
   onClearNotifications,
-}) {
+}: NexusTaskbarProps) {
   const [trayOpen, setTrayOpen] = React.useState(false);
-  const [trayFilter, setTrayFilter] = React.useState('UNREAD');
+  const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
   const [appPage, setAppPage] = React.useState(0);
   const [noticePage, setNoticePage] = React.useState(0);
   const appsPerPage = 6;
@@ -87,12 +103,9 @@ export default function NexusTaskbar({
   return (
     <section className="relative nx-taskbar-strip">
       <div className="nx-taskbar-block nx-taskbar-meta">
-        <div className="nx-taskbar-dock-chip">
-          <Sparkles className="w-3 h-3" />
-          <span>Dock</span>
-        </div>
         <NexusBadge tone="neutral" className="nx-taskbar-count-badge">
-          {appCatalog.length} modules
+          <Sparkles className="w-3 h-3 mr-1" />
+          {appCatalog.length}
         </NexusBadge>
         {appPageCount > 1 ? (
           <NexusBadge tone="neutral" className="nx-taskbar-count-badge hidden md:inline-flex">
