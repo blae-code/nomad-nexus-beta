@@ -197,15 +197,15 @@ export default function NexusTaskbar({
       </div>
 
       {trayOpen ? (
-        <div className="nx-taskbar-tray">
-          <div className="nx-taskbar-tray-header">
-            <div className="text-[11px] text-zinc-400 uppercase tracking-wide">
+        <div className="nx-taskbar-tray fixed bottom-full left-0 right-0 mb-1 mx-auto w-[min(calc(100vw-2rem),640px)] max-h-96 overflow-y-auto rounded-t-lg border border-b-0 border-zinc-700/60 bg-zinc-950/98 backdrop-blur-lg shadow-2xl">
+          <div className="sticky top-0 px-3 py-2.5 border-b border-zinc-800/60 bg-zinc-950/95 backdrop-blur-sm flex items-center justify-between gap-3">
+            <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">
               Alerts Center
-              <span className="text-zinc-600 ml-1">
+              <span className="text-zinc-600 ml-2">
                 {filteredNotifications.length}/{notifications.length}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <NexusButton
                 size="sm"
                 intent={trayFilter === 'UNREAD' ? 'primary' : 'subtle'}
