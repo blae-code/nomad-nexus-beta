@@ -560,8 +560,8 @@ export default function CommsNetworkConsole({
       { id: 'GCE', label: wingLabelByElement('GCE') },
     ];
     return wings.map((wing) => {
-      const squadByLabel = new Map<string, any>();
-      for (const channel of visibleSchemaChannels) {
+      const squadByLabel = new Map();
+      for (const channel of channels) {
         const channelId = channel.id;
         const explicitIds = explicitChannelMembersById.get(channelId) || [];
         const fallbackIds = fallbackChannelMembersById.get(channelId) || [];
