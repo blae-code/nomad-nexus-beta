@@ -204,7 +204,7 @@ export default function AccessGate() {
       <PageTransition>
         <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative">
 
-      <div className="relative z-10 w-full max-w-md my-8">
+      <div className="relative z-10 w-full max-w-md">
         <div className="nexus-immersive-panel p-0 overflow-hidden flex-shrink-0 shadow-2xl shadow-red-900/30">
           <div className="border-b border-red-700/50 bg-gradient-to-br from-red-900/20 via-zinc-900/40 to-zinc-950/60 p-8 relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.15),transparent_70%)]" />
