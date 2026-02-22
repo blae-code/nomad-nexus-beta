@@ -202,104 +202,114 @@ export default function AccessGate() {
     <RouteGuard requiredAuth="none">
       <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
       <PageTransition>
-        {/* Polished Header */}
-        <header className="fixed top-0 left-0 right-0 z-40 border-b border-red-700/30 bg-zinc-950/95 backdrop-blur-sm px-6 py-3 flex items-center justify-between">
+        <header className="fixed top-0 left-0 right-0 z-40 border-b border-red-700/30 bg-zinc-950/98 backdrop-blur-md px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Shield className="w-4 h-4 text-red-500" />
-            <div className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Redscar Nomads Command Intranet</div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <Signal className="w-3 h-3 text-green-500" />
-              SECURE CONNECTION
+            <div className="p-1.5 rounded-lg bg-red-500/15 border border-red-500/30">
+              <Shield className="w-4 h-4 text-red-400" />
             </div>
+            <div className="min-w-0">
+              <div className="text-xs text-zinc-300 font-bold uppercase tracking-[0.15em]">Redscar Nomads</div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-wider">Command Intranet</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded border border-green-500/30 bg-green-500/10">
+            <Signal className="w-3 h-3 text-green-400" />
+            <span className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">Secure</span>
           </div>
         </header>
 
-        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative pt-16 pb-16">
+        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative pt-20 pb-16">
 
       <div className="relative z-10 w-full max-w-md my-8">
-        <div className="nexus-immersive-panel p-0 overflow-hidden flex-shrink-0">
-          {/* Header Section */}
-          <div className="border-b border-red-700/50 bg-gradient-to-r from-red-700/15 via-transparent to-transparent p-6 relative overflow-hidden">
-            <div className="flex items-center justify-center mb-4">
+        <div className="nexus-immersive-panel p-0 overflow-hidden flex-shrink-0 shadow-2xl shadow-red-900/30">
+          <div className="border-b border-red-700/50 bg-gradient-to-br from-red-900/20 via-zinc-900/40 to-zinc-950/60 p-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.15),transparent_70%)]" />
+            
+            <div className="relative flex items-center justify-center mb-6">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-red-500/10 animate-pulse" />
+              </div>
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/692e6bd486f10b06a9125c80/068c6849c_Redscar_Nomads_Icon_White.png"
                 alt="Redscar Nomads"
-                className="w-16 h-16 drop-shadow-lg"
+                className="w-20 h-20 drop-shadow-2xl relative z-10"
               />
             </div>
 
-            <div className="text-center space-y-2">
-              <h1 className="nexus-section-title text-4xl font-black uppercase tracking-[0.2em] text-white drop-shadow-lg">
-                Nexus <span className="text-red-600">Gate</span>
+            <div className="relative text-center space-y-3">
+              <h1 className="text-4xl font-black uppercase tracking-[0.22em] text-white drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+                Nexus<span className="text-red-500">Gate</span>
               </h1>
-              <div className="h-px bg-gradient-to-r from-transparent via-red-700/40 to-transparent" />
-              <p className="text-[10px] text-gray-400 uppercase tracking-[0.25em] font-bold">
-                Authorization Protocol
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-red-500/60" />
+                <div className="w-1 h-1 bg-red-500/80 rounded-full" />
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-red-500/60" />
+              </div>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">
+                Authorization Required
               </p>
             </div>
           </div>
 
-          {/* Form Section */}
           <form
-            className="p-6 space-y-5"
+            className="p-8 space-y-6"
             onSubmit={(e) => {
               e.preventDefault();
               handleRedeem();
             }}
           >
-            {/* Access Code Field */}
-            <div className="space-y-2 group">
-              <label htmlFor="accessCode" className="nexus-label text-amber-300 block">
-                ◆ Access Code
+            <div className="space-y-2.5">
+              <label htmlFor="accessCode" className="block text-xs font-bold uppercase tracking-[0.15em] text-amber-300/90">
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-1 h-1 bg-amber-400/70 rounded-full" />
+                  Access Code
+                </span>
               </label>
-              <div className="relative">
-                <Input
-                  id="accessCode"
-                  type="password"
-                  placeholder="XXXX-XXXX-XXXX"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                  className="font-mono tracking-widest text-center h-11 text-yellow-300 border-yellow-500/35"
-                  />
-              </div>
+              <Input
+                id="accessCode"
+                type="password"
+                placeholder="XXXX-XXXX-XXXX"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                className="font-mono tracking-[0.3em] text-center h-12 text-amber-200 bg-zinc-950/60 border-amber-500/40 focus:border-amber-400/70 focus:ring-2 focus:ring-amber-500/30 transition-all placeholder:text-zinc-700"
+              />
             </div>
 
-            {/* Callsign Field */}
-            <div className="space-y-2 group">
-              <label htmlFor="callsign" className="nexus-label text-emerald-300 block">
-                ◆ Callsign
+            <div className="space-y-2.5">
+              <label htmlFor="callsign" className="block text-xs font-bold uppercase tracking-[0.15em] text-emerald-300/90">
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-1 h-1 bg-emerald-400/70 rounded-full" />
+                  Callsign
+                </span>
               </label>
-              <div className="relative">
-                <Input
-                  id="callsign"
-                  type="text"
-                  placeholder="Enter callsign"
-                  value={callsign}
-                  onChange={(e) => setCallsign(e.target.value)}
-                  className="tracking-wider text-center h-11 border-white/35"
-                  />
-              </div>
+              <Input
+                id="callsign"
+                type="text"
+                placeholder="Your operator callsign"
+                value={callsign}
+                onChange={(e) => setCallsign(e.target.value)}
+                className="tracking-wider text-center h-12 text-zinc-100 bg-zinc-950/60 border-emerald-500/40 focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/30 transition-all placeholder:text-zinc-700"
+              />
             </div>
 
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center gap-3 pt-2 pb-1">
+            <div className="flex items-center gap-3 pt-1">
               <Checkbox
                 id="rememberMe"
                 checked={rememberMe}
                 onCheckedChange={setRememberMe}
                 className="border-cyan-500/50 data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-500"
               />
-              <label htmlFor="rememberMe" className="text-xs text-cyan-300 cursor-pointer">
-                Remember me on this device
+              <label htmlFor="rememberMe" className="text-xs text-cyan-300/90 cursor-pointer hover:text-cyan-200 transition-colors">
+                Remember credentials on this device
               </label>
             </div>
 
-            {/* Saved Login Info */}
             {hasSavedLogin && (
-              <div className="flex items-center justify-between bg-cyan-950/30 border border-cyan-500/30 rounded px-3 py-2">
-                <span className="text-[10px] text-cyan-300">✓ Saved login detected</span>
+              <div className="flex items-center justify-between bg-cyan-950/25 border border-cyan-500/35 rounded-lg px-3.5 py-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                  <span className="text-[11px] text-cyan-300 font-medium">Saved credentials detected</span>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -322,70 +332,75 @@ export default function AccessGate() {
                     setAccessCode('');
                     setCallsign('');
                   }}
-                  className="h-6 px-2 text-cyan-400 hover:text-red-400 hover:bg-red-950/30"
+                  className="h-7 px-2.5 text-cyan-400 hover:text-red-400 hover:bg-red-950/40 transition-colors"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
             )}
 
-            {/* Verify Button */}
             <Button
               type="submit"
               disabled={loading || verifyingAuth || !accessCode.trim() || !callsign.trim()}
-              className="w-full h-11 mt-6 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 relative overflow-hidden group"
+              className="w-full h-12 mt-2 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 text-white font-bold uppercase tracking-[0.2em] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl shadow-red-500/40 hover:shadow-red-400/60 transition-all duration-300 relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-full group-hover:-translate-x-full transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700" />
               {loading || verifyingAuth ? (
-                <span className="flex items-center justify-center gap-2 relative z-10">
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  {verifyingAuth ? 'CONFIRMING AUTH...' : 'VERIFYING...'}
+                <span className="flex items-center justify-center gap-2.5 relative z-10">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {verifyingAuth ? 'Confirming...' : 'Verifying...'}
                 </span>
               ) : (
-                <span className="flex items-center justify-center gap-2 relative z-10">
-                  <Zap className="w-4 h-4 animate-pulse" />
-                  VERIFY ACCESS
+                <span className="flex items-center justify-center gap-2.5 relative z-10">
+                  <Zap className="w-4 h-4" />
+                  Verify Access
                 </span>
               )}
             </Button>
 
-            {/* Status Messages */}
             {message && (
-              <div role="status" aria-live="polite" className={`p-4 rounded border-2 text-center whitespace-pre-line font-mono text-xs animate-in fade-in duration-300 ${
+              <div role="status" aria-live="polite" className={`p-4 rounded-lg border text-center whitespace-pre-line text-xs leading-relaxed animate-in fade-in duration-300 ${
                 message.includes('granted') 
-                  ? 'bg-green-950/40 border-green-500/50 text-green-300 shadow-lg shadow-green-500/20' 
+                  ? 'bg-green-950/50 border-green-500/60 text-green-200 shadow-xl shadow-green-500/25' 
                   : message.includes('Revoked') 
-                  ? 'bg-amber-950/40 border-amber-500/50 text-amber-300 shadow-lg shadow-amber-500/20' 
-                  : 'bg-red-950/40 border-red-500/50 text-red-300 shadow-lg shadow-red-500/20'
+                  ? 'bg-amber-950/50 border-amber-500/60 text-amber-200 shadow-xl shadow-amber-500/25' 
+                  : 'bg-red-950/50 border-red-500/60 text-red-200 shadow-xl shadow-red-500/25'
               }`}>
-                {message}
+                <div className="font-semibold">{message}</div>
               </div>
             )}
           </form>
 
-          {/* Footer */}
-          <div className="border-t border-red-700/40 bg-gradient-to-r from-red-700/5 to-transparent px-6 py-4">
-            <p className="text-[10px] text-red-700/70 text-center uppercase tracking-[0.2em] font-bold">
-              ⸻ REDSCAR NOMADS COMMAND ⸻
-            </p>
+          <div className="border-t border-red-700/30 bg-gradient-to-r from-red-950/30 via-zinc-950/20 to-transparent px-6 py-4">
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-px w-8 bg-red-700/40" />
+              <p className="text-[10px] text-red-600/70 uppercase tracking-[0.25em] font-bold">
+                Redscar Nomads
+              </p>
+              <div className="h-px w-8 bg-red-700/40" />
+            </div>
           </div>
         </div>
 
-        {/* Security indicator */}
-        <div className="mt-4 text-center text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">
-          <span className="inline-flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-green-500/70 rounded-full animate-pulse" />
-            ENCRYPTED PROTOCOL
-            <span className="w-1.5 h-1.5 bg-green-500/70 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
-          </span>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <div className="h-px w-16 bg-gradient-to-r from-transparent to-green-500/30" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-500/25 bg-green-500/5">
+            <span className="w-1.5 h-1.5 bg-green-400/80 rounded-full animate-pulse" />
+            <span className="text-[10px] text-green-400/80 uppercase tracking-wider font-semibold">Secure Link</span>
+            <span className="w-1.5 h-1.5 bg-green-400/80 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+          </div>
+          <div className="h-px w-16 bg-gradient-to-l from-transparent to-green-500/30" />
         </div>
       </div>
 
-      {/* Polished Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-red-700/30 bg-zinc-950/95 backdrop-blur-sm px-6 py-3">
-        <p className="text-center text-[10px] text-red-700/70 uppercase tracking-[0.2em] font-bold">
-          ⸻ REDSCAR NOMADS COMMAND ⸻
-        </p>
+      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-red-700/25 bg-zinc-950/98 backdrop-blur-md px-6 py-3.5">
+        <div className="flex items-center justify-center gap-2">
+          <div className="h-px w-12 bg-red-700/30" />
+          <p className="text-[10px] text-red-700/60 uppercase tracking-[0.25em] font-bold">
+            Redscar Nomads Command
+          </p>
+          <div className="h-px w-12 bg-red-700/30" />
+        </div>
       </footer>
 
       {/* Hidden readiness beacon */}

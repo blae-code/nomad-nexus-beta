@@ -78,6 +78,7 @@ import PublicUpdate from './pages/PublicUpdate';
 import QAConsole from './pages/QAConsole';
 import Recon from './pages/Recon';
 import ReportBuilder from './pages/ReportBuilder';
+import RoleManagement from './pages/RoleManagement';
 import Settings from './pages/Settings';
 import StrategicObjectives from './pages/StrategicObjectives';
 import SystemAdmin from './pages/SystemAdmin';
@@ -89,7 +90,6 @@ import UserDirectory from './pages/UserDirectory';
 import UserSettings from './pages/UserSettings';
 import WarAcademy from './pages/WarAcademy';
 import Workspace from './pages/Workspace';
-import RoleManagement from './pages/RoleManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -125,6 +125,7 @@ export const PAGES = {
     "QAConsole": QAConsole,
     "Recon": Recon,
     "ReportBuilder": ReportBuilder,
+    "RoleManagement": RoleManagement,
     "Settings": Settings,
     "StrategicObjectives": StrategicObjectives,
     "SystemAdmin": SystemAdmin,
@@ -136,7 +137,6 @@ export const PAGES = {
     "UserSettings": UserSettings,
     "WarAcademy": WarAcademy,
     "Workspace": Workspace,
-    "RoleManagement": RoleManagement,
 }
 
 export const pagesConfig = {
