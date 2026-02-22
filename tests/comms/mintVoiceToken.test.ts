@@ -51,12 +51,14 @@ const createBase44Mock = ({
   nets = [],
   events = [],
   eventLogs = [],
+  eventDutyAssignments = [],
   keyStatus = 'ACTIVE',
 }: {
   actorProfile: any;
   nets?: any[];
   events?: any[];
   eventLogs?: any[];
+  eventDutyAssignments?: any[];
   keyStatus?: string;
 }) => {
   const netStore = new Map<string, any>(nets.map((net) => [net.id, net]));
@@ -105,6 +107,12 @@ const createBase44Mock = ({
       },
       EventLog: {
         list: vi.fn(async () => [...eventLogs]),
+      },
+      EventDutyAssignment: {
+        filter: vi.fn(async (query: Record<string, unknown>) => {
+          const eventId = String(query?.event_id || '');
+          return (eventDutyAssignments || []).filter((entry: any) => String(entry?.event_id || '') === eventId);
+        }),
       },
     },
   };
@@ -265,6 +273,70 @@ describe('mintVoiceToken', () => {
     expect(payload.policy).toMatchObject({
       disciplineMode: 'REQUEST_TO_SPEAK',
       canPublish: true,
+    });
+  });
+
+  it('blocks planned operation nets before activation window for non-override members', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER', membership: 'MEMBER', roles: [] };
+    const now = Date.now();
+    mockState.base44 = createBase44Mock({
+      actorProfile,
+      nets: [
+        {
+          id: 'net-op',
+          code: 'OPS-CMD',
+          type: 'command',
+          discipline: 'focused',
+          event_id: 'event-1',
+          lifecycle_scope: 'temp_operation',
+          status: 'planned',
+          planned_activation_at: new Date(now + 10 * 60 * 1000).toISOString(),
+        },
+      ],
+      events: [{ id: 'event-1', host_id: 'member-9', assigned_member_profile_ids: ['member-1'] }],
+    });
+
+    const handler = await loadHandler('../../functions/mintVoiceToken.ts', testEnv);
+    const response = await handler(
+      buildRequest({
+        netId: 'net-op',
+        userId: 'member-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload).toMatchObject({
+      error: 'Voice net pending activation window',
+    });
+  });
+
+  it('allows event-duty role authority to join operation nets even when not explicitly assigned', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'MEMBER', membership: 'MEMBER', roles: [] };
+    mockState.base44 = createBase44Mock({
+      actorProfile,
+      nets: [{ id: 'net-op', code: 'OPS-CMD', type: 'command', discipline: 'casual', event_id: 'event-1', lifecycle_scope: 'temp_operation', status: 'active' }],
+      events: [{ id: 'event-1', host_id: 'member-9', assigned_member_profile_ids: ['member-2'] }],
+      eventDutyAssignments: [{ id: 'duty-1', event_id: 'event-1', member_profile_id: 'member-1', role_name: 'Squad Leader' }],
+    });
+
+    const handler = await loadHandler('../../functions/mintVoiceToken.ts', testEnv);
+    const response = await handler(
+      buildRequest({
+        netId: 'net-op',
+        userId: 'member-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.policy).toMatchObject({
+      lifecycleScope: 'temp_operation',
+      canSubscribe: true,
     });
   });
 });

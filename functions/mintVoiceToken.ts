@@ -1,6 +1,17 @@
 import { getAuthContext, isAdminMember, readJson } from './_shared/memberAuth.ts';
 import { AccessToken } from 'npm:livekit@2.0.0';
 import { enforceContentLength, enforceJsonPost } from './_shared/security.ts';
+import {
+  canManageOperationNet,
+  deriveVoiceNetPolicyFromLogs,
+  eventCreatorMemberId,
+  listEventDutyAssignments,
+  listEventLogs,
+  normalizeVoiceNetForUi,
+  readLifecycleScope,
+  readOwnerMemberId,
+  resolveVoiceNetActorAuthority,
+} from './_shared/voiceNetGovernance.ts';
 
 const FOCUSED_MEMBERSHIPS = new Set(['MEMBER', 'AFFILIATE', 'PARTNER']);
 const DISCIPLINE_MODES = new Set(['OPEN', 'PTT', 'REQUEST_TO_SPEAK', 'COMMAND_ONLY']);
@@ -171,7 +182,7 @@ Deno.serve(async (req) => {
     const payload = await readJson(req);
     const { base44, actorType, adminUser, memberProfile } = await getAuthContext(req, payload, {
       allowAdmin: true,
-      allowMember: true
+      allowMember: true,
     });
 
     if (!actorType) {
@@ -188,7 +199,7 @@ Deno.serve(async (req) => {
     const whisperTargetRaw = text(payload?.whisperTarget || payload?.whisper_target, 120);
     const whisperTarget = whisperTargetRaw || null;
     const monitorSubmixesRaw = Array.isArray(payload?.monitorSubmixes || payload?.monitor_submixes)
-      ? (payload?.monitorSubmixes || payload?.monitor_submixes)
+      ? payload?.monitorSubmixes || payload?.monitor_submixes
       : [];
     const monitorSubmixes = monitorSubmixesRaw
       .map((entry: unknown) => text(entry, 40).toUpperCase())
@@ -223,32 +234,91 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const actorAuthority = resolveVoiceNetActorAuthority({
+      actorType,
+      adminUser,
+      memberProfile,
+    });
+
     const rank = String(memberProfile?.rank || '').toUpperCase();
     const roles = Array.isArray(memberProfile?.roles)
       ? memberProfile.roles.map((entry: unknown) => String(entry || '').toLowerCase())
       : [];
-    const commandPrivileges = actorType === 'admin' || isAdminMember(memberProfile) || rank === 'COMMANDER' || roles.includes('command') || roles.includes('officer');
+    const commandPrivileges =
+      actorAuthority.hasGlobalOverride ||
+      actorAuthority.isCommandStaff ||
+      actorType === 'admin' ||
+      isAdminMember(memberProfile) ||
+      rank === 'COMMANDER' ||
+      roles.includes('command') ||
+      roles.includes('officer');
 
     const voiceNet = await resolveVoiceNet(base44, netId);
     if (!voiceNet) {
       return Response.json({ error: 'Voice net not found' }, { status: 404 });
     }
 
-    const netEventId = text(voiceNet?.event_id || voiceNet?.eventId) || null;
-    if (actorType === 'member' && !commandPrivileges && memberProfile?.id && netEventId) {
-      const scopedEvent = await resolveEvent(base44, netEventId);
-      if (scopedEvent) {
-        const assigned = eventAssignedMemberIds(scopedEvent);
-        const hostId = text(scopedEvent?.host_id || scopedEvent?.hostId);
-        const isAssigned = assigned.includes(memberProfile.id) || hostId === memberProfile.id;
-        if (!isAssigned) {
-          return Response.json({ error: 'Voice net access denied for this operation' }, { status: 403 });
-        }
+    const governanceLogs = await listEventLogs(base44, 2800).catch(() => []);
+    const governancePolicy = deriveVoiceNetPolicyFromLogs(voiceNet, governanceLogs);
+    const resolvedVoiceNet = normalizeVoiceNetForUi(voiceNet, governancePolicy);
+    const netLifecycleScope = readLifecycleScope(resolvedVoiceNet);
+    const netOwnerMemberId = readOwnerMemberId(resolvedVoiceNet);
+    const netEventId = text(resolvedVoiceNet?.event_id || voiceNet?.event_id || voiceNet?.eventId) || null;
+
+    const netStatus = text(resolvedVoiceNet?.status || voiceNet?.status, 'active').toLowerCase();
+    if (netStatus === 'closed' || netStatus === 'inactive' || netStatus === 'retired' || netStatus === 'merged') {
+      return Response.json({ error: 'Voice net is not active' }, { status: 403 });
+    }
+
+    const plannedActivationAt = text(
+      resolvedVoiceNet?.planned_activation_at || resolvedVoiceNet?.raw?.planned_activation_at || resolvedVoiceNet?.raw?.plannedActivationAt
+    );
+    if (
+      netLifecycleScope === 'temp_operation' &&
+      netStatus === 'planned' &&
+      plannedActivationAt &&
+      Number.isFinite(new Date(plannedActivationAt).getTime()) &&
+      Date.now() < new Date(plannedActivationAt).getTime() &&
+      !actorAuthority.hasGlobalOverride
+    ) {
+      return Response.json(
+        {
+          error: 'Voice net pending activation window',
+          planned_activation_at: plannedActivationAt,
+        },
+        { status: 403 }
+      );
+    }
+
+    let scopedEvent = null;
+    let canManageOperationScope = false;
+    if (netEventId) {
+      scopedEvent = await resolveEvent(base44, netEventId);
+      if (scopedEvent && netLifecycleScope === 'temp_operation') {
+        const assignments = await listEventDutyAssignments(base44, netEventId).catch(() => []);
+        canManageOperationScope = canManageOperationNet({
+          hasGlobalOverride: actorAuthority.hasGlobalOverride,
+          actorMemberId: memberProfile?.id || null,
+          memberProfile,
+          event: scopedEvent,
+          assignments,
+        });
       }
     }
 
-    if (isFocusedNet(voiceNet) && !isTemporaryNet(voiceNet, netId) && !commandPrivileges) {
-      const membership = text(memberProfile?.membership || (isAdminMember(memberProfile) ? 'PARTNER' : 'GUEST')).toUpperCase();
+    if (actorType === 'member' && !commandPrivileges && memberProfile?.id && netEventId && scopedEvent) {
+      const assigned = eventAssignedMemberIds(scopedEvent);
+      const hostId = eventCreatorMemberId(scopedEvent) || text(scopedEvent?.host_id || scopedEvent?.hostId);
+      const isAssigned = assigned.includes(memberProfile.id) || hostId === memberProfile.id || canManageOperationScope;
+      if (!isAssigned) {
+        return Response.json({ error: 'Voice net access denied for this operation' }, { status: 403 });
+      }
+    }
+
+    if (isFocusedNet(resolvedVoiceNet) && !isTemporaryNet(resolvedVoiceNet, netId) && !commandPrivileges) {
+      const membership = text(
+        memberProfile?.membership || (isAdminMember(memberProfile) || actorAuthority.hasGlobalOverride ? 'PARTNER' : 'GUEST')
+      ).toUpperCase();
       if (!FOCUSED_MEMBERSHIPS.has(membership)) {
         return Response.json(
           {
@@ -301,7 +371,7 @@ Deno.serve(async (req) => {
     // Generate room name from netId (deterministic)
     const roomName = `nexus-net-${netId}`;
 
-    const policy = await deriveVoicePolicy(base44, {
+    const disciplinePolicy = await deriveVoicePolicy(base44, {
       netId,
       eventId: netEventId,
       fallbackMode: requestedDisciplineMode,
@@ -309,13 +379,19 @@ Deno.serve(async (req) => {
     });
 
     const canPublishByDiscipline = (() => {
-      if (policy.disciplineMode === 'COMMAND_ONLY') return commandPrivileges;
-      if (policy.disciplineMode === 'REQUEST_TO_SPEAK') return commandPrivileges || policy.requestToSpeakApproved;
+      if (disciplinePolicy.disciplineMode === 'COMMAND_ONLY') return commandPrivileges;
+      if (disciplinePolicy.disciplineMode === 'REQUEST_TO_SPEAK') return commandPrivileges || disciplinePolicy.requestToSpeakApproved;
       return true;
     })();
     const canPublish = payload?.canPublish === false ? false : canPublishByDiscipline;
     const canSubscribe = payload?.canSubscribe === false ? false : true;
     const canPublishData = payload?.canPublishData === false ? false : true;
+
+    const isOwner = Boolean(memberProfile?.id && netOwnerMemberId && memberProfile.id === netOwnerMemberId);
+    const canManageNet =
+      actorAuthority.hasGlobalOverride ||
+      (netLifecycleScope === 'temp_adhoc' && isOwner) ||
+      (netLifecycleScope === 'temp_operation' && canManageOperationScope);
 
     const token = new AccessToken(liveKitApiKey, liveKitApiSecret);
     token.identity = userId;
@@ -328,9 +404,9 @@ Deno.serve(async (req) => {
     token.metadata = JSON.stringify({
       callsign: callsign || memberProfile?.display_callsign || memberProfile?.callsign || adminUser?.full_name || 'Unknown',
       clientId: clientId || '',
-      netId: netId,
-      netType: text(voiceNet?.type),
-      disciplineMode: policy.disciplineMode,
+      netId,
+      netType: text(resolvedVoiceNet?.type || voiceNet?.type),
+      disciplineMode: disciplinePolicy.disciplineMode,
       commandPrivileges,
       secureMode,
       secureKeyVersion: secureKeyVersion || null,
@@ -338,6 +414,9 @@ Deno.serve(async (req) => {
       monitorSubmixes,
       txSubmix,
       disableRecordings,
+      lifecycleScope: netLifecycleScope,
+      ownerMemberProfileId: netOwnerMemberId,
+      canManageNet,
     });
 
     token.addGrant({
@@ -353,11 +432,17 @@ Deno.serve(async (req) => {
       token: token.toJwt(),
       roomName,
       policy: {
-        disciplineMode: policy.disciplineMode,
+        disciplineMode: disciplinePolicy.disciplineMode,
         canPublish,
         canSubscribe,
         secureMode,
         secureKeyVersion: secureKeyVersion || null,
+        lifecycleScope: netLifecycleScope,
+        temporary: isTemporaryNet(resolvedVoiceNet, netId),
+        ownerMemberProfileId: netOwnerMemberId,
+        isOwner,
+        canManageNet,
+        hasGlobalOverride: actorAuthority.hasGlobalOverride,
       },
     });
   } catch (error) {
