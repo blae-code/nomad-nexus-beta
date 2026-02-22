@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
-  AlertTriangle,
   ArrowRight,
   CheckCircle2,
   ChevronDown,
@@ -10,7 +9,6 @@ import {
   Radio,
   RefreshCcw,
   Send,
-  Signal,
   UserCheck,
   Users,
   Zap,
@@ -25,7 +23,6 @@ import {
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
-  type CommsIncidentRecord,
   type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
@@ -33,7 +30,6 @@ import {
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
-  type CommsDirectiveThreadLane,
   type DirectiveDeliveryState,
   type DisciplineAlert,
   type DirectiveDispatchRecord,
@@ -45,7 +41,20 @@ import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
-import { getNumberTokenAssetUrl, tokenAssets } from '../tokens';
+import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
+import {
+  channelStatusTokenIcon,
+  operatorStatusTone,
+  operatorStatusTokenIcon,
+  resolveSquadLabel,
+  roleTokenIcon,
+  topologyNodeTokenIcon,
+  vehicleStatusTone,
+  vehicleStatusTokenIcon,
+  wingLabelByElement,
+  wingTokenIcon,
+  squadTokenIcon,
+} from './commsTokenSemantics';
 
 interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
 interface TopologyBridgeEdge {
@@ -58,7 +67,6 @@ interface TopologyBridgeEdge {
 
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
-const THREAD_LIST_PAGE_SIZE = 5;
 const ORDER_LIST_PAGE_SIZE = 5;
 const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
@@ -79,19 +87,6 @@ function nodeBorder(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
-}
-
-function incidentPriorityTone(priority: string): 'danger' | 'warning' | 'active' {
-  if (priority === 'CRITICAL') return 'danger';
-  if (priority === 'HIGH') return 'warning';
-  return 'active';
-}
-
-function incidentStatusTone(status: CommsIncidentStatus): 'warning' | 'active' | 'ok' | 'neutral' {
-  if (status === 'NEW') return 'warning';
-  if (status === 'ACKED') return 'active';
-  if (status === 'ASSIGNED') return 'ok';
-  return 'neutral';
 }
 
 function formatAge(nowMs: number, createdAtMs: number): string {
@@ -120,12 +115,6 @@ function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'o
   return 'ok';
 }
 
-function directiveByThreadAction(action: CommsDirectiveThreadLane['nextAction']): 'REROUTE' | 'RESTRICT' | 'CHECKIN' {
-  if (action === 'REROUTE') return 'REROUTE';
-  if (action === 'RESTRICT') return 'RESTRICT';
-  return 'CHECKIN';
-}
-
 function clampPct(value: number): number {
   return Math.max(3, Math.min(97, value));
 }
@@ -145,21 +134,6 @@ function toToken(value: unknown): string {
 function isMutedParticipant(participant: any): boolean {
   if (participant?.muted === true) return true;
   return String(participant?.state || '').toUpperCase().includes('MUTE');
-}
-
-function wingLabelByElement(element: string): string {
-  if (element === 'CE') return 'Command Wing';
-  if (element === 'ACE') return 'Aerospace Wing';
-  return 'Ground Wing';
-}
-
-function resolveSquadLabel(channelId: string, channelLabel: string): string {
-  const token = `${toToken(channelId)} ${toToken(channelLabel)}`;
-  if (token.includes('alpha')) return 'Squad Alpha';
-  if (token.includes('bravo')) return 'Squad Bravo';
-  if (token.includes('coord') || token.includes('command')) return 'Command Cell';
-  if (token.includes('log')) return 'Logistics Cell';
-  return 'Operations Cell';
 }
 
 function resolveVehicleBucket(member: { role: string; element: string; callsign: string }, channelId: string): { id: string; label: string } {
@@ -188,72 +162,6 @@ function resolveVehicleBucket(member: { role: string; element: string; callsign:
   };
 }
 
-function operatorStatusTone(status: string): 'warning' | 'ok' | 'neutral' | 'danger' {
-  if (status === 'TX') return 'warning';
-  if (status === 'ON-NET') return 'ok';
-  if (status === 'MUTED') return 'neutral';
-  return 'danger';
-}
-
-function operatorStatusTokenIcon(status: string): string {
-  if (status === 'TX') return tokenAssets.comms.operatorStatus.tx;
-  if (status === 'ON-NET') return tokenAssets.comms.operatorStatus.onNet;
-  if (status === 'MUTED') return tokenAssets.comms.operatorStatus.muted;
-  return tokenAssets.comms.operatorStatus.offNet;
-}
-
-function vehicleStatusTone(status: string): 'danger' | 'warning' | 'active' | 'ok' {
-  if (status === 'DEGRADED') return 'danger';
-  if (status === 'ACTIVE') return 'warning';
-  if (status === 'MIXED') return 'active';
-  return 'ok';
-}
-
-function vehicleStatusTokenIcon(status: string): string {
-  if (status === 'DEGRADED') return tokenAssets.comms.vehicleStatus.degraded;
-  if (status === 'ACTIVE') return tokenAssets.comms.vehicleStatus.active;
-  if (status === 'MIXED') return tokenAssets.comms.vehicleStatus.mixed;
-  return tokenAssets.comms.vehicleStatus.ready;
-}
-
-function roleTokenIcon(role: string): string {
-  const token = toToken(role);
-  if (token.includes('lead') || token.includes('command') || token.includes('signal')) return tokenAssets.comms.role.command;
-  if (token.includes('pilot') || token.includes('flight') || token.includes('gunship')) return tokenAssets.comms.role.flight;
-  if (token.includes('medic') || token.includes('medical')) return tokenAssets.comms.role.medical;
-  if (token.includes('log') || token.includes('maint') || token.includes('mech')) return tokenAssets.comms.role.support;
-  return tokenAssets.comms.role.default;
-}
-
-function topologyNodeTokenIcon(node: CommsGraphNode): string {
-  if (node.type === 'channel') return tokenAssets.comms.channel;
-  if (node.type === 'team') return tokenAssets.comms.vehicle;
-  return tokenAssets.comms.role.default;
-}
-
-function wingTokenIcon(wingId: string): string {
-  if (wingId === 'CE') return getNumberTokenAssetUrl(1, 'yellow');
-  if (wingId === 'ACE') return getNumberTokenAssetUrl(2, 'cyan');
-  return getNumberTokenAssetUrl(3, 'green');
-}
-
-function squadTokenIcon(label: string): string {
-  const token = toToken(label);
-  if (token.includes('alpha')) return getNumberTokenAssetUrl(1, 'yellow');
-  if (token.includes('bravo')) return getNumberTokenAssetUrl(2, 'yellow');
-  if (token.includes('command')) return tokenAssets.comms.role.command;
-  if (token.includes('log')) return tokenAssets.comms.role.support;
-  return tokenAssets.comms.role.default;
-}
-
-function channelStatusTokenIcon(status: string): string {
-  const token = toToken(status);
-  if (token.includes('saturated') || token.includes('degraded')) return tokenAssets.comms.vehicleStatus.degraded;
-  if (token.includes('busy') || token.includes('active')) return tokenAssets.comms.vehicleStatus.active;
-  if (token.includes('clear') || token.includes('ready')) return tokenAssets.comms.vehicleStatus.ready;
-  return tokenAssets.comms.vehicleStatus.mixed;
-}
-
 function operatorStatusPriority(status: string): number {
   if (status === 'TX') return 0;
   if (status === 'ON-NET') return 1;
@@ -278,17 +186,16 @@ export default function CommsNetworkConsole({
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(true);
   const [healthPage, setHealthPage] = useState(0);
-  const [incidentPage, setIncidentPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
   const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
-  const [threadPage, setThreadPage] = useState(0);
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [crewCardPage, setCrewCardPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [rightPanelView, setRightPanelView] = useState<'cards' | 'schema' | 'incidents' | 'threads'>('cards');
+  const [rightPanelView, setRightPanelView] = useState<'cards' | 'schema'>('cards');
+  const [showTokenAtlas, setShowTokenAtlas] = useState(false);
   const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
   const [ordersPage, setOrdersPage] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState('');
@@ -458,15 +365,6 @@ export default function CommsNetworkConsole({
     () => buildCommsDirectiveThreads({ channelHealth, incidents, events, nowMs }),
     [channelHealth, incidents, events, nowMs]
   );
-  const threadPageCount = Math.max(1, Math.ceil(directiveThreads.length / THREAD_LIST_PAGE_SIZE));
-  const visibleThreads = useMemo(
-    () =>
-      directiveThreads.slice(
-        threadPage * THREAD_LIST_PAGE_SIZE,
-        threadPage * THREAD_LIST_PAGE_SIZE + THREAD_LIST_PAGE_SIZE
-      ),
-    [directiveThreads, threadPage]
-  );
   const selectedThread = directiveThreads.find((lane) => lane.id === selectedThreadId) || null;
   const deliverySurface = useMemo(
     () =>
@@ -494,8 +392,6 @@ export default function CommsNetworkConsole({
 
   const healthPageCount = Math.max(1, Math.ceil(channelHealth.length / LIST_PAGE_SIZE));
   const visibleHealth = channelHealth.slice(healthPage * LIST_PAGE_SIZE, healthPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
-  const incidentPageCount = Math.max(1, Math.ceil(incidents.length / LIST_PAGE_SIZE));
-  const visibleIncidents = incidents.slice(incidentPage * LIST_PAGE_SIZE, incidentPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
   const selectedIncident = incidents.find((incident) => incident.id === selectedIncidentId) || null;
   const bridgedChannelIds = useMemo(() => {
     const result = new Set<string>();
@@ -845,16 +741,8 @@ export default function CommsNetworkConsole({
   }, [healthPageCount]);
 
   useEffect(() => {
-    setIncidentPage((prev) => Math.min(prev, incidentPageCount - 1));
-  }, [incidentPageCount]);
-
-  useEffect(() => {
     setVoicePage((prev) => Math.min(prev, voicePageCount - 1));
   }, [voicePageCount]);
-
-  useEffect(() => {
-    setThreadPage((prev) => Math.min(prev, threadPageCount - 1));
-  }, [threadPageCount]);
 
   useEffect(() => {
     setSchemaChannelPage((prev) => Math.min(prev, schemaChannelPageCount - 1));
@@ -1042,15 +930,6 @@ export default function CommsNetworkConsole({
       },
     });
   }, [selectedIncident, selectedThread, channelHealth, emitDirectiveMacro]);
-
-  const executeThreadAction = useCallback(
-    (lane: CommsDirectiveThreadLane) => {
-      if (!lane) return;
-      const directive = directiveByThreadAction(lane.nextAction);
-      dispatchDirective(directive, { channelId: lane.channelId, laneId: lane.id });
-    },
-    [dispatchDirective]
-  );
 
   const executeRecommendation = useCallback(() => {
     if (commandRecommendation.action === 'ACK') {
@@ -1350,6 +1229,16 @@ export default function CommsNetworkConsole({
     });
   }, []);
 
+  const tokenAtlasEntriesByFamily = useMemo(() => {
+    const grouped = new Map<string, (typeof tokenCatalog.entries)[number][]>();
+    for (const entry of tokenCatalog.entries) {
+      const rows = grouped.get(entry.family) || [];
+      rows.push(entry);
+      grouped.set(entry.family, rows);
+    }
+    return [...grouped.entries()];
+  }, []);
+
   if (loading) {
     return <PanelLoadingState label="Loading comms graph..." />;
   }
@@ -1359,10 +1248,10 @@ export default function CommsNetworkConsole({
   }
 
   return (
-    <div className="h-full min-h-0 grid grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] gap-3">
+    <div className="relative h-full min-h-0 grid grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] gap-3">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Command</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Topology</h3>
           <p className="text-xs text-zinc-500 truncate">Template: {snapshot.templateId} · Drag nodes · Right-click radial command · Target-click bridge</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -1372,6 +1261,11 @@ export default function CommsNetworkConsole({
           <NexusButton size="sm" intent={showUsers ? 'primary' : 'subtle'} onClick={() => setShowUsers((prev) => !prev)}>
             Users
           </NexusButton>
+          {import.meta.env.DEV ? (
+            <NexusButton size="sm" intent={showTokenAtlas ? 'primary' : 'subtle'} onClick={() => setShowTokenAtlas((prev) => !prev)}>
+              Tokens
+            </NexusButton>
+          ) : null}
           <NexusButton size="sm" intent="subtle" onClick={loadGraph}>
             <RefreshCcw className="w-3.5 h-3.5 mr-1" />
             Refresh
@@ -1397,209 +1291,23 @@ export default function CommsNetworkConsole({
         </NexusBadge>
       </div>
 
-      <section className="grid grid-cols-2 xl:grid-cols-4 gap-2">
-        <div className="rounded border border-orange-500/35 bg-gradient-to-br from-orange-500/20 to-zinc-950/60 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-orange-300">
-            Net Health
-            <Activity className="w-3.5 h-3.5" />
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div>
+            <div className="text-[10px] uppercase tracking-wide text-orange-300">Command Intent</div>
+            <div className="text-sm font-semibold text-zinc-100 mt-0.5">{commandRecommendation.label}</div>
+            <div className="text-[10px] text-zinc-400 mt-0.5">{commandRecommendation.detail}</div>
           </div>
-          <div className="mt-1 text-lg font-semibold text-zinc-100">{Math.max(0, channels.length - degradedChannelCount)}/{channels.length}</div>
-          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">clear channels</div>
-        </div>
-        <div className="rounded border border-amber-500/30 bg-gradient-to-br from-amber-500/16 to-zinc-950/60 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-amber-300">
-            Degraded
-            <Signal className="w-3.5 h-3.5" />
-          </div>
-          <div className="mt-1 text-lg font-semibold text-zinc-100">{degradedChannelCount}</div>
-          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">channels flagged</div>
-        </div>
-        <div className="rounded border border-red-500/30 bg-gradient-to-br from-red-500/16 to-zinc-950/60 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-red-300">
-            Critical
-            <AlertTriangle className="w-3.5 h-3.5" />
-          </div>
-          <div className="mt-1 text-lg font-semibold text-zinc-100">{criticalIncidentCount}</div>
-          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">active incidents</div>
-        </div>
-        <div className="rounded border border-sky-500/30 bg-gradient-to-br from-sky-500/16 to-zinc-950/60 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-sky-300">
-            Operators
-            <Users className="w-3.5 h-3.5" />
-          </div>
-          <div className="mt-1 text-lg font-semibold text-zinc-100">{voiceParticipants.length}</div>
-          <div className="text-[10px] text-zinc-400 uppercase tracking-wide">voice participants</div>
-        </div>
-      </section>
-
-      <section className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="rounded border border-orange-500/30 bg-gradient-to-r from-orange-500/14 via-zinc-900/55 to-zinc-950/70 px-3 py-2">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <div className="text-[10px] uppercase tracking-wide text-orange-300">Command Intent</div>
-              <div className="text-sm font-semibold text-zinc-100 mt-0.5">{commandRecommendation.label}</div>
-              <div className="text-[10px] text-zinc-400 mt-0.5">{commandRecommendation.detail}</div>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <NexusBadge tone={activeSpeakers.length > 0 ? 'warning' : 'neutral'}>
+              <Zap className="w-3 h-3 mr-1" />
+              TX {activeSpeakers.length}
+            </NexusBadge>
             <NexusButton size="sm" intent="primary" className="shrink-0" onClick={executeRecommendation}>
               Execute
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </NexusButton>
           </div>
-        </div>
-        <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-[10px] uppercase tracking-wide text-zinc-400">Live Speaker Activity</div>
-            <NexusBadge tone={activeSpeakers.length > 0 ? 'warning' : 'neutral'}>
-              <Zap className="w-3 h-3 mr-1" />
-              {activeSpeakers.length}
-            </NexusBadge>
-          </div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            {activeSpeakers.length > 0 ? (
-              activeSpeakers.map((participant: any, index: number) => (
-                <div key={`speaker:${participant.id || participant.callsign || index}`} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
-                  <div className="text-[10px] text-zinc-200 truncate">{participant.callsign || participant.name || participant.id || 'Operator'}</div>
-                  <div className="text-[9px] text-zinc-500 uppercase tracking-wide inline-flex items-center gap-1">
-                    <img
-                      src={operatorStatusTokenIcon(isParticipantSpeaking(participant) ? 'TX' : isMutedParticipant(participant) ? 'MUTED' : 'ON-NET')}
-                      alt=""
-                      className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65"
-                    />
-                    {isParticipantSpeaking(participant) ? 'TX' : isMutedParticipant(participant) ? 'MUTED' : participant.state || 'ON-NET'}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-2 rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5 text-[10px] text-zinc-500">
-                No active speakers detected.
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2">
-        {disciplineAlerts.length > 0 ? (
-          <div className="mb-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5">
-            {disciplineAlerts.slice(0, 3).map((alert) => (
-              <div key={alert.id} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{alert.title}</div>
-                  <NexusBadge tone={disciplineAlertTone(alert.severity)}>{alert.severity}</NexusBadge>
-                </div>
-                <div className="mt-0.5 text-[10px] text-zinc-500">{alert.detail}</div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="text-[11px] text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
-            <Radio className="w-3.5 h-3.5 text-orange-400" />
-            Voice Situational Matrix
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <NexusBadge tone={voiceNet.connectionState === 'CONNECTED' ? 'ok' : voiceNet.connectionState === 'ERROR' ? 'danger' : 'warning'}>
-              {voiceNet.connectionState || 'IDLE'}
-            </NexusBadge>
-            <NexusBadge tone={activeVoiceNetId ? 'active' : 'neutral'}>{activeVoiceNetId || 'NO TX'}</NexusBadge>
-            <NexusBadge tone="neutral">Monitored {monitoredVoiceSet.size}</NexusBadge>
-          </div>
-        </div>
-
-        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-            {visibleVoiceNets.map((net: any) => {
-              const netId = String(net?.id || net?.code || '').trim();
-              const isMonitored = monitoredVoiceSet.has(netId);
-              const isTransmit = netId === String(voiceNet.transmitNetId || '');
-              return (
-                <div key={netId} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-[11px] text-zinc-200 truncate inline-flex items-center gap-1">
-                        <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
-                        {net?.code || netId}
-                      </div>
-                      <div className="text-[10px] text-zinc-500 truncate">{net?.label || net?.name || 'Voice lane'}</div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {isTransmit ? <NexusBadge tone="active">TX</NexusBadge> : null}
-                      {isMonitored ? <NexusBadge tone="ok">MON</NexusBadge> : null}
-                    </div>
-                  </div>
-                  <div className="mt-1 flex items-center gap-1">
-                    {isMonitored ? (
-                      <>
-                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => setTransmitVoiceNet(netId)}>
-                          Route TX
-                        </NexusButton>
-                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => leaveVoiceNet(netId)}>
-                          Leave
-                        </NexusButton>
-                      </>
-                    ) : (
-                      <>
-                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => joinVoiceNet(netId, false)}>
-                          Join
-                        </NexusButton>
-                        <NexusButton size="sm" intent="subtle" className="text-[10px] h-6 px-2" onClick={() => joinVoiceNet(netId, true)}>
-                          Monitor
-                        </NexusButton>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {visibleVoiceNets.length === 0 ? (
-              <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500 md:col-span-2">
-                No voice nets available in current scope.
-              </div>
-            ) : null}
-          </div>
-
-          <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Persistent Rail Controls</div>
-            <div className="mt-1.5 space-y-1 text-[11px]">
-              <div className="flex items-center justify-between gap-2 text-zinc-300">
-                <span>Mic</span>
-                <NexusBadge tone={voiceNet.micEnabled ? 'ok' : 'danger'}>{voiceNet.micEnabled ? 'LIVE' : 'MUTED'}</NexusBadge>
-              </div>
-              <div className="flex items-center justify-between gap-2 text-zinc-300">
-                <span>PTT</span>
-                <NexusBadge tone={voiceNet.pttActive ? 'warning' : 'neutral'}>{voiceNet.pttActive ? 'TX' : 'IDLE'}</NexusBadge>
-              </div>
-              <div className="flex items-center justify-between gap-2 text-zinc-300">
-                <span>Discipline</span>
-                <NexusBadge tone="neutral">{activeVoiceDiscipline}</NexusBadge>
-              </div>
-              <div className="flex items-center justify-between gap-2 text-zinc-300">
-                <span>Secure</span>
-                <NexusBadge tone={secureModeEnabled ? 'warning' : 'neutral'}>{secureModeEnabled ? 'ON' : 'OFF'}</NexusBadge>
-              </div>
-            </div>
-            <div className="mt-2 text-[10px] text-zinc-500 leading-snug">
-              Full mic, PTT, discipline, and roster control remains in the persistent right voice rail across all focus modes.
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-2 flex items-center justify-end gap-1.5">
-          <NexusButton size="sm" intent="subtle" onClick={() => setVoicePage((prev) => Math.max(0, prev - 1))} disabled={voicePage === 0}>
-            Prev
-          </NexusButton>
-          <NexusBadge tone="neutral">
-            {voicePage + 1}/{voicePageCount}
-          </NexusBadge>
-          <NexusButton
-            size="sm"
-            intent="subtle"
-            onClick={() => setVoicePage((prev) => Math.min(voicePageCount - 1, prev + 1))}
-            disabled={voicePage >= voicePageCount - 1}
-          >
-            Next
-          </NexusButton>
         </div>
       </section>
 
@@ -1723,7 +1431,7 @@ export default function CommsNetworkConsole({
                       title={`${node.label}${node.type === 'channel' ? ` · activity ${Math.round(node.intensity * 100)}%` : ''}`}
                     >
                       <div className="font-semibold uppercase tracking-wide inline-flex items-center justify-center gap-1">
-                        <img src={topologyNodeTokenIcon(node)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                        <img src={topologyNodeTokenIcon(node.type)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                         <span>{node.label}</span>
                       </div>
                       {node.type === 'channel' ? <div className="text-[9px] text-zinc-300">{Math.round(node.intensity * 100)}%</div> : null}
@@ -1813,14 +1521,6 @@ export default function CommsNetworkConsole({
                 <ClipboardList className="w-3.5 h-3.5 mr-1" />
                 Fleet Schema
               </NexusButton>
-              <NexusButton size="sm" intent={rightPanelView === 'incidents' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('incidents')}>
-                <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                Priority Queue
-              </NexusButton>
-              <NexusButton size="sm" intent={rightPanelView === 'threads' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('threads')}>
-                <ClipboardList className="w-3.5 h-3.5 mr-1" />
-                Mission Threads
-              </NexusButton>
             </div>
             {rightPanelView === 'cards' ? (
               <div className="flex items-center gap-1.5">
@@ -1844,7 +1544,7 @@ export default function CommsNetworkConsole({
                   Next
                 </NexusButton>
               </div>
-            ) : rightPanelView === 'schema' ? (
+            ) : (
               <div className="flex items-center gap-1.5">
                 <NexusButton
                   size="sm"
@@ -1866,40 +1566,6 @@ export default function CommsNetworkConsole({
                   Next
                 </NexusButton>
               </div>
-            ) : rightPanelView === 'incidents' ? (
-              <div className="flex items-center gap-1.5">
-                <NexusButton size="sm" intent="subtle" onClick={() => setIncidentPage((prev) => Math.max(0, prev - 1))} disabled={incidentPage === 0}>
-                  Prev
-                </NexusButton>
-                <NexusBadge tone="neutral">
-                  {incidentPage + 1}/{incidentPageCount}
-                </NexusBadge>
-                <NexusButton
-                  size="sm"
-                  intent="subtle"
-                  onClick={() => setIncidentPage((prev) => Math.min(incidentPageCount - 1, prev + 1))}
-                  disabled={incidentPage >= incidentPageCount - 1}
-                >
-                  Next
-                </NexusButton>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <NexusButton size="sm" intent="subtle" onClick={() => setThreadPage((prev) => Math.max(0, prev - 1))} disabled={threadPage === 0}>
-                  Prev
-                </NexusButton>
-                <NexusBadge tone="neutral">
-                  {threadPage + 1}/{threadPageCount}
-                </NexusBadge>
-                <NexusButton
-                  size="sm"
-                  intent="subtle"
-                  onClick={() => setThreadPage((prev) => Math.min(threadPageCount - 1, prev + 1))}
-                  disabled={threadPage >= threadPageCount - 1}
-                >
-                  Next
-                </NexusButton>
-              </div>
             )}
           </div>
 
@@ -1914,8 +1580,8 @@ export default function CommsNetworkConsole({
                         <div className="min-w-0">
                           <div className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.vehicleLabel}</div>
                           <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate inline-flex items-center gap-1">
-                            <img src={wingTokenIcon(card.wingId)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                            <img src={squadTokenIcon(card.squadLabel)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <img src={wingTokenIcon(card.wingId, card.channelStatus)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <img src={squadTokenIcon(card.squadLabel, card.channelStatus)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                             <span>{card.wingLabel} · {card.squadLabel}</span>
                           </div>
                         </div>
@@ -2123,112 +1789,7 @@ export default function CommsNetworkConsole({
                 </div>
               ) : null}
             </div>
-          ) : rightPanelView === 'incidents' ? (
-            <>
-              <div className="grid grid-cols-1 gap-1.5">
-                {visibleIncidents.map((incident) => {
-                  const active = incident.id === selectedIncidentId;
-                  return (
-                    <button
-                      key={incident.id}
-                      type="button"
-                      className={`text-left rounded border px-2 py-1.5 transition-colors ${
-                        active ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55 hover:border-zinc-700'
-                      }`}
-                      onClick={() => setSelectedIncidentId(incident.id)}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-zinc-200 truncate">{incident.title}</span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <NexusBadge tone={incidentPriorityTone(incident.priority)}>{incident.priority}</NexusBadge>
-                          <NexusBadge tone={incidentStatusTone(incident.status)}>{incident.status}</NexusBadge>
-                        </div>
-                      </div>
-                      <div className="mt-1 text-[10px] text-zinc-500 truncate">{incident.detail}</div>
-                    </button>
-                  );
-                })}
-                {visibleIncidents.length === 0 ? (
-                  <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
-                    No priority incidents in scope.
-                  </div>
-                ) : null}
-              </div>
-
-              {selectedIncident ? (
-                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-zinc-200 truncate">{selectedIncident.title}</div>
-                    <span className="text-[10px] text-zinc-500">{formatAge(nowMs, selectedIncident.createdAtMs)} ago</span>
-                  </div>
-                  <div className="mt-1 text-[10px] text-zinc-500">{selectedIncident.detail}</div>
-                  <div className="mt-1 text-[10px] text-zinc-500">Recommended: {selectedIncident.recommendedAction}</div>
-                </div>
-              ) : (
-                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
-                  Select an incident to issue deterministic actions.
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 gap-1.5">
-                {visibleThreads.map((lane) => {
-                  const active = lane.id === selectedThreadId;
-                  return (
-                    <button
-                      key={lane.id}
-                      type="button"
-                      className={`text-left rounded border px-2 py-1.5 transition-colors ${
-                        active ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-800 bg-zinc-950/55 hover:border-zinc-700'
-                      }`}
-                      onClick={() => setSelectedThreadId(lane.id)}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-zinc-200 truncate uppercase tracking-wide">{lane.label}</span>
-                        <NexusBadge tone={lane.criticalCount > 0 ? 'danger' : lane.unresolvedCount > 0 ? 'warning' : 'neutral'}>
-                          {lane.nextAction}
-                        </NexusBadge>
-                      </div>
-                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                        <NexusBadge tone="neutral">Q {lane.qualityPct}%</NexusBadge>
-                        <NexusBadge tone="neutral">Inc {lane.unresolvedCount}</NexusBadge>
-                        <NexusBadge tone={lane.criticalCount > 0 ? 'danger' : 'neutral'}>Crit {lane.criticalCount}</NexusBadge>
-                        <NexusBadge tone="active">Dir {lane.directiveVolume}</NexusBadge>
-                      </div>
-                    </button>
-                  );
-                })}
-                {visibleThreads.length === 0 ? (
-                  <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
-                    No mission thread lanes in scope.
-                  </div>
-                ) : null}
-              </div>
-
-              {selectedThread ? (
-                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-zinc-200 uppercase tracking-wide truncate">{selectedThread.label}</div>
-                    <span className="text-[10px] text-zinc-500">{formatAge(nowMs, selectedThread.lastActivityMs)} ago</span>
-                  </div>
-                  <div className="mt-1 text-[10px] text-zinc-500">
-                    Next lane action: {selectedThread.nextAction} · unresolved {selectedThread.unresolvedCount}
-                  </div>
-                  <div className="mt-1.5">
-                    <NexusButton size="sm" intent="primary" onClick={() => executeThreadAction(selectedThread)}>
-                      Execute Lane Action
-                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </NexusButton>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-auto rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 text-[11px] text-zinc-500">
-                  Select a lane to issue mission-thread directives.
-                </div>
-              )}
-            </>
-          )}
+          ) : null}
         </section>
       </div>
 
@@ -2326,6 +1887,44 @@ export default function CommsNetworkConsole({
         </div>
         {feedback ? <div className="mt-1 text-[10px] text-orange-300">{feedback}</div> : null}
       </div>
+
+      {import.meta.env.DEV && showTokenAtlas ? (
+        <div className="absolute inset-0 z-40 bg-zinc-950/75 backdrop-blur-[1px] flex justify-end">
+          <aside className="h-full w-[min(520px,92vw)] border-l border-zinc-700 bg-zinc-950/95 flex flex-col">
+            <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between gap-2">
+              <div>
+                <div className="text-xs text-zinc-100 uppercase tracking-wide">Token Atlas</div>
+                <div className="text-[10px] text-zinc-500">{tokenCatalog.fileNames.length} assets mapped</div>
+              </div>
+              <NexusButton size="sm" intent="subtle" onClick={() => setShowTokenAtlas(false)}>
+                Close
+              </NexusButton>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-2">
+              {tokenAtlasEntriesByFamily.map(([family, entries]) => (
+                <section key={family} className="rounded border border-zinc-800 bg-zinc-900/35 p-2">
+                  <div className="text-[10px] text-zinc-300 uppercase tracking-wide mb-1">{family}</div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {entries.map((entry) => (
+                      <div key={`${entry.family}:${entry.color}:${entry.variant}`} className="rounded border border-zinc-800 bg-zinc-950/55 px-1.5 py-1">
+                        <div className="flex items-center gap-1">
+                          <img
+                            src={getTokenAssetUrl(entry.family, entry.color, { variant: entry.variant })}
+                            alt=""
+                            className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/70"
+                          />
+                          <span className="text-[8px] text-zinc-300 uppercase truncate">{entry.color}</span>
+                        </div>
+                        <div className="text-[8px] text-zinc-500 uppercase truncate">{entry.variant}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }

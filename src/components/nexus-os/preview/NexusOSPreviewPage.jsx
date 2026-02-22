@@ -114,7 +114,7 @@ function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
   );
 }
 
-export default function NexusOSPreviewPage({ mode = 'dev' }) {
+export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }) {
   const { user } = useAuth();
   const voiceNet = useVoiceNet();
   const vars = getNexusCssVars();
@@ -145,6 +145,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const elementFilter = osSession.elementFilter;
   const actorId = osSession.actorId;
   const focusMode = osSession.focusMode;
+  const lockedFocusMode = FOCUS_APP_IDS.has(forceFocusMode) ? forceFocusMode : '';
   const forceDesignOpId = osSession.forceDesignOpId;
   const reportsOpId = osSession.reportsOpId;
 
@@ -197,6 +198,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   const setReportsOpId = (nextOpId) => patchSnapshot({ reportsOpId: nextOpId });
 
   const openFocusApp = (appId) => {
+    if (lockedFocusMode) return;
     if (!FOCUS_APP_IDS.has(appId)) return;
     const label = FOCUS_APP_LABEL_BY_ID[appId] || String(appId || '').toUpperCase();
     profileSync('focus.open', appId, () => {
@@ -212,6 +214,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   };
 
   const closeFocusApp = () => {
+    if (lockedFocusMode) return;
     if (focusMode && FOCUS_APP_IDS.has(focusMode)) {
       lifecycle.markBackground(focusMode);
     }
@@ -219,6 +222,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
   };
 
   const suspendFocusApp = (appId = focusMode) => {
+    if (lockedFocusMode) return;
     if (!appId || !FOCUS_APP_IDS.has(appId)) return;
     lifecycle.markSuspended(appId);
     if (focusMode === appId) patchSnapshot({ focusMode: null });
@@ -253,6 +257,12 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
       window.removeEventListener('offline', onOffline);
     };
   }, []);
+
+  useEffect(() => {
+    if (!lockedFocusMode) return;
+    if (focusMode === lockedFocusMode) return;
+    patchSnapshot({ focusMode: lockedFocusMode });
+  }, [lockedFocusMode, focusMode, patchSnapshot]);
 
   useEffect(() => {
     if (!focusMode || !FOCUS_APP_IDS.has(focusMode)) return;
@@ -362,7 +372,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     onOpenOperationFocus: () => openFocusApp('ops'),
   };
 
-  const workbenchFocusMode = focusMode || lifecycle.foregroundAppId || 'map';
+  const workbenchFocusMode = lockedFocusMode || focusMode || lifecycle.foregroundAppId || 'map';
 
   const fallbackVoiceNets = useMemo(() => {
     const opNets = operations.slice(0, 6).map((operation) => {

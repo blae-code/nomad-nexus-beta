@@ -43,18 +43,21 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
   await expect(page.getByText(/NexusOS Command Surface/i)).toBeVisible();
 
   await page.keyboard.press('Alt+3');
-  await expect(page.getByText(/Comms Network Command/i)).toBeVisible();
+  await expect(page.getByText(/Comms Network Topology/i)).toBeVisible();
   await expect(page.getByText(/Text Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Voice Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Global Voice Controls/i)).toBeVisible();
   await expect(page.getByText(/Command Intent/i).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Crew Cards/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Fleet Schema/i })).toBeVisible();
 
   await clickButtonDirect(page, /Reroute Net/i);
   await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(0);
 
-  await clickButtonDirect(page, /Mission Threads/i);
-  await expect(page.getByRole('button', { name: /Execute Lane Action/i })).toBeVisible();
-  await clickButtonDirect(page, /Execute Lane Action/i);
+  await clickButtonDirect(page, /Fleet Schema/i);
+  await expect(page.getByText(/REDSCAR Fleet/i)).toBeVisible();
+  await clickButtonDirect(page, /Crew Cards/i);
+  await clickButtonDirect(page, /Broadcast Check-In/i);
   await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(1);
 
   expect(fatal.length).toBe(0);
