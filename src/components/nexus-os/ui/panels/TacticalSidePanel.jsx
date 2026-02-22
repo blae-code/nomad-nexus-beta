@@ -88,20 +88,20 @@ export default function TacticalSidePanel({
     >
       {!collapsed ? (
         <>
-          <header className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/20 px-2 py-1.5">
+          <header className="flex-shrink-0 border-b border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm px-2.5 py-2">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex items-center gap-1.5">
                 {Icon ? <Icon className="w-3.5 h-3.5 text-orange-500" /> : null}
                 <div className="min-w-0">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-100 truncate">{title}</div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-50 truncate">{title}</div>
+                  <div className="flex items-center gap-2 mt-0.5">
                     <div className="flex items-center gap-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${headerStatusClass.dot}`} />
-                      <span className={`text-[8px] font-mono uppercase ${headerStatusClass.text}`}>{headerStatusLabel}</span>
+                      <span className={`text-[8px] font-mono uppercase tracking-wider ${headerStatusClass.text}`}>{headerStatusLabel}</span>
                     </div>
                     <div className="flex items-center gap-0.5">
                       <Signal className={`w-2.5 h-2.5 ${headerSignalClass}`} />
-                      <span className={`text-[8px] font-mono ${headerSignalClass}`}>{headerSignalValue}</span>
+                      <span className={`text-[8px] font-mono tracking-wider ${headerSignalClass}`}>{headerSignalValue}</span>
                     </div>
                   </div>
                 </div>
@@ -111,7 +111,7 @@ export default function TacticalSidePanel({
                 <button
                   type="button"
                   onClick={() => setPanelMode((prev) => prev === 'standard' ? 'command' : 'standard')}
-                  className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
+                  className="px-2 py-1 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 text-[8px] font-bold uppercase tracking-wide text-zinc-400 hover:text-zinc-200 transition-all"
                   title={`Switch to ${panelMode === 'standard' ? 'command' : 'standard'} mode`}
                 >
                   {panelMode === 'standard' ? 'Std' : 'Cmd'}
