@@ -26,7 +26,6 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
-import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
