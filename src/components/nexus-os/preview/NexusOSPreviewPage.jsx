@@ -130,7 +130,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     opId: '',
     elementFilter: 'ALL',
     actorId: isWorkspaceMode ? workspaceActorId : DEV_CQB_ROSTER[0]?.id || 'ce-warden',
-    focusMode: null,
+    focusMode: 'comms',
     forceDesignOpId: '',
     reportsOpId: '',
     activePanelIds: [],
@@ -261,7 +261,7 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
 
   useEffect(() => {
     if (focusMode || lifecycle.foregroundAppId) return;
-    lifecycle.markForeground('map');
+    lifecycle.markForeground('comms');
   }, [focusMode, lifecycle.foregroundAppId]);
 
   useEffect(() => {
