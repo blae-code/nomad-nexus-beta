@@ -1,5 +1,6 @@
 import type { MapNode } from '../schemas/mapSchemas';
 import type { Operation } from '../schemas/opSchemas';
+import type { AcquisitionMode, EvidenceSource } from './dataAcquisitionPolicyService';
 
 export type CommsPriority = 'STANDARD' | 'HIGH' | 'CRITICAL';
 export type CommsNetDiscipline = 'FOCUSED' | 'HANGOUT' | 'CONTRACT' | 'GENERAL';
@@ -36,6 +37,12 @@ interface CommsTopologyCallout {
   priority: CommsPriority;
   message: string;
   createdDate: string | null;
+  captureMode?: AcquisitionMode;
+  evidenceSource?: EvidenceSource;
+  commandSource?: string;
+  confirmed?: boolean;
+  confirmedAt?: string | null;
+  policyVersion?: string;
 }
 
 interface CommsTopologyNetLoad {
@@ -122,6 +129,12 @@ export interface MapCommsOverlayCallout {
   createdDate: string | null;
   ageSeconds: number;
   stale: boolean;
+  captureMode?: AcquisitionMode;
+  evidenceSource?: EvidenceSource;
+  commandSource?: string;
+  confirmed?: boolean;
+  confirmedAt?: string | null;
+  policyVersion?: string;
 }
 
 export interface MapCommsOverlaySpeakRequest {
@@ -205,6 +218,22 @@ function priority(value: unknown): CommsPriority {
   if (token === 'CRITICAL') return 'CRITICAL';
   if (token === 'HIGH') return 'HIGH';
   return 'STANDARD';
+}
+
+function captureMode(value: unknown): AcquisitionMode | undefined {
+  const token = toText(value).toUpperCase();
+  if (token === 'MANUAL_ONLY') return 'MANUAL_ONLY';
+  if (token === 'PTT_CONFIRMED') return 'PTT_CONFIRMED';
+  return undefined;
+}
+
+function evidenceSource(value: unknown): EvidenceSource | undefined {
+  const token = toText(value).toUpperCase();
+  if (token === 'OPERATOR_FORM') return 'OPERATOR_FORM';
+  if (token === 'RADIAL_ACTION') return 'RADIAL_ACTION';
+  if (token === 'MANUAL_TRANSCRIPT') return 'MANUAL_TRANSCRIPT';
+  if (token === 'VOICE_PTT_CONFIRMED') return 'VOICE_PTT_CONFIRMED';
+  return undefined;
 }
 
 function asArray<T = Record<string, unknown>>(value: unknown): T[] {
@@ -375,6 +404,12 @@ export function extractCommsTopologySnapshot(payload: unknown): CommsTopologySna
     priority: priority(entry?.priority),
     message: toText(entry?.message),
     createdDate: toIso(entry?.created_date || entry?.createdDate || entry?.created_at),
+    captureMode: captureMode(entry?.capture_mode || entry?.captureMode),
+    evidenceSource: evidenceSource(entry?.evidence_source || entry?.evidenceSource),
+    commandSource: toText(entry?.command_source || entry?.commandSource),
+    confirmed: typeof entry?.confirmed === 'boolean' ? entry.confirmed : undefined,
+    confirmedAt: toIso(entry?.confirmed_at || entry?.confirmedAt),
+    policyVersion: toText(entry?.policy_version || entry?.policyVersion),
   }));
 
   const netLoad = asArray(topology.netLoad).map((entry: any) => ({
@@ -515,6 +550,12 @@ export function buildMapCommsOverlay(input: BuildMapCommsOverlayInput): MapComms
         createdDate: callout.createdDate,
         ageSeconds,
         stale,
+        captureMode: callout.captureMode,
+        evidenceSource: callout.evidenceSource,
+        commandSource: callout.commandSource,
+        confirmed: callout.confirmed,
+        confirmedAt: callout.confirmedAt,
+        policyVersion: callout.policyVersion,
       };
     })
     .filter((callout) => mapNodeById.has(callout.nodeId));

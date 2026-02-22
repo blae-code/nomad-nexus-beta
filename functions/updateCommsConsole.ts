@@ -15,6 +15,10 @@ const MAP_MACRO_IDS = new Set([
   'ENABLE_SECURE_NET',
   'REQUEST_SITREP_BURST',
 ]);
+const ACQUISITION_MODES = new Set(['MANUAL_ONLY', 'PTT_CONFIRMED']);
+const EVIDENCE_SOURCES = new Set(['OPERATOR_FORM', 'RADIAL_ACTION', 'MANUAL_TRANSCRIPT', 'VOICE_PTT_CONFIRMED']);
+const DEFAULT_CAPTURE_MODE = 'MANUAL_ONLY';
+const DEFAULT_POLICY_VERSION = 'nexus-acquisition-v1';
 
 type UpdateAttempt = Record<string, unknown>;
 
@@ -66,14 +70,84 @@ async function createFirstSuccessful(entity: any, attempts: UpdateAttempt[]) {
   throw lastError || new Error('Create failed');
 }
 
-async function writeCommsLog(base44: any, payload: UpdateAttempt) {
+function normalizeCommandSourceToken(value: unknown): string {
+  return text(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+}
+
+function inferEvidenceSource(details: Record<string, unknown>, fallbackSource: string): string {
+  const commandSource = normalizeCommandSourceToken(
+    details.command_source || details.commandSource || fallbackSource || details.source
+  );
+  if (!commandSource) return 'OPERATOR_FORM';
+  if (commandSource.includes('radial')) return 'RADIAL_ACTION';
+  if (commandSource.includes('voice') || commandSource.includes('ptt')) return 'VOICE_PTT_CONFIRMED';
+  if (commandSource.includes('manual') || commandSource.includes('transcript')) return 'MANUAL_TRANSCRIPT';
+  return 'OPERATOR_FORM';
+}
+
+function normalizeCaptureMetadata(payload: UpdateAttempt, detailsRaw: Record<string, unknown>, nowIso: string) {
+  const captureModeRaw = text(detailsRaw.capture_mode || detailsRaw.captureMode || payload.capture_mode || payload.captureMode).toUpperCase();
+  const capture_mode = ACQUISITION_MODES.has(captureModeRaw) ? captureModeRaw : DEFAULT_CAPTURE_MODE;
+
+  const sourceRaw = text(detailsRaw.evidence_source || detailsRaw.evidenceSource || payload.evidence_source || payload.evidenceSource).toUpperCase();
+  const evidence_source = EVIDENCE_SOURCES.has(sourceRaw)
+    ? sourceRaw
+    : inferEvidenceSource(detailsRaw, text(payload.command_source || payload.commandSource));
+
+  const command_source = normalizeCommandSourceToken(
+    detailsRaw.command_source || detailsRaw.commandSource || payload.command_source || payload.commandSource || evidence_source
+  ) || 'operator_form';
+
+  const explicitConfirmed = typeof detailsRaw.confirmed === 'boolean'
+    ? detailsRaw.confirmed
+    : typeof payload.confirmed === 'boolean'
+      ? payload.confirmed
+      : undefined;
+  const confirmed = typeof explicitConfirmed === 'boolean'
+    ? explicitConfirmed
+    : evidence_source !== 'VOICE_PTT_CONFIRMED' || capture_mode === 'PTT_CONFIRMED';
+
+  const confirmedAtInput = detailsRaw.confirmed_at || detailsRaw.confirmedAt || payload.confirmed_at || payload.confirmedAt;
+  const confirmed_at = confirmed ? toIso(confirmedAtInput) || nowIso : null;
+
+  const policyVersionRaw = text(detailsRaw.policy_version || detailsRaw.policyVersion || payload.policy_version || payload.policyVersion);
+  const policy_version = policyVersionRaw || DEFAULT_POLICY_VERSION;
+
+  return {
+    capture_mode,
+    evidence_source,
+    command_source,
+    confirmed: Boolean(confirmed),
+    confirmed_at,
+    policy_version,
+  };
+}
+
+function normalizeCommsLogPayload(payload: UpdateAttempt, nowIso: string): UpdateAttempt {
+  const detailsRaw = payload?.details && typeof payload.details === 'object'
+    ? { ...(payload.details as Record<string, unknown>) }
+    : {};
+  const compliance = normalizeCaptureMetadata(payload, detailsRaw, nowIso);
+  return {
+    ...payload,
+    details: {
+      ...detailsRaw,
+      ...compliance,
+    },
+  };
+}
+
+async function writeCommsLog(base44: any, payload: UpdateAttempt, options?: { nowIso?: string }) {
+  const nowIso = text(options?.nowIso || new Date().toISOString());
+  const normalizedPayload = normalizeCommsLogPayload(payload, nowIso);
   return createFirstSuccessful(base44.entities.EventLog, [
-    payload,
+    normalizedPayload,
     {
-      type: payload.type,
-      severity: payload.severity,
-      actor_member_profile_id: payload.actor_member_profile_id,
-      summary: payload.summary,
+      type: normalizedPayload.type,
+      severity: normalizedPayload.severity,
+      actor_member_profile_id: normalizedPayload.actor_member_profile_id,
+      summary: normalizedPayload.summary,
+      details: normalizedPayload.details,
     },
   ]);
 }
@@ -141,6 +215,12 @@ function buildPriorityCallouts(eventLogs: any[], eventId: string | null = null) 
         message: text(details?.message),
         requires_ack: Boolean(details?.requires_ack),
         issued_by_member_profile_id: text(details?.issued_by_member_profile_id || entry?.actor_member_profile_id),
+        capture_mode: text(details?.capture_mode || details?.captureMode).toUpperCase() || DEFAULT_CAPTURE_MODE,
+        evidence_source: text(details?.evidence_source || details?.evidenceSource).toUpperCase() || inferEvidenceSource(details, 'callout'),
+        command_source: normalizeCommandSourceToken(details?.command_source || details?.commandSource || details?.source || 'operator_form'),
+        confirmed: typeof details?.confirmed === 'boolean' ? details.confirmed : true,
+        confirmed_at: text(details?.confirmed_at || details?.confirmedAt || entry?.created_date || ''),
+        policy_version: text(details?.policy_version || details?.policyVersion || DEFAULT_POLICY_VERSION),
         created_date: entry?.created_date || null,
       };
     })
@@ -408,6 +488,33 @@ function buildCommandBusFeed(eventLogs: any[], options: { eventId?: string | nul
       actor_member_profile_id: text(entry?.details?.actor_member_profile_id || entry?.actor_member_profile_id),
       created_date: entry?.created_date || null,
     }))
+    .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
+    .slice(0, Math.max(1, limit));
+}
+
+function buildComplianceAuditFeed(eventLogs: any[], options: { eventId?: string | null; limit?: number }) {
+  const { eventId = null, limit = 120 } = options;
+  return (eventLogs || [])
+    .filter((entry) => text(entry?.type).toUpperCase().startsWith('COMMS_'))
+    .filter((entry) => !eventId || eventIdFromEntry(entry) === eventId)
+    .map((entry) => {
+      const details = entry?.details && typeof entry.details === 'object' ? entry.details : {};
+      const compliance = normalizeCaptureMetadata({}, details, text(entry?.created_date || new Date().toISOString()));
+      return {
+        id: entry?.id,
+        type: text(entry?.type).toUpperCase(),
+        summary: text(entry?.summary || ''),
+        event_id: eventIdFromEntry(entry),
+        actor_member_profile_id: text(entry?.actor_member_profile_id || details?.actor_member_profile_id),
+        capture_mode: compliance.capture_mode,
+        evidence_source: compliance.evidence_source,
+        command_source: compliance.command_source,
+        confirmed: Boolean(compliance.confirmed),
+        confirmed_at: compliance.confirmed_at,
+        policy_version: compliance.policy_version,
+        created_date: entry?.created_date || null,
+      };
+    })
     .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
     .slice(0, Math.max(1, limit));
 }
@@ -1629,6 +1736,24 @@ ${transcriptSnippet || '(no entries)'}`,
         success: true,
         action,
         actions: actionsFeed,
+      });
+    }
+
+    if (action === 'list_compliance_audit') {
+      if (!commandAccess) {
+        return Response.json({ error: 'Command privileges required' }, { status: 403 });
+      }
+      const eventId = text(payload.eventId || payload.event_id) || null;
+      const limitRaw = Number(payload.limit || 120);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, 300)) : 120;
+      const eventLogs = await base44.entities.EventLog.list('-created_date', 3600);
+      const audit = buildComplianceAuditFeed(eventLogs || [], { eventId, limit });
+      return Response.json({
+        success: true,
+        action,
+        mode: DEFAULT_CAPTURE_MODE,
+        policyVersion: DEFAULT_POLICY_VERSION,
+        audit,
       });
     }
 

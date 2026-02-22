@@ -57,6 +57,12 @@ describe('mapInferenceService', () => {
             createdDate: '2026-02-10T08:10:00.000Z',
             ageSeconds: 20,
             stale: false,
+            captureMode: 'MANUAL_ONLY',
+            evidenceSource: 'OPERATOR_FORM',
+            commandSource: 'map_action',
+            confirmed: true,
+            confirmedAt: '2026-02-10T08:10:00.000Z',
+            policyVersion: 'nexus-acquisition-v1',
           },
         ],
       },
@@ -80,6 +86,12 @@ describe('mapInferenceService', () => {
     expect(snapshot.prioritizedActions.length).toBeGreaterThan(0);
     expect(snapshot.prioritizedActions[0].priority).toBe('NOW');
     expect(snapshot.projectedLoadBand).toBe('LOW');
+    expect(snapshot.complianceDiagnostics).toMatchObject({
+      mode: 'MANUAL_ONLY',
+      strictCompliance: true,
+      includedCallouts: 1,
+      droppedCallouts: 0,
+    });
   });
 
   it('builds deterministic AI prompt from inference snapshot', () => {
@@ -97,6 +109,58 @@ describe('mapInferenceService', () => {
     expect(promptA).toContain('Do not invent telemetry');
     expect(promptA).toContain('Risk score');
     expect(promptA).toContain('Prioritized actions');
+  });
+
+  it('drops untrusted/missing-metadata callouts in strict MANUAL_ONLY mode', () => {
+    const snapshot = computeMapInference({
+      controlZones: [],
+      commsOverlay: {
+        generatedAt: '2026-02-10T08:00:00.000Z',
+        scopedOpId: 'op-2',
+        nets: [
+          {
+            id: 'net-2',
+            label: 'Bravo',
+            code: 'BRV',
+            eventId: 'op-2',
+            nodeId: 'body-hurston',
+            participants: 4,
+            speaking: 1,
+            muted: 0,
+            trafficScore: 10,
+            quality: 'DEGRADED',
+            discipline: 'FOCUSED',
+          },
+        ],
+        links: [],
+        callouts: [
+          {
+            id: 'call-untrusted',
+            eventId: 'op-2',
+            netId: 'net-2',
+            nodeId: 'body-hurston',
+            lane: 'COMMAND',
+            priority: 'CRITICAL',
+            message: 'No provenance metadata',
+            createdDate: '2026-02-10T08:09:00.000Z',
+            ageSeconds: 10,
+            stale: false,
+          },
+        ],
+      } as any,
+      intelObjects: [],
+      operations: [{ id: 'op-2', name: 'Inference Filter Test' }] as any,
+      focusOperationId: 'op-2',
+      nowMs: Date.parse('2026-02-10T08:11:00.000Z'),
+    });
+
+    expect(snapshot.criticalCalloutCount).toBe(0);
+    expect(snapshot.complianceDiagnostics).toMatchObject({
+      totalCallouts: 1,
+      includedCallouts: 0,
+      droppedCallouts: 1,
+      missingMetadataCallouts: 1,
+    });
   });
 });
 

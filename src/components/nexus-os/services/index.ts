@@ -6,6 +6,7 @@ export * from './locationEstimateService';
 export * from './commandIntentService';
 export * from './commsGraphService';
 export * from './commsFocusDirectiveService';
+export * from './dataAcquisitionPolicyService';
 export * from './base44CommsReadAdapter';
 export * from './mapCommsOverlayService';
 export * from './mapLogisticsOverlayService';

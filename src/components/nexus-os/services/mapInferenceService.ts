@@ -2,6 +2,7 @@ import type { ControlZone } from '../schemas/mapSchemas';
 import type { Operation } from '../schemas/opSchemas';
 import type { IntelRenderable } from './intelService';
 import type { MapCommsOverlay } from './mapCommsOverlayService';
+import { DEFAULT_ACQUISITION_MODE, isSourceAllowed, requiresConfirmation, type AcquisitionMode } from './dataAcquisitionPolicyService';
 
 export interface MapInferenceInput {
   controlZones: ControlZone[];
@@ -9,6 +10,8 @@ export interface MapInferenceInput {
   intelObjects: IntelRenderable[];
   operations: Operation[];
   focusOperationId?: string;
+  acquisitionMode?: AcquisitionMode;
+  strictCompliance?: boolean;
   nowMs?: number;
 }
 
@@ -42,6 +45,15 @@ export interface MapInferenceSnapshot {
     commsSignals: number;
     intelSignals: number;
   };
+  complianceDiagnostics: {
+    mode: AcquisitionMode;
+    strictCompliance: boolean;
+    totalCallouts: number;
+    includedCallouts: number;
+    droppedCallouts: number;
+    missingMetadataCallouts: number;
+    untrustedCallouts: number;
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -54,8 +66,8 @@ function projectedLoadBand(score: number): MapInferenceSnapshot['projectedLoadBa
   return 'LOW';
 }
 
-function formatCalloutHint(input: MapInferenceInput): string | null {
-  const highest = [...input.commsOverlay.callouts]
+function formatCalloutHint(callouts: MapCommsOverlay['callouts']): string | null {
+  const highest = [...callouts]
     .filter((entry) => !entry.stale)
     .sort((a, b) => {
       const rank = { CRITICAL: 3, HIGH: 2, STANDARD: 1 };
@@ -64,6 +76,18 @@ function formatCalloutHint(input: MapInferenceInput): string | null {
   if (!highest) return null;
   const lane = highest.lane || highest.netId || 'UNKNOWN';
   return `Prioritize ${highest.priority} comms lane ${lane} and rebalance monitoring coverage.`;
+}
+
+function isTrustedCalloutForInference(
+  callout: MapCommsOverlay['callouts'][number],
+  mode: AcquisitionMode,
+  strictCompliance: boolean
+): boolean {
+  if (!strictCompliance) return true;
+  if (!callout.evidenceSource) return false;
+  if (!isSourceAllowed(mode, callout.evidenceSource)) return false;
+  if (requiresConfirmation(mode, callout.evidenceSource) && !callout.confirmed) return false;
+  return true;
 }
 
 function buildFactors(input: {
@@ -191,14 +215,25 @@ function buildPrioritizedActions(input: {
 
 export function computeMapInference(input: MapInferenceInput): MapInferenceSnapshot {
   const nowMs = Number.isFinite(input.nowMs) ? Number(input.nowMs) : Date.now();
+  const acquisitionMode = input.acquisitionMode || DEFAULT_ACQUISITION_MODE;
+  const strictCompliance = typeof input.strictCompliance === 'boolean' ? input.strictCompliance : acquisitionMode === 'MANUAL_ONLY';
+  const totalCallouts = input.commsOverlay.callouts.length;
+  const missingMetadataCallouts = input.commsOverlay.callouts.filter((entry) => !entry.evidenceSource).length;
+  const trustedCallouts = input.commsOverlay.callouts.filter((entry) =>
+    isTrustedCalloutForInference(entry, acquisitionMode, strictCompliance)
+  );
+  const untrustedCallouts = input.commsOverlay.callouts.filter(
+    (entry) => entry.evidenceSource && !isTrustedCalloutForInference(entry, acquisitionMode, strictCompliance)
+  ).length;
+  const droppedCallouts = Math.max(0, totalCallouts - trustedCallouts.length);
   const contestedZoneCount = input.controlZones.filter((zone) => zone.contestationLevel >= 0.45).length;
   const staleIntelCount = input.intelObjects.filter((intel) => intel.ttl.stale).length;
   const degradedNetCount = input.commsOverlay.nets.filter((net) => net.quality !== 'CLEAR').length;
-  const criticalCalloutCount = input.commsOverlay.callouts.filter((entry) => !entry.stale && entry.priority === 'CRITICAL').length;
-  const highCallouts = input.commsOverlay.callouts.filter((entry) => !entry.stale && entry.priority === 'HIGH').length;
+  const criticalCalloutCount = trustedCallouts.filter((entry) => !entry.stale && entry.priority === 'CRITICAL').length;
+  const highCallouts = trustedCallouts.filter((entry) => !entry.stale && entry.priority === 'HIGH').length;
   const projectedLoadScore = input.commsOverlay.nets.reduce((acc, net) => acc + net.trafficScore, 0);
   const zoneSignalCount = input.controlZones.reduce((acc, zone) => acc + zone.signals.length, 0);
-  const commsSignalCount = input.commsOverlay.nets.length + input.commsOverlay.links.length + input.commsOverlay.callouts.length;
+  const commsSignalCount = input.commsOverlay.nets.length + input.commsOverlay.links.length + trustedCallouts.length;
   const intelSignalCount = input.intelObjects.length;
   const evidenceTotal = zoneSignalCount + commsSignalCount + intelSignalCount;
 
@@ -236,7 +271,7 @@ export function computeMapInference(input: MapInferenceInput): MapInferenceSnaps
   if (projectedLoadBand(projectedLoadScore) === 'HIGH') {
     recommendations.push('Pre-stage reserve command staff for overflow coordination and casualty response.');
   }
-  const calloutHint = formatCalloutHint(input);
+  const calloutHint = formatCalloutHint(trustedCallouts);
   if (calloutHint) recommendations.push(calloutHint);
   if (recommendations.length === 0) {
     recommendations.push('Maintain current command cadence and continue periodic intel/comms validation sweeps.');
@@ -279,6 +314,15 @@ export function computeMapInference(input: MapInferenceInput): MapInferenceSnaps
       commsSignals: commsSignalCount,
       intelSignals: intelSignalCount,
     },
+    complianceDiagnostics: {
+      mode: acquisitionMode,
+      strictCompliance,
+      totalCallouts,
+      includedCallouts: trustedCallouts.length,
+      droppedCallouts,
+      missingMetadataCallouts,
+      untrustedCallouts,
+    },
   };
 }
 
@@ -293,6 +337,7 @@ export function buildMapAiPrompt(input: MapInferenceSnapshot): string {
     `Critical callouts: ${input.criticalCalloutCount}`,
     `Stale intel records: ${input.staleIntelCount}`,
     `Load band: ${input.projectedLoadBand}`,
+    `Compliance: mode=${input.complianceDiagnostics.mode}, strict=${input.complianceDiagnostics.strictCompliance}, callouts included=${input.complianceDiagnostics.includedCallouts}/${input.complianceDiagnostics.totalCallouts}`,
     `Evidence counts - zone: ${input.evidence.zoneSignals}, comms: ${input.evidence.commsSignals}, intel: ${input.evidence.intelSignals}`,
     `Prioritized actions: ${input.prioritizedActions.map((action) => `${action.priority}:${action.title}`).join(' | ')}`,
     `Recommended actions: ${input.recommendations.join(' | ')}`,

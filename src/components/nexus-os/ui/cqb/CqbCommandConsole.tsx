@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import type { CqbEventType } from '../../schemas/coreSchemas';
 import { NexusBadge, NexusButton, PanelFrame } from '../primitives';
 import { PanelErrorBoundary } from '../workbench';
+import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
 import CqbFeedPanel from './CqbFeedPanel';
 import CqbHandsFreeControl from './CqbHandsFreeControl';
 import CqbMacroPad from './CqbMacroPad';
@@ -24,7 +25,13 @@ export default function CqbCommandConsole(props: CqbCommandConsoleProps) {
   );
 
   const sendOrder = (eventType: (typeof ORDER_EVENT_TYPES)[number]) => {
-    dispatchMacroEvent(eventType, { commandStrip: true });
+    const captureMetadata = buildCaptureMetadata({
+      mode: DEFAULT_ACQUISITION_MODE,
+      source: 'OPERATOR_FORM',
+      commandSource: 'cqb_order_strip',
+      confirmed: true,
+    });
+    dispatchMacroEvent(eventType, { commandStrip: true, ...toCaptureMetadataRecord(captureMetadata) });
     setPendingAcks(['CE', 'GCE', 'ACE']);
   };
 

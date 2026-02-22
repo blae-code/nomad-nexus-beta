@@ -36,6 +36,7 @@ import {
   type DisciplineAlert,
   type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
+import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
 import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
@@ -426,6 +427,14 @@ export default function CommsNetworkConsole({
           incidentId: input.incidentId || null,
           source: 'comms-network-console',
           actorId,
+          ...toCaptureMetadataRecord(
+            buildCaptureMetadata({
+              mode: DEFAULT_ACQUISITION_MODE,
+              source: 'OPERATOR_FORM',
+              commandSource: 'comms_network_console',
+              confirmed: true,
+            })
+          ),
           ...(input.payload || {}),
         },
         input.successMessage

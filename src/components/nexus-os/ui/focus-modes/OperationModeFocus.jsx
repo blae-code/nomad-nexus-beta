@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { Calendar, CheckCircle2, Clock, MessageSquare, Radio, Target, Users } from 'lucide-react';
 import { useActiveOp } from '@/components/ops/ActiveOpProvider';
 import { NexusBadge, NexusButton } from '../primitives';
+import { listBase44OperationTasks } from '@/components/nexus-os/services';
 
 const PAGE_SIZE = 6;
 
@@ -47,7 +47,7 @@ export default function OperationModeFocus() {
 
     const loadOpData = async () => {
       try {
-        const taskList = await base44.entities.Task?.filter({ operation_id: activeOp.activeEvent.id }).catch(() => []);
+        const taskList = await listBase44OperationTasks(activeOp.activeEvent.id).catch(() => []);
         setTasks(taskList || []);
       } catch (err) {
         console.error('Failed to load operation data:', err);

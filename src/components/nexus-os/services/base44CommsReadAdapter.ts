@@ -19,6 +19,15 @@ export interface Base44ChannelMembershipRecord {
   memberId: string;
 }
 
+export interface Base44OperationTask {
+  id: string;
+  operationId: string;
+  title: string;
+  status: string;
+  assignee: string;
+  priority: string;
+}
+
 type MaybeEntityClient = {
   list?: (...args: unknown[]) => Promise<unknown>;
   filter?: (...args: unknown[]) => Promise<unknown>;
@@ -26,6 +35,7 @@ type MaybeEntityClient = {
 
 const CHANNEL_ENTITY_CANDIDATES = ['Channel', 'CommsChannel'] as const;
 const MEMBERSHIP_ENTITY_CANDIDATES = ['ChannelMembership', 'ChannelMember', 'CommsChannelMember'] as const;
+const TASK_ENTITY_CANDIDATES = ['Task', 'OperationTask'] as const;
 
 function text(value: unknown): string {
   return String(value || '').trim();
@@ -56,6 +66,29 @@ async function listRows(entity: MaybeEntityClient, limit: number): Promise<Recor
       if (Array.isArray(rows)) return rows as Record<string, unknown>[];
     } catch {
       // Keep trying compatible list/filter signatures.
+    }
+  }
+  return [];
+}
+
+async function filterRows(
+  entity: MaybeEntityClient,
+  filters: Record<string, unknown>,
+  limit: number,
+): Promise<Record<string, unknown>[]> {
+  const attempts = [
+    () => entity.filter?.(filters, '-created_date', limit),
+    () => entity.filter?.(filters, limit),
+    () => entity.filter?.(filters),
+    () => entity.list?.('-created_date', limit),
+  ];
+  for (const run of attempts) {
+    if (!run) continue;
+    try {
+      const rows = await run();
+      if (Array.isArray(rows)) return rows as Record<string, unknown>[];
+    } catch {
+      // Keep trying compatible filter/list signatures.
     }
   }
   return [];
@@ -92,6 +125,24 @@ function normalizeMembershipRecord(row: Record<string, unknown>): Base44ChannelM
   return {
     channelId,
     memberId,
+  };
+}
+
+function normalizeOperationTaskRecord(
+  row: Record<string, unknown>,
+  operationId: string,
+): Base44OperationTask | null {
+  const id = text(row.id || row.task_id || row.taskId);
+  if (!id) return null;
+  const rowOperationId = text(row.operation_id || row.operationId || row.op_id || row.opId || operationId);
+  if (!rowOperationId || rowOperationId !== operationId) return null;
+  return {
+    id,
+    operationId: rowOperationId,
+    title: text(row.title || row.name || 'Untitled task'),
+    status: text(row.status || 'open').toLowerCase(),
+    assignee: text(row.assignee || row.owner || row.assigned_to || ''),
+    priority: text(row.priority || row.severity || ''),
   };
 }
 
@@ -136,3 +187,27 @@ export async function listBase44ChannelMemberships(limit = 500): Promise<Base44C
   return [];
 }
 
+export async function listBase44OperationTasks(operationId: string, limit = 200): Promise<Base44OperationTask[]> {
+  const scopedOperationId = normalizeChannelId(operationId);
+  if (!scopedOperationId) return [];
+
+  for (const entityName of TASK_ENTITY_CANDIDATES) {
+    const entity = getEntityClient(entityName);
+    if (!entity) continue;
+    const rows = await filterRows(entity, { operation_id: scopedOperationId }, limit);
+    if (!rows.length) continue;
+    const normalized = rows
+      .map((row) => normalizeOperationTaskRecord(row, scopedOperationId))
+      .filter((entry): entry is Base44OperationTask => Boolean(entry));
+    if (normalized.length > 0) {
+      const deduped = new Map<string, Base44OperationTask>();
+      for (const task of normalized) {
+        if (deduped.has(task.id)) continue;
+        deduped.set(task.id, task);
+      }
+      return Array.from(deduped.values());
+    }
+  }
+
+  return [];
+}

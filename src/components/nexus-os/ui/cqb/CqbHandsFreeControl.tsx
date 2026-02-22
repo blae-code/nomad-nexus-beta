@@ -3,6 +3,13 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { getMacrosForVariant, type CqbMacroDefinition } from '../../registries/macroRegistry';
 import type { CqbEventType } from '../../schemas/coreSchemas';
 import { parseCqbVoiceCommand } from '../../services/cqbVoiceCommandService';
+import {
+  DEFAULT_ACQUISITION_MODE,
+  buildCaptureMetadata,
+  isSourceAllowed,
+  toCaptureMetadataRecord,
+  type EvidenceSource,
+} from '../../services/dataAcquisitionPolicyService';
 import { NexusBadge, NexusButton } from '../primitives';
 import CqbQuickRadialMenu from './CqbQuickRadialMenu';
 import type { CqbPanelSharedProps } from './cqbTypes';
@@ -99,9 +106,11 @@ export default function CqbHandsFreeControl({
     Boolean(voiceNet.micEnabled);
 
   const speechSupported = typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const acquisitionMode = DEFAULT_ACQUISITION_MODE;
+  const voiceDispatchAllowed = isSourceAllowed(acquisitionMode, 'VOICE_PTT_CONFIRMED');
 
   const pushTranscriptToRadioLog = useCallback(
-    async (transcript: string, confidence: number) => {
+    async (transcript: string, confidence: number, metadata: Record<string, unknown>) => {
       if (!transcript) return;
       await voiceNet.appendRadioLogEntry?.({
         eventId: opId || focusOperationId || undefined,
@@ -109,6 +118,7 @@ export default function CqbHandsFreeControl({
         speakerMemberProfileId: actorId,
         transcript,
         transcriptConfidence: confidence,
+        ...metadata,
       });
     },
     [actorId, connectedNetId, focusOperationId, opId, voiceNet]
@@ -135,6 +145,26 @@ export default function CqbHandsFreeControl({
         setParseSummary('No transcript captured.');
         return;
       }
+      const evidenceSource: EvidenceSource = source === 'voice' ? 'VOICE_PTT_CONFIRMED' : 'MANUAL_TRANSCRIPT';
+      if (!isSourceAllowed(acquisitionMode, evidenceSource)) {
+        setParseSummary('Policy gate: voice parse is disabled in MANUAL_ONLY mode.');
+        setStatusMessage('Voice parse disabled by policy; use manual/radial dispatch.');
+        return;
+      }
+      let captureMetadataRecord: Record<string, unknown>;
+      try {
+        captureMetadataRecord = toCaptureMetadataRecord(
+          buildCaptureMetadata({
+            mode: acquisitionMode,
+            source: evidenceSource,
+            commandSource: source,
+            confirmed: true,
+          })
+        );
+      } catch (error) {
+        setStatusMessage(error instanceof Error ? error.message : 'Capture blocked by acquisition policy.');
+        return;
+      }
       const parsed = parseCqbVoiceCommand(variantId, transcript);
       setLastTranscript(transcript);
       setParseSummary(parsed.reason);
@@ -144,7 +174,7 @@ export default function CqbHandsFreeControl({
           : 'Command not recognized. Use suggestion or radial action.'
       );
 
-      await pushTranscriptToRadioLog(transcript, parsed.confidence);
+      await pushTranscriptToRadioLog(transcript, parsed.confidence, captureMetadataRecord);
 
       if (parsed.status !== 'MATCHED' || !parsed.eventType) {
         if (parsed.suggestions.length > 0) {
@@ -161,11 +191,12 @@ export default function CqbHandsFreeControl({
         commandSource: source,
         parserConfidence: parsed.confidence,
         macroId: parsed.macroId,
+        ...captureMetadataRecord,
       });
       setLastDispatchedMacro(parsed.macroId || null);
       await syncAgentDraft(parsed.eventType);
     },
-    [onDispatchMacro, pushTranscriptToRadioLog, syncAgentDraft, variantId]
+    [acquisitionMode, onDispatchMacro, pushTranscriptToRadioLog, syncAgentDraft, variantId]
   );
 
   const stopRecognition = useCallback(() => {
@@ -250,6 +281,11 @@ export default function CqbHandsFreeControl({
   const startPTTSession = useCallback(
     (event?: React.MouseEvent | React.TouchEvent) => {
       event?.preventDefault();
+      if (!voiceDispatchAllowed) {
+        setStatusMessage('Voice parse disabled by policy; use manual/radial dispatch.');
+        setParseSummary('MANUAL_ONLY acquisition mode blocks voice command ingestion.');
+        return;
+      }
       if (voiceMandatory && !voiceReady) {
         setStatusMessage('Voice discipline active: connect voice net + mic before gameplay command entry.');
         return;
@@ -258,7 +294,7 @@ export default function CqbHandsFreeControl({
       voiceNet.startPTT?.();
       startRecognition();
     },
-    [startRecognition, voiceMandatory, voiceNet, voiceReady]
+    [startRecognition, voiceDispatchAllowed, voiceMandatory, voiceNet, voiceReady]
   );
 
   const stopPTTSession = useCallback(
@@ -274,18 +310,25 @@ export default function CqbHandsFreeControl({
 
   const dispatchMacro = useCallback(
     (macro: CqbMacroDefinition) => {
+      const captureMetadata = buildCaptureMetadata({
+        mode: acquisitionMode,
+        source: 'RADIAL_ACTION',
+        commandSource: 'radial',
+        confirmed: true,
+      });
       const payload = {
         ...macro.payloadTemplate,
         macroId: macro.id,
         macroLabel: macro.label,
         commandSource: 'radial',
+        ...toCaptureMetadataRecord(captureMetadata),
       };
       onDispatchMacro?.(macro.eventType, payload);
       setLastDispatchedMacro(macro.id);
       setStatusMessage(`Radial dispatch: ${macro.label}.`);
       setParseSummary(`Mapped to macro ${macro.label}.`);
     },
-    [onDispatchMacro]
+    [acquisitionMode, onDispatchMacro]
   );
 
   useEffect(() => {
@@ -317,6 +360,7 @@ export default function CqbHandsFreeControl({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-100">Hands-Free Loop Control</h3>
         <div className="flex items-center gap-1.5">
+          <NexusBadge tone={acquisitionMode === 'MANUAL_ONLY' ? 'warning' : 'active'}>{acquisitionMode}</NexusBadge>
           <NexusBadge tone={voiceMandatory ? 'warning' : 'neutral'}>
             {voiceMandatory ? 'PTT Mandatory' : 'Voice Optional'}
           </NexusBadge>
@@ -327,6 +371,7 @@ export default function CqbHandsFreeControl({
       </div>
       <p className="mt-1 text-[11px] text-zinc-500">
         Hold PTT, speak brevity callouts, and dispatch via parser. Radial actions remain available for single-tap control.
+        {acquisitionMode === 'MANUAL_ONLY' ? ' Voice parsing is policy-gated; use manual transcript or radial actions.' : ''}
       </p>
 
       <div className="mt-3 grid grid-cols-1 xl:grid-cols-12 gap-3">
@@ -347,7 +392,11 @@ export default function CqbHandsFreeControl({
             } ${voiceMandatory && !voiceReady ? 'opacity-60 cursor-not-allowed' : ''}`}
             aria-label="Press and hold PTT for gameplay loop voice command"
           >
-            {holdingPTT || listening ? 'Listening.. release to dispatch' : 'Hold PTT + Speak'}
+            {acquisitionMode === 'MANUAL_ONLY'
+              ? 'PTT policy-gated'
+              : holdingPTT || listening
+                ? 'Listening.. release to dispatch'
+                : 'Hold PTT + Speak'}
           </button>
 
           <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2 text-[11px] text-zinc-400 min-h-[5.5rem] space-y-1">
@@ -374,30 +423,30 @@ export default function CqbHandsFreeControl({
       </div>
       {speechError ? <div className="mt-1 text-[11px] text-red-300">{speechError}</div> : null}
 
-      {!speechSupported ? (
-        <div className="mt-2 rounded border border-zinc-800 bg-zinc-900/50 p-2">
-          <label className="text-[11px] text-zinc-500 uppercase tracking-[0.12em]">Manual voice transcript fallback</label>
-          <div className="mt-1 flex gap-2">
-            <input
-              value={manualTranscript}
-              onChange={(event) => setManualTranscript(event.target.value)}
-              placeholder="Type captured comms phrase..."
-              className="flex-1 h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
-            />
-            <NexusButton
-              size="sm"
-              intent="subtle"
-              onClick={() => {
-                void dispatchTranscript(manualTranscript, 'manual');
-                setManualTranscript('');
-              }}
-              disabled={!sanitizeTranscript(manualTranscript)}
-            >
-              Parse
-            </NexusButton>
-          </div>
+      <div className="mt-2 rounded border border-zinc-800 bg-zinc-900/50 p-2">
+        <label className="text-[11px] text-zinc-500 uppercase tracking-[0.12em]">
+          {speechSupported ? 'Manual transcript entry' : 'Manual voice transcript fallback'}
+        </label>
+        <div className="mt-1 flex gap-2">
+          <input
+            value={manualTranscript}
+            onChange={(event) => setManualTranscript(event.target.value)}
+            placeholder="Type captured comms phrase..."
+            className="flex-1 h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+          />
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() => {
+              void dispatchTranscript(manualTranscript, 'manual');
+              setManualTranscript('');
+            }}
+            disabled={!sanitizeTranscript(manualTranscript)}
+          >
+            Parse
+          </NexusButton>
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }

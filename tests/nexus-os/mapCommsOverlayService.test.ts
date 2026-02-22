@@ -15,7 +15,18 @@ describe('mapCommsOverlayService', () => {
           nets: [{ id: 'net-alpha', label: 'Alpha Command', code: 'ALPHA', event_id: 'op-1' }],
           memberships: [{ member_profile_id: 'm-1', net_id: 'net-alpha', speaking: true, muted: false }],
           bridges: [{ id: 'bridge-1', source_net_id: 'net-alpha', target_net_id: 'net-beta', status: 'degraded' }],
-        callouts: [{ id: 'call-1', net_id: 'net-alpha', priority: 'HIGH', message: 'Lane degraded' }],
+        callouts: [{
+          id: 'call-1',
+          net_id: 'net-alpha',
+          priority: 'HIGH',
+          message: 'Lane degraded',
+          capture_mode: 'MANUAL_ONLY',
+          evidence_source: 'OPERATOR_FORM',
+          command_source: 'map_panel',
+          confirmed: true,
+          confirmed_at: '2026-02-10T08:01:00.000Z',
+          policy_version: 'nexus-acquisition-v1',
+        }],
         netLoad: [{ net_id: 'net-alpha', participants: 3, traffic_score: 7 }],
         discipline: { mode: 'REQUEST_TO_SPEAK', net_id: 'net-alpha', event_id: 'op-1', updated_at: '2026-02-10T08:02:00.000Z' },
         speakRequests: [{ request_id: 'sr-1', event_id: 'op-1', net_id: 'net-alpha', requester_member_profile_id: 'm-2', status: 'PENDING' }],
@@ -31,6 +42,13 @@ describe('mapCommsOverlayService', () => {
     });
     expect(snapshot.memberships[0]).toMatchObject({ memberProfileId: 'm-1', netId: 'net-alpha' });
     expect(snapshot.callouts[0].priority).toBe('HIGH');
+    expect(snapshot.callouts[0]).toMatchObject({
+      captureMode: 'MANUAL_ONLY',
+      evidenceSource: 'OPERATOR_FORM',
+      commandSource: 'map_panel',
+      confirmed: true,
+      policyVersion: 'nexus-acquisition-v1',
+    });
     expect(snapshot.discipline?.mode).toBe('REQUEST_TO_SPEAK');
     expect(snapshot.speakRequests[0].requestId).toBe('sr-1');
     expect(snapshot.commandBus[0].action).toBe('PRIORITY_OVERRIDE');

@@ -4,6 +4,7 @@ import { getMacrosForVariant } from '../../registries/macroRegistry';
 import { getDefaultTTLSeconds, getTTLProfile } from '../../registries/ttlProfileRegistry';
 import { getActiveChannelId } from '../../services/channelContextService';
 import { storeCqbEvent } from '../../services/cqbEventService';
+import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
 import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { BREVITY_GROUP_BY_EVENT, type MacroGroup } from './brevity';
@@ -83,7 +84,18 @@ export default function CqbMacroPad({
   };
 
   const onMacroClick = (macro: (typeof macros)[number]) => {
-    const payload: Record<string, unknown> = { ...macro.payloadTemplate, macroId: macro.id, macroLabel: macro.label };
+    const captureMetadata = buildCaptureMetadata({
+      mode: DEFAULT_ACQUISITION_MODE,
+      source: 'OPERATOR_FORM',
+      commandSource: 'cqb_macro_pad',
+      confirmed: true,
+    });
+    const payload: Record<string, unknown> = {
+      ...macro.payloadTemplate,
+      macroId: macro.id,
+      macroLabel: macro.label,
+      ...toCaptureMetadataRecord(captureMetadata),
+    };
 
     if (macro.eventType === 'MOVE_OUT') {
       payload.destinationTag = destinationTag.trim();

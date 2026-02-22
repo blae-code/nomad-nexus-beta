@@ -219,6 +219,13 @@ describe('updateCommsConsole', () => {
       },
     });
     expect(base44.entities.EventLog.create).toHaveBeenCalledTimes(1);
+    const createdLogPayload = base44.entities.EventLog.create.mock.calls[0][0];
+    expect(createdLogPayload.details).toMatchObject({
+      capture_mode: 'MANUAL_ONLY',
+      evidence_source: 'OPERATOR_FORM',
+      confirmed: true,
+      policy_version: 'nexus-acquisition-v1',
+    });
   });
 
   it('rejects schedule when channel does not exist', async () => {
@@ -377,6 +384,13 @@ describe('updateCommsConsole', () => {
     expect(base44.entities.Message.create).toHaveBeenCalledTimes(1);
     expect(base44.entities.EventLog.create).toHaveBeenCalledTimes(1);
     expect(base44.entities.Notification.create).toHaveBeenCalled();
+    const createdLogPayload = base44.entities.EventLog.create.mock.calls[0][0];
+    expect(createdLogPayload.details).toMatchObject({
+      capture_mode: 'MANUAL_ONLY',
+      evidence_source: 'OPERATOR_FORM',
+      confirmed: true,
+      policy_version: 'nexus-acquisition-v1',
+    });
   });
 
   it('records and lists voice captions', async () => {
@@ -644,6 +658,64 @@ describe('updateCommsConsole', () => {
     expect(payload.actionable_alerts[0]).toMatchObject({ id: 'critical-callouts' });
     expect(payload.topology.discipline).toMatchObject({ mode: 'REQUEST_TO_SPEAK' });
     expect(payload.topology.speakRequests.length).toBe(1);
+  });
+
+  it('returns compliance audit feed with normalized provenance metadata', async () => {
+    const actorProfile = { id: 'member-1', callsign: 'Nomad', rank: 'COMMANDER' };
+    const { base44 } = createBase44Mock({
+      actorProfile,
+      eventLogs: [
+        {
+          id: 'log-1',
+          created_date: new Date(Date.now() - 30 * 1000).toISOString(),
+          type: 'COMMS_PRIORITY_CALLOUT',
+          actor_member_profile_id: 'member-1',
+          summary: 'Manual callout',
+          details: {
+            event_id: 'event-1',
+            capture_mode: 'MANUAL_ONLY',
+            evidence_source: 'OPERATOR_FORM',
+            command_source: 'console_form',
+            confirmed: true,
+            confirmed_at: new Date(Date.now() - 30 * 1000).toISOString(),
+            policy_version: 'nexus-acquisition-v1',
+          },
+        },
+      ],
+    });
+    mockState.base44 = base44;
+
+    const handler = await loadHandler('../../functions/updateCommsConsole.ts', {
+      BASE44_APP_ID: 'app',
+      BASE44_SERVICE_ROLE_KEY: 'service-key',
+    });
+
+    const response = await handler(
+      buildRequest({
+        action: 'list_compliance_audit',
+        eventId: 'event-1',
+        code: 'ACCESS-01',
+        callsign: 'Nomad',
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      success: true,
+      action: 'list_compliance_audit',
+      mode: 'MANUAL_ONLY',
+      policyVersion: 'nexus-acquisition-v1',
+    });
+    expect(Array.isArray(payload.audit)).toBe(true);
+    expect(payload.audit[0]).toMatchObject({
+      type: 'COMMS_PRIORITY_CALLOUT',
+      capture_mode: 'MANUAL_ONLY',
+      evidence_source: 'OPERATOR_FORM',
+      command_source: 'console_form',
+      confirmed: true,
+      actor_member_profile_id: 'member-1',
+    });
   });
 
   it('returns degraded but valid map command surface payload when backing entities fail', async () => {

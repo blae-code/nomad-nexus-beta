@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { invokeMemberFunction } from '@/api/memberFunctions';
+import { isAdminUser } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,6 +65,9 @@ export default function CommsConsole() {
   const [bridgeSessions, setBridgeSessions] = useState([]);
   const [scheduledMessages, setScheduledMessages] = useState([]);
   const [sentiment, setSentiment] = useState({ total: 0, positive: 0, neutral: 0, negative: 0, score: 0 });
+  const [complianceAudit, setComplianceAudit] = useState([]);
+  const [complianceMode, setComplianceMode] = useState('MANUAL_ONLY');
+  const [compliancePolicyVersion, setCompliancePolicyVersion] = useState('');
   const [busy, setBusy] = useState(false);
 
   const [bridgeForm, setBridgeForm] = useState({ eventId: '', leftRoom: '', rightRoom: '', bridgeType: 'OP_INTERNAL', discordMessage: '', webhookUrl: '' });
@@ -78,6 +82,7 @@ export default function CommsConsole() {
   const recognitionRef = useRef(null);
 
   const voiceSupported = useMemo(() => typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition), []);
+  const canViewComplianceAudit = useMemo(() => isAdminUser(authUser), [authUser]);
   const hangoutNet = useMemo(() => {
     const nets = Array.isArray(voiceNet.voiceNets) ? voiceNet.voiceNets : [];
     return nets.find((n) => String(n?.type || '').toLowerCase() === 'general') || null;
@@ -124,11 +129,28 @@ export default function CommsConsole() {
     setSentiment({ total: (rows || []).length, positive, neutral, negative, score });
   }, []);
 
+  const loadComplianceAudit = useCallback(async () => {
+    if (!canViewComplianceAudit) return;
+    const response = await invokeMemberFunction('updateCommsConsole', {
+      action: 'list_compliance_audit',
+      eventId: activeOp?.activeEventId || undefined,
+      limit: 24,
+    });
+    if (response?.data?.success) {
+      setComplianceAudit(Array.isArray(response.data.audit) ? response.data.audit : []);
+      setComplianceMode(String(response.data.mode || 'MANUAL_ONLY'));
+      setCompliancePolicyVersion(String(response.data.policyVersion || ''));
+      return;
+    }
+    notify('error', response?.data?.error || 'Unable to load compliance audit');
+  }, [activeOp?.activeEventId, canViewComplianceAudit]);
+
   useEffect(() => {
     loadData();
     loadScheduled();
     loadSentiment();
-  }, [loadData, loadScheduled, loadSentiment]);
+    loadComplianceAudit();
+  }, [loadComplianceAudit, loadData, loadScheduled, loadSentiment]);
 
   const joinHangout = useCallback(() => {
     if (!hangoutNet || !currentUser) return;
@@ -253,6 +275,7 @@ export default function CommsConsole() {
       notify('success', 'Message scheduled.');
       setScheduleForm((p) => ({ ...p, content: '', sendAt: defaultScheduleTime() }));
       await loadScheduled();
+      await loadComplianceAudit();
     } else notify('error', response?.data?.error || 'Scheduling failed');
     setBusy(false);
   };
@@ -263,6 +286,7 @@ export default function CommsConsole() {
     if (response?.data?.success) notify('success', `Dispatched ${response?.data?.dispatchedCount || 0} message(s).`);
     else notify('error', response?.data?.error || 'Dispatch failed');
     await loadScheduled();
+    await loadComplianceAudit();
     setBusy(false);
   };
 
@@ -272,6 +296,7 @@ export default function CommsConsole() {
     if (response?.data?.success) notify('success', 'Scheduled message cancelled.');
     else notify('error', response?.data?.error || 'Cancel failed');
     await loadScheduled();
+    await loadComplianceAudit();
     setBusy(false);
   };
 
@@ -403,6 +428,27 @@ export default function CommsConsole() {
           <div className="text-xs text-zinc-400">Bridge sessions: {bridgeSessions.length}</div>
           <div className="text-xs text-zinc-400">Negative sentiment in sample: {sentiment.negative}</div>
           <div className="text-xs text-zinc-400">Focused access: {canAccessFocusedComms(currentUser, { type: COMMS_CHANNEL_TYPES.FOCUSED, isTemporary: false }) ? 'Authorized' : 'Denied'}</div>
+          {canViewComplianceAudit && (
+            <div className="pt-2 mt-2 border-t border-zinc-800 space-y-2">
+              <div className="text-xs uppercase tracking-widest text-zinc-500">Compliance Audit</div>
+              <div className="text-xs text-zinc-400">
+                Mode: <span className="text-zinc-200">{complianceMode}</span>
+                {compliancePolicyVersion ? <span className="text-zinc-500"> · {compliancePolicyVersion}</span> : null}
+              </div>
+              {complianceAudit.length === 0 ? (
+                <div className="text-xs text-zinc-500">No comms compliance records in scope.</div>
+              ) : (
+                complianceAudit.slice(0, 5).map((entry) => (
+                  <div key={entry.id || `${entry.type}-${entry.created_date}`} className="rounded border border-zinc-800 bg-zinc-900/40 p-2 text-[11px]">
+                    <div className="text-zinc-200 truncate">{entry.type || 'COMMS_EVENT'}</div>
+                    <div className="text-zinc-500 truncate">
+                      {entry.evidence_source || 'unknown'} · {entry.confirmed ? 'confirmed' : 'pending'} · {entry.actor_member_profile_id || 'n/a'}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
 
