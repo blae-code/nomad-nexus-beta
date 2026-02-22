@@ -171,7 +171,7 @@ export default function CommsNetworkConsole({
   events = [],
   actorId = '',
   onCreateMacroEvent,
-}: CommsNetworkConsoleProps) {
+}) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   const voiceNet = useVoiceNet() as any;
