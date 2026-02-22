@@ -191,9 +191,9 @@ export default function CommsNetworkConsole({
   const [selectedThreadId, setSelectedThreadId] = useState('');
 
   const [showTokenAtlas, setShowTokenAtlas] = useState(false);
-  const [managedNets, setManagedNets] = useState<any[]>([]);
-  const [plannedManagedNets, setPlannedManagedNets] = useState<any[]>([]);
-  const [managedVoicePolicy, setManagedVoicePolicy] = useState<Record<string, any>>({});
+  const [managedNets, setManagedNets] = useState([]);
+  const [plannedManagedNets, setPlannedManagedNets] = useState([]);
+  const [managedVoicePolicy, setManagedVoicePolicy] = useState({});
   const [netControlLoading, setNetControlLoading] = useState(false);
   const [netControlError, setNetControlError] = useState('');
   const [plannedNetPage, setPlannedNetPage] = useState(0);
