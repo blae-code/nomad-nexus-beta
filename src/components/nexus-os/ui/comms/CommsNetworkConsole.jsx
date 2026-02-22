@@ -263,7 +263,7 @@ export default function CommsNetworkConsole({
   const voicePageCount = Math.max(1, Math.ceil(voiceNets.length / VOICE_LIST_PAGE_SIZE));
   const visibleVoiceNets = voiceNets.slice(voicePage * VOICE_LIST_PAGE_SIZE, voicePage * VOICE_LIST_PAGE_SIZE + VOICE_LIST_PAGE_SIZE);
   const monitoredVoiceSet = useMemo(
-    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id: unknown) => String(id || ''))),
+    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id) => String(id || ''))),
     [voiceNet.monitoredNetIds]
   );
   const voiceParticipants = useMemo(
@@ -271,7 +271,7 @@ export default function CommsNetworkConsole({
     [voiceNet.participants]
   );
   const activeSpeakers = useMemo(
-    () => voiceParticipants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
+    () => voiceParticipants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 4),
     [voiceParticipants]
   );
   const disciplineAlerts = useMemo(
@@ -295,27 +295,27 @@ export default function CommsNetworkConsole({
         return {
           label: 'Acknowledge Incident',
           detail: 'Confirm ownership before dispatching reroutes.',
-          action: 'ACK' as const,
+          action: 'ACK',
         };
       }
       if (selectedIncident.status === 'ACKED') {
         return {
           label: 'Assign Resolution Element',
           detail: 'Lock responsible team and begin mitigation.',
-          action: 'ASSIGN' as const,
+          action: 'ASSIGN',
         };
       }
       if (selectedIncident.status === 'ASSIGNED') {
         return {
           label: 'Issue Reroute Directive',
           detail: 'Reduce traffic pressure while recovery executes.',
-          action: 'REROUTE' as const,
+          action: 'REROUTE',
         };
       }
       return {
         label: 'Incident Resolved',
         detail: 'Run check-in broadcast to confirm net stability.',
-        action: 'CHECKIN' as const,
+        action: 'CHECKIN',
       };
     }
 
@@ -323,7 +323,7 @@ export default function CommsNetworkConsole({
       return {
         label: 'Prioritize Critical Queue',
         detail: 'Select a critical incident and acknowledge immediately.',
-        action: 'FOCUS_CRITICAL' as const,
+        action: 'FOCUS_CRITICAL',
       };
     }
 
@@ -331,14 +331,14 @@ export default function CommsNetworkConsole({
       return {
         label: 'Stabilize Degraded Lanes',
         detail: 'Issue restriction directive to protect command traffic.',
-        action: 'RESTRICT' as const,
+        action: 'RESTRICT',
       };
     }
 
     return {
       label: 'Maintain Readiness',
       detail: 'Run periodic check-in to verify net discipline.',
-      action: 'CHECKIN' as const,
+      action: 'CHECKIN',
     };
   }, [selectedIncident, criticalIncidentCount, degradedChannelCount]);
 
@@ -573,7 +573,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(monitorOnly ? `Monitoring ${netId}` : `Joined ${netId}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Voice join failed.');
       }
     },
