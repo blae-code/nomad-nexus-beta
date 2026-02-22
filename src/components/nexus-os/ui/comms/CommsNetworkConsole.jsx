@@ -1797,10 +1797,9 @@ export default function CommsNetworkConsole({
             </div>
           </div>
 
-          {rightPanelView === 'cards' ? (
-            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
-              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-1.5">
-                {visibleCrewCards.map((card) => (
+          <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-1.5">
+              {visibleCrewCards.map((card) => (
                   <article key={card.id} className="rounded border border-zinc-800 bg-zinc-950/70 px-2 py-1.5">
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
