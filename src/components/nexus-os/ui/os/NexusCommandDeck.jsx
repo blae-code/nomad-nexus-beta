@@ -29,6 +29,7 @@ export default function NexusCommandDeck({
   onRunCommand,
   commandCatalog = DEFAULT_CATALOG,
   contextSummary = 'Execute workspace controls and bridge commands.',
+  suggestedTutorial = null,
 }) {
   const inputRef = useRef(null);
   const [command, setCommand] = useState('');
@@ -99,11 +100,10 @@ export default function NexusCommandDeck({
     [history, historyPage]
   );
 
-  const executeCommand = (nextCommand?: string) => {
+  const executeCommand = (nextCommand) => {
     const payload = String(nextCommand ?? command).trim();
     if (!payload) return;
 
-    // Handle tutorial command
     if (payload === 'tutorial' || payload === 'tutorials') {
       setShowTutorials(true);
       setCommand('');
@@ -306,10 +306,10 @@ export default function NexusCommandDeck({
           </section>
         </div>
 
-        {/* Tutorial System Overlay */}
         <NexusTutorialSystem 
           open={showTutorials} 
-          onClose={() => setShowTutorials(false)} 
+          onClose={() => setShowTutorials(false)}
+          autoSuggestModule={suggestedTutorial}
         />
       </section>
     </div>
