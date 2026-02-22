@@ -46,6 +46,7 @@ Define one canonical token taxonomy and usage map so Base44 and contributors do 
 
 ## Surface Placement
 - Comms focus topology + crew cards + fleet schema: `src/components/nexus-os/ui/comms/CommsNetworkConsole.tsx`
+- Comms focus net control (planned/permanent/temporary governance): `src/components/nexus-os/ui/comms/CommsNetworkConsole.tsx`
 - Voice rail quick controls + lane cards: `src/components/nexus-os/ui/comms/VoiceCommsRail.jsx`
 - Debug token atlas drawer (dev only): `src/components/nexus-os/ui/comms/CommsNetworkConsole.tsx`
 

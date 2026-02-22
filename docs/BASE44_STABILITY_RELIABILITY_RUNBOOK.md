@@ -83,3 +83,11 @@ NexusOS persistence moved under `src/components/nexus-os/`.
 - Does `verify:stability` pass locally?
 - If a Base44 function contract changed: was the corresponding `functions/*` path updated?
 
+## 7) Voice Lifecycle Scheduler (Comms)
+
+- Canonical governance function: `functions/manageVoiceNets.ts`
+- Canonical lifecycle sweep: `functions/sweepVoiceNetLifecycle.ts`
+- Recommended cron cadence: every 2 minutes.
+- Fallback path: enable `nexus.voice.lifecycle.scheduler.enabled` via Data Ops panel only when external cron is unavailable.
+- Fallback execution surface: `src/components/admin/FittingDataOpsScheduler.jsx`.
+

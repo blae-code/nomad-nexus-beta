@@ -43,6 +43,8 @@ export const NEXUS_OS_UI_REFINEMENT_MANIFEST: NexusOsUiRefinementManifest = Obje
     'src/components/nexus-os/preview/NexusOSPreviewPage.jsx',
     'src/components/nexus-os/ui/comms/CommsNetworkConsole.tsx',
     'src/components/nexus-os/ui/comms/commsTokenSemantics.ts',
+    'src/components/voice/voiceNetGovernanceClient.js',
+    'src/components/voice/VoiceNetCreator.jsx',
     'src/components/nexus-os/ui/tokens/tokenAssetMap.ts',
     'src/components/nexus-os/ui/theme/nexus-shell.css',
     'src/components/nexus-os/ui/workbench/WorkbenchGrid.jsx',

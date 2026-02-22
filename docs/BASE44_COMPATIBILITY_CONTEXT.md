@@ -27,6 +27,8 @@ This document defines how the repo stays compatible with Base44 while avoiding h
 - Frontend member-function gateway: `src/api/memberFunctions.js`
 - Function auth/session boundary: `functions/_shared/memberAuth.ts`
 - Workspace state backend bridge: `functions/updateWorkspaceState.ts`
+- Voice-net governance boundary: `functions/manageVoiceNets.ts`
+- Voice-net lifecycle sweep: `functions/sweepVoiceNetLifecycle.ts`
 
 ## NexusOS Non-Lock-In Rule
 
@@ -50,6 +52,7 @@ Canonical comms focus surfaces:
 - `src/components/nexus-os/ui/comms/CommsNetworkConsole.tsx`
 - `src/components/nexus-os/ui/comms/VoiceCommsRail.jsx`
 - `src/components/nexus-os/ui/comms/CommsHub.jsx`
+- `src/components/voice/voiceNetGovernanceClient.js` (frontend gateway for governed voice-net mutations)
 
 ## Anti-Drift Gate
 
