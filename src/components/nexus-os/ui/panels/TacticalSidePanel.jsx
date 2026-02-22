@@ -152,13 +152,13 @@ export default function TacticalSidePanel({
             <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
 
             {panelMode === 'command' ? (
-              <section className="flex-shrink-0 min-h-[184px] max-h-[42%] border-t border-zinc-700/40 bg-zinc-900/40 p-2 flex flex-col gap-2 overflow-hidden">
+              <section className="flex-shrink-0 min-h-[184px] max-h-[42%] border-t border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-2.5 flex flex-col gap-2.5 overflow-hidden">
                 <div className="flex items-center gap-1 rounded border border-zinc-700/40 bg-zinc-900/50 p-0.5">
                   <button
                     type="button"
                     onClick={() => setDiagnosticTab('metrics')}
-                    className={`flex-1 h-6 rounded text-[9px] font-bold uppercase tracking-wide flex items-center justify-center gap-1 ${
-                      diagnosticTab === 'metrics' ? 'bg-zinc-800 text-orange-300' : 'text-zinc-500 hover:text-zinc-300'
+                    className={`flex-1 h-6 rounded text-[9px] font-semibold uppercase tracking-wide flex items-center justify-center gap-1 transition-all ${
+                      diagnosticTab === 'metrics' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
                     <TrendingUp className="w-3 h-3" />
@@ -167,8 +167,8 @@ export default function TacticalSidePanel({
                   <button
                     type="button"
                     onClick={() => setDiagnosticTab('logs')}
-                    className={`flex-1 h-6 rounded text-[9px] font-bold uppercase tracking-wide flex items-center justify-center gap-1 ${
-                      diagnosticTab === 'logs' ? 'bg-zinc-800 text-orange-300' : 'text-zinc-500 hover:text-zinc-300'
+                    className={`flex-1 h-6 rounded text-[9px] font-semibold uppercase tracking-wide flex items-center justify-center gap-1 transition-all ${
+                      diagnosticTab === 'logs' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
                     <Activity className="w-3 h-3" />
