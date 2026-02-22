@@ -202,23 +202,7 @@ export default function AccessGate() {
     <RouteGuard requiredAuth="none">
       <AsyncLoadingOverlay isLoading={loading || verifyingAuth} message={verifyingAuth ? 'Confirming authorization...' : 'Verifying credentials...'} />
       <PageTransition>
-        <header className="fixed top-0 left-0 right-0 z-40 border-b border-red-700/30 bg-zinc-950/98 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-lg bg-red-500/15 border border-red-500/30">
-              <Shield className="w-4 h-4 text-red-400" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs text-zinc-300 font-bold uppercase tracking-[0.15em]">Redscar Nomads</div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-wider">Command Intranet</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded border border-green-500/30 bg-green-500/10">
-            <Signal className="w-3 h-3 text-green-400" />
-            <span className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">Secure</span>
-          </div>
-        </header>
-
-        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative pt-20 pb-16">
+        <div className="nexus-immersive-screen w-full h-screen max-h-screen flex items-center justify-center px-4 overflow-y-auto relative">
 
       <div className="relative z-10 w-full max-w-md my-8">
         <div className="nexus-immersive-panel p-0 overflow-hidden flex-shrink-0 shadow-2xl shadow-red-900/30">
