@@ -365,27 +365,7 @@ export default function AccessGate() {
             </div>
           </div>
         </div>
-
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <div className="h-px w-16 bg-gradient-to-r from-transparent to-green-500/30" />
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-500/25 bg-green-500/5">
-            <span className="w-1.5 h-1.5 bg-green-400/80 rounded-full animate-pulse" />
-            <span className="text-[10px] text-green-400/80 uppercase tracking-wider font-semibold">Secure Link</span>
-            <span className="w-1.5 h-1.5 bg-green-400/80 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
-          </div>
-          <div className="h-px w-16 bg-gradient-to-l from-transparent to-green-500/30" />
-        </div>
       </div>
-
-      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-red-700/25 bg-zinc-950/98 backdrop-blur-md px-6 py-3.5">
-        <div className="flex items-center justify-center gap-2">
-          <div className="h-px w-12 bg-red-700/30" />
-          <p className="text-[10px] text-red-700/60 uppercase tracking-[0.25em] font-bold">
-            Redscar Nomads Command
-          </p>
-          <div className="h-px w-12 bg-red-700/30" />
-        </div>
-      </footer>
 
       {/* Hidden readiness beacon */}
       {authState && <div id="nn-ready" data-state={authState} style={{ display: 'none' }} />}
