@@ -815,13 +815,13 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
           />
         </TacticalSidePanel>
 
-        <main className="flex-1 overflow-hidden flex flex-col px-3">
+        <main className="flex-1 overflow-hidden flex flex-col px-3 py-3">
           {commandFeedback && (
-            <section aria-live="polite" className="nx-inline-feedback nexus-console-text">
+            <section aria-live="polite" className="nx-inline-feedback nexus-console-text mb-2">
               {commandFeedback}
             </section>
           )}
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow">
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40">
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
