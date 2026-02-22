@@ -821,14 +821,14 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             <Clock3 className="w-3.5 h-3.5 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
             <div className="flex flex-col gap-0.5">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[8px] uppercase tracking-wider text-zinc-600 font-semibold leading-none">Local</span>
-                <span className="text-[10px] font-mono text-zinc-300 group-hover:text-zinc-100 transition-colors leading-none">
+                <span className="text-[7px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
+                <span className="text-[12px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
                   {new Date(clockNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                 </span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[8px] uppercase tracking-wider text-zinc-700 font-semibold leading-none">UTC</span>
-                <span className="text-[9px] font-mono text-zinc-500 group-hover:text-zinc-400 transition-colors leading-none">
+                <span className="text-[7px] uppercase tracking-wider text-zinc-700 font-semibold leading-none">UTC</span>
+                <span className="text-[8px] font-mono text-zinc-500 group-hover:text-zinc-400 transition-colors leading-none">
                   {new Date(clockNowMs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' })}Z
                 </span>
               </div>
