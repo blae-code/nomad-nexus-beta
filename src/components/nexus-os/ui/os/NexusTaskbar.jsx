@@ -24,7 +24,7 @@ function ageLabel(timestamp) {
   return `${Math.floor(ageSeconds / 3600)}h`;
 }
 
-function compactLabel(value: string, max = 10): string {
+function compactLabel(value, max = 10) {
   const clean = String(value || '').trim();
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}...`;
