@@ -32,7 +32,6 @@ import {
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
-  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
