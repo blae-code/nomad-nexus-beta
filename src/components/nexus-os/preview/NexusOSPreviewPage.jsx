@@ -782,7 +782,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/30 bg-zinc-900/30">
               <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-200">{workspaceDisplayCallsign}</span>
               <span className="text-[8px] text-zinc-600">•</span>
-              <span className="text-[9px] uppercase tracking-wider text-zinc-300">{bridgeId}</span>
+              <span className="text-[9px] uppercase tracking-wider text-zinc-300">{user?.member_profile_data?.rank || 'Vagrant'}</span>
             </div>
           </div>
 
