@@ -49,10 +49,7 @@ export default function TacticalSidePanel({
   onMinimize,
   className = '',
 }) {
-  const [panelMode, setPanelMode] = useState('standard');
-  const [diagnosticTab, setDiagnosticTab] = useState('metrics');
-  const [metricsPage, setMetricsPage] = useState(0);
-  const [logsPage, setLogsPage] = useState(0);
+  // Diagnostics removed—focus on content only
 
   const isLeft = side === 'left';
   const borderSideClass = isLeft ? 'border-r' : 'border-l';
