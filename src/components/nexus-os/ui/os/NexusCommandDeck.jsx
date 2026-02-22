@@ -1,13 +1,37 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Command, History, Sparkles, TerminalSquare, X, Zap } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Command, History, Sparkles, TerminalSquare, X, Zap } from 'lucide-react';
 import { NexusButton } from '../primitives';
+import NexusTutorialSystem from '../tutorial/NexusTutorialSystem';
+
+interface NexusCommandCatalogItem {
+  id: string;
+  label: string;
+  command: string;
+  detail?: string;
+}
+
+interface NexusCommandDeckProps {
+  open: boolean;
+  onClose: () => void;
+  onRunCommand: (command: string) => string;
+  commandCatalog?: NexusCommandCatalogItem[];
+  contextSummary?: string;
+}
+
+interface CommandResultEntry {
+  id: string;
+  command: string;
+  result: string;
+  timestamp: string;
+}
 
 const CATALOG_PAGE_SIZE = 6;
 const OUTPUT_PAGE_SIZE = 4;
 const HISTORY_PAGE_SIZE = 4;
 
-const DEFAULT_CATALOG = [
+const DEFAULT_CATALOG: NexusCommandCatalogItem[] = [
   { id: 'help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
+  { id: 'tutorial', label: 'Tutorials', command: 'tutorial', detail: 'Open interactive training modules.' },
   { id: 'status', label: 'System Status', command: 'status', detail: 'Show bridge/link/focus status.' },
   { id: 'open-map', label: 'Focus Map', command: 'open map', detail: 'Open tactical map focus mode.' },
   { id: 'open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Open operations focus mode.' },
@@ -27,15 +51,16 @@ export default function NexusCommandDeck({
   onRunCommand,
   commandCatalog = DEFAULT_CATALOG,
   contextSummary = 'Execute workspace controls and bridge commands.',
-}) {
-  const inputRef = useRef(null);
+}: NexusCommandDeckProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [command, setCommand] = useState('');
-  const [results, setResults] = useState([]);
-  const [history, setHistory] = useState([]);
+  const [results, setResults] = useState<CommandResultEntry[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
   const [historyCursor, setHistoryCursor] = useState(-1);
   const [catalogPage, setCatalogPage] = useState(0);
   const [outputPage, setOutputPage] = useState(0);
   const [historyPage, setHistoryPage] = useState(0);
+  const [showTutorials, setShowTutorials] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -96,9 +121,17 @@ export default function NexusCommandDeck({
     [history, historyPage]
   );
 
-  const executeCommand = (nextCommand) => {
+  const executeCommand = (nextCommand?: string) => {
     const payload = String(nextCommand ?? command).trim();
     if (!payload) return;
+
+    // Handle tutorial command
+    if (payload === 'tutorial' || payload === 'tutorials') {
+      setShowTutorials(true);
+      setCommand('');
+      return;
+    }
+
     const result = String(onRunCommand(payload) || '');
     const timestamp = toTimestampLabel();
 
@@ -110,7 +143,7 @@ export default function NexusCommandDeck({
     setCommand('');
   };
 
-  const onInputKeyDown = (event) => {
+  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       executeCommand();
@@ -294,6 +327,12 @@ export default function NexusCommandDeck({
             ) : null}
           </section>
         </div>
+
+        {/* Tutorial System Overlay */}
+        <NexusTutorialSystem 
+          open={showTutorials} 
+          onClose={() => setShowTutorials(false)} 
+        />
       </section>
     </div>
   );

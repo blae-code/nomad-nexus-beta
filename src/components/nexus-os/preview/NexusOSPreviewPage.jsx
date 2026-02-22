@@ -605,7 +605,11 @@ export default function NexusOSPreviewPage({ mode = 'dev' }) {
     const normalizedArg = arg.toLowerCase();
 
     if (keyword === 'help' || keyword === '?') {
-      return 'Commands: help, status, open <map|ops|comms>, bridge <id|next|prev>, close.';
+      return 'Commands: help, tutorial, status, open <map|ops|comms>, bridge <id|next|prev>, close.';
+    }
+
+    if (keyword === 'tutorial' || keyword === 'tutorials') {
+      return 'Opening tutorials...';
     }
 
     if (keyword === 'status') {
