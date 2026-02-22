@@ -218,11 +218,7 @@ export default function CommsNetworkConsole({
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
   const [bridgeEdges, setBridgeEdges] = useState<TopologyBridgeEdge[]>([]);
-  const [schemaExpandedById, setSchemaExpandedById] = useState<Record<string, boolean>>({
-    'fleet:redscar': true,
-    'wing:CE': true,
-    'squad:CE:Command Cell': true,
-  });
+
   const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const [radialOpen, setRadialOpen] = useState(false);
   const [radialAnchor, setRadialAnchor] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
