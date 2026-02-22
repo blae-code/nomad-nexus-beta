@@ -44,7 +44,7 @@ export default function NexusTaskbar({
   onClearNotifications,
 }) {
   const [trayOpen, setTrayOpen] = React.useState(false);
-  const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
+  const [trayFilter, setTrayFilter] = React.useState('UNREAD');
   const [appPage, setAppPage] = React.useState(0);
   const [noticePage, setNoticePage] = React.useState(0);
   const appsPerPage = 6;
