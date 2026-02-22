@@ -107,32 +107,20 @@ export default function TacticalSidePanel({
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setPanelMode((prev) => prev === 'standard' ? 'command' : 'standard')}
-                  className="px-2 py-1 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 text-[8px] font-bold uppercase tracking-wide text-zinc-400 hover:text-zinc-200 transition-all"
-                  title={`Switch to ${panelMode === 'standard' ? 'command' : 'standard'} mode`}
+                  onClick={onMinimize}
+                  className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
+                  title="Minimize panel width"
                 >
-                  {panelMode === 'standard' ? 'Std' : 'Cmd'}
+                  <Minimize2 className="w-3.5 h-3.5" />
                 </button>
-                {panelMode === 'command' ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={onMinimize}
-                      className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
-                      title="Minimize panel width"
-                    >
-                      <Minimize2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onMaximize}
-                      className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
-                      title="Maximize panel width"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={onMaximize}
+                  className="p-0.5 text-zinc-500 hover:text-orange-400 transition-colors"
+                  title="Maximize panel width"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
                 <button
                   type="button"
                   onClick={onToggleCollapse}
