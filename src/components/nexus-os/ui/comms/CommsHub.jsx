@@ -74,28 +74,14 @@ export default function CommsHub({
   const [messageFilter, setMessageFilter] = useState('all');
   const [acknowledgedUnreadByChannel, setAcknowledgedUnreadByChannel] = useState({});
 
-  const [displayMode, setDisplayMode] = useState('standard');
   const [showAiFeatures, setShowAiFeatures] = useState(false);
   const [messageAnalyses, setMessageAnalyses] = useState({});
   const [aiSearchActive, setAiSearchActive] = useState(false);
   const [aiSearchResults, setAiSearchResults] = useState(null);
   const [responseSuggestions, setResponseSuggestions] = useState([]);
   const [selectedMessageForResponse, setSelectedMessageForResponse] = useState(null);
-  const [commandSurfaceTab, setCommandSurfaceTab] = useState('topology');
-  const [topologyPositionById, setTopologyPositionById] = useState({});
-  const [topologyBridgeLinks, setTopologyBridgeLinks] = useState([]);
-  const [selectedTopologyNodeId, setSelectedTopologyNodeId] = useState('');
-  const [bridgeSourceNodeId, setBridgeSourceNodeId] = useState('');
-  const [restrictedChannelById, setRestrictedChannelById] = useState({});
-  const [radialOpen, setRadialOpen] = useState(false);
-  const [radialAnchor, setRadialAnchor] = useState({ x: 50, y: 50 });
-  const [orderFeed, setOrderFeed] = useState([]);
-  const [orderPage, setOrderPage] = useState(0);
-  const topologyRef = useRef(null);
-  const dragRef = useRef(null);
 
   const aiEnabled = showAiFeatures;
-  const isCommsFocus = String(focusMode || '').toLowerCase() === 'comms';
   const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
 
   const channels = useMemo(() => {
@@ -242,86 +228,6 @@ export default function CommsHub({
         .slice(0, 3),
     [channelsWithUnread]
   );
-  const topologyChannels = useMemo(() => {
-    const selected = allChannels.find((entry) => entry.id === selectedChannel);
-    const remaining = allChannels.filter((entry) => entry.id !== selectedChannel);
-    return [selected, ...remaining].filter(Boolean).slice(0, TOPOLOGY_NODE_LIMIT);
-  }, [allChannels, selectedChannel]);
-  const topologyNodes = useMemo(() => {
-    const count = topologyChannels.length;
-    const radius = count > 6 ? 34 : 30;
-    return topologyChannels.map((channel, index) => {
-      const angle = (index / Math.max(1, count)) * Math.PI * 2 - Math.PI / 2;
-      const fallbackX = 50 + Math.cos(angle) * radius;
-      const fallbackY = 50 + Math.sin(angle) * radius;
-      const override = topologyPositionById[channel.id];
-      return {
-        id: channel.id,
-        label: channel.name,
-        unread: Number(channel.unread || 0),
-        category: channel.category,
-        x: override ? override.x : fallbackX,
-        y: override ? override.y : fallbackY,
-      };
-    });
-  }, [topologyChannels, topologyPositionById]);
-  const topologyNodeById = useMemo(
-    () => topologyNodes.reduce((acc, node) => ({ ...acc, [node.id]: node }), {}),
-    [topologyNodes]
-  );
-  const bridgeChannelSet = useMemo(() => {
-    const result = new Set();
-    for (const entry of topologyBridgeLinks) {
-      result.add(entry.fromId);
-      result.add(entry.toId);
-    }
-    return result;
-  }, [topologyBridgeLinks]);
-  const topologyLinks = useMemo(() => {
-    const links = [];
-    const commandNode = topologyNodes.find((node) => node.id === 'command');
-    if (commandNode) {
-      const adjacent = topologyNodes
-        .filter((node) => node.id !== commandNode.id)
-        .slice(0, 5);
-      for (const node of adjacent) {
-        links.push({
-          id: `base:${commandNode.id}:${node.id}`,
-          fromId: commandNode.id,
-          toId: node.id,
-          kind: 'base',
-        });
-      }
-    }
-    for (const entry of topologyBridgeLinks) {
-      links.push({
-        id: entry.id,
-        fromId: entry.fromId,
-        toId: entry.toId,
-        kind: 'bridge',
-      });
-    }
-    return links;
-  }, [topologyNodes, topologyBridgeLinks]);
-  const selectedTopologyNode = useMemo(
-    () => topologyNodes.find((node) => node.id === selectedTopologyNodeId) || null,
-    [topologyNodes, selectedTopologyNodeId]
-  );
-  const orderPageCount = Math.max(1, Math.ceil(orderFeed.length / ORDER_PAGE_SIZE));
-  const pagedOrders = useMemo(
-    () => orderFeed.slice(orderPage * ORDER_PAGE_SIZE, orderPage * ORDER_PAGE_SIZE + ORDER_PAGE_SIZE),
-    [orderFeed, orderPage]
-  );
-  const channelStatusById = useMemo(() => {
-    const result = {};
-    allChannels.forEach((channel) => {
-      result[channel.id] = {
-        bridged: bridgeChannelSet.has(channel.id),
-        restricted: Boolean(restrictedChannelById[channel.id]),
-      };
-    });
-    return result;
-  }, [allChannels, bridgeChannelSet, restrictedChannelById]);
   const selectedChannelUnread = Number(selectedChannelData?.unread || 0);
   const commandIntent = useMemo(() => {
     if (!online) {
@@ -361,75 +267,12 @@ export default function CommsHub({
   }, [online, selectedChannelUnread, selectedChannelData?.name, selectedVoiceNetId, onRouteVoiceNet]);
 
   useEffect(() => {
-    setDisplayMode((current) => {
-      if (isCommsFocus) return current === 'standard' ? 'command' : current;
-      if (current === 'command') return 'standard';
-      return current;
-    });
-  }, [isCommsFocus]);
-
-  useEffect(() => {
-    if (!topologyNodes.length) {
-      setSelectedTopologyNodeId('');
-      setBridgeSourceNodeId('');
-      setTopologyPositionById({});
-      setTopologyBridgeLinks([]);
-      return;
-    }
-    setTopologyPositionById((prev) => {
-      const next = {};
-      let changed = false;
-      topologyNodes.forEach((node) => {
-        if (prev[node.id]) {
-          next[node.id] = prev[node.id];
-          return;
-        }
-        next[node.id] = { x: node.x, y: node.y };
-        changed = true;
-      });
-      if (Object.keys(next).length !== Object.keys(prev).length) changed = true;
-      return changed ? next : prev;
-    });
-    setTopologyBridgeLinks((prev) => {
-      const ids = new Set(topologyNodes.map((node) => node.id));
-      const filtered = prev.filter((entry) => ids.has(entry.fromId) && ids.has(entry.toId));
-      return filtered.length === prev.length ? prev : filtered;
-    });
-  }, [topologyNodes]);
-
-  useEffect(() => {
-    if (!topologyNodes.length) return;
-    if (selectedTopologyNodeId && topologyNodes.some((node) => node.id === selectedTopologyNodeId)) return;
-    setSelectedTopologyNodeId(topologyNodes[0].id);
-  }, [topologyNodes, selectedTopologyNodeId]);
-
-  useEffect(() => {
     if (!panelFeedback) return undefined;
     const timer = window.setTimeout(() => setPanelFeedback(''), 3200);
     return () => window.clearTimeout(timer);
   }, [panelFeedback]);
 
-  useEffect(() => {
-    setOrderPage((current) => Math.min(current, orderPageCount - 1));
-  }, [orderPageCount]);
 
-  useEffect(() => {
-    if (displayMode !== 'command' || commandSurfaceTab !== 'topology') {
-      setRadialOpen(false);
-    }
-  }, [displayMode, commandSurfaceTab]);
-
-  useEffect(() => {
-    if (!bridgeSourceNodeId) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      setBridgeSourceNodeId('');
-      setPanelFeedback('Bridge target mode cleared.');
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [bridgeSourceNodeId]);
 
   const toggleCategory = useCallback((category) => {
     setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
@@ -552,213 +395,6 @@ export default function CommsHub({
     }
   };
 
-  const issueTopologyOrder = useCallback((input) => {
-    const nowMs = Date.now();
-    const channelId = String(input.channelId || '').trim();
-    const payload = input.payload && typeof input.payload === 'object' ? input.payload : {};
-    const entry = {
-      id: `order:${nowMs}:${Math.floor(Math.random() * 1000)}`,
-      channelId,
-      summary: input.summary || 'Order issued',
-      action: input.action || 'COMMAND',
-      status: 'SENT',
-      createdAtMs: nowMs,
-    };
-    setOrderFeed((prev) => [entry, ...prev].slice(0, 36));
-    setOrderPage(0);
-    if (channelId) setSelectedChannel(channelId);
-    if (typeof onIssueCommsOrder === 'function') {
-      onIssueCommsOrder(input.eventType || 'MOVE_OUT', {
-        channelId,
-        source: 'comms-hub-topology',
-        commandAction: entry.action,
-        ...payload,
-      });
-    }
-    setPanelFeedback(entry.summary);
-  }, [onIssueCommsOrder]);
-
-  const setNodeFromClientPoint = useCallback((nodeId, clientX, clientY) => {
-    const host = topologyRef.current;
-    if (!host || !nodeId) return;
-    const rect = host.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const x = clampPct(((clientX - rect.left) / rect.width) * 100);
-    const y = clampPct(((clientY - rect.top) / rect.height) * 100);
-    setTopologyPositionById((prev) => ({
-      ...prev,
-      [nodeId]: { x, y },
-    }));
-  }, []);
-
-  const completeBridgeIfArmed = useCallback((targetNodeId) => {
-    if (!bridgeSourceNodeId || !targetNodeId || bridgeSourceNodeId === targetNodeId) return false;
-    const sourceNode = topologyNodeById[bridgeSourceNodeId];
-    const targetNode = topologyNodeById[targetNodeId];
-    if (!sourceNode || !targetNode) return false;
-    const id = `bridge:${bridgeSourceNodeId}->${targetNodeId}`;
-    setTopologyBridgeLinks((prev) => {
-      const filtered = prev.filter((entry) => entry.id !== id);
-      return [{ id, fromId: bridgeSourceNodeId, toId: targetNodeId, createdAtMs: Date.now() }, ...filtered].slice(0, 24);
-    });
-    issueTopologyOrder({
-      action: 'BRIDGE_NETS',
-      channelId: bridgeSourceNodeId,
-      eventType: 'MOVE_OUT',
-      summary: `Bridge established ${sourceNode.label} -> ${targetNode.label}`,
-      payload: {
-        sourceChannelId: bridgeSourceNodeId,
-        targetChannelId: targetNodeId,
-        orderType: 'COMMS_BRIDGE',
-      },
-    });
-    setBridgeSourceNodeId('');
-    return true;
-  }, [bridgeSourceNodeId, topologyNodeById, issueTopologyOrder]);
-
-  const handleNodePointerDown = useCallback((event, nodeId) => {
-    if (event.button !== 0) return;
-    dragRef.current = {
-      nodeId,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      moved: false,
-    };
-    setSelectedTopologyNodeId(nodeId);
-    setRadialOpen(false);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }, []);
-
-  const handleNodePointerMove = useCallback((event, nodeId) => {
-    const drag = dragRef.current;
-    if (!drag || drag.nodeId !== nodeId || drag.pointerId !== event.pointerId) return;
-    const movedX = Math.abs(event.clientX - drag.startX);
-    const movedY = Math.abs(event.clientY - drag.startY);
-    if (movedX > 2 || movedY > 2) {
-      drag.moved = true;
-      setNodeFromClientPoint(nodeId, event.clientX, event.clientY);
-    }
-  }, [setNodeFromClientPoint]);
-
-  const handleNodePointerUp = useCallback((event, nodeId) => {
-    const drag = dragRef.current;
-    if (!drag || drag.nodeId !== nodeId || drag.pointerId !== event.pointerId) return;
-    if (!drag.moved) {
-      if (!completeBridgeIfArmed(nodeId)) {
-        setSelectedTopologyNodeId(nodeId);
-      }
-    }
-    dragRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  }, [completeBridgeIfArmed]);
-
-  const handleNodeContextMenu = useCallback((event, nodeId) => {
-    event.preventDefault();
-    const host = topologyRef.current;
-    if (!host) return;
-    const rect = host.getBoundingClientRect();
-    const x = clampPct(((event.clientX - rect.left) / rect.width) * 100);
-    const y = clampPct(((event.clientY - rect.top) / rect.height) * 100);
-    setSelectedTopologyNodeId(nodeId);
-    setRadialAnchor({ x, y });
-    setRadialOpen(true);
-  }, []);
-
-  const radialItems = useMemo(() => {
-    if (!selectedTopologyNode) return [];
-    const channelId = selectedTopologyNode.id;
-    const isRestricted = Boolean(restrictedChannelById[channelId]);
-    const items = [
-      {
-        id: 'route-voice',
-        label: 'Route Voice',
-        icon: 'request-patrol',
-        disabled: typeof onRouteVoiceNet !== 'function',
-        onSelect: () => {
-          onRouteVoiceNet?.(channelId);
-          issueTopologyOrder({
-            action: 'ROUTE_VOICE',
-            channelId,
-            eventType: 'SET',
-            summary: `Voice lane routed to ${selectedTopologyNode.label}`,
-          });
-          setRadialOpen(false);
-        },
-      },
-      {
-        id: 'restrict',
-        label: isRestricted ? 'Clear Restrict' : 'Restrict Net',
-        icon: 'challenge',
-        tone: isRestricted ? 'standard' : 'warning',
-        onSelect: () => {
-          setRestrictedChannelById((prev) => ({ ...prev, [channelId]: !prev[channelId] }));
-          issueTopologyOrder({
-            action: isRestricted ? 'CLEAR_RESTRICT' : 'RESTRICT_NET',
-            channelId,
-            eventType: 'HOLD',
-            summary: isRestricted
-              ? `Restriction cleared on ${selectedTopologyNode.label}`
-              : `Restriction set on ${selectedTopologyNode.label}`,
-          });
-          setRadialOpen(false);
-        },
-      },
-      {
-        id: 'checkin',
-        label: 'Broadcast Check-In',
-        icon: 'endorse',
-        onSelect: () => {
-          primeMessage(channelId, 'Check-in request: report status, lane quality, and blockers.', 'Check-in draft primed.');
-          issueTopologyOrder({
-            action: 'CHECKIN',
-            channelId,
-            eventType: 'SELF_CHECK',
-            summary: `Check-in broadcast queued for ${selectedTopologyNode.label}`,
-          });
-          setRadialOpen(false);
-        },
-      },
-      {
-        id: 'bridge',
-        label: bridgeSourceNodeId === channelId ? 'Cancel Bridge' : 'Bridge Target',
-        icon: 'link-op',
-        tone: bridgeSourceNodeId === channelId ? 'danger' : 'standard',
-        onSelect: () => {
-          if (bridgeSourceNodeId === channelId) {
-            setBridgeSourceNodeId('');
-            setPanelFeedback('Bridge target mode cleared.');
-          } else {
-            setBridgeSourceNodeId(channelId);
-            setPanelFeedback(`Bridge target mode armed from ${selectedTopologyNode.label}. Click destination node.`);
-          }
-          setRadialOpen(false);
-        },
-      },
-    ];
-    if (bridgeSourceNodeId) {
-      items.push({
-        id: 'abort',
-        label: 'Abort Target',
-        icon: 'attach-intel',
-        tone: 'danger',
-        onSelect: () => {
-          setBridgeSourceNodeId('');
-          setPanelFeedback('Bridge target mode cleared.');
-          setRadialOpen(false);
-        },
-      });
-    }
-    return items;
-  }, [
-    selectedTopologyNode,
-    restrictedChannelById,
-    onRouteVoiceNet,
-    issueTopologyOrder,
-    primeMessage,
-    bridgeSourceNodeId,
-  ]);
-
   const renderCategory = (category, label) => {
     const items = channels[category] || [];
     if (!items.length && category !== 'operations') return null;
@@ -766,43 +402,65 @@ export default function CommsHub({
     const page = channelPages[category] || 0;
     const pageCount = categoryPageCounts[category] || 1;
     const pagedChannels = items.slice(page * CHANNEL_PAGE_SIZE, page * CHANNEL_PAGE_SIZE + CHANNEL_PAGE_SIZE);
+    const categoryUnread = items.reduce((sum, ch) => sum + Number(ch.unread || 0), 0);
 
     return (
-      <div key={category}>
+      <div key={category} className="mb-1">
         <button
           type="button"
           onClick={() => toggleCategory(category)}
-          className="w-full flex items-center gap-1 px-1.5 py-1 text-[10px] font-bold text-zinc-500 hover:text-zinc-200 uppercase tracking-wider transition-colors"
+          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 rounded transition-colors"
         >
-          <ChevronDown className={`w-3 h-3 transition-transform ${expandedCategories[category] ? '' : '-rotate-90'}`} />
-          {label}
+          <div className="flex items-center gap-1.5">
+            <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
+            <span className="uppercase tracking-wider">{label}</span>
+            <span className="text-zinc-600 font-normal">({items.length})</span>
+          </div>
+          {categoryUnread > 0 ? (
+            <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[9px] font-bold">
+              {categoryUnread}
+            </div>
+          ) : null}
         </button>
 
         {expandedCategories[category] ? (
-          <div className="space-y-1">
+          <div className="ml-3 space-y-0.5 mt-0.5">
             {pagedChannels.length > 0 ? (
               pagedChannels.map((channel) => (
-                <ChannelButton
+                <button
                   key={channel.id}
-                  channel={channel}
-                  status={channelStatusById[channel.id]}
-                  isSelected={selectedChannel === channel.id}
+                  type="button"
                   onClick={() => pickChannel(channel.id)}
-                />
+                  className={`w-full text-left px-2 py-1.5 rounded transition-colors flex items-center justify-between gap-2 ${
+                    selectedChannel === channel.id 
+                      ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300' 
+                      : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Hash className="w-3 h-3 flex-shrink-0" />
+                    <span className="text-[10px] font-medium truncate">{channel.name}</span>
+                  </div>
+                  {channel.unread > 0 ? (
+                    <div className="flex-shrink-0 px-1.5 py-0.5 rounded-full bg-orange-500/40 text-orange-200 text-[9px] font-bold">
+                      {channel.unread}
+                    </div>
+                  ) : null}
+                </button>
               ))
             ) : (
               <div className="px-2 py-1 text-[10px] text-zinc-600">No channels</div>
             )}
 
             {pageCount > 1 ? (
-              <div className="flex items-center justify-end gap-2 pt-0.5 text-[9px] text-zinc-500">
+              <div className="flex items-center justify-end gap-2 pt-1 pr-1 text-[9px] text-zinc-500">
                 <button
                   type="button"
                   onClick={() => pageCategory(category, 'prev')}
                   disabled={page === 0}
                   className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
                 >
-                  Prev
+                  ‹
                 </button>
                 <span>{page + 1}/{pageCount}</span>
                 <button
@@ -811,7 +469,7 @@ export default function CommsHub({
                   disabled={page >= pageCount - 1}
                   className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
                 >
-                  Next
+                  ›
                 </button>
               </div>
             ) : null}
@@ -844,14 +502,6 @@ export default function CommsHub({
             <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
-                onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
-                className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
-                title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
-              >
-                {displayMode === 'standard' ? 'Std' : 'Cmd'}
-              </button>
-              <button
-                type="button"
                 onClick={() => setShowAiFeatures((prev) => !prev)}
                 className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-400' : ''}`}
                 title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
@@ -865,271 +515,12 @@ export default function CommsHub({
           </div>
 
           <div className="flex-shrink-0 p-2 border-b border-zinc-700/40 bg-zinc-900/20">
-            <div className="mb-2 p-2 rounded border border-zinc-800 bg-zinc-900/35 space-y-1.5">
-              <div className="grid grid-cols-3 gap-1">
-                <div className="rounded border border-zinc-800 px-2 py-1 text-center">
-                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Channels</div>
-                  <div className="text-[10px] font-semibold text-zinc-300">{allChannels.length}</div>
-                </div>
-                <div className="rounded border border-zinc-800 px-2 py-1 text-center">
-                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Unread</div>
-                  <div className={`text-[10px] font-semibold ${totalUnread > 0 ? 'text-orange-300' : 'text-zinc-300'}`}>{totalUnread}</div>
-                </div>
-                <div className="rounded border border-zinc-800 px-2 py-1 text-center">
-                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Mode</div>
-                  <div className="text-[10px] font-semibold text-zinc-300">{displayMode === 'command' ? 'Cmd' : 'Std'}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => acknowledgeChannel()}
-                  className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
-                >
-                  Mark Reviewed
-                </button>
-                <button
-                  type="button"
-                  onClick={() => primeMessage('command', 'Command priority broadcast: report status by exception only.', 'Priority broadcast draft primed.')}
-                  className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
-                >
-                  Priority Broadcast
-                </button>
-                {priorityChannels.length > 0 ? (
-                  <span className="text-[9px] uppercase tracking-wide text-zinc-600 truncate">
-                    Hot: {priorityChannels.map((channel) => channel.name).join(' / ')}
-                  </span>
-                ) : (
-                  <span className="text-[9px] uppercase tracking-wide text-zinc-600">No hot channels</span>
-                )}
-              </div>
+            <div className="space-y-1">
+              {renderCategory('tactical', 'Tactical')}
+              {renderCategory('operations', 'Operations')}
+              {renderCategory('social', 'Social')}
+              {renderCategory('direct', 'Direct')}
             </div>
-
-            {displayMode === 'command' ? (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setCommandSurfaceTab('topology')}
-                    className={`h-6 px-2 rounded border text-[9px] uppercase tracking-wide ${
-                      commandSurfaceTab === 'topology'
-                        ? 'border-orange-500/60 bg-orange-500/15 text-orange-300'
-                        : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
-                    }`}
-                  >
-                    Topology
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCommandSurfaceTab('channels')}
-                    className={`h-6 px-2 rounded border text-[9px] uppercase tracking-wide ${
-                      commandSurfaceTab === 'channels'
-                        ? 'border-orange-500/60 bg-orange-500/15 text-orange-300'
-                        : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
-                    }`}
-                  >
-                    Channels
-                  </button>
-                  <span className="ml-auto text-[9px] uppercase tracking-wide text-zinc-600">
-                    Orders {orderFeed.length}
-                  </span>
-                </div>
-
-                {commandSurfaceTab === 'topology' ? (
-                  <>
-                    <div
-                      ref={topologyRef}
-                      className="relative h-36 rounded border border-zinc-800 bg-zinc-950/65 overflow-hidden"
-                      onContextMenu={(event) => event.preventDefault()}
-                      onClick={(event) => {
-                        if (event.target === event.currentTarget) setRadialOpen(false);
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0 opacity-[0.15]"
-                        style={{
-                          backgroundImage:
-                            'linear-gradient(rgba(251,146,60,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(251,146,60,0.22) 1px, transparent 1px)',
-                          backgroundSize: '20px 20px',
-                        }}
-                      />
-                      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-                        {topologyLinks.map((link) => {
-                          const fromNode = topologyNodeById[link.fromId];
-                          const toNode = topologyNodeById[link.toId];
-                          if (!fromNode || !toNode) return null;
-                          return (
-                            <line
-                              key={link.id}
-                              x1={fromNode.x}
-                              y1={fromNode.y}
-                              x2={toNode.x}
-                              y2={toNode.y}
-                              stroke={link.kind === 'bridge' ? 'rgba(251,146,60,0.92)' : 'rgba(113,113,122,0.55)'}
-                              strokeWidth={link.kind === 'bridge' ? 1.9 : 1}
-                              strokeDasharray={link.kind === 'bridge' ? '3 1.3' : '1.8 2'}
-                            />
-                          );
-                        })}
-                      </svg>
-
-                      {topologyNodes.map((node) => {
-                        const selected = node.id === selectedTopologyNodeId;
-                        const bridgeSource = node.id === bridgeSourceNodeId;
-                        const bridgeCandidate = Boolean(bridgeSourceNodeId && bridgeSourceNodeId !== node.id);
-                        return (
-                          <div
-                            key={node.id}
-                            className="absolute"
-                            style={{
-                              left: `${node.x}%`,
-                              top: `${node.y}%`,
-                              transform: 'translate(-50%, -50%)',
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onPointerDown={(event) => handleNodePointerDown(event, node.id)}
-                              onPointerMove={(event) => handleNodePointerMove(event, node.id)}
-                              onPointerUp={(event) => handleNodePointerUp(event, node.id)}
-                              onPointerCancel={() => {
-                                dragRef.current = null;
-                              }}
-                              onContextMenu={(event) => handleNodeContextMenu(event, node.id)}
-                              className="min-w-[56px] px-2 py-1 rounded border text-[9px] font-semibold uppercase tracking-wide bg-zinc-900/90 text-zinc-200 cursor-grab active:cursor-grabbing focus:outline-none focus-visible:ring-1 focus-visible:ring-orange-400/70"
-                              style={{
-                                borderColor: bridgeSource
-                                  ? 'rgba(251,191,36,0.95)'
-                                  : selected
-                                    ? 'rgba(251,146,60,0.88)'
-                                    : bridgeCandidate
-                                      ? 'rgba(250,204,21,0.65)'
-                                      : 'rgba(82,82,91,0.82)',
-                              }}
-                            >
-                              <div className="truncate max-w-[90px]">{node.label}</div>
-                              <div className="mt-0.5 text-[8px] text-zinc-500">
-                                {node.unread > 0 ? `${node.unread} unread` : 'clear'}
-                              </div>
-                            </button>
-                          </div>
-                        );
-                      })}
-
-                      {bridgeSourceNodeId ? (
-                        <div className="absolute left-1.5 top-1.5 rounded border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-[9px] text-amber-200">
-                          Bridge target mode active
-                        </div>
-                      ) : null}
-                      {selectedTopologyNode ? (
-                        <div className="absolute right-1.5 top-1.5 rounded border border-zinc-700 bg-zinc-950/85 px-1.5 py-0.5 text-[9px] text-zinc-300 max-w-[150px] truncate">
-                          {selectedTopologyNode.label}
-                        </div>
-                      ) : null}
-
-                      <RadialMenu
-                        open={radialOpen}
-                        title={selectedTopologyNode ? `${selectedTopologyNode.label} Net` : 'Comms Net'}
-                        anchor={radialAnchor}
-                        items={radialItems}
-                        onClose={() => setRadialOpen(false)}
-                      />
-                    </div>
-
-                    <div className="rounded border border-zinc-800 bg-zinc-900/40 px-1.5 py-1.5">
-                      <div className="flex items-center justify-between gap-1.5 mb-1">
-                        <div className="text-[9px] uppercase tracking-wide text-zinc-500">Orders Feed</div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setOrderPage((prev) => Math.max(0, prev - 1))}
-                            disabled={orderPage === 0}
-                            className="px-1.5 py-0.5 rounded border border-zinc-700 text-[8px] text-zinc-500 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                          >
-                            Prev
-                          </button>
-                          <span className="text-[8px] text-zinc-500">{orderPage + 1}/{orderPageCount}</span>
-                          <button
-                            type="button"
-                            onClick={() => setOrderPage((prev) => Math.min(orderPageCount - 1, prev + 1))}
-                            disabled={orderPage >= orderPageCount - 1}
-                            className="px-1.5 py-0.5 rounded border border-zinc-700 text-[8px] text-zinc-500 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                          >
-                            Next
-                          </button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                        {pagedOrders.length > 0 ? (
-                          pagedOrders.map((entry) => (
-                            <div key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/55 px-1.5 py-1">
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="text-[8px] text-zinc-300 uppercase tracking-wide truncate">{entry.action}</span>
-                                <span className="text-[8px] text-emerald-300">{entry.status}</span>
-                              </div>
-                              <div className="mt-0.5 text-[8px] text-zinc-500 truncate">{entry.summary}</div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="sm:col-span-2 rounded border border-zinc-800 bg-zinc-950/55 px-1.5 py-1 text-[8px] text-zinc-500">
-                            No orders dispatched.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-1.5">
-                    {renderCategory('tactical', 'Tactical')}
-                    {renderCategory('operations', 'Operations')}
-                    {renderCategory('social', 'Social')}
-                    {renderCategory('direct', 'Direct')}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
-                  <span className="text-zinc-500 font-bold">Active Channels</span>
-                  <span className="text-zinc-600">{standardChannels.length}</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                  {standardVisibleChannels.map((channel) => (
-                    <ChannelButton
-                      key={channel.id}
-                      channel={channel}
-                      status={channelStatusById[channel.id]}
-                      isSelected={selectedChannel === channel.id}
-                      onClick={() => pickChannel(channel.id)}
-                    />
-                  ))}
-                  {standardVisibleChannels.length === 0 ? (
-                    <div className="px-2 py-1 text-[10px] text-zinc-600 border border-zinc-800 rounded">No channels</div>
-                  ) : null}
-                </div>
-                {standardChannelPageCount > 1 ? (
-                  <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
-                    <button
-                      type="button"
-                      onClick={() => setStandardChannelPage((prev) => Math.max(0, prev - 1))}
-                      disabled={standardChannelPage === 0}
-                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                    >
-                      Prev
-                    </button>
-                    <span>{standardChannelPage + 1}/{standardChannelPageCount}</span>
-                    <button
-                      type="button"
-                      onClick={() => setStandardChannelPage((prev) => Math.min(standardChannelPageCount - 1, prev + 1))}
-                      disabled={standardChannelPage >= standardChannelPageCount - 1}
-                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                    >
-                      Next
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )}
           </div>
 
           {selectedChannel ? (
@@ -1140,39 +531,34 @@ export default function CommsHub({
                     <Hash className="w-3.5 h-3.5 text-zinc-500" />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread} unread</NexusBadge> : null}
-                    {channelStatusById[selectedChannel]?.bridged ? <NexusBadge tone="active">Bridged</NexusBadge> : null}
-                    {channelStatusById[selectedChannel]?.restricted ? <NexusBadge tone="danger">Restricted</NexusBadge> : null}
-                    {selectedVoiceNetId ? <NexusBadge tone="neutral">{selectedVoiceNetId}</NexusBadge> : null}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread}</NexusBadge> : null}
                     {selectedVoiceNetId && onRouteVoiceNet ? (
                       <button
                         type="button"
                         onClick={() => onRouteVoiceNet(selectedChannel)}
                         className="h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors"
+                        title="Route voice to this channel"
                       >
                         Route Voice
                       </button>
                     ) : null}
-                    <button type="button" className="text-zinc-500 hover:text-orange-500 transition-colors" title="Channel notifications">
-                      <Bell className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 </div>
 
-                <div className="p-2 rounded border border-zinc-800 bg-zinc-900/45">
-                  <div className="flex items-center justify-between gap-2">
+                <div className="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
                     <div>
-                      <div className="text-[9px] uppercase tracking-wide text-zinc-500">Command Intent</div>
+                      <div className="text-[9px] uppercase tracking-wide text-zinc-500 mb-0.5">Channel Status</div>
                       <div className="text-[10px] font-semibold text-zinc-200">{commandIntent.label}</div>
                     </div>
-                    <NexusBadge tone={commandIntent.tone}>{isCommsFocus ? 'Focused' : 'Aux'}</NexusBadge>
+                    <NexusBadge tone={commandIntent.tone}>Live</NexusBadge>
                   </div>
-                  <p className="text-[9px] text-zinc-500 mt-1">{commandIntent.detail}</p>
+                  <p className="text-[9px] text-zinc-500 leading-snug">{commandIntent.detail}</p>
                   <button
                     type="button"
                     onClick={executeCommandIntent}
-                    className="mt-1.5 h-6 px-2 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors inline-flex items-center gap-1"
+                    className="mt-2 h-6 px-2.5 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors inline-flex items-center gap-1"
                   >
                     {commandIntent.actionLabel}
                     <ArrowRight className="w-3 h-3" />
@@ -1251,7 +637,7 @@ export default function CommsHub({
                 ) : (
                   pagedMessages.map((message) => {
                     const analysis = messageAnalyses[message.id];
-                    const showAnalysis = aiEnabled && (displayMode === 'command' || showAiFeatures) && analysis;
+                    const showAnalysis = aiEnabled && showAiFeatures && analysis;
                     return (
                       <div key={message.id} className="group px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-orange-500/30 transition-colors">
                         <div className="flex items-start justify-between gap-2">
@@ -1290,7 +676,7 @@ export default function CommsHub({
 
                             <div className="text-[10px] text-zinc-400">{message.text}</div>
 
-                            {aiEnabled && (displayMode === 'command' || showAiFeatures) && analysis?.requiresResponse ? (
+                            {aiEnabled && showAiFeatures && analysis?.requiresResponse ? (
                               <button
                                 type="button"
                                 onClick={() => handleGenerateSuggestions(message)}
@@ -1390,33 +776,5 @@ export default function CommsHub({
         </>
       )}
     </div>
-  );
-}
-
-function ChannelButton({ channel, status, isSelected, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left px-2 py-1.5 rounded transition-colors ${
-        isSelected ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300' : 'bg-zinc-900/40 border border-zinc-800 text-zinc-400 hover:bg-zinc-800/40'
-      }`}
-    >
-      <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0">
-          <channel.icon className="w-3 h-3 flex-shrink-0" />
-          <span className="text-[10px] font-bold uppercase tracking-wider truncate">{channel.name}</span>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {status?.bridged ? <span className="px-1 py-0.5 rounded border border-sky-500/40 text-[8px] text-sky-300 uppercase">BR</span> : null}
-          {status?.restricted ? <span className="px-1 py-0.5 rounded border border-red-500/40 text-[8px] text-red-300 uppercase">RS</span> : null}
-          {channel.unread > 0 ? (
-            <div className="flex-shrink-0 px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[9px] font-bold">
-              {channel.unread}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </button>
   );
 }
