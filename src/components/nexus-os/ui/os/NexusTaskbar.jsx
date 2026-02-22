@@ -156,14 +156,15 @@ export default function NexusTaskbar({
         ) : null}
       </div>
 
-      <div className="nx-taskbar-block nx-taskbar-actions">
+      {/* Actions & Controls */}
+      <div className="nx-taskbar-block nx-taskbar-actions px-3 py-2 border-l border-zinc-800/60 flex items-center gap-2">
         {activeAppId && activeAppState === 'foreground' ? (
           <NexusButton
             size="sm"
             intent="subtle"
             onClick={() => onSuspendApp(activeAppId)}
             title={`Suspend ${activeAppLabel}`}
-            className="hidden lg:inline-flex nx-taskbar-hold-btn"
+            className="hidden lg:inline-flex"
           >
             <PauseCircle className="w-3.5 h-3.5 mr-1" />
             Hold
@@ -173,15 +174,23 @@ export default function NexusTaskbar({
         <button
           type="button"
           onClick={() => setTrayOpen((prev) => !prev)}
-          className={`nx-taskbar-alert-btn ${trayOpen ? 'is-open' : ''}`}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border transition-all text-[10px] font-semibold uppercase tracking-wide ${
+            trayOpen
+              ? 'border-orange-500/60 bg-orange-500/10 text-orange-300'
+              : 'border-zinc-700/40 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-800/60 hover:border-orange-500/40'
+          }`}
           title="Alerts center"
         >
-          {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+          {unreadNotifications > 0 ? (
+            <BellRing className="w-3.5 h-3.5 animate-pulse text-orange-400" />
+          ) : (
+            <Bell className="w-3.5 h-3.5 text-zinc-400" />
+          )}
           <span className="hidden md:inline">Alerts</span>
-          <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
+          <strong className="text-[11px]">{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
         </button>
 
-        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 nx-taskbar-command-btn">
+        <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0">
           <AppWindow className="w-3.5 h-3.5 mr-1" />
           Deck
         </NexusButton>
