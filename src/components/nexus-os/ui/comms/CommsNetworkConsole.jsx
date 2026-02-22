@@ -501,7 +501,7 @@ export default function CommsNetworkConsole({
     return map;
   }, [voiceParticipants]);
   const explicitChannelMembersById = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map();
     for (const edge of edges) {
       if (edge.type !== 'membership') continue;
       if (!edge.sourceId.startsWith('user:') || !edge.targetId.startsWith('channel:')) continue;
