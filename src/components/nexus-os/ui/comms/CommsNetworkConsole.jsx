@@ -199,12 +199,12 @@ export default function CommsNetworkConsole({
   const [plannedNetPage, setPlannedNetPage] = useState(0);
   const [permanentNetPage, setPermanentNetPage] = useState(0);
   const [temporaryNetPage, setTemporaryNetPage] = useState(0);
-  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState([]);
   const [ordersPage, setOrdersPage] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
-  const [bridgeEdges, setBridgeEdges] = useState<TopologyBridgeEdge[]>([]);
-  const [schemaExpandedById, setSchemaExpandedById] = useState<Record<string, boolean>>({
+  const [bridgeEdges, setBridgeEdges] = useState([]);
+  const [schemaExpandedById, setSchemaExpandedById] = useState({
     'fleet:redscar': true,
     'wing:CE': true,
     'squad:CE:Command Cell': true,
