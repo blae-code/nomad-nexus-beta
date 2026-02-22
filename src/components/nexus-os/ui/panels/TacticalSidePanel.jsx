@@ -283,12 +283,12 @@ export default function TacticalSidePanel({
           </div>
 
           {statusMetrics.length > 0 ? (
-            <footer className="flex-shrink-0 border-t border-zinc-700/40 bg-zinc-900/40">
-              <div className="grid grid-cols-3 divide-x divide-zinc-700/40">
+            <footer className="flex-shrink-0 border-t border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm">
+              <div className="grid grid-cols-3 divide-x divide-zinc-800/60">
                 {statusMetrics.slice(0, 3).map((metric, index) => (
-                  <div key={`${metric.label}:${index}`} className="px-2 py-1.5 flex flex-col items-center">
-                    <span className="text-[8px] text-zinc-500 uppercase tracking-wider font-bold">{metric.label}</span>
-                    <span className="text-[10px] font-mono text-orange-400 font-bold">{metric.value}</span>
+                  <div key={`${metric.label}:${index}`} className="px-2 py-2 flex flex-col items-center">
+                    <span className="text-[8px] text-zinc-500 uppercase tracking-wider font-semibold">{metric.label}</span>
+                    <span className="text-[10px] font-mono text-orange-400 font-bold mt-0.5">{metric.value}</span>
                   </div>
                 ))}
               </div>
