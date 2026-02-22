@@ -1,31 +1,15 @@
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { NexusBadge, NexusButton } from '../primitives';
-import type { NexusAppLifecycleEntry } from './appLifecycle';
-import type { NexusTrayNotification } from './trayNotifications';
 
-interface NexusTaskbarProps {
-  activeAppId: string | null;
-  appEntries: Record<string, NexusAppLifecycleEntry>;
-  appCatalog: Array<{ id: string; label: string; hotkey?: string }>;
-  notifications: NexusTrayNotification[];
-  unreadNotifications: number;
-  onActivateApp: (appId: string) => void;
-  onSuspendApp: (appId: string) => void;
-  onOpenCommandDeck: () => void;
-  onMarkNotificationRead: (notificationId: string) => void;
-  onMarkAllNotificationsRead: () => void;
-  onClearNotifications: () => void;
-}
-
-function toneForNotificationLevel(level: NexusTrayNotification['level']) {
+function toneForNotificationLevel(level) {
   if (level === 'critical') return 'danger';
   if (level === 'warning') return 'warning';
   if (level === 'success') return 'ok';
   return 'active';
 }
 
-function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
+function dotForState(state) {
   if (state === 'foreground') return 'bg-emerald-400';
   if (state === 'background') return 'bg-sky-400';
   if (state === 'suspended') return 'bg-amber-400';
@@ -33,14 +17,14 @@ function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string 
   return 'bg-zinc-600';
 }
 
-function ageLabel(timestamp: string): string {
+function ageLabel(timestamp) {
   const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
   if (ageSeconds < 60) return `${ageSeconds}s`;
   if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m`;
   return `${Math.floor(ageSeconds / 3600)}h`;
 }
 
-function compactLabel(value: string, max = 10): string {
+function compactLabel(value, max = 10) {
   const clean = String(value || '').trim();
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}...`;
