@@ -806,7 +806,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">
             Command Deck
           </span>
-          <kbd className="bg-zinc-800/80 text-orange-300 ml-auto pt-1 pb-1 font-mono rounded hidden xl:inline-flex items-center gap-1 border border-orange-500/40">
+          <kbd className="bg-zinc-800/80 text-orange-300 ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded hidden xl:inline-flex items-center gap-0.5 border border-orange-500/40">
             Ctrl+Shift+P
           </kbd>
         </button>
