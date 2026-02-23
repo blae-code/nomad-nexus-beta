@@ -431,15 +431,7 @@ export default function VoiceCommsRail({
             </div>
           </div>
 
-          <div className="flex-shrink-0 px-2 py-1 flex items-center gap-1 border-b border-red-700/40 bg-black/40">
-            <button
-            type="button"
-            onClick={() => setSelectedTab('nets')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-            selectedTab === 'nets' ? 'text-red-400 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
-            }>
-              Nets
-            </button>
+          <div className="flex-shrink-0 px-2 py-1 flex items-center gap-1 border-b border-zinc-700/40 bg-zinc-900/30">
             <button
             type="button"
             onClick={() => setSelectedTab('roster')}
@@ -459,75 +451,6 @@ export default function VoiceCommsRail({
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-            {selectedTab === 'nets' &&
-          <>
-                <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30">
-                  <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Quick</div>
-                </div>
-                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1">
-                  {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) :
-                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">None</div>
-                  }
-                </div>
-
-                {quickPageCount > 1 &&
-                <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
-                    <button
-                type="button"
-                onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
-                disabled={quickPage === 0}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
-                      Prev
-                    </button>
-                    <span className="text-[8px]">{quickPage + 1}/{quickPageCount}</span>
-                    <button
-                type="button"
-                onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
-                disabled={quickPage >= quickPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
-                      Next
-                    </button>
-                  </div>
-            }
-
-                <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30 flex items-center justify-between">
-                  <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">All</div>
-                  <button
-                  type="button"
-                  onClick={() => setShowNetCreator(true)}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/40 hover:text-orange-300 transition-colors flex items-center gap-1"
-                  title="New net">
-                    <Plus className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-                <div className="px-2 py-1.5 space-y-1">
-                  {pagedNets.length > 0 ? pagedNets.map(renderQuickNetCard) :
-                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">None</div>
-                  }
-                </div>
-
-                {netsPageCount > 1 &&
-                <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
-                    <button
-                type="button"
-                onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
-                disabled={netsPage === 0}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
-                      Prev
-                    </button>
-                    <span className="text-[8px]">{netsPage + 1}/{netsPageCount}</span>
-                    <button
-                type="button"
-                onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
-                disabled={netsPage >= netsPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
-                      Next
-                    </button>
-                  </div>
-            }
-              </>
-          }
-
             {selectedTab === 'roster' &&
           <>
                 <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30">
