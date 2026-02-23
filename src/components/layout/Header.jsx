@@ -14,6 +14,7 @@ import { Radio, MessageSquare, Activity, Users, Settings, Command, PanelRightOpe
 import { Button } from '@/components/ui/button';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 import VerseClock from '@/components/header/VerseClock';
+import StatusSelector from '@/components/presence/StatusSelector';
 
 /**
  * Header — Control plane v1
@@ -117,6 +118,9 @@ export default function Header() {
 
         {/* Right: Critical System Status + Controls */}
         <div className="flex items-center gap-2 justify-end flex-shrink-0 min-w-max">
+          {/* Status Selector */}
+          <StatusSelector />
+
           {/* Verse Clock */}
           <VerseClock />
 
