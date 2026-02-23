@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronLeft,
-  ChevronRight,
   Mic,
   MicOff,
   Plus,
@@ -14,9 +13,16 @@ import { NexusBadge } from '../primitives';
 import TokenRenderer from '../tokens/TokenRenderer';
 import { tokenAssets } from '../tokens';
 import {
+  channelStatusTokenIcon,
   operatorStatusTone,
-  operatorStatusTokenIcon } from
+  operatorStatusTokenIcon,
+  roleTokenIcon,
+  squadTokenIcon,
+  vehicleStatusTone,
+  vehicleStatusTokenIcon,
+  wingTokenIcon } from
 './commsTokenSemantics';
+import { buildCompactChannelCards, buildSchemaTree } from './commsFleetSchemaRuntime';
 
 const PAGE_SIZE = 5;
 const QUICK_NET_PAGE_SIZE = 4;
@@ -68,11 +74,17 @@ function channelRowsFromVoiceNets(voiceNets) {
 }
 
 export default function VoiceCommsRail({
+  variantId,
+  opId,
   voiceNets = [],
   activeNetId,
   transmitNetId = '',
   monitoredNetIds = [],
   participants = [],
+  roster = [],
+  events = [],
+  graphChannels = [],
+  graphEdges = [],
   connectionState = 'IDLE',
   micEnabled = true,
   pttActive = false,
@@ -91,9 +103,12 @@ export default function VoiceCommsRail({
   focusMode = ''
 }) {
   const [selectedTab, setSelectedTab] = useState('nets');
+  const [fleetView, setFleetView] = useState('schema');
   const [quickPage, setQuickPage] = useState(0);
   const [netsPage, setNetsPage] = useState(0);
   const [rosterPage, setRosterPage] = useState(0);
+  const [fleetSchemaPage, setFleetSchemaPage] = useState(0);
+  const [fleetCardPage, setFleetCardPage] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [showNetCreator, setShowNetCreator] = useState(false);
 
@@ -127,6 +142,37 @@ export default function VoiceCommsRail({
   const quickPageCount = Math.max(1, Math.ceil(quickNets.length / quickPageSize));
   const netsPageCount = Math.max(1, Math.ceil(voiceNets.length / PAGE_SIZE));
   const rosterPageCount = Math.max(1, Math.ceil(participants.length / PAGE_SIZE));
+  const fleetChannels = useMemo(() => {
+    const graphRows = (Array.isArray(graphChannels) ? graphChannels : []).map(normalizeChannelRow).filter(Boolean);
+    return graphRows.length > 0 ? graphRows : channelRowsFromVoiceNets(voiceNets);
+  }, [graphChannels, voiceNets]);
+
+  const fleetSchemaRuntime = useMemo(
+    () =>
+    buildSchemaTree({
+      channels: fleetChannels,
+      edges: Array.isArray(graphEdges) ? graphEdges : [],
+      roster: Array.isArray(roster) ? roster : [],
+      voiceParticipants: Array.isArray(participants) ? participants : [],
+      schemaChannelPage: fleetSchemaPage
+    }),
+    [fleetChannels, graphEdges, roster, participants, fleetSchemaPage]
+  );
+
+  const schemaTree = fleetSchemaRuntime?.schemaTree || [];
+  const schemaChannelPageCount = Math.max(1, Number(fleetSchemaRuntime?.schemaChannelPageCount || 1));
+
+  const compactCardRuntime = useMemo(
+    () =>
+    buildCompactChannelCards({
+      schemaTree,
+      page: fleetCardPage
+    }),
+    [schemaTree, fleetCardPage]
+  );
+
+  const compactFleetCards = compactCardRuntime?.cards || [];
+  const compactFleetCardPageCount = Math.max(1, Number(compactCardRuntime?.pageCount || 1));
 
 
 
@@ -141,6 +187,18 @@ export default function VoiceCommsRail({
   useEffect(() => {
     setRosterPage((current) => Math.min(current, rosterPageCount - 1));
   }, [rosterPageCount]);
+
+  useEffect(() => {
+    setFleetSchemaPage((current) => Math.min(current, schemaChannelPageCount - 1));
+  }, [schemaChannelPageCount]);
+
+  useEffect(() => {
+    setFleetCardPage((current) => Math.min(current, compactFleetCardPageCount - 1));
+  }, [compactFleetCardPageCount]);
+
+  useEffect(() => {
+    setFleetCardPage(0);
+  }, [fleetSchemaPage]);
 
   useEffect(() => {
     if (!feedback) return undefined;
@@ -166,6 +224,15 @@ export default function VoiceCommsRail({
   const speakingParticipants = useMemo(
     () => participants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 3),
     [participants]
+  );
+
+  const fleetWings = useMemo(
+    () =>
+    schemaTree.filter((wing) => {
+      const squads = Array.isArray(wing?.squads) ? wing.squads : [];
+      return squads.some((squad) => Array.isArray(squad?.channels) && squad.channels.length > 0);
+    }),
+    [schemaTree]
   );
 
   const renderPTTButton = () =>
@@ -387,6 +454,14 @@ export default function VoiceCommsRail({
             }>
               Roster
             </button>
+            <button
+            type="button"
+            onClick={() => setSelectedTab('fleet')}
+            className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+            selectedTab === 'fleet' ? 'text-red-400 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+            }>
+              Fleet
+            </button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
@@ -506,6 +581,193 @@ export default function VoiceCommsRail({
                       Next
                     </button>
                   </div>
+                )}
+              </>
+            )}
+
+            {selectedTab === 'fleet' && (
+              <>
+                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-bold">REDSCAR Fleet</div>
+                    <NexusBadge tone="active">{String(variantId || 'live').toUpperCase()}</NexusBadge>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 text-[8px] text-zinc-500 uppercase tracking-wide">
+                    <span>OP {String(opId || 'N/A')}</span>
+                    <span>Events {Array.isArray(events) ? events.length : 0}</span>
+                    <NexusBadge tone={String(connectionState || '').toUpperCase() === 'CONNECTED' ? 'ok' : 'warning'}>
+                      {String(connectionState || 'IDLE').toUpperCase()}
+                    </NexusBadge>
+                  </div>
+                </div>
+
+                <div className="px-2 py-1 flex items-center justify-between gap-1 border-b border-red-700/40 bg-black/35">
+                  <div className="flex items-center gap-1">
+                    <button
+                    type="button"
+                    onClick={() => setFleetView('schema')}
+                    className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+                    fleetView === 'schema' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+                    }>
+                      Schema
+                    </button>
+                    <button
+                    type="button"
+                    onClick={() => setFleetView('cards')}
+                    className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+                    fleetView === 'cards' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+                    }>
+                      Cards
+                    </button>
+                  </div>
+                  <NexusBadge tone="neutral">{fleetChannels.length} lanes</NexusBadge>
+                </div>
+
+                {fleetView === 'schema' && (
+                  <>
+                    {schemaChannelPageCount > 1 && (
+                      <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                        <button
+                        type="button"
+                        onClick={() => setFleetSchemaPage((prev) => Math.max(0, prev - 1))}
+                        disabled={fleetSchemaPage === 0}
+                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                          Prev
+                        </button>
+                        <span className="text-[8px]">{fleetSchemaPage + 1}/{schemaChannelPageCount}</span>
+                        <button
+                        type="button"
+                        onClick={() => setFleetSchemaPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
+                        disabled={fleetSchemaPage >= schemaChannelPageCount - 1}
+                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                          Next
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="px-2 py-1.5 space-y-1.5">
+                      {fleetWings.length > 0 ?
+                      fleetWings.map((wing) =>
+                      <article key={wing.id} className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5">
+                            <div className="flex items-center gap-1.5 text-[10px] text-zinc-200 uppercase tracking-wide font-semibold">
+                              <img src={wingTokenIcon(wing.id, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                              <span className="truncate">{wing.label}</span>
+                            </div>
+                            <div className="mt-1 space-y-1">
+                              {(wing.squads || []).map((squad) =>
+                        <div key={squad.id} className="rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1">
+                                  <div className="flex items-center gap-1 text-[9px] uppercase tracking-wide text-zinc-400">
+                                    <img src={squadTokenIcon(squad.label, 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                    <span className="truncate">{squad.label}</span>
+                                  </div>
+                                  <div className="mt-1 space-y-1">
+                                    {(squad.channels || []).map((channel) => {
+                                  const vehicles = Array.isArray(channel.vehicles) ? channel.vehicles : [];
+                                  const leadVehicle = vehicles[0];
+                                  const leadOperator = Array.isArray(leadVehicle?.operators) ? leadVehicle.operators[0] : null;
+                                  return (
+                                    <div key={channel.id} className="rounded border border-zinc-800/80 bg-zinc-900/35 px-1.5 py-1">
+                                          <div className="flex items-center justify-between gap-1">
+                                            <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
+                                              <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                              <span className="truncate">{channel.label}</span>
+                                            </div>
+                                            <div className="inline-flex items-center gap-1 shrink-0">
+                                              <img src={channelStatusTokenIcon(channel.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                              <span className="text-[8px] text-zinc-500 uppercase tracking-wide">M {Number(channel.membershipCount || 0)}</span>
+                                            </div>
+                                          </div>
+                                          {leadVehicle ?
+                                      <div className="mt-1 flex items-center justify-between gap-1">
+                                              <div className="min-w-0 inline-flex items-center gap-1 text-[8px] text-zinc-400">
+                                                <img src={tokenAssets.comms.vehicle} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                                <span className="truncate">{leadVehicle.label}</span>
+                                              </div>
+                                              <div className="inline-flex items-center gap-1 shrink-0">
+                                                <img src={vehicleStatusTokenIcon(leadVehicle.basicStatus)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                                <NexusBadge tone={vehicleStatusTone(leadVehicle.basicStatus)}>{leadVehicle.basicStatus}</NexusBadge>
+                                              </div>
+                                            </div> :
+                                      null}
+                                          {leadOperator ?
+                                      <div className="mt-1 flex items-center justify-between gap-1 rounded border border-zinc-800/80 bg-zinc-900/35 px-1 py-0.5">
+                                              <div className="min-w-0 inline-flex items-center gap-1 text-[8px] text-zinc-300">
+                                                <img src={roleTokenIcon(leadOperator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                                <span className="truncate">{leadOperator.callsign}</span>
+                                              </div>
+                                              <div className="inline-flex items-center gap-1 shrink-0">
+                                                <img src={operatorStatusTokenIcon(leadOperator.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                                <NexusBadge tone={operatorStatusTone(leadOperator.status)}>{leadOperator.status}</NexusBadge>
+                                              </div>
+                                            </div> :
+                                      null}
+                                        </div>);
+
+                                })}
+                                  </div>
+                                </div>
+                        )}
+                            </div>
+                          </article>
+                      ) :
+                      <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No fleet schema channels available.</div>
+                      }
+                    </div>
+                  </>
+                )}
+
+                {fleetView === 'cards' && (
+                  <>
+                    {compactFleetCardPageCount > 1 && (
+                      <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                        <button
+                        type="button"
+                        onClick={() => setFleetCardPage((prev) => Math.max(0, prev - 1))}
+                        disabled={fleetCardPage === 0}
+                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                          Prev
+                        </button>
+                        <span className="text-[8px]">{fleetCardPage + 1}/{compactFleetCardPageCount}</span>
+                        <button
+                        type="button"
+                        onClick={() => setFleetCardPage((prev) => Math.min(compactFleetCardPageCount - 1, prev + 1))}
+                        disabled={fleetCardPage >= compactFleetCardPageCount - 1}
+                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                          Next
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="px-2 py-1.5 space-y-1">
+                      {compactFleetCards.length > 0 ?
+                      compactFleetCards.map((card) =>
+                      <article key={card.id} className="rounded border border-red-700/30 bg-zinc-950/70 px-2 py-1.5">
+                            <div className="flex items-center justify-between gap-1.5">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <img src={tokenAssets.comms.vehicle} alt="" className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                <div className="min-w-0">
+                                  <div className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.vehicleLabel}</div>
+                                  <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel} · {card.squadLabel}</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <img src={vehicleStatusTokenIcon(card.vehicleStatus)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                <NexusBadge tone={vehicleStatusTone(card.vehicleStatus)}>{card.vehicleStatus}</NexusBadge>
+                              </div>
+                            </div>
+                            <div className="mt-1 flex items-center justify-between gap-1.5">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                <span className="text-[9px] text-zinc-300 truncate">{card.channelLabel}</span>
+                              </div>
+                              <span className="text-[8px] text-zinc-500 uppercase tracking-wide shrink-0">Crew {card.crewCount}</span>
+                            </div>
+                          </article>
+                      ) :
+                      <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No compact fleet cards available.</div>
+                      }
+                    </div>
+                  </>
                 )}
               </>
             )}
