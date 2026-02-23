@@ -83,6 +83,7 @@ export default function VoiceCommsRail({
   monitoredNetIds = [],
   participants = [],
   roster = [],
+  registeredUsers = [],
   events = [],
   graphChannels = [],
   graphEdges = [],
@@ -101,6 +102,11 @@ export default function VoiceCommsRail({
   onStopPTT,
   onSetDisciplineMode,
   onRequestToSpeak,
+  onHailUser,
+  onInviteToVoice,
+  onSendMessage,
+  onViewProfile,
+  onCreateGroup,
   focusMode = ''
 }) {
   const [rosterExpanded, setRosterExpanded] = useState(true);
@@ -111,6 +117,8 @@ export default function VoiceCommsRail({
   const [fleetCardPage, setFleetCardPage] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [showNetCreator, setShowNetCreator] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
 
   const isCommsFocus = String(focusMode || '').toLowerCase() === 'comms';
   const quickPageSize = isCommsFocus ? 3 : QUICK_NET_PAGE_SIZE;
@@ -141,7 +149,17 @@ export default function VoiceCommsRail({
 
   const quickPageCount = Math.max(1, Math.ceil(quickNets.length / quickPageSize));
   const netsPageCount = Math.max(1, Math.ceil(voiceNets.length / PAGE_SIZE));
-  const rosterPageCount = Math.max(1, Math.ceil(participants.length / PAGE_SIZE));
+  const displayUsers = registeredUsers.length > 0 ? registeredUsers : participants;
+  const userMap = useMemo(() => {
+    const map = new Map();
+    participants.forEach((p) => {
+      const key = String(p.id || p.userId || p.callsign || '').trim();
+      if (key) map.set(key, p);
+    });
+    return map;
+  }, [participants]);
+
+  const rosterPageCount = Math.max(1, Math.ceil(displayUsers.length / PAGE_SIZE));
   const fleetChannels = useMemo(() => {
     const graphRows = (Array.isArray(graphChannels) ? graphChannels : []).map(normalizeChannelRow).filter(Boolean);
     return graphRows.length > 0 ? graphRows : channelRowsFromVoiceNets(voiceNets);
@@ -199,9 +217,23 @@ export default function VoiceCommsRail({
   }, [feedback]);
 
   const pagedParticipants = useMemo(
-    () => participants.slice(rosterPage * PAGE_SIZE, rosterPage * PAGE_SIZE + PAGE_SIZE),
-    [participants, rosterPage]
+    () => displayUsers.slice(rosterPage * PAGE_SIZE, rosterPage * PAGE_SIZE + PAGE_SIZE),
+    [displayUsers, rosterPage]
   );
+
+  const getRosterItemStatus = (user) => {
+    const activeParticipant = userMap.get(String(user.id || user.userId || user.email || '').trim());
+    if (!activeParticipant) return 'OFFLINE';
+    return participantStatusLabel(activeParticipant);
+  };
+
+  const handleRosterRightClick = (e, user) => {
+    e.preventDefault();
+    const userId = String(user.id || user.userId || user.email || '').trim();
+    setContextMenu({ x: e.clientX, y: e.clientY, userId, userName: user.full_name || user.name || user.email || 'User' });
+  };
+
+  const closeContextMenu = () => setContextMenu(null);
 
   const speakingParticipants = useMemo(
     () => participants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 3),
