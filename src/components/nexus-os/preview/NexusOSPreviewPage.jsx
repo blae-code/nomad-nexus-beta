@@ -813,6 +813,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-200">{workspaceDisplayCallsign}</span>
               <span className="text-[8px] text-zinc-600">•</span>
               <span className="text-[9px] uppercase tracking-wider text-zinc-300">{user?.member_profile_data?.rank || 'Vagrant'}</span>
+              <span className="text-[8px] text-zinc-600">•</span>
+              <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[8px] font-semibold">{online ? 'Ready' : 'Offline'}</NexusBadge>
             </div>
           </div>
 
