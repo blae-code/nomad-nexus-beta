@@ -26,24 +26,31 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
+  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
+  type DirectiveDeliveryState,
+  type DisciplineAlert,
+  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
+import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import RadialMenu from '../map/RadialMenu';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
 import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
 import {
   channelStatusTokenIcon,
@@ -59,6 +66,15 @@ import {
   squadTokenIcon,
 } from './commsTokenSemantics';
 
+interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
+interface TopologyBridgeEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  status: 'active' | 'degraded';
+  createdAtMs: number;
+}
+
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const ORDER_LIST_PAGE_SIZE = 5;
@@ -66,25 +82,25 @@ const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
 const NET_CONTROL_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS = {
+const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node) {
+function nodeFill(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node) {
+function nodeBorder(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function formatAge(nowMs, createdAtMs) {
+function formatAge(nowMs: number, createdAtMs: number): string {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -92,31 +108,31 @@ function formatAge(nowMs, createdAtMs) {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant) {
+function isParticipantSpeaking(participant: any): boolean {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity) {
+function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status) {
+function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function clampPct(value) {
+function clampPct(value: number): number {
   return Math.max(3, Math.min(97, value));
 }
 
 function extractChannelId(node) {
   if (!node) return '';
-  const explicit = String((node.meta as any)?.channelId || '').trim();
+  const explicit = String(node.meta?.channelId || '').trim();
   if (explicit) return explicit;
   if (node.id.startsWith('channel:')) return node.id.replace('channel:', '');
   return '';
@@ -174,7 +190,7 @@ export default function CommsNetworkConsole({
 }) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
-  const voiceNet = useVoiceNet() as any;
+  const voiceNet = useVoiceNet();
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -186,8 +202,10 @@ export default function CommsNetworkConsole({
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
+  const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [crewCardPage, setCrewCardPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
+  const [rightPanelView, setRightPanelView] = useState('cards');
   const [showTokenAtlas, setShowTokenAtlas] = useState(false);
   const [managedNets, setManagedNets] = useState([]);
   const [plannedManagedNets, setPlannedManagedNets] = useState([]);
@@ -202,6 +220,11 @@ export default function CommsNetworkConsole({
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
   const [bridgeEdges, setBridgeEdges] = useState([]);
+  const [schemaExpandedById, setSchemaExpandedById] = useState({
+    'fleet:redscar': true,
+    'wing:CE': true,
+    'squad:CE:Command Cell': true,
+  });
   const [nodePositionOverrides, setNodePositionOverrides] = useState({});
   const [radialOpen, setRadialOpen] = useState(false);
   const [radialAnchor, setRadialAnchor] = useState({ x: 50, y: 50 });
@@ -223,7 +246,7 @@ export default function CommsNetworkConsole({
         roster,
       });
       setSnapshot(next);
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.message || 'Failed to load comms graph.');
     } finally {
       setLoading(false);
@@ -256,7 +279,7 @@ export default function CommsNetworkConsole({
       if (response?.error && !response?.success) {
         setNetControlError(String(response.error));
       }
-    } catch (err: any) {
+    } catch (err) {
       setNetControlError(err?.message || 'Failed to load managed voice nets.');
     } finally {
       setNetControlLoading(false);
@@ -269,7 +292,7 @@ export default function CommsNetworkConsole({
 
   useEffect(() => {
     if (!bridgeDraftSourceId) return undefined;
-    const onKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       setBridgeDraftSourceId('');
@@ -451,7 +474,7 @@ export default function CommsNetworkConsole({
   const voicePageCount = Math.max(1, Math.ceil(voiceNets.length / VOICE_LIST_PAGE_SIZE));
   const visibleVoiceNets = voiceNets.slice(voicePage * VOICE_LIST_PAGE_SIZE, voicePage * VOICE_LIST_PAGE_SIZE + VOICE_LIST_PAGE_SIZE);
   const monitoredVoiceSet = useMemo(
-    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id: unknown) => String(id || ''))),
+    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id) => String(id || ''))),
     [voiceNet.monitoredNetIds]
   );
   const voiceParticipants = useMemo(
@@ -459,7 +482,7 @@ export default function CommsNetworkConsole({
     [voiceNet.participants]
   );
   const activeSpeakers = useMemo(
-    () => voiceParticipants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
+    () => voiceParticipants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 4),
     [voiceParticipants]
   );
   const disciplineAlerts = useMemo(
@@ -530,6 +553,15 @@ export default function CommsNetworkConsole({
     }
     return map;
   }, [channels, roster]);
+  const schemaChannelPageCount = Math.max(1, Math.ceil(channels.length / SCHEMA_CHANNEL_PAGE_SIZE));
+  const visibleSchemaChannels = useMemo(
+    () =>
+      channels.slice(
+        schemaChannelPage * SCHEMA_CHANNEL_PAGE_SIZE,
+        schemaChannelPage * SCHEMA_CHANNEL_PAGE_SIZE + SCHEMA_CHANNEL_PAGE_SIZE
+      ),
+    [channels, schemaChannelPage]
+  );
   const schemaTree = useMemo(() => {
     const wings = [
       { id: 'CE', label: wingLabelByElement('CE') },
@@ -538,7 +570,7 @@ export default function CommsNetworkConsole({
     ];
     return wings.map((wing) => {
       const squadByLabel = new Map();
-      for (const channel of channels) {
+      for (const channel of visibleSchemaChannels) {
         const channelId = channel.id;
         const explicitIds = explicitChannelMembersById.get(channelId) || [];
         const fallbackIds = fallbackChannelMembersById.get(channelId) || [];
@@ -584,8 +616,8 @@ export default function CommsNetworkConsole({
         }
 
         const vehicles = [...vehiclesById.values()].map((vehicle) => {
-          const txCount = vehicle.operators.filter((entry: any) => entry.status === 'TX').length;
-          const mutedCount = vehicle.operators.filter((entry: any) => entry.status === 'MUTED').length;
+          const txCount = vehicle.operators.filter((entry) => entry.status === 'TX').length;
+          const mutedCount = vehicle.operators.filter((entry) => entry.status === 'MUTED').length;
           const channelState = channelHealthById[channelId];
           const basicStatus =
             channelState?.discipline === 'SATURATED'
@@ -620,7 +652,7 @@ export default function CommsNetworkConsole({
       };
     });
   }, [
-    channels,
+    visibleSchemaChannels,
     explicitChannelMembersById,
     fallbackChannelMembersById,
     roster,
@@ -820,7 +852,9 @@ export default function CommsNetworkConsole({
     setVoicePage((prev) => Math.min(prev, voicePageCount - 1));
   }, [voicePageCount]);
 
-
+  useEffect(() => {
+    setSchemaChannelPage((prev) => Math.min(prev, schemaChannelPageCount - 1));
+  }, [schemaChannelPageCount]);
 
   useEffect(() => {
     setCrewCardPage((prev) => Math.min(prev, crewCardPageCount - 1));
@@ -1046,7 +1080,7 @@ export default function CommsNetworkConsole({
         });
         await Promise.all([loadManagedNets(), loadGraph()]);
         emitVoiceGovernanceOrder('VOICE_NET_CREATE', result?.net || { code, lifecycle_scope: scope }, `${code} created`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Failed to create voice net.');
       }
     },
@@ -1060,7 +1094,7 @@ export default function CommsNetworkConsole({
         await closeManagedVoiceNet(net.id, 'comms_focus_close');
         await Promise.all([loadManagedNets(), loadGraph()]);
         emitVoiceGovernanceOrder('VOICE_NET_CLOSE', net, `${net.code || net.label} closed`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Failed to close voice net.');
       }
     },
@@ -1075,7 +1109,7 @@ export default function CommsNetworkConsole({
         await updateManagedVoiceNet(net.id, { discipline: nextDiscipline });
         await loadManagedNets();
         emitVoiceGovernanceOrder('VOICE_NET_EDIT', net, `${net.code || net.label} set ${nextDiscipline}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Failed to update voice net discipline.');
       }
     },
@@ -1093,7 +1127,7 @@ export default function CommsNetworkConsole({
         await transferManagedVoiceNetOwner(net.id, targetOwnerId.trim());
         await loadManagedNets();
         emitVoiceGovernanceOrder('VOICE_NET_TRANSFER_OWNER', net, `${net.code || net.label} owner updated`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Failed to transfer voice net owner.');
       }
     },
@@ -1172,7 +1206,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(monitorOnly ? `Monitoring ${netId}` : `Joined ${netId}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Voice join failed.');
       }
     },
@@ -1193,7 +1227,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(`TX lane set: ${netId}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Unable to set transmit net.');
       }
     },
@@ -1205,7 +1239,7 @@ export default function CommsNetworkConsole({
       try {
         await voiceNet.leaveNet?.(netId);
         setFeedback(`Left ${netId}`);
-      } catch (err: any) {
+      } catch (err) {
         setFeedback(err?.message || 'Unable to leave net.');
       }
     },
@@ -1400,7 +1434,23 @@ export default function CommsNetworkConsole({
     return items;
   }, [selectedNode, bridgeDraftSourceId, dispatchDirective, cancelBridgeDraft]);
 
+  const isSchemaExpanded = useCallback(
+    (id, fallback = false) => {
+      if (Object.prototype.hasOwnProperty.call(schemaExpandedById, id)) return Boolean(schemaExpandedById[id]);
+      return fallback;
+    },
+    [schemaExpandedById]
+  );
 
+  const toggleSchemaExpanded = useCallback((id, fallback = false) => {
+    setSchemaExpandedById((prev) => {
+      const current = Object.prototype.hasOwnProperty.call(prev, id) ? Boolean(prev[id]) : fallback;
+      return {
+        ...prev,
+        [id]: !current,
+      };
+    });
+  }, []);
 
   const tokenAtlasEntriesByFamily = useMemo(() => {
     const grouped = new Map();
@@ -1691,34 +1741,65 @@ export default function CommsNetworkConsole({
 
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" />
-              <span className="text-[11px] text-zinc-300 uppercase tracking-wide">Crew Cards</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <NexusButton
-                size="sm"
-                intent="subtle"
-                onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
-                disabled={crewCardPage === 0}
-              >
-                Prev
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <NexusButton size="sm" intent={rightPanelView === 'cards' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('cards')}>
+                <Users className="w-3.5 h-3.5 mr-1" />
+                Crew Cards
               </NexusButton>
-              <NexusBadge tone="neutral">
-                {crewCardPage + 1}/{crewCardPageCount}
-              </NexusBadge>
-              <NexusButton
-                size="sm"
-                intent="subtle"
-                onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
-                disabled={crewCardPage >= crewCardPageCount - 1}
-              >
-                Next
+              <NexusButton size="sm" intent={rightPanelView === 'schema' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('schema')}>
+                <ClipboardList className="w-3.5 h-3.5 mr-1" />
+                Fleet Schema
               </NexusButton>
             </div>
+            {rightPanelView === 'cards' ? (
+              <div className="flex items-center gap-1.5">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
+                  disabled={crewCardPage === 0}
+                >
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {crewCardPage + 1}/{crewCardPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
+                  disabled={crewCardPage >= crewCardPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))}
+                  disabled={schemaChannelPage === 0}
+                >
+                  Prev
+                </NexusButton>
+                <NexusBadge tone="neutral">
+                  {schemaChannelPage + 1}/{schemaChannelPageCount}
+                </NexusBadge>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
+                  disabled={schemaChannelPage >= schemaChannelPageCount - 1}
+                >
+                  Next
+                </NexusButton>
+              </div>
+            )}
           </div>
 
-          <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+          {rightPanelView === 'cards' ? (
+            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
               <div className="grid grid-cols-1 2xl:grid-cols-2 gap-1.5">
                 {visibleCrewCards.map((card) => (
                   <article key={card.id} className="rounded border border-zinc-800 bg-zinc-950/70 px-2 py-1.5">
@@ -1778,7 +1859,168 @@ export default function CommsNetworkConsole({
                     No crew cards available for this channel page.
                   </div>
                 ) : null}
-          </div>
+              </div>
+            </div>
+          ) : rightPanelView === 'schema' ? (
+            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
+              <button
+                type="button"
+                className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"
+                onClick={() => toggleSchemaExpanded('fleet:redscar', true)}
+              >
+                {isSchemaExpanded('fleet:redscar', true) ? <ChevronDown className="w-3 h-3 text-zinc-400" /> : <ChevronRight className="w-3 h-3 text-zinc-400" />}
+                <img src={tokenAssets.map.node.comms} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                <span className="text-[10px] text-zinc-200 uppercase tracking-wide">REDSCAR Fleet</span>
+                <NexusBadge tone="neutral" className="ml-auto">
+                  Wing {schemaTree.filter((wing) => wing.squads.length > 0).length}
+                </NexusBadge>
+              </button>
+
+              {isSchemaExpanded('fleet:redscar', true) ? (
+                <div className="space-y-1">
+                  {schemaTree.map((wing) => {
+                    if (!wing.squads.length) return null;
+                    const wingKey = `wing:${wing.id}`;
+                    return (
+                      <div key={wing.id} className="pl-2">
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1"
+                          onClick={() => toggleSchemaExpanded(wingKey, wing.id === 'CE')}
+                        >
+                          {isSchemaExpanded(wingKey, wing.id === 'CE') ? (
+                            <ChevronDown className="w-3 h-3 text-zinc-400" />
+                          ) : (
+                            <ChevronRight className="w-3 h-3 text-zinc-400" />
+                          )}
+                          <img src={wingTokenIcon(wing.id)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                          <span className="text-[10px] text-zinc-200 uppercase tracking-wide">{wing.label}</span>
+                          <NexusBadge tone="neutral" className="ml-auto">
+                            Squad {wing.squads.length}
+                          </NexusBadge>
+                        </button>
+
+                        {isSchemaExpanded(wingKey, wing.id === 'CE') ? (
+                          <div className="space-y-1 pl-2">
+                            {wing.squads.map((squad) => {
+                              const squadKey = `squad:${squad.id}`;
+                              return (
+                                <div key={squad.id}>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/25 px-2 py-1"
+                                    onClick={() => toggleSchemaExpanded(squadKey, squad.label === 'Command Cell')}
+                                  >
+                                    {isSchemaExpanded(squadKey, squad.label === 'Command Cell') ? (
+                                      <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                    ) : (
+                                      <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                    )}
+                                    <img src={squadTokenIcon(squad.label)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                    <span className="text-[10px] text-zinc-300 uppercase tracking-wide">{squad.label}</span>
+                                    <span className="ml-auto text-[9px] text-zinc-500">Channel {squad.channels.length}</span>
+                                  </button>
+
+                                  {isSchemaExpanded(squadKey, squad.label === 'Command Cell') ? (
+                                    <div className="space-y-1 pl-2">
+                                      {squad.channels.map((channel, channelIndex) => {
+                                        const channelKey = `channel:${wing.id}:${channel.id}`;
+                                        const defaultChannelExpanded = channelIndex === 0;
+                                        return (
+                                          <div key={channel.id}>
+                                            <button
+                                              type="button"
+                                              className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1"
+                                              onClick={() => toggleSchemaExpanded(channelKey, defaultChannelExpanded)}
+                                            >
+                                              {isSchemaExpanded(channelKey, defaultChannelExpanded) ? (
+                                                <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                              ) : (
+                                                <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                              )}
+                                              <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                              <span className="text-[10px] text-zinc-200 truncate">{channel.label}</span>
+                                              <NexusBadge tone={bridgedChannelIds.has(channel.id) ? 'active' : 'neutral'} className="ml-auto">
+                                                {bridgedChannelIds.has(channel.id) ? 'BRIDGED' : 'LINK'}
+                                              </NexusBadge>
+                                            </button>
+                                            <div className="pl-4 text-[9px] text-zinc-500 flex items-center gap-1.5">
+                                              <img src={channelStatusTokenIcon(channel.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                              <span className="truncate">{channel.status}</span>
+                                            </div>
+
+                                            {isSchemaExpanded(channelKey, defaultChannelExpanded) ? (
+                                              <div className="space-y-1 pl-3 pt-0.5">
+                                                {channel.vehicles.length > 0 ? (
+                                                  channel.vehicles.map((vehicle, vehicleIndex) => {
+                                                    const vehicleKey = `vehicle:${channel.id}:${vehicle.id}`;
+                                                    const defaultVehicleExpanded = vehicleIndex === 0;
+                                                    return (
+                                                      <div key={vehicle.id}>
+                                                        <button
+                                                          type="button"
+                                                          className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1"
+                                                          onClick={() => toggleSchemaExpanded(vehicleKey, defaultVehicleExpanded)}
+                                                        >
+                                                          {isSchemaExpanded(vehicleKey, defaultVehicleExpanded) ? (
+                                                            <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                                          ) : (
+                                                            <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                                          )}
+                                                          <img src={tokenAssets.comms.vehicle} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                                          <span className="text-[10px] text-zinc-300">{vehicle.label}</span>
+                                                          <img src={vehicleStatusTokenIcon(vehicle.basicStatus)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 ml-auto" />
+                                                          <NexusBadge tone={vehicleStatusTone(vehicle.basicStatus)}>
+                                                            {vehicle.basicStatus}
+                                                          </NexusBadge>
+                                                        </button>
+
+                                                        {isSchemaExpanded(vehicleKey, defaultVehicleExpanded) ? (
+                                                          <div className="space-y-0.5 pl-4">
+                                                            {vehicle.operators.map((operator) => (
+                                                              <div key={operator.id} className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-950/45 px-2 py-0.5">
+                                                                <div className="min-w-0 flex items-center gap-1.5">
+                                                                  <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 shrink-0" />
+                                                                  <div className="min-w-0">
+                                                                    <div className="text-[9px] text-zinc-200 truncate">{operator.callsign}</div>
+                                                                    <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{operator.role}</div>
+                                                                  </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                  <img src={operatorStatusTokenIcon(operator.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                                                  <NexusBadge tone={operatorStatusTone(operator.status)}>{operator.status}</NexusBadge>
+                                                                </div>
+                                                              </div>
+                                                            ))}
+                                                          </div>
+                                                        ) : null}
+                                                      </div>
+                                                    );
+                                                  })
+                                                ) : (
+                                                  <div className="rounded border border-zinc-800 bg-zinc-950/45 px-2 py-1 text-[9px] text-zinc-500">
+                                                    No vehicle crews scoped to this channel page.
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
             <div className="flex items-center justify-between gap-2">
