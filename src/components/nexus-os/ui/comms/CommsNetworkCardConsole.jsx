@@ -842,10 +842,10 @@ export default function CommsNetworkCardConsole({
 
           <div className="flex items-center justify-between gap-2">
             <div className="text-[11px] text-zinc-300 uppercase tracking-wide">Squad Cards</div>
-            <div className="flex items-center gap-1.5">
-              <NexusButton size="sm" intent="subtle" onClick={() => setSquadCardPage((prev) => Math.max(0, prev - 1))} disabled={squadCardPage === 0}>Prev</NexusButton>
-              <NexusBadge tone="neutral">{squadCardPage + 1}/{squadCardPageCount}</NexusBadge>
-              <NexusButton size="sm" intent="subtle" onClick={() => setSquadCardPage((prev) => Math.min(squadCardPageCount - 1, prev + 1))} disabled={squadCardPage >= squadCardPageCount - 1}>Next</NexusButton>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => setSquadCardPage((prev) => Math.max(0, prev - 1))} disabled={squadCardPage === 0} className="h-5 px-1.5 rounded border text-[8px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 disabled:hover:border-zinc-700/40 disabled:hover:bg-zinc-900/40 disabled:hover:text-zinc-500">Prev</button>
+              <span className="px-2 h-5 flex items-center text-[8px] text-zinc-500 font-bold">{squadCardPage + 1}/{squadCardPageCount}</span>
+              <button type="button" onClick={() => setSquadCardPage((prev) => Math.min(squadCardPageCount - 1, prev + 1))} disabled={squadCardPage >= squadCardPageCount - 1} className="h-5 px-1.5 rounded border text-[8px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 disabled:hover:border-zinc-700/40 disabled:hover:bg-zinc-900/40 disabled:hover:text-zinc-500">Next</button>
             </div>
           </div>
 
