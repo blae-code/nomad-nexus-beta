@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '@/components/providers/NotificationContext';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { X, AlertTriangle, CheckCircle, Info, AlertCircle, Settings, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
 import NotificationFilters from './NotificationFilters';
 import QuietHoursManager from './QuietHoursManager';
+import NotificationPanel from './NotificationPanel';
 
 /**
  * NotificationCenter — Renders stacked notifications in top-right corner
@@ -11,8 +14,39 @@ import QuietHoursManager from './QuietHoursManager';
  */
 export default function NotificationCenter() {
   const { notifications, removeNotification, getGroupedNotifications, isInQuietHours } = useNotification();
+  const { user } = useAuth();
   const [showControls, setShowControls] = useState(false);
   const grouped = getGroupedNotifications();
+
+  // Persist critical notifications to database
+  useEffect(() => {
+    const persistNotifications = async () => {
+      if (!user?.id) return;
+      try {
+        const criticalNotifs = notifications.filter((n) => n.priority === 'critical' || n.type === 'alert');
+        for (const notif of criticalNotifs) {
+          // Check if already persisted
+          const existing = await base44.entities.Notification.filter(
+            { user_id: user.id, title: notif.title, type: notif.type },
+            '-created_date',
+            1
+          );
+          if (!existing?.length) {
+            await base44.entities.Notification.create({
+              user_id: user.id,
+              type: notif.type,
+              title: notif.title,
+              message: notif.message,
+              is_read: false,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('[Notifications] Failed to persist:', e?.message);
+      }
+    };
+    persistNotifications();
+  }, [notifications, user?.id]);
 
   const getIcon = (type) => {
     switch (type) {
@@ -56,17 +90,20 @@ export default function NotificationCenter() {
       aria-live="polite"
       aria-atomic="false"
     >
-      {/* Controls */}
+      {/* Controls Panel */}
       <div
         className={cn(
-          'transition-all duration-200',
-          showControls ? 'pointer-events-auto' : 'pointer-events-none opacity-0'
+          'transition-all duration-200 pointer-events-auto',
+          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
       >
         {showControls && (
-          <div className="flex gap-2 bg-zinc-900/95 border border-zinc-700 rounded-lg p-2 backdrop-blur-sm">
-            <NotificationFilters />
-            <QuietHoursManager />
+          <div className="bg-zinc-900/95 border border-zinc-700 rounded-lg backdrop-blur-sm max-h-96 overflow-y-auto">
+            <NotificationPanel />
+            <div className="border-t border-zinc-700 p-2 space-y-1.5">
+              <NotificationFilters />
+              <QuietHoursManager />
+            </div>
           </div>
         )}
       </div>
