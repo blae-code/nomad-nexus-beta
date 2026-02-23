@@ -195,10 +195,10 @@ function buildSquadCards(schemaTree, edges) {
     const sourceSquadId = squadByChannelId.get(sourceChannelId);
     const targetSquadId = squadByChannelId.get(targetChannelId);
     if (!sourceSquadId || !targetSquadId || sourceSquadId === targetSquadId) continue;
-    const sourceSet = linkedBySquadId.get(sourceSquadId) || new Set<string>();
+    const sourceSet = linkedBySquadId.get(sourceSquadId) || new Set();
     sourceSet.add(targetSquadId);
     linkedBySquadId.set(sourceSquadId, sourceSet);
-    const targetSet = linkedBySquadId.get(targetSquadId) || new Set<string>();
+    const targetSet = linkedBySquadId.get(targetSquadId) || new Set();
     targetSet.add(sourceSquadId);
     linkedBySquadId.set(targetSquadId, targetSet);
   }
