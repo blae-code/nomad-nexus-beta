@@ -26,24 +26,31 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
+  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
+  type DirectiveDeliveryState,
+  type DisciplineAlert,
+  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
+import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import RadialMenu from '../map/RadialMenu';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
 import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
 import {
   channelStatusTokenIcon,
@@ -58,15 +65,6 @@ import {
   wingTokenIcon,
   squadTokenIcon,
 } from './commsTokenSemantics';
-
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
-interface TopologyBridgeEdge {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  status: 'active' | 'degraded';
-  createdAtMs: number;
-}
 
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
@@ -747,7 +745,7 @@ export default function CommsNetworkConsole({
   const plannedOperationNets = useMemo(() => {
     const managedPlanned = activeManagedNets.filter((entry) => String(entry?.status || '').toLowerCase() === 'planned');
     const combined = [...managedPlanned, ...plannedManagedNets];
-    const byId = new Map();
+    const byId = new Map<string, any>();
     for (const net of combined) {
       const id = String(net?.id || `${net?.event_id || 'event'}:${net?.code || net?.label || Math.random()}`);
       if (!byId.has(id)) byId.set(id, net);
