@@ -441,9 +441,10 @@ export default function VoiceCommsRail({
                <Radio className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
                <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">Controls</h3>
              </div>
-            <div className="px-2 py-1.5 bg-black/40">
-              {renderGlobalControlCluster()}
-            </div>
+          </div>
+
+          <div className="flex-shrink-0 px-2.5 py-2 bg-zinc-950/60 border-b border-zinc-700/40">
+            {renderGlobalControlCluster()}
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
