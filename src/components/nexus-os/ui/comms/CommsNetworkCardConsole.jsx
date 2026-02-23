@@ -44,9 +44,6 @@ import {
   buildSquadSlaSnapshots,
   normalizeBridgeTtlSec,
   sortSquadCardsDeterministic,
-  type BridgeLifecycleSession,
-  type EscalationSuggestion,
-  type SlaStatusColor,
 } from './commsCardConsoleRuntime';
 
 interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
