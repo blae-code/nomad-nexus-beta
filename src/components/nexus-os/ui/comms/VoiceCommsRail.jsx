@@ -281,8 +281,8 @@ export default function VoiceCommsRail({
         <button
         type="button"
         onClick={() => onRequestToSpeak?.()}
-        className="h-6 text-[9px] px-2 rounded border border-red-700/30 text-zinc-400 hover:border-orange-500/40 hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-1"
-        title="Request transmit privilege">
+        className="h-6 text-[9px] px-2 rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors flex items-center justify-center gap-1"
+        title="Request">
 
           <Signal className="w-3 h-3" />
         </button>
@@ -378,7 +378,7 @@ export default function VoiceCommsRail({
   };
 
   return (
-    <div className={`${isExpanded ? 'w-80' : 'w-12'} bg-black/98 border-l-2 border-red-700/50 flex flex-col overflow-hidden z-[900] relative transition-all duration-200 h-full min-h-0`}>
+    <div className={`${isExpanded ? 'w-80' : 'w-12'} bg-black/98 border-l border-zinc-700/40 flex flex-col overflow-hidden z-[900] relative transition-all duration-200 h-full min-h-0`}>
       {/* Header */}
       
 
@@ -422,10 +422,10 @@ export default function VoiceCommsRail({
 
       {isExpanded &&
       <>
-          <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
-            <div className="px-3 py-2 border-b border-zinc-700/40">
-              <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Controls</div>
-            </div>
+          <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40 nexus-top-rail">
+             <div className="px-3 py-2 border-b border-zinc-700/40">
+               <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Controls</div>
+             </div>
             <div className="px-2 py-1.5 bg-black/40">
               {renderGlobalControlCluster()}
             </div>
@@ -770,16 +770,15 @@ export default function VoiceCommsRail({
           }
 
             {feedback &&
-          <div className="px-2 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-[9px] text-red-300 inline-flex items-center gap-1">
-                <Radio className="w-3 h-3" />
+            <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/30 text-[8px] text-orange-400">
                 {feedback}
               </div>
-          }
+            }
           </div>
 
           {showNetCreator &&
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
-              <div className="w-full max-w-md bg-zinc-950 border border-red-700/40 rounded-lg p-4 m-4 shadow-2xl shadow-red-500/10">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+              <div className="w-full max-w-md bg-zinc-950 border border-zinc-700/40 rounded-lg p-4 m-4 shadow-2xl">
                 <VoiceNetCreator
               onSuccess={() => {
                 setShowNetCreator(false);

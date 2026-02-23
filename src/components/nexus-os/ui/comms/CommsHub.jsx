@@ -731,50 +731,38 @@ export default function CommsHub({
                                type="button"
                                onClick={() => setChatViewMode(chatViewMode === 'network' ? 'messages' : 'network')}
                                  className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${chatViewMode === 'network' ? 'text-orange-500' : ''}`}
-                               title={chatViewMode === 'network' ? 'View messages' : 'View network'}
+                               title={chatViewMode === 'network' ? 'Messages' : 'Network'}
                              >
                                <Network className="w-3.5 h-3.5" />
-                             </button>
-                             <button
-                               type="button"
-                               onClick={() => setShowAiFeatures((prev) => !prev)}
-                                 className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-500' : ''}`}
-                               title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
-                             >
-                               <Sparkles className="w-3.5 h-3.5" />
                              </button>
                       <button
                         type="button"
                         onClick={() => setChatPanelOpen(false)}
                           className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
-                        title="Close chat"
+                        title="Close"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
-                <div className="p-2.5 rounded-lg border border-zinc-700/40 bg-zinc-950/60">
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div>
-                      <div className="text-[9px] uppercase tracking-wide text-zinc-500 mb-0.5">Channel Status</div>
-                      <div className="text-[10px] font-semibold text-zinc-200">{commandIntent.label}</div>
-                    </div>
+                <div className="p-2 rounded border border-zinc-700/40 bg-zinc-900/40">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-zinc-300">{commandIntent.label}</div>
                     <NexusBadge tone={commandIntent.tone}>Live</NexusBadge>
                   </div>
-                  <p className="text-[9px] text-zinc-500 leading-snug">{commandIntent.detail}</p>
                   <button
                     type="button"
                     onClick={executeCommandIntent}
-                    className="mt-2 h-6 px-2.5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 transition-colors inline-flex items-center gap-1"
+                    className="w-full h-6 px-2 rounded border border-zinc-700/40 bg-zinc-900/40 text-[8px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider"
                   >
                     {commandIntent.actionLabel}
-                    <ArrowRight className="w-3 h-3" />
+                    <ArrowRight className="w-2.5 h-2.5" />
                   </button>
                 </div>
 
                 {chatViewMode === 'network' ? (
-                  <div className="flex-1 min-h-0 p-2">
+                  <div className="flex-1 min-h-0 p-2 overflow-hidden">
                     <CommsNetworkViz 
                       channels={channels} 
                       selectedChannel={selectedChannel}
@@ -782,61 +770,22 @@ export default function CommsHub({
                       unreadByChannel={unreadByChannel}
                     />
                   </div>
-                ) : showAiFeatures ? (
-                   <div className="space-y-2">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Assistant search (natural language)..."
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' && event.currentTarget.value.trim()) {
-                            handleAiSearch(event.currentTarget.value);
-                          }
-                        }}
-                        className="w-full bg-zinc-950/60 border border-zinc-700/40 rounded pl-7 pr-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-600/40 focus:ring-1 focus:ring-zinc-600/20"
-                        />
-                        <Sparkles className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-500" />
-                      {aiSearchActive ? (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                          <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {aiSearchResults ? (
-                      <div className="p-2 rounded border border-orange-500/30 bg-orange-500/5">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[9px] text-orange-400 font-semibold uppercase">Assistant Results</span>
-                          <button type="button" onClick={() => setAiSearchResults(null)} className="text-zinc-500 hover:text-zinc-300">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <p className="text-[9px] text-zinc-400 mb-1">{aiSearchResults.summary}</p>
-                        {(aiSearchResults.results || []).slice(0, 3).map((result) => (
-                          <div key={result.messageId} className="text-[9px] text-zinc-300 p-1 rounded hover:bg-zinc-800/50 mt-1">
-                            <span className="text-orange-400">{Math.round(result.relevanceScore * 100)}%</span>
-                            <span className="text-zinc-500 ml-1">{result.reasoning}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
                 ) : null}
-              </div>
+                </div>
 
-              <div className="flex-1 min-h-0 p-2 space-y-1 overflow-hidden">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-[9px] uppercase tracking-wide text-zinc-500">Feed Filter</div>
-                  <div className="flex items-center gap-1">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <div className="flex-shrink-0 flex items-center justify-between gap-1 px-2 py-1 border-b border-zinc-700/40 bg-zinc-900/30">
+                  <div className="text-[8px] uppercase tracking-wider text-zinc-500 font-bold">Filter</div>
+                  <div className="flex items-center gap-0.5">
                     {MESSAGE_FILTERS.map((filterId) => (
                       <button
                         key={filterId}
                         type="button"
                         onClick={() => setMessageFilter(filterId)}
-                        className={`h-5 px-1.5 rounded text-[8px] font-bold uppercase tracking-wide border transition-colors ${
+                        className={`h-5 px-1.5 rounded text-[7px] font-bold uppercase tracking-wider border transition-colors ${
                           messageFilter === filterId
                             ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
-                            : 'border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600/40'
+                            : 'border-zinc-700/40 bg-zinc-900/40 text-zinc-500'
                         }`}
                       >
                         {filterId}
@@ -844,6 +793,8 @@ export default function CommsHub({
                     ))}
                   </div>
                 </div>
+
+                <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
 
                 {pagedMessages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2 px-4 text-center">
@@ -879,62 +830,30 @@ export default function CommsHub({
 
                             <div className="text-[10px] text-zinc-400 leading-relaxed">{message.text}</div>
 
-                            <div className="mt-1.5 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {threadCount === 0 ? (
                               <button
                                 type="button"
                                 onClick={() => createThread(message)}
-                                className="text-[9px] text-orange-400 hover:text-orange-300 flex items-center gap-1"
-                                title="Start thread"
+                                className="mt-1 text-[8px] text-zinc-600 hover:text-orange-400 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Reply"
                               >
-                                <CornerDownRight className="w-3 h-3" />
-                                Reply in thread
+                                <CornerDownRight className="w-2.5 h-2.5" />
+                                Thread
                               </button>
-                              {aiEnabled && showAiFeatures && analysis?.requiresResponse ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleGenerateSuggestions(message)}
-                                  className="text-[9px] text-orange-400 hover:text-orange-300 flex items-center gap-1"
-                                >
-                                  <Sparkles className="w-3 h-3" />
-                                  Suggest
-                                </button>
-                              ) : null}
-                            </div>
+                            ) : null}
 
                             {threadCount > 0 ? (
                               <button
                                 type="button"
                                 onClick={() => setActiveThread(threadId)}
-                                className="mt-1.5 flex items-center gap-1.5 px-2 py-1 rounded bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/15 transition-colors"
+                                className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/15 transition-colors"
                               >
-                                <MessageSquare className="w-3 h-3 text-orange-400" />
-                                <span className="text-[9px] text-orange-300 font-semibold">{threadCount} {threadCount === 1 ? 'reply' : 'replies'}</span>
-                                <ChevronRight className="w-3 h-3 text-orange-400" />
+                                <CornerDownRight className="w-2.5 h-2.5 text-orange-400" />
+                                <span className="text-[8px] text-orange-300 font-bold uppercase">{threadCount}</span>
                               </button>
                             ) : null}
 
-                            {selectedMessageForResponse === message.id && responseSuggestions.length > 0 ? (
-                              <div className="mt-2 space-y-1">
-                                {responseSuggestions.map((suggestion, index) => (
-                                  <button
-                                    key={`${message.id}:suggestion:${index}`}
-                                    type="button"
-                                    onClick={() => {
-                                      setMessageInput(suggestion.text);
-                                      setResponseSuggestions([]);
-                                      setSelectedMessageForResponse(null);
-                                    }}
-                                    className="w-full text-left p-2 rounded border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700/50 text-[10px] text-zinc-300 transition-colors"
-                                    >
-                                    <div className="flex items-center justify-between mb-0.5">
-                                      <span className="text-red-400 font-semibold text-[9px] uppercase">{suggestion.tone}</span>
-                                      <Sparkles className="w-2.5 h-2.5 text-red-400" />
-                                    </div>
-                                    <p>{suggestion.text}</p>
-                                  </button>
-                                ))}
-                              </div>
-                            ) : null}
+
                           </div>
                           <button type="button" className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-orange-500 transition-all" title="Archive message preview">
                             <Trash2 className="w-3 h-3" />
@@ -942,9 +861,10 @@ export default function CommsHub({
                         </div>
                       </div>
                     );
-                  })
-                )}
-              </div>
+                    })
+                    )}
+                    </div>
+                    </div>
 
               {messagePageCount > 1 ? (
                 <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/40 flex items-center justify-end gap-2 text-[9px] text-zinc-500">

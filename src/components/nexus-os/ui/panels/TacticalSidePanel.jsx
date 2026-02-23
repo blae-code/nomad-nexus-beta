@@ -59,12 +59,12 @@ export default function TacticalSidePanel({
     >
       {!collapsed ? (
         <>
-           <header className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40 backdrop-blur-sm px-2.5 py-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 flex items-center gap-1.5">
-                {Icon ? <Icon className="w-3.5 h-3.5 text-orange-500" /> : null}
-                <div className="min-w-0">
-                  <div className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-50 truncate">{title}</div>
+           <header className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40 backdrop-blur-sm px-2.5 py-2 nexus-top-rail">
+             <div className="flex items-center justify-between gap-2">
+               <div className="min-w-0 flex items-center gap-1.5">
+                 {Icon ? <Icon className="w-3.5 h-3.5 text-orange-500" /> : null}
+                 <div className="min-w-0">
+                   <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white truncate">{title}</div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <div className="flex items-center gap-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${headerStatusClass.dot}`} />
