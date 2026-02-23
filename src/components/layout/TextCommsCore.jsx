@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, X, ChevronLeft, Send, Hash, Users, Lock, Globe, AtSign, Pin } from 'lucide-react';
+import { MessageSquare, X, ChevronLeft, Send, Hash, Users, Lock, Globe, AtSign, Pin, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { base44 } from '@/api/base44Client';
 import { useUnreadCounts } from '@/components/hooks/useUnreadCounts';
+import { isRankSufficient } from '@/components/constants/ranks';
 
 /**
  * TextCommsCore — Right sidebar for text-based communications
@@ -22,6 +23,9 @@ export default function TextCommsCore({ isOpen, onClose, isMinimized, onMinimize
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
+
+  // Permission check: only Pioneer (tier 4) and System Admin can manage categories
+  const canManageCategories = authUser?.is_admin || isRankSufficient(user?.rank, 'PIONEER');
 
   const activeChannel = channels.find(c => c.id === activeChannelId);
 
@@ -134,8 +138,19 @@ export default function TextCommsCore({ isOpen, onClose, isMinimized, onMinimize
         <>
           {/* Channels List */}
           <div className="flex-shrink-0 border-b border-red-700/40 bg-black/40">
-            <div className="px-3 py-2 border-b border-red-700/40">
+            <div className="px-3 py-2 border-b border-red-700/40 flex items-center justify-between">
               <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Channels</div>
+              {canManageCategories && (
+                <button
+                  title="Add channel category"
+                  className="p-0.5 text-zinc-600 hover:text-red-400 transition-colors"
+                  onClick={() => {
+                    // Category management can be added here
+                  }}
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              )}
             </div>
             <div className="max-h-40 overflow-y-auto">
               {channels.map(channel => {
@@ -146,26 +161,54 @@ export default function TextCommsCore({ isOpen, onClose, isMinimized, onMinimize
                                    channel.category === 'public' ? Globe : Hash;
                 
                 return (
-                  <button
-                    key={channel.id}
-                    onClick={() => setActiveChannelId(channel.id)}
-                    className={`w-full px-3 py-2 flex items-center gap-2 text-left transition-all ${
-                      isActive 
-                        ? 'bg-red-950/40 border-l-2 border-red-500' 
-                        : 'hover:bg-red-950/20 border-l-2 border-transparent'
-                    }`}
-                  >
-                    <ChannelIcon className={`w-3 h-3 flex-shrink-0 ${isActive ? 'text-red-500' : 'text-zinc-600'}`} />
-                    <span className={`text-[10px] font-bold truncate ${isActive ? 'text-zinc-200' : 'text-zinc-500'}`}>
-                      {channel.name}
-                    </span>
-                    {unread > 0 && (
-                      <span className="ml-auto px-1.5 py-0.5 bg-red-600 text-white text-[8px] font-bold rounded-full">
-                        {unread}
-                      </span>
-                    )}
-                  </button>
-                );
+                   <div
+                     key={channel.id}
+                     className={`group w-full px-3 py-2 flex items-center gap-2 text-left transition-all ${
+                       isActive 
+                         ? 'bg-red-950/40 border-l-2 border-red-500' 
+                         : 'hover:bg-red-950/20 border-l-2 border-transparent'
+                     }`}
+                   >
+                     <button
+                       onClick={() => setActiveChannelId(channel.id)}
+                       className="flex-1 flex items-center gap-2"
+                     >
+                       <ChannelIcon className={`w-3 h-3 flex-shrink-0 ${isActive ? 'text-red-500' : 'text-zinc-600'}`} />
+                       <span className={`text-[10px] font-bold truncate ${isActive ? 'text-zinc-200' : 'text-zinc-500'}`}>
+                         {channel.name}
+                       </span>
+                     </button>
+                     {unread > 0 && (
+                       <span className="px-1.5 py-0.5 bg-red-600 text-white text-[8px] font-bold rounded-full flex-shrink-0">
+                         {unread}
+                       </span>
+                     )}
+                     {canManageCategories && (
+                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 flex-shrink-0">
+                         <button
+                           title="Edit channel"
+                           className="p-0.5 text-zinc-600 hover:text-orange-400 transition-colors"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             // Edit functionality can be added
+                           }}
+                         >
+                           <Edit2 className="w-2.5 h-2.5" />
+                         </button>
+                         <button
+                           title="Delete channel"
+                           className="p-0.5 text-zinc-600 hover:text-red-400 transition-colors"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             // Delete functionality can be added
+                           }}
+                         >
+                           <Trash2 className="w-2.5 h-2.5" />
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                 );
               })}
             </div>
           </div>
