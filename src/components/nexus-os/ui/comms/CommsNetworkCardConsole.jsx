@@ -185,7 +185,7 @@ function buildSquadCards(schemaTree, edges) {
     }
   }
 
-  const linkedBySquadId = new Map<string, Set<string>>();
+  const linkedBySquadId = new Map();
   for (const edge of edges || []) {
     const sourceId = String(edge?.sourceId || '');
     const targetId = String(edge?.targetId || '');
