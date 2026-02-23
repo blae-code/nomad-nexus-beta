@@ -104,7 +104,7 @@ function slaTone(status) {
   return 'ok';
 }
 
-function slaTokenIcon(status: SlaStatusColor): string {
+function slaTokenIcon(status) {
   if (status === 'red') return tokenAssets.comms.operatorStatus.offNet;
   if (status === 'amber') return tokenAssets.comms.operatorStatus.tx;
   return tokenAssets.comms.operatorStatus.onNet;
