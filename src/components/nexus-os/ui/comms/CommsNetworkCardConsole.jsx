@@ -110,7 +110,7 @@ function slaTokenIcon(status) {
   return tokenAssets.comms.operatorStatus.onNet;
 }
 
-function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
+function buildSquadCards(schemaTree, edges) {
   const cards: SquadCard[] = [];
   const squadByChannelId = new Map<string, string>();
 
