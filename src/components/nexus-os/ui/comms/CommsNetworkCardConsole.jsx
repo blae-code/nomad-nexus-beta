@@ -711,21 +711,21 @@ export default function CommsNetworkCardConsole({
           <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Cards</h3>
           
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <NexusButton size="sm" intent="subtle" onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))} disabled={schemaChannelPage === 0}>Lane Prev</NexusButton>
-          <NexusBadge tone="neutral">{schemaChannelPage + 1}/{schemaChannelPageCount}</NexusBadge>
-          <NexusButton size="sm" intent="subtle" onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))} disabled={schemaChannelPage >= schemaChannelPageCount - 1}>Lane Next</NexusButton>
-          <NexusButton
-            size="sm"
-            intent="subtle"
-            onClick={() => {
-              setNowMs(Date.now());
-              void loadGraph(false);
-            }}>
+        
 
-            <RefreshCcw className="w-3.5 h-3.5 mr-1" />Refresh
-          </NexusButton>
-        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
       </div>
 
       
