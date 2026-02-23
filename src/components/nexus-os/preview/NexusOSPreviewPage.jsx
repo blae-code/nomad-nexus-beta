@@ -877,6 +877,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           isResizing={isResizingLeft}
           title="Text Comms"
           icon={Radio}
+          className="rounded-lg"
           statusMetrics={sidePanelRuntime.leftPanelMetrics}
           metricHistory={sidePanelRuntime.metricHistory}
           logEntries={sidePanelRuntime.panelLogEntries}
@@ -906,7 +907,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         </TacticalSidePanel>
 
-        <main className="flex-1 overflow-hidden flex flex-col px-3 py-3">
+        <main className="flex-1 overflow-hidden flex flex-col px-2 py-2">
           {commandFeedback &&
           <section aria-live="polite" className="nx-inline-feedback nexus-console-text mb-2">
               {commandFeedback}
@@ -931,6 +932,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           isResizing={isResizingRight}
           title="Voice Comms"
           icon={Signal}
+          className="rounded-lg"
           statusMetrics={sidePanelRuntime.rightPanelMetrics}
           metricHistory={sidePanelRuntime.metricHistory}
           logEntries={sidePanelRuntime.panelLogEntries}
