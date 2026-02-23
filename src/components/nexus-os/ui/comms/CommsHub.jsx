@@ -497,7 +497,7 @@ export default function CommsHub({
         <button
            type="button"
            onClick={() => toggleCategory(category)}
-           className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[9px] font-bold text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 rounded transition-colors uppercase tracking-wider"
+           className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[9px] font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 rounded transition-colors uppercase tracking-wider"
          >
            <div className="flex items-center gap-1.5">
              <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
