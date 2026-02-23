@@ -197,6 +197,28 @@ export default function SquadCard({
                   className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
                 />
               </button>
+
+              {/* Vehicle Status Bar - Collapsed View */}
+              {!isExpanded && (
+                <div className="border-t border-zinc-800/40 px-1 py-0.5 flex flex-wrap gap-0.5 text-[7px]">
+                  <NexusBadge tone={getSecurityTone(vehicle.security_status)}>
+                    {String(vehicle.security_status || 'SAFE').substring(0, 3).toUpperCase()}
+                  </NexusBadge>
+                  {ammoBadge && (
+                    <NexusBadge tone={ammoBadge.tone}>{ammoBadge.label}</NexusBadge>
+                  )}
+                  {vehicle.hydrogen_fuel !== undefined && (
+                    <NexusBadge tone={getFuelTone(vehicle.hydrogen_fuel)}>H2 {vehicle.hydrogen_fuel}%</NexusBadge>
+                  )}
+                  {vehicle.quantanium_fuel !== undefined && (
+                    <NexusBadge tone={getFuelTone(vehicle.quantanium_fuel)}>QT {vehicle.quantanium_fuel}%</NexusBadge>
+                  )}
+                  <NexusBadge tone={crewStatus.status === 'ready' ? 'ok' : 'warning'}>
+                    {crewStatus.current}/{crewStatus.recommended}
+                  </NexusBadge>
+                </div>
+              )}
+
               {isExpanded && (
                 <div className="border-t border-zinc-800/40 px-1 py-1 space-y-0.5">
                   {crewForVehicle.length > 0 ? (
