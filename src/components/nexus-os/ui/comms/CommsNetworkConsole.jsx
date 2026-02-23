@@ -643,7 +643,7 @@ export default function CommsNetworkConsole({
       };
     });
   }, [
-    visibleSchemaChannels,
+    channels,
     explicitChannelMembersById,
     fallbackChannelMembersById,
     roster,
