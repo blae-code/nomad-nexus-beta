@@ -184,16 +184,20 @@ export default function SquadCard({
 
       {/* Ships: Collapsible Categories */}
       <div className="mt-1 space-y-1">
-        {card.vehicles.map((vehicle) => {
-            const isExpanded = expandedVehicleId === vehicle.id;
+        {buildVehicleTree().map((vehicle) => {
+          const renderVehicleNode = (vehicle, depth = 0) => {
+            const isExpanded = expandedVehicleIds.has(vehicle.id);
             const crewForVehicle = card.operators.filter((op) =>
               vehicle.label.toLowerCase().includes(op.callsign.split('-')[0].toLowerCase()) ||
               card.operators.length <= 5
             ).slice(0, 5);
             const crewStatus = getCrewReadiness(vehicle, crewForVehicle.length);
             const ammoBadge = getAmmoBadge(vehicle.ammo_percent);
+            const paddingLeft = depth * 12;
+
             return (
-            <div key={vehicle.id} className="rounded border border-zinc-800/60 bg-zinc-900/25">
+              <div key={vehicle.id} className="space-y-1">
+                <div className="rounded border border-zinc-800/60 bg-zinc-900/25" style={{ marginLeft: `${paddingLeft}px` }}>
               <button
                 type="button"
                 onClick={(e) => toggleVehicle(e, vehicle.id)}
