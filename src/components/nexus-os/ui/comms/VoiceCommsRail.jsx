@@ -448,156 +448,156 @@ export default function VoiceCommsRail({
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-            {/* Fleet Section */}
-            <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
-              <button
-              type="button"
-              onClick={() => setFleetExpanded(!fleetExpanded)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail">
+            {/* Roster Section */}
+              <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
+                <button
+                type="button"
+                onClick={() => setRosterExpanded(!rosterExpanded)}
+                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail">
 
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${fleetExpanded ? 'rotate-180' : ''}`} />
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Fleet</h3>
-                </div>
-                
-              </button>
-            </div>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${rosterExpanded ? 'rotate-180' : ''}`} />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Roster</h3>
+                  </div>
+                </button>
+              </div>
 
-            {rosterExpanded &&
-          <>
-                 <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/30">
-                   <div className="flex items-center justify-between gap-2">
-                     <span className="text-[9px] font-semibold text-zinc-200 inline-flex items-center gap-1">
-                       <TokenRenderer family="square" color="cyan" size="xs" />
-                       You
-                     </span>
-                     <select
-                     onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
-                     defaultValue="ON-NET"
-                     className="h-6 px-2 text-[9px] rounded border border-orange-500/40 bg-zinc-900/80 text-white font-semibold uppercase cursor-pointer hover:border-orange-500/60 hover:bg-zinc-900 transition-colors focus:outline-none focus:ring-1 focus:ring-orange-500/50">
+              {rosterExpanded &&
+            <>
+                   <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/30">
+                     <div className="flex items-center justify-between gap-2">
+                       <span className="text-[9px] font-semibold text-zinc-200 inline-flex items-center gap-1">
+                         <TokenRenderer family="square" color="cyan" size="xs" />
+                         You
+                       </span>
+                       <select
+                       onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
+                       defaultValue="ON-NET"
+                       className="h-6 px-2 text-[9px] rounded border border-orange-500/40 bg-zinc-900/80 text-white font-semibold uppercase cursor-pointer hover:border-orange-500/60 hover:bg-zinc-900 transition-colors focus:outline-none focus:ring-1 focus:ring-orange-500/50">
 
-                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="READY">Ready</option>
-                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="ON-NET">On Net</option>
-                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="ENGAGED">Engaged</option>
-                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="MUTED">Muted</option>
-                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="OFFLINE">Offline</option>
-                     </select>
+                         <option style={{background: '#18181b', color: '#f5f5f5'}} value="READY">Ready</option>
+                         <option style={{background: '#18181b', color: '#f5f5f5'}} value="ON-NET">On Net</option>
+                         <option style={{background: '#18181b', color: '#f5f5f5'}} value="ENGAGED">Engaged</option>
+                         <option style={{background: '#18181b', color: '#f5f5f5'}} value="MUTED">Muted</option>
+                         <option style={{background: '#18181b', color: '#f5f5f5'}} value="OFFLINE">Offline</option>
+                       </select>
+                     </div>
                    </div>
-                 </div>
 
-                 <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1" onClick={closeContextMenu}>
-                   {pagedParticipants.map((user) => {
-                const userId = String(user.id || user.userId || user.email || '').trim();
-                const isSelected = selectedUsers.has(userId);
-                const status = getRosterItemStatus(user);
-                const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
-                return (
-                  <div
-                    key={userId}
-                    onContextMenu={(e) => handleRosterRightClick(e, user)}
-                    onClick={(e) => {
-                      if (e.ctrlKey || e.metaKey) {
-                        const newSet = new Set(selectedUsers);
-                        isSelected ? newSet.delete(userId) : newSet.add(userId);
-                        setSelectedUsers(newSet);
-                      } else {
-                        setSelectedUsers(new Set([userId]));
-                      }
-                    }}
-                    className={`px-2 py-1 rounded border cursor-pointer transition-colors ${
-                    isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'}`
-                    }>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[9px] font-semibold text-zinc-200 truncate inline-flex items-center gap-1">
-                            <TokenRenderer family="square" color={status === 'OFFLINE' ? 'grey' : 'cyan'} size="xs" />
-                            {user.full_name || user.name || user.email}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <TokenRenderer family="circle" color={statusColor} size="xs" animated={status === 'TX'} />
-                            <NexusBadge tone={status === 'OFFLINE' ? 'neutral' : operatorStatusTone(status)}>{status}</NexusBadge>
-                          </span>
-                        </div>
-                      </div>);
+                   <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1" onClick={closeContextMenu}>
+                     {pagedParticipants.map((user) => {
+                  const userId = String(user.id || user.userId || user.email || '').trim();
+                  const isSelected = selectedUsers.has(userId);
+                  const status = getRosterItemStatus(user);
+                  const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
+                  return (
+                    <div
+                      key={userId}
+                      onContextMenu={(e) => handleRosterRightClick(e, user)}
+                      onClick={(e) => {
+                        if (e.ctrlKey || e.metaKey) {
+                          const newSet = new Set(selectedUsers);
+                          isSelected ? newSet.delete(userId) : newSet.add(userId);
+                          setSelectedUsers(newSet);
+                        } else {
+                          setSelectedUsers(new Set([userId]));
+                        }
+                      }}
+                      className={`px-2 py-1 rounded border cursor-pointer transition-colors ${
+                      isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'}`
+                      }>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[9px] font-semibold text-zinc-200 truncate inline-flex items-center gap-1">
+                              <TokenRenderer family="square" color={status === 'OFFLINE' ? 'grey' : 'cyan'} size="xs" />
+                              {user.full_name || user.name || user.email}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <TokenRenderer family="circle" color={statusColor} size="xs" animated={status === 'TX'} />
+                              <NexusBadge tone={status === 'OFFLINE' ? 'neutral' : operatorStatusTone(status)}>{status}</NexusBadge>
+                            </span>
+                          </div>
+                        </div>);
 
-              })}
+                })}
 
-                  {pagedParticipants.length === 0 &&
-              <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-400">No users registered</div>
-              }
-                </div>
+                    {pagedParticipants.length === 0 &&
+                <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-400">No users registered</div>
+                }
+                  </div>
 
-                {contextMenu &&
-            <div
-              className="fixed z-[1000] bg-zinc-900 border border-zinc-700/60 rounded shadow-lg py-1"
-              style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}>
-                  <button
-                type="button"
-                onClick={() => {onHailUser?.(contextMenu.userId);closeContextMenu();}}
-                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
-                    Hail
-                  </button>
-                  <button
-                type="button"
-                onClick={() => {onInviteToVoice?.(contextMenu.userId);closeContextMenu();}}
-                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
-                    Invite to Channel
-                  </button>
-                  <button
-                type="button"
-                onClick={() => {onSendMessage?.(contextMenu.userId);closeContextMenu();}}
-                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
-                    Send Message
-                  </button>
-                  <button
-                type="button"
-                onClick={() => {onViewProfile?.(contextMenu.userId);closeContextMenu();}}
-                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
-                    View Profile
-                  </button>
-                  <div className="border-t border-zinc-700/40 my-1" />
-                  <button
-                type="button"
-                onClick={() => {onCreateGroup?.(Array.from(selectedUsers));closeContextMenu();}}
-                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-green-500/20 hover:text-green-300 transition-colors">
-                    Create Squad ({selectedUsers.size})
-                  </button>
-                </div>
-            }
-                {rosterPageCount > 1 &&
-            <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
+                  {contextMenu &&
+              <div
+                className="fixed z-[1000] bg-zinc-900 border border-zinc-700/60 rounded shadow-lg py-1"
+                style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}>
                     <button
-                type="button"
-                onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
-                disabled={rosterPage === 0}
-                className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
-                      Prev
+                  type="button"
+                  onClick={() => {onHailUser?.(contextMenu.userId);closeContextMenu();}}
+                  className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                      Hail
                     </button>
-                    <span>{rosterPage + 1}/{rosterPageCount}</span>
                     <button
-                type="button"
-                onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
-                disabled={rosterPage >= rosterPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
-                      Next
+                  type="button"
+                  onClick={() => {onInviteToVoice?.(contextMenu.userId);closeContextMenu();}}
+                  className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                      Invite to Channel
+                    </button>
+                    <button
+                  type="button"
+                  onClick={() => {onSendMessage?.(contextMenu.userId);closeContextMenu();}}
+                  className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                      Send Message
+                    </button>
+                    <button
+                  type="button"
+                  onClick={() => {onViewProfile?.(contextMenu.userId);closeContextMenu();}}
+                  className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                      View Profile
+                    </button>
+                    <div className="border-t border-zinc-700/40 my-1" />
+                    <button
+                  type="button"
+                  onClick={() => {onCreateGroup?.(Array.from(selectedUsers));closeContextMenu();}}
+                  className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-green-500/20 hover:text-green-300 transition-colors">
+                      Create Squad ({selectedUsers.size})
                     </button>
                   </div>
+              }
+                  {rosterPageCount > 1 &&
+              <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
+                      <button
+                  type="button"
+                  onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
+                  disabled={rosterPage === 0}
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
+                        Prev
+                      </button>
+                      <span>{rosterPage + 1}/{rosterPageCount}</span>
+                      <button
+                  type="button"
+                  onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
+                  disabled={rosterPage >= rosterPageCount - 1}
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
+                        Next
+                      </button>
+                    </div>
+              }
+                </>
             }
-              </>
-          }
 
-            {/* Roster Section */}
-            <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
-              <button
-              type="button"
-              onClick={() => setRosterExpanded(!rosterExpanded)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail">
+              {/* Fleet Section */}
+              <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
+                <button
+                type="button"
+                onClick={() => setFleetExpanded(!fleetExpanded)}
+                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail">
 
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${rosterExpanded ? 'rotate-180' : ''}`} />
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Roster</h3>
-                </div>
-              </button>
-            </div>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${fleetExpanded ? 'rotate-180' : ''}`} />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Fleet</h3>
+                  </div>
+
+                </button>
+              </div>
 
             {fleetExpanded &&
           <>
