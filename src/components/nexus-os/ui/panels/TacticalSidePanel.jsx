@@ -54,7 +54,7 @@ export default function TacticalSidePanel({
 
   return (
     <aside
-      className={`bg-zinc-950/80 ${borderSideClass} border-zinc-700/40 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
+      className={`bg-zinc-950/80 ${borderSideClass} border-zinc-700/40 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col rounded-lg ${className}`}
       style={{ width: collapsed ? 52 : width }}
     >
       {!collapsed ? (
