@@ -26,31 +26,24 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
-import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
-  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
-  type DirectiveDeliveryState,
-  type DisciplineAlert,
-  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
-import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
-import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
+import RadialMenu from '../map/RadialMenu';
 import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
 import {
   channelStatusTokenIcon,
@@ -66,15 +59,6 @@ import {
   squadTokenIcon,
 } from './commsTokenSemantics';
 
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
-interface TopologyBridgeEdge {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  status: 'active' | 'degraded';
-  createdAtMs: number;
-}
-
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const ORDER_LIST_PAGE_SIZE = 5;
@@ -82,25 +66,25 @@ const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
 const NET_CONTROL_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
+const INCIDENT_EVENT_BY_STATUS = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node: CommsGraphNode): string {
+function nodeFill(node) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node: CommsGraphNode): string {
+function nodeBorder(node) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -108,25 +92,25 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant: any): boolean {
+function isParticipantSpeaking(participant) {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
+function disciplineAlertTone(severity) {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
+function deliveryTone(status) {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function clampPct(value: number): number {
+function clampPct(value) {
   return Math.max(3, Math.min(97, value));
 }
 
@@ -364,7 +348,7 @@ export default function CommsNetworkConsole({
         id: edge.id,
         sourceId: edge.sourceId,
         targetId: edge.targetId,
-        type: 'monitoring' as const,
+        type: 'monitoring',
         intensity: edge.status === 'degraded' ? 0.52 : 0.9,
         dashed: edge.status === 'degraded',
       })),
@@ -797,27 +781,27 @@ export default function CommsNetworkConsole({
         return {
           label: 'Acknowledge Incident',
           detail: 'Confirm ownership before dispatching reroutes.',
-          action: 'ACK' as const,
+          action: 'ACK',
         };
       }
       if (selectedIncident.status === 'ACKED') {
         return {
           label: 'Assign Resolution Element',
           detail: 'Lock responsible team and begin mitigation.',
-          action: 'ASSIGN' as const,
+          action: 'ASSIGN',
         };
       }
       if (selectedIncident.status === 'ASSIGNED') {
         return {
           label: 'Issue Reroute Directive',
           detail: 'Reduce traffic pressure while recovery executes.',
-          action: 'REROUTE' as const,
+          action: 'REROUTE',
         };
       }
       return {
         label: 'Incident Resolved',
         detail: 'Run check-in broadcast to confirm net stability.',
-        action: 'CHECKIN' as const,
+        action: 'CHECKIN',
       };
     }
 
@@ -825,7 +809,7 @@ export default function CommsNetworkConsole({
       return {
         label: 'Prioritize Critical Queue',
         detail: 'Select a critical incident and acknowledge immediately.',
-        action: 'FOCUS_CRITICAL' as const,
+        action: 'FOCUS_CRITICAL',
       };
     }
 
@@ -833,7 +817,7 @@ export default function CommsNetworkConsole({
       return {
         label: 'Stabilize Degraded Lanes',
         detail: 'Issue restriction directive to protect command traffic.',
-        action: 'RESTRICT' as const,
+        action: 'RESTRICT',
       };
     }
 
