@@ -23,6 +23,7 @@ import {
   wingTokenIcon } from
 './commsTokenSemantics';
 import { buildCompactChannelCards, buildSchemaTree } from './commsFleetSchemaRuntime';
+import { ChevronDown } from 'lucide-react';
 
 const PAGE_SIZE = 5;
 const QUICK_NET_PAGE_SIZE = 4;
@@ -102,10 +103,9 @@ export default function VoiceCommsRail({
   onRequestToSpeak,
   focusMode = ''
 }) {
-  const [selectedTab, setSelectedTab] = useState('nets');
+  const [rosterExpanded, setRosterExpanded] = useState(true);
+  const [fleetExpanded, setFleetExpanded] = useState(true);
   const [fleetView, setFleetView] = useState('schema');
-  const [quickPage, setQuickPage] = useState(0);
-  const [netsPage, setNetsPage] = useState(0);
   const [rosterPage, setRosterPage] = useState(0);
   const [fleetSchemaPage, setFleetSchemaPage] = useState(0);
   const [fleetCardPage, setFleetCardPage] = useState(0);
@@ -431,31 +431,22 @@ export default function VoiceCommsRail({
             </div>
           </div>
 
-          <div className="flex-shrink-0 px-2 py-1 flex items-center gap-1 border-b border-zinc-700/40 bg-zinc-900/30">
-            <button
-            type="button"
-            onClick={() => setSelectedTab('roster')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-            selectedTab === 'roster' ? 'text-orange-400 bg-orange-500/10 border-orange-500/40' : 'text-zinc-500 border-zinc-700/40'}`
-            }>
-              Roster
-            </button>
-            <button
-            type="button"
-            onClick={() => setSelectedTab('fleet')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-            selectedTab === 'fleet' ? 'text-orange-400 bg-orange-500/10 border-orange-500/40' : 'text-zinc-500 border-zinc-700/40'}`
-            }>
-              Fleet
-            </button>
-          </div>
-
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-            {selectedTab === 'roster' &&
+            {/* Roster Section */}
+            <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/30">
+              <button
+                type="button"
+                onClick={() => setRosterExpanded(!rosterExpanded)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors"
+              >
+                <ChevronDown className={`w-3 h-3 transition-transform ${rosterExpanded ? 'rotate-180' : ''}`} />
+                Roster
+              </button>
+            </div>
+
+            {rosterExpanded &&
           <>
-                <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30">
-                  <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Roster</div>
-                </div>
+
                 <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1">
                   {pagedParticipants.map((participant) => {
                 const status = participantStatusLabel(participant);
@@ -502,12 +493,26 @@ export default function VoiceCommsRail({
               </>
           }
 
-            {selectedTab === 'fleet' &&
+            {/* Fleet Section */}
+            <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/30">
+              <button
+                type="button"
+                onClick={() => setFleetExpanded(!fleetExpanded)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <ChevronDown className={`w-3 h-3 transition-transform ${fleetExpanded ? 'rotate-180' : ''}`} />
+                  Fleet
+                </div>
+                <NexusBadge tone="active">{String(variantId || 'live').toUpperCase()}</NexusBadge>
+              </button>
+            </div>
+
+            {fleetExpanded &&
           <>
                 <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30">
-                  <div className="flex items-center justify-between gap-1.5">
-                    <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-400 font-bold">Fleet</div>
-                    <NexusBadge tone="active">{String(variantId || 'live').toUpperCase()}</NexusBadge>
+                  <div className="flex items-center gap-1.5">
+                    <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Info</div>
                   </div>
                   <div className="mt-1 flex items-center gap-1.5 text-[8px] text-zinc-500 uppercase tracking-wide">
                     <span>OP {String(opId || 'N/A')}</span>
