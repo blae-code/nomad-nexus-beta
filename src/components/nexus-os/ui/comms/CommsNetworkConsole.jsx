@@ -855,9 +855,7 @@ export default function CommsNetworkConsole({
     setVoicePage((prev) => Math.min(prev, voicePageCount - 1));
   }, [voicePageCount]);
 
-  useEffect(() => {
-    setSchemaChannelPage((prev) => Math.min(prev, schemaChannelPageCount - 1));
-  }, [schemaChannelPageCount]);
+
 
   useEffect(() => {
     setCrewCardPage((prev) => Math.min(prev, crewCardPageCount - 1));
