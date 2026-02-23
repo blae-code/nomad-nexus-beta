@@ -801,13 +801,13 @@ export default function CommsNetworkCardConsole({
 
 
 
-      <div className="flex items-center gap-2 flex-wrap text-[11px] text-zinc-500">
-        <NexusBadge tone="active">Fleet Command</NexusBadge>
-        <NexusBadge tone="neutral">Squads {squadCards.length}</NexusBadge>
-        <NexusBadge tone="neutral">Channels {channels.length}</NexusBadge>
-        <NexusBadge tone={bridgeSessions.length > 0 ? 'warning' : 'neutral'}>Bridges {bridgeSessions.length}</NexusBadge>
-        
-      </div>
+      <CommsFleetMetrics
+        squadCards={squadCards}
+        channels={channels}
+        bridgeSessions={bridgeSessions}
+        events={events}
+        deliveryStats={deliveryStats}
+      />
 
       <div className="min-h-0 grid gap-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
