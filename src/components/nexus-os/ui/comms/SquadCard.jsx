@@ -164,12 +164,14 @@ export default function SquadCard({
       {/* Ships: Collapsible Categories */}
       <div className="mt-1 space-y-1">
         {card.vehicles.map((vehicle) => {
-          const isExpanded = expandedVehicleId === vehicle.id;
-          const crewForVehicle = card.operators.filter((op) =>
-            vehicle.label.toLowerCase().includes(op.callsign.split('-')[0].toLowerCase()) ||
-            card.operators.length <= 5
-          ).slice(0, 5);
-          return (
+            const isExpanded = expandedVehicleId === vehicle.id;
+            const crewForVehicle = card.operators.filter((op) =>
+              vehicle.label.toLowerCase().includes(op.callsign.split('-')[0].toLowerCase()) ||
+              card.operators.length <= 5
+            ).slice(0, 5);
+            const crewStatus = getCrewReadiness(vehicle, crewForVehicle.length);
+            const ammoBadge = getAmmoBadge(vehicle.ammo_percent);
+            return (
             <div key={vehicle.id} className="rounded border border-zinc-800/60 bg-zinc-900/25">
               <button
                 type="button"
