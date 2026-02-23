@@ -4,12 +4,14 @@
  */
 
 import React, { useState } from 'react';
-import { AlertTriangle, RotateCcw, Copy, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { wipeAll, countAllDomains } from '@/components/services/dataRegistry';
 import { useNotification } from '@/components/providers/NotificationContext';
-import { useShellUI } from '@/components/providers/ShellUIContext';
 import { navigateToUrl } from '@/utils';
+
+const PROTECTED_RESET_DOMAIN_KEYS = ['memberProfiles', 'accessKeys'];
+const PROTECTED_RESET_DOMAINS_LABEL = 'Member Profiles and Access Keys';
 
 const STORAGE_KEYS_TO_CLEAR = [
   'nexus.shell.ui.state',
@@ -31,14 +33,13 @@ export default function FactoryReset() {
   const [preserveSeeded, setPreserveSeeded] = useState(false);
   const [resetResult, setResetResult] = useState(null);
   const { addNotification } = useNotification();
-  const shellUI = useShellUI();
 
   const requiredPhrase = 'RESET ALL DATA';
 
   const handleInitiatePreflight = async () => {
     setLoadingCounts(true);
     try {
-      const counts = await countAllDomains();
+      const counts = await countAllDomains({ excludeDomainKeys: PROTECTED_RESET_DOMAIN_KEYS });
       setDomainCounts(counts);
       setStep('preflight');
     } catch (error) {
@@ -68,7 +69,7 @@ export default function FactoryReset() {
     try {
       // Wipe all domains
       setResetProgress('Wiping application data...');
-      const wipeResult = await wipeAll({ preserveSeeded });
+      const wipeResult = await wipeAll({ preserveSeeded, excludeDomainKeys: PROTECTED_RESET_DOMAIN_KEYS });
 
       // Clear localStorage
       setResetProgress('Clearing application state...');
@@ -124,6 +125,9 @@ export default function FactoryReset() {
                 This will permanently delete ALL application data, including users, events, channels, and messages.
               </p>
               <p className="text-sm text-zinc-400 mt-2">
+                Protected domains remain untouched: {PROTECTED_RESET_DOMAINS_LABEL}.
+              </p>
+              <p className="text-sm text-zinc-400 mt-2">
                 All localStorage state will be cleared. The app will reload to a fresh state.
               </p>
             </div>
@@ -146,7 +150,7 @@ export default function FactoryReset() {
           <Button
             variant="outline"
             className="flex-1"
-            onClick={() => setStep('preflight')}
+            onClick={handleInitiatePreflight}
             disabled={loadingCounts}
           >
             {loadingCounts ? 'Counting...' : 'Continue'}
@@ -163,6 +167,9 @@ export default function FactoryReset() {
       <div className="space-y-4">
         <div className="p-4 bg-zinc-800/50 border border-zinc-700/50 rounded">
           <h3 className="font-bold text-zinc-200 mb-3">Pre-Flight Summary</h3>
+          <div className="text-xs text-zinc-500 mb-2">
+            Protected and excluded from wipe: {PROTECTED_RESET_DOMAINS_LABEL}
+          </div>
           <div className="space-y-2 max-h-64 overflow-y-auto text-xs">
             {Object.entries(domainCounts)
               .filter(([_, count]) => count > 0)

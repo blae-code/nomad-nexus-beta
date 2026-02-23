@@ -73,26 +73,6 @@ async function listMembershipsFromBase44(): Promise<ChannelMembershipRecord[]> {
   return listBase44ChannelMemberships(500);
 }
 
-function buildDevMemberships(channelIds: string[], roster: CqbRosterMember[]): ChannelMembershipRecord[] {
-  // Dev fallback only: deterministic assignment for preview graph integrity.
-  if (!channelIds.length || !roster.length) return [];
-
-  const primary = channelIds[0];
-  const support = channelIds[1] || primary;
-  return roster.flatMap((member) => {
-    if (member.element === 'CE') {
-      return [{ channelId: primary, memberId: member.id }];
-    }
-    if (member.element === 'ACE') {
-      return [
-        { channelId: primary, memberId: member.id },
-        { channelId: support, memberId: member.id },
-      ];
-    }
-    return [{ channelId: support, memberId: member.id }];
-  });
-}
-
 export function getCqbChannelTraffic(options: Pick<CommsGraphOptions, 'variantId' | 'opId' | 'cqbWindowMs'>): ChannelTrafficSnapshot {
   const windowMs = options.cqbWindowMs ?? 20000;
   const nowMs = Date.now();
@@ -162,14 +142,25 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
   const roster = Array.isArray(options.roster) ? options.roster : [];
 
   const baseChannels = await listChannelsFromBase44();
+  const baseRows = baseChannels.map((entry) => ({
+    id: entry.id,
+    label: entry.label || entry.id,
+  }));
   const templateRows = context.channelIds.map((id) => {
     const fromBase44 = baseChannels.find((entry) => entry.matchKeys.includes(id));
-    const fromTemplate = template.channels.find((entry) => entry.id === id);
+    if (!fromBase44) return null;
     return {
-      id,
-      label: fromBase44?.label || fromTemplate?.label || id,
+      id: fromBase44.id,
+      label: fromBase44.label || id,
     };
-  });
+  }).filter(Boolean) as Array<{ id: string; label: string }>;
+  const channelRows = [...templateRows];
+  const channelIds = new Set(channelRows.map((entry) => entry.id));
+  for (const row of baseRows) {
+    if (channelIds.has(row.id)) continue;
+    channelRows.push(row);
+    channelIds.add(row.id);
+  }
   const sharedRows =
     options.opId
       ? listSharedOperationChannels(options.opId).map((channel) => ({
@@ -177,10 +168,14 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
           label: channel.channelLabel,
         }))
       : [];
-  const channelRows = [...templateRows, ...sharedRows];
+  for (const row of sharedRows) {
+    if (channelIds.has(row.id)) continue;
+    channelRows.push(row);
+    channelIds.add(row.id);
+  }
 
   const membershipsFromEntity = await listMembershipsFromBase44();
-  const memberships = membershipsFromEntity.length > 0 ? membershipsFromEntity : buildDevMemberships(templateRows.map((entry) => entry.id), roster);
+  const memberships = membershipsFromEntity;
 
   const channelMemberCounts = channelRows.reduce<Record<string, number>>((acc, channel) => {
     acc[channel.id] = memberships.filter((entry) => entry.channelId === channel.id).length;
@@ -253,7 +248,9 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
     })
     .filter(Boolean) as CommsGraphEdge[];
 
-  const monitoringEdges: CommsGraphEdge[] = template.monitoringLinks.map((link) => {
+  const monitoringEdges: CommsGraphEdge[] = template.monitoringLinks
+    .filter((link) => channelIds.has(link.sourceChannelId) && channelIds.has(link.targetChannelId))
+    .map((link) => {
     const sourceIntensity = traffic.byChannelId[link.sourceChannelId]?.intensity || 0;
     const targetIntensity = traffic.byChannelId[link.targetChannelId]?.intensity || 0;
     return {
@@ -268,6 +265,7 @@ export async function buildCommsGraphSnapshot(options: CommsGraphOptions): Promi
 
   // Shared joint channels are linked to primary template net with dashed monitoring edge style.
   for (const row of sharedRows) {
+    if (!channelIds.has(context.primaryChannelId)) continue;
     monitoringEdges.push({
       id: `edge:monitor:primary->${row.id}`,
       sourceId: `channel:${context.primaryChannelId}`,

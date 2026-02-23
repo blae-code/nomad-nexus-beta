@@ -7,7 +7,6 @@ import {
   CqbCommandConsole,
   buildDevControlSignals,
   buildDevLocationEstimates,
-  DEV_CQB_ROSTER,
   FittingForceDesignFocusApp,
   MobileArCompanionFocusApp,
   OperationFocusApp,
@@ -132,7 +131,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     variantId: 'CQB-01',
     opId: '',
     elementFilter: 'ALL',
-    actorId: isWorkspaceMode ? workspaceActorId : DEV_CQB_ROSTER[0]?.id || 'ce-warden',
+    actorId: isWorkspaceMode ? workspaceActorId : 'operator-local',
     focusMode: 'comms',
     forceDesignOpId: '',
     reportsOpId: '',
@@ -331,9 +330,9 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const resolvedOpId = opId.trim() || focusOperationId || undefined;
 
   const activeRoster = useMemo(() => {
-    if (!isWorkspaceMode) return DEV_CQB_ROSTER;
+    if (!isWorkspaceMode) return [];
 
-    const participantIds = new Set([workspaceActorId]);
+    const participantIds = new Set();
     for (const event of events) {
       if (event.authorId) participantIds.add(event.authorId);
     }
@@ -403,7 +402,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const workbenchFocusMode = lockedFocusMode || focusMode || lifecycle.foregroundAppId || 'map';
 
   const fallbackVoiceNets = useMemo(() => {
-    const opNets = operations.slice(0, 6).map((operation) => {
+    return operations.slice(0, 6).map((operation) => {
       const fallbackCode = String(operation.id || '').replace(/^op[_-]?/i, '').slice(0, 8).toUpperCase();
       const displayCode = String(operation.name || fallbackCode || 'OP').
       replace(/[^A-Za-z0-9]+/g, '').
@@ -415,8 +414,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         label: `${operation.status} · ${operation.name || 'Operation'}`
       };
     });
-    return [{ id: 'net:command', code: 'COMMAND', label: `${bridgeId} Command Net` }, ...opNets];
-  }, [operations, bridgeId]);
+  }, [operations]);
 
   const fallbackActiveVoiceNetId = useMemo(() => {
     if (!fallbackVoiceNets.length) return '';

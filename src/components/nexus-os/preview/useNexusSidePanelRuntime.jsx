@@ -22,7 +22,7 @@ function deriveChannelId(event) {
   if (direct) return direct;
   const opId = toText(event?.opId || event?.op_id);
   if (opId) return `op-${opId}`;
-  return 'command';
+  return 'unscoped';
 }
 
 function deriveEventMessage(event, fallbackNowMs, roster = []) {
@@ -117,14 +117,26 @@ export default function useNexusSidePanelRuntime({
     [events, clockNowMs, actorId]
   );
 
+  const channelCount = useMemo(() => {
+    const unique = new Set();
+    for (const event of events) {
+      const id = deriveChannelId(event);
+      if (id) unique.add(id);
+    }
+    for (const operation of operations) {
+      const opId = toText(operation?.id);
+      if (opId) unique.add(`op-${opId}`);
+    }
+    return unique.size;
+  }, [events, operations]);
+
   const leftPanelMetrics = useMemo(() => {
-    const channelCount = 6 + Math.min(10, operations.length);
     return [
       { label: 'Channels', value: String(channelCount) },
       { label: 'Unread', value: String(recentUnread) },
       { label: 'Ping', value: online ? `${pingMs}ms` : '--' },
     ];
-  }, [operations.length, recentUnread, online, pingMs]);
+  }, [channelCount, recentUnread, online, pingMs]);
 
   const rightPanelMetrics = useMemo(
     () => [

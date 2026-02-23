@@ -44,6 +44,8 @@ const DOMAINS = [
   { key: 'aiAgentRules', label: 'AI Agent Rules', entityName: 'AIAgentRule' },
 ];
 
+const EMPTY_ARRAY = Object.freeze([]);
+
 /**
  * Get list of all domains with metadata
  */
@@ -83,9 +85,12 @@ export async function countDomain(domainKey) {
 /**
  * Get all counts for all domains
  */
-export async function countAllDomains() {
+export async function countAllDomains(options = {}) {
+  const { excludeDomainKeys = EMPTY_ARRAY } = options;
+  const excluded = new Set(excludeDomainKeys);
   const counts = {};
   for (const domain of DOMAINS) {
+    if (excluded.has(domain.key)) continue;
     counts[domain.key] = await countDomain(domain.key);
   }
   return counts;
@@ -98,7 +103,10 @@ export async function wipeDomain(domainKey, options = {}) {
   const domain = DOMAINS.find((d) => d.key === domainKey);
   if (!domain) throw new Error(`Unknown domain: ${domainKey}`);
 
-  const { dryRun = false, preserveSeeded = false } = options;
+  const { dryRun = false, preserveSeeded = false, excludeDomainKeys = EMPTY_ARRAY } = options;
+  if (excludeDomainKeys.includes(domain.key)) {
+    return { success: true, skipped: true, deleted: 0 };
+  }
 
   try {
     const entity = base44.entities[domain.entityName];
@@ -137,13 +145,18 @@ export async function wipeDomain(domainKey, options = {}) {
  * Wipe all domains
  */
 export async function wipeAll(options = {}) {
-  const { dryRun = false, preserveSeeded = false } = options;
+  const { dryRun = false, preserveSeeded = false, excludeDomainKeys = EMPTY_ARRAY } = options;
+  const excluded = new Set(excludeDomainKeys);
   const results = {};
   let totalDeleted = 0;
 
   for (const domain of DOMAINS) {
+    if (excluded.has(domain.key)) {
+      results[domain.key] = { success: true, skipped: true, deleted: 0 };
+      continue;
+    }
     try {
-      const result = await wipeDomain(domain.key, { dryRun, preserveSeeded });
+      const result = await wipeDomain(domain.key, { dryRun, preserveSeeded, excludeDomainKeys });
       results[domain.key] = result;
       if (result.success) {
         totalDeleted += result.deleted;
