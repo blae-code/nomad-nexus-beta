@@ -23,6 +23,13 @@ export default function SquadCard({
   slaTone,
   formatSlaAge
 }) {
+  const [expandedVehicleId, setExpandedVehicleId] = useState(null);
+
+  const toggleVehicle = (e, vehicleId) => {
+    e.stopPropagation();
+    setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
+  };
+
   return (
     <article
       key={card.id}
