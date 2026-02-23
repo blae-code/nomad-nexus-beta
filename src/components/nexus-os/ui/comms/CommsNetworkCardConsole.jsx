@@ -1,11 +1,8 @@
-
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Pin, PinOff, Radio, RefreshCcw } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
-import type { CommsGraphSnapshot } from '../../services/commsGraphService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
-import type { CqbEventType } from '../../schemas/coreSchemas';
 import { NexusBadge, NexusButton, DegradedStateCard } from '../primitives';
 import { PanelLoadingState } from '../loading';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
