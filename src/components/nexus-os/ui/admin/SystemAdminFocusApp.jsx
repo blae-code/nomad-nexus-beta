@@ -37,8 +37,8 @@ const LOG_PAGE_SIZE = 5;
 const PROTECTED_DOMAIN_KEYS = ['memberProfiles', 'accessKeys'];
 const IDENTITY_USER_PAGE_SIZE = 5;
 const IDENTITY_KEY_PAGE_SIZE = 6;
-const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'] as const;
-const RANK_GRANTS_CONFIG: Record<string, string[]> = {
+const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
+const RANK_GRANTS_CONFIG = {
   VAGRANT: ['read_only'],
   SCOUT: ['read_only', 'comms_access'],
   VOYAGER: ['read_only', 'comms_access', 'event_creation'],
@@ -46,7 +46,7 @@ const RANK_GRANTS_CONFIG: Record<string, string[]> = {
   FOUNDER: ['admin_access'],
 };
 
-function normalizeUsername(input: any): string {
+function normalizeUsername(input) {
   return String(
     input?.display_callsign ||
       input?.callsign ||
@@ -58,7 +58,7 @@ function normalizeUsername(input: any): string {
   ).trim();
 }
 
-function normalizeDirectoryUsers(raw: any[]): DirectoryUser[] {
+function normalizeDirectoryUsers(raw) {
   const mapped = (Array.isArray(raw) ? raw : []).map((entry) => ({
     id: String(entry?.id || '').trim(),
     username: normalizeUsername(entry),
@@ -69,7 +69,7 @@ function normalizeDirectoryUsers(raw: any[]): DirectoryUser[] {
   return mapped.filter((entry) => Boolean(entry.id));
 }
 
-function normalizeAccessKeys(raw: any[]): AccessKeyRecord[] {
+function normalizeAccessKeys(raw) {
   return (Array.isArray(raw) ? raw : [])
     .map((entry) => ({
       id: String(entry?.id || '').trim(),
@@ -90,7 +90,7 @@ function normalizeAccessKeys(raw: any[]): AccessKeyRecord[] {
     .filter((entry) => Boolean(entry.id) && Boolean(entry.code));
 }
 
-function accessKeyTone(status: string): 'ok' | 'warning' | 'danger' | 'neutral' | 'active' {
+function accessKeyTone(status) {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'ACTIVE') return 'ok';
   if (normalized === 'REDEEMED') return 'active';
@@ -99,24 +99,24 @@ function accessKeyTone(status: string): 'ok' | 'warning' | 'danger' | 'neutral' 
   return 'neutral';
 }
 
-function maskKeyCode(code: string): string {
+function maskKeyCode(code) {
   const normalized = String(code || '').trim();
   if (normalized.length <= 8) return normalized;
   return `${normalized.slice(0, 4)}...${normalized.slice(-4)}`;
 }
 
-function titleizeDomainKey(key: string): string {
+function titleizeDomainKey(key) {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase()).trim();
 }
 
-function toneForLog(entry: LogTone): 'ok' | 'warning' | 'danger' | 'neutral' {
+function toneForLog(entry) {
   if (entry === 'ok') return 'ok';
   if (entry === 'warning') return 'warning';
   if (entry === 'danger') return 'danger';
   return 'neutral';
 }
 
-function formatClock(value: string): string {
+function formatClock(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '--:--';
   return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -131,7 +131,7 @@ export default function SystemAdminFocusApp({
   onOpenOperationFocus,
   onOpenCommsNetwork,
   onCreateMacroEvent,
-}: SystemAdminFocusAppProps) {
+}) {
   const [persona, setPersona] = useState('SYSTEM_ADMIN');
   const [busyId, setBusyId] = useState('');
   const [domainCounts, setDomainCounts] = useState({});
@@ -354,7 +354,7 @@ export default function SystemAdminFocusApp({
   }, [runTask, refreshIdentityAccess]);
 
   const generateInviteForKey = useCallback(
-    async (keyCode: string, rank: string, membership: string) => {
+    async (keyCode, rank, membership) => {
       const invitationResponse = await invokeMemberFunction('generateDiscordInvitation', {
         accessKeyCode: keyCode,
         accessKeyRank: rank,
@@ -410,7 +410,7 @@ export default function SystemAdminFocusApp({
   ]);
 
   const revokeKeyById = useCallback(
-    async (keyId: string, code: string) => {
+    async (keyId, code) => {
       const approved = window.confirm(`Revoke access key ${code}?`);
       if (!approved) return;
       await runTask(`identity-revoke-${keyId}`, async () => {
@@ -474,7 +474,7 @@ export default function SystemAdminFocusApp({
        const report = await validateAll();
       const issueCount = Array.isArray(report?.issues) ? report.issues.length : 0;
       const errorCount = Array.isArray(report?.issues)
-        ? report.issues.filter((entry: any) => String(entry?.severity || '').toLowerCase() === 'error').length
+        ? report.issues.filter((entry) => String(entry?.severity || '').toLowerCase() === 'error').length
         : 0;
       setIntegritySnapshot({
         at: new Date().toISOString(),

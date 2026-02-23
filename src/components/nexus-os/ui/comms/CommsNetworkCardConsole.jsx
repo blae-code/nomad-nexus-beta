@@ -47,29 +47,6 @@ import {
   sortSquadCardsDeterministic,
 } from './commsCardConsoleRuntime';
 
-interface SquadCard {
-  id: string;
-  wingId: string;
-  wingLabel: string;
-  squadLabel: string;
-  channels: Array<{ id: string; label: string; status: string; membershipCount: number }>;
-  vehicles: Array<{ id: string; label: string; status: string; crewCount: number }>;
-  operators: Array<{ id: string; callsign: string; role: string; status: string }>;
-  primaryChannelId: string;
-  pilotCount: number;
-  medicCount: number;
-  leadCount: number;
-  txCount: number;
-  onlineCount: number;
-  offNetCount: number;
-  linkedSquadIds: string[];
-}
-
-interface BridgeSession extends BridgeLifecycleSession {}
-
-type RoleHailTarget = 'PILOT' | 'MEDIC' | 'ALL_HANDS' | 'SQUAD_LEAD';
-type RoleHailScope = 'SQUAD' | 'WING' | 'FLEET';
-
 const SQUAD_CARD_PAGE_SIZE = 5;
 const WATCHLIST_PAGE_SIZE = 5;
 const ORDER_FEED_PREVIEW_SIZE = 3;
@@ -77,7 +54,7 @@ const MAX_ORDER_HISTORY = 24;
 const GRAPH_REFRESH_MS = 12_000;
 const MAX_BRIDGE_SESSIONS = 6;
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -85,7 +62,7 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function formatSlaAge(seconds: number): string {
+function formatSlaAge(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '0s';
   if (seconds < 60) return `${Math.round(seconds)}s`;
   const minutes = Math.floor(seconds / 60);
@@ -93,7 +70,7 @@ function formatSlaAge(seconds: number): string {
   return `${minutes}m ${String(rem).padStart(2, '0')}s`;
 }
 
-function roleToken(role: string): string {
+function roleToken(role) {
   return String(role || '').trim().toLowerCase();
 }
 
@@ -109,13 +86,13 @@ function slaTokenIcon(status) {
   return tokenAssets.comms.operatorStatus.onNet;
 }
 
-function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
-  const cards: SquadCard[] = [];
-  const squadByChannelId = new Map<string, string>();
+function buildSquadCards(schemaTree, edges) {
+  const cards = [];
+  const squadByChannelId = new Map();
 
   for (const wing of schemaTree || []) {
     for (const squad of wing.squads || []) {
-      const channels = (squad.channels || []).map((channel: any) => {
+      const channels = (squad.channels || []).map((channel) => {
         squadByChannelId.set(channel.id, squad.id);
         return {
           id: channel.id,
@@ -125,8 +102,8 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
         };
       });
 
-      const vehicles: SquadCard['vehicles'] = [];
-      const operators: SquadCard['operators'] = [];
+      const vehicles = [];
+      const operators = [];
 
       for (const channel of squad.channels || []) {
         for (const vehicle of channel.vehicles || []) {
@@ -184,7 +161,7 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
     }
   }
 
-  const linkedBySquadId = new Map<string, Set<string>>();
+  const linkedBySquadId = new Map();
   for (const edge of edges || []) {
     const sourceId = String(edge?.sourceId || '');
     const targetId = String(edge?.targetId || '');
@@ -194,10 +171,10 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
     const sourceSquadId = squadByChannelId.get(sourceChannelId);
     const targetSquadId = squadByChannelId.get(targetChannelId);
     if (!sourceSquadId || !targetSquadId || sourceSquadId === targetSquadId) continue;
-    const sourceSet = linkedBySquadId.get(sourceSquadId) || new Set<string>();
+    const sourceSet = linkedBySquadId.get(sourceSquadId) || new Set();
     sourceSet.add(targetSquadId);
     linkedBySquadId.set(sourceSquadId, sourceSet);
-    const targetSet = linkedBySquadId.get(targetSquadId) || new Set<string>();
+    const targetSet = linkedBySquadId.get(targetSquadId) || new Set();
     targetSet.add(sourceSquadId);
     linkedBySquadId.set(targetSquadId, targetSet);
   }
@@ -205,18 +182,18 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
   return sortSquadCardsDeterministic(
     cards.map((card) => ({
       ...card,
-      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set<string>())],
+      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set())],
     }))
   );
 }
 
-function onTemplateNameInput(defaultValue: string): string {
+function onTemplateNameInput(defaultValue) {
   if (typeof window === 'undefined') return defaultValue;
   const response = window.prompt('Bridge template name', defaultValue) || '';
   return response.trim();
 }
 
-function confirmAction(message: string): boolean {
+function confirmAction(message) {
   if (typeof window === 'undefined') return false;
   return Boolean(window.confirm(message));
 }
@@ -406,7 +383,7 @@ export default function CommsNetworkCardConsole({
 
   const squadSlaSnapshots = useMemo(() => {
     const offNetSinceByOperatorId = offNetSinceByOperatorRef.current;
-    const liveOperatorIds = new Set<string>();
+    const liveOperatorIds = new Set();
 
     for (const squad of squadCards) {
       for (const operator of squad.operators) {
@@ -565,7 +542,7 @@ export default function CommsNetworkCardConsole({
     (input) => {
       const targetSquads = input.squadIds
         .map((squadId) => squadById[squadId])
-        .filter((card): card is SquadCard => Boolean(card) && Boolean(card.primaryChannelId));
+        .filter((card) => Boolean(card) && Boolean(card.primaryChannelId));
       if (!targetSquads.length) return;
       const channelIds = targetSquads.map((card) => card.primaryChannelId);
       const directive = `HAIL_${input.targetRole}_${input.scope}`;
@@ -652,7 +629,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const applyTemplate = useCallback(
-    (templateId: string) => {
+    (templateId) => {
       const template = templateById[templateId];
       if (!template) return;
       setBridgeDraftSquadIds(template.squadIds.slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS));
