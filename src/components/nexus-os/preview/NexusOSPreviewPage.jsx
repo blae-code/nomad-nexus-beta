@@ -913,7 +913,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               {commandFeedback}
             </section>
           }
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40 bg-zinc-950/20 hover:border-orange-500/40 transition-colors p-3">
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40 bg-zinc-950/30 hover:border-orange-500/40 transition-colors p-3 backdrop-blur-sm">
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
