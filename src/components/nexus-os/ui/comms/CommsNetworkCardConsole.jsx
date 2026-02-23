@@ -46,6 +46,7 @@ import {
   normalizeBridgeTtlSec,
   sortSquadCardsDeterministic } from
 './commsCardConsoleRuntime';
+import CommsFleetMetrics from './CommsFleetMetrics';
 
 const SQUAD_CARD_PAGE_SIZE = 5;
 const WATCHLIST_PAGE_SIZE = 5;
