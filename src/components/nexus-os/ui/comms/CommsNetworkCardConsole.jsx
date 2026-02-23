@@ -13,8 +13,8 @@ import {
   roleTokenIcon,
   squadTokenIcon,
   vehicleStatusTokenIcon,
-  wingTokenIcon,
-} from './commsTokenSemantics';
+  wingTokenIcon } from
+'./commsTokenSemantics';
 import { buildSchemaTree } from './commsFleetSchemaRuntime';
 import {
   appendOrderDispatch,
@@ -22,8 +22,8 @@ import {
   buildDeliverySurface,
   buildPagedOrders,
   createOrderDispatch,
-  deliveryTone,
-} from './commsOrderRuntime';
+  deliveryTone } from
+'./commsOrderRuntime';
 import {
   COMMS_CARD_CONSOLE_DEFAULT_TTL_SEC,
   COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS,
@@ -37,15 +37,15 @@ import {
   removeBridgeTemplate,
   renameBridgeTemplate,
   toggleWatchlistSquad,
-  upsertBridgeTemplate,
-} from './commsCardConsoleState';
+  upsertBridgeTemplate } from
+'./commsCardConsoleState';
 import {
   buildBridgeLifecycleRows,
   buildEscalationSuggestions,
   buildSquadSlaSnapshots,
   normalizeBridgeTtlSec,
-  sortSquadCardsDeterministic,
-} from './commsCardConsoleRuntime';
+  sortSquadCardsDeterministic } from
+'./commsCardConsoleRuntime';
 
 const SQUAD_CARD_PAGE_SIZE = 5;
 const WATCHLIST_PAGE_SIZE = 5;
@@ -98,7 +98,7 @@ function buildSquadCards(schemaTree, edges) {
           id: channel.id,
           label: channel.label,
           status: channel.status,
-          membershipCount: Number(channel.membershipCount || 0),
+          membershipCount: Number(channel.membershipCount || 0)
         };
       });
 
@@ -111,7 +111,7 @@ function buildSquadCards(schemaTree, edges) {
             id: vehicle.id,
             label: vehicle.label,
             status: vehicle.basicStatus,
-            crewCount: Number(vehicle.crewCount || vehicle.operators?.length || 0),
+            crewCount: Number(vehicle.crewCount || vehicle.operators?.length || 0)
           });
 
           for (const operator of vehicle.operators || []) {
@@ -119,7 +119,7 @@ function buildSquadCards(schemaTree, edges) {
               id: operator.id,
               callsign: operator.callsign || operator.id,
               role: operator.role || 'Member',
-              status: operator.status || 'OFF-NET',
+              status: operator.status || 'OFF-NET'
             });
           }
         }
@@ -156,7 +156,7 @@ function buildSquadCards(schemaTree, edges) {
         txCount,
         onlineCount,
         offNetCount,
-        linkedSquadIds: [],
+        linkedSquadIds: []
       });
     }
   }
@@ -182,7 +182,7 @@ function buildSquadCards(schemaTree, edges) {
   return sortSquadCardsDeterministic(
     cards.map((card) => ({
       ...card,
-      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set())],
+      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set())]
     }))
   );
 }
@@ -205,14 +205,14 @@ export default function CommsNetworkCardConsole({
   roster = [],
   events = [],
   actorId = '',
-  onCreateMacroEvent,
+  onCreateMacroEvent
 }) {
   const voiceNet = useVoiceNet();
   const scopeInput = useMemo(
     () => ({
       sessionScopeKey: `${String(bridgeId || 'OPS')}:${String(actorId || 'operator')}`,
       variantId,
-      opId,
+      opId
     }),
     [actorId, bridgeId, opId, variantId]
   );
@@ -247,7 +247,7 @@ export default function CommsNetworkCardConsole({
           variantId,
           opId,
           includeUserNodes: true,
-          roster,
+          roster
         });
         setSnapshot(next);
       } catch (err) {
@@ -285,16 +285,16 @@ export default function CommsNetworkCardConsole({
   useEffect(() => {
     let cancelled = false;
     const local = loadLocalCommsCardConsoleState(scopeInput);
-    void hydrateCommsCardConsoleState(scopeInput, local)
-      .then((hydrated) => {
-        if (cancelled) return;
-        setConsoleState(hydrated);
-        setRemoteSynced(true);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setRemoteSynced(true);
-      });
+    void hydrateCommsCardConsoleState(scopeInput, local).
+    then((hydrated) => {
+      if (cancelled) return;
+      setConsoleState(hydrated);
+      setRemoteSynced(true);
+    }).
+    catch(() => {
+      if (cancelled) return;
+      setRemoteSynced(true);
+    });
     return () => {
       cancelled = true;
     };
@@ -307,19 +307,19 @@ export default function CommsNetworkCardConsole({
   const channels = snapshot?.channels || [];
   const edges = snapshot?.edges || [];
   const voiceParticipants = useMemo(
-    () => (Array.isArray(voiceNet?.participants) ? voiceNet.participants : []),
+    () => Array.isArray(voiceNet?.participants) ? voiceNet.participants : [],
     [voiceNet?.participants]
   );
 
   const { schemaTree, schemaChannelPageCount } = useMemo(
     () =>
-      buildSchemaTree({
-        channels,
-        edges,
-        roster,
-        voiceParticipants,
-        schemaChannelPage,
-      }),
+    buildSchemaTree({
+      channels,
+      edges,
+      roster,
+      voiceParticipants,
+      schemaChannelPage
+    }),
     [channels, edges, roster, voiceParticipants, schemaChannelPage]
   );
 
@@ -332,14 +332,14 @@ export default function CommsNetworkCardConsole({
   const watchlistSet = useMemo(() => new Set(consoleState.watchlistSquadIds), [consoleState.watchlistSquadIds]);
   const watchlistCards = useMemo(
     () =>
-      consoleState.watchlistSquadIds
-        .map((squadId) => squadById[squadId])
-        .filter((card) => Boolean(card)),
+    consoleState.watchlistSquadIds.
+    map((squadId) => squadById[squadId]).
+    filter((card) => Boolean(card)),
     [consoleState.watchlistSquadIds, squadById]
   );
 
   const cardsForPaging = useMemo(
-    () => (consoleState.uiPrefs.compactMode ? watchlistCards : squadCards),
+    () => consoleState.uiPrefs.compactMode ? watchlistCards : squadCards,
     [consoleState.uiPrefs.compactMode, squadCards, watchlistCards]
   );
 
@@ -409,16 +409,16 @@ export default function CommsNetworkCardConsole({
       events,
       nowMs,
       slaPolicy: consoleState.slaPolicy,
-      offNetSinceByOperatorId,
+      offNetSinceByOperatorId
     });
   }, [consoleState.slaPolicy, events, nowMs, squadCards]);
 
   const slaBySquadId = useMemo(
     () =>
-      squadSlaSnapshots.reduce((acc, snapshot) => {
-        acc[snapshot.squadId] = snapshot;
-        return acc;
-      }, {}),
+    squadSlaSnapshots.reduce((acc, snapshot) => {
+      acc[snapshot.squadId] = snapshot;
+      return acc;
+    }, {}),
     [squadSlaSnapshots]
   );
 
@@ -456,7 +456,7 @@ export default function CommsNetworkCardConsole({
         online: 0,
         tx: 0,
         redSlaCount: 0,
-        squadIds: [],
+        squadIds: []
       };
       row.squadCount += 1;
       row.online += card.onlineCount;
@@ -470,10 +470,10 @@ export default function CommsNetworkCardConsole({
 
   const templateById = useMemo(
     () =>
-      consoleState.bridgeTemplates.reduce((acc, template) => {
-        acc[template.id] = template;
-        return acc;
-      }, {}),
+    consoleState.bridgeTemplates.reduce((acc, template) => {
+      acc[template.id] = template;
+      return acc;
+    }, {}),
     [consoleState.bridgeTemplates]
   );
 
@@ -490,17 +490,17 @@ export default function CommsNetworkCardConsole({
 
   const patchUiPrefs = useCallback((patch) => {
     setConsoleState((prev) =>
-      normalizeCommsCardConsoleState(
-        {
-          ...prev,
-          uiPrefs: {
-            ...prev.uiPrefs,
-            ...patch,
-          },
-          updatedAt: new Date().toISOString(),
+    normalizeCommsCardConsoleState(
+      {
+        ...prev,
+        uiPrefs: {
+          ...prev.uiPrefs,
+          ...patch
         },
-        prev
-      )
+        updatedAt: new Date().toISOString()
+      },
+      prev
+    )
     );
   }, []);
 
@@ -512,7 +512,7 @@ export default function CommsNetworkCardConsole({
         laneId: `lane:${input.channelId}`,
         directive: input.directive,
         eventType: input.eventType,
-        nowMs,
+        nowMs
       });
       setDirectiveDispatches((prev) => appendOrderDispatch(prev, dispatch, MAX_ORDER_HISTORY));
       if (onCreateMacroEvent) {
@@ -528,9 +528,9 @@ export default function CommsNetworkCardConsole({
               mode: DEFAULT_ACQUISITION_MODE,
               source: 'RADIAL_ACTION',
               commandSource: 'comms_card_console',
-              confirmed: true,
+              confirmed: true
             })
-          ),
+          )
         });
       }
       setFeedback(onCreateMacroEvent ? input.success : `${input.success} (preview)`);
@@ -540,9 +540,9 @@ export default function CommsNetworkCardConsole({
 
   const issueRoleHail = useCallback(
     (input) => {
-      const targetSquads = input.squadIds
-        .map((squadId) => squadById[squadId])
-        .filter((card) => Boolean(card) && Boolean(card.primaryChannelId));
+      const targetSquads = input.squadIds.
+      map((squadId) => squadById[squadId]).
+      filter((card) => Boolean(card) && Boolean(card.primaryChannelId));
       if (!targetSquads.length) return;
       const channelIds = targetSquads.map((card) => card.primaryChannelId);
       const directive = `HAIL_${input.targetRole}_${input.scope}`;
@@ -557,9 +557,9 @@ export default function CommsNetworkCardConsole({
             targetRole: input.targetRole,
             squadIds: targetSquads.map((card) => card.id),
             wingId: input.wingId || squad.wingId,
-            channelIds,
+            channelIds
           },
-          success: `Hail ${input.targetRole.toLowerCase()} ${input.scope.toLowerCase()} queued`,
+          success: `Hail ${input.targetRole.toLowerCase()} ${input.scope.toLowerCase()} queued`
         });
       }
     },
@@ -593,9 +593,9 @@ export default function CommsNetworkCardConsole({
           targetSquadId: card.id,
           bridgeSquadIds,
           targetChannelId: card.primaryChannelId,
-          bridgeTtlSec: ttlSec,
+          bridgeTtlSec: ttlSec
         },
-        success: `Bridge briefing ${anchor.squadLabel} -> ${card.squadLabel}`,
+        success: `Bridge briefing ${anchor.squadLabel} -> ${card.squadLabel}`
       });
     }
 
@@ -618,9 +618,9 @@ export default function CommsNetworkCardConsole({
             bridgeSessionId: session.id,
             squadIds: session.squadIds,
             bridgeTtlSec: session.ttlSec,
-            splitSuggested: fromSuggestion,
+            splitSuggested: fromSuggestion
           },
-          success: `Split briefing for ${squad.squadLabel}`,
+          success: `Split briefing for ${squad.squadLabel}`
         });
       }
       setBridgeSessions((prev) => prev.filter((entry) => entry.id !== session.id));
@@ -683,9 +683,9 @@ export default function CommsNetworkCardConsole({
           squadLabel: card.squadLabel,
           wingId: card.wingId,
           escalationTarget: suggestion.target,
-          channelIds: [card.primaryChannelId],
+          channelIds: [card.primaryChannelId]
         },
-        success: `${suggestion.label} queued for ${card.squadLabel}`,
+        success: `${suggestion.label} queued for ${card.squadLabel}`
       });
     },
     [issueOrder]
@@ -698,9 +698,9 @@ export default function CommsNetworkCardConsole({
         state="OFFLINE"
         reason={error || 'Comms graph data unavailable.'}
         actionLabel="Retry"
-        onAction={() => void loadGraph(false)}
-      />
-    );
+        onAction={() => void loadGraph(false)} />);
+
+
   }
 
   return (
@@ -720,98 +720,98 @@ export default function CommsNetworkCardConsole({
             onClick={() => {
               setNowMs(Date.now());
               void loadGraph(false);
-            }}
-          >
+            }}>
+
             <RefreshCcw className="w-3.5 h-3.5 mr-1" />Refresh
           </NexusButton>
         </div>
       </div>
 
-      <div data-comms-command-bar="true" className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 grid gap-1.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,3fr)_auto]">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <label className="text-[9px] uppercase tracking-wide text-zinc-500 shrink-0">Template</label>
-          <select
-            data-comms-template-select="true"
-            className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950/80 text-[10px] text-zinc-100 px-1.5 py-1"
-            value={selectedTemplateId}
-            onChange={(event) => {
-              const templateId = String(event.target.value || '');
-              setSelectedTemplateId(templateId);
-              if (!templateId) {
-                patchUiPrefs({ lastTemplateId: '' });
-                return;
-              }
-              patchUiPrefs({ lastTemplateId: templateId });
-            }}
-          >
-            <option value="">Select template</option>
-            {consoleState.bridgeTemplates.map((template) => (
-              <option key={template.id} value={template.id}>{template.name}</option>
-            ))}
-          </select>
-          <NexusButton size="sm" intent="subtle" onClick={saveBridgeTemplate}>Save</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={() => selectedTemplateId && applyTemplate(selectedTemplateId)} disabled={!selectedTemplateId}>Apply</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={renameSelectedTemplate} disabled={!selectedTemplateId}>Rename</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={deleteSelectedTemplate} disabled={!selectedTemplateId}>Delete</NexusButton>
-        </div>
+      
 
-        <div className="flex items-center gap-1.5 min-w-0">
-          <label className="text-[9px] uppercase tracking-wide text-zinc-500 shrink-0">Bridge TTL</label>
-          <select
-            data-comms-ttl-select="true"
-            className="rounded border border-zinc-700 bg-zinc-950/80 text-[10px] text-zinc-100 px-1.5 py-1"
-            value={bridgeTtlSec}
-            onChange={(event) => setBridgeTtlSec(normalizeBridgeTtlSec(Number(event.target.value)))}
-          >
-            {COMMS_CARD_CONSOLE_TTL_PRESETS.map((ttl) => (
-              <option key={ttl} value={ttl}>{ttl === 0 ? 'manual' : `${Math.round(ttl / 60)}m`}</option>
-            ))}
-          </select>
-          <NexusBadge tone="neutral">Human-confirmed</NexusBadge>
-          <NexusBadge tone={remoteSynced ? 'ok' : 'warning'}>{remoteSynced ? 'Workspace Synced' : 'Syncing'}</NexusBadge>
-          {!utilityCoreEnabled ? <NexusBadge tone="warning">Utility Core Off</NexusBadge> : null}
-        </div>
 
-        <div className="flex items-center gap-1.5 min-w-0">
-          <label className="text-[9px] uppercase tracking-wide text-zinc-500 shrink-0">Fleet Hail</label>
-          <select
-            data-comms-fleet-hail="true"
-            className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950/80 text-[10px] text-zinc-100 px-1.5 py-1"
-            onChange={(event) => {
-              const role = String(event.target.value || '');
-              if (role) {
-                issueRoleHail({ scope: 'FLEET', targetRole: role, squadIds: squadCards.map((card) => card.id) });
-                event.target.value = '';
-              }
-            }}
-            disabled={!utilityCoreEnabled || squadCards.length === 0}
-          >
-            <option value="">Select role</option>
-            <option value="PILOT">All Pilots</option>
-            <option value="MEDIC">All Medics</option>
-            <option value="SQUAD_LEAD">All Squad Leads</option>
-          </select>
-        </div>
 
-        <div className="flex items-center justify-end gap-1.5">
-          <NexusButton size="sm" intent={consoleState.uiPrefs.compactMode ? 'primary' : 'subtle'} onClick={() => patchUiPrefs({ compactMode: !consoleState.uiPrefs.compactMode })}>
-            {consoleState.uiPrefs.compactMode ? 'Watchlist Only' : 'All Squads'}
-          </NexusButton>
-        </div>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       <div className="flex items-center gap-2 flex-wrap text-[11px] text-zinc-500">
         <NexusBadge tone="active">Fleet Command</NexusBadge>
         <NexusBadge tone="neutral">Squads {squadCards.length}</NexusBadge>
         <NexusBadge tone="neutral">Channels {channels.length}</NexusBadge>
         <NexusBadge tone={bridgeSessions.length > 0 ? 'warning' : 'neutral'}>Bridges {bridgeSessions.length}</NexusBadge>
-        <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>Delivery {deliveryStats.confidencePct}%</NexusBadge>
+        
       </div>
 
       <div className="min-h-0 grid gap-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
-          {watchlistCards.length > 0 ? (
-            <div data-comms-watchlist-pinboard="true" className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
+          {watchlistCards.length > 0 ?
+          <div data-comms-watchlist-pinboard="true" className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <div className="text-[10px] uppercase tracking-wide text-zinc-300">Watchlist Pinboard</div>
                 <div className="flex items-center gap-1.5">
@@ -821,23 +821,23 @@ export default function CommsNetworkCardConsole({
                 </div>
               </div>
               <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-5">
-                {visibleWatchlistCards.map((card) => (
-                  <button
-                    key={`watch:${card.id}`}
-                    type="button"
-                    className="rounded border border-orange-500/30 bg-zinc-950/70 px-1.5 py-1 text-left"
-                    onClick={() => setSelectedSquadId(card.id)}
-                  >
+                {visibleWatchlistCards.map((card) =>
+              <button
+                key={`watch:${card.id}`}
+                type="button"
+                className="rounded border border-orange-500/30 bg-zinc-950/70 px-1.5 py-1 text-left"
+                onClick={() => setSelectedSquadId(card.id)}>
+
                     <div className="inline-flex items-center gap-1 min-w-0">
                       <img src={squadTokenIcon(card.squadLabel, 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                       <span className="text-[9px] text-zinc-100 uppercase tracking-wide truncate">{card.squadLabel}</span>
                     </div>
                     <div className="mt-0.5 text-[8px] text-zinc-500 uppercase tracking-wide">Wing {card.wingLabel}</div>
                   </button>
-                ))}
+              )}
               </div>
-            </div>
-          ) : null}
+            </div> :
+          null}
 
           <div className="flex items-center justify-between gap-2">
             <div className="text-[11px] text-zinc-300 uppercase tracking-wide">Squad Cards</div>
@@ -873,8 +873,8 @@ export default function CommsNetworkCardConsole({
                     </div>
                   </button>
 
-                  {sla ? (
-                    <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1 grid grid-cols-3 gap-1 text-[8px] uppercase tracking-wide">
+                  {sla ?
+                  <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1 grid grid-cols-3 gap-1 text-[8px] uppercase tracking-wide">
                       <span className="inline-flex items-center gap-1 text-zinc-400">
                         <img src={slaTokenIcon(sla.checkinStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         CI {formatSlaAge(sla.last_checkin_age_s)}
@@ -887,8 +887,8 @@ export default function CommsNetworkCardConsole({
                         <img src={slaTokenIcon(sla.offNetStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         OFF {formatSlaAge(sla.off_net_duration_s)}
                       </span>
-                    </div>
-                  ) : null}
+                    </div> :
+                  null}
 
                   <div className="mt-1 flex items-center gap-1 flex-wrap">
                     <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'PILOT')} disabled={card.pilotCount === 0}>Hail Pilot</NexusButton>
@@ -898,14 +898,14 @@ export default function CommsNetworkCardConsole({
                     <NexusButton size="sm" intent="subtle" onClick={() => setConsoleState((prev) => toggleWatchlistSquad(prev, card.id))}>
                       {watchlistSet.has(card.id) ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
                     </NexusButton>
-                    {escalation ? (
-                      <NexusButton size="sm" intent={slaTone(sla?.overallStatus || 'green')} onClick={() => triggerEscalation(card, escalation)}>
+                    {escalation ?
+                    <NexusButton size="sm" intent={slaTone(sla?.overallStatus || 'green')} onClick={() => triggerEscalation(card, escalation)}>
                         {escalation.label}
-                      </NexusButton>
-                    ) : null}
+                      </NexusButton> :
+                    null}
                   </div>
-                </article>
-              );
+                </article>);
+
             })}
             {visibleSquadCards.length === 0 ? <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">No squad cards available for this lane page.</div> : null}
           </div>
@@ -920,8 +920,8 @@ export default function CommsNetworkCardConsole({
           <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
             <div className="text-[9px] text-zinc-400 uppercase tracking-wide mb-1">Wing Hails</div>
             <div className="grid grid-cols-1 gap-1">
-              {fleetSummary.slice(0, 3).map((wing) => (
-                <div key={wing.wingId} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-1">
+              {fleetSummary.slice(0, 3).map((wing) =>
+              <div key={wing.wingId} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-1">
                   <span className="inline-flex items-center gap-1 text-[9px] text-zinc-300 uppercase tracking-wide truncate">
                     <img src={wingTokenIcon(wing.wingId, wing.redSlaCount > 0 ? 'busy' : 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                     {wing.wingLabel} · {wing.squadCount}
@@ -931,12 +931,12 @@ export default function CommsNetworkCardConsole({
                     <NexusButton size="sm" intent="subtle" onClick={() => issueRoleHail({ scope: 'WING', targetRole: 'MEDIC', wingId: wing.wingId, squadIds: wing.squadIds })}>Medics</NexusButton>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {selectedSquad ? (
-            <>
+          {selectedSquad ?
+          <>
               <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-1.5">
                   <div className="min-w-0 inline-flex items-center gap-1.5">
@@ -958,34 +958,34 @@ export default function CommsNetworkCardConsole({
                 <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(selectedSquad, 'ALL_HANDS')}>Hail Squad</NexusButton>
               </div>
 
-              {bridgeLifecycleRows.length > 0 ? (
-                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
+              {bridgeLifecycleRows.length > 0 ?
+            <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                   <div className="text-[9px] text-zinc-400 uppercase tracking-wide mb-1">Bridge Sessions</div>
                   <div className="space-y-1">
-                    {bridgeLifecycleRows.slice(0, 3).map((session) => (
-                      <div key={session.id} data-comms-bridge-session="true" className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                    {bridgeLifecycleRows.slice(0, 3).map((session) =>
+                <div key={session.id} data-comms-bridge-session="true" className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
                         <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">
                           {session.squadIds.map((id) => squadById[id]?.squadLabel || id).join(' + ')} · {formatAge(nowMs, session.createdAtMs)} · {session.ttlLabel}
                         </span>
                         <div className="inline-flex items-center gap-1">
-                          {session.splitSuggested ? (
-                            <NexusBadge tone="warning" data-comms-split-suggested="true">Split Suggested</NexusBadge>
-                          ) : null}
+                          {session.splitSuggested ?
+                    <NexusBadge tone="warning" data-comms-split-suggested="true">Split Suggested</NexusBadge> :
+                    null}
                           <NexusButton size="sm" intent={session.splitSuggested ? 'primary' : 'subtle'} onClick={() => splitBridgeSession(session, session.splitSuggested)}>
                             {session.splitSuggested ? 'Confirm Split' : 'Split'}
                           </NexusButton>
                         </div>
                       </div>
-                    ))}
+                )}
                   </div>
-                </div>
-              ) : null}
+                </div> :
+            null}
 
               <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                 <div className="text-[9px] text-zinc-400 uppercase tracking-wide mb-1">Ships + Crew</div>
                 <div className="space-y-1">
-                  {selectedSquad.vehicles.slice(0, 4).map((vehicle) => (
-                    <div key={vehicle.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                  {selectedSquad.vehicles.slice(0, 4).map((vehicle) =>
+                <div key={vehicle.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
                       <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
                         <img src={tokenAssets.comms.vehicle} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         <span className="truncate">{vehicle.label}</span>
@@ -995,9 +995,9 @@ export default function CommsNetworkCardConsole({
                         <span className="text-[8px] text-zinc-500 uppercase tracking-wide">Crew {vehicle.crewCount}</span>
                       </div>
                     </div>
-                  ))}
-                  {selectedSquad.operators.slice(0, 5).map((operator) => (
-                    <div key={operator.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                )}
+                  {selectedSquad.operators.slice(0, 5).map((operator) =>
+                <div key={operator.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
                       <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
                         <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         <span className="truncate">{operator.callsign}</span>
@@ -1007,13 +1007,13 @@ export default function CommsNetworkCardConsole({
                         <NexusBadge tone={operatorStatusTone(operator.status)}>{operator.status}</NexusBadge>
                       </div>
                     </div>
-                  ))}
+                )}
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">Select a squad card to view details.</div>
-          )}
+            </> :
+
+          <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">Select a squad card to view details.</div>
+          }
         </section>
       </div>
 
@@ -1024,37 +1024,37 @@ export default function CommsNetworkCardConsole({
             <NexusBadge tone={deliveryStats.persisted > 0 ? 'active' : 'neutral'}>Persisted {deliveryStats.persisted}</NexusBadge>
             <NexusBadge tone={deliveryStats.acked > 0 ? 'ok' : 'neutral'}>Acked {deliveryStats.acked}</NexusBadge>
             <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>Confidence {deliveryStats.confidencePct}%</NexusBadge>
-            {fleetSummary.slice(0, 3).map((wing) => (
-              <span key={wing.wingId} className="inline-flex items-center gap-1 text-[9px] text-zinc-500 uppercase tracking-wide">
+            {fleetSummary.slice(0, 3).map((wing) =>
+            <span key={wing.wingId} className="inline-flex items-center gap-1 text-[9px] text-zinc-500 uppercase tracking-wide">
                 <img src={wingTokenIcon(wing.wingId, wing.redSlaCount > 0 ? 'busy' : 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                 {wing.wingLabel} {wing.squadCount}
               </span>
-            ))}
+            )}
           </div>
           <div className="text-[10px] text-zinc-500">Showing {feedPage.visible.length} tactical echoes</div>
         </div>
 
-        {feedPage.visible.length > 0 ? (
-          <div className="mt-1.5 grid grid-cols-1 md:grid-cols-3 gap-1.5">
-            {feedPage.visible.map((dispatch) => (
-              <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
+        {feedPage.visible.length > 0 ?
+        <div className="mt-1.5 grid grid-cols-1 md:grid-cols-3 gap-1.5">
+            {feedPage.visible.map((dispatch) =>
+          <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{dispatch.directive}</span>
                   <NexusBadge tone={deliveryTone(dispatch.status)}>{dispatch.status}</NexusBadge>
                 </div>
                 <div className="mt-0.5 text-[9px] text-zinc-500 truncate">{dispatch.channelId} · {formatAge(nowMs, dispatch.issuedAtMs)} ago</div>
               </div>
-            ))}
-          </div>
-        ) : null}
+          )}
+          </div> :
+        null}
 
-        {feedback ? (
-          <div className="mt-1 text-[10px] text-orange-300 inline-flex items-center gap-1">
+        {feedback ?
+        <div className="mt-1 text-[10px] text-orange-300 inline-flex items-center gap-1">
             {feedback.toLowerCase().includes('escalate') ? <AlertTriangle className="w-3 h-3" /> : <Radio className="w-3 h-3" />}
             {feedback}
-          </div>
-        ) : null}
+          </div> :
+        null}
       </div>
-    </div>
-  );
+    </div>);
+
 }
