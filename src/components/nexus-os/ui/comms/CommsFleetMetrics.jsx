@@ -57,9 +57,9 @@ export default function CommsFleetMetrics({
           <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
           <h3 className="text-[10px] uppercase tracking-[0.15em] text-zinc-200 font-semibold">Fleet Nexus</h3>
         </div>
-        <NexusBadge tone={getHealthTone(metrics.systemHealth)}>
-          {metrics.systemHealth}% Health
-        </NexusBadge>
+        
+
+
       </div>
 
       {/* Primary Metrics Grid */}
