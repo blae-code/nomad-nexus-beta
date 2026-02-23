@@ -54,12 +54,12 @@ export default function TacticalSidePanel({
 
   return (
     <aside
-      className={`bg-zinc-950/80 ${borderSideClass} border-zinc-700/40 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
+      className={`bg-zinc-950/80 ${borderSideClass} border-orange-500/20 flex-shrink-0 relative overflow-hidden transition-all duration-300 flex flex-col ${className}`}
       style={{ width: collapsed ? 52 : width }}
     >
       {!collapsed ? (
         <>
-          <header className="flex-shrink-0 border-b border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm px-2.5 py-2">
+           <header className="flex-shrink-0 border-b border-orange-500/20 bg-orange-500/5 nexus-panel-glow backdrop-blur-sm px-2.5 py-2">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex items-center gap-1.5">
                 {Icon ? <Icon className="w-3.5 h-3.5 text-orange-500" /> : null}
@@ -110,8 +110,8 @@ export default function TacticalSidePanel({
           <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
 
           {statusMetrics.length > 0 ? (
-            <footer className="flex-shrink-0 border-t border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm">
-              <div className="grid grid-cols-3 divide-x divide-zinc-800/60">
+            <footer className="flex-shrink-0 border-t border-orange-500/20 bg-orange-500/5 backdrop-blur-sm">
+              <div className="grid grid-cols-3 divide-x divide-orange-500/20">
                 {statusMetrics.slice(0, 3).map((metric, index) => (
                   <div key={`${metric.label}:${index}`} className="px-2 py-2 flex flex-col items-center">
                     <span className="text-[8px] text-zinc-500 uppercase tracking-wider font-semibold">{metric.label}</span>
