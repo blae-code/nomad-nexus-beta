@@ -438,9 +438,9 @@ export default function VoiceCommsRail({
       <>
           <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
              <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Controls</div>
-          </div>
-          <div className="px-2 py-1.5 bg-black/40">
-            {renderGlobalControlCluster()}
+            <div className="px-2 py-1.5 bg-black/40">
+              {renderGlobalControlCluster()}
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
