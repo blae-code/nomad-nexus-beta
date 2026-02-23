@@ -46,7 +46,7 @@ import {
   sortSquadCardsDeterministic,
 } from './commsCardConsoleRuntime';
 
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
+
 
 interface SquadCard {
   id: string;
