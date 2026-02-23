@@ -693,6 +693,63 @@ export default function CommsNetworkCardConsole({
     [issueOrder]
   );
 
+  // Sample data for demo wings
+  const SAMPLE_SQUADS = [
+    // Yela's Belt - Mining/Industrial Wing
+    {
+      id: 'squad:mining-alpha',
+      wingId: 'wing:yelas-belt',
+      wingLabel: "Yela's Belt",
+      squadLabel: 'MINING-ALPHA',
+      channels: [{ id: 'ch:yelas-alpha', label: 'Yelas-A', status: 'active', membershipCount: 6 }],
+      vehicles: [
+        { id: 'v:prospector-01', label: 'Prospector-01', status: 'OPERATIONAL', crewCount: 1 },
+        { id: 'v:prospector-02', label: 'Prospector-02', status: 'OPERATIONAL', crewCount: 1 }
+      ],
+      operators: [
+        { id: 'op:miner-01', callsign: 'Digger-1', role: 'MINER', status: 'ON-NET' },
+        { id: 'op:miner-02', callsign: 'Digger-2', role: 'MINER', status: 'ON-NET' },
+        { id: 'op:haul-01', callsign: 'Hauler-1', role: 'LOGISTICS', status: 'TX' }
+      ],
+      primaryChannelId: 'ch:yelas-alpha',
+      pilotCount: 2,
+      medicCount: 0,
+      leadCount: 1,
+      txCount: 1,
+      onlineCount: 3,
+      offNetCount: 0,
+      linkedSquadIds: []
+    },
+    // PvP - 20v20 Combined Arms Wing
+    {
+      id: 'squad:pvp-alpha',
+      wingId: 'wing:pvp-combat',
+      wingLabel: 'PVP-20v20',
+      squadLabel: 'COMBAT-ALPHA',
+      channels: [{ id: 'ch:pvp-alpha', label: 'Combat-A', status: 'active', membershipCount: 10 }],
+      vehicles: [
+        { id: 'v:fighter-01', label: 'SuperHornet-01', status: 'OPERATIONAL', crewCount: 2 },
+        { id: 'v:fighter-02', label: 'SuperHornet-02', status: 'OPERATIONAL', crewCount: 2 },
+        { id: 'v:tank-01', label: 'Tonk-Support', status: 'OPERATIONAL', crewCount: 3 }
+      ],
+      operators: [
+        { id: 'op:pilot-01', callsign: 'Viper-1', role: 'PILOT', status: 'TX' },
+        { id: 'op:pilot-02', callsign: 'Viper-2', role: 'PILOT', status: 'TX' },
+        { id: 'op:gunner-01', callsign: 'Trigger-1', role: 'GUNNER', status: 'ON-NET' },
+        { id: 'op:gunner-02', callsign: 'Trigger-2', role: 'GUNNER', status: 'ON-NET' },
+        { id: 'op:medic-01', callsign: 'Doc-Alpha', role: 'MEDIC', status: 'ON-NET' }
+      ],
+      primaryChannelId: 'ch:pvp-alpha',
+      pilotCount: 2,
+      medicCount: 1,
+      leadCount: 0,
+      txCount: 2,
+      onlineCount: 5,
+      offNetCount: 0,
+      linkedSquadIds: []
+    }
+  ];
+
   if (loading) return <PanelLoadingState label="Loading comms cards..." />;
   if (error || !snapshot) {
     return (
