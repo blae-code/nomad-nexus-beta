@@ -625,6 +625,9 @@ export default function VoiceCommsRail({
 
                 {fleetView === 'schema' &&
             <>
+                    <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
+                      <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Fleet Channels</div>
+                    </div>
                     {schemaChannelPageCount > 1 &&
               <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                         <button
