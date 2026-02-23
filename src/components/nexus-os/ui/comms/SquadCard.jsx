@@ -24,7 +24,7 @@ export default function SquadCard({
   slaTone,
   formatSlaAge
 }) {
-  const [expandedVehicleId, setExpandedVehicleId] = useState(null);
+  const [expandedVehicleIds, setExpandedVehicleIds] = useState(new Set());
   const [location, setLocation] = useState(card.location || '');
 
   useEffect(() => {
@@ -39,9 +39,30 @@ export default function SquadCard({
     return () => unsubscribe?.();
   }, [card.id]);
 
+  const buildVehicleTree = () => {
+    const byId = {};
+    const roots = [];
+    
+    card.vehicles.forEach((v) => {
+      byId[v.id] = { ...v, children: [] };
+    });
+    
+    card.vehicles.forEach((v) => {
+      if (v.parent_id && byId[v.parent_id]) {
+        byId[v.parent_id].children.push(byId[v.id]);
+      } else {
+        roots.push(byId[v.id]);
+      }
+    });
+    
+    return roots;
+  };
+
   const toggleVehicle = (e, vehicleId) => {
     e.stopPropagation();
-    setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
+    const newSet = new Set(expandedVehicleIds);
+    newSet.has(vehicleId) ? newSet.delete(vehicleId) : newSet.add(vehicleId);
+    setExpandedVehicleIds(newSet);
   };
 
   const getSizeSymbol = (vehicleSize) => {
@@ -163,61 +184,55 @@ export default function SquadCard({
 
       {/* Ships: Collapsible Categories */}
       <div className="mt-1 space-y-1">
-        {card.vehicles.map((vehicle) => {
-            const isExpanded = expandedVehicleId === vehicle.id;
+        {buildVehicleTree().map((vehicle) => {
+          const renderVehicleNode = (vehicle, depth = 0) => {
+            const isExpanded = expandedVehicleIds.has(vehicle.id);
             const crewForVehicle = card.operators.filter((op) =>
               vehicle.label.toLowerCase().includes(op.callsign.split('-')[0].toLowerCase()) ||
               card.operators.length <= 5
             ).slice(0, 5);
             const crewStatus = getCrewReadiness(vehicle, crewForVehicle.length);
             const ammoBadge = getAmmoBadge(vehicle.ammo_percent);
+            const paddingLeft = depth * 12;
+
             return (
-            <div key={vehicle.id} className="rounded border border-zinc-800/60 bg-zinc-900/25">
+              <div key={vehicle.id} className="space-y-1">
+                <div className="rounded border border-zinc-800/60 bg-zinc-900/25" style={{ marginLeft: `${paddingLeft}px` }}>
               <button
                 type="button"
                 onClick={(e) => toggleVehicle(e, vehicle.id)}
-                className="w-full flex items-center justify-between gap-1 px-1.5 py-1 text-[10px] text-zinc-300 uppercase tracking-wide font-semibold hover:bg-zinc-900/40 transition-colors"
+                className="w-full flex items-center justify-between gap-1.5 px-2 py-1.5 text-[11px] text-zinc-200 uppercase tracking-wide font-semibold hover:bg-zinc-900/40 transition-colors"
               >
-                <div className="flex items-center gap-1 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <ChevronDown
-                    className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${
+                    className={`w-2.5 h-2.5 flex-shrink-0 transition-transform ${
                       isExpanded ? 'rotate-180' : ''
                     }`}
                   />
                   <img
                     src={tokenAssets.comms.vehicle}
                     alt=""
-                    className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
+                    className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
                   />
                   <span className="truncate">{getSizeSymbol(vehicle.size)} {vehicle.label}</span>
+                  {!isExpanded && (
+                    <div className="flex gap-1.5 text-[10px] flex-wrap ml-auto">
+                      <img src={slaTokenIcon(getSecurityTone(vehicle.security_status))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={String(vehicle.security_status || 'SAFE').substring(0, 3)} />
+                      {ammoBadge && <img src={slaTokenIcon(ammoBadge.tone)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={ammoBadge.label} />}
+                      {vehicle.hydrogen_fuel !== undefined && <img src={slaTokenIcon(getFuelTone(vehicle.hydrogen_fuel))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={`H2 ${vehicle.hydrogen_fuel}%`} />}
+                      {vehicle.quantanium_fuel !== undefined && <img src={slaTokenIcon(getFuelTone(vehicle.quantanium_fuel))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={`QT ${vehicle.quantanium_fuel}%`} />}
+                      <img src={slaTokenIcon(crewStatus.status === 'ready' ? 'ok' : 'warning')} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={`${crewStatus.current}/${crewStatus.recommended}`} />
+                    </div>
+                  )}
                 </div>
                 <img
                   src={vehicleStatusTokenIcon(vehicle.status)}
                   alt=""
-                  className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
+                  className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
                 />
               </button>
 
-              {/* Vehicle Status Bar - Collapsed View */}
-              {!isExpanded && (
-                <div className="border-t border-zinc-800/40 px-1 py-0.5 flex flex-wrap gap-0.5 text-[7px]">
-                  <NexusBadge tone={getSecurityTone(vehicle.security_status)}>
-                    {String(vehicle.security_status || 'SAFE').substring(0, 3).toUpperCase()}
-                  </NexusBadge>
-                  {ammoBadge && (
-                    <NexusBadge tone={ammoBadge.tone}>{ammoBadge.label}</NexusBadge>
-                  )}
-                  {vehicle.hydrogen_fuel !== undefined && (
-                    <NexusBadge tone={getFuelTone(vehicle.hydrogen_fuel)}>H2 {vehicle.hydrogen_fuel}%</NexusBadge>
-                  )}
-                  {vehicle.quantanium_fuel !== undefined && (
-                    <NexusBadge tone={getFuelTone(vehicle.quantanium_fuel)}>QT {vehicle.quantanium_fuel}%</NexusBadge>
-                  )}
-                  <NexusBadge tone={crewStatus.status === 'ready' ? 'ok' : 'warning'}>
-                    {crewStatus.current}/{crewStatus.recommended}
-                  </NexusBadge>
-                </div>
-              )}
+
 
               {isExpanded && (
                 <div className="border-t border-zinc-800/40 px-1 py-1 space-y-0.5">
@@ -249,8 +264,19 @@ export default function SquadCard({
                   )}
                 </div>
               )}
+              
+              {/* Render child vehicles recursively */}
+              {isExpanded && vehicle.children && vehicle.children.length > 0 && (
+                <div className="space-y-1">
+                  {vehicle.children.map((child) => renderVehicleNode(child, depth + 1))}
+                </div>
+              )}
+            </div>
             </div>
           );
+        };
+
+        return renderVehicleNode(vehicle);
         })}
       </div>
 
