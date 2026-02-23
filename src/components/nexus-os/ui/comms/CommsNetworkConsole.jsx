@@ -1844,8 +1844,6 @@ export default function CommsNetworkConsole({
                 ) : null}
               </div>
             </div>
-          ) : rightPanelView === 'schema' ? (
-            <div className="min-h-0 rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-1.5">
               <button
                 type="button"
                 className="w-full flex items-center gap-1 text-left rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1"
