@@ -11,6 +11,7 @@ import {
 'lucide-react';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
 import { NexusBadge } from '../primitives';
+import TokenRenderer from '../tokens/TokenRenderer';
 import { tokenAssets } from '../tokens';
 import {
   operatorStatusTone,
@@ -236,18 +237,18 @@ export default function VoiceCommsRail({
       )}
       </div>
       {speakingParticipants.length > 0 ?
-    <div className="flex items-center gap-1 flex-wrap">
-          {speakingParticipants.map((participant) =>
+      <div className="flex items-center gap-1 flex-wrap">
+        {speakingParticipants.map((participant) =>
       <span
-        key={participant.id || participant.userId || participant.clientId || participant.callsign}
-        className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[8px] uppercase tracking-wide inline-flex items-center gap-1">
+      key={participant.id || participant.userId || participant.clientId || participant.callsign}
+      className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[8px] uppercase tracking-wide inline-flex items-center gap-1">
 
-              <img src={tokenAssets.comms.operatorStatus.tx} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-              {participant.callsign || participant.name || participant.id}
-            </span>
+            <TokenRenderer family="circle" color="orange" size="xs" animated />
+            {participant.callsign || participant.name || participant.id}
+          </span>
       )}
-        </div> :
-    null}
+      </div> :
+      null}
     </div>;
 
 
@@ -267,7 +268,7 @@ export default function VoiceCommsRail({
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="font-bold uppercase tracking-wider truncate inline-flex items-center gap-1">
-              <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+              <TokenRenderer family="hex" color="orange" size="xs" />
               {net.code || net.id || net.name}
             </div>
             <div className="text-[9px] text-zinc-500 mt-0.5 truncate">{net.label || net.description || 'Voice lane'}</div>
@@ -443,15 +444,16 @@ export default function VoiceCommsRail({
                 <div className="space-y-1">
                   {pagedParticipants.map((participant) => {
                 const status = participantStatusLabel(participant);
+                const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
                 return (
                   <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-950/60 border border-red-700/30">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[10px] font-semibold text-zinc-300 truncate inline-flex items-center gap-1">
-                            <img src={tokenAssets.comms.role.default} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <TokenRenderer family="square" color="cyan" size="xs" />
                             {participant.callsign || participant.name || participant.id}
                           </span>
                           <span className="inline-flex items-center gap-1">
-                            <img src={operatorStatusTokenIcon(status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <TokenRenderer family="circle" color={statusColor} size="xs" animated={status === 'TX'} />
                             <NexusBadge tone={operatorStatusTone(status)}>{status}</NexusBadge>
                           </span>
                         </div>
