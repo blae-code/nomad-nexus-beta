@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Pin, PinOff, Radio, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, Pin, PinOff, Radio } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
 import { NexusBadge, NexusButton, DegradedStateCard } from '../primitives';
 import { PanelLoadingState } from '../loading';
+
 import { tokenAssets } from '../tokens';
 import {
   operatorStatusTone,
@@ -12,8 +13,8 @@ import {
   roleTokenIcon,
   squadTokenIcon,
   vehicleStatusTokenIcon,
-  wingTokenIcon,
-} from './commsTokenSemantics';
+  wingTokenIcon } from
+'./commsTokenSemantics';
 import { buildSchemaTree } from './commsFleetSchemaRuntime';
 import {
   appendOrderDispatch,
@@ -21,8 +22,8 @@ import {
   buildDeliverySurface,
   buildPagedOrders,
   createOrderDispatch,
-  deliveryTone,
-} from './commsOrderRuntime';
+  deliveryTone } from
+'./commsOrderRuntime';
 import {
   COMMS_CARD_CONSOLE_DEFAULT_TTL_SEC,
   COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS,
@@ -36,40 +37,17 @@ import {
   removeBridgeTemplate,
   renameBridgeTemplate,
   toggleWatchlistSquad,
-  upsertBridgeTemplate,
-} from './commsCardConsoleState';
+  upsertBridgeTemplate } from
+'./commsCardConsoleState';
 import {
   buildBridgeLifecycleRows,
   buildEscalationSuggestions,
   buildSquadSlaSnapshots,
   normalizeBridgeTtlSec,
-  sortSquadCardsDeterministic,
-} from './commsCardConsoleRuntime';
-
-
-
-interface SquadCard {
-  id: string;
-  wingId: string;
-  wingLabel: string;
-  squadLabel: string;
-  channels: Array<{ id: string; label: string; status: string; membershipCount: number }>;
-  vehicles: Array<{ id: string; label: string; status: string; crewCount: number }>;
-  operators: Array<{ id: string; callsign: string; role: string; status: string }>;
-  primaryChannelId: string;
-  pilotCount: number;
-  medicCount: number;
-  leadCount: number;
-  txCount: number;
-  onlineCount: number;
-  offNetCount: number;
-  linkedSquadIds: string[];
-}
-
-interface BridgeSession extends BridgeLifecycleSession {}
-
-type RoleHailTarget = 'PILOT' | 'MEDIC' | 'ALL_HANDS' | 'SQUAD_LEAD';
-type RoleHailScope = 'SQUAD' | 'WING' | 'FLEET';
+  sortSquadCardsDeterministic } from
+'./commsCardConsoleRuntime';
+import CommsFleetMetrics from './CommsFleetMetrics';
+import SquadCard from './SquadCard';
 
 const SQUAD_CARD_PAGE_SIZE = 5;
 const WATCHLIST_PAGE_SIZE = 5;
@@ -78,7 +56,7 @@ const MAX_ORDER_HISTORY = 24;
 const GRAPH_REFRESH_MS = 12_000;
 const MAX_BRIDGE_SESSIONS = 6;
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -86,7 +64,7 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function formatSlaAge(seconds: number): string {
+function formatSlaAge(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '0s';
   if (seconds < 60) return `${Math.round(seconds)}s`;
   const minutes = Math.floor(seconds / 60);
@@ -94,7 +72,7 @@ function formatSlaAge(seconds: number): string {
   return `${minutes}m ${String(rem).padStart(2, '0')}s`;
 }
 
-function roleToken(role: string): string {
+function roleToken(role) {
   return String(role || '').trim().toLowerCase();
 }
 
@@ -116,13 +94,13 @@ function buildSquadCards(schemaTree, edges) {
 
   for (const wing of schemaTree || []) {
     for (const squad of wing.squads || []) {
-      const channels = (squad.channels || []).map((channel: any) => {
+      const channels = (squad.channels || []).map((channel) => {
         squadByChannelId.set(channel.id, squad.id);
         return {
           id: channel.id,
           label: channel.label,
           status: channel.status,
-          membershipCount: Number(channel.membershipCount || 0),
+          membershipCount: Number(channel.membershipCount || 0)
         };
       });
 
@@ -135,7 +113,7 @@ function buildSquadCards(schemaTree, edges) {
             id: vehicle.id,
             label: vehicle.label,
             status: vehicle.basicStatus,
-            crewCount: Number(vehicle.crewCount || vehicle.operators?.length || 0),
+            crewCount: Number(vehicle.crewCount || vehicle.operators?.length || 0)
           });
 
           for (const operator of vehicle.operators || []) {
@@ -143,7 +121,7 @@ function buildSquadCards(schemaTree, edges) {
               id: operator.id,
               callsign: operator.callsign || operator.id,
               role: operator.role || 'Member',
-              status: operator.status || 'OFF-NET',
+              status: operator.status || 'OFF-NET'
             });
           }
         }
@@ -180,7 +158,7 @@ function buildSquadCards(schemaTree, edges) {
         txCount,
         onlineCount,
         offNetCount,
-        linkedSquadIds: [],
+        linkedSquadIds: []
       });
     }
   }
@@ -206,18 +184,18 @@ function buildSquadCards(schemaTree, edges) {
   return sortSquadCardsDeterministic(
     cards.map((card) => ({
       ...card,
-      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set<string>())],
+      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set())]
     }))
   );
 }
 
-function onTemplateNameInput(defaultValue: string): string {
+function onTemplateNameInput(defaultValue) {
   if (typeof window === 'undefined') return defaultValue;
   const response = window.prompt('Bridge template name', defaultValue) || '';
   return response.trim();
 }
 
-function confirmAction(message: string): boolean {
+function confirmAction(message) {
   if (typeof window === 'undefined') return false;
   return Boolean(window.confirm(message));
 }
@@ -229,38 +207,38 @@ export default function CommsNetworkCardConsole({
   roster = [],
   events = [],
   actorId = '',
-  onCreateMacroEvent,
-}: CommsNetworkConsoleProps) {
-  const voiceNet = useVoiceNet() as any;
+  onCreateMacroEvent
+}) {
+  const voiceNet = useVoiceNet();
   const scopeInput = useMemo(
     () => ({
       sessionScopeKey: `${String(bridgeId || 'OPS')}:${String(actorId || 'operator')}`,
       variantId,
-      opId,
+      opId
     }),
     [actorId, bridgeId, opId, variantId]
   );
   const scopeKey = useMemo(() => buildCommsCardConsoleScopeKey(scopeInput), [scopeInput]);
   const utilityCoreEnabled = useMemo(() => isCommsCardUtilityCoreEnabled(), []);
 
-  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [squadCardPage, setSquadCardPage] = useState(0);
   const [watchlistPage, setWatchlistPage] = useState(0);
   const [selectedSquadId, setSelectedSquadId] = useState('');
-  const [bridgeDraftSquadIds, setBridgeDraftSquadIds] = useState<string[]>([]);
-  const [bridgeSessions, setBridgeSessions] = useState<BridgeSession[]>([]);
+  const [bridgeDraftSquadIds, setBridgeDraftSquadIds] = useState([]);
+  const [bridgeSessions, setBridgeSessions] = useState([]);
   const [bridgeTtlSec, setBridgeTtlSec] = useState(COMMS_CARD_CONSOLE_DEFAULT_TTL_SEC);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [directiveDispatches, setDirectiveDispatches] = useState<any[]>([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [consoleState, setConsoleState] = useState(() => loadLocalCommsCardConsoleState(scopeInput));
   const [remoteSynced, setRemoteSynced] = useState(false);
 
-  const offNetSinceByOperatorRef = useRef<Record<string, number>>({});
+  const offNetSinceByOperatorRef = useRef({});
 
   const loadGraph = useCallback(
     async (silent = false) => {
@@ -271,10 +249,10 @@ export default function CommsNetworkCardConsole({
           variantId,
           opId,
           includeUserNodes: true,
-          roster,
+          roster
         });
         setSnapshot(next);
-      } catch (err: any) {
+      } catch (err) {
         setError(err?.message || 'Failed to load comms graph.');
       } finally {
         if (!silent) setLoading(false);
@@ -309,16 +287,16 @@ export default function CommsNetworkCardConsole({
   useEffect(() => {
     let cancelled = false;
     const local = loadLocalCommsCardConsoleState(scopeInput);
-    void hydrateCommsCardConsoleState(scopeInput, local)
-      .then((hydrated) => {
-        if (cancelled) return;
-        setConsoleState(hydrated);
-        setRemoteSynced(true);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setRemoteSynced(true);
-      });
+    void hydrateCommsCardConsoleState(scopeInput, local).
+    then((hydrated) => {
+      if (cancelled) return;
+      setConsoleState(hydrated);
+      setRemoteSynced(true);
+    }).
+    catch(() => {
+      if (cancelled) return;
+      setRemoteSynced(true);
+    });
     return () => {
       cancelled = true;
     };
@@ -331,39 +309,39 @@ export default function CommsNetworkCardConsole({
   const channels = snapshot?.channels || [];
   const edges = snapshot?.edges || [];
   const voiceParticipants = useMemo(
-    () => (Array.isArray(voiceNet?.participants) ? voiceNet.participants : []),
+    () => Array.isArray(voiceNet?.participants) ? voiceNet.participants : [],
     [voiceNet?.participants]
   );
 
   const { schemaTree, schemaChannelPageCount } = useMemo(
     () =>
-      buildSchemaTree({
-        channels,
-        edges,
-        roster,
-        voiceParticipants,
-        schemaChannelPage,
-      }),
+    buildSchemaTree({
+      channels,
+      edges,
+      roster,
+      voiceParticipants,
+      schemaChannelPage
+    }),
     [channels, edges, roster, voiceParticipants, schemaChannelPage]
   );
 
   const squadCards = useMemo(() => buildSquadCards(schemaTree, edges), [schemaTree, edges]);
   const squadById = useMemo(
-    () => squadCards.reduce<Record<string, SquadCard>>((acc, card) => ({ ...acc, [card.id]: card }), {}),
+    () => squadCards.reduce((acc, card) => ({ ...acc, [card.id]: card }), {}),
     [squadCards]
   );
 
   const watchlistSet = useMemo(() => new Set(consoleState.watchlistSquadIds), [consoleState.watchlistSquadIds]);
   const watchlistCards = useMemo(
     () =>
-      consoleState.watchlistSquadIds
-        .map((squadId) => squadById[squadId])
-        .filter((card): card is SquadCard => Boolean(card)),
+    consoleState.watchlistSquadIds.
+    map((squadId) => squadById[squadId]).
+    filter((card) => Boolean(card)),
     [consoleState.watchlistSquadIds, squadById]
   );
 
   const cardsForPaging = useMemo(
-    () => (consoleState.uiPrefs.compactMode ? watchlistCards : squadCards),
+    () => consoleState.uiPrefs.compactMode ? watchlistCards : squadCards,
     [consoleState.uiPrefs.compactMode, squadCards, watchlistCards]
   );
 
@@ -407,7 +385,7 @@ export default function CommsNetworkCardConsole({
 
   const squadSlaSnapshots = useMemo(() => {
     const offNetSinceByOperatorId = offNetSinceByOperatorRef.current;
-    const liveOperatorIds = new Set<string>();
+    const liveOperatorIds = new Set();
 
     for (const squad of squadCards) {
       for (const operator of squad.operators) {
@@ -433,22 +411,22 @@ export default function CommsNetworkCardConsole({
       events,
       nowMs,
       slaPolicy: consoleState.slaPolicy,
-      offNetSinceByOperatorId,
+      offNetSinceByOperatorId
     });
   }, [consoleState.slaPolicy, events, nowMs, squadCards]);
 
   const slaBySquadId = useMemo(
     () =>
-      squadSlaSnapshots.reduce<Record<string, (typeof squadSlaSnapshots)[number]>>((acc, snapshot) => {
-        acc[snapshot.squadId] = snapshot;
-        return acc;
-      }, {}),
+    squadSlaSnapshots.reduce((acc, snapshot) => {
+      acc[snapshot.squadId] = snapshot;
+      return acc;
+    }, {}),
     [squadSlaSnapshots]
   );
 
   const escalationBySquadId = useMemo(() => {
     const suggestions = buildEscalationSuggestions({ snapshots: squadSlaSnapshots });
-    return suggestions.reduce<Record<string, EscalationSuggestion>>((acc, suggestion) => {
+    return suggestions.reduce((acc, suggestion) => {
       acc[suggestion.squadId] = suggestion;
       return acc;
     }, {});
@@ -472,7 +450,7 @@ export default function CommsNetworkCardConsole({
   const feedPage = useMemo(() => buildPagedOrders(deliverySurface, 0, ORDER_FEED_PREVIEW_SIZE), [deliverySurface]);
 
   const fleetSummary = useMemo(() => {
-    const wingMap = new Map<string, { wingLabel: string; squadCount: number; online: number; tx: number; redSlaCount: number; squadIds: string[] }>();
+    const wingMap = new Map();
     for (const card of squadCards) {
       const row = wingMap.get(card.wingId) || {
         wingLabel: card.wingLabel,
@@ -480,7 +458,7 @@ export default function CommsNetworkCardConsole({
         online: 0,
         tx: 0,
         redSlaCount: 0,
-        squadIds: [],
+        squadIds: []
       };
       row.squadCount += 1;
       row.online += card.onlineCount;
@@ -494,10 +472,10 @@ export default function CommsNetworkCardConsole({
 
   const templateById = useMemo(
     () =>
-      consoleState.bridgeTemplates.reduce<Record<string, (typeof consoleState.bridgeTemplates)[number]>>((acc, template) => {
-        acc[template.id] = template;
-        return acc;
-      }, {}),
+    consoleState.bridgeTemplates.reduce((acc, template) => {
+      acc[template.id] = template;
+      return acc;
+    }, {}),
     [consoleState.bridgeTemplates]
   );
 
@@ -512,31 +490,31 @@ export default function CommsNetworkCardConsole({
     }
   }, [consoleState.uiPrefs.lastTemplateId, selectedTemplateId, templateById]);
 
-  const patchUiPrefs = useCallback((patch: Partial<typeof consoleState.uiPrefs>) => {
+  const patchUiPrefs = useCallback((patch) => {
     setConsoleState((prev) =>
-      normalizeCommsCardConsoleState(
-        {
-          ...prev,
-          uiPrefs: {
-            ...prev.uiPrefs,
-            ...patch,
-          },
-          updatedAt: new Date().toISOString(),
+    normalizeCommsCardConsoleState(
+      {
+        ...prev,
+        uiPrefs: {
+          ...prev.uiPrefs,
+          ...patch
         },
-        prev
-      )
+        updatedAt: new Date().toISOString()
+      },
+      prev
+    )
     );
   }, []);
 
   const issueOrder = useCallback(
-    (input: { channelId: string; directive: string; eventType: CqbEventType; payload?: Record<string, unknown>; success: string }) => {
+    (input) => {
       if (!input.channelId) return;
       const dispatch = createOrderDispatch({
         channelId: input.channelId,
         laneId: `lane:${input.channelId}`,
         directive: input.directive,
         eventType: input.eventType,
-        nowMs,
+        nowMs
       });
       setDirectiveDispatches((prev) => appendOrderDispatch(prev, dispatch, MAX_ORDER_HISTORY));
       if (onCreateMacroEvent) {
@@ -552,9 +530,9 @@ export default function CommsNetworkCardConsole({
               mode: DEFAULT_ACQUISITION_MODE,
               source: 'RADIAL_ACTION',
               commandSource: 'comms_card_console',
-              confirmed: true,
+              confirmed: true
             })
-          ),
+          )
         });
       }
       setFeedback(onCreateMacroEvent ? input.success : `${input.success} (preview)`);
@@ -563,10 +541,10 @@ export default function CommsNetworkCardConsole({
   );
 
   const issueRoleHail = useCallback(
-    (input: { scope: RoleHailScope; targetRole: RoleHailTarget; squadIds: string[]; wingId?: string }) => {
-      const targetSquads = input.squadIds
-        .map((squadId) => squadById[squadId])
-        .filter((card): card is SquadCard => Boolean(card) && Boolean(card.primaryChannelId));
+    (input) => {
+      const targetSquads = input.squadIds.
+      map((squadId) => squadById[squadId]).
+      filter((card) => Boolean(card) && Boolean(card.primaryChannelId));
       if (!targetSquads.length) return;
       const channelIds = targetSquads.map((card) => card.primaryChannelId);
       const directive = `HAIL_${input.targetRole}_${input.scope}`;
@@ -581,9 +559,9 @@ export default function CommsNetworkCardConsole({
             targetRole: input.targetRole,
             squadIds: targetSquads.map((card) => card.id),
             wingId: input.wingId || squad.wingId,
-            channelIds,
+            channelIds
           },
-          success: `Hail ${input.targetRole.toLowerCase()} ${input.scope.toLowerCase()} queued`,
+          success: `Hail ${input.targetRole.toLowerCase()} ${input.scope.toLowerCase()} queued`
         });
       }
     },
@@ -591,7 +569,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const hailSquad = useCallback(
-    (card: SquadCard | null, targetRole: RoleHailTarget) => {
+    (card, targetRole) => {
       if (!card) return;
       issueRoleHail({ scope: 'SQUAD', targetRole, squadIds: [card.id], wingId: card.wingId });
     },
@@ -599,7 +577,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const createBridgeSession = useCallback(() => {
-    const selectedCards = bridgeDraftSquadIds.map((id) => squadById[id]).filter((card): card is SquadCard => Boolean(card));
+    const selectedCards = bridgeDraftSquadIds.map((id) => squadById[id]).filter((card) => Boolean(card));
     if (selectedCards.length < 2) return;
 
     const anchor = selectedCards[0];
@@ -617,9 +595,9 @@ export default function CommsNetworkCardConsole({
           targetSquadId: card.id,
           bridgeSquadIds,
           targetChannelId: card.primaryChannelId,
-          bridgeTtlSec: ttlSec,
+          bridgeTtlSec: ttlSec
         },
-        success: `Bridge briefing ${anchor.squadLabel} -> ${card.squadLabel}`,
+        success: `Bridge briefing ${anchor.squadLabel} -> ${card.squadLabel}`
       });
     }
 
@@ -629,7 +607,7 @@ export default function CommsNetworkCardConsole({
   }, [bridgeDraftSquadIds, bridgeTtlSec, issueOrder, squadById]);
 
   const splitBridgeSession = useCallback(
-    (session: BridgeSession, fromSuggestion = false) => {
+    (session, fromSuggestion = false) => {
       for (const squadId of session.squadIds) {
         const squad = squadById[squadId];
         if (!squad?.primaryChannelId) continue;
@@ -642,9 +620,9 @@ export default function CommsNetworkCardConsole({
             bridgeSessionId: session.id,
             squadIds: session.squadIds,
             bridgeTtlSec: session.ttlSec,
-            splitSuggested: fromSuggestion,
+            splitSuggested: fromSuggestion
           },
-          success: `Split briefing for ${squad.squadLabel}`,
+          success: `Split briefing for ${squad.squadLabel}`
         });
       }
       setBridgeSessions((prev) => prev.filter((entry) => entry.id !== session.id));
@@ -653,7 +631,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const applyTemplate = useCallback(
-    (templateId: string) => {
+    (templateId) => {
       const template = templateById[templateId];
       if (!template) return;
       setBridgeDraftSquadIds(template.squadIds.slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS));
@@ -695,7 +673,7 @@ export default function CommsNetworkCardConsole({
   }, [selectedTemplateId, templateById]);
 
   const triggerEscalation = useCallback(
-    (card: SquadCard, suggestion: EscalationSuggestion) => {
+    (card, suggestion) => {
       if (!card.primaryChannelId) return;
       issueOrder({
         channelId: card.primaryChannelId,
@@ -707,13 +685,70 @@ export default function CommsNetworkCardConsole({
           squadLabel: card.squadLabel,
           wingId: card.wingId,
           escalationTarget: suggestion.target,
-          channelIds: [card.primaryChannelId],
+          channelIds: [card.primaryChannelId]
         },
-        success: `${suggestion.label} queued for ${card.squadLabel}`,
+        success: `${suggestion.label} queued for ${card.squadLabel}`
       });
     },
     [issueOrder]
   );
+
+  // Sample data for demo wings
+  const SAMPLE_SQUADS = [
+    // Yela's Belt - Mining/Industrial Wing
+    {
+      id: 'squad:mining-alpha',
+      wingId: 'wing:yelas-belt',
+      wingLabel: "Yela's Belt",
+      squadLabel: 'MINING-ALPHA',
+      channels: [{ id: 'ch:yelas-alpha', label: 'Yelas-A', status: 'active', membershipCount: 6 }],
+      vehicles: [
+        { id: 'v:prospector-01', label: 'Prospector-01', status: 'OPERATIONAL', crewCount: 1 },
+        { id: 'v:prospector-02', label: 'Prospector-02', status: 'OPERATIONAL', crewCount: 1 }
+      ],
+      operators: [
+        { id: 'op:miner-01', callsign: 'Digger-1', role: 'MINER', status: 'ON-NET' },
+        { id: 'op:miner-02', callsign: 'Digger-2', role: 'MINER', status: 'ON-NET' },
+        { id: 'op:haul-01', callsign: 'Hauler-1', role: 'LOGISTICS', status: 'TX' }
+      ],
+      primaryChannelId: 'ch:yelas-alpha',
+      pilotCount: 2,
+      medicCount: 0,
+      leadCount: 1,
+      txCount: 1,
+      onlineCount: 3,
+      offNetCount: 0,
+      linkedSquadIds: []
+    },
+    // PvP - 20v20 Combined Arms Wing
+    {
+      id: 'squad:pvp-alpha',
+      wingId: 'wing:pvp-combat',
+      wingLabel: 'PVP-20v20',
+      squadLabel: 'COMBAT-ALPHA',
+      channels: [{ id: 'ch:pvp-alpha', label: 'Combat-A', status: 'active', membershipCount: 10 }],
+      vehicles: [
+        { id: 'v:fighter-01', label: 'SuperHornet-01', status: 'OPERATIONAL', crewCount: 2 },
+        { id: 'v:fighter-02', label: 'SuperHornet-02', status: 'OPERATIONAL', crewCount: 2 },
+        { id: 'v:tank-01', label: 'Tonk-Support', status: 'OPERATIONAL', crewCount: 3 }
+      ],
+      operators: [
+        { id: 'op:pilot-01', callsign: 'Viper-1', role: 'PILOT', status: 'TX' },
+        { id: 'op:pilot-02', callsign: 'Viper-2', role: 'PILOT', status: 'TX' },
+        { id: 'op:gunner-01', callsign: 'Trigger-1', role: 'GUNNER', status: 'ON-NET' },
+        { id: 'op:gunner-02', callsign: 'Trigger-2', role: 'GUNNER', status: 'ON-NET' },
+        { id: 'op:medic-01', callsign: 'Doc-Alpha', role: 'MEDIC', status: 'ON-NET' }
+      ],
+      primaryChannelId: 'ch:pvp-alpha',
+      pilotCount: 2,
+      medicCount: 1,
+      leadCount: 0,
+      txCount: 2,
+      onlineCount: 5,
+      offNetCount: 0,
+      linkedSquadIds: []
+    }
+  ];
 
   if (loading) return <PanelLoadingState label="Loading comms cards..." />;
   if (error || !snapshot) {
@@ -722,9 +757,9 @@ export default function CommsNetworkCardConsole({
         state="OFFLINE"
         reason={error || 'Comms graph data unavailable.'}
         actionLabel="Retry"
-        onAction={() => void loadGraph(false)}
-      />
-    );
+        onAction={() => void loadGraph(false)} />);
+
+
   }
 
   return (
@@ -732,95 +767,110 @@ export default function CommsNetworkCardConsole({
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Cards</h3>
-          <p className="text-xs text-zinc-500 truncate">Bird-eye comms relation view with role hails, bridge templates, SLA cues, and watchlist pinboard.</p>
+          
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <NexusButton size="sm" intent="subtle" onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))} disabled={schemaChannelPage === 0}>Lane Prev</NexusButton>
-          <NexusBadge tone="neutral">{schemaChannelPage + 1}/{schemaChannelPageCount}</NexusBadge>
-          <NexusButton size="sm" intent="subtle" onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))} disabled={schemaChannelPage >= schemaChannelPageCount - 1}>Lane Next</NexusButton>
-          <NexusButton
-            size="sm"
-            intent="subtle"
-            onClick={() => {
-              setNowMs(Date.now());
-              void loadGraph(false);
-            }}
-          >
-            <RefreshCcw className="w-3.5 h-3.5 mr-1" />Refresh
-          </NexusButton>
-        </div>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       </div>
 
-      <div data-comms-command-bar="true" className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 grid gap-1.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,3fr)_auto]">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <label className="text-[9px] uppercase tracking-wide text-zinc-500 shrink-0">Template</label>
-          <select
-            data-comms-template-select="true"
-            className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950/80 text-[10px] text-zinc-100 px-1.5 py-1"
-            value={selectedTemplateId}
-            onChange={(event) => {
-              const templateId = String(event.target.value || '');
-              setSelectedTemplateId(templateId);
-              if (!templateId) {
-                patchUiPrefs({ lastTemplateId: '' });
-                return;
-              }
-              patchUiPrefs({ lastTemplateId: templateId });
-            }}
-          >
-            <option value="">Select template</option>
-            {consoleState.bridgeTemplates.map((template) => (
-              <option key={template.id} value={template.id}>{template.name}</option>
-            ))}
-          </select>
-          <NexusButton size="sm" intent="subtle" onClick={saveBridgeTemplate}>Save</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={() => selectedTemplateId && applyTemplate(selectedTemplateId)} disabled={!selectedTemplateId}>Apply</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={renameSelectedTemplate} disabled={!selectedTemplateId}>Rename</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={deleteSelectedTemplate} disabled={!selectedTemplateId}>Delete</NexusButton>
-        </div>
+      
 
-        <div className="flex items-center gap-1.5 min-w-0">
-          <label className="text-[9px] uppercase tracking-wide text-zinc-500 shrink-0">Bridge TTL</label>
-          <select
-            data-comms-ttl-select="true"
-            className="rounded border border-zinc-700 bg-zinc-950/80 text-[10px] text-zinc-100 px-1.5 py-1"
-            value={bridgeTtlSec}
-            onChange={(event) => setBridgeTtlSec(normalizeBridgeTtlSec(Number(event.target.value)))}
-          >
-            {COMMS_CARD_CONSOLE_TTL_PRESETS.map((ttl) => (
-              <option key={ttl} value={ttl}>{ttl === 0 ? 'manual' : `${Math.round(ttl / 60)}m`}</option>
-            ))}
-          </select>
-          <NexusBadge tone="neutral">Human-confirmed</NexusBadge>
-          <NexusBadge tone={remoteSynced ? 'ok' : 'warning'}>{remoteSynced ? 'Workspace Synced' : 'Syncing'}</NexusBadge>
-          {!utilityCoreEnabled ? <NexusBadge tone="warning">Utility Core Off</NexusBadge> : null}
-        </div>
 
-        <div className="flex items-center gap-1 flex-wrap">
-          <NexusButton size="sm" intent="subtle" onClick={() => issueRoleHail({ scope: 'FLEET', targetRole: 'PILOT', squadIds: squadCards.map((card) => card.id) })} disabled={!utilityCoreEnabled || squadCards.length === 0}>Fleet Pilots</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={() => issueRoleHail({ scope: 'FLEET', targetRole: 'MEDIC', squadIds: squadCards.map((card) => card.id) })} disabled={!utilityCoreEnabled || squadCards.length === 0}>Fleet Medics</NexusButton>
-          <NexusButton size="sm" intent="subtle" onClick={() => issueRoleHail({ scope: 'FLEET', targetRole: 'SQUAD_LEAD', squadIds: squadCards.map((card) => card.id) })} disabled={!utilityCoreEnabled || squadCards.length === 0}>Fleet Leads</NexusButton>
-        </div>
 
-        <div className="flex items-center justify-end gap-1.5">
-          <NexusButton size="sm" intent={consoleState.uiPrefs.compactMode ? 'primary' : 'subtle'} onClick={() => patchUiPrefs({ compactMode: !consoleState.uiPrefs.compactMode })}>
-            {consoleState.uiPrefs.compactMode ? 'Watchlist Only' : 'All Squads'}
-          </NexusButton>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2 flex-wrap text-[11px] text-zinc-500">
-        <NexusBadge tone="active">Fleet Command</NexusBadge>
-        <NexusBadge tone="neutral">Squads {squadCards.length}</NexusBadge>
-        <NexusBadge tone="neutral">Channels {channels.length}</NexusBadge>
-        <NexusBadge tone={bridgeSessions.length > 0 ? 'warning' : 'neutral'}>Bridges {bridgeSessions.length}</NexusBadge>
-        <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>Delivery {deliveryStats.confidencePct}%</NexusBadge>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <CommsFleetMetrics
+        squadCards={squadCards}
+        channels={channels}
+        bridgeSessions={bridgeSessions}
+        events={events}
+        deliveryStats={deliveryStats} />
+
 
       <div className="min-h-0 grid gap-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
-          {watchlistCards.length > 0 ? (
-            <div data-comms-watchlist-pinboard="true" className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
+          {watchlistCards.length > 0 ?
+          <div data-comms-watchlist-pinboard="true" className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <div className="text-[10px] uppercase tracking-wide text-zinc-300">Watchlist Pinboard</div>
                 <div className="flex items-center gap-1.5">
@@ -830,93 +880,65 @@ export default function CommsNetworkCardConsole({
                 </div>
               </div>
               <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-5">
-                {visibleWatchlistCards.map((card) => (
-                  <button
-                    key={`watch:${card.id}`}
-                    type="button"
-                    className="rounded border border-orange-500/30 bg-zinc-950/70 px-1.5 py-1 text-left"
-                    onClick={() => setSelectedSquadId(card.id)}
-                  >
+                {visibleWatchlistCards.map((card) =>
+              <button
+                key={`watch:${card.id}`}
+                type="button"
+                className="rounded border border-orange-500/30 bg-zinc-950/70 px-1.5 py-1 text-left"
+                onClick={() => setSelectedSquadId(card.id)}>
+
                     <div className="inline-flex items-center gap-1 min-w-0">
                       <img src={squadTokenIcon(card.squadLabel, 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                       <span className="text-[9px] text-zinc-100 uppercase tracking-wide truncate">{card.squadLabel}</span>
                     </div>
                     <div className="mt-0.5 text-[8px] text-zinc-500 uppercase tracking-wide">Wing {card.wingLabel}</div>
                   </button>
-                ))}
+              )}
               </div>
-            </div>
-          ) : null}
+            </div> :
+          null}
 
           <div className="flex items-center justify-between gap-2">
             <div className="text-[11px] text-zinc-300 uppercase tracking-wide">Squad Cards</div>
-            <div className="flex items-center gap-1.5">
-              <NexusButton size="sm" intent="subtle" onClick={() => setSquadCardPage((prev) => Math.max(0, prev - 1))} disabled={squadCardPage === 0}>Prev</NexusButton>
-              <NexusBadge tone="neutral">{squadCardPage + 1}/{squadCardPageCount}</NexusBadge>
-              <NexusButton size="sm" intent="subtle" onClick={() => setSquadCardPage((prev) => Math.min(squadCardPageCount - 1, prev + 1))} disabled={squadCardPage >= squadCardPageCount - 1}>Next</NexusButton>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => setSquadCardPage((prev) => Math.max(0, prev - 1))} disabled={squadCardPage === 0} className="h-5 px-1.5 rounded border text-[8px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 disabled:hover:border-zinc-700/40 disabled:hover:bg-zinc-900/40 disabled:hover:text-zinc-500">Prev</button>
+              <span className="px-2 h-5 flex items-center text-[8px] text-zinc-500 font-bold">{squadCardPage + 1}/{squadCardPageCount}</span>
+              <button type="button" onClick={() => setSquadCardPage((prev) => Math.min(squadCardPageCount - 1, prev + 1))} disabled={squadCardPage >= squadCardPageCount - 1} className="h-5 px-1.5 rounded border text-[8px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 disabled:hover:border-zinc-700/40 disabled:hover:bg-zinc-900/40 disabled:hover:text-zinc-500">Next</button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-1.5">
-            {visibleSquadCards.map((card) => {
+            {(visibleSquadCards.length > 0 ? visibleSquadCards : SAMPLE_SQUADS).map((card) => {
               const sla = slaBySquadId[card.id];
               const escalation = escalationBySquadId[card.id];
               return (
-                <article key={card.id} data-comms-squad-card="true" className={`rounded border px-2 py-1.5 ${selectedSquadId === card.id ? 'border-orange-500/60 bg-zinc-950/80' : 'border-zinc-800 bg-zinc-950/60'}`}>
-                  <button type="button" onClick={() => setSelectedSquadId(card.id)} className="w-full text-left">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <div className="min-w-0 inline-flex items-center gap-1.5">
-                        <img src={wingTokenIcon(card.wingId, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        <span className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.squadLabel}</span>
-                        <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel}</span>
-                      </div>
-                      <div className="inline-flex items-center gap-1 shrink-0">
-                        {bridgedSquadIdSet.has(card.id) ? <NexusBadge tone="active">BR</NexusBadge> : null}
-                        <NexusBadge tone={card.txCount > 0 ? 'warning' : card.offNetCount > 0 ? 'danger' : 'ok'}>TX {card.txCount}</NexusBadge>
-                      </div>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-1 text-[8px] text-zinc-500 uppercase tracking-wide">
-                      <span>Ships {card.vehicles.length}</span>
-                      <span>Crew {card.operators.length}</span>
-                      <span>Links {card.linkedSquadIds.length}</span>
-                    </div>
-                  </button>
-
-                  {sla ? (
-                    <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1 grid grid-cols-3 gap-1 text-[8px] uppercase tracking-wide">
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.checkinStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        CI {formatSlaAge(sla.last_checkin_age_s)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.ackStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        ACK {formatSlaAge(sla.last_ack_age_s)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.offNetStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        OFF {formatSlaAge(sla.off_net_duration_s)}
-                      </span>
-                    </div>
-                  ) : null}
-
-                  <div className="mt-1 flex items-center gap-1 flex-wrap">
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'PILOT')} disabled={card.pilotCount === 0}>Hail Pilot</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'MEDIC')} disabled={card.medicCount === 0}>Hail Medics</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'ALL_HANDS')}>Hail Squad</NexusButton>
-                    <NexusButton size="sm" intent={bridgeDraftSquadIds.includes(card.id) ? 'primary' : 'subtle'} onClick={() => setBridgeDraftSquadIds((prev) => prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id].slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS))}>Bridge</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => setConsoleState((prev) => toggleWatchlistSquad(prev, card.id))}>
-                      {watchlistSet.has(card.id) ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
-                    </NexusButton>
-                    {escalation ? (
-                      <NexusButton size="sm" intent={slaTone(sla?.overallStatus || 'green')} onClick={() => triggerEscalation(card, escalation)}>
-                        {escalation.label}
-                      </NexusButton>
-                    ) : null}
-                  </div>
-                </article>
+                <SquadCard
+                  key={card.id}
+                  card={card}
+                  sla={sla}
+                  escalation={escalation}
+                  isBridged={bridgedSquadIdSet.has(card.id)}
+                  isWatchlisted={watchlistSet.has(card.id)}
+                  isSelected={selectedSquadId === card.id}
+                  onSelect={setSelectedSquadId}
+                  onHailPilot={(c) => hailSquad(c, 'PILOT')}
+                  onHailMedic={(c) => hailSquad(c, 'MEDIC')}
+                  onHailSquad={(c) => hailSquad(c, 'ALL_HANDS')}
+                  onToggleBridge={(id) =>
+                    setBridgeDraftSquadIds((prev) =>
+                      prev.includes(id)
+                        ? prev.filter((x) => x !== id)
+                        : [...prev, id].slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS)
+                    )
+                  }
+                  onToggleWatchlist={(id) => setConsoleState((prev) => toggleWatchlistSquad(prev, id))}
+                  onEscalate={triggerEscalation}
+                  slaTokenIcon={slaTokenIcon}
+                  slaTone={slaTone}
+                  formatSlaAge={formatSlaAge}
+                />
               );
             })}
-            {visibleSquadCards.length === 0 ? <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">No squad cards available for this lane page.</div> : null}
           </div>
         </section>
 
@@ -926,10 +948,26 @@ export default function CommsNetworkCardConsole({
             <NexusButton size="sm" intent="primary" disabled={bridgeDraftSquadIds.length < 2} onClick={createBridgeSession}>Bridge Selected</NexusButton>
           </div>
 
+          <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
+            <div className="text-[9px] text-zinc-400 uppercase tracking-wide mb-1">Wing Hails</div>
+            <div className="grid grid-cols-1 gap-1">
+              {fleetSummary.slice(0, 3).map((wing) =>
+              <div key={wing.wingId} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-1">
+                  <span className="inline-flex items-center gap-1 text-[9px] text-zinc-300 uppercase tracking-wide truncate">
+                    <img src={wingTokenIcon(wing.wingId, wing.redSlaCount > 0 ? 'busy' : 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                    {wing.wingLabel} · {wing.squadCount}
+                  </span>
+                  <div className="inline-flex items-center gap-1 shrink-0">
+                    <NexusButton size="sm" intent="subtle" onClick={() => issueRoleHail({ scope: 'WING', targetRole: 'PILOT', wingId: wing.wingId, squadIds: wing.squadIds })}>Pilots</NexusButton>
+                    <NexusButton size="sm" intent="subtle" onClick={() => issueRoleHail({ scope: 'WING', targetRole: 'MEDIC', wingId: wing.wingId, squadIds: wing.squadIds })}>Medics</NexusButton>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
-
-          {selectedSquad ? (
-            <>
+          {selectedSquad ?
+          <>
               <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-1.5">
                   <div className="min-w-0 inline-flex items-center gap-1.5">
@@ -951,34 +989,34 @@ export default function CommsNetworkCardConsole({
                 <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(selectedSquad, 'ALL_HANDS')}>Hail Squad</NexusButton>
               </div>
 
-              {bridgeLifecycleRows.length > 0 ? (
-                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
+              {bridgeLifecycleRows.length > 0 ?
+            <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                   <div className="text-[9px] text-zinc-400 uppercase tracking-wide mb-1">Bridge Sessions</div>
                   <div className="space-y-1">
-                    {bridgeLifecycleRows.slice(0, 3).map((session) => (
-                      <div key={session.id} data-comms-bridge-session="true" className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                    {bridgeLifecycleRows.slice(0, 3).map((session) =>
+                <div key={session.id} data-comms-bridge-session="true" className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
                         <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">
                           {session.squadIds.map((id) => squadById[id]?.squadLabel || id).join(' + ')} · {formatAge(nowMs, session.createdAtMs)} · {session.ttlLabel}
                         </span>
                         <div className="inline-flex items-center gap-1">
-                          {session.splitSuggested ? (
-                            <NexusBadge tone="warning" data-comms-split-suggested="true">Split Suggested</NexusBadge>
-                          ) : null}
+                          {session.splitSuggested ?
+                    <NexusBadge tone="warning" data-comms-split-suggested="true">Split Suggested</NexusBadge> :
+                    null}
                           <NexusButton size="sm" intent={session.splitSuggested ? 'primary' : 'subtle'} onClick={() => splitBridgeSession(session, session.splitSuggested)}>
                             {session.splitSuggested ? 'Confirm Split' : 'Split'}
                           </NexusButton>
                         </div>
                       </div>
-                    ))}
+                )}
                   </div>
-                </div>
-              ) : null}
+                </div> :
+            null}
 
               <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
                 <div className="text-[9px] text-zinc-400 uppercase tracking-wide mb-1">Ships + Crew</div>
                 <div className="space-y-1">
-                  {selectedSquad.vehicles.slice(0, 4).map((vehicle) => (
-                    <div key={vehicle.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                  {selectedSquad.vehicles.slice(0, 4).map((vehicle) =>
+                <div key={vehicle.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
                       <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
                         <img src={tokenAssets.comms.vehicle} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         <span className="truncate">{vehicle.label}</span>
@@ -988,9 +1026,9 @@ export default function CommsNetworkCardConsole({
                         <span className="text-[8px] text-zinc-500 uppercase tracking-wide">Crew {vehicle.crewCount}</span>
                       </div>
                     </div>
-                  ))}
-                  {selectedSquad.operators.slice(0, 5).map((operator) => (
-                    <div key={operator.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
+                )}
+                  {selectedSquad.operators.slice(0, 5).map((operator) =>
+                <div key={operator.id} className="flex items-center justify-between gap-1 rounded border border-zinc-800 bg-zinc-900/35 px-1.5 py-0.5">
                       <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
                         <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         <span className="truncate">{operator.callsign}</span>
@@ -1000,54 +1038,54 @@ export default function CommsNetworkCardConsole({
                         <NexusBadge tone={operatorStatusTone(operator.status)}>{operator.status}</NexusBadge>
                       </div>
                     </div>
-                  ))}
+                )}
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">Select a squad card to view details.</div>
-          )}
+            </> :
+
+          <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">Select a squad card to view details.</div>
+          }
         </section>
       </div>
 
-      <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <NexusBadge tone={deliveryStats.queued > 0 ? 'warning' : 'neutral'}>Queued {deliveryStats.queued}</NexusBadge>
-            <NexusBadge tone={deliveryStats.persisted > 0 ? 'active' : 'neutral'}>Persisted {deliveryStats.persisted}</NexusBadge>
-            <NexusBadge tone={deliveryStats.acked > 0 ? 'ok' : 'neutral'}>Acked {deliveryStats.acked}</NexusBadge>
-            <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>Confidence {deliveryStats.confidencePct}%</NexusBadge>
-            {fleetSummary.slice(0, 3).map((wing) => (
-              <span key={wing.wingId} className="inline-flex items-center gap-1 text-[9px] text-zinc-500 uppercase tracking-wide">
-                <img src={wingTokenIcon(wing.wingId, wing.redSlaCount > 0 ? 'busy' : 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                {wing.wingLabel} {wing.squadCount}
-              </span>
-            ))}
-          </div>
-          <div className="text-[10px] text-zinc-500">Showing {feedPage.visible.length} tactical echoes</div>
-        </div>
+      
 
-        {feedPage.visible.length > 0 ? (
-          <div className="mt-1.5 grid grid-cols-1 md:grid-cols-3 gap-1.5">
-            {feedPage.visible.map((dispatch) => (
-              <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{dispatch.directive}</span>
-                  <NexusBadge tone={deliveryTone(dispatch.status)}>{dispatch.status}</NexusBadge>
-                </div>
-                <div className="mt-0.5 text-[9px] text-zinc-500 truncate">{dispatch.channelId} · {formatAge(nowMs, dispatch.issuedAtMs)} ago</div>
-              </div>
-            ))}
-          </div>
-        ) : null}
 
-        {feedback ? (
-          <div className="mt-1 text-[10px] text-orange-300 inline-flex items-center gap-1">
-            {feedback.toLowerCase().includes('escalate') ? <AlertTriangle className="w-3 h-3" /> : <Radio className="w-3 h-3" />}
-            {feedback}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </div>);
+
 }
