@@ -24,6 +24,8 @@ import {
   Target,
   Activity,
 } from 'lucide-react';
+import TokenRenderer from '../tokens/TokenRenderer';
+import { eventPhaseTokens, playerStatusTokens, getTokenByStatus } from '../tokens/tokenSemantics';
 import { analyzeTacticalSituation, subscribeToTacticalAI } from '../../services/tacticalAIService';
 
 const FOOTER_HEIGHT_KEY = 'nexus.tacticalFooter.height';
@@ -535,19 +537,22 @@ function EventDashboard({ activeOp, voiceNet }) {
       {/* Op Details Section */}
       <div className="flex-shrink-0 border-b border-zinc-800/40">
         <button
-          onClick={() => toggleSection('details')}
-          className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-800/20 transition-colors"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${sectionsCollapsed.details ? '-rotate-90' : ''}`} />
-            <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wide truncate">
-              {event.title}
-            </h4>
-          </div>
-          <NexusBadge tone="active" className="text-[10px] shrink-0">
-            {event.phase || 'ACTIVE'}
-          </NexusBadge>
-        </button>
+           onClick={() => toggleSection('details')}
+           className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-800/20 transition-colors"
+         >
+           <div className="flex items-center gap-2 min-w-0">
+             <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${sectionsCollapsed.details ? '-rotate-90' : ''}`} />
+             <h4 className="text-xs font-bold text-orange-400 uppercase tracking-wide truncate">
+               {event.title}
+             </h4>
+           </div>
+           <TokenRenderer 
+             family={getTokenByStatus(event.phase, eventPhaseTokens).family}
+             color={getTokenByStatus(event.phase, eventPhaseTokens).color}
+             size="sm"
+             label={event.phase || 'ACTIVE'}
+           />
+         </button>
         {!sectionsCollapsed.details && event.description && (
           <div className="px-3 pb-2">
             <p className="text-[10px] text-zinc-400 line-clamp-2">{event.description}</p>
@@ -618,12 +623,15 @@ function EventDashboard({ activeOp, voiceNet }) {
           </button>
           {!sectionsCollapsed.team && (
             <div className="flex-1 overflow-y-auto px-3 pb-2 space-y-1">
-              {participants.map((p) => (
-                <div key={p.id} className="flex items-center justify-between text-[10px] px-1.5 py-1 rounded hover:bg-zinc-800/30 transition-colors">
-                  <span className="text-zinc-300 truncate">{p.callsign || p.name || 'Unknown'}</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                </div>
-              ))}
+              {participants.map((p) => {
+                const statusToken = getTokenByStatus(p.status || 'OFFLINE', playerStatusTokens);
+                return (
+                  <div key={p.id} className="flex items-center justify-between text-[10px] px-1.5 py-1 rounded hover:bg-zinc-800/30 transition-colors">
+                    <span className="text-zinc-300 truncate">{p.callsign || p.name || 'Unknown'}</span>
+                    <TokenRenderer family={statusToken.family} color={statusToken.color} size="xs" animated={p.status === 'ENGAGED'} />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
