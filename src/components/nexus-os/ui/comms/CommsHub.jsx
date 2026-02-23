@@ -593,7 +593,7 @@ export default function CommsHub({
                   type="button"
                   onClick={() => pageCategory(category, 'prev')}
                   disabled={page === 0}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
                 >
                   ‹
                 </button>
@@ -602,7 +602,7 @@ export default function CommsHub({
                   type="button"
                   onClick={() => pageCategory(category, 'next')}
                   disabled={page >= pageCount - 1}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
                 >
                   ›
                 </button>
@@ -813,10 +813,10 @@ export default function CommsHub({
                         key={filterId}
                         type="button"
                         onClick={() => setMessageFilter(filterId)}
-                        className={`h-5 px-1.5 rounded text-[8px] font-bold uppercase tracking-wide border ${
+                        className={`h-5 px-1.5 rounded text-[8px] font-bold uppercase tracking-wide border transition-colors ${
                           messageFilter === filterId
-                            ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
-                            : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                            ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
+                            : 'border-red-700/30 bg-zinc-900/40 text-zinc-500 hover:text-zinc-300 hover:border-red-700/50'
                         }`}
                       >
                         {filterId}
@@ -839,7 +839,7 @@ export default function CommsHub({
                     const threadData = threads[threadId];
                     const threadCount = message.threadCount || threadData?.messages?.length || 0;
                     return (
-                      <div key={message.id} className="group px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800 hover:border-orange-500/30 transition-colors">
+                      <div key={message.id} className="group px-2 py-1.5 rounded bg-zinc-950/60 border border-red-700/25 hover:border-orange-500/40 transition-colors">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
