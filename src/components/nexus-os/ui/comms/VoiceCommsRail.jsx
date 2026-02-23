@@ -445,7 +445,7 @@ export default function VoiceCommsRail({
             </button>
           </div>
 
-          <div className="flex-1 min-h-0 px-2 py-1.5 space-y-1.5 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto p-2">
             {selectedTab === 'nets' ? (
               <>
                 <div className="space-y-1">
