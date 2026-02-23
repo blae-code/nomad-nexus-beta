@@ -148,27 +148,27 @@ export default function CommsFleetMetrics({
       </div>
 
       {/* Status Indicators Row */}
-      <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-zinc-700/30">
-        
-        {metrics.activeEvents > 0 &&
-        <NexusBadge tone={metrics.activeEvents > 1 ? 'danger' : 'warning'}>
-            <AlertTriangle className="w-2.5 h-2.5 mr-1" />
-            {metrics.activeEvents} Events
-          </NexusBadge>
-        }
-        {metrics.bridgeLoad > 0 &&
-        <NexusBadge tone="warning">
-            <Radio className="w-2.5 h-2.5 mr-1" />
-            Bridges Active
-          </NexusBadge>
-        }
-        {metrics.systemHealth < 70 &&
-        <NexusBadge tone="danger">
-            <TrendingUp className="w-2.5 h-2.5 mr-1" />
-            Alert
-          </NexusBadge>
-        }
-      </div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     </div>);
 
 }
