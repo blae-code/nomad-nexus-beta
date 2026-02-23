@@ -34,6 +34,7 @@ const DEFAULT_CATALOG: NexusCommandCatalogItem[] = [
   { id: 'open-map', label: 'Focus Map', command: 'open map', detail: 'Open tactical map focus mode.' },
   { id: 'open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Open operations focus mode.' },
   { id: 'open-comms', label: 'Focus Comms', command: 'open comms', detail: 'Open comms focus mode.' },
+  { id: 'open-admin', label: 'Focus Admin', command: 'open admin', detail: 'Open system admin focus mode.' },
   { id: 'bridge', label: 'Bridge Info', command: 'bridge', detail: 'Show available bridge IDs.' },
   { id: 'bridge-next', label: 'Bridge Next', command: 'bridge next', detail: 'Cycle to next bridge profile.' },
   { id: 'close', label: 'Standby Focus', command: 'close', detail: 'Return focused app to standby.' },

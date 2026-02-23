@@ -128,6 +128,11 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
     await expect(page.getByText(/No operation available|Operation context required/i).first()).toBeVisible();
   }
 
+  await page.keyboard.press('Alt+4');
+  await expect(page.getByText(/System Admin Focus/i).first()).toBeVisible();
+  await expect(page.locator('[data-admin-focus=\"true\"]').first()).toBeVisible();
+  await expect(page.getByText(/Identity Access Control/i).first()).toBeVisible();
+
   expect(fatal.length).toBe(0);
 });
 

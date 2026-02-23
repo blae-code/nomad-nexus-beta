@@ -11,6 +11,7 @@ import {
   MobileArCompanionFocusApp,
   OperationFocusApp,
   ReportsFocusApp,
+  SystemAdminFocusApp,
   NexusBadge,
   TacticalMapFocusApp,
   getNexusCssVars,
@@ -44,6 +45,7 @@ import {
   Radar,
   Search,
   Settings,
+  ShieldCheck,
   Shield,
   Signal } from
 'lucide-react';
@@ -52,7 +54,8 @@ import '../ui/theme/nexus-shell.css';
 const FOCUS_APP_CATALOG = [
 { id: 'map', label: 'Map', hotkey: 'Alt+1' },
 { id: 'ops', label: 'Ops', hotkey: 'Alt+2' },
-{ id: 'comms', label: 'Comms', hotkey: 'Alt+3' }];
+{ id: 'comms', label: 'Comms', hotkey: 'Alt+3' },
+{ id: 'admin', label: 'Admin', hotkey: 'Alt+4' }];
 
 
 const FOCUS_APP_IDS = new Set(FOCUS_APP_CATALOG.map((entry) => entry.id));
@@ -60,7 +63,8 @@ const FOCUS_APP_LABEL_BY_ID = Object.fromEntries(FOCUS_APP_CATALOG.map((entry) =
 const FOCUS_APP_ICON_BY_ID = {
   map: Compass,
   ops: ClipboardList,
-  comms: Radio
+  comms: Radio,
+  admin: ShieldCheck
 };
 const FOCUS_APP_ALIASES = {
   map: 'map',
@@ -73,9 +77,14 @@ const FOCUS_APP_ALIASES = {
   comms: 'comms',
   comm: 'comms',
   communications: 'comms',
-  voice: 'comms'
+  voice: 'comms',
+  admin: 'admin',
+  pioneer: 'admin',
+  system: 'admin',
+  governance: 'admin',
+  manage: 'admin'
 };
-const MOBILE_NAV_APP_IDS = ['map', 'ops', 'comms'];
+const MOBILE_NAV_APP_IDS = ['map', 'ops', 'comms', 'admin'];
 
 function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
   const [mountedModes, setMountedModes] = useState(() => mode ? { [mode]: true } : { map: true });
@@ -89,7 +98,8 @@ function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
   const modeComponent = {
     map: <TacticalMapFocusApp {...sharedPanelProps} onClose={onClose} />,
     comms: <CommsNetworkConsole {...sharedPanelProps} onClose={onClose} />,
-    ops: <OperationFocusApp {...sharedPanelProps} onClose={onClose} />
+    ops: <OperationFocusApp {...sharedPanelProps} onClose={onClose} />,
+    admin: <SystemAdminFocusApp {...sharedPanelProps} onClose={onClose} />
   };
 
   return (
@@ -295,7 +305,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         return;
       }
 
-      if (event.altKey && /^[1-3]$/.test(event.key)) {
+      if (event.altKey && /^[1-4]$/.test(event.key)) {
         event.preventDefault();
         const index = Number(event.key) - 1;
         const appId = FOCUS_APP_CATALOG[index]?.id;
@@ -641,7 +651,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     const normalizedArg = arg.toLowerCase();
 
     if (keyword === 'help' || keyword === '?') {
-      return 'Commands: help, tutorial, status, open <map|ops|comms>, bridge <id|next|prev>, close.';
+      return 'Commands: help, tutorial, status, open <map|ops|comms|admin>, bridge <id|next|prev>, close.';
     }
 
     if (keyword === 'tutorial' || keyword === 'tutorials') {
@@ -655,7 +665,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
     if (keyword === 'open' || keyword === 'focus') {
       const appId = FOCUS_APP_ALIASES[normalizedArg] || (FOCUS_APP_IDS.has(normalizedArg) ? normalizedArg : null);
-      if (!appId) return `Unknown app "${arg}". Use: map, ops, comms.`;
+      if (!appId) return `Unknown app "${arg}". Use: map, ops, comms, admin.`;
       openFocusApp(appId);
       return `Opened ${FOCUS_APP_LABEL_BY_ID[appId] || appId.toUpperCase()}.`;
     }
@@ -696,6 +706,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     { id: 'cmd-open-map', label: 'Focus Map', command: 'open map', detail: 'Bring tactical map to foreground.' },
     { id: 'cmd-open-ops', label: 'Focus Ops', command: 'open ops', detail: 'Bring operations workspace to foreground.' },
     { id: 'cmd-open-comms', label: 'Focus Comms', command: 'open comms', detail: 'Bring comms workspace to foreground.' },
+    { id: 'cmd-open-admin', label: 'Focus Admin', command: 'open admin', detail: 'Bring admin command surface to foreground.' },
     { id: 'cmd-bridge-next', label: 'Bridge Next', command: 'bridge next', detail: `Cycle bridge (current ${bridgeId}).` },
     { id: 'cmd-bridge-current', label: 'Bridge Info', command: 'bridge', detail: 'Display current and available bridge IDs.' },
     { id: 'cmd-close', label: 'Standby Focus', command: 'close', detail: 'Return focus workspace to standby.' }],
