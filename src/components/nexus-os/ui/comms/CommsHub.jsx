@@ -479,7 +479,7 @@ export default function CommsHub({
     setMessagePage(0);
 
     setPanelFeedback(`Sent to ${selectedChannelData?.name || selectedChannel}.`);
-  }, [messageInput, selectedChannel, aiEnabled, actorId, selectedChannelData?.name]);
+  }, [messageInput, selectedChannel, actorId, selectedChannelData?.name]);
 
 
 
