@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Users, UserPlus, UserMinus } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isAdminUser } from '@/utils';
+import StatusBadge from '@/components/presence/StatusBadge';
 
 export default function CommsRosterPanel() {
   const { user: authUser } = useAuth();
@@ -16,6 +17,7 @@ export default function CommsRosterPanel() {
   const [memberships, setMemberships] = useState([]);
   const [selectedSquadId, setSelectedSquadId] = useState(null);
   const [search, setSearch] = useState('');
+  const [presenceMap, setPresenceMap] = useState({});
 
   useEffect(() => {
     const load = async () => {
@@ -45,6 +47,18 @@ export default function CommsRosterPanel() {
     };
 
     load();
+
+    // Subscribe to real-time presence updates
+    const unsubscribe = base44.entities.UserPresence.subscribe((event) => {
+      if (event.data?.member_profile_id) {
+        setPresenceMap((prev) => ({
+          ...prev,
+          [event.data.member_profile_id]: event.data.status || 'offline',
+        }));
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   const groupedSquads = useMemo(() => {
@@ -175,8 +189,11 @@ export default function CommsRosterPanel() {
               <div className="text-[10px] text-zinc-600">No members assigned.</div>
             ) : (
               assignedMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between text-xs text-zinc-300">
-                  <span>{member.display_callsign || member.callsign || member.full_name}</span>
+                <div key={member.id} className="flex items-center justify-between text-xs text-zinc-300 gap-2">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <StatusBadge status={presenceMap[member.id] || 'offline'} compact />
+                    <span className="truncate">{member.display_callsign || member.callsign || member.full_name}</span>
+                  </div>
                   {canManage && (
                     <Button size="sm" variant="ghost" onClick={() => handleRemove(member.id)}>
                       <UserMinus className="w-3 h-3 text-red-400" />
@@ -203,8 +220,11 @@ export default function CommsRosterPanel() {
               filteredMembers.map((member) => {
                 const isAssigned = assignedMembers.some((m) => m.id === member.id);
                 return (
-                  <div key={member.id} className="flex items-center justify-between text-xs text-zinc-300">
-                    <span>{member.display_callsign || member.callsign || member.full_name}</span>
+                  <div key={member.id} className="flex items-center justify-between text-xs text-zinc-300 gap-2">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      <StatusBadge status={presenceMap[member.id] || 'offline'} compact />
+                      <span className="truncate">{member.display_callsign || member.callsign || member.full_name}</span>
+                    </div>
                     {canManage && (
                       <Button
                         size="sm"
