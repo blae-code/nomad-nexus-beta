@@ -98,7 +98,7 @@ function roleToken(role: string): string {
   return String(role || '').trim().toLowerCase();
 }
 
-function slaTone(status: SlaStatusColor): 'ok' | 'warning' | 'danger' {
+function slaTone(status) {
   if (status === 'red') return 'danger';
   if (status === 'amber') return 'warning';
   return 'ok';
