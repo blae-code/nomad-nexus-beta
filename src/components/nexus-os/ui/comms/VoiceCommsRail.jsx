@@ -466,12 +466,12 @@ export default function VoiceCommsRail({
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1">
                   {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) :
-              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets.</div>
-              }
+                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">None</div>
+                  }
                 </div>
 
                 {quickPageCount > 1 &&
-            <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
                     <button
                 type="button"
                 onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
@@ -490,24 +490,24 @@ export default function VoiceCommsRail({
                   </div>
             }
 
-                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40 flex items-center justify-between">
-                  <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">All Nets</div>
+                <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30 flex items-center justify-between">
+                  <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">All</div>
                   <button
-                type="button"
-                onClick={() => setShowNetCreator(true)}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 text-zinc-500 hover:border-red-700/50 hover:text-red-400 transition-colors flex items-center gap-1"
-                title="Create new voice net">
+                  type="button"
+                  onClick={() => setShowNetCreator(true)}
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-500 hover:border-orange-500/40 hover:text-orange-300 transition-colors flex items-center gap-1"
+                  title="New net">
                     <Plus className="w-2.5 h-2.5" />
                   </button>
                 </div>
                 <div className="px-2 py-1.5 space-y-1">
                   {pagedNets.length > 0 ? pagedNets.map(renderQuickNetCard) :
-              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets.</div>
-              }
+                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">None</div>
+                  }
                 </div>
 
                 {netsPageCount > 1 &&
-            <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
                     <button
                 type="button"
                 onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
@@ -530,17 +530,17 @@ export default function VoiceCommsRail({
 
             {selectedTab === 'roster' &&
           <>
-                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
-                  <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Roster</div>
+                <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30">
+                  <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Roster</div>
                 </div>
-                <div className="px-2 py-1.5 space-y-1">
+                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1">
                   {pagedParticipants.map((participant) => {
                 const status = participantStatusLabel(participant);
                 const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
                 return (
-                  <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-950/60 border border-red-700/30">
+                  <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-700/40">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-semibold text-zinc-300 truncate inline-flex items-center gap-1">
+                          <span className="text-[9px] font-semibold text-zinc-400 truncate inline-flex items-center gap-1">
                             <TokenRenderer family="square" color="cyan" size="xs" />
                             {participant.callsign || participant.name || participant.id}
                           </span>
@@ -554,11 +554,11 @@ export default function VoiceCommsRail({
               })}
 
                   {pagedParticipants.length === 0 &&
-              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div>
-              }
+                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">None online</div>
+                  }
                 </div>
                 {rosterPageCount > 1 &&
-            <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
                     <button
                 type="button"
                 onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
@@ -581,9 +581,9 @@ export default function VoiceCommsRail({
 
             {selectedTab === 'fleet' &&
           <>
-                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
+                <div className="px-3 py-2 border-b border-zinc-700/40 bg-zinc-900/30">
                   <div className="flex items-center justify-between gap-1.5">
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-bold">REDSCAR Fleet</div>
+                    <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-400 font-bold">Fleet</div>
                     <NexusBadge tone="active">{String(variantId || 'live').toUpperCase()}</NexusBadge>
                   </div>
                   <div className="mt-1 flex items-center gap-1.5 text-[8px] text-zinc-500 uppercase tracking-wide">
@@ -595,26 +595,26 @@ export default function VoiceCommsRail({
                   </div>
                 </div>
 
-                <div className="px-2 py-1 flex items-center justify-between gap-1 border-b border-red-700/40 bg-black/35">
+                <div className="px-2 py-1 flex items-center justify-between gap-1 border-b border-zinc-700/40 bg-zinc-900/30">
                   <div className="flex items-center gap-1">
                     <button
                   type="button"
                   onClick={() => setFleetView('schema')}
-                  className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-                  fleetView === 'schema' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+                  className={`h-6 px-2 text-[8px] uppercase tracking-wider rounded border transition-colors font-bold ${
+                  fleetView === 'schema' ? 'text-orange-400 bg-orange-500/10 border-orange-500/40' : 'text-zinc-500 border-zinc-700/40'}`
                   }>
-                      Schema
+                      S
                     </button>
                     <button
                   type="button"
                   onClick={() => setFleetView('cards')}
-                  className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-                  fleetView === 'cards' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+                  className={`h-6 px-2 text-[8px] uppercase tracking-wider rounded border transition-colors font-bold ${
+                  fleetView === 'cards' ? 'text-orange-400 bg-orange-500/10 border-orange-500/40' : 'text-zinc-500 border-zinc-700/40'}`
                   }>
-                      Cards
-                    </button>
-                  </div>
-                  <NexusBadge tone="neutral">{fleetChannels.length} lanes</NexusBadge>
+                      C
+                      </button>
+                      </div>
+                      <span className="text-[8px] text-zinc-500">{fleetChannels.length}L</span>
                 </div>
 
                 {fleetView === 'schema' &&
