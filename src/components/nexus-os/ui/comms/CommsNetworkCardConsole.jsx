@@ -126,8 +126,8 @@ function buildSquadCards(schemaTree, edges) {
         };
       });
 
-      const vehicles: SquadCard['vehicles'] = [];
-      const operators: SquadCard['operators'] = [];
+      const vehicles = [];
+      const operators = [];
 
       for (const channel of squad.channels || []) {
         for (const vehicle of channel.vehicles || []) {
