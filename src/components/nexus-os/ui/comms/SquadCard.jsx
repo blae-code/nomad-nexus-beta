@@ -24,7 +24,7 @@ export default function SquadCard({
   slaTone,
   formatSlaAge
 }) {
-  const [expandedVehicleId, setExpandedVehicleId] = useState(null);
+  const [expandedVehicleIds, setExpandedVehicleIds] = useState(new Set());
   const [location, setLocation] = useState(card.location || '');
 
   useEffect(() => {
@@ -39,9 +39,30 @@ export default function SquadCard({
     return () => unsubscribe?.();
   }, [card.id]);
 
+  const buildVehicleTree = () => {
+    const byId = {};
+    const roots = [];
+    
+    card.vehicles.forEach((v) => {
+      byId[v.id] = { ...v, children: [] };
+    });
+    
+    card.vehicles.forEach((v) => {
+      if (v.parent_id && byId[v.parent_id]) {
+        byId[v.parent_id].children.push(byId[v.id]);
+      } else {
+        roots.push(byId[v.id]);
+      }
+    });
+    
+    return roots;
+  };
+
   const toggleVehicle = (e, vehicleId) => {
     e.stopPropagation();
-    setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
+    const newSet = new Set(expandedVehicleIds);
+    newSet.has(vehicleId) ? newSet.delete(vehicleId) : newSet.add(vehicleId);
+    setExpandedVehicleIds(newSet);
   };
 
   const getSizeSymbol = (vehicleSize) => {
