@@ -274,19 +274,19 @@ export default function SquadCard({
                   )}
                 </div>
               )}
-              </div>
-
+              
               {/* Render child vehicles recursively */}
               {isExpanded && vehicle.children && vehicle.children.length > 0 && (
                 <div className="space-y-1">
                   {vehicle.children.map((child) => renderVehicleNode(child, depth + 1))}
                 </div>
               )}
-              </div>
-            );
-          };
+            </div>
+            </div>
+          );
+        };
 
-          return renderVehicleNode(vehicle);
+        return renderVehicleNode(vehicle);
         })}
       </div>
 
