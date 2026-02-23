@@ -902,11 +902,11 @@ export default function ComprehensiveTacticalFooter() {
 
   if (collapsed) {
     return (
-      <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/95 backdrop-blur-xl">
-        <div className="px-4 py-2 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 text-[10px] font-mono flex-1 min-w-0">
-            <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-900/60 border border-zinc-800 truncate">
-              <Map className="w-3 h-3 text-red-400 shrink-0" />
+      <footer className="relative w-full z-[700] border-t border-zinc-700/40 bg-black/98 backdrop-blur-xl">
+         <div className="px-4 py-2 flex items-center justify-between gap-3">
+           <div className="flex items-center gap-3 text-[10px] font-mono flex-1 min-w-0">
+             <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-900/40 border border-zinc-700/40 truncate">
+               <Map className="w-3 h-3 text-orange-400 shrink-0" />
               <span className="text-zinc-400 truncate">Tactical Map</span>
               <span className="text-orange-400 ml-auto shrink-0">{markers.length}M</span>
             </div>
@@ -942,11 +942,11 @@ export default function ComprehensiveTacticalFooter() {
 
   if (isPoppedOut) {
     return (
-      <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/95 backdrop-blur-xl">
-        <div className="px-4 py-2 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 text-[10px] font-mono flex-1 min-w-0">
-            <div className="flex items-center gap-2 px-2 py-1 rounded bg-orange-500/10 border border-orange-500/30 truncate">
-              <ExternalLink className="w-3 h-3 text-orange-400 shrink-0" />
+      <footer className="relative w-full z-[700] border-t border-zinc-700/40 bg-black/98 backdrop-blur-xl">
+         <div className="px-4 py-2 flex items-center justify-between gap-3">
+           <div className="flex items-center gap-3 text-[10px] font-mono flex-1 min-w-0">
+             <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-900/40 border border-zinc-700/40 truncate">
+               <ExternalLink className="w-3 h-3 text-orange-400 shrink-0" />
               <span className="text-orange-300 truncate">Tactical view open in separate window</span>
             </div>
           </div>
@@ -969,11 +969,11 @@ export default function ComprehensiveTacticalFooter() {
   }
 
   return (
-    <footer className="relative w-full z-[700] border-t border-orange-500/20 bg-black/98 backdrop-blur-xl shadow-2xl shadow-orange-500/5 flex flex-col transition-all duration-200" style={{ height: `${height}px` }}>
+    <footer className="relative w-full z-[700] border-t border-zinc-700/40 bg-black/98 backdrop-blur-xl shadow-2xl shadow-orange-500/5 flex flex-col transition-all duration-200 max-h-[calc(100dvh-60px)]" style={{ height: `${height}px` }}>
       {/* Resize Handle */}
       <div
         ref={resizeRef}
-        className={`h-1.5 bg-gradient-to-r from-transparent via-orange-700/60 to-transparent cursor-ns-resize hover:via-orange-500 transition-all flex-shrink-0 flex items-center justify-center ${
+        className={`h-1 bg-gradient-to-r from-transparent via-zinc-700/40 to-transparent cursor-ns-resize hover:via-orange-500/50 transition-all flex-shrink-0 flex items-center justify-center ${
           isResizing ? 'via-orange-500' : ''
         }`}
         onMouseDown={handleResizeStart}
@@ -983,7 +983,7 @@ export default function ComprehensiveTacticalFooter() {
       </div>
 
       {/* Header with Tabs */}
-      <div className="flex-shrink-0 px-4 py-2 border-b border-orange-500/15 bg-zinc-900/40 flex items-center justify-between gap-3">
+      <div className="flex-shrink-0 px-4 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-3 nexus-top-rail">
         <div className="flex items-center gap-4 min-w-0">
           <div className="flex items-center gap-2">
             <Map className="w-4 h-4 text-orange-500 shrink-0" />

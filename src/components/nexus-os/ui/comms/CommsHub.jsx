@@ -1,21 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
-  AlertCircle,
   AtSign,
-  Bell,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Hash,
   MessageSquare,
   Send,
-  Settings,
-  Sparkles,
-  Trash2,
-  TrendingUp,
   X,
-  Zap,
   Plus,
   Users,
   FolderPlus,
@@ -23,7 +16,6 @@ import {
   Network,
 } from 'lucide-react';
 import { NexusBadge } from '../primitives';
-import { generateResponseSuggestions, queueMessageAnalysis, smartSearch } from '../../services/commsAIService';
 import RadialMenu from '../map/RadialMenu';
 import { tokenAssets } from '../tokens';
 import CommsNetworkViz from './CommsNetworkViz';
@@ -104,15 +96,7 @@ export default function CommsHub({
   const [messageFilter, setMessageFilter] = useState('all');
   const [acknowledgedUnreadByChannel, setAcknowledgedUnreadByChannel] = useState({});
 
-  const [showAiFeatures, setShowAiFeatures] = useState(false);
-  const [messageAnalyses, setMessageAnalyses] = useState({});
-  const [aiSearchActive, setAiSearchActive] = useState(false);
-  const [aiSearchResults, setAiSearchResults] = useState(null);
-  const [responseSuggestions, setResponseSuggestions] = useState([]);
-  const [selectedMessageForResponse, setSelectedMessageForResponse] = useState(null);
   const [chatViewMode, setChatViewMode] = useState('messages'); // 'messages' or 'network'
-
-  const aiEnabled = showAiFeatures;
   const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
 
   const channels = useMemo(() => {
@@ -235,9 +219,6 @@ export default function CommsHub({
 
   useEffect(() => {
     setMessagePage(0);
-    setAiSearchResults(null);
-    setResponseSuggestions([]);
-    setSelectedMessageForResponse(null);
   }, [selectedChannel]);
 
   const selectedChannelData = useMemo(
@@ -497,36 +478,10 @@ export default function CommsHub({
     setMessageInput('');
     setMessagePage(0);
 
-    if (aiEnabled) {
-      queueMessageAnalysis(newMessage).then((analysis) => {
-        setMessageAnalyses((prev) => ({ ...prev, [newMessage.id]: analysis }));
-      });
-    }
-    setPanelFeedback(`Message sent to ${selectedChannelData?.name || selectedChannel}.`);
+    setPanelFeedback(`Sent to ${selectedChannelData?.name || selectedChannel}.`);
   }, [messageInput, selectedChannel, aiEnabled, actorId, selectedChannelData?.name]);
 
-  const handleAiSearch = async (query) => {
-    if (!query.trim() || !currentMessages.length) return;
-    setAiSearchActive(true);
-    try {
-      const results = await smartSearch(query, currentMessages);
-      setAiSearchResults(results);
-    } catch (error) {
-      console.error('[CommsHub] AI search failed:', error);
-    } finally {
-      setAiSearchActive(false);
-    }
-  };
 
-  const handleGenerateSuggestions = async (message) => {
-    setSelectedMessageForResponse(message.id);
-    try {
-      const suggestions = await generateResponseSuggestions(message, currentMessages);
-      setResponseSuggestions(suggestions);
-    } catch (error) {
-      console.error('[CommsHub] Response suggestions failed:', error);
-    }
-  };
 
   const renderCategory = (category, label) => {
     const items = channels[category] || [];
@@ -803,8 +758,6 @@ export default function CommsHub({
                         </div>
                       ) : (
                   pagedMessages.map((message) => {
-                    const analysis = messageAnalyses[message.id];
-                    const showAnalysis = aiEnabled && showAiFeatures && analysis;
                     const threadId = `thread-${message.id}`;
                     const threadData = threads[threadId];
                     const threadCount = message.threadCount || threadData?.messages?.length || 0;
@@ -818,12 +771,6 @@ export default function CommsHub({
                               {message.source === 'event' ? (
                                 <span className="px-1 py-0.5 rounded text-[7px] font-bold uppercase bg-zinc-700/30 text-zinc-400">
                                   Feed
-                                </span>
-                              ) : null}
-                              {showAnalysis && analysis.priority === 'critical' ? (
-                                <span className="px-1 py-0.5 rounded text-[7px] font-bold uppercase bg-red-500/20 text-red-400 flex items-center gap-0.5">
-                                  <AlertCircle className="w-2 h-2" />
-                                  Critical
                                 </span>
                               ) : null}
                             </div>
