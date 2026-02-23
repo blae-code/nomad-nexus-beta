@@ -111,8 +111,8 @@ function slaTokenIcon(status) {
 }
 
 function buildSquadCards(schemaTree, edges) {
-  const cards: SquadCard[] = [];
-  const squadByChannelId = new Map<string, string>();
+  const cards = [];
+  const squadByChannelId = new Map();
 
   for (const wing of schemaTree || []) {
     for (const squad of wing.squads || []) {
