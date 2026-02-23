@@ -203,7 +203,7 @@ export default function SquadCard({
                 onClick={(e) => toggleVehicle(e, vehicle.id)}
                 className="w-full flex items-center justify-between gap-1 px-1.5 py-1 text-[10px] text-zinc-300 uppercase tracking-wide font-semibold hover:bg-zinc-900/40 transition-colors"
               >
-                <div className="flex items-center gap-1 min-w-0">
+                <div className="flex items-center gap-1 min-w-0 flex-wrap">
                   <ChevronDown
                     className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${
                       isExpanded ? 'rotate-180' : ''
@@ -215,6 +215,15 @@ export default function SquadCard({
                     className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
                   />
                   <span className="truncate">{getSizeSymbol(vehicle.size)} {vehicle.label}</span>
+                  {!isExpanded && (
+                    <div className="flex gap-0.5 text-[7px] flex-wrap ml-auto">
+                      <img src={slaTokenIcon(getSecurityTone(vehicle.security_status))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={String(vehicle.security_status || 'SAFE').substring(0, 3)} />
+                      {ammoBadge && <img src={slaTokenIcon(ammoBadge.tone)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={ammoBadge.label} />}
+                      {vehicle.hydrogen_fuel !== undefined && <img src={slaTokenIcon(getFuelTone(vehicle.hydrogen_fuel))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={`H2 ${vehicle.hydrogen_fuel}%`} />}
+                      {vehicle.quantanium_fuel !== undefined && <img src={slaTokenIcon(getFuelTone(vehicle.quantanium_fuel))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={`QT ${vehicle.quantanium_fuel}%`} />}
+                      <img src={slaTokenIcon(crewStatus.status === 'ready' ? 'ok' : 'warning')} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" title={`${crewStatus.current}/${crewStatus.recommended}`} />
+                    </div>
+                  )}
                 </div>
                 <img
                   src={vehicleStatusTokenIcon(vehicle.status)}
