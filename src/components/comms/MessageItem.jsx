@@ -17,6 +17,8 @@ import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
 import MessageTranslator from '@/components/comms/MessageTranslator';
 import { getMembershipLabel, getRankLabel, getRoleLabel } from '@/components/constants/labels';
+import TokenRenderer from '@/components/nexus-os/ui/tokens/TokenRenderer';
+import { priorityTokens, getTokenByStatus } from '@/components/nexus-os/ui/tokens/tokenSemantics';
 import EmojiPickerModal from '@/components/comms/EmojiPickerModal';
 import LinkPreview from '@/components/comms/LinkPreview';
 import {
@@ -53,10 +55,10 @@ const deriveStatusKey = (presenceRecord, lastSeen) => {
 
 const getMessageBadge = (message) => {
   if (message?.whisper_metadata?.is_whisper) {
-    return { label: 'Whisper', className: 'text-purple-300 border-purple-500/40 bg-purple-500/10' };
+    return { label: 'Whisper', type: 'special' };
   }
   if (message?.broadcast_metadata?.is_broadcast) {
-    return { label: 'Broadcast', className: 'text-orange-300 border-orange-500/40 bg-orange-500/10' };
+    return { label: 'Broadcast', type: 'special' };
   }
 
   if (!message?.content) return null;
@@ -65,12 +67,16 @@ const getMessageBadge = (message) => {
   const base = match[1].toUpperCase();
   const level = match[2]?.toUpperCase?.() || null;
   const label = level ? `${base}:${level}` : base;
-  const isHigh = base === 'URGENT' || base === 'ALERT' || level === 'HIGH' || level === 'CRITICAL';
+  const priorityMap = {
+    URGENT: 'CRITICAL',
+    ALERT: 'CRITICAL',
+    PRIORITY: 'HIGH',
+  };
+  const priority = priorityMap[base] || 'STANDARD';
   return {
     label,
-    className: isHigh
-      ? 'text-red-300 border-red-500/40 bg-red-500/10'
-      : 'text-blue-300 border-blue-500/40 bg-blue-500/10',
+    type: 'priority',
+    priority,
   };
 };
 
@@ -293,9 +299,18 @@ export default function MessageItem({
             {badge && (
               <>
                 <span className="text-zinc-600 flex-shrink-0">•</span>
-                <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border ${badge.className}`}>
-                  {badge.label}
-                </span>
+                {badge.type === 'priority' ? (
+                  <TokenRenderer
+                    family={getTokenByStatus(badge.priority, priorityTokens).family}
+                    color={getTokenByStatus(badge.priority, priorityTokens).color}
+                    label={badge.label}
+                    size="xs"
+                  />
+                ) : (
+                  <span className="text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border border-purple-500/40 bg-purple-500/10 text-purple-300">
+                    {badge.label}
+                  </span>
+                )}
               </>
             )}
             {message.is_routed && (
