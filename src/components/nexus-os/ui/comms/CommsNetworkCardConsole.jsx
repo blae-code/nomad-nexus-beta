@@ -855,59 +855,32 @@ export default function CommsNetworkCardConsole({
               const sla = slaBySquadId[card.id];
               const escalation = escalationBySquadId[card.id];
               return (
-                <article key={card.id} data-comms-squad-card="true" className={`rounded border px-2 py-1.5 ${selectedSquadId === card.id ? 'border-orange-500/60 bg-zinc-950/80' : 'border-zinc-800 bg-zinc-950/60'}`}>
-                  <button type="button" onClick={() => setSelectedSquadId(card.id)} className="w-full text-left">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <div className="min-w-0 inline-flex items-center gap-1.5">
-                        <img src={wingTokenIcon(card.wingId, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        <span className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.squadLabel}</span>
-                        <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel}</span>
-                      </div>
-                      <div className="inline-flex items-center gap-1 shrink-0">
-                        {bridgedSquadIdSet.has(card.id) ? <NexusBadge tone="active">BR</NexusBadge> : null}
-                        <NexusBadge tone={card.txCount > 0 ? 'warning' : card.offNetCount > 0 ? 'danger' : 'ok'}>TX {card.txCount}</NexusBadge>
-                      </div>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-1 text-[8px] text-zinc-500 uppercase tracking-wide">
-                      <span>Ships {card.vehicles.length}</span>
-                      <span>Crew {card.operators.length}</span>
-                      <span>Links {card.linkedSquadIds.length}</span>
-                    </div>
-                  </button>
-
-                  {sla ?
-                  <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1 grid grid-cols-3 gap-1 text-[8px] uppercase tracking-wide">
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.checkinStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        CI {formatSlaAge(sla.last_checkin_age_s)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.ackStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        ACK {formatSlaAge(sla.last_ack_age_s)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.offNetStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        OFF {formatSlaAge(sla.off_net_duration_s)}
-                      </span>
-                    </div> :
-                  null}
-
-                  <div className="mt-1 flex items-center gap-1 flex-wrap">
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'PILOT')} disabled={card.pilotCount === 0}>Hail Pilot</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'MEDIC')} disabled={card.medicCount === 0}>Hail Medics</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'ALL_HANDS')}>Hail Squad</NexusButton>
-                    <NexusButton size="sm" intent={bridgeDraftSquadIds.includes(card.id) ? 'primary' : 'subtle'} onClick={() => setBridgeDraftSquadIds((prev) => prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id].slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS))}>Bridge</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => setConsoleState((prev) => toggleWatchlistSquad(prev, card.id))}>
-                      {watchlistSet.has(card.id) ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
-                    </NexusButton>
-                    {escalation ?
-                    <NexusButton size="sm" intent={slaTone(sla?.overallStatus || 'green')} onClick={() => triggerEscalation(card, escalation)}>
-                        {escalation.label}
-                      </NexusButton> :
-                    null}
-                  </div>
-                </article>);
-
+                <SquadCard
+                  key={card.id}
+                  card={card}
+                  sla={sla}
+                  escalation={escalation}
+                  isBridged={bridgedSquadIdSet.has(card.id)}
+                  isWatchlisted={watchlistSet.has(card.id)}
+                  isSelected={selectedSquadId === card.id}
+                  onSelect={setSelectedSquadId}
+                  onHailPilot={(c) => hailSquad(c, 'PILOT')}
+                  onHailMedic={(c) => hailSquad(c, 'MEDIC')}
+                  onHailSquad={(c) => hailSquad(c, 'ALL_HANDS')}
+                  onToggleBridge={(id) =>
+                    setBridgeDraftSquadIds((prev) =>
+                      prev.includes(id)
+                        ? prev.filter((x) => x !== id)
+                        : [...prev, id].slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS)
+                    )
+                  }
+                  onToggleWatchlist={(id) => setConsoleState((prev) => toggleWatchlistSquad(prev, id))}
+                  onEscalate={triggerEscalation}
+                  slaTokenIcon={slaTokenIcon}
+                  slaTone={slaTone}
+                  formatSlaAge={formatSlaAge}
+                />
+              );
             })}
             {visibleSquadCards.length === 0 ? <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">No squad cards available for this lane page.</div> : null}
           </div>
