@@ -529,24 +529,21 @@ export default function VoiceCommsRail({
 
                 {fleetView === 'schema' &&
             <>
-                    <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
-                      <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Fleet Channels</div>
-                    </div>
                     {schemaChannelPageCount > 1 &&
-              <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+              <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-b border-zinc-700/40 py-1">
                         <button
                   type="button"
                   onClick={() => setFleetSchemaPage((prev) => Math.max(0, prev - 1))}
                   disabled={fleetSchemaPage === 0}
-                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
                           Prev
                         </button>
-                        <span className="text-[8px]">{fleetSchemaPage + 1}/{schemaChannelPageCount}</span>
+                        <span>{fleetSchemaPage + 1}/{schemaChannelPageCount}</span>
                         <button
                   type="button"
                   onClick={() => setFleetSchemaPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
                   disabled={fleetSchemaPage >= schemaChannelPageCount - 1}
-                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
                           Next
                         </button>
                       </div>
@@ -617,7 +614,7 @@ export default function VoiceCommsRail({
                             </div>
                           </article>
                 ) :
-                <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No fleet schema channels available.</div>
+                <div className="rounded border border-zinc-700/40 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No fleet schema channels available.</div>
                 }
                     </div>
                   </>
@@ -626,20 +623,20 @@ export default function VoiceCommsRail({
                 {fleetView === 'cards' &&
             <>
                     {compactFleetCardPageCount > 1 &&
-              <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+              <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-b border-zinc-700/40 py-1">
                         <button
                   type="button"
                   onClick={() => setFleetCardPage((prev) => Math.max(0, prev - 1))}
                   disabled={fleetCardPage === 0}
-                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
                           Prev
                         </button>
-                        <span className="text-[8px]">{fleetCardPage + 1}/{compactFleetCardPageCount}</span>
+                        <span>{fleetCardPage + 1}/{compactFleetCardPageCount}</span>
                         <button
                   type="button"
                   onClick={() => setFleetCardPage((prev) => Math.min(compactFleetCardPageCount - 1, prev + 1))}
                   disabled={fleetCardPage >= compactFleetCardPageCount - 1}
-                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
                           Next
                         </button>
                       </div>
@@ -671,7 +668,7 @@ export default function VoiceCommsRail({
                             </div>
                           </article>
                 ) :
-                <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No compact fleet cards available.</div>
+                <div className="rounded border border-zinc-700/40 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No compact fleet cards available.</div>
                 }
                     </div>
                   </>
