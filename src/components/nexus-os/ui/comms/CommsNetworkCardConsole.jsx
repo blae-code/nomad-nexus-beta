@@ -709,7 +709,7 @@ export default function CommsNetworkCardConsole({
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">Comms Network Cards</h3>
-          <p className="text-xs text-zinc-500 truncate">Bird-eye comms relation view with role hails, bridge templates, SLA cues, and watchlist pinboard.</p>
+          
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <NexusButton size="sm" intent="subtle" onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))} disabled={schemaChannelPage === 0}>Lane Prev</NexusButton>
