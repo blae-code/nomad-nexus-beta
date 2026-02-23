@@ -187,7 +187,7 @@ export default function SquadCard({
                     alt=""
                     className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
                   />
-                  <span className="truncate">{vehicle.label}</span>
+                  <span className="truncate">{getSizeSymbol(vehicle.size)} {vehicle.label}</span>
                 </div>
                 <img
                   src={vehicleStatusTokenIcon(vehicle.status)}
