@@ -282,12 +282,12 @@ export default function VoiceCommsRail({
       </div>
       <div className="grid grid-cols-3 gap-1">
          <button
-         type="button"
-         onClick={() => onSetMicEnabled?.(!micEnabled)}
-         className={`h-6 text-[9px] px-2 rounded border transition-colors flex items-center justify-center gap-1 ${
-         micEnabled ? 'bg-green-500/15 border-green-500/40 text-green-300' : 'bg-zinc-900/40 border-zinc-700/40 text-zinc-500'}`
-         }
-         title={micEnabled ? 'Mute' : 'Enable'}>
+        type="button"
+        onClick={() => onSetMicEnabled?.(!micEnabled)}
+        className={`h-6 text-[9px] px-2 rounded border transition-colors flex items-center justify-center gap-1 ${
+        micEnabled ? 'bg-green-500/15 border-green-500/40 text-green-300' : 'bg-zinc-900/40 border-zinc-700/40 text-zinc-500'}`
+        }
+        title={micEnabled ? 'Mute' : 'Enable'}>
 
            {micEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
          </button>
@@ -359,31 +359,31 @@ export default function VoiceCommsRail({
         </div>
         <div className="mt-1 grid grid-cols-4 gap-1">
            <button
-             type="button"
-             onClick={() => onJoinNet?.(id)}
-             className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
-             title="Join">
+            type="button"
+            onClick={() => onJoinNet?.(id)}
+            className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
+            title="Join">
              J
            </button>
            <button
-             type="button"
-             onClick={() => onMonitorNet?.(id)}
-             className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
-             title="Monitor">
+            type="button"
+            onClick={() => onMonitorNet?.(id)}
+            className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
+            title="Monitor">
              M
            </button>
            <button
-             type="button"
-             onClick={() => onSetTransmitNet?.(id)}
-             className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
-             title="Transmit">
+            type="button"
+            onClick={() => onSetTransmitNet?.(id)}
+            className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
+            title="Transmit">
              T
            </button>
            <button
-             type="button"
-             onClick={() => onLeaveNet?.(id)}
-             className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
-             title="Leave">
+            type="button"
+            onClick={() => onLeaveNet?.(id)}
+            className="h-5 rounded border border-zinc-700/40 bg-zinc-900/40 text-[7px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors font-bold uppercase"
+            title="Leave">
              X
            </button>
          </div>
@@ -451,20 +451,20 @@ export default function VoiceCommsRail({
             {/* Fleet Section */}
             <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
               <button
-                type="button"
-                onClick={() => setFleetExpanded(!fleetExpanded)}
-                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail"
-              >
+              type="button"
+              onClick={() => setFleetExpanded(!fleetExpanded)}
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail">
+
                 <div className="flex items-center gap-1.5 min-w-0">
                   <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${fleetExpanded ? 'rotate-180' : ''}`} />
                   <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Fleet</h3>
                 </div>
-                <NexusBadge tone="active">{String(variantId || 'live').toUpperCase()}</NexusBadge>
+                
               </button>
             </div>
 
             {rosterExpanded &&
-            <>
+          <>
                  <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/30">
                    <div className="flex items-center justify-between gap-2">
                      <span className="text-[9px] font-semibold text-zinc-200 inline-flex items-center gap-1">
@@ -472,10 +472,10 @@ export default function VoiceCommsRail({
                        You
                      </span>
                      <select
-                       onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
-                       defaultValue="ON-NET"
-                       className="h-5 px-1.5 text-[8px] rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-300 hover:border-orange-500/40 transition-colors font-semibold uppercase cursor-pointer"
-                     >
+                  onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
+                  defaultValue="ON-NET"
+                  className="h-5 px-1.5 text-[8px] rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-300 hover:border-orange-500/40 transition-colors font-semibold uppercase cursor-pointer">
+
                        <option value="READY">Ready</option>
                        <option value="ON-NET">On Net</option>
                        <option value="ENGAGED">Engaged</option>
@@ -505,8 +505,8 @@ export default function VoiceCommsRail({
                       }
                     }}
                     className={`px-2 py-1 rounded border cursor-pointer transition-colors ${
-                      isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'
-                    }`}>
+                    isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'}`
+                    }>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[9px] font-semibold text-zinc-200 truncate inline-flex items-center gap-1">
                             <TokenRenderer family="square" color={status === 'OFFLINE' ? 'grey' : 'cyan'} size="xs" />
@@ -519,52 +519,52 @@ export default function VoiceCommsRail({
                         </div>
                       </div>);
 
-                })}
+              })}
 
                   {pagedParticipants.length === 0 &&
-                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-400">No users registered</div>
-                  }
+              <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-400">No users registered</div>
+              }
                 </div>
 
                 {contextMenu &&
-                <div
-                  className="fixed z-[1000] bg-zinc-900 border border-zinc-700/60 rounded shadow-lg py-1"
-                  style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}>
+            <div
+              className="fixed z-[1000] bg-zinc-900 border border-zinc-700/60 rounded shadow-lg py-1"
+              style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}>
                   <button
-                    type="button"
-                    onClick={() => { onHailUser?.(contextMenu.userId); closeContextMenu(); }}
-                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                type="button"
+                onClick={() => {onHailUser?.(contextMenu.userId);closeContextMenu();}}
+                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
                     Hail
                   </button>
                   <button
-                    type="button"
-                    onClick={() => { onInviteToVoice?.(contextMenu.userId); closeContextMenu(); }}
-                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                type="button"
+                onClick={() => {onInviteToVoice?.(contextMenu.userId);closeContextMenu();}}
+                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
                     Invite to Channel
                   </button>
                   <button
-                    type="button"
-                    onClick={() => { onSendMessage?.(contextMenu.userId); closeContextMenu(); }}
-                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                type="button"
+                onClick={() => {onSendMessage?.(contextMenu.userId);closeContextMenu();}}
+                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
                     Send Message
                   </button>
                   <button
-                    type="button"
-                    onClick={() => { onViewProfile?.(contextMenu.userId); closeContextMenu(); }}
-                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                type="button"
+                onClick={() => {onViewProfile?.(contextMenu.userId);closeContextMenu();}}
+                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
                     View Profile
                   </button>
                   <div className="border-t border-zinc-700/40 my-1" />
                   <button
-                    type="button"
-                    onClick={() => { onCreateGroup?.(Array.from(selectedUsers)); closeContextMenu(); }}
-                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-green-500/20 hover:text-green-300 transition-colors">
+                type="button"
+                onClick={() => {onCreateGroup?.(Array.from(selectedUsers));closeContextMenu();}}
+                className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-green-500/20 hover:text-green-300 transition-colors">
                     Create Squad ({selectedUsers.size})
                   </button>
                 </div>
-                }
+            }
                 {rosterPageCount > 1 &&
-                <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
+            <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
                     <button
                 type="button"
                 onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
@@ -581,17 +581,17 @@ export default function VoiceCommsRail({
                       Next
                     </button>
                   </div>
-                }
+            }
               </>
           }
 
             {/* Roster Section */}
             <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
               <button
-                type="button"
-                onClick={() => setRosterExpanded(!rosterExpanded)}
-                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail"
-              >
+              type="button"
+              onClick={() => setRosterExpanded(!rosterExpanded)}
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail">
+
                 <div className="flex items-center gap-1.5 min-w-0">
                   <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${rosterExpanded ? 'rotate-180' : ''}`} />
                   <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Roster</h3>
@@ -600,7 +600,7 @@ export default function VoiceCommsRail({
             </div>
 
             {fleetExpanded &&
-            <>
+          <>
                  <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
                    <div className="flex items-center gap-1.5">
                      <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-300">Schema</span>
@@ -699,19 +699,19 @@ export default function VoiceCommsRail({
                 }
                     </div>
                   </>
-                  }
+            }
                   </>
-                  }
+          }
 
             {feedback &&
-            <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/30 text-[8px] text-orange-400">
+          <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/30 text-[8px] text-orange-400">
                 {feedback}
               </div>
-            }
+          }
           </div>
 
           {showNetCreator &&
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
               <div className="w-full max-w-md bg-zinc-950 border border-zinc-700/40 rounded-lg p-4 m-4 shadow-2xl">
                 <VoiceNetCreator
               onSuccess={() => {
