@@ -44,6 +44,45 @@ export default function SquadCard({
     setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
   };
 
+  const getSizeSymbol = (vehicleSize) => {
+    const sizeMap = {
+      'capital': '◆',
+      'large': '◇',
+      'medium': '○',
+      'small': '●',
+      'fighter': '▪'
+    };
+    return sizeMap[String(vehicleSize || '').toLowerCase()] || '◇';
+  };
+
+  const getSecurityTone = (securityStatus) => {
+    const status = String(securityStatus || 'safe').toLowerCase();
+    if (status.includes('engaged')) return 'danger';
+    if (status.includes('risk')) return 'warning';
+    return 'ok';
+  };
+
+  const getFuelTone = (fuelPercent) => {
+    const percent = Number(fuelPercent || 0);
+    if (percent <= 10) return 'danger';
+    if (percent <= 30) return 'warning';
+    return 'ok';
+  };
+
+  const getAmmoBadge = (ammo) => {
+    if (!ammo) return null;
+    const percent = Number(ammo || 0);
+    if (percent === 0) return { label: 'No Ammo', tone: 'danger' };
+    if (percent < 30) return { label: 'Low', tone: 'warning' };
+    return { label: 'Ready', tone: 'ok' };
+  };
+
+  const getCrewReadiness = (vehicle, crewCount) => {
+    const recommended = Number(vehicle.recommended_crew || 2);
+    const status = crewCount >= recommended ? 'ready' : 'loading';
+    return { current: crewCount, recommended, status };
+  };
+
   return (
     <article
       key={card.id}
