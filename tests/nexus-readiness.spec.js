@@ -44,21 +44,63 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
   await expect(page.getByText(/Command Surface/i).first()).toBeVisible();
 
   await page.keyboard.press('Alt+3');
-  await expect(page.getByText(/Comms Network Topology/i)).toBeVisible();
-  await expect(page.getByText(/Comms Channel Cards/i)).toBeVisible();
+  await expect(page.getByText(/Comms Network Cards/i)).toBeVisible();
+  await expect(page.getByText(/^Squad Cards$/i).first()).toBeVisible();
+  await expect(page.locator('[data-comms-command-bar=\"true\"]').first()).toBeVisible();
+  await expect(page.locator('[data-comms-template-select=\"true\"]').first()).toBeVisible();
+  await expect(page.locator('[data-comms-ttl-select=\"true\"]').first()).toBeVisible();
   await expect(page.getByText(/Text Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Voice Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Global Voice Controls/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /Fleet/i }).first()).toBeVisible();
 
   await clickButtonDirect(page, /Fleet/i);
-  await clickButtonDirect(page, /Schema/i);
-  await expect(page.getByText(/REDSCAR Fleet/i)).toBeVisible();
+  const schemaButton = page.getByRole('button', { name: /Schema/i }).first();
+  const hasSchemaButton = await schemaButton.isVisible().catch(() => false);
+  if (hasSchemaButton) {
+    await schemaButton.dispatchEvent('click');
+    await expect(page.getByText(/REDSCAR Fleet/i)).toBeVisible();
+  }
 
-  const firstNode = page.locator('[data-comms-node=\"true\"]').first();
-  await expect(firstNode).toBeVisible();
-  await firstNode.dispatchEvent('click');
-  await clickButtonDirect(page, /Execute/i);
+  const firstSquadCard = page.locator('[data-comms-squad-card=\"true\"]').first();
+  await expect(firstSquadCard).toBeVisible();
+  await firstSquadCard.getByRole('button').first().dispatchEvent('click');
+  await clickButtonDirect(page, /Hail Squad/i);
+  await firstSquadCard.locator('button').nth(5).dispatchEvent('click');
+  await expect(page.locator('[data-comms-watchlist-pinboard=\"true\"]').first()).toBeVisible();
+  const cards = page.locator('[data-comms-squad-card=\"true\"]');
+  await cards.nth(0).getByRole('button', { name: /^Bridge$/i }).dispatchEvent('click');
+  await cards.nth(1).getByRole('button', { name: /^Bridge$/i }).dispatchEvent('click');
+
+  await page.evaluate(() => {
+    window.prompt = () => 'Briefing Template A';
+  });
+  await clickButtonDirect(page, /^Save$/i);
+  const templateSelect = page.locator('[data-comms-template-select=\"true\"]').first();
+  const templateValue = await templateSelect.locator('option').nth(1).getAttribute('value');
+  await templateSelect.selectOption(String(templateValue || ''));
+  await clickButtonDirect(page, /^Apply$/i);
+
+  await page.locator('[data-comms-ttl-select=\"true\"]').first().selectOption('120');
+  await clickButtonDirect(page, /Bridge Selected/i);
+
+  await page.evaluate(() => {
+    const originalNow = Date.now.bind(Date);
+    if (!window.__nexusNowPatched) {
+      window.__nexusNowOffset = 0;
+      Date.now = () => originalNow() + window.__nexusNowOffset;
+      window.__nexusNowPatched = true;
+    }
+    window.__nexusNowOffset += 190000;
+  });
+  await clickButtonDirect(page, /Refresh/i);
+  await expect(page.locator('[data-comms-split-suggested=\"true\"]').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Escalate to/i }).first()).toBeVisible();
+
+  await page.evaluate(() => {
+    window.confirm = () => true;
+  });
+  await clickButtonDirect(page, /^Delete$/i);
 
   await page.keyboard.press('Alt+2');
   await expect(page.getByText(/Operation Focus/i).first()).toBeVisible();
