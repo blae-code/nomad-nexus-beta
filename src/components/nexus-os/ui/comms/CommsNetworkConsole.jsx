@@ -1446,23 +1446,7 @@ export default function CommsNetworkConsole({
     return items;
   }, [selectedNode, bridgeDraftSourceId, dispatchDirective, cancelBridgeDraft]);
 
-  const isSchemaExpanded = useCallback(
-    (id: string, fallback = false) => {
-      if (Object.prototype.hasOwnProperty.call(schemaExpandedById, id)) return Boolean(schemaExpandedById[id]);
-      return fallback;
-    },
-    [schemaExpandedById]
-  );
 
-  const toggleSchemaExpanded = useCallback((id: string, fallback = false) => {
-    setSchemaExpandedById((prev) => {
-      const current = Object.prototype.hasOwnProperty.call(prev, id) ? Boolean(prev[id]) : fallback;
-      return {
-        ...prev,
-        [id]: !current,
-      };
-    });
-  }, []);
 
   const tokenAtlasEntriesByFamily = useMemo(() => {
     const grouped = new Map<string, (typeof tokenCatalog.entries)[number][]>();
