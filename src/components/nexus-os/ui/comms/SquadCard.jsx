@@ -55,21 +55,23 @@ export default function SquadCard({
       }`}
     >
       <button type="button" onClick={() => onSelect(card.id)} className="w-full text-left">
-        {/* Header: Wing + Squad + Status Icons */}
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="min-w-0 inline-flex items-center gap-1.5">
-            <img
-              src={wingTokenIcon(card.wingId, 'ready')}
-              alt=""
-              className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
-            />
-            <span className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">
-              {card.squadLabel}
-            </span>
-            <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">
-              {card.wingLabel}
-            </span>
-          </div>
+         {/* Header: Squad ID + Location Breadcrumb */}
+         <div className="flex items-center justify-between gap-1.5">
+           <div className="min-w-0 flex flex-col gap-1">
+             <div className="inline-flex items-center gap-1.5">
+               <span className="text-[10px] text-zinc-100 uppercase tracking-wide font-semibold">
+                 {card.squadLabel}
+               </span>
+               <span className="text-[8px] text-zinc-500 uppercase tracking-wide">
+                 {card.wingLabel}
+               </span>
+             </div>
+             {location && (
+               <span className="text-[8px] text-zinc-400 font-mono break-words">
+                 {location}
+               </span>
+             )}
+           </div>
           <div className="inline-flex items-center gap-1 shrink-0">
             {isBridged ? <NexusBadge tone="active">BR</NexusBadge> : null}
             <NexusBadge
