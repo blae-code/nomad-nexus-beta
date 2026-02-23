@@ -539,7 +539,7 @@ export default function CommsHub({
         <button
           type="button"
           onClick={() => toggleCategory(category)}
-          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 rounded transition-colors"
+          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 rounded transition-colors"
         >
           <div className="flex items-center gap-1.5">
             <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
@@ -615,9 +615,9 @@ export default function CommsHub({
   };
 
   return (
-    <div className={`flex h-full bg-zinc-950/80 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
+    <div className={`flex h-full bg-black/95 border-r border-red-700/30 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
       {!isExpanded ? (
-        <div className="flex items-center justify-center py-2 border-r border-zinc-700/40">
+        <div className="flex items-center justify-center py-2">
           <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Expand">
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -625,8 +625,8 @@ export default function CommsHub({
       ) : (
         <div className="flex w-full h-full overflow-hidden">
           {/* Channel Tree Panel */}
-          <div className="flex flex-col w-64 flex-shrink-0 border-r border-zinc-700/40 h-full overflow-hidden">
-            <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex items-center justify-between gap-2">
+          <div className="flex flex-col w-64 flex-shrink-0 border-r border-red-700/25 h-full overflow-hidden">
+            <div className="flex-shrink-0 px-2 py-1.5 border-b border-red-700/25 bg-zinc-900/40 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
                 <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider">Channels</h3>
@@ -652,25 +652,25 @@ export default function CommsHub({
             </div>
 
             {showCreateMenu ? (
-              <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40 p-2 space-y-1.5">
+              <div className="flex-shrink-0 border-b border-red-700/25 bg-zinc-900/50 p-2 space-y-1.5">
                 <div className="text-[9px] uppercase tracking-wide text-zinc-500 mb-1">Create New</div>
                 <button
                   type="button"
                   onClick={createDirectMessage}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[10px] text-zinc-300 hover:bg-zinc-800/50 transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-red-700/30 bg-zinc-950/60 text-[10px] text-zinc-300 hover:bg-zinc-800/50 hover:border-orange-500/40 transition-colors"
                 >
-                  <AtSign className="w-3.5 h-3.5 text-cyan-400" />
+                  <AtSign className="w-3.5 h-3.5 text-orange-400" />
                   Direct Message
                 </button>
                 <button
                   type="button"
                   onClick={createGroupMessage}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[10px] text-zinc-300 hover:bg-zinc-800/50 transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-red-700/30 bg-zinc-950/60 text-[10px] text-zinc-300 hover:bg-zinc-800/50 hover:border-orange-500/40 transition-colors"
                 >
-                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  <Users className="w-3.5 h-3.5 text-orange-400" />
                   Group Message
                 </button>
-                <div className="pt-1 border-t border-zinc-800">
+                <div className="pt-1 border-t border-red-700/25">
                   <div className="flex gap-1">
                     <input
                       type="text"
@@ -681,13 +681,13 @@ export default function CommsHub({
                         if (e.key === 'Enter') createCategory();
                         if (e.key === 'Escape') setShowCreateMenu(false);
                       }}
-                      className="flex-1 bg-zinc-800/60 border border-zinc-700/40 rounded px-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40"
+                      className="flex-1 bg-zinc-950/60 border border-red-700/30 rounded px-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
                     />
                     <button
                       type="button"
                       onClick={createCategory}
                       disabled={!newCategoryName.trim()}
-                      className="px-2 py-1 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 py-1 rounded border border-red-700/30 bg-orange-500/15 hover:bg-orange-500/25 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Create category"
                     >
                       <FolderPlus className="w-3.5 h-3.5" />
@@ -710,13 +710,13 @@ export default function CommsHub({
 
           {/* Chat Panel - slides in when channel selected */}
           <div
-            className={`flex flex-col flex-1 border-l border-zinc-700/40 bg-zinc-900/60 transition-all duration-300 overflow-hidden ${
+            className={`flex flex-col flex-1 border-l border-red-700/25 bg-zinc-950/60 transition-all duration-300 overflow-hidden ${
               chatPanelOpen && selectedChannel ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute inset-0 pointer-events-none'
             }`}
           >
             {selectedChannel ? (
               <>
-                <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
+                <div className="flex-shrink-0 px-2.5 py-2 border-b border-red-700/25 bg-zinc-900/50 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <img src={channelTokenIcon(selectedChannelData)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
@@ -743,7 +743,7 @@ export default function CommsHub({
                     </div>
                   </div>
 
-                <div className="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50">
+                <div className="p-2.5 rounded-lg border border-red-700/30 bg-zinc-950/60">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <div>
                       <div className="text-[9px] uppercase tracking-wide text-zinc-500 mb-0.5">Channel Status</div>
@@ -755,7 +755,7 @@ export default function CommsHub({
                   <button
                     type="button"
                     onClick={executeCommandIntent}
-                    className="mt-2 h-6 px-2.5 rounded border border-zinc-700 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:text-orange-300 transition-colors inline-flex items-center gap-1"
+                    className="mt-2 h-6 px-2.5 rounded border border-red-700/30 bg-zinc-900/40 text-[9px] text-zinc-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 transition-colors inline-flex items-center gap-1"
                   >
                     {commandIntent.actionLabel}
                     <ArrowRight className="w-3 h-3" />
@@ -773,7 +773,7 @@ export default function CommsHub({
                             handleAiSearch(event.currentTarget.value);
                           }
                         }}
-                        className="w-full bg-zinc-800/60 border border-zinc-700/40 rounded pl-7 pr-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40"
+                        className="w-full bg-zinc-950/60 border border-red-700/30 rounded pl-7 pr-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
                       />
                       <Sparkles className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-400" />
                       {aiSearchActive ? (
@@ -944,12 +944,12 @@ export default function CommsHub({
               </div>
 
               {messagePageCount > 1 ? (
-                <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/30 bg-zinc-900/30 flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                <div className="flex-shrink-0 px-2 py-1 border-t border-red-700/20 bg-zinc-900/40 flex items-center justify-end gap-2 text-[9px] text-zinc-500">
                   <button
                     type="button"
                     onClick={() => setMessagePage((prev) => Math.max(0, prev - 1))}
                     disabled={messagePage === 0}
-                    className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
                   >
                     Prev
                   </button>
@@ -958,14 +958,14 @@ export default function CommsHub({
                     type="button"
                     onClick={() => setMessagePage((prev) => Math.min(messagePageCount - 1, prev + 1))}
                     disabled={messagePage >= messagePageCount - 1}
-                    className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
                   >
                     Next
                   </button>
                 </div>
               ) : null}
 
-              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
+              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-red-700/25 bg-zinc-900/50">
                 <input
                   type="text"
                   placeholder="Type a message..."
@@ -974,13 +974,13 @@ export default function CommsHub({
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && event.currentTarget.value.trim()) handleSendMessage();
                   }}
-                  className="flex-1 text-[10px] bg-zinc-800/60 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
+                  className="flex-1 text-[10px] bg-zinc-950/60 border border-red-700/30 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
                 />
                 <button
                   type="button"
                   onClick={handleSendMessage}
                   disabled={!messageInput.trim()}
-                  className="h-6 px-2 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="h-6 px-2 rounded border border-red-700/30 bg-orange-500/15 hover:bg-orange-500/25 hover:border-orange-500/50 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   title="Send message (Enter)"
                 >
                   <Send className="w-3 h-3" />
@@ -988,7 +988,7 @@ export default function CommsHub({
               </div>
 
                 {panelFeedback ? (
-                  <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/30 bg-zinc-900/20 text-[9px] text-zinc-500">
+                  <div className="flex-shrink-0 px-2 py-1 border-t border-red-700/20 bg-zinc-900/30 text-[9px] text-orange-400">
                     {panelFeedback}
                   </div>
                 ) : null}
@@ -998,8 +998,8 @@ export default function CommsHub({
 
           {/* Thread Panel - slides over chat panel */}
           {activeThread && threads[activeThread] ? (
-            <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-sm flex flex-col z-10 animate-in slide-in-from-right duration-300">
-              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40">
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-sm flex flex-col z-10 animate-in slide-in-from-right duration-300">
+              <div className="flex-shrink-0 px-2.5 py-2 border-b border-red-700/25 bg-zinc-900/50">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
@@ -1037,7 +1037,7 @@ export default function CommsHub({
                   </div>
                 ) : (
                   threads[activeThread].messages.map((reply) => (
-                    <div key={reply.id} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-800">
+                    <div key={reply.id} className="px-2 py-1.5 rounded bg-zinc-950/60 border border-red-700/25">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-[10px] font-semibold text-zinc-300">{reply.author}</span>
                         <span className="text-[9px] text-zinc-600">{reply.timestamp}</span>
@@ -1048,7 +1048,7 @@ export default function CommsHub({
                 )}
               </div>
 
-              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
+              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-red-700/25 bg-zinc-900/50">
                 <input
                   type="text"
                   placeholder="Reply to thread..."
@@ -1057,13 +1057,13 @@ export default function CommsHub({
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && event.currentTarget.value.trim()) sendThreadReply();
                   }}
-                  className="flex-1 text-[10px] bg-zinc-800/60 border border-cyan-500/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-500/20"
+                  className="flex-1 text-[10px] bg-zinc-950/60 border border-red-700/30 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
                 />
                 <button
                   type="button"
                   onClick={sendThreadReply}
                   disabled={!threadInput.trim()}
-                  className="h-6 px-2 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="h-6 px-2 rounded border border-red-700/30 bg-orange-500/15 hover:bg-orange-500/25 hover:border-orange-500/50 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   title="Send reply (Enter)"
                 >
                   <Send className="w-3 h-3" />

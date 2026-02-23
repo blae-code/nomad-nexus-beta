@@ -182,8 +182,8 @@ export default function VoiceCommsRail({
     onTouchStart={() => onStartPTT?.()}
     onTouchEnd={() => onStopPTT?.()}
     onTouchCancel={() => onStopPTT?.()}
-    className={`h-6 text-[9px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
-    pttActive ? 'bg-orange-500/25 hover:bg-orange-500/35 text-orange-200' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'}`
+    className={`h-6 text-[9px] px-2 rounded border transition-colors flex items-center justify-center gap-1 ${
+    pttActive ? 'bg-red-500/20 border-red-500/50 hover:bg-red-500/30 text-red-200' : 'bg-zinc-900/60 border-red-700/30 hover:bg-zinc-800/60 text-zinc-400'}`
     }
     title="Hold to transmit">
 
@@ -193,17 +193,17 @@ export default function VoiceCommsRail({
 
 
   const renderGlobalControlCluster = () =>
-  <div className="px-2 py-1.5 rounded border border-zinc-700/40 bg-zinc-900/40 space-y-1.5">
+  <div className="px-2 py-1.5 rounded border border-red-700/30 bg-zinc-950/60 space-y-1.5">
       <div className="flex items-center justify-between gap-2 text-[9px] uppercase tracking-wide">
-        <span className="text-zinc-500">Global Voice Controls</span>
-        <span className="text-zinc-600">{participants.length} online</span>
+        <span className="text-zinc-400">Global Voice Controls</span>
+        <span className="text-orange-400">{participants.length} online</span>
       </div>
       <div className="grid grid-cols-3 gap-1">
         <button
         type="button"
         onClick={() => onSetMicEnabled?.(!micEnabled)}
-        className={`h-6 text-[9px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
-        micEnabled ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'}`
+        className={`h-6 text-[9px] px-2 rounded border transition-colors flex items-center justify-center gap-1 ${
+        micEnabled ? 'bg-green-500/15 border-green-500/40 hover:bg-green-500/20 text-green-300' : 'bg-zinc-900/60 border-red-700/30 hover:bg-zinc-800/60 text-zinc-400'}`
         }
         title={micEnabled ? 'Mute microphone' : 'Enable microphone'}>
 
@@ -213,7 +213,7 @@ export default function VoiceCommsRail({
         <button
         type="button"
         onClick={() => onRequestToSpeak?.()}
-        className="h-6 text-[9px] px-2 rounded border border-zinc-700 text-zinc-400 hover:border-orange-500/40 transition-colors flex items-center justify-center gap-1"
+        className="h-6 text-[9px] px-2 rounded border border-red-700/30 text-zinc-400 hover:border-orange-500/40 hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-1"
         title="Request transmit privilege">
 
           <Signal className="w-3 h-3" />
@@ -227,8 +227,8 @@ export default function VoiceCommsRail({
         onClick={() => onSetDisciplineMode?.(mode.id)}
         className={`h-6 text-[9px] px-1 rounded border transition-colors ${
         disciplineMode === mode.id ?
-        'border-green-500/40 bg-green-500/20 text-green-300' :
-        'border-zinc-700 bg-zinc-900/60 text-zinc-500 hover:border-zinc-500'}`
+        'border-orange-500/40 bg-orange-500/15 text-orange-300' :
+        'border-red-700/30 bg-zinc-900/60 text-zinc-500 hover:border-red-700/50 hover:text-zinc-300'}`
         }>
 
             {mode.label}
@@ -261,7 +261,7 @@ export default function VoiceCommsRail({
       <div
         key={id}
         className={`w-full px-2 py-1.5 rounded border text-[10px] ${
-        isActive ? 'bg-green-500/20 border-green-500/30 text-green-300' : 'bg-zinc-900/40 border-zinc-700/40 text-zinc-400'}`
+        isActive ? 'bg-orange-500/15 border-orange-500/40 text-orange-300' : 'bg-zinc-950/60 border-red-700/30 text-zinc-400'}`
         }>
 
         <div className="flex items-center justify-between gap-2">
@@ -273,15 +273,15 @@ export default function VoiceCommsRail({
             <div className="text-[9px] text-zinc-500 mt-0.5 truncate">{net.label || net.description || 'Voice lane'}</div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {isTransmit ? <NexusBadge tone="warning">TX</NexusBadge> : null}
-            {isMonitored ? <NexusBadge tone="active">MON</NexusBadge> : null}
+            {isTransmit ? <NexusBadge tone="danger">TX</NexusBadge> : null}
+            {isMonitored ? <NexusBadge tone="warning">MON</NexusBadge> : null}
           </div>
         </div>
         <div className="mt-1.5 grid grid-cols-4 gap-1">
           <button
             type="button"
             onClick={() => onJoinNet?.(id)}
-            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-green-500/40"
+            className="h-5 rounded border border-red-700/30 bg-zinc-900/40 text-[8px] text-zinc-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 transition-colors"
             title="Join net">
 
             Join
@@ -289,7 +289,7 @@ export default function VoiceCommsRail({
           <button
             type="button"
             onClick={() => onMonitorNet?.(id)}
-            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-green-500/40"
+            className="h-5 rounded border border-red-700/30 bg-zinc-900/40 text-[8px] text-zinc-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300 transition-colors"
             title="Monitor net">
 
             Mon
@@ -297,7 +297,7 @@ export default function VoiceCommsRail({
           <button
             type="button"
             onClick={() => onSetTransmitNet?.(id)}
-            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-orange-500/40"
+            className="h-5 rounded border border-red-700/30 bg-zinc-900/40 text-[8px] text-zinc-400 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 transition-colors"
             title="Set transmit net">
 
             TX
@@ -305,7 +305,7 @@ export default function VoiceCommsRail({
           <button
             type="button"
             onClick={() => onLeaveNet?.(id)}
-            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-red-500/40"
+            className="h-5 rounded border border-red-700/30 bg-zinc-900/40 text-[8px] text-zinc-400 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 transition-colors"
             title="Leave net">
 
             Leave
@@ -316,8 +316,7 @@ export default function VoiceCommsRail({
   };
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden">
-      
+    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-black/95 border-l border-red-700/30">
 
 
 
@@ -341,16 +340,16 @@ export default function VoiceCommsRail({
 
       {isExpanded ?
       <>
-          <div className="px-2 py-1 border-b border-zinc-700/30 bg-zinc-900/30">
+          <div className="px-2 py-1.5 border-b border-red-700/25 bg-zinc-900/40">
             {renderGlobalControlCluster()}
           </div>
 
-          <div className="px-2 py-1 flex items-center gap-1 border-b border-zinc-700/30 bg-zinc-900/20">
+          <div className="px-2 py-1 flex items-center gap-1 border-b border-red-700/20 bg-zinc-900/30">
             <button
             type="button"
             onClick={() => setSelectedTab('nets')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border ${
-            selectedTab === 'nets' ? 'text-green-400 bg-zinc-800 border-green-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700'}`
+            className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border transition-colors ${
+            selectedTab === 'nets' ? 'text-orange-300 bg-orange-500/15 border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700 hover:border-red-700/40'}`
             }>
 
               Nets
@@ -358,8 +357,8 @@ export default function VoiceCommsRail({
             <button
             type="button"
             onClick={() => setSelectedTab('roster')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border ${
-            selectedTab === 'roster' ? 'text-green-400 bg-zinc-800 border-green-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700'}`
+            className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border transition-colors ${
+            selectedTab === 'roster' ? 'text-orange-300 bg-orange-500/15 border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700 hover:border-red-700/40'}`
             }>
 
               Roster
@@ -370,9 +369,9 @@ export default function VoiceCommsRail({
             {selectedTab === 'nets' ?
           <>
                 <div className="space-y-1">
-                  <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-1">Quick Nets</div>
+                  <div className="text-[9px] font-bold text-orange-400 uppercase tracking-wider px-1">Quick Nets</div>
                   {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) :
-              <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets available.</div>
+              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets available.</div>
               }
                 </div>
 
@@ -382,7 +381,7 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
                 disabled={quickPage === 0}
-                className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60">
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
 
                       Prev
                     </button>
@@ -391,7 +390,7 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
                 disabled={quickPage >= quickPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60">
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
 
                       Next
                     </button>
@@ -399,19 +398,19 @@ export default function VoiceCommsRail({
             null}
 
                 <div className="space-y-1">
-                  <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-1 flex items-center justify-between">
+                  <div className="text-[9px] font-bold text-orange-400 uppercase tracking-wider px-1 flex items-center justify-between">
                     <span>All Nets</span>
                     <button
                   type="button"
                   onClick={() => setShowNetCreator(true)}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-400 hover:border-green-500/60 hover:text-green-400 transition-colors flex items-center gap-1"
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 text-zinc-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-400 transition-colors flex items-center gap-1"
                   title="Create new voice net">
 
                       <Plus className="w-2.5 h-2.5" />
                     </button>
                   </div>
                   {pagedNets.length > 0 ? pagedNets.map(renderQuickNetCard) :
-              <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets available.</div>
+              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets available.</div>
               }
                 </div>
 
@@ -421,7 +420,7 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
                 disabled={netsPage === 0}
-                className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60">
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
 
                       Prev
                     </button>
@@ -430,7 +429,7 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
                 disabled={netsPage >= netsPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60">
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
 
                       Next
                     </button>
@@ -445,7 +444,7 @@ export default function VoiceCommsRail({
                   {pagedParticipants.map((participant) => {
                 const status = participantStatusLabel(participant);
                 return (
-                  <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-700/40">
+                  <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-950/60 border border-red-700/30">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[10px] font-semibold text-zinc-300 truncate inline-flex items-center gap-1">
                             <img src={tokenAssets.comms.role.default} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
@@ -461,7 +460,7 @@ export default function VoiceCommsRail({
               })}
 
                   {pagedParticipants.length === 0 ?
-              <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div> :
+              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div> :
               null}
                 </div>
 
@@ -471,7 +470,7 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
                 disabled={rosterPage === 0}
-                className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60">
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
 
                       Prev
                     </button>
@@ -480,7 +479,7 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
                 disabled={rosterPage >= rosterPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60">
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
 
                       Next
                     </button>
@@ -490,7 +489,7 @@ export default function VoiceCommsRail({
           null}
 
             {feedback ?
-          <div className="px-2 py-1.5 rounded border border-orange-500/40 bg-orange-500/10 text-[9px] text-orange-300 inline-flex items-center gap-1">
+          <div className="px-2 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-[9px] text-red-300 inline-flex items-center gap-1">
                 <Radio className="w-3 h-3" />
                 {feedback}
               </div> :
@@ -498,8 +497,8 @@ export default function VoiceCommsRail({
           </div>
 
           {showNetCreator &&
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-              <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-lg p-4 m-4 shadow-2xl">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+              <div className="w-full max-w-md bg-zinc-950 border border-red-700/40 rounded-lg p-4 m-4 shadow-2xl shadow-red-500/10">
                 <VoiceNetCreator
               onSuccess={() => {
                 setShowNetCreator(false);
