@@ -146,27 +146,27 @@ export default function SquadCard({
                     crewForVehicle.map((operator) => (
                       <div
                         key={operator.id}
-                        className="flex items-center justify-between gap-1 text-[7px] rounded px-0.5 py-0.5 bg-zinc-900/50"
+                        className="flex items-center justify-between gap-1 text-[9px] rounded px-1 py-1 bg-zinc-900/50"
                       >
                         <div className="flex items-center gap-1 min-w-0">
                           <img
                             src={roleTokenIcon(operator.role)}
                             alt=""
-                            className="w-2 h-2 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
+                            className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
                             title={operator.role}
                           />
-                          <span className="text-zinc-400 truncate">{operator.callsign}</span>
+                          <span className="text-zinc-300 truncate">{operator.callsign}</span>
                         </div>
                         <img
                           src={operatorStatusTokenIcon(operator.status)}
                           alt=""
-                          className="w-2 h-2 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
+                          className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
                           title={operator.status}
                         />
                       </div>
                     ))
                   ) : (
-                    <div className="text-[7px] text-zinc-500 italic px-0.5 py-0.5">No crew assigned</div>
+                    <div className="text-[8px] text-zinc-500 italic px-1 py-1">No crew assigned</div>
                   )}
                 </div>
               )}
