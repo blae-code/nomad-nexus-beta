@@ -461,30 +461,84 @@ export default function VoiceCommsRail({
             {rosterExpanded &&
           <>
 
-                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1">
-                  {pagedParticipants.map((participant) => {
-                const status = participantStatusLabel(participant);
+                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1" onClick={closeContextMenu}>
+                  {pagedParticipants.map((user) => {
+                const userId = String(user.id || user.userId || user.email || '').trim();
+                const isSelected = selectedUsers.has(userId);
+                const status = getRosterItemStatus(user);
                 const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
                 return (
-                  <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-700/40">
+                  <div
+                    key={userId}
+                    onContextMenu={(e) => handleRosterRightClick(e, user)}
+                    onClick={(e) => {
+                      if (e.ctrlKey || e.metaKey) {
+                        const newSet = new Set(selectedUsers);
+                        isSelected ? newSet.delete(userId) : newSet.add(userId);
+                        setSelectedUsers(newSet);
+                      } else {
+                        setSelectedUsers(new Set([userId]));
+                      }
+                    }}
+                    className={`px-2 py-1 rounded border cursor-pointer transition-colors ${
+                      isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'
+                    }`}>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[9px] font-semibold text-zinc-400 truncate inline-flex items-center gap-1">
-                            <TokenRenderer family="square" color="cyan" size="xs" />
-                            {participant.callsign || participant.name || participant.id}
+                            <TokenRenderer family="square" color={status === 'OFFLINE' ? 'grey' : 'cyan'} size="xs" />
+                            {user.full_name || user.name || user.email}
                           </span>
                           <span className="inline-flex items-center gap-1">
                             <TokenRenderer family="circle" color={statusColor} size="xs" animated={status === 'TX'} />
-                            <NexusBadge tone={operatorStatusTone(status)}>{status}</NexusBadge>
+                            <NexusBadge tone={status === 'OFFLINE' ? 'neutral' : operatorStatusTone(status)}>{status}</NexusBadge>
                           </span>
                         </div>
                       </div>);
 
-              })}
+                })}
 
                   {pagedParticipants.length === 0 &&
-                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">None online</div>
+                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">No users registered</div>
                   }
                 </div>
+
+                {contextMenu &&
+                <div
+                  className="fixed z-[1000] bg-zinc-900 border border-zinc-700/60 rounded shadow-lg py-1"
+                  style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}>
+                  <button
+                    type="button"
+                    onClick={() => { onHailUser?.(contextMenu.userId); closeContextMenu(); }}
+                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                    Hail
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onInviteToVoice?.(contextMenu.userId); closeContextMenu(); }}
+                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                    Invite to Channel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onSendMessage?.(contextMenu.userId); closeContextMenu(); }}
+                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                    Send Message
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onViewProfile?.(contextMenu.userId); closeContextMenu(); }}
+                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-orange-500/20 hover:text-orange-300 transition-colors">
+                    View Profile
+                  </button>
+                  <div className="border-t border-zinc-700/40 my-1" />
+                  <button
+                    type="button"
+                    onClick={() => { onCreateGroup?.(Array.from(selectedUsers)); closeContextMenu(); }}
+                    className="w-full px-3 py-1.5 text-[9px] text-left text-zinc-300 hover:bg-green-500/20 hover:text-green-300 transition-colors">
+                    Create Squad ({selectedUsers.size})
+                  </button>
+                </div>
+                }
                 {rosterPageCount > 1 &&
                 <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-t border-zinc-700/40 py-1">
                     <button
