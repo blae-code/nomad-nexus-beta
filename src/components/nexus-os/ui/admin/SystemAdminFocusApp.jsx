@@ -617,13 +617,13 @@ export default function SystemAdminFocusApp({
             </div>
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <NexusButton intent={persona === 'SYSTEM_ADMIN' ? 'primary' : 'subtle'} onClick={() => setPersona('SYSTEM_ADMIN')}>
-              <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+          <div className="mt-1 flex items-center gap-1">
+            <NexusButton intent={persona === 'SYSTEM_ADMIN' ? 'primary' : 'subtle'} onClick={() => setPersona('SYSTEM_ADMIN')} className="h-7 text-xs px-2">
+              <ShieldCheck className="w-3 h-3 mr-0.5" />
               System
             </NexusButton>
-            <NexusButton intent={persona === 'PIONEER' ? 'primary' : 'subtle'} onClick={() => setPersona('PIONEER')}>
-              <Rocket className="w-3.5 h-3.5 mr-1" />
+            <NexusButton intent={persona === 'PIONEER' ? 'primary' : 'subtle'} onClick={() => setPersona('PIONEER')} className="h-7 text-xs px-2">
+              <Rocket className="w-3 h-3 mr-0.5" />
               Pioneer
             </NexusButton>
           </div>
