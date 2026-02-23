@@ -47,6 +47,7 @@ import {
   sortSquadCardsDeterministic } from
 './commsCardConsoleRuntime';
 import CommsFleetMetrics from './CommsFleetMetrics';
+import SquadCard from './SquadCard';
 
 const SQUAD_CARD_PAGE_SIZE = 5;
 const WATCHLIST_PAGE_SIZE = 5;
