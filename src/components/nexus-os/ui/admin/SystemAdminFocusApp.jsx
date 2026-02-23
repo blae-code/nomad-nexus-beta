@@ -37,8 +37,8 @@ const LOG_PAGE_SIZE = 5;
 const PROTECTED_DOMAIN_KEYS = ['memberProfiles', 'accessKeys'];
 const IDENTITY_USER_PAGE_SIZE = 5;
 const IDENTITY_KEY_PAGE_SIZE = 6;
-const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
-const RANK_GRANTS_CONFIG = {
+const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'] as const;
+const RANK_GRANTS_CONFIG: Record<string, string[]> = {
   VAGRANT: ['read_only'],
   SCOUT: ['read_only', 'comms_access'],
   VOYAGER: ['read_only', 'comms_access', 'event_creation'],
@@ -46,7 +46,7 @@ const RANK_GRANTS_CONFIG = {
   FOUNDER: ['admin_access'],
 };
 
-function normalizeUsername(input) {
+function normalizeUsername(input: any): string {
   return String(
     input?.display_callsign ||
       input?.callsign ||
@@ -58,7 +58,7 @@ function normalizeUsername(input) {
   ).trim();
 }
 
-function normalizeDirectoryUsers(raw) {
+function normalizeDirectoryUsers(raw: any[]): DirectoryUser[] {
   const mapped = (Array.isArray(raw) ? raw : []).map((entry) => ({
     id: String(entry?.id || '').trim(),
     username: normalizeUsername(entry),
@@ -69,7 +69,7 @@ function normalizeDirectoryUsers(raw) {
   return mapped.filter((entry) => Boolean(entry.id));
 }
 
-function normalizeAccessKeys(raw) {
+function normalizeAccessKeys(raw: any[]): AccessKeyRecord[] {
   return (Array.isArray(raw) ? raw : [])
     .map((entry) => ({
       id: String(entry?.id || '').trim(),
@@ -90,7 +90,7 @@ function normalizeAccessKeys(raw) {
     .filter((entry) => Boolean(entry.id) && Boolean(entry.code));
 }
 
-function accessKeyTone(status) {
+function accessKeyTone(status: string): 'ok' | 'warning' | 'danger' | 'neutral' | 'active' {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'ACTIVE') return 'ok';
   if (normalized === 'REDEEMED') return 'active';
@@ -99,24 +99,24 @@ function accessKeyTone(status) {
   return 'neutral';
 }
 
-function maskKeyCode(code) {
+function maskKeyCode(code: string): string {
   const normalized = String(code || '').trim();
   if (normalized.length <= 8) return normalized;
   return `${normalized.slice(0, 4)}...${normalized.slice(-4)}`;
 }
 
-function titleizeDomainKey(key) {
+function titleizeDomainKey(key: string): string {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase()).trim();
 }
 
-function toneForLog(entry) {
+function toneForLog(entry: LogTone): 'ok' | 'warning' | 'danger' | 'neutral' {
   if (entry === 'ok') return 'ok';
   if (entry === 'warning') return 'warning';
   if (entry === 'danger') return 'danger';
   return 'neutral';
 }
 
-function formatClock(value) {
+function formatClock(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '--:--';
   return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
