@@ -951,12 +951,11 @@ export default function CommsHub({
                 })()}
               </div>
 
-              <div className="flex-1 min-h-0 p-2 space-y-1.5 overflow-y-auto">
+              <div className="flex-1 min-h-0 p-2 space-y-1 overflow-y-auto">
                 {threads[activeThread].messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
-                    <CornerDownRight className="w-8 h-8 text-cyan-700/50" />
-                    <div className="text-[10px] font-bold uppercase tracking-wider">No replies yet</div>
-                    <div className="text-[9px] text-zinc-600">Start the conversation</div>
+                  <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2 px-4 text-center">
+                    <CornerDownRight className="w-8 h-8 text-zinc-700/50" />
+                    <div className="text-[10px] font-bold uppercase tracking-wider">No replies</div>
                   </div>
                 ) : (
                   threads[activeThread].messages.map((reply) => (
@@ -971,23 +970,23 @@ export default function CommsHub({
                 )}
               </div>
 
-              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/50">
+              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
                 <input
                   type="text"
-                  placeholder="Reply to thread..."
+                  placeholder="Reply..."
                   value={threadInput}
                   onChange={(event) => setThreadInput(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && event.currentTarget.value.trim()) sendThreadReply();
                   }}
-                  className="flex-1 text-[10px] bg-zinc-950/60 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-600/40 focus:ring-1 focus:ring-zinc-600/20"
+                  className="flex-1 text-[10px] bg-zinc-900/40 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
                 />
                 <button
                   type="button"
                   onClick={sendThreadReply}
                   disabled={!threadInput.trim()}
-                  className="h-6 px-2 rounded border border-zinc-700/40 bg-orange-500/15 hover:bg-orange-500/25 hover:border-orange-500/50 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  title="Send reply (Enter)"
+                  className="h-6 px-2 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-orange-500/15 hover:border-orange-500/50 text-zinc-500 hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  title="Send"
                 >
                   <Send className="w-3 h-3" />
                 </button>

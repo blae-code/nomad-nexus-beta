@@ -645,7 +645,7 @@ export default function VoiceCommsRail({
                     <div className="px-2 py-1.5 space-y-1.5">
                       {fleetWings.length > 0 ?
                 fleetWings.map((wing) =>
-                <article key={wing.id} className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5">
+                <article key={wing.id} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1">
                             <div className="flex items-center gap-1.5 text-[10px] text-zinc-200 uppercase tracking-wide font-semibold">
                               <img src={wingTokenIcon(wing.id, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                               <span className="truncate">{wing.label}</span>
@@ -738,7 +738,7 @@ export default function VoiceCommsRail({
                     <div className="px-2 py-1.5 space-y-1">
                       {compactFleetCards.length > 0 ?
                 compactFleetCards.map((card) =>
-                <article key={card.id} className="rounded border border-red-700/30 bg-zinc-950/70 px-2 py-1.5">
+                <article key={card.id} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1">
                             <div className="flex items-center justify-between gap-1.5">
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <img src={tokenAssets.comms.vehicle} alt="" className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
