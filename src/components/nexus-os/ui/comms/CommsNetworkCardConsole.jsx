@@ -806,8 +806,8 @@ export default function CommsNetworkCardConsole({
         channels={channels}
         bridgeSessions={bridgeSessions}
         events={events}
-        deliveryStats={deliveryStats}
-      />
+        deliveryStats={deliveryStats} />
+
 
       <div className="min-h-0 grid gap-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
@@ -1018,44 +1018,44 @@ export default function CommsNetworkCardConsole({
         </section>
       </div>
 
-      <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <NexusBadge tone={deliveryStats.queued > 0 ? 'warning' : 'neutral'}>Queued {deliveryStats.queued}</NexusBadge>
-            <NexusBadge tone={deliveryStats.persisted > 0 ? 'active' : 'neutral'}>Persisted {deliveryStats.persisted}</NexusBadge>
-            <NexusBadge tone={deliveryStats.acked > 0 ? 'ok' : 'neutral'}>Acked {deliveryStats.acked}</NexusBadge>
-            <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>Confidence {deliveryStats.confidencePct}%</NexusBadge>
-            {fleetSummary.slice(0, 3).map((wing) =>
-            <span key={wing.wingId} className="inline-flex items-center gap-1 text-[9px] text-zinc-500 uppercase tracking-wide">
-                <img src={wingTokenIcon(wing.wingId, wing.redSlaCount > 0 ? 'busy' : 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                {wing.wingLabel} {wing.squadCount}
-              </span>
-            )}
-          </div>
-          <div className="text-[10px] text-zinc-500">Showing {feedPage.visible.length} tactical echoes</div>
-        </div>
+      
 
-        {feedPage.visible.length > 0 ?
-        <div className="mt-1.5 grid grid-cols-1 md:grid-cols-3 gap-1.5">
-            {feedPage.visible.map((dispatch) =>
-          <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{dispatch.directive}</span>
-                  <NexusBadge tone={deliveryTone(dispatch.status)}>{dispatch.status}</NexusBadge>
-                </div>
-                <div className="mt-0.5 text-[9px] text-zinc-500 truncate">{dispatch.channelId} · {formatAge(nowMs, dispatch.issuedAtMs)} ago</div>
-              </div>
-          )}
-          </div> :
-        null}
 
-        {feedback ?
-        <div className="mt-1 text-[10px] text-orange-300 inline-flex items-center gap-1">
-            {feedback.toLowerCase().includes('escalate') ? <AlertTriangle className="w-3 h-3" /> : <Radio className="w-3 h-3" />}
-            {feedback}
-          </div> :
-        null}
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     </div>);
 
 }
