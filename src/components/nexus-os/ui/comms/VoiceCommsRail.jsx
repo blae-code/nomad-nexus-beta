@@ -177,14 +177,6 @@ export default function VoiceCommsRail({
 
 
   useEffect(() => {
-    setQuickPage((current) => Math.min(current, quickPageCount - 1));
-  }, [quickPageCount]);
-
-  useEffect(() => {
-    setNetsPage((current) => Math.min(current, netsPageCount - 1));
-  }, [netsPageCount]);
-
-  useEffect(() => {
     setRosterPage((current) => Math.min(current, rosterPageCount - 1));
   }, [rosterPageCount]);
 
@@ -205,16 +197,6 @@ export default function VoiceCommsRail({
     const timerId = window.setTimeout(() => setFeedback(''), 4200);
     return () => window.clearTimeout(timerId);
   }, [feedback]);
-
-  const quickVisibleNets = useMemo(
-    () => quickNets.slice(quickPage * quickPageSize, quickPage * quickPageSize + quickPageSize),
-    [quickNets, quickPage, quickPageSize]
-  );
-
-  const pagedNets = useMemo(
-    () => voiceNets.slice(netsPage * PAGE_SIZE, netsPage * PAGE_SIZE + PAGE_SIZE),
-    [voiceNets, netsPage]
-  );
 
   const pagedParticipants = useMemo(
     () => participants.slice(rosterPage * PAGE_SIZE, rosterPage * PAGE_SIZE + PAGE_SIZE),
