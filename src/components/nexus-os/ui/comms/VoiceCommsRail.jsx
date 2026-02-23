@@ -465,8 +465,28 @@ export default function VoiceCommsRail({
 
             {rosterExpanded &&
             <>
+                 <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/30">
+                   <div className="flex items-center justify-between gap-2">
+                     <span className="text-[9px] font-semibold text-zinc-200 inline-flex items-center gap-1">
+                       <TokenRenderer family="square" color="cyan" size="xs" />
+                       You
+                     </span>
+                     <select
+                       onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
+                       defaultValue="ON-NET"
+                       className="h-5 px-1.5 text-[8px] rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-300 hover:border-orange-500/40 transition-colors font-semibold uppercase cursor-pointer"
+                     >
+                       <option value="READY">Ready</option>
+                       <option value="ON-NET">On Net</option>
+                       <option value="ENGAGED">Engaged</option>
+                       <option value="MUTED">Muted</option>
+                       <option value="OFFLINE">Offline</option>
+                     </select>
+                   </div>
+                 </div>
+
                  <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1" onClick={closeContextMenu}>
-                  {pagedParticipants.map((user) => {
+                   {pagedParticipants.map((user) => {
                 const userId = String(user.id || user.userId || user.email || '').trim();
                 const isSelected = selectedUsers.has(userId);
                 const status = getRosterItemStatus(user);
