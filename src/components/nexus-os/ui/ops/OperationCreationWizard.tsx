@@ -896,7 +896,7 @@ export default function OperationCreationWizard({
     }
   };
 
-  const canCreateOperation = createPermission.allowed
+  const canCreateOperationNow = createPermission.allowed
     && scheduleValidation.valid
     && (!selectedVariantOption || selectedVariantOption.available)
     && (archetypeId !== 'INDUSTRIAL_SALVAGE' || selectedMethodAvailability.available);
@@ -1306,7 +1306,7 @@ export default function OperationCreationWizard({
           </div>
         <div className="flex flex-wrap gap-2">
           <NexusButton size="sm" intent="subtle" onClick={exportDraftIcs}>Export Draft ICS</NexusButton>
-          <NexusButton size="sm" intent="primary" disabled={!canCreateOperation} onClick={createFromWizard}>Create Operation</NexusButton>
+          <NexusButton size="sm" intent="primary" disabled={!canCreateOperationNow} onClick={createFromWizard}>Create Operation</NexusButton>
           {createdOpId ? <NexusBadge tone="ok">Created {createdOpId}</NexusBadge> : null}
         </div>
         {icsPreview ? <textarea value={icsPreview} readOnly className="h-20 w-full resize-none rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px] text-zinc-500" /> : null}

@@ -439,7 +439,7 @@ export default function VoiceCommsRail({
           <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
              <div className="flex items-center gap-1.5 min-w-0">
                <Radio className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">Controls</h3>
+               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">Global Voice Controls</h3>
              </div>
           </div>
 

@@ -1,1 +1,1 @@
-export { default } from './CommsNetworkCardConsole';
+export { default } from './CommsNetworkCardConsole.tsx';

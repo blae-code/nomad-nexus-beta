@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   channelStatusTokenIcon,
+  commsActionTokenIcon,
   operatorStatusTokenIcon,
   operatorStatusTone,
+  orderStatusTokenIcon,
   roleTokenIcon,
   squadTokenIcon,
   vehicleStatusTokenIcon,
@@ -28,5 +30,15 @@ describe('commsTokenSemantics', () => {
     expect(roleTokenIcon('Medic')).toContain('token-hospital-green.png');
     expect(wingTokenIcon('CE', 'secure')).toContain('token-number-1-yellow.png');
     expect(squadTokenIcon('Squad Alpha', 'critical')).toContain('token-number-1-yellow.png');
+  });
+
+  it('maps comms card action tokens and order statuses to canonical assets', () => {
+    expect(commsActionTokenIcon('HAIL_PILOT')).toContain('token-fuel-cyan.png');
+    expect(commsActionTokenIcon('HAIL_MEDIC')).toContain('token-hospital-green.png');
+    expect(commsActionTokenIcon('WATCHLIST', 'watching')).toContain('token-objective-orange.png');
+    expect(commsActionTokenIcon('BRIDGE', 'bridged')).toContain('token-number-9-purple-1.png');
+    expect(orderStatusTokenIcon('QUEUED')).toContain('token-circle-orange.png');
+    expect(orderStatusTokenIcon('PERSISTED')).toContain('token-circle-cyan.png');
+    expect(orderStatusTokenIcon('ACKED')).toContain('token-circle-green.png');
   });
 });

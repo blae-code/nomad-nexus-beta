@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Pin, PinOff, Radio, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, Radio, RefreshCcw } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
 import type { CommsGraphSnapshot } from '../../services/commsGraphService';
@@ -11,8 +11,11 @@ import { PanelLoadingState } from '../loading';
 import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { tokenAssets } from '../tokens';
 import {
+  buildLatestDispatchByChannelId,
+  commsActionTokenIcon,
   operatorStatusTone,
   operatorStatusTokenIcon,
+  orderStatusTokenIcon,
   roleTokenIcon,
   squadTokenIcon,
   vehicleStatusTokenIcon,
@@ -84,6 +87,11 @@ const ORDER_FEED_PREVIEW_SIZE = 3;
 const MAX_ORDER_HISTORY = 24;
 const GRAPH_REFRESH_MS = 12_000;
 const MAX_BRIDGE_SESSIONS = 6;
+
+function dispatchIssuedAtMs(entry: { issuedAtMs?: unknown } | null | undefined): number {
+  const issuedAtMs = Number(entry?.issuedAtMs || 0);
+  return Number.isFinite(issuedAtMs) ? issuedAtMs : 0;
+}
 
 function formatAge(nowMs: number, createdAtMs: number): string {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
@@ -474,6 +482,10 @@ export default function CommsNetworkCardConsole({
   const deliverySurface = useMemo(
     () => buildDeliverySurface({ dispatches: directiveDispatches, events, incidents: [], nowMs }),
     [directiveDispatches, events, nowMs]
+  );
+  const latestDispatchByChannelId = useMemo(
+    () => buildLatestDispatchByChannelId(deliverySurface),
+    [deliverySurface]
   );
   const deliveryStats = useMemo(() => buildDeliveryStats(deliverySurface), [deliverySurface]);
   const feedPage = useMemo(() => buildPagedOrders(deliverySurface, 0, ORDER_FEED_PREVIEW_SIZE), [deliverySurface]);
@@ -868,58 +880,120 @@ export default function CommsNetworkCardConsole({
             {visibleSquadCards.map((card) => {
               const sla = slaBySquadId[card.id];
               const escalation = escalationBySquadId[card.id];
+              const isBridged = bridgedSquadIdSet.has(card.id);
+              const isWatchlisted = watchlistSet.has(card.id);
+              const isBridgeDrafted = bridgeDraftSquadIds.includes(card.id);
+              const lastDispatch = latestDispatchByChannelId[card.primaryChannelId];
               return (
-                <article key={card.id} data-comms-squad-card="true" className={`rounded border px-2 py-1.5 ${selectedSquadId === card.id ? 'border-orange-500/60 bg-zinc-950/80' : 'border-zinc-800 bg-zinc-950/60'}`}>
+                <article
+                  key={card.id}
+                  data-comms-squad-card="true"
+                  className={`rounded border px-2 py-1.5 transition-colors ${
+                    selectedSquadId === card.id ? 'border-orange-500/60 bg-zinc-950/80' : 'border-zinc-800 bg-zinc-950/60'
+                  }`}
+                >
                   <button type="button" onClick={() => setSelectedSquadId(card.id)} className="w-full text-left">
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="min-w-0 inline-flex items-center gap-1.5">
-                        <img src={wingTokenIcon(card.wingId, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        <img src={squadTokenIcon(card.squadLabel, sla?.overallStatus || 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        <img src={wingTokenIcon(card.wingId, sla?.overallStatus || 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                         <span className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.squadLabel}</span>
                         <span className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel}</span>
                       </div>
                       <div className="inline-flex items-center gap-1 shrink-0">
-                        {bridgedSquadIdSet.has(card.id) ? <NexusBadge tone="active">BR</NexusBadge> : null}
+                        {isBridged ? <NexusBadge tone="active">BR</NexusBadge> : null}
                         <NexusBadge tone={card.txCount > 0 ? 'warning' : card.offNetCount > 0 ? 'danger' : 'ok'}>TX {card.txCount}</NexusBadge>
                       </div>
                     </div>
-                    <div className="mt-1 flex items-center justify-between gap-1 text-[8px] text-zinc-500 uppercase tracking-wide">
-                      <span>Ships {card.vehicles.length}</span>
-                      <span>Crew {card.operators.length}</span>
-                      <span>Links {card.linkedSquadIds.length}</span>
-                    </div>
                   </button>
 
-                  {sla ? (
-                    <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1 grid grid-cols-3 gap-1 text-[8px] uppercase tracking-wide">
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.checkinStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        CI {formatSlaAge(sla.last_checkin_age_s)}
+                  <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1 space-y-1">
+                    <div className="grid grid-cols-3 gap-1 text-[8px] text-zinc-500 uppercase tracking-wide">
+                      <span className="inline-flex items-center gap-1">
+                        <img src={tokenAssets.comms.vehicle} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        Ships {card.vehicles.length}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.ackStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        ACK {formatSlaAge(sla.last_ack_age_s)}
+                      <span className="inline-flex items-center gap-1">
+                        <img src={tokenAssets.comms.role.default} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        Crew {card.operators.length}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-zinc-400">
-                        <img src={slaTokenIcon(sla.offNetStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                        OFF {formatSlaAge(sla.off_net_duration_s)}
+                      <span className="inline-flex items-center gap-1">
+                        <img src={tokenAssets.comms.channel} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        Links {card.linkedSquadIds.length}
                       </span>
                     </div>
-                  ) : null}
+
+                    {sla ? (
+                      <div className="grid grid-cols-3 gap-1 text-[8px] uppercase tracking-wide">
+                        <span className="inline-flex items-center gap-1 text-zinc-400">
+                          <img src={slaTokenIcon(sla.checkinStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                          CI {formatSlaAge(sla.last_checkin_age_s)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-zinc-400">
+                          <img src={slaTokenIcon(sla.ackStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                          ACK {formatSlaAge(sla.last_ack_age_s)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-zinc-400">
+                          <img src={slaTokenIcon(sla.offNetStatus)} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                          OFF {formatSlaAge(sla.off_net_duration_s)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-[8px] text-zinc-500 uppercase tracking-wide">SLA nominal</div>
+                    )}
+                  </div>
 
                   <div className="mt-1 flex items-center gap-1 flex-wrap">
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'PILOT')} disabled={card.pilotCount === 0}>Hail Pilot</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'MEDIC')} disabled={card.medicCount === 0}>Hail Medics</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'ALL_HANDS')}>Hail Squad</NexusButton>
-                    <NexusButton size="sm" intent={bridgeDraftSquadIds.includes(card.id) ? 'primary' : 'subtle'} onClick={() => setBridgeDraftSquadIds((prev) => prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id].slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS))}>Bridge</NexusButton>
-                    <NexusButton size="sm" intent="subtle" onClick={() => setConsoleState((prev) => toggleWatchlistSquad(prev, card.id))}>
-                      {watchlistSet.has(card.id) ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'PILOT')} disabled={card.pilotCount === 0}>
+                      <img src={commsActionTokenIcon('HAIL_PILOT')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 mr-1" />
+                      Hail Pilot
+                    </NexusButton>
+                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'MEDIC')} disabled={card.medicCount === 0}>
+                      <img src={commsActionTokenIcon('HAIL_MEDIC')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 mr-1" />
+                      Hail Medics
+                    </NexusButton>
+                    <NexusButton size="sm" intent="subtle" onClick={() => hailSquad(card, 'ALL_HANDS')}>
+                      <img src={commsActionTokenIcon('HAIL_SQUAD')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 mr-1" />
+                      Hail Squad
+                    </NexusButton>
+                    <NexusButton
+                      size="sm"
+                      intent={isBridgeDrafted ? 'primary' : 'subtle'}
+                      onClick={() =>
+                        setBridgeDraftSquadIds((prev) =>
+                          prev.includes(card.id)
+                            ? prev.filter((id) => id !== card.id)
+                            : [...prev, card.id].slice(0, COMMS_CARD_CONSOLE_MAX_TEMPLATE_SQUADS)
+                        )
+                      }
+                    >
+                      <img src={commsActionTokenIcon('BRIDGE', isBridged ? 'bridged' : 'standalone')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 mr-1" />
+                      Bridge
+                    </NexusButton>
+                    <NexusButton size="sm" intent={isWatchlisted ? 'primary' : 'subtle'} onClick={() => setConsoleState((prev) => toggleWatchlistSquad(prev, card.id))}>
+                      <img src={commsActionTokenIcon('WATCHLIST', isWatchlisted ? 'watching' : 'idle')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 mr-1" />
+                      Watch
                     </NexusButton>
                     {escalation ? (
                       <NexusButton size="sm" intent={slaTone(sla?.overallStatus || 'green')} onClick={() => triggerEscalation(card, escalation)}>
+                        <img src={commsActionTokenIcon('ESCALATE', escalation.target)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60 mr-1" />
                         {escalation.label}
                       </NexusButton>
                     ) : null}
                   </div>
+
+                  {lastDispatch ? (
+                    <div className="mt-1 rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-0.5 flex items-center justify-between gap-1">
+                      <span className="inline-flex items-center gap-1 text-[8px] uppercase tracking-wide text-zinc-400">
+                        <img src={orderStatusTokenIcon(String(lastDispatch.status || ''))} alt="" className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                        Last
+                        <NexusBadge tone={deliveryTone(String(lastDispatch.status || 'QUEUED'))}>{String(lastDispatch.status || 'QUEUED')}</NexusBadge>
+                      </span>
+                      <span className="text-[8px] text-zinc-500 truncate">
+                        {String(lastDispatch.directive || 'Directive')} · {formatAge(nowMs, dispatchIssuedAtMs(lastDispatch))} ago
+                      </span>
+                    </div>
+                  ) : null}
                 </article>
               );
             })}

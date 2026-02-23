@@ -1,4 +1,4 @@
-import { getNumberTokenAssetUrl, getNumberTokenVariantByState, tokenAssets } from '../tokens';
+import { getNumberTokenAssetUrl, getNumberTokenVariantByState, getTokenAssetUrl, tokenAssets } from '../tokens';
 
 type CommsNodeType = 'channel' | 'team' | 'user';
 
@@ -56,6 +56,82 @@ export function roleTokenIcon(role: string): string {
   if (token.includes('medic') || token.includes('medical')) return tokenAssets.comms.role.medical;
   if (token.includes('log') || token.includes('maint') || token.includes('mech')) return tokenAssets.comms.role.support;
   return tokenAssets.comms.role.default;
+}
+
+export type CommsCardActionToken =
+  | 'HAIL_PILOT'
+  | 'HAIL_MEDIC'
+  | 'HAIL_SQUAD'
+  | 'BRIDGE'
+  | 'WATCHLIST'
+  | 'ESCALATE';
+
+export function commsActionTokenIcon(action: CommsCardActionToken, state = ''): string {
+  const actionToken = toToken(action);
+  const stateToken = toToken(state);
+  if (actionToken === 'hail_pilot') return roleTokenIcon('pilot');
+  if (actionToken === 'hail_medic') return roleTokenIcon('medic');
+  if (actionToken === 'hail_squad') return tokenAssets.comms.channel;
+  if (actionToken === 'bridge') {
+    if (stateToken.includes('active') || stateToken.includes('bridged') || stateToken.includes('secure')) {
+      return getNumberTokenAssetUrl(9, 'purple', { variant: 'v1' });
+    }
+    if (stateToken.includes('degrad') || stateToken.includes('split')) return tokenAssets.comms.vehicleStatus.degraded;
+    return tokenAssets.comms.channel;
+  }
+  if (actionToken === 'watchlist') {
+    return getTokenAssetUrl('objective', stateToken.includes('watch') || stateToken.includes('active') ? 'orange' : 'grey');
+  }
+  if (actionToken === 'escalate') return getTokenAssetUrl('triangle', 'red');
+  return tokenAssets.comms.role.default;
+}
+
+export function orderStatusTokenIcon(status: string): string {
+  const token = toToken(status);
+  if (token.includes('ack')) return tokenAssets.comms.operatorStatus.onNet;
+  if (token.includes('persist')) return getTokenAssetUrl('circle', 'cyan');
+  if (token.includes('queue')) return tokenAssets.comms.operatorStatus.tx;
+  return tokenAssets.comms.operatorStatus.muted;
+}
+
+interface DeliveryDispatchLike {
+  channelId?: unknown;
+  issuedAtMs?: unknown;
+  dispatchId?: unknown;
+}
+
+function dispatchIssuedAtMs(entry: DeliveryDispatchLike | null | undefined): number {
+  const issuedAtMs = Number(entry?.issuedAtMs || 0);
+  return Number.isFinite(issuedAtMs) ? issuedAtMs : 0;
+}
+
+export function buildLatestDispatchByChannelId<T extends DeliveryDispatchLike>(dispatches: T[]): Record<string, T> {
+  const byChannel: Record<string, T> = {};
+  for (const dispatch of dispatches || []) {
+    const channelId = String(dispatch?.channelId || '').trim();
+    if (!channelId) continue;
+    const current = byChannel[channelId];
+    if (!current) {
+      byChannel[channelId] = dispatch;
+      continue;
+    }
+
+    const nextIssuedAt = dispatchIssuedAtMs(dispatch);
+    const currentIssuedAt = dispatchIssuedAtMs(current);
+    if (nextIssuedAt > currentIssuedAt) {
+      byChannel[channelId] = dispatch;
+      continue;
+    }
+
+    if (nextIssuedAt === currentIssuedAt) {
+      const nextDispatchId = String(dispatch?.dispatchId || '');
+      const currentDispatchId = String(current?.dispatchId || '');
+      if (nextDispatchId > currentDispatchId) {
+        byChannel[channelId] = dispatch;
+      }
+    }
+  }
+  return byChannel;
 }
 
 export function topologyNodeTokenIcon(nodeType: CommsNodeType): string {
