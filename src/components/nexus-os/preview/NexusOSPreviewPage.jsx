@@ -390,6 +390,23 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
   const controlZones = useMemo(() => computeControlZones(controlSignals, Date.now()), [controlSignals]);
 
+  const actorProfile = useMemo(() => {
+    const profile = user?.member_profile_data || {};
+    const roles = Array.isArray(profile.roles) ?
+    profile.roles :
+    Array.isArray(user?.roles) ?
+    user.roles :
+    [];
+    return {
+      id: profile.id || user?.member_profile_id || user?.id || actorId || '',
+      rank: profile.rank || user?.rank || 'VAGRANT',
+      roles,
+      orgId: profile.org_id || profile.orgId || user?.org_id || user?.orgId || 'ORG-LOCAL',
+      membership: profile.membership || profile.tier || 'MEMBER',
+      isAdmin: Boolean(user?.is_admin)
+    };
+  }, [user, actorId]);
+
   const sharedPanelProps = {
     variantId,
     bridgeId,
@@ -403,6 +420,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     controlZones,
     operations,
     focusOperationId,
+    actorProfile,
     onCreateMacroEvent: createMacroEvent,
     onOpenCommsNetwork: () => openFocusApp('comms'),
     onOpenMapFocus: () => openFocusApp('map'),

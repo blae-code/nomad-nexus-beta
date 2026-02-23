@@ -18,6 +18,16 @@ import {
   updateOperation,
   updateStatus,
 } from '../../services/operationService';
+import {
+  canControlLifecycle,
+  resolveOperationRoleView,
+  type OperationRoleView,
+} from '../../services/operationAuthorityService';
+import {
+  buildOperationIcsFilename,
+  buildOperationScheduleIcs,
+} from '../../services/operationScheduleService';
+import { isOperationExecutionBoardV2Enabled } from '../../services/operationFeatureFlagService';
 import type { DataClassification } from '../../schemas/crossOrgSchemas';
 import {
   challengeAssumption,
@@ -97,9 +107,11 @@ import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
 import OperationCommsControlPanel from './OperationCommsControlPanel';
+import OperationCreationWizard from './OperationCreationWizard';
+import OperationExecutionBoard from './OperationExecutionBoard';
 import { deriveOperationStagePolicy } from './stagePolicy';
 
-type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'TIMELINE' | 'NARRATIVE' | 'COALITION';
+type TabId = 'EXECUTION' | 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'TIMELINE' | 'NARRATIVE' | 'COALITION';
 type TimelineSource = 'AUDIT' | 'DECISION' | 'EVENT';
 type TimelineFilter = 'ALL' | TimelineSource;
 type TimelineSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -119,7 +131,7 @@ interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
   onClose?: () => void;
 }
 
-const TABS: TabId[] = ['PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
+const TABS: TabId[] = ['EXECUTION', 'PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
 const TIMELINE_FILTERS: TimelineFilter[] = ['ALL', 'AUDIT', 'DECISION', 'EVENT'];
 const DEFAULT_PAGE_SIZE = 6;
 
@@ -227,6 +239,7 @@ function toneForTimelineSource(source: TimelineSource): 'neutral' | 'active' | '
 export default function OperationFocusApp({
   variantId = 'CQB-01',
   actorId,
+  actorProfile,
   roster = [],
   events = [],
   onCreateMacroEvent,
@@ -235,6 +248,7 @@ export default function OperationFocusApp({
   onOpenReports,
 }: OperationFocusAppProps) {
   useRenderProfiler('OperationFocusApp');
+  const executionBoardEnabled = isOperationExecutionBoardV2Enabled();
   const [opsVersion, setOpsVersion] = useState(0);
   const [planVersion, setPlanVersion] = useState(0);
   const [rsvpVersion, setRsvpVersion] = useState(0);
@@ -242,7 +256,8 @@ export default function OperationFocusApp({
   const [threadVersion, setThreadVersion] = useState(0);
   const [enhancementVersion, setEnhancementVersion] = useState(0);
   const [errorText, setErrorText] = useState('');
-  const [tabId, setTabId] = useState<TabId>('PLAN');
+  const [tabId, setTabId] = useState<TabId>('EXECUTION');
+  const [roleViewPreview, setRoleViewPreview] = useState<OperationRoleView | ''>('');
   const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('ALL');
   const [statusCapsuleOpen, setStatusCapsuleOpen] = useState(false);
   const [commandCapsuleOpen, setCommandCapsuleOpen] = useState(false);
@@ -252,6 +267,7 @@ export default function OperationFocusApp({
   const [metadataAoNodeInput, setMetadataAoNodeInput] = useState('');
   const [metadataAoNoteInput, setMetadataAoNoteInput] = useState('');
   const [metadataClassificationInput, setMetadataClassificationInput] = useState<DataClassification>('INTERNAL');
+  const [statusOverrideReasonInput, setStatusOverrideReasonInput] = useState('');
   const [focusTemplateNameInput, setFocusTemplateNameInput] = useState('');
   const [focusTemplateDescriptionInput, setFocusTemplateDescriptionInput] = useState('');
 
@@ -324,7 +340,10 @@ export default function OperationFocusApp({
     };
   }, []);
 
-  const operations = useMemo(() => listOperationsForUser({ userId: actorId, includeArchived: false }), [actorId, opsVersion]);
+  const operations = useMemo(
+    () => listOperationsForUser({ userId: actorId, includeArchived: false, orgId: actorProfile?.orgId || undefined }),
+    [actorId, actorProfile?.orgId, opsVersion]
+  );
   const focusOperationId = useMemo(() => getFocusOperationId(actorId), [actorId, opsVersion]);
 
   useEffect(() => {
@@ -364,6 +383,7 @@ export default function OperationFocusApp({
     setMetadataAoNodeInput(selectedOp.ao?.nodeId || '');
     setMetadataAoNoteInput(selectedOp.ao?.note || '');
     setMetadataClassificationInput(selectedOp.classification || 'INTERNAL');
+    setStatusOverrideReasonInput('');
     setFocusTemplateNameInput(`${selectedOp.name} Template`);
     setFocusTemplateDescriptionInput(`Template saved from ${selectedOp.name}.`);
   }, [selectedOp?.id, selectedOp?.name, selectedOp?.ao?.nodeId, selectedOp?.ao?.note, selectedOp?.classification]);
@@ -545,14 +565,51 @@ export default function OperationFocusApp({
     ],
     [mandateProfile]
   );
-  const stagePolicy = selectedOp ? deriveOperationStagePolicy(selectedOp, actorId) : null;
+  const actorEntry = entries.find((entry) => entry.userId === actorId && entry.status !== 'WITHDRAWN') || null;
+  const roleViewResolution = useMemo(
+    () =>
+      resolveOperationRoleView({
+        context: {
+          actorId,
+          rank: actorProfile?.rank,
+          roles: actorProfile?.roles,
+          orgId: actorProfile?.orgId,
+          isAdmin: actorProfile?.isAdmin,
+        },
+        operation: selectedOp,
+        rsvpPrimaryRole: actorEntry?.rolePrimary,
+        previewRoleView: roleViewPreview,
+      }),
+    [actorId, actorProfile?.rank, actorProfile?.roles, actorProfile?.orgId, actorProfile?.isAdmin, selectedOp?.id, actorEntry?.rolePrimary, roleViewPreview]
+  );
+  const effectiveRoleView = roleViewResolution.roleView;
+  const stagePolicy = selectedOp
+    ? deriveOperationStagePolicy(selectedOp, actorId, {
+        rank: actorProfile?.rank,
+        roles: actorProfile?.roles,
+        orgId: actorProfile?.orgId,
+        isAdmin: actorProfile?.isAdmin,
+      })
+    : null;
+  const lifecyclePermission = selectedOp
+    ? canControlLifecycle(
+        {
+          actorId,
+          rank: actorProfile?.rank,
+          roles: actorProfile?.roles,
+          orgId: actorProfile?.orgId,
+          isAdmin: actorProfile?.isAdmin,
+        },
+        selectedOp
+      )
+    : { allowed: false, reason: 'No operation selected.' };
   const planningLocked = stagePolicy ? !stagePolicy.canEditPlan : true;
   const requirementsLocked = stagePolicy ? !stagePolicy.canEditRequirements : true;
   const rosterLocked = stagePolicy ? !stagePolicy.canManageRoster : true;
   const commsLocked = stagePolicy ? !stagePolicy.canPostComms : true;
   const doctrineRegistryLocked = stagePolicy ? !stagePolicy.isCommandRole : true;
-  const commandLocked = !commandPermission.allowed || !stagePolicy?.canChangeLifecycle;
-  const actorEntry = entries.find((entry) => entry.userId === actorId && entry.status !== 'WITHDRAWN') || null;
+  const lifecycleLocked = !lifecyclePermission.allowed || !stagePolicy?.canChangeLifecycle;
+  const metadataLocked = !commandPermission.allowed;
   const activeThreadSummary =
     threadSummaries.find((entry) => entry.root.id === selectedThreadRootId) || threadSummaries[0] || null;
   const activeThreadComments = activeThreadSummary
@@ -572,6 +629,23 @@ export default function OperationFocusApp({
   const pagedThreadComments = usePagedItems(activeThreadComments, 5);
   const pagedDecisions = usePagedItems(decisions, 4);
   const pagedTimelineEntries = usePagedItems(filteredTimelineEntries, 7);
+  const tabIds = useMemo(
+    () => (executionBoardEnabled ? TABS : TABS.filter((id) => id !== 'EXECUTION')),
+    [executionBoardEnabled]
+  );
+  const defaultTabForRole: TabId = executionBoardEnabled
+    ? (effectiveRoleView === 'COMMAND' ? 'EXECUTION' : effectiveRoleView === 'LEAD' ? 'ROSTER' : 'COMMS')
+    : (effectiveRoleView === 'LEAD' ? 'ROSTER' : 'COMMS');
+
+  useEffect(() => {
+    if (!selectedOp) return;
+    setTabId(defaultTabForRole);
+  }, [selectedOp?.id, defaultTabForRole]);
+
+  useEffect(() => {
+    if (executionBoardEnabled) return;
+    if (tabId === 'EXECUTION') setTabId(defaultTabForRole);
+  }, [executionBoardEnabled, tabId, defaultTabForRole]);
 
   useEffect(() => {
     if (!threadSummaries.length) {
@@ -610,6 +684,24 @@ export default function OperationFocusApp({
       action();
     } catch (error: any) {
       setErrorText(error?.message || 'Action failed');
+    }
+  };
+
+  const exportOperationScheduleIcs = (operation: Operation) => {
+    try {
+      const ics = buildOperationScheduleIcs(operation);
+      if (typeof window === 'undefined') return;
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = buildOperationIcsFilename(operation);
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      setErrorText(error?.message || 'Unable to export operation schedule.');
     }
   };
 
@@ -677,6 +769,15 @@ export default function OperationFocusApp({
           {onClose ? <NexusButton size="sm" intent="subtle" onClick={onClose}>Return</NexusButton> : null}
         </section>
         <DegradedStateCard state="LOCKED" reason="Operation context required." />
+        <OperationCreationWizard
+          actorId={actorId}
+          actorProfile={actorProfile}
+          onCreated={(operation) => {
+            setSelectedOpId(operation.id);
+            setFocusOperation(actorId, operation.id);
+          }}
+          onError={(message) => setErrorText(message)}
+        />
       </div>
     );
   }
@@ -705,6 +806,20 @@ export default function OperationFocusApp({
           <NexusBadge tone={(summary?.hardViolations || 0) > 0 ? 'warning' : 'neutral'}>
             Violations {(summary?.hardViolations || 0)}
           </NexusBadge>
+          <NexusBadge tone={effectiveRoleView === 'COMMAND' ? 'active' : effectiveRoleView === 'LEAD' ? 'warning' : 'neutral'}>
+            {effectiveRoleView} VIEW
+          </NexusBadge>
+          <select
+            value={roleViewPreview}
+            onChange={(event) => setRoleViewPreview(event.target.value as OperationRoleView | '')}
+            className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+          >
+            <option value="">Preview: Auto</option>
+            <option value="COMMAND">Preview COMMAND</option>
+            <option value="LEAD">Preview LEAD</option>
+            <option value="PARTICIPANT">Preview PARTICIPANT</option>
+          </select>
+          {roleViewResolution.previewApplied ? <NexusBadge tone="warning">PREVIEW</NexusBadge> : null}
           <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => setFocusOperation(actorId, selectedOp.id))}>Set Focus</NexusButton>
           <NexusButton
             size="sm"
@@ -754,9 +869,18 @@ export default function OperationFocusApp({
             {stagePolicy.bannerText}
           </div>
         ) : null}
+        {!lifecyclePermission.allowed ? (
+          <div className="rounded border border-amber-900/60 bg-amber-950/25 px-2 py-1 text-[11px] text-amber-200">
+            {lifecyclePermission.reason}
+          </div>
+        ) : (
+          <div className="rounded border border-zinc-800 bg-zinc-900/45 px-2 py-1 text-[11px] text-zinc-500">
+            {lifecyclePermission.reason}
+          </div>
+        )}
         {!commandPermission.allowed ? (
           <div className="rounded border border-amber-900/60 bg-amber-950/25 px-2 py-1 text-[11px] text-amber-200">
-            {commandPermission.reason}
+            Metadata controls: {commandPermission.reason}
           </div>
         ) : null}
 
@@ -797,7 +921,7 @@ export default function OperationFocusApp({
                   note: metadataAoNoteInput.trim() || undefined,
                 },
                 classification: metadataClassificationInput,
-              }, actorId))} disabled={commandLocked}>
+              }, actorId))} disabled={metadataLocked}>
                 Save Metadata
               </NexusButton>
             </div>
@@ -808,10 +932,21 @@ export default function OperationFocusApp({
                   key={posture}
                   size="sm"
                   intent={selectedOp.posture === posture ? 'primary' : 'subtle'}
-                  disabled={commandLocked}
+                  disabled={lifecycleLocked}
                   onClick={() =>
                     runAction(() => {
-                      setPosture(selectedOp.id, posture, actorId);
+                      setPosture(
+                        selectedOp.id,
+                        posture,
+                        actorId,
+                        Date.now(),
+                        {
+                          rank: actorProfile?.rank,
+                          roles: actorProfile?.roles,
+                          orgId: actorProfile?.orgId,
+                          isAdmin: actorProfile?.isAdmin,
+                        }
+                      );
                       alignRSVPPolicyToPosture(selectedOp.id, posture);
                       alignOperationEnhancementsToPosture(selectedOp.id, posture, actorId);
                     })
@@ -828,8 +963,26 @@ export default function OperationFocusApp({
                   key={status}
                   size="sm"
                   intent={selectedOp.status === status ? 'primary' : 'subtle'}
-                  disabled={commandLocked}
-                  onClick={() => runAction(() => updateStatus(selectedOp.id, status, actorId))}
+                  disabled={lifecycleLocked}
+                  onClick={() =>
+                    runAction(() =>
+                      updateStatus(
+                        selectedOp.id,
+                        status,
+                        actorId,
+                        Date.now(),
+                        {
+                          overrideReason: statusOverrideReasonInput.trim() || undefined,
+                          actorContext: {
+                            rank: actorProfile?.rank,
+                            roles: actorProfile?.roles,
+                            orgId: actorProfile?.orgId,
+                            isAdmin: actorProfile?.isAdmin,
+                          },
+                        }
+                      )
+                    )
+                  }
                 >
                   {status}
                 </NexusButton>
@@ -837,12 +990,36 @@ export default function OperationFocusApp({
               <NexusButton
                 size="sm"
                 intent="subtle"
-                disabled={commandLocked}
-                onClick={() => runAction(() => updateStatus(selectedOp.id, cycleStatus(selectedOp.status), actorId))}
+                disabled={lifecycleLocked}
+                onClick={() =>
+                  runAction(() =>
+                    updateStatus(
+                      selectedOp.id,
+                      cycleStatus(selectedOp.status),
+                      actorId,
+                      Date.now(),
+                      {
+                        overrideReason: statusOverrideReasonInput.trim() || undefined,
+                        actorContext: {
+                          rank: actorProfile?.rank,
+                          roles: actorProfile?.roles,
+                          orgId: actorProfile?.orgId,
+                          isAdmin: actorProfile?.isAdmin,
+                        },
+                      }
+                    )
+                  )
+                }
               >
                 Cycle Status
               </NexusButton>
             </div>
+            <input
+              value={statusOverrideReasonInput}
+              onChange={(e) => setStatusOverrideReasonInput(e.target.value)}
+              className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+              placeholder="Lifecycle override reason (required when readiness gates pending)"
+            />
 
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
               <input
@@ -861,7 +1038,7 @@ export default function OperationFocusApp({
                 <NexusButton
                   size="sm"
                   intent="subtle"
-                  disabled={commandLocked}
+                  disabled={metadataLocked}
                   onClick={() =>
                     runAction(() => {
                       createOperationTemplateFromOperation(selectedOp.id, actorId, {
@@ -876,7 +1053,7 @@ export default function OperationFocusApp({
                 <NexusButton
                   size="sm"
                   intent="subtle"
-                  disabled={commandLocked}
+                  disabled={metadataLocked}
                   onClick={() =>
                     runAction(() => {
                       const cloned = cloneOperation(selectedOp.id, {
@@ -891,6 +1068,13 @@ export default function OperationFocusApp({
                   }
                 >
                   Clone Op
+                </NexusButton>
+                <NexusButton
+                  size="sm"
+                  intent="subtle"
+                  onClick={() => exportOperationScheduleIcs(selectedOp)}
+                >
+                  Export ICS
                 </NexusButton>
               </div>
             </div>
@@ -920,10 +1104,26 @@ export default function OperationFocusApp({
       </section>
 
       <section className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 flex items-center gap-2 nexus-terminal-panel">
-        {TABS.map((id) => <NexusButton key={id} size="sm" intent={tabId === id ? 'primary' : 'subtle'} onClick={() => setTabId(id)}>{id}</NexusButton>)}
+        {tabIds.map((id) => <NexusButton key={id} size="sm" intent={tabId === id ? 'primary' : 'subtle'} onClick={() => setTabId(id)}>{id}</NexusButton>)}
       </section>
 
       <div className="flex-1 min-h-0 overflow-hidden pr-1">
+        {executionBoardEnabled && tabId === 'EXECUTION' ? (
+          <OperationExecutionBoard
+            operation={selectedOp}
+            actorId={actorId}
+            roleView={effectiveRoleView}
+            lifecycleReason={stagePolicy?.lifecycleReason || lifecyclePermission.reason}
+            actorContext={{
+              rank: actorProfile?.rank,
+              roles: actorProfile?.roles,
+              orgId: actorProfile?.orgId,
+              isAdmin: actorProfile?.isAdmin,
+            }}
+            onError={(message) => setErrorText(message)}
+          />
+        ) : null}
+
         {tabId === 'PLAN' ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {planningLocked ? (

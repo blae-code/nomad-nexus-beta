@@ -22,14 +22,18 @@ import {
   updateOperation,
   updateStatus,
 } from '../../services/operationService';
+import { isOperationWizardV2Enabled } from '../../services/operationFeatureFlagService';
 import { listAssumptions } from '../../services/planningService';
 import type { Operation } from '../../schemas/opSchemas';
 import type { DataClassification } from '../../schemas/crossOrgSchemas';
+import type { CqbActorProfile } from '../cqb/cqbTypes';
 import { SkeletonTile } from '../components';
 import { NexusBadge, NexusButton } from '../primitives';
+import OperationCreationWizard from './OperationCreationWizard';
 
 interface OpsStripProps {
   actorId: string;
+  actorProfile?: CqbActorProfile;
   onOpenOperationFocus?: () => void;
 }
 
@@ -98,8 +102,9 @@ const OP_TEMPLATES: Array<{
   },
 ];
 
-export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProps) {
+export default function OpsStrip({ actorId, actorProfile, onOpenOperationFocus }: OpsStripProps) {
   useRenderProfiler('OpsStrip');
+  const wizardV2Enabled = isOperationWizardV2Enabled();
   const [opsVersion, setOpsVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -127,6 +132,7 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
 
   const [stripError, setStripError] = useState('');
   const [showBuildConsole, setShowBuildConsole] = useState(false);
+  const [showWizardConsole, setShowWizardConsole] = useState(false);
   const [showFilterJoin, setShowFilterJoin] = useState(false);
   const [showManageConsole, setShowManageConsole] = useState(false);
   const [showTemplateBay, setShowTemplateBay] = useState(false);
@@ -146,11 +152,14 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
   }, [opsVersion, actorId]);
 
   const operations = useMemo(
-    () => listOperationsForUser({ userId: actorId, includeArchived }),
-    [actorId, includeArchived, opsVersion]
+    () => listOperationsForUser({ userId: actorId, includeArchived, orgId: actorProfile?.orgId || undefined }),
+    [actorId, actorProfile?.orgId, includeArchived, opsVersion]
   );
   const focusOperationId = useMemo(() => getFocusOperationId(actorId), [actorId, opsVersion]);
-  const operationTemplates = useMemo(() => listOperationTemplates(), [opsVersion]);
+  const operationTemplates = useMemo(
+    () => listOperationTemplates({ orgId: actorProfile?.orgId || undefined, userId: actorId }),
+    [actorId, actorProfile?.orgId, opsVersion]
+  );
 
   const visibleOperations = useMemo(() => {
     const query = queryInput.trim().toLowerCase();
@@ -276,13 +285,37 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
   const setManagedStatus = (nextStatus: Operation['status']) => {
     if (!manageOperation) return;
     setStripError('');
-    updateStatus(manageOperation.id, nextStatus, actorId);
+    updateStatus(
+      manageOperation.id,
+      nextStatus,
+      actorId,
+      Date.now(),
+      {
+        actorContext: {
+          rank: actorProfile?.rank,
+          roles: actorProfile?.roles,
+          orgId: actorProfile?.orgId,
+          isAdmin: actorProfile?.isAdmin,
+        },
+      }
+    );
   };
 
   const setManagedPosture = (nextPosture: Operation['posture']) => {
     if (!manageOperation) return;
     setStripError('');
-    setPosture(manageOperation.id, nextPosture, actorId);
+    setPosture(
+      manageOperation.id,
+      nextPosture,
+      actorId,
+      Date.now(),
+      {
+        rank: actorProfile?.rank,
+        roles: actorProfile?.roles,
+        orgId: actorProfile?.orgId,
+        isAdmin: actorProfile?.isAdmin,
+      }
+    );
     alignRSVPPolicyToPosture(manageOperation.id, nextPosture);
     alignOperationEnhancementsToPosture(manageOperation.id, nextPosture, actorId);
   };
@@ -302,6 +335,11 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        {wizardV2Enabled ? (
+          <NexusButton size="sm" intent={showWizardConsole ? 'primary' : 'subtle'} className="nexus-command-capsule" data-open={showWizardConsole ? 'true' : 'false'} onClick={() => setShowWizardConsole((prev) => !prev)}>
+            Wizard {showWizardConsole ? 'Hide' : 'Show'}
+          </NexusButton>
+        ) : null}
         <NexusButton size="sm" intent={showBuildConsole ? 'primary' : 'subtle'} className="nexus-command-capsule" data-open={showBuildConsole ? 'true' : 'false'} onClick={() => setShowBuildConsole((prev) => !prev)}>
           Build {showBuildConsole ? 'Hide' : 'Show'}
         </NexusButton>
@@ -318,6 +356,20 @@ export default function OpsStrip({ actorId, onOpenOperationFocus }: OpsStripProp
           Audit {showAuditFeed ? 'Hide' : 'Show'}
         </NexusButton>
       </div>
+
+      {wizardV2Enabled && showWizardConsole ? (
+      <OperationCreationWizard
+        actorId={actorId}
+        actorProfile={actorProfile}
+        onCreated={(operation) => {
+          setManageOpId(operation.id);
+          setSelectedTemplateId('');
+          setShowBuildConsole(false);
+          if (onOpenOperationFocus) onOpenOperationFocus();
+        }}
+        onError={(message) => setStripError(message)}
+      />
+      ) : null}
 
       {showBuildConsole ? (
       <div className="rounded border border-zinc-800 bg-zinc-900/45 p-2 space-y-2 nexus-terminal-panel">

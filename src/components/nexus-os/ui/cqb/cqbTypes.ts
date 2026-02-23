@@ -12,6 +12,15 @@ export interface CqbRosterMember {
   role: string;
 }
 
+export interface CqbActorProfile {
+  id?: string;
+  rank?: string;
+  roles?: string[];
+  orgId?: string;
+  membership?: string;
+  isAdmin?: boolean;
+}
+
 export interface CqbPanelSharedProps {
   variantId: string;
   bridgeId?: string;
@@ -24,6 +33,7 @@ export interface CqbPanelSharedProps {
   controlSignals?: ControlSignal[];
   operations?: Operation[];
   focusOperationId?: string;
+  actorProfile?: CqbActorProfile;
   onCreateMacroEvent?: (macroEventType: string, payload: Record<string, unknown>) => void;
   onOpenCqbConsole?: () => void;
   onOpenCommsNetwork?: () => void;

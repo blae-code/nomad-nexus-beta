@@ -26,6 +26,25 @@ describe('operation service command-grade workflows', () => {
       status: 'ACTIVE',
       classification: 'ALLIED',
       ao: { nodeId: 'system-pyro', note: 'Push convoy through corridor.' },
+      archetypeId: 'PVP_ORG_V_ORG',
+      releaseTrack: 'PREVIEW_4_7',
+      schedule: {
+        plannedStartAt: '2026-03-01T10:00:00.000Z',
+        plannedEndAt: '2026-03-01T12:00:00.000Z',
+        timezone: 'UTC',
+      },
+      readinessGates: [
+        {
+          id: 'gate_1',
+          label: 'ROE Confirmed',
+          ownerRole: 'Commander',
+          required: true,
+          status: 'READY',
+          note: '',
+          updatedAt: '2026-03-01T09:00:00.000Z',
+          updatedBy: 'cmd-lead',
+        },
+      ],
     });
 
     const template = createOperationTemplateFromOperation(source.id, 'cmd-lead', {
@@ -44,6 +63,10 @@ describe('operation service command-grade workflows', () => {
     expect(instantiated.posture).toBe('FOCUSED');
     expect(instantiated.classification).toBe('ALLIED');
     expect(instantiated.ao.nodeId).toBe('system-pyro');
+    expect(instantiated.archetypeId).toBe('PVP_ORG_V_ORG');
+    expect(instantiated.releaseTrack).toBe('PREVIEW_4_7');
+    expect(instantiated.schedule?.timezone).toBe('UTC');
+    expect(instantiated.readinessGates?.length).toBe(1);
   });
 
   it('clones operations and records directional clone audit events', () => {

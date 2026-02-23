@@ -24,17 +24,24 @@ function makeOperation(status: Operation['status']): Operation {
 }
 
 describe('stagePolicy', () => {
-  it('keeps planning editable for participants and lifecycle controls for command', () => {
+  it('keeps planning role-aware and lifecycle controls for command/rank authority', () => {
     const planning = makeOperation('PLANNING');
     const participantPolicy = deriveOperationStagePolicy(planning, 'member-1');
     const commandPolicy = deriveOperationStagePolicy(planning, 'cmd-1');
+    const rankLifecyclePolicy = deriveOperationStagePolicy(planning, 'scout-1', { rank: 'SCOUT' });
 
-    expect(participantPolicy.canEditPlan).toBe(true);
-    expect(participantPolicy.canEditRequirements).toBe(true);
+    expect(participantPolicy.roleView).toBe('PARTICIPANT');
+    expect(participantPolicy.canEditPlan).toBe(false);
+    expect(participantPolicy.canEditRequirements).toBe(false);
     expect(participantPolicy.canChangeLifecycle).toBe(false);
+    expect(participantPolicy.lifecycleReason).toMatch(/SCOUT\+ rank/i);
 
     expect(commandPolicy.canChangeLifecycle).toBe(true);
     expect(commandPolicy.isCommandRole).toBe(true);
+    expect(commandPolicy.roleView).toBe('COMMAND');
+
+    expect(rankLifecyclePolicy.canChangeLifecycle).toBe(true);
+    expect(rankLifecyclePolicy.roleView).toBe('COMMAND');
   });
 
   it('locks active planning edits for non-command but allows command override', () => {
@@ -59,6 +66,7 @@ describe('stagePolicy', () => {
     expect(policy.canManageRoster).toBe(false);
     expect(policy.canPostComms).toBe(false);
     expect(policy.canChangeLifecycle).toBe(false);
+    expect(policy.lifecycleReason).toMatch(/read-only/i);
   });
 });
 

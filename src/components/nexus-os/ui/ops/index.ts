@@ -3,3 +3,5 @@ export { default as OperationFocusApp } from './OperationFocusApp';
 export { default as FittingForceDesignFocusApp } from './FittingForceDesignFocusApp';
 export { default as OperationNarrativePanel } from './OperationNarrativePanel';
 export { default as CoalitionOutreachPanel } from './CoalitionOutreachPanel';
+export { default as OperationExecutionBoard } from './OperationExecutionBoard';
+export { default as OperationCreationWizard } from './OperationCreationWizard';

@@ -27,6 +27,7 @@ import {
   resetOperationServiceState,
   setFocusOperation,
   setPosture,
+  updateOperation,
   updateStatus,
 } from '../../src/components/nexus-os/services/operationService';
 import {
@@ -628,7 +629,7 @@ describe('Nexus OS hardening services', () => {
     const persisted = getOperationById(op.id);
     expect(persisted?.permissions.participantIds?.includes('gce-rifleman')).toBe(true);
 
-    expect(() => updateStatus(op.id, 'ACTIVE', 'gce-rifleman')).toThrow(/owners\/commanders/i);
+    expect(() => updateStatus(op.id, 'ACTIVE', 'gce-rifleman')).toThrow(/lifecycle update requires/i);
     expect(() => setFocusOperation('intruder', op.id)).toThrow(/membership/i);
 
     const visibleToJoiner = listOperationsForUser({ userId: 'gce-rifleman' });
@@ -1031,6 +1032,62 @@ describe('Nexus OS hardening services', () => {
     }, nowMs - 10_000);
     const broadcasts = listEmergencyBroadcasts(hostOrg.id);
     expect(broadcasts.length).toBeGreaterThan(0);
+  });
+
+  it('keeps legacy speculative salvage variants editable across metadata updates', () => {
+    const op = createOperation({
+      name: 'Legacy Salvage Payload',
+      createdBy: 'ce-warden',
+      posture: 'CASUAL',
+      status: 'PLANNING',
+      ao: { nodeId: 'system-stanton' },
+      scenarioConfig: {
+        salvage: {
+          variantId: 'LEGACY_SALVAGE_ALPHA',
+          extractionMethod: 'DRONE',
+          objectiveType: 'Legacy Run',
+          targetWreckType: 'Unknown Hull',
+          claimJurisdiction: 'Unknown',
+          routePlan: 'Legacy route',
+          processingPlan: 'Legacy process',
+          escortPolicy: 'Legacy escort',
+          inventoryPolicy: 'Legacy inventory',
+          hazardTags: [],
+          riskProfile: {
+            threatBand: 'MEDIUM',
+            legalExposure: 'MEDIUM',
+            interdictionRisk: 'MEDIUM',
+            hazardTags: [],
+          },
+          telemetryProjection: {
+            hullRecoveredPct: 0,
+            componentsRecovered: 0,
+            cargoRecoveredScu: 0,
+            cycleTimeMinutes: 0,
+            contaminationIncidents: 0,
+          },
+          economics: {
+            projectedRmcScu: 0,
+            projectedCmScu: 0,
+            projectedCargoScu: 0,
+            projectedGrossAuec: 0,
+            projectedFuelCostAuec: 0,
+            projectedProcessingCostAuec: 0,
+            projectedRiskReserveAuec: 0,
+            evidenceRefs: [],
+          },
+          companionLink: { enabled: false, source: 'NONE', externalRefs: [] },
+        },
+      } as any,
+    });
+
+    expect(op.scenarioConfig?.salvage?.variantId).toBe('LEGACY_SALVAGE_ALPHA');
+    expect(op.scenarioConfig?.salvage?.extractionMethod).toBe('SALVAGE_DRONE');
+
+    const updated = updateOperation(op.id, { name: 'Legacy Salvage Payload Updated' }, 'ce-warden');
+    expect(updated.name).toBe('Legacy Salvage Payload Updated');
+    expect(updated.scenarioConfig?.salvage?.variantId).toBe('LEGACY_SALVAGE_ALPHA');
+    expect(updated.scenarioConfig?.salvage?.extractionMethod).toBe('SALVAGE_DRONE');
   });
 });
 
