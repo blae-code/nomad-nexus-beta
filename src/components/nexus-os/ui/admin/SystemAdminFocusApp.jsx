@@ -26,47 +26,10 @@ import {
   wipeSeededOnly,
 } from '@/components/services/dataRegistry';
 
-type PersonaMode = 'SYSTEM_ADMIN' | 'PIONEER';
-type LogTone = 'neutral' | 'ok' | 'warning' | 'danger';
-
-interface SystemAdminFocusAppProps {
-  actorId: string;
-  onClose?: () => void;
-  opId?: string;
-  operations?: any[];
-  focusOperationId?: string;
-  onOpenMapFocus?: () => void;
-  onOpenOperationFocus?: () => void;
-  onOpenCommsNetwork?: () => void;
-  onCreateMacroEvent?: (type: string, data: any) => void;
-}
-
-interface ActionLogEntry {
-  id: string;
-  tone: LogTone;
-  summary: string;
-  detail: string;
-  createdAt: string;
-}
-
-interface DirectoryUser {
-  id: string;
-  username: string;
-  callsign: string;
-  rank: string;
-  membership: string;
-}
-
-interface AccessKeyRecord {
-  id: string;
-  code: string;
-  status: string;
-  grants_rank: string;
-  grants_membership: string;
-  grants_roles: string[];
-  redeemed_by_member_profile_ids: string[];
-  created_date?: string;
-}
+/**
+ * @typedef {'SYSTEM_ADMIN' | 'PIONEER'} PersonaMode
+ * @typedef {'neutral' | 'ok' | 'warning' | 'danger'} LogTone
+ */
 
 const PERSONA_STORAGE_KEY = 'nexus.admin.focus.persona';
 const DOMAIN_PAGE_SIZE = 6;
@@ -169,34 +132,29 @@ export default function SystemAdminFocusApp({
   onOpenCommsNetwork,
   onCreateMacroEvent,
 }: SystemAdminFocusAppProps) {
-  const [persona, setPersona] = useState<PersonaMode>('SYSTEM_ADMIN');
+  const [persona, setPersona] = useState('SYSTEM_ADMIN');
   const [busyId, setBusyId] = useState('');
-  const [domainCounts, setDomainCounts] = useState<Record<string, number>>({});
+  const [domainCounts, setDomainCounts] = useState({});
   const [domainPage, setDomainPage] = useState(0);
   const [logPage, setLogPage] = useState(0);
   const [preserveSeededOnSafeWipe, setPreserveSeededOnSafeWipe] = useState(false);
   const [safeWipeArmed, setSafeWipeArmed] = useState(false);
-  const [integritySnapshot, setIntegritySnapshot] = useState<{
-    at: string;
-    totalRecords: number;
-    issueCount: number;
-    errorCount: number;
-  } | null>(null);
-  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
-  const [directoryUsers, setDirectoryUsers] = useState<DirectoryUser[]>([]);
-  const [accessKeys, setAccessKeys] = useState<AccessKeyRecord[]>([]);
+  const [integritySnapshot, setIntegritySnapshot] = useState(null);
+  const [actionLog, setActionLog] = useState([]);
+  const [directoryUsers, setDirectoryUsers] = useState([]);
+  const [accessKeys, setAccessKeys] = useState([]);
   const [identityUserSearch, setIdentityUserSearch] = useState('');
   const [identityKeySearch, setIdentityKeySearch] = useState('');
   const [identityUserPage, setIdentityUserPage] = useState(0);
   const [identityKeyPage, setIdentityKeyPage] = useState(0);
   const [selectedIdentityUserId, setSelectedIdentityUserId] = useState('');
-  const [identityRank, setIdentityRank] = useState<(typeof RANK_OPTIONS)[number]>('VAGRANT');
+  const [identityRank, setIdentityRank] = useState('VAGRANT');
   const [identityMembership, setIdentityMembership] = useState(getDefaultMembershipForRank('VAGRANT'));
   const [inviteMessage, setInviteMessage] = useState('');
 
   const focusOpId = String(focusOperationId || opId || operations[0]?.id || '');
 
-  const pushLog = useCallback((tone: LogTone, summary: string, detail: string) => {
+  const pushLog = useCallback((tone, summary, detail) => {
     setActionLog((previous) => [
       {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -210,11 +168,11 @@ export default function SystemAdminFocusApp({
   }, []);
 
   const runTask = useCallback(
-    async (id: string, task: () => Promise<void>) => {
+    async (id, task) => {
       setBusyId(id);
       try {
         await task();
-      } catch (error: any) {
+      } catch (error) {
         pushLog('danger', 'Action failed', error?.message || 'Operation did not complete.');
       } finally {
         setBusyId('');
@@ -375,7 +333,7 @@ export default function SystemAdminFocusApp({
     setSelectedIdentityUserId(firstUserId);
   }, [selectedIdentityUserId, directoryUserById, directoryUsers]);
 
-  const parseResponseData = useCallback((response: any) => response?.data || response || {}, []);
+  const parseResponseData = useCallback((response) => response?.data || response || {}, []);
 
   const refreshIdentityAccess = useCallback(async () => {
     const directoryResponse = await invokeMemberFunction('getUserDirectory', { includeDetails: false });
@@ -492,7 +450,7 @@ export default function SystemAdminFocusApp({
     });
   }, [selectedDirectoryUser, keyRows, runTask, refreshIdentityAccess, pushLog]);
 
-  const copyToClipboard = useCallback((value: string, summary: string) => {
+  const copyToClipboard = useCallback((value, summary) => {
     if (!value) return;
     void navigator.clipboard.writeText(value).then(() => {
       pushLog('ok', summary, value.length > 64 ? `${value.slice(0, 60)}...` : value);
@@ -500,7 +458,7 @@ export default function SystemAdminFocusApp({
   }, [pushLog]);
 
   const invokeQuickOpen = useCallback(
-    (label: string, fn: (() => void) | undefined) => {
+    (label, fn) => {
       if (!fn) {
         pushLog('warning', `${label} unavailable`, 'No handler is registered in this workspace context.');
         return;
@@ -512,8 +470,8 @@ export default function SystemAdminFocusApp({
   );
 
   const runIntegrityValidation = useCallback(async () => {
-    await runTask('validate', async () => {
-      const report: any = await validateAll();
+     await runTask('validate', async () => {
+       const report = await validateAll();
       const issueCount = Array.isArray(report?.issues) ? report.issues.length : 0;
       const errorCount = Array.isArray(report?.issues)
         ? report.issues.filter((entry: any) => String(entry?.severity || '').toLowerCase() === 'error').length
@@ -533,16 +491,16 @@ export default function SystemAdminFocusApp({
   }, [runTask, pushLog]);
 
   const runRepair = useCallback(async () => {
-    await runTask('repair', async () => {
-      const result: any = await repairAll();
+     await runTask('repair', async () => {
+       const result = await repairAll();
       pushLog('ok', 'Repair routine finished', String(result?.message || 'Repair flow completed.'));
     });
   }, [runTask, pushLog]);
 
   const runSeed = useCallback(
-    async (intensity: 'light' | 'full') => {
-      await runTask(`seed-${intensity}`, async () => {
-        const result: any = await seedImmersive({ intensity });
+    async (intensity) => {
+       await runTask(`seed-${intensity}`, async () => {
+         const result = await seedImmersive({ intensity });
         await refreshDomainCounts();
         pushLog(result?.success ? 'ok' : 'warning', `Seed ${intensity} executed`, String(result?.message || result?.error || 'Seed task finished.'));
       });
@@ -554,7 +512,7 @@ export default function SystemAdminFocusApp({
     const approved = window.confirm('Delete seeded demo data only? Non-seeded records stay intact.');
     if (!approved) return;
     await runTask('wipe-seeded', async () => {
-      const result: any = await wipeSeededOnly();
+        const result = await wipeSeededOnly();
       await refreshDomainCounts();
       pushLog('warning', 'Seeded data purged', `${Number(result?.totalDeleted || 0)} seeded records removed.`);
     });
@@ -570,7 +528,7 @@ export default function SystemAdminFocusApp({
     );
     if (!approved) return;
     await runTask('safe-wipe', async () => {
-      const result: any = await wipeAll({
+      const result = await wipeAll({
         preserveSeeded: preserveSeededOnSafeWipe,
         excludeDomainKeys: PROTECTED_DOMAIN_KEYS,
       });
@@ -665,7 +623,7 @@ export default function SystemAdminFocusApp({
                           type="button"
                           onClick={() => {
                             setSelectedIdentityUserId(entry.id);
-                            setIdentityRank(entry.rank as (typeof RANK_OPTIONS)[number]);
+                            setIdentityRank(entry.rank);
                             setIdentityMembership(entry.membership || getDefaultMembershipForRank(entry.rank));
                           }}
                           className={`w-full rounded border px-2 py-1.5 text-left transition-colors ${
@@ -711,9 +669,9 @@ export default function SystemAdminFocusApp({
                   <div className="text-[10px] text-zinc-400 uppercase tracking-wide">Key + Invite Actions</div>
                   <div className="grid grid-cols-2 gap-1.5">
                     <select
-                      value={identityRank}
-                      onChange={(event) => {
-                        const nextRank = event.target.value as (typeof RANK_OPTIONS)[number];
+                    value={identityRank}
+                    onChange={(event) => {
+                    const nextRank = event.target.value;
                         setIdentityRank(nextRank);
                         setIdentityMembership(getDefaultMembershipForRank(nextRank));
                       }}
