@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   channelStatusTokenIcon,
   commsActionTokenIcon,
+  operationalRoleLabel,
+  operationalRoleTokenIcon,
   operatorStatusTokenIcon,
   operatorStatusTone,
   orderStatusTokenIcon,
@@ -28,6 +30,10 @@ describe('commsTokenSemantics', () => {
 
   it('maps role and formation markers with optional state variants', () => {
     expect(roleTokenIcon('Medic')).toContain('token-hospital-green.png');
+    expect(roleTokenIcon('Turret Gunner')).toContain('token-target-red.png');
+    expect(roleTokenIcon('Cargo Crew')).toContain('token-food-orange.png');
+    expect(operationalRoleTokenIcon('engineer')).toContain('token-mechanics-yellow.png');
+    expect(operationalRoleLabel('squad_lead')).toBe('Lead');
     expect(wingTokenIcon('CE', 'secure')).toContain('token-number-1-yellow.png');
     expect(squadTokenIcon('Squad Alpha', 'critical')).toContain('token-number-1-yellow.png');
   });

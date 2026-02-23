@@ -1,4 +1,5 @@
 import { getNumberTokenAssetUrl, getNumberTokenVariantByState, getTokenAssetUrl, tokenAssets } from '../tokens';
+import type { OperationalRoleToken } from './commsSquadCardEnhancementRuntime';
 
 type CommsNodeType = 'channel' | 'team' | 'user';
 
@@ -51,11 +52,38 @@ export function vehicleStatusTokenIcon(status: string): string {
 
 export function roleTokenIcon(role: string): string {
   const token = toToken(role);
-  if (token.includes('lead') || token.includes('command') || token.includes('signal')) return tokenAssets.comms.role.command;
+  if (token.includes('lead') || token.includes('command')) return tokenAssets.comms.role.command;
+  if (token.includes('signal') || token.includes('comms') || token.includes('radio')) return getTokenAssetUrl('hex', 'cyan');
   if (token.includes('pilot') || token.includes('flight') || token.includes('gunship')) return tokenAssets.comms.role.flight;
   if (token.includes('medic') || token.includes('medical')) return tokenAssets.comms.role.medical;
-  if (token.includes('log') || token.includes('maint') || token.includes('mech')) return tokenAssets.comms.role.support;
+  if (token.includes('gunner') || token.includes('turret') || token.includes('weapons')) return getTokenAssetUrl('target', 'red');
+  if (token.includes('engineer') || token.includes('mech') || token.includes('maint') || token.includes('tech')) return tokenAssets.comms.role.support;
+  if (token.includes('cargo') || token.includes('log') || token.includes('hauler') || token.includes('load')) return getTokenAssetUrl('food', 'orange');
   return tokenAssets.comms.role.default;
+}
+
+export function operationalRoleTokenIcon(roleToken: OperationalRoleToken): string {
+  if (roleToken === 'pilot') return tokenAssets.comms.role.flight;
+  if (roleToken === 'squad_lead') return tokenAssets.comms.role.command;
+  if (roleToken === 'medic') return tokenAssets.comms.role.medical;
+  if (roleToken === 'gunner') return getTokenAssetUrl('target', 'red');
+  if (roleToken === 'engineer') return tokenAssets.comms.role.support;
+  if (roleToken === 'cargo') return getTokenAssetUrl('food', 'orange');
+  if (roleToken === 'signal') return getTokenAssetUrl('hex', 'cyan');
+  if (roleToken === 'command') return tokenAssets.comms.role.command;
+  return tokenAssets.comms.role.default;
+}
+
+export function operationalRoleLabel(roleToken: OperationalRoleToken): string {
+  if (roleToken === 'pilot') return 'Pilot';
+  if (roleToken === 'squad_lead') return 'Lead';
+  if (roleToken === 'medic') return 'Medic';
+  if (roleToken === 'gunner') return 'Gunner';
+  if (roleToken === 'engineer') return 'Engineer';
+  if (roleToken === 'cargo') return 'Cargo';
+  if (roleToken === 'signal') return 'Signal';
+  if (roleToken === 'command') return 'Command';
+  return 'Crew';
 }
 
 export type CommsCardActionToken =
