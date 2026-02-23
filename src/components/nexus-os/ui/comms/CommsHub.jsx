@@ -540,14 +540,14 @@ export default function CommsHub({
     return (
       <div key={category} className="mb-0.5">
         <button
-          type="button"
-          onClick={() => toggleCategory(category)}
-          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 rounded transition-colors"
-        >
-          <div className="flex items-center gap-1.5">
-            <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
-            <img src={categoryTokenIcon(category)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
-            <span className="uppercase tracking-wider">{label}</span>
+           type="button"
+           onClick={() => toggleCategory(category)}
+           className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[9px] font-bold text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 rounded transition-colors uppercase tracking-wider"
+         >
+           <div className="flex items-center gap-1.5">
+             <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
+             <img src={categoryTokenIcon(category)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+             <span>{label}</span>
             <span className="text-zinc-600 font-normal">({items.length})</span>
           </div>
           {categoryUnread > 0 ? (
@@ -567,20 +567,20 @@ export default function CommsHub({
                   onClick={() => pickChannel(channel.id)}
                   onMouseEnter={() => setHoveredChannel(channel.id)}
                   onMouseLeave={() => setHoveredChannel(null)}
-                  className={`w-full text-left px-2 py-1.5 rounded transition-all flex items-center justify-between gap-2 ${
+                  className={`w-full text-left px-2 py-1.5 rounded transition-all flex items-center justify-between gap-2 text-[10px] ${
                     selectedChannel === channel.id 
                       ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300' 
                       : hoveredChannel === channel.id
                         ? 'bg-zinc-800/60 text-zinc-200 border border-zinc-700/40'
-                        : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200 border border-transparent'
+                        : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <img src={channelTokenIcon(channel)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 flex-shrink-0" />
-                    <span className="text-[10px] font-medium truncate">{channel.name}</span>
+                    <span className="truncate">{channel.name}</span>
                   </div>
                   {channel.unread > 0 ? (
-                    <div className="flex-shrink-0 px-1.5 py-0.5 rounded-full bg-orange-500/40 text-orange-200 text-[9px] font-bold">
+                    <div className="flex-shrink-0 px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
                       {channel.unread}
                     </div>
                   ) : null}
@@ -629,10 +629,10 @@ export default function CommsHub({
          <div className="flex w-full h-full overflow-hidden">
            {/* Channel Tree Panel */}
             <div className="flex flex-col w-64 flex-shrink-0 border-r border-zinc-700/40 h-full overflow-hidden">
-              <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2">
+              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
               <div className="flex items-center gap-1.5 min-w-0">
-                <MessageSquare className="w-3.5 h-3.5 text-red-500" />
-                  <h3 className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">Channels</h3>
+                <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
+                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">Channels</h3>
                 {totalUnread > 0 ? (
                   <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
                     {totalUnread}
@@ -846,12 +846,11 @@ export default function CommsHub({
                 </div>
 
                 {pagedMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
-                    <MessageSquare className="w-8 h-8 text-zinc-700/50" />
-                    <div className="text-[10px] font-bold uppercase tracking-wider">No messages yet</div>
-                    <div className="text-[9px] text-zinc-600">Send a message to initialize channel traffic</div>
-                  </div>
-                ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2 px-4 text-center">
+                          <MessageSquare className="w-8 h-8 text-zinc-700/50" />
+                          <div className="text-[10px] font-bold uppercase tracking-wider">No messages</div>
+                        </div>
+                      ) : (
                   pagedMessages.map((message) => {
                     const analysis = messageAnalyses[message.id];
                     const showAnalysis = aiEnabled && showAiFeatures && analysis;
@@ -864,33 +863,17 @@ export default function CommsHub({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                               <span className="text-[10px] font-semibold text-zinc-300">{message.author}</span>
-                              <span className="text-[9px] text-zinc-600">{message.timestamp}</span>
+                              <span className="text-[8px] text-zinc-600">{message.timestamp}</span>
                               {message.source === 'event' ? (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-blue-500/20 text-blue-300">
+                                <span className="px-1 py-0.5 rounded text-[7px] font-bold uppercase bg-zinc-700/30 text-zinc-400">
                                   Feed
                                 </span>
                               ) : null}
-                              {showAnalysis ? (
-                                <>
-                                  {analysis.priority === 'critical' ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-red-500/20 text-red-400 flex items-center gap-0.5">
-                                      <AlertCircle className="w-2.5 h-2.5" />
-                                      Critical
-                                    </span>
-                                  ) : null}
-                                  {analysis.priority === 'high' ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-red-500/20 text-red-400 flex items-center gap-0.5">
-                                      <TrendingUp className="w-2.5 h-2.5" />
-                                      High
-                                    </span>
-                                  ) : null}
-                                  {analysis.urgency >= 8 ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-yellow-500/20 text-yellow-400 flex items-center gap-0.5">
-                                      <Zap className="w-2.5 h-2.5" />
-                                      Urgent
-                                    </span>
-                                  ) : null}
-                                </>
+                              {showAnalysis && analysis.priority === 'critical' ? (
+                                <span className="px-1 py-0.5 rounded text-[7px] font-bold uppercase bg-red-500/20 text-red-400 flex items-center gap-0.5">
+                                  <AlertCircle className="w-2 h-2" />
+                                  Critical
+                                </span>
                               ) : null}
                             </div>
 
@@ -985,27 +968,27 @@ export default function CommsHub({
                 </div>
               ) : null}
 
-              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/50">
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  value={messageInput}
-                  onChange={(event) => setMessageInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && event.currentTarget.value.trim()) handleSendMessage();
-                  }}
-                  className="flex-1 text-[10px] bg-zinc-950/60 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-600/40 focus:ring-1 focus:ring-zinc-600/20"
-                />
-                <button
-                  type="button"
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim()}
-                  className="h-6 px-2 rounded border border-zinc-700/40 bg-orange-500/15 hover:bg-orange-500/25 hover:border-orange-500/50 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  title="Send message (Enter)"
-                >
-                  <Send className="w-3 h-3" />
-                </button>
-              </div>
+              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
+                  <input
+                    type="text"
+                    placeholder="Message..."
+                    value={messageInput}
+                    onChange={(event) => setMessageInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && event.currentTarget.value.trim()) handleSendMessage();
+                    }}
+                    className="flex-1 text-[10px] bg-zinc-900/40 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendMessage}
+                    disabled={!messageInput.trim()}
+                    className="h-6 px-2 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-orange-500/15 hover:border-orange-500/50 text-zinc-500 hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    title="Send (Enter)"
+                  >
+                    <Send className="w-3 h-3" />
+                  </button>
+                </div>
 
                 {panelFeedback ? (
                   <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/30 text-[9px] text-orange-400">
@@ -1019,11 +1002,11 @@ export default function CommsHub({
           {/* Thread Panel - slides over chat panel */}
           {activeThread && threads[activeThread] ? (
             <div className="absolute inset-0 bg-black/98 backdrop-blur-sm flex flex-col z-10 animate-in slide-in-from-right duration-300">
-              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40">
+              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 nexus-top-rail">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">Thread</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-100">Thread</span>
                   </div>
                   <button
                     type="button"
