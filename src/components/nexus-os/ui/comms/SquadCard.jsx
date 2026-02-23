@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pin, PinOff, ChevronDown } from 'lucide-react';
 import { NexusButton, NexusBadge } from '../primitives';
 import { wingTokenIcon, squadTokenIcon, vehicleStatusTokenIcon, operatorStatusTokenIcon, roleTokenIcon } from './commsTokenSemantics';
 import { tokenAssets } from '../tokens';
 import { operatorStatusTone } from './commsTokenSemantics';
+import { base44 } from '@/api/base44Client';
 
 export default function SquadCard({
   card,
