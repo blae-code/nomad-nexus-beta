@@ -13,7 +13,6 @@ import {
   Trash2,
   Wrench,
 } from 'lucide-react';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { NexusBadge, NexusButton } from '../primitives';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { getDefaultMembershipForRank, MEMBERSHIP_LIST } from '@/components/constants/membership';
@@ -30,9 +29,16 @@ import {
 type PersonaMode = 'SYSTEM_ADMIN' | 'PIONEER';
 type LogTone = 'neutral' | 'ok' | 'warning' | 'danger';
 
-interface SystemAdminFocusAppProps extends Partial<CqbPanelSharedProps> {
+interface SystemAdminFocusAppProps {
   actorId: string;
   onClose?: () => void;
+  opId?: string;
+  operations?: any[];
+  focusOperationId?: string;
+  onOpenMapFocus?: () => void;
+  onOpenOperationFocus?: () => void;
+  onOpenCommsNetwork?: () => void;
+  onCreateMacroEvent?: (type: string, data: any) => void;
 }
 
 interface ActionLogEntry {
