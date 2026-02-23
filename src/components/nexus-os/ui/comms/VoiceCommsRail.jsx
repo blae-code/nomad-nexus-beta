@@ -679,63 +679,9 @@ export default function VoiceCommsRail({
                 }
                     </div>
                   </>
-            }
-
-                {fleetView === 'cards' &&
-            <>
-                    {compactFleetCardPageCount > 1 &&
-              <div className="px-2 flex items-center justify-between gap-1 text-[8px] text-zinc-500 border-b border-zinc-700/40 py-1">
-                        <button
-                  type="button"
-                  onClick={() => setFleetCardPage((prev) => Math.max(0, prev - 1))}
-                  disabled={fleetCardPage === 0}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
-                          Prev
-                        </button>
-                        <span>{fleetCardPage + 1}/{compactFleetCardPageCount}</span>
-                        <button
-                  type="button"
-                  onClick={() => setFleetCardPage((prev) => Math.min(compactFleetCardPageCount - 1, prev + 1))}
-                  disabled={fleetCardPage >= compactFleetCardPageCount - 1}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
-                          Next
-                        </button>
-                      </div>
-              }
-
-                    <div className="px-2 py-1.5 space-y-1">
-                      {compactFleetCards.length > 0 ?
-                compactFleetCards.map((card) =>
-                <article key={card.id} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1">
-                            <div className="flex items-center justify-between gap-1.5">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <img src={tokenAssets.comms.vehicle} alt="" className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                                <div className="min-w-0">
-                                  <div className="text-[10px] text-white uppercase tracking-wide truncate font-semibold">{card.vehicleLabel}</div>
-                                  <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel} · {card.squadLabel}</div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <img src={vehicleStatusTokenIcon(card.vehicleStatus)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                                <NexusBadge tone={vehicleStatusTone(card.vehicleStatus)}>{card.vehicleStatus}</NexusBadge>
-                              </div>
-                            </div>
-                            <div className="mt-1 flex items-center justify-between gap-1.5">
-                              <div className="flex items-center gap-1 min-w-0">
-                                <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                                <span className="text-[9px] text-zinc-100 truncate font-semibold">{card.channelLabel}</span>
-                              </div>
-                              <span className="text-[8px] text-zinc-500 uppercase tracking-wide shrink-0">Crew {card.crewCount}</span>
-                            </div>
-                          </article>
-                ) :
-                <div className="rounded border border-zinc-700/40 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No compact fleet cards available.</div>
-                }
-                    </div>
+                  }
                   </>
-            }
-              </>
-          }
+                  }
 
             {feedback &&
             <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/30 text-[8px] text-orange-400">
