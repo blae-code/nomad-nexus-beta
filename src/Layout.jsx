@@ -112,6 +112,7 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   usePresenceHeartbeat();
   useRealtimeNotifications();
   useVoiceCommands();
+  useGlobalHotkeys();
 
   const { isContextPanelOpen, isCommsDockOpen, dockMinimized, contextPanelMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized, setContextPanelMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
