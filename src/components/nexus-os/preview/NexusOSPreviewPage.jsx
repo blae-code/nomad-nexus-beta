@@ -363,7 +363,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           variantId,
           opId: resolvedOpId,
           includeUserNodes: true,
-          roster: activeRoster,
+          roster: activeRoster
         });
         if (cancelled) return;
         setRightRailGraph(snapshot);
@@ -907,7 +907,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         </TacticalSidePanel>
 
-        <main className="flex-1 overflow-hidden flex flex-col px-2 py-2">
+        <main className="px-3 flex-1 overflow-hidden flex flex-col">
           {commandFeedback &&
           <section aria-live="polite" className="nx-inline-feedback rounded-lg border border-zinc-700/40 bg-zinc-900/40 px-3 py-2 text-[11px] text-orange-400 font-semibold uppercase tracking-wide mb-2 hover:border-orange-500/40 hover:bg-zinc-800/60 transition-colors">
               {commandFeedback}
