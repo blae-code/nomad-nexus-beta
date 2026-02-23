@@ -501,7 +501,7 @@ export default function VoiceCommsRail({
                 })}
 
                   {pagedParticipants.length === 0 &&
-                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-600">No users registered</div>
+                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1 text-[8px] text-zinc-400">No users registered</div>
                   }
                 </div>
 
