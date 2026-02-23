@@ -1755,61 +1755,31 @@ export default function CommsNetworkConsole({
 
         <section className="min-h-0 rounded border border-zinc-800 bg-zinc-900/40 p-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <NexusButton size="sm" intent={rightPanelView === 'cards' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('cards')}>
-                <Users className="w-3.5 h-3.5 mr-1" />
-                Crew Cards
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              <span className="text-[11px] text-zinc-300 uppercase tracking-wide">Crew Cards</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <NexusButton
+                size="sm"
+                intent="subtle"
+                onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
+                disabled={crewCardPage === 0}
+              >
+                Prev
               </NexusButton>
-              <NexusButton size="sm" intent={rightPanelView === 'schema' ? 'primary' : 'subtle'} onClick={() => setRightPanelView('schema')}>
-                <ClipboardList className="w-3.5 h-3.5 mr-1" />
-                Fleet Schema
+              <NexusBadge tone="neutral">
+                {crewCardPage + 1}/{crewCardPageCount}
+              </NexusBadge>
+              <NexusButton
+                size="sm"
+                intent="subtle"
+                onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
+                disabled={crewCardPage >= crewCardPageCount - 1}
+              >
+                Next
               </NexusButton>
             </div>
-            {rightPanelView === 'cards' ? (
-              <div className="flex items-center gap-1.5">
-                <NexusButton
-                  size="sm"
-                  intent="subtle"
-                  onClick={() => setCrewCardPage((prev) => Math.max(0, prev - 1))}
-                  disabled={crewCardPage === 0}
-                >
-                  Prev
-                </NexusButton>
-                <NexusBadge tone="neutral">
-                  {crewCardPage + 1}/{crewCardPageCount}
-                </NexusBadge>
-                <NexusButton
-                  size="sm"
-                  intent="subtle"
-                  onClick={() => setCrewCardPage((prev) => Math.min(crewCardPageCount - 1, prev + 1))}
-                  disabled={crewCardPage >= crewCardPageCount - 1}
-                >
-                  Next
-                </NexusButton>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <NexusButton
-                  size="sm"
-                  intent="subtle"
-                  onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))}
-                  disabled={schemaChannelPage === 0}
-                >
-                  Prev
-                </NexusButton>
-                <NexusBadge tone="neutral">
-                  {schemaChannelPage + 1}/{schemaChannelPageCount}
-                </NexusBadge>
-                <NexusButton
-                  size="sm"
-                  intent="subtle"
-                  onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
-                  disabled={schemaChannelPage >= schemaChannelPageCount - 1}
-                >
-                  Next
-                </NexusButton>
-              </div>
-            )}
           </div>
 
           {rightPanelView === 'cards' ? (
