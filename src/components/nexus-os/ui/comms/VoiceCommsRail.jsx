@@ -472,15 +472,15 @@ export default function VoiceCommsRail({
                        You
                      </span>
                      <select
-                  onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
-                  defaultValue="ON-NET"
-                  className="h-5 px-1.5 text-[8px] rounded border border-zinc-700/40 bg-zinc-900/40 text-zinc-300 hover:border-orange-500/40 transition-colors font-semibold uppercase cursor-pointer">
+                     onChange={(e) => setFeedback(`Status: ${e.target.value}`)}
+                     defaultValue="ON-NET"
+                     className="h-6 px-2 text-[9px] rounded border border-orange-500/40 bg-zinc-900/80 text-white font-semibold uppercase cursor-pointer hover:border-orange-500/60 hover:bg-zinc-900 transition-colors focus:outline-none focus:ring-1 focus:ring-orange-500/50">
 
-                       <option value="READY">Ready</option>
-                       <option value="ON-NET">On Net</option>
-                       <option value="ENGAGED">Engaged</option>
-                       <option value="MUTED">Muted</option>
-                       <option value="OFFLINE">Offline</option>
+                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="READY">Ready</option>
+                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="ON-NET">On Net</option>
+                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="ENGAGED">Engaged</option>
+                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="MUTED">Muted</option>
+                       <option style={{background: '#18181b', color: '#f5f5f5'}} value="OFFLINE">Offline</option>
                      </select>
                    </div>
                  </div>
