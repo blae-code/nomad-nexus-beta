@@ -37,8 +37,8 @@ const LOG_PAGE_SIZE = 5;
 const PROTECTED_DOMAIN_KEYS = ['memberProfiles', 'accessKeys'];
 const IDENTITY_USER_PAGE_SIZE = 5;
 const IDENTITY_KEY_PAGE_SIZE = 6;
-const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'] as const;
-const RANK_GRANTS_CONFIG: Record<string, string[]> = {
+const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
+const RANK_GRANTS_CONFIG = {
   VAGRANT: ['read_only'],
   SCOUT: ['read_only', 'comms_access'],
   VOYAGER: ['read_only', 'comms_access', 'event_creation'],
