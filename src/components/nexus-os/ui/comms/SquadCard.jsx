@@ -44,6 +44,17 @@ export default function SquadCard({
     setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
   };
 
+  const getSizeSymbol = (vehicleSize) => {
+    const sizeMap = {
+      'capital': '◆',
+      'large': '◇',
+      'medium': '○',
+      'small': '●',
+      'fighter': '▪'
+    };
+    return sizeMap[String(vehicleSize || '').toLowerCase()] || '◇';
+  };
+
   return (
     <article
       key={card.id}
