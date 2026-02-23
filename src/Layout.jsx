@@ -112,10 +112,6 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   usePresenceHeartbeat();
   useRealtimeNotifications();
   useVoiceCommands();
-  // useGlobalHotkeys only in standard shell mode (inside CommandPaletteProvider)
-  if (!isNexusWorkspace) {
-    useGlobalHotkeys();
-  }
 
   const { isContextPanelOpen, isCommsDockOpen, dockMinimized, contextPanelMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized, setContextPanelMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
@@ -185,6 +181,8 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
       onResetUILayout={handleResetUILayout}
       onReplayBoot={handleReplayBoot}>
 
+      <GlobalHotkeysBridge />
+
       {/* Boot Overlay */}
       <BootOverlay forceShow={bootOverlay.showBoot} onDismiss={bootOverlay.dismiss} />
 
@@ -240,4 +238,9 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
         </div>
         </CommandPaletteProvider>);
 
+}
+
+function GlobalHotkeysBridge() {
+  useGlobalHotkeys();
+  return null;
 }
