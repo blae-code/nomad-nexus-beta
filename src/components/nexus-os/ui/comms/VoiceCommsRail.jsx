@@ -448,15 +448,15 @@ export default function VoiceCommsRail({
 
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             {/* Fleet Section */}
-            <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/30">
+            <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40">
               <button
                 type="button"
                 onClick={() => setFleetExpanded(!fleetExpanded)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors"
+                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold hover:bg-zinc-900/50 transition-colors nexus-top-rail"
               >
-                <div className="flex items-center gap-2">
-                  <ChevronDown className={`w-3 h-3 transition-transform ${fleetExpanded ? 'rotate-180' : ''}`} />
-                  Fleet
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${fleetExpanded ? 'rotate-180' : ''}`} />
+                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] truncate">Fleet</h3>
                 </div>
                 <NexusBadge tone="active">{String(variantId || 'live').toUpperCase()}</NexusBadge>
               </button>
