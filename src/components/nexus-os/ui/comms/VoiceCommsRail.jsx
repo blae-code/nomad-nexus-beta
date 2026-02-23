@@ -545,19 +545,19 @@ export default function VoiceCommsRail({
                 type="button"
                 onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
                 disabled={rosterPage === 0}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
                       Prev
                     </button>
-                    <span className="text-[8px]">{rosterPage + 1}/{rosterPageCount}</span>
+                    <span>{rosterPage + 1}/{rosterPageCount}</span>
                     <button
                 type="button"
                 onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
                 disabled={rosterPage >= rosterPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600/40 transition-colors">
                       Next
                     </button>
                   </div>
-            }
+                }
               </>
           }
 
