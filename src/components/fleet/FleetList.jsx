@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import TokenRenderer from '@/components/nexus-os/ui/tokens/TokenRenderer';
+import { assetStatusTokens, getTokenByStatus } from '@/components/nexus-os/ui/tokens/tokenSemantics';
 
 const STATUS_CONFIG = {
-  OPERATIONAL: { bg: 'bg-green-950/30', border: 'border-green-600/50', text: 'text-green-400' },
-  MAINTENANCE: { bg: 'bg-yellow-950/30', border: 'border-yellow-600/50', text: 'text-yellow-400' },
-  DESTROYED: { bg: 'bg-red-950/30', border: 'border-red-600/50', text: 'text-red-400' },
-  MISSION: { bg: 'bg-blue-950/30', border: 'border-blue-600/50', text: 'text-blue-400' },
-  UNKNOWN: { bg: 'bg-zinc-800/30', border: 'border-zinc-600/50', text: 'text-zinc-400' },
+  OPERATIONAL: { bg: 'bg-green-950/30', border: 'border-green-600/50' },
+  MAINTENANCE: { bg: 'bg-yellow-950/30', border: 'border-yellow-600/50' },
+  DESTROYED: { bg: 'bg-red-950/30', border: 'border-red-600/50' },
+  MISSION: { bg: 'bg-blue-950/30', border: 'border-blue-600/50' },
+  UNKNOWN: { bg: 'bg-zinc-800/30', border: 'border-zinc-600/50' },
 };
 
 export default function FleetList({ assets, selectedAsset, onSelectAsset, getDeployedEvents }) {
@@ -58,23 +60,26 @@ export default function FleetList({ assets, selectedAsset, onSelectAsset, getDep
 
                     return (
                       <button
-                        key={asset.id}
-                        onClick={() => onSelectAsset(asset)}
-                        className={`w-full text-left p-3 rounded border transition ${
-                          isSelected
-                            ? 'bg-purple-500/20 border-purple-500'
-                            : `${config.bg} ${config.border} hover:border-purple-500/50`
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-1">
-                          <div>
-                            <div className="font-bold text-white text-sm">{asset.name}</div>
-                            <div className="text-xs text-zinc-400">{asset.model}</div>
-                          </div>
-                          <div className={`text-xs font-bold px-2 py-1 rounded ${config.text} bg-black/30`}>
-                            {status}
-                          </div>
-                        </div>
+                         key={asset.id}
+                         onClick={() => onSelectAsset(asset)}
+                         className={`w-full text-left p-3 rounded border transition ${
+                           isSelected
+                             ? 'bg-purple-500/20 border-purple-500'
+                             : `${config.bg} ${config.border} hover:border-purple-500/50`
+                         }`}
+                       >
+                         <div className="flex items-start justify-between mb-1">
+                           <div>
+                             <div className="font-bold text-white text-sm">{asset.name}</div>
+                             <div className="text-xs text-zinc-400">{asset.model}</div>
+                           </div>
+                           <TokenRenderer 
+                             family={getTokenByStatus(status, assetStatusTokens).family}
+                             color={getTokenByStatus(status, assetStatusTokens).color}
+                             size="sm"
+                             label={status}
+                           />
+                         </div>
 
                         {asset.location && (
                           <div className="text-xs text-zinc-400 mb-2">
