@@ -908,7 +908,7 @@ export default function CommsNetworkCardConsole({
           </div>
 
           <div className="grid grid-cols-1 gap-1.5">
-            {visibleSquadCards.map((card) => {
+            {(visibleSquadCards.length > 0 ? visibleSquadCards : SAMPLE_SQUADS).map((card) => {
               const sla = slaBySquadId[card.id];
               const escalation = escalationBySquadId[card.id];
               return (
@@ -939,7 +939,6 @@ export default function CommsNetworkCardConsole({
                 />
               );
             })}
-            {visibleSquadCards.length === 0 ? <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">No squad cards available for this lane page.</div> : null}
           </div>
         </section>
 
