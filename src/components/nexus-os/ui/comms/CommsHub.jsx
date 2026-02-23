@@ -626,7 +626,7 @@ export default function CommsHub({
         <div className="flex w-full h-full overflow-hidden">
           {/* Channel Tree Panel */}
            <div className="flex flex-col w-64 flex-shrink-0 border-r border-red-700/50 h-full overflow-hidden">
-             <div className="flex-shrink-0 px-2 py-1.5 border-b border-red-700/50 bg-gradient-to-r from-red-950/40 to-black/60 flex items-center justify-between gap-2">
+             <div className="flex-shrink-0 px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <MessageSquare className="w-3.5 h-3.5 text-red-500" />
                   <h3 className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">Channels</h3>
@@ -716,7 +716,7 @@ export default function CommsHub({
           >
             {selectedChannel ? (
               <>
-                <div className="flex-shrink-0 px-2.5 py-2 border-b border-red-700/50 bg-gradient-to-r from-red-950/40 to-black/60 space-y-2">
+                <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <img src={channelTokenIcon(selectedChannelData)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
