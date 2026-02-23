@@ -2,11 +2,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, ArrowRight, Radio, RefreshCcw } from 'lucide-react';
 import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import { buildCommsChannelHealth } from '../../services/commsIncidentService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
+import type { CqbEventType } from '../../schemas/coreSchemas';
 import { NexusBadge, NexusButton, DegradedStateCard } from '../primitives';
 import { PanelLoadingState } from '../loading';
-import RadialMenu from '../map/RadialMenu';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
 import { tokenAssets } from '../tokens';
 import {
   channelStatusTokenIcon,
@@ -26,35 +29,45 @@ import {
   createOrderDispatch,
 } from './commsOrderRuntime';
 
+interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
+
+interface TopologyBridgeEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  status: 'active' | 'degraded';
+  createdAtMs: number;
+}
+
 const HEALTH_PAGE_SIZE = 5;
 const ORDER_FEED_PREVIEW_SIZE = 3;
 const MAX_ORDER_HISTORY = 24;
 
-function nodeFill(node) {
+function nodeFill(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node) {
+function nodeBorder(node: CommsGraphNode): string {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function clampPct(value) {
+function clampPct(value: number): number {
   return Math.max(3, Math.min(97, value));
 }
 
-function extractChannelId(node) {
+function extractChannelId(node: CommsGraphNode | null | undefined): string {
   if (!node) return '';
-  const explicit = String(node.meta?.channelId || '').trim();
+  const explicit = String((node.meta as any)?.channelId || '').trim();
   if (explicit) return explicit;
   if (node.id.startsWith('channel:')) return node.id.replace('channel:', '');
   return '';
 }
 
-function formatAge(nowMs, createdAtMs) {
+function formatAge(nowMs: number, createdAtMs: number): string {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -62,13 +75,13 @@ function formatAge(nowMs, createdAtMs) {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function deliveryTone(status) {
+function deliveryTone(status: string): 'warning' | 'active' | 'ok' {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function recommendationForDiscipline(discipline) {
+function recommendationForDiscipline(discipline: string): { label: string; action: 'REROUTE' | 'RESTRICT' | 'CHECKIN'; detail: string } {
   if (discipline === 'SATURATED') {
     return {
       label: 'Reroute traffic now',
@@ -97,28 +110,34 @@ export default function CommsNetworkConsole({
   events = [],
   actorId = '',
   onCreateMacroEvent,
-}) {
-  const voiceNet = useVoiceNet();
-  const [snapshot, setSnapshot] = useState(null);
+}: CommsNetworkConsoleProps) {
+  const voiceNet = useVoiceNet() as any;
+  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
-  const [bridgeEdges, setBridgeEdges] = useState([]);
-  const [nodePositionOverrides, setNodePositionOverrides] = useState({});
+  const [bridgeEdges, setBridgeEdges] = useState<TopologyBridgeEdge[]>([]);
+  const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const [radialOpen, setRadialOpen] = useState(false);
-  const [radialAnchor, setRadialAnchor] = useState({ x: 50, y: 50 });
+  const [radialAnchor, setRadialAnchor] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [compactCardPage, setCompactCardPage] = useState(0);
   const [healthPage, setHealthPage] = useState(0);
-  const [directiveDispatches, setDirectiveDispatches] = useState([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState<any[]>([]);
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
 
-  const topologyRef = useRef(null);
-  const dragRef = useRef(null);
+  const topologyRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    nodeId: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -131,7 +150,7 @@ export default function CommsNetworkConsole({
         roster,
       });
       setSnapshot(next);
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'Failed to load comms graph.');
     } finally {
       setLoading(false);
@@ -155,7 +174,7 @@ export default function CommsNetworkConsole({
 
   useEffect(() => {
     if (!bridgeDraftSourceId) return undefined;
-    const onKeyDown = (event) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       setBridgeDraftSourceId('');
@@ -180,7 +199,7 @@ export default function CommsNetworkConsole({
 
     setNodePositionOverrides((prev) => {
       let changed = false;
-      const next = {};
+      const next: Record<string, { x: number; y: number }> = {};
       for (const node of nodes) {
         const prior = prev[node.id];
         const resolvedX = clampPct(prior?.x ?? node.x);
@@ -218,7 +237,7 @@ export default function CommsNetworkConsole({
         id: edge.id,
         sourceId: edge.sourceId,
         targetId: edge.targetId,
-        type: 'monitoring',
+        type: 'monitoring' as const,
         intensity: edge.status === 'degraded' ? 0.52 : 0.9,
         dashed: edge.status === 'degraded',
       })),
@@ -228,7 +247,7 @@ export default function CommsNetworkConsole({
 
   const nodeMap = useMemo(
     () =>
-      displayNodes.reduce((acc, node) => {
+      displayNodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
@@ -295,7 +314,7 @@ export default function CommsNetworkConsole({
   );
 
   const bridgedChannelIds = useMemo(() => {
-    const result = new Set();
+    const result = new Set<string>();
     for (const edge of bridgeEdges) {
       const sourceId = extractChannelId(nodeMap[edge.sourceId]);
       const targetId = extractChannelId(nodeMap[edge.targetId]);
@@ -327,7 +346,7 @@ export default function CommsNetworkConsole({
   );
 
   const emitMacro = useCallback(
-    (eventType, payload, successMessage) => {
+    (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
       if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
       setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
     },
@@ -335,10 +354,17 @@ export default function CommsNetworkConsole({
   );
 
   const dispatchChannelOrder = useCallback(
-    (action, channelId, options) => {
+    (
+      action: 'REROUTE' | 'RESTRICT' | 'CHECKIN' | 'BRIDGE',
+      channelId: string,
+      options?: { targetChannelId?: string; sourceNodeId?: string; targetNodeId?: string }
+    ) => {
       if (!channelId) return;
 
-      const mapByAction = {
+      const mapByAction: Record<
+        'REROUTE' | 'RESTRICT' | 'CHECKIN' | 'BRIDGE',
+        { eventType: CqbEventType; directive: string; success: string }
+      > = {
         REROUTE: { eventType: 'MOVE_OUT', directive: 'REROUTE_TRAFFIC', success: 'Reroute directive sent' },
         RESTRICT: { eventType: 'HOLD', directive: 'RESTRICT_NON_ESSENTIAL', success: 'Restriction directive sent' },
         CHECKIN: { eventType: 'SELF_CHECK', directive: 'CHECK_IN_REQUEST', success: 'Check-in request broadcast' },
@@ -390,7 +416,7 @@ export default function CommsNetworkConsole({
   );
 
   const applyBridgeOrder = useCallback(
-    (sourceNodeId, targetNodeId) => {
+    (sourceNodeId: string, targetNodeId: string) => {
       if (!sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId) return;
       const sourceNode = nodeMap[sourceNodeId];
       const targetNode = nodeMap[targetNodeId];
@@ -414,7 +440,7 @@ export default function CommsNetworkConsole({
     [dispatchChannelOrder, nodeMap]
   );
 
-  const updateNodeFromClientPoint = useCallback((nodeId, clientX, clientY) => {
+  const updateNodeFromClientPoint = useCallback((nodeId: string, clientX: number, clientY: number) => {
     const host = topologyRef.current;
     if (!host || !nodeId) return;
     const rect = host.getBoundingClientRect();
@@ -424,7 +450,7 @@ export default function CommsNetworkConsole({
     setNodePositionOverrides((prev) => ({ ...prev, [nodeId]: { x, y } }));
   }, []);
 
-  const handleNodePointerDown = useCallback((event, nodeId) => {
+  const handleNodePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
     if (event.button !== 0) return;
     dragRef.current = {
       nodeId,
@@ -439,7 +465,7 @@ export default function CommsNetworkConsole({
   }, []);
 
   const handleNodePointerMove = useCallback(
-    (event, nodeId) => {
+    (event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
       const current = dragRef.current;
       if (!current || current.nodeId !== nodeId || current.pointerId !== event.pointerId) return;
       const movedX = Math.abs(event.clientX - current.startX);
@@ -453,7 +479,7 @@ export default function CommsNetworkConsole({
   );
 
   const handleNodePointerUp = useCallback(
-    (event, nodeId) => {
+    (event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
       const current = dragRef.current;
       if (!current || current.nodeId !== nodeId || current.pointerId !== event.pointerId) return;
       if (!current.moved) {
@@ -466,7 +492,7 @@ export default function CommsNetworkConsole({
     [applyBridgeOrder, bridgeDraftSourceId]
   );
 
-  const handleNodeContextMenu = useCallback((event, nodeId) => {
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>, nodeId: string) => {
     event.preventDefault();
     const host = topologyRef.current;
     if (!host) return;
@@ -478,12 +504,12 @@ export default function CommsNetworkConsole({
     setRadialOpen(true);
   }, []);
 
-  const radialItems = useMemo(() => {
+  const radialItems = useMemo<RadialMenuItem[]>(() => {
     if (!selectedNode) return [];
     const channelId = extractChannelId(selectedNode);
     const canCommandChannel = selectedNode.type === 'channel' && Boolean(channelId);
 
-    const items = [
+    const items: RadialMenuItem[] = [
       {
         id: 'reroute',
         label: 'Reroute',
@@ -601,7 +627,7 @@ export default function CommsNetworkConsole({
             />
 
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-              {renderedEdges.map((edge) => {
+              {renderedEdges.map((edge: CommsGraphEdge) => {
                 const source = nodeMap[edge.sourceId];
                 const target = nodeMap[edge.targetId];
                 if (!source || !target) return null;
@@ -734,7 +760,7 @@ export default function CommsNetworkConsole({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-1.5">
               {visibleHealth.map((entry) => (
                 <div key={entry.channelId} className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px]">
                   <div className="flex items-center justify-between gap-2">
@@ -751,7 +777,7 @@ export default function CommsNetworkConsole({
                 </div>
               ))}
               {visibleHealth.length === 0 ? (
-                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px] text-zinc-500 md:col-span-2">
+                <div className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5 text-[11px] text-zinc-500">
                   No channels in current graph snapshot.
                 </div>
               ) : null}
@@ -865,14 +891,40 @@ export default function CommsNetworkConsole({
         </section>
       </div>
 
-      {feedback ? (
-        <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5">
-          <div className="text-[10px] text-orange-300 inline-flex items-center gap-1">
+      <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <NexusBadge tone={deliveryStats.queued > 0 ? 'warning' : 'neutral'}>Queued {deliveryStats.queued}</NexusBadge>
+            <NexusBadge tone={deliveryStats.persisted > 0 ? 'active' : 'neutral'}>Persisted {deliveryStats.persisted}</NexusBadge>
+            <NexusBadge tone={deliveryStats.acked > 0 ? 'ok' : 'neutral'}>Acked {deliveryStats.acked}</NexusBadge>
+            <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>Confidence {deliveryStats.confidencePct}%</NexusBadge>
+          </div>
+          <div className="text-[10px] text-zinc-500">Showing {feedPage.visible.length} tactical echoes</div>
+        </div>
+
+        {feedPage.visible.length > 0 ? (
+          <div className="mt-1.5 grid grid-cols-1 md:grid-cols-3 gap-1.5">
+            {feedPage.visible.map((dispatch) => (
+              <div key={dispatch.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/65 px-2 py-1">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{dispatch.directive}</span>
+                  <NexusBadge tone={deliveryTone(dispatch.status)}>{dispatch.status}</NexusBadge>
+                </div>
+                <div className="mt-0.5 text-[9px] text-zinc-500 truncate">
+                  {dispatch.channelId} · {formatAge(nowMs, dispatch.issuedAtMs)} ago
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {feedback ? (
+          <div className="mt-1 text-[10px] text-orange-300 inline-flex items-center gap-1">
             <Radio className="w-3 h-3" />
             {feedback}
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
