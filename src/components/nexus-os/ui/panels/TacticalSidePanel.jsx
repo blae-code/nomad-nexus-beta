@@ -65,7 +65,7 @@ export default function TacticalSidePanel({
                  {Icon ? <Icon className="w-3.5 h-3.5 text-orange-500" /> : null}
                  <div className="min-w-0">
                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white truncate">{title}</div>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className={`flex items-center gap-2 mt-0.5 px-1.5 py-0.5 rounded border transition-colors ${headerStatusTone === 'danger' ? 'border-red-500/30 bg-red-500/5' : headerStatusTone === 'warning' ? 'border-amber-500/30 bg-amber-500/5' : 'border-green-500/30 bg-green-500/5'}`}>
                     <div className="flex items-center gap-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${headerStatusClass.dot}`} />
                       <span className={`text-[8px] font-mono uppercase tracking-wider font-semibold ${headerStatusClass.text}`}>{headerStatusLabel}</span>
