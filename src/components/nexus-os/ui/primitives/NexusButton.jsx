@@ -4,13 +4,13 @@ import { getNexusCssVars } from '../tokens';
 
 const intentClasses = {
   primary:
-    'border text-zinc-50',
+    'border text-white font-semibold',
   neutral:
-    'bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-600 text-zinc-100',
+    'bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-600 text-zinc-50 font-semibold',
   subtle:
-    'border text-zinc-200',
+    'border text-zinc-100 font-semibold',
   danger:
-    'bg-red-900/70 hover:bg-red-800/80 border border-red-500/60 text-red-50',
+    'bg-red-900/70 hover:bg-red-800/80 border border-red-500/60 text-white font-semibold',
 };
 
 const intentStyles = {
