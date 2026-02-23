@@ -304,18 +304,18 @@ export default function VoiceCommsRail({
       )}
       </div>
       {speakingParticipants.length > 0 ?
-      <div className="flex items-center gap-1 flex-wrap">
+    <div className="flex items-center gap-1 flex-wrap">
         {speakingParticipants.map((participant) =>
       <span
-      key={participant.id || participant.userId || participant.clientId || participant.callsign}
-      className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[8px] uppercase tracking-wide inline-flex items-center gap-1">
+        key={participant.id || participant.userId || participant.clientId || participant.callsign}
+        className="px-1.5 py-0.5 rounded border border-orange-500/35 bg-orange-500/15 text-orange-200 text-[8px] uppercase tracking-wide inline-flex items-center gap-1">
 
             <TokenRenderer family="circle" color="orange" size="xs" animated />
             {participant.callsign || participant.name || participant.id}
           </span>
       )}
       </div> :
-      null}
+    null}
     </div>;
 
 
@@ -386,28 +386,7 @@ export default function VoiceCommsRail({
   return (
     <div className={`${isExpanded ? 'w-80' : 'w-12'} bg-black/98 border-l-2 border-red-700/50 flex flex-col overflow-hidden z-[900] relative transition-all duration-200 h-full min-h-0`}>
       {/* Header */}
-      <div className="h-12 border-b-2 border-red-700/50 flex items-center justify-between px-3 flex-shrink-0 bg-gradient-to-r from-red-950/40 to-black/60 backdrop-blur-sm">
-        {isExpanded && (
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-6 bg-red-500 rounded-sm" />
-            <div>
-              <h2 className="text-xs font-black uppercase text-white tracking-[0.2em]">Comms Core</h2>
-              <p className="text-[9px] text-zinc-600 uppercase tracking-wider font-mono mt-0.5">Voice Systems</p>
-            </div>
-          </div>
-        )}
-        <div className="flex items-center gap-1 ml-auto">
-          <button
-            type="button"
-            size="icon"
-            onClick={() => onToggleExpand?.(!isExpanded)}
-            className="h-6 w-6 text-zinc-600 hover:text-red-400 border-0 bg-transparent p-1 rounded"
-            title={isExpanded ? 'Collapse' : 'Expand'}
-          >
-            <ChevronLeft className={`w-4 h-4 transition-transform ${isExpanded ? '' : 'rotate-180'}`} />
-          </button>
-        </div>
-      </div>
+      
 
 
 
@@ -426,8 +405,29 @@ export default function VoiceCommsRail({
 
 
 
-      {isExpanded && (
-        <>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      {isExpanded &&
+      <>
           <div className="flex-shrink-0 border-b border-red-700/40 bg-black/40">
             <div className="px-3 py-2 border-b border-red-700/40">
               <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Controls</div>
@@ -465,77 +465,77 @@ export default function VoiceCommsRail({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
-            {selectedTab === 'nets' && (
-              <>
+            {selectedTab === 'nets' &&
+          <>
                 <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
                   <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Quick Nets</div>
                 </div>
                 <div className="px-2 py-1.5 space-y-1">
                   {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) :
-                    <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets.</div>
-                  }
+              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets.</div>
+              }
                 </div>
 
-                {quickPageCount > 1 && (
-                  <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                {quickPageCount > 1 &&
+            <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                     <button
-                    type="button"
-                    onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
-                    disabled={quickPage === 0}
-                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                type="button"
+                onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
+                disabled={quickPage === 0}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Prev
                     </button>
                     <span className="text-[8px]">{quickPage + 1}/{quickPageCount}</span>
                     <button
-                    type="button"
-                    onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
-                    disabled={quickPage >= quickPageCount - 1}
-                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                type="button"
+                onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
+                disabled={quickPage >= quickPageCount - 1}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Next
                     </button>
                   </div>
-                )}
+            }
 
                 <div className="px-3 py-2 border-b border-red-700/40 bg-black/40 flex items-center justify-between">
                   <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">All Nets</div>
                   <button
-                  type="button"
-                  onClick={() => setShowNetCreator(true)}
-                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 text-zinc-500 hover:border-red-700/50 hover:text-red-400 transition-colors flex items-center gap-1"
-                  title="Create new voice net">
+                type="button"
+                onClick={() => setShowNetCreator(true)}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 text-zinc-500 hover:border-red-700/50 hover:text-red-400 transition-colors flex items-center gap-1"
+                title="Create new voice net">
                     <Plus className="w-2.5 h-2.5" />
                   </button>
                 </div>
                 <div className="px-2 py-1.5 space-y-1">
                   {pagedNets.length > 0 ? pagedNets.map(renderQuickNetCard) :
-                    <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets.</div>
-                  }
+              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets.</div>
+              }
                 </div>
 
-                {netsPageCount > 1 && (
-                  <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                {netsPageCount > 1 &&
+            <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                     <button
-                    type="button"
-                    onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
-                    disabled={netsPage === 0}
-                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                type="button"
+                onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
+                disabled={netsPage === 0}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Prev
                     </button>
                     <span className="text-[8px]">{netsPage + 1}/{netsPageCount}</span>
                     <button
-                    type="button"
-                    onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
-                    disabled={netsPage >= netsPageCount - 1}
-                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                type="button"
+                onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
+                disabled={netsPage >= netsPageCount - 1}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Next
                     </button>
                   </div>
-                )}
+            }
               </>
-            )}
+          }
 
-            {selectedTab === 'roster' && (
-              <>
+            {selectedTab === 'roster' &&
+          <>
                 <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
                   <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Roster</div>
                 </div>
@@ -559,34 +559,34 @@ export default function VoiceCommsRail({
 
               })}
 
-                  {pagedParticipants.length === 0 && (
-                    <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div>
-                  )}
+                  {pagedParticipants.length === 0 &&
+              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div>
+              }
                 </div>
-                {rosterPageCount > 1 && (
-                  <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                {rosterPageCount > 1 &&
+            <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                     <button
-                    type="button"
-                    onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
-                    disabled={rosterPage === 0}
-                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                type="button"
+                onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
+                disabled={rosterPage === 0}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Prev
                     </button>
                     <span className="text-[8px]">{rosterPage + 1}/{rosterPageCount}</span>
                     <button
-                    type="button"
-                    onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
-                    disabled={rosterPage >= rosterPageCount - 1}
-                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                type="button"
+                onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
+                disabled={rosterPage >= rosterPageCount - 1}
+                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Next
                     </button>
                   </div>
-                )}
+            }
               </>
-            )}
+          }
 
-            {selectedTab === 'fleet' && (
-              <>
+            {selectedTab === 'fleet' &&
+          <>
                 <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
                   <div className="flex items-center justify-between gap-1.5">
                     <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-bold">REDSCAR Fleet</div>
@@ -604,69 +604,69 @@ export default function VoiceCommsRail({
                 <div className="px-2 py-1 flex items-center justify-between gap-1 border-b border-red-700/40 bg-black/35">
                   <div className="flex items-center gap-1">
                     <button
-                    type="button"
-                    onClick={() => setFleetView('schema')}
-                    className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-                    fleetView === 'schema' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
-                    }>
+                  type="button"
+                  onClick={() => setFleetView('schema')}
+                  className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+                  fleetView === 'schema' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+                  }>
                       Schema
                     </button>
                     <button
-                    type="button"
-                    onClick={() => setFleetView('cards')}
-                    className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
-                    fleetView === 'cards' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
-                    }>
+                  type="button"
+                  onClick={() => setFleetView('cards')}
+                  className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+                  fleetView === 'cards' ? 'text-red-300 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
+                  }>
                       Cards
                     </button>
                   </div>
                   <NexusBadge tone="neutral">{fleetChannels.length} lanes</NexusBadge>
                 </div>
 
-                {fleetView === 'schema' && (
-                  <>
-                    {schemaChannelPageCount > 1 && (
-                      <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                {fleetView === 'schema' &&
+            <>
+                    {schemaChannelPageCount > 1 &&
+              <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                         <button
-                        type="button"
-                        onClick={() => setFleetSchemaPage((prev) => Math.max(0, prev - 1))}
-                        disabled={fleetSchemaPage === 0}
-                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  type="button"
+                  onClick={() => setFleetSchemaPage((prev) => Math.max(0, prev - 1))}
+                  disabled={fleetSchemaPage === 0}
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                           Prev
                         </button>
                         <span className="text-[8px]">{fleetSchemaPage + 1}/{schemaChannelPageCount}</span>
                         <button
-                        type="button"
-                        onClick={() => setFleetSchemaPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
-                        disabled={fleetSchemaPage >= schemaChannelPageCount - 1}
-                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  type="button"
+                  onClick={() => setFleetSchemaPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
+                  disabled={fleetSchemaPage >= schemaChannelPageCount - 1}
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                           Next
                         </button>
                       </div>
-                    )}
+              }
 
                     <div className="px-2 py-1.5 space-y-1.5">
                       {fleetWings.length > 0 ?
-                      fleetWings.map((wing) =>
-                      <article key={wing.id} className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5">
+                fleetWings.map((wing) =>
+                <article key={wing.id} className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5">
                             <div className="flex items-center gap-1.5 text-[10px] text-zinc-200 uppercase tracking-wide font-semibold">
                               <img src={wingTokenIcon(wing.id, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                               <span className="truncate">{wing.label}</span>
                             </div>
                             <div className="mt-1 space-y-1">
                               {(wing.squads || []).map((squad) =>
-                        <div key={squad.id} className="rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1">
+                    <div key={squad.id} className="rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1">
                                   <div className="flex items-center gap-1 text-[9px] uppercase tracking-wide text-zinc-400">
                                     <img src={squadTokenIcon(squad.label, 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                                     <span className="truncate">{squad.label}</span>
                                   </div>
                                   <div className="mt-1 space-y-1">
                                     {(squad.channels || []).map((channel) => {
-                                  const vehicles = Array.isArray(channel.vehicles) ? channel.vehicles : [];
-                                  const leadVehicle = vehicles[0];
-                                  const leadOperator = Array.isArray(leadVehicle?.operators) ? leadVehicle.operators[0] : null;
-                                  return (
-                                    <div key={channel.id} className="rounded border border-zinc-800/80 bg-zinc-900/35 px-1.5 py-1">
+                          const vehicles = Array.isArray(channel.vehicles) ? channel.vehicles : [];
+                          const leadVehicle = vehicles[0];
+                          const leadOperator = Array.isArray(leadVehicle?.operators) ? leadVehicle.operators[0] : null;
+                          return (
+                            <div key={channel.id} className="rounded border border-zinc-800/80 bg-zinc-900/35 px-1.5 py-1">
                                           <div className="flex items-center justify-between gap-1">
                                             <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
                                               <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
@@ -678,7 +678,7 @@ export default function VoiceCommsRail({
                                             </div>
                                           </div>
                                           {leadVehicle ?
-                                      <div className="mt-1 flex items-center justify-between gap-1">
+                              <div className="mt-1 flex items-center justify-between gap-1">
                                               <div className="min-w-0 inline-flex items-center gap-1 text-[8px] text-zinc-400">
                                                 <img src={tokenAssets.comms.vehicle} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                                                 <span className="truncate">{leadVehicle.label}</span>
@@ -688,9 +688,9 @@ export default function VoiceCommsRail({
                                                 <NexusBadge tone={vehicleStatusTone(leadVehicle.basicStatus)}>{leadVehicle.basicStatus}</NexusBadge>
                                               </div>
                                             </div> :
-                                      null}
+                              null}
                                           {leadOperator ?
-                                      <div className="mt-1 flex items-center justify-between gap-1 rounded border border-zinc-800/80 bg-zinc-900/35 px-1 py-0.5">
+                              <div className="mt-1 flex items-center justify-between gap-1 rounded border border-zinc-800/80 bg-zinc-900/35 px-1 py-0.5">
                                               <div className="min-w-0 inline-flex items-center gap-1 text-[8px] text-zinc-300">
                                                 <img src={roleTokenIcon(leadOperator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                                                 <span className="truncate">{leadOperator.callsign}</span>
@@ -700,48 +700,48 @@ export default function VoiceCommsRail({
                                                 <NexusBadge tone={operatorStatusTone(leadOperator.status)}>{leadOperator.status}</NexusBadge>
                                               </div>
                                             </div> :
-                                      null}
+                              null}
                                         </div>);
 
-                                })}
+                        })}
                                   </div>
                                 </div>
-                        )}
+                    )}
                             </div>
                           </article>
-                      ) :
-                      <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No fleet schema channels available.</div>
-                      }
+                ) :
+                <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No fleet schema channels available.</div>
+                }
                     </div>
                   </>
-                )}
+            }
 
-                {fleetView === 'cards' && (
-                  <>
-                    {compactFleetCardPageCount > 1 && (
-                      <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
+                {fleetView === 'cards' &&
+            <>
+                    {compactFleetCardPageCount > 1 &&
+              <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                         <button
-                        type="button"
-                        onClick={() => setFleetCardPage((prev) => Math.max(0, prev - 1))}
-                        disabled={fleetCardPage === 0}
-                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  type="button"
+                  onClick={() => setFleetCardPage((prev) => Math.max(0, prev - 1))}
+                  disabled={fleetCardPage === 0}
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                           Prev
                         </button>
                         <span className="text-[8px]">{fleetCardPage + 1}/{compactFleetCardPageCount}</span>
                         <button
-                        type="button"
-                        onClick={() => setFleetCardPage((prev) => Math.min(compactFleetCardPageCount - 1, prev + 1))}
-                        disabled={fleetCardPage >= compactFleetCardPageCount - 1}
-                        className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
+                  type="button"
+                  onClick={() => setFleetCardPage((prev) => Math.min(compactFleetCardPageCount - 1, prev + 1))}
+                  disabled={fleetCardPage >= compactFleetCardPageCount - 1}
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                           Next
                         </button>
                       </div>
-                    )}
+              }
 
                     <div className="px-2 py-1.5 space-y-1">
                       {compactFleetCards.length > 0 ?
-                      compactFleetCards.map((card) =>
-                      <article key={card.id} className="rounded border border-red-700/30 bg-zinc-950/70 px-2 py-1.5">
+                compactFleetCards.map((card) =>
+                <article key={card.id} className="rounded border border-red-700/30 bg-zinc-950/70 px-2 py-1.5">
                             <div className="flex items-center justify-between gap-1.5">
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <img src={tokenAssets.comms.vehicle} alt="" className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
@@ -763,38 +763,38 @@ export default function VoiceCommsRail({
                               <span className="text-[8px] text-zinc-500 uppercase tracking-wide shrink-0">Crew {card.crewCount}</span>
                             </div>
                           </article>
-                      ) :
-                      <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No compact fleet cards available.</div>
-                      }
+                ) :
+                <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No compact fleet cards available.</div>
+                }
                     </div>
                   </>
-                )}
+            }
               </>
-            )}
+          }
 
-            {feedback && (
-              <div className="px-2 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-[9px] text-red-300 inline-flex items-center gap-1">
+            {feedback &&
+          <div className="px-2 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-[9px] text-red-300 inline-flex items-center gap-1">
                 <Radio className="w-3 h-3" />
                 {feedback}
               </div>
-            )}
+          }
           </div>
 
-          {showNetCreator && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          {showNetCreator &&
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
               <div className="w-full max-w-md bg-zinc-950 border border-red-700/40 rounded-lg p-4 m-4 shadow-2xl shadow-red-500/10">
                 <VoiceNetCreator
-                  onSuccess={() => {
-                    setShowNetCreator(false);
-                    setFeedback('Voice net created successfully');
-                  }}
-                  onCancel={() => setShowNetCreator(false)}
-                />
+              onSuccess={() => {
+                setShowNetCreator(false);
+                setFeedback('Voice net created successfully');
+              }}
+              onCancel={() => setShowNetCreator(false)} />
+
               </div>
             </div>
-          )}
+        }
           </>
-          )}
+      }
     </div>);
 
 }
