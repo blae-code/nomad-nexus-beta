@@ -25,6 +25,19 @@ export default function SquadCard({
   formatSlaAge
 }) {
   const [expandedVehicleId, setExpandedVehicleId] = useState(null);
+  const [location, setLocation] = useState(card.location || '');
+
+  useEffect(() => {
+    if (!card.id) return;
+    
+    const unsubscribe = base44.entities.Squad.subscribe((event) => {
+      if (event.id === card.id && event.data?.location) {
+        setLocation(event.data.location);
+      }
+    });
+    
+    return () => unsubscribe?.();
+  }, [card.id]);
 
   const toggleVehicle = (e, vehicleId) => {
     e.stopPropagation();
