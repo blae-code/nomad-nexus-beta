@@ -1999,9 +1999,6 @@ export default function CommsNetworkConsole({
                     );
                   })}
                 </div>
-              ) : null}
-            </div>
-          ) : null}
 
           <div className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
             <div className="flex items-center justify-between gap-2">
