@@ -13,6 +13,7 @@ import { useAlertSimulator } from '@/components/hooks/useAlertSimulator';
 import PermissionGuard from '@/components/PermissionGuard';
 import { usePresenceHeartbeat } from '@/components/hooks/usePresenceHeartbeat';
 import { useVoiceCommands } from '@/components/hooks/useVoiceCommands';
+import { useGlobalHotkeys } from '@/components/hooks/useGlobalHotkeys';
 
 import { VoiceNetProvider } from '@/components/voice/VoiceNetProvider';
 import { ActiveOpProvider } from '@/components/ops/ActiveOpProvider';
