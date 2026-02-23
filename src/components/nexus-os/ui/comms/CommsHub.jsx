@@ -526,8 +526,8 @@ export default function CommsHub({
                     selectedChannel === channel.id 
                       ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300' 
                       : hoveredChannel === channel.id
-                        ? 'bg-zinc-800/60 text-zinc-200 border border-zinc-700/40'
-                        : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 border border-transparent'
+                        ? 'bg-zinc-800/60 text-zinc-100 border border-zinc-700/40'
+                        : 'text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -775,7 +775,7 @@ export default function CommsHub({
                               ) : null}
                             </div>
 
-                            <div className="text-[10px] text-zinc-400 leading-relaxed">{message.text}</div>
+                            <div className="text-[10px] text-zinc-200 leading-relaxed">{message.text}</div>
 
                             {threadCount === 0 ? (
                               <button

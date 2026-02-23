@@ -487,7 +487,7 @@ export default function VoiceCommsRail({
                       isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'
                     }`}>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[9px] font-semibold text-zinc-400 truncate inline-flex items-center gap-1">
+                          <span className="text-[9px] font-semibold text-zinc-200 truncate inline-flex items-center gap-1">
                             <TokenRenderer family="square" color={status === 'OFFLINE' ? 'grey' : 'cyan'} size="xs" />
                             {user.full_name || user.name || user.email}
                           </span>
@@ -639,14 +639,14 @@ export default function VoiceCommsRail({
                       {fleetWings.length > 0 ?
                 fleetWings.map((wing) =>
                 <article key={wing.id} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1">
-                            <div className="flex items-center gap-1.5 text-[10px] text-zinc-200 uppercase tracking-wide font-semibold">
+                            <div className="flex items-center gap-1.5 text-[10px] text-zinc-100 uppercase tracking-wide font-semibold">
                               <img src={wingTokenIcon(wing.id, 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                               <span className="truncate">{wing.label}</span>
                             </div>
                             <div className="mt-1 space-y-1">
                               {(wing.squads || []).map((squad) =>
                     <div key={squad.id} className="rounded border border-zinc-800 bg-zinc-900/30 px-1.5 py-1">
-                                  <div className="flex items-center gap-1 text-[9px] uppercase tracking-wide text-zinc-400">
+                                  <div className="flex items-center gap-1 text-[9px] uppercase tracking-wide text-zinc-300">
                                     <img src={squadTokenIcon(squad.label, 'ready')} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
                                     <span className="truncate">{squad.label}</span>
                                   </div>
@@ -658,7 +658,7 @@ export default function VoiceCommsRail({
                           return (
                             <div key={channel.id} className="rounded border border-zinc-800/80 bg-zinc-900/35 px-1.5 py-1">
                                           <div className="flex items-center justify-between gap-1">
-                                            <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-300">
+                                            <div className="min-w-0 inline-flex items-center gap-1 text-[9px] text-zinc-100">
                                               <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                                               <span className="truncate">{channel.label}</span>
                                             </div>
@@ -669,7 +669,7 @@ export default function VoiceCommsRail({
                                           </div>
                                           {leadVehicle ?
                               <div className="mt-1 flex items-center justify-between gap-1">
-                                              <div className="min-w-0 inline-flex items-center gap-1 text-[8px] text-zinc-400">
+                                              <div className="min-w-0 inline-flex items-center gap-1 text-[8px] text-zinc-300">
                                                 <img src={tokenAssets.comms.vehicle} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                                                 <span className="truncate">{leadVehicle.label}</span>
                                               </div>
@@ -736,7 +736,7 @@ export default function VoiceCommsRail({
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <img src={tokenAssets.comms.vehicle} alt="" className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
                                 <div className="min-w-0">
-                                  <div className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.vehicleLabel}</div>
+                                  <div className="text-[10px] text-white uppercase tracking-wide truncate font-semibold">{card.vehicleLabel}</div>
                                   <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel} · {card.squadLabel}</div>
                                 </div>
                               </div>
@@ -748,7 +748,7 @@ export default function VoiceCommsRail({
                             <div className="mt-1 flex items-center justify-between gap-1.5">
                               <div className="flex items-center gap-1 min-w-0">
                                 <img src={tokenAssets.comms.channel} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                                <span className="text-[9px] text-zinc-300 truncate">{card.channelLabel}</span>
+                                <span className="text-[9px] text-zinc-100 truncate font-semibold">{card.channelLabel}</span>
                               </div>
                               <span className="text-[8px] text-zinc-500 uppercase tracking-wide shrink-0">Crew {card.crewCount}</span>
                             </div>

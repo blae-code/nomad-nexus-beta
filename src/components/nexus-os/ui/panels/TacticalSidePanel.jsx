@@ -68,11 +68,11 @@ export default function TacticalSidePanel({
                   <div className="flex items-center gap-2 mt-0.5">
                     <div className="flex items-center gap-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${headerStatusClass.dot}`} />
-                      <span className={`text-[8px] font-mono uppercase tracking-wider ${headerStatusClass.text}`}>{headerStatusLabel}</span>
+                      <span className={`text-[8px] font-mono uppercase tracking-wider font-semibold ${headerStatusClass.text}`}>{headerStatusLabel}</span>
                     </div>
                     <div className="flex items-center gap-0.5">
                       <Signal className={`w-2.5 h-2.5 ${headerSignalClass}`} />
-                      <span className={`text-[8px] font-mono tracking-wider ${headerSignalClass}`}>{headerSignalValue}</span>
+                      <span className={`text-[8px] font-mono tracking-wider font-semibold ${headerSignalClass}`}>{headerSignalValue}</span>
                     </div>
                   </div>
                 </div>
@@ -114,7 +114,7 @@ export default function TacticalSidePanel({
               <div className="grid grid-cols-3 divide-x divide-zinc-800/60">
                 {statusMetrics.slice(0, 3).map((metric, index) => (
                   <div key={`${metric.label}:${index}`} className="px-2 py-2 flex flex-col items-center">
-                    <span className="text-[8px] text-zinc-500 uppercase tracking-wider font-semibold">{metric.label}</span>
+                    <span className="text-[8px] text-zinc-300 uppercase tracking-wider font-semibold">{metric.label}</span>
                     <span className="text-[10px] font-mono text-orange-400 font-bold mt-0.5">{metric.value}</span>
                   </div>
                 ))}
