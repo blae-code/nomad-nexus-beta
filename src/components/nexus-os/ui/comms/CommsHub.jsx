@@ -20,11 +20,13 @@ import {
   Users,
   FolderPlus,
   CornerDownRight,
+  Network,
 } from 'lucide-react';
 import { NexusBadge } from '../primitives';
 import { generateResponseSuggestions, queueMessageAnalysis, smartSearch } from '../../services/commsAIService';
 import RadialMenu from '../map/RadialMenu';
 import { tokenAssets } from '../tokens';
+import CommsNetworkViz from './CommsNetworkViz';
 
 const CHANNEL_PAGE_SIZE = 6;
 const MESSAGE_PAGE_SIZE = 6;
@@ -108,6 +110,7 @@ export default function CommsHub({
   const [aiSearchResults, setAiSearchResults] = useState(null);
   const [responseSuggestions, setResponseSuggestions] = useState([]);
   const [selectedMessageForResponse, setSelectedMessageForResponse] = useState(null);
+  const [chatViewMode, setChatViewMode] = useState('messages'); // 'messages' or 'network'
 
   const aiEnabled = showAiFeatures;
   const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
@@ -724,14 +727,22 @@ export default function CommsHub({
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread}</NexusBadge> : null}
-                      <button
-                        type="button"
-                        onClick={() => setShowAiFeatures((prev) => !prev)}
-                          className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-500' : ''}`}
-                        title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                      </button>
+                             <button
+                               type="button"
+                               onClick={() => setChatViewMode(chatViewMode === 'network' ? 'messages' : 'network')}
+                                 className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${chatViewMode === 'network' ? 'text-orange-500' : ''}`}
+                               title={chatViewMode === 'network' ? 'View messages' : 'View network'}
+                             >
+                               <Network className="w-3.5 h-3.5" />
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setShowAiFeatures((prev) => !prev)}
+                                 className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${showAiFeatures ? 'text-orange-500' : ''}`}
+                               title={showAiFeatures ? 'Hide assistant' : 'Show assistant'}
+                             >
+                               <Sparkles className="w-3.5 h-3.5" />
+                             </button>
                       <button
                         type="button"
                         onClick={() => setChatPanelOpen(false)}
@@ -762,8 +773,17 @@ export default function CommsHub({
                   </button>
                 </div>
 
-                {showAiFeatures ? (
-                  <div className="space-y-2">
+                {chatViewMode === 'network' ? (
+                  <div className="flex-1 min-h-0 p-2">
+                    <CommsNetworkViz 
+                      channels={channels} 
+                      selectedChannel={selectedChannel}
+                      onSelectChannel={pickChannel}
+                      unreadByChannel={unreadByChannel}
+                    />
+                  </div>
+                ) : showAiFeatures ? (
+                   <div className="space-y-2">
                     <div className="relative">
                       <input
                         type="text"
