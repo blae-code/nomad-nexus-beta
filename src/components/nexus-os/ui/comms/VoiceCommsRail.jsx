@@ -602,11 +602,10 @@ export default function VoiceCommsRail({
             {fleetExpanded &&
           <>
                  <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
-                   <div className="flex items-center gap-1.5">
-                     <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-300">Schema</span>
-                   </div>
-                   <span className="text-[9px] text-zinc-400 uppercase tracking-wide">{fleetChannels.length}L</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-300">Schema</span>
                   </div>
+                 </div>
 
                 {fleetView === 'schema' &&
             <>
