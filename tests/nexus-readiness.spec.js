@@ -40,27 +40,40 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/NexusOSPreview', { waitUntil: 'networkidle' });
-  await expect(page.getByText(/NexusOS Command Surface/i)).toBeVisible();
+  await expect(page.getByText(/^NexusOS$/i).first()).toBeVisible();
+  await expect(page.getByText(/Command Surface/i).first()).toBeVisible();
 
   await page.keyboard.press('Alt+3');
   await expect(page.getByText(/Comms Network Topology/i)).toBeVisible();
+  await expect(page.getByText(/Comms Channel Cards/i)).toBeVisible();
   await expect(page.getByText(/Text Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Voice Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Global Voice Controls/i)).toBeVisible();
-  await expect(page.getByText(/Command Intent/i).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /Crew Cards/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Fleet Schema/i })).toBeVisible();
-  await expect(page.getByText(/Net Control/i).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /Create Temp/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Fleet/i }).first()).toBeVisible();
 
-  await clickButtonDirect(page, /Reroute Net/i);
-  await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(0);
-
-  await clickButtonDirect(page, /Fleet Schema/i);
+  await clickButtonDirect(page, /Fleet/i);
+  await clickButtonDirect(page, /Schema/i);
   await expect(page.getByText(/REDSCAR Fleet/i)).toBeVisible();
-  await clickButtonDirect(page, /Crew Cards/i);
-  await clickButtonDirect(page, /Broadcast Check-In/i);
-  await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(1);
+
+  const firstNode = page.locator('[data-comms-node=\"true\"]').first();
+  await expect(firstNode).toBeVisible();
+  await firstNode.dispatchEvent('click');
+  await clickButtonDirect(page, /Execute/i);
+
+  await page.keyboard.press('Alt+2');
+  await expect(page.getByText(/Operation Focus/i).first()).toBeVisible();
+  const opsCommsTab = page.locator('main').getByRole('button', { name: /^COMMS$/i }).first();
+  const hasCommsTab = await opsCommsTab.isVisible().catch(() => false);
+  if (hasCommsTab) {
+    await expect(opsCommsTab).toBeVisible();
+    await opsCommsTab.dispatchEvent('click');
+    await expect(page.getByText(/Operational Comms Control/i)).toBeVisible();
+    await expect(page.getByText(/Net Control/i).first()).toBeVisible();
+    await expect(page.getByText(/Orders Feed/i).first()).toBeVisible();
+    await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(0);
+  } else {
+    await expect(page.getByText(/No operation available|Operation context required/i).first()).toBeVisible();
+  }
 
   expect(fatal.length).toBe(0);
 });

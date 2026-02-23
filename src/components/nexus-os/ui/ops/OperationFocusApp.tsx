@@ -96,6 +96,7 @@ import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
+import OperationCommsControlPanel from './OperationCommsControlPanel';
 import { deriveOperationStagePolicy } from './stagePolicy';
 
 type TabId = 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'TIMELINE' | 'NARRATIVE' | 'COALITION';
@@ -224,8 +225,11 @@ function toneForTimelineSource(source: TimelineSource): 'neutral' | 'active' | '
 }
 
 export default function OperationFocusApp({
+  variantId = 'CQB-01',
   actorId,
   roster = [],
+  events = [],
+  onCreateMacroEvent,
   onClose,
   onOpenForceDesign,
   onOpenReports,
@@ -1420,7 +1424,7 @@ export default function OperationFocusApp({
         ) : null}
 
         {tabId === 'COMMS' ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Comms Discipline</h4>
               <select value={selectedOp.commsTemplateId} disabled={!stagePolicy?.canChangeLifecycle || commsLocked} onChange={(e) => runAction(() => applyCommsTemplate(selectedOp.id, e.target.value as CommsTemplateId, actorId))} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
@@ -1432,6 +1436,16 @@ export default function OperationFocusApp({
                 <div>Foregrounding: {selectedOp.id === focusOperationId ? 'Focus Op emphasized' : 'Background Op dimmed'}</div>
               </div>
             </section>
+
+            <OperationCommsControlPanel
+              selectedOp={selectedOp}
+              actorId={actorId}
+              roster={roster}
+              events={events}
+              variantId={variantId}
+              locked={commsLocked}
+              onCreateMacroEvent={onCreateMacroEvent}
+            />
 
             <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
               <div className="flex items-center justify-between gap-2">

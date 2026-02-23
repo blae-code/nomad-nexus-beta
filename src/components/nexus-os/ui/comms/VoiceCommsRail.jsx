@@ -1,41 +1,33 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   Mic,
   MicOff,
   Plus,
   Radio,
-  Send,
-  Settings,
   Signal,
-  UserCheck,
-  Users,
   Volume2,
-  Zap,
 } from 'lucide-react';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
-import { useAuth } from '@/components/providers/AuthProvider';
-import {
-  buildCommsChannelHealth,
-  buildCommsIncidentCandidates,
-  canTransitionIncidentStatus,
-  normalizeIncidentStatusById,
-  sortCommsIncidents,
-} from '../../services/commsIncidentService';
-import {
-  buildCommsDirectiveThreads,
-  buildCommsDisciplineAlerts,
-  createDirectiveDispatchRecord,
-  reconcileDirectiveDispatches,
-} from '../../services/commsFocusDirectiveService';
 import { NexusBadge, NexusButton } from '../primitives';
 import { tokenAssets } from '../tokens';
+import {
+  operatorStatusTone,
+  operatorStatusTokenIcon,
+  roleTokenIcon,
+  squadTokenIcon,
+  vehicleStatusTone,
+  vehicleStatusTokenIcon,
+  wingTokenIcon,
+} from './commsTokenSemantics';
+import {
+  buildCompactChannelCards,
+  buildSchemaTree,
+  COMPACT_CHANNEL_CARD_PAGE_SIZE,
+  SCHEMA_CHANNEL_PAGE_SIZE,
+} from './commsFleetSchemaRuntime';
 
 const PAGE_SIZE = 5;
 const QUICK_NET_PAGE_SIZE = 4;
@@ -45,33 +37,6 @@ const DISCIPLINE_MODES = [
   { id: 'REQUEST_TO_SPEAK', label: 'Req' },
   { id: 'COMMAND_ONLY', label: 'Cmd' },
 ];
-
-function incidentPriorityTone(priority) {
-  if (priority === 'CRITICAL') return 'danger';
-  if (priority === 'HIGH') return 'warning';
-  return 'active';
-}
-
-function incidentStatusTone(status) {
-  if (status === 'NEW') return 'warning';
-  if (status === 'ACKED') return 'active';
-  if (status === 'ASSIGNED') return 'ok';
-  return 'neutral';
-}
-
-function deliveryTone(status) {
-  if (status === 'QUEUED') return 'warning';
-  if (status === 'PERSISTED') return 'active';
-  return 'ok';
-}
-
-function formatAge(nowMs, createdAtMs) {
-  const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  return `${Math.floor(minutes / 60)}h`;
-}
 
 function isParticipantSpeaking(participant) {
   if (participant?.isSpeaking) return true;
@@ -86,18 +51,32 @@ function participantStatusLabel(participant) {
   return 'OFF-NET';
 }
 
-function participantStatusIcon(status) {
-  if (status === 'TX') return tokenAssets.comms.operatorStatus.tx;
-  if (status === 'ON-NET') return tokenAssets.comms.operatorStatus.onNet;
-  if (status === 'MUTED') return tokenAssets.comms.operatorStatus.muted;
-  return tokenAssets.comms.operatorStatus.offNet;
+function normalizeChannelRow(entry) {
+  const id = String(entry?.id || entry?.code || '').trim();
+  const label = String(entry?.label || entry?.name || entry?.code || id || 'Voice lane').trim();
+  if (!id) return null;
+  return {
+    id,
+    label,
+    membershipCount: Number(entry?.membershipCount || entry?.member_count || 0),
+    intensity: Number(entry?.intensity || 0),
+  };
 }
 
-const INCIDENT_EVENT_BY_STATUS = {
-  ACKED: 'ROGER',
-  ASSIGNED: 'WILCO',
-  RESOLVED: 'CLEAR_COMMS',
-};
+function channelRowsFromVoiceNets(voiceNets) {
+  return (Array.isArray(voiceNets) ? voiceNets : [])
+    .map((entry) => {
+      const id = String(entry?.id || entry?.code || '').trim();
+      if (!id) return null;
+      return {
+        id,
+        label: String(entry?.label || entry?.name || entry?.code || id).trim(),
+        membershipCount: 0,
+        intensity: 0,
+      };
+    })
+    .filter(Boolean);
+}
 
 export default function VoiceCommsRail({
   voiceNets = [],
@@ -121,27 +100,23 @@ export default function VoiceCommsRail({
   onSetDisciplineMode,
   onRequestToSpeak,
   focusMode = '',
-  events = [],
-  channels = [],
-  actorId = '',
-  onCreateMacroEvent,
+  roster = [],
+  graphChannels = [],
+  graphEdges = [],
 }) {
-  const { user } = useAuth();
-  const [displayMode, setDisplayMode] = useState('standard');
   const [selectedTab, setSelectedTab] = useState('nets');
+  const [fleetView, setFleetView] = useState('cards');
   const [quickPage, setQuickPage] = useState(0);
   const [netsPage, setNetsPage] = useState(0);
   const [rosterPage, setRosterPage] = useState(0);
-  const [incidentPage, setIncidentPage] = useState(0);
-  const [threadPage, setThreadPage] = useState(0);
-  const [healthPage, setHealthPage] = useState(0);
-  const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState({});
-  const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [directiveDispatches, setDirectiveDispatches] = useState([]);
+  const [schemaChannelPage, setSchemaChannelPage] = useState(0);
+  const [fleetCardPage, setFleetCardPage] = useState(0);
   const [feedback, setFeedback] = useState('');
-  const [nowMs, setNowMs] = useState(() => Date.now());
   const [showNetCreator, setShowNetCreator] = useState(false);
+  const [schemaExpandedById, setSchemaExpandedById] = useState({
+    'fleet:redscar': true,
+    'wing:CE': true,
+  });
 
   const isCommsFocus = String(focusMode || '').toLowerCase() === 'comms';
   const quickPageSize = isCommsFocus ? 3 : QUICK_NET_PAGE_SIZE;
@@ -174,68 +149,32 @@ export default function VoiceCommsRail({
   const netsPageCount = Math.max(1, Math.ceil(voiceNets.length / PAGE_SIZE));
   const rosterPageCount = Math.max(1, Math.ceil(participants.length / PAGE_SIZE));
 
-  const channelHealth = useMemo(() => buildCommsChannelHealth({ channels }), [channels]);
-  const incidentCandidates = useMemo(
-    () => buildCommsIncidentCandidates({ channelHealth, events, nowMs }),
-    [channelHealth, events, nowMs]
-  );
-  const incidents = useMemo(
-    () => sortCommsIncidents(incidentCandidates, incidentStatusById),
-    [incidentCandidates, incidentStatusById]
-  );
-  const degradedChannelCount = useMemo(
-    () => channelHealth.filter((entry) => entry.discipline !== 'CLEAR').length,
-    [channelHealth]
-  );
-  const unresolvedIncidentCount = useMemo(
-    () => incidents.filter((incident) => incident.status !== 'RESOLVED').length,
-    [incidents]
-  );
-  const criticalIncidentCount = useMemo(
-    () => incidents.filter((incident) => incident.priority === 'CRITICAL' && incident.status !== 'RESOLVED').length,
-    [incidents]
-  );
-  const activeSpeakers = useMemo(
-    () => participants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 4),
-    [participants]
-  );
-  const disciplineAlerts = useMemo(
-    () =>
-      buildCommsDisciplineAlerts({
-        events,
-        incidents,
-        nowMs,
-        activeSpeakers: activeSpeakers.length,
-        degradedChannelCount,
-      }),
-    [events, incidents, nowMs, activeSpeakers.length, degradedChannelCount]
-  );
-  const directiveThreads = useMemo(
-    () => buildCommsDirectiveThreads({ channelHealth, incidents, events, nowMs }),
-    [channelHealth, incidents, events, nowMs]
-  );
-  const deliverySurface = useMemo(
-    () =>
-      reconcileDirectiveDispatches({
-        dispatches: directiveDispatches,
-        events,
-        incidents,
-        nowMs,
-      }),
-    [directiveDispatches, events, incidents, nowMs]
-  );
-  const deliveryStats = useMemo(() => {
-    const total = deliverySurface.length;
-    const queued = deliverySurface.filter((entry) => entry.status === 'QUEUED').length;
-    const persisted = deliverySurface.filter((entry) => entry.status === 'PERSISTED').length;
-    const acked = deliverySurface.filter((entry) => entry.status === 'ACKED').length;
-    const confidencePct = total > 0 ? Math.round((acked / total) * 100) : 100;
-    return { total, queued, persisted, acked, confidencePct };
-  }, [deliverySurface]);
+  const sourceChannels = useMemo(() => {
+    const explicit = (Array.isArray(graphChannels) ? graphChannels : []).map(normalizeChannelRow).filter(Boolean);
+    return explicit.length > 0 ? explicit : channelRowsFromVoiceNets(voiceNets);
+  }, [graphChannels, voiceNets]);
 
-  const incidentPageCount = Math.max(1, Math.ceil(incidents.length / PAGE_SIZE));
-  const threadPageCount = Math.max(1, Math.ceil(directiveThreads.length / PAGE_SIZE));
-  const healthPageCount = Math.max(1, Math.ceil(channelHealth.length / PAGE_SIZE));
+  const sourceEdges = useMemo(() => (Array.isArray(graphEdges) ? graphEdges : []), [graphEdges]);
+
+  const { schemaTree, schemaChannelPageCount } = useMemo(
+    () =>
+      buildSchemaTree({
+        channels: sourceChannels,
+        edges: sourceEdges,
+        roster,
+        voiceParticipants: participants,
+        schemaChannelPage,
+      }),
+    [sourceChannels, sourceEdges, roster, participants, schemaChannelPage]
+  );
+
+  const fleetCardsState = useMemo(
+    () => buildCompactChannelCards({ schemaTree, page: fleetCardPage }),
+    [schemaTree, fleetCardPage]
+  );
+
+  const fleetCards = fleetCardsState.cards;
+  const fleetCardPageCount = fleetCardsState.pageCount;
 
   useEffect(() => {
     setQuickPage((current) => Math.min(current, quickPageCount - 1));
@@ -250,60 +189,18 @@ export default function VoiceCommsRail({
   }, [rosterPageCount]);
 
   useEffect(() => {
-    setIncidentPage((current) => Math.min(current, incidentPageCount - 1));
-  }, [incidentPageCount]);
+    setSchemaChannelPage((current) => Math.min(current, schemaChannelPageCount - 1));
+  }, [schemaChannelPageCount]);
 
   useEffect(() => {
-    setThreadPage((current) => Math.min(current, threadPageCount - 1));
-  }, [threadPageCount]);
-
-  useEffect(() => {
-    setHealthPage((current) => Math.min(current, healthPageCount - 1));
-  }, [healthPageCount]);
-
-  useEffect(() => {
-    if (!incidents.length) {
-      setSelectedIncidentId('');
-      return;
-    }
-    const exists = incidents.some((incident) => incident.id === selectedIncidentId);
-    if (exists) return;
-    const firstUnresolved = incidents.find((incident) => incident.status !== 'RESOLVED');
-    setSelectedIncidentId(firstUnresolved?.id || incidents[0].id);
-  }, [incidents, selectedIncidentId]);
-
-  useEffect(() => {
-    if (!directiveThreads.length) {
-      setSelectedThreadId('');
-      return;
-    }
-    const exists = directiveThreads.some((lane) => lane.id === selectedThreadId);
-    if (exists) return;
-    setSelectedThreadId(directiveThreads[0].id);
-  }, [directiveThreads, selectedThreadId]);
-
-  useEffect(() => {
-    setIncidentStatusById((prev) => normalizeIncidentStatusById(incidentCandidates, prev));
-  }, [incidentCandidates]);
+    setFleetCardPage((current) => Math.min(current, fleetCardPageCount - 1));
+  }, [fleetCardPageCount]);
 
   useEffect(() => {
     if (!feedback) return undefined;
     const timerId = window.setTimeout(() => setFeedback(''), 4200);
     return () => window.clearTimeout(timerId);
   }, [feedback]);
-
-  useEffect(() => {
-    const timerId = window.setInterval(() => setNowMs(Date.now()), 15000);
-    return () => window.clearInterval(timerId);
-  }, []);
-
-  useEffect(() => {
-    setDisplayMode((current) => {
-      if (isCommsFocus) return 'standard';
-      if (current === 'standard') return 'command';
-      return current;
-    });
-  }, [isCommsFocus]);
 
   const quickVisibleNets = useMemo(
     () => quickNets.slice(quickPage * quickPageSize, quickPage * quickPageSize + quickPageSize),
@@ -320,129 +217,25 @@ export default function VoiceCommsRail({
     [participants, rosterPage]
   );
 
-  const visibleIncidents = useMemo(
-    () => incidents.slice(incidentPage * PAGE_SIZE, incidentPage * PAGE_SIZE + PAGE_SIZE),
-    [incidents, incidentPage]
-  );
-
-  const visibleThreads = useMemo(
-    () => directiveThreads.slice(threadPage * PAGE_SIZE, threadPage * PAGE_SIZE + PAGE_SIZE),
-    [directiveThreads, threadPage]
-  );
-
-  const visibleHealth = useMemo(
-    () => channelHealth.slice(healthPage * PAGE_SIZE, healthPage * PAGE_SIZE + PAGE_SIZE),
-    [channelHealth, healthPage]
-  );
-
   const speakingParticipants = useMemo(
     () => participants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 3),
     [participants]
   );
 
-  const selectedIncident = incidents.find((incident) => incident.id === selectedIncidentId) || null;
-  const selectedThread = directiveThreads.find((lane) => lane.id === selectedThreadId) || null;
+  const isSchemaExpanded = useCallback((id, fallback = false) => {
+    if (Object.prototype.hasOwnProperty.call(schemaExpandedById, id)) return Boolean(schemaExpandedById[id]);
+    return fallback;
+  }, [schemaExpandedById]);
 
-  const emitMacro = useCallback(
-    (eventType, payload, successMessage) => {
-      if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
-      setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
-    },
-    [onCreateMacroEvent]
-  );
-
-  const emitDirectiveMacro = useCallback(
-    (input) => {
-      const dispatch = createDirectiveDispatchRecord({
-        channelId: input.channelId,
-        laneId: input.laneId,
-        directive: input.directive,
-        eventType: input.eventType,
-        incidentId: input.incidentId,
-        nowMs,
-      });
-      setDirectiveDispatches((prev) => [dispatch, ...prev].slice(0, 18));
-      emitMacro(
-        input.eventType,
-        {
-          channelId: input.channelId,
-          dispatchId: dispatch.dispatchId,
-          directive: input.directive,
-          laneId: input.laneId || dispatch.laneId,
-          incidentId: input.incidentId || null,
-          source: 'voice-comms-rail',
-          actorId,
-          ...(input.payload || {}),
-        },
-        input.successMessage
-      );
-    },
-    [emitMacro, nowMs, actorId, onCreateMacroEvent]
-  );
-
-  const transitionIncident = useCallback(
-    (nextStatus) => {
-      if (!selectedIncident) return;
-      if (!canTransitionIncidentStatus(selectedIncident.status, nextStatus)) return;
-
-      setIncidentStatusById((prev) => ({ ...prev, [selectedIncident.id]: nextStatus }));
-      const scopedChannelId = selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : undefined;
-      emitDirectiveMacro({
-        eventType: INCIDENT_EVENT_BY_STATUS[nextStatus],
-        channelId: scopedChannelId || 'UNSCOPED',
-        incidentId: selectedIncident.id,
-        directive: `INCIDENT_${nextStatus}`,
-        successMessage: `Incident ${nextStatus.toLowerCase()}`,
-        payload: {
-          priority: selectedIncident.priority,
-          incidentStatus: nextStatus,
-        },
-      });
-    },
-    [selectedIncident, emitDirectiveMacro]
-  );
-
-  const dispatchDirective = useCallback(
-    (directive) => {
-      const channelId = channelHealth[0]?.channelId || '';
-      if (!channelId) return;
-
-      if (directive === 'REROUTE') {
-        emitDirectiveMacro({
-          eventType: 'MOVE_OUT',
-          channelId,
-          directive: 'REROUTE_TRAFFIC',
-          successMessage: 'Reroute directive sent',
-        });
-        return;
-      }
-
-      if (directive === 'RESTRICT') {
-        emitDirectiveMacro({
-          eventType: 'HOLD',
-          channelId,
-          directive: 'RESTRICT_NON_ESSENTIAL',
-          successMessage: 'Net restriction directive sent',
-        });
-        return;
-      }
-
-      emitDirectiveMacro({
-        eventType: 'SELF_CHECK',
-        channelId,
-        directive: 'CHECK_IN_REQUEST',
-        successMessage: 'Check-in request broadcast',
-      });
-    },
-    [channelHealth, emitDirectiveMacro]
-  );
-
-  const connectionTone =
-    connectionState === 'CONNECTED'
-      ? 'text-green-400'
-      : connectionState === 'ERROR'
-        ? 'text-red-400'
-        : 'text-zinc-500';
+  const toggleSchemaExpanded = useCallback((id, fallback = false) => {
+    setSchemaExpandedById((prev) => {
+      const current = Object.prototype.hasOwnProperty.call(prev, id) ? Boolean(prev[id]) : fallback;
+      return {
+        ...prev,
+        [id]: !current,
+      };
+    });
+  }, []);
 
   const renderPTTButton = () => (
     <button
@@ -493,18 +286,24 @@ export default function VoiceCommsRail({
           className="h-6 text-[9px] px-2 rounded border border-zinc-700 text-zinc-400 hover:border-orange-500/40 transition-colors flex items-center justify-center gap-1"
           title="Request transmit privilege"
         >
-          <Zap className="w-3 h-3" />
+          <Signal className="w-3 h-3" />
         </button>
       </div>
-      <div className="flex items-center gap-1.5 text-[8px] uppercase tracking-wide">
-        <span className={`px-1.5 py-0.5 rounded border inline-flex items-center gap-1 ${String(transmitNetId || '') ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>
-          <img src={tokenAssets.comms.operatorStatus.tx} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-          {String(transmitNetId || '') ? `TX ${transmitNetId}` : 'TX NONE'}
-        </span>
-        <span className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-500 inline-flex items-center gap-1">
-          <img src={tokenAssets.comms.vehicleStatus.mixed} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-          MON {monitoredSet.size}
-        </span>
+      <div className="grid grid-cols-2 gap-1 mt-1">
+        {DISCIPLINE_MODES.map((mode) => (
+          <button
+            key={mode.id}
+            type="button"
+            onClick={() => onSetDisciplineMode?.(mode.id)}
+            className={`h-6 text-[9px] px-1 rounded border transition-colors ${
+              disciplineMode === mode.id
+                ? 'border-green-500/40 bg-green-500/20 text-green-300'
+                : 'border-zinc-700 bg-zinc-900/60 text-zinc-500 hover:border-zinc-500'
+            }`}
+          >
+            {mode.label}
+          </button>
+        ))}
       </div>
       {speakingParticipants.length > 0 ? (
         <div className="flex items-center gap-1 flex-wrap">
@@ -543,501 +342,400 @@ export default function VoiceCommsRail({
             </div>
             <div className="text-[9px] text-zinc-500 mt-0.5 truncate">{net.label || net.description || 'Voice lane'}</div>
           </div>
-          <div className="flex items-center gap-1">
-            {isTransmit ? <span className="px-1 py-0.5 rounded border border-green-500/40 bg-green-500/20 text-green-300 text-[8px]">TX</span> : null}
-            {isMonitored ? <span className="px-1 py-0.5 rounded border border-blue-500/40 bg-blue-500/20 text-blue-300 text-[8px]">MON</span> : null}
+          <div className="flex items-center gap-1 shrink-0">
+            {isTransmit ? <NexusBadge tone="warning">TX</NexusBadge> : null}
+            {isMonitored ? <NexusBadge tone="active">MON</NexusBadge> : null}
           </div>
         </div>
-        <div className="flex gap-1 mt-1.5">
-          {isMonitored ? (
-            <>
-              <button
-                type="button"
-                onClick={() => onSetTransmitNet?.(id)}
-                className="flex-1 h-5 rounded border border-zinc-700 text-[9px] hover:border-green-500/40"
-              >
-                TX
-              </button>
-              <button
-                type="button"
-                onClick={() => onLeaveNet?.(id)}
-                className="flex-1 h-5 rounded border border-zinc-700 text-[9px] hover:border-red-500/40"
-              >
-                Leave
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => onJoinNet?.(id)}
-                className="flex-1 h-5 rounded border border-zinc-700 text-[9px] hover:border-green-500/40"
-              >
-                Join
-              </button>
-              <button
-                type="button"
-                onClick={() => onMonitorNet?.(id)}
-                className="flex-1 h-5 rounded border border-zinc-700 text-[9px] hover:border-blue-500/40"
-              >
-                Monitor
-              </button>
-            </>
-          )}
+        <div className="mt-1.5 grid grid-cols-4 gap-1">
+          <button
+            type="button"
+            onClick={() => onJoinNet?.(id)}
+            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-green-500/40"
+            title="Join net"
+          >
+            Join
+          </button>
+          <button
+            type="button"
+            onClick={() => onMonitorNet?.(id)}
+            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-green-500/40"
+            title="Monitor net"
+          >
+            Mon
+          </button>
+          <button
+            type="button"
+            onClick={() => onSetTransmitNet?.(id)}
+            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-orange-500/40"
+            title="Set transmit net"
+          >
+            TX
+          </button>
+          <button
+            type="button"
+            onClick={() => onLeaveNet?.(id)}
+            className="h-5 rounded border border-zinc-700 text-[8px] text-zinc-400 hover:border-red-500/40"
+            title="Leave net"
+          >
+            Leave
+          </button>
         </div>
       </div>
     );
   };
 
   return (
-    <div className={`nx-voice-rail flex flex-col h-full bg-zinc-950/80 border-l border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
-      {!isExpanded ? (
-        <div className="flex items-center justify-center py-2 border-b border-zinc-700/40">
-          <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-green-500 transition-colors" title="Expand">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+    <div className="h-full min-h-0 flex flex-col overflow-hidden">
+      <div className="px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/45 flex items-center justify-between gap-2">
+        <div>
+          <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Comms Rail</h3>
+          <div className="text-[9px] text-zinc-500 uppercase tracking-wide">Connection: {connectionState}</div>
         </div>
-      ) : (
+        <div className="flex items-center gap-1">
+          {onToggleExpand ? (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="w-6 h-6 rounded border border-zinc-700 text-zinc-400 hover:border-zinc-500 flex items-center justify-center"
+              title={isExpanded ? 'Collapse rail' : 'Expand rail'}
+            >
+              {isExpanded ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            </button>
+          ) : null}
+          <NexusBadge tone={connectionState === 'CONNECTED' ? 'ok' : connectionState === 'ERROR' ? 'danger' : 'neutral'}>
+            {connectionState === 'CONNECTED' ? 'LINK' : connectionState}
+          </NexusBadge>
+        </div>
+      </div>
+
+      {isExpanded ? (
         <>
-          <div className="px-2 py-1.5 border-b border-zinc-700/40 bg-zinc-900/20 flex-shrink-0 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Radio className="w-3.5 h-3.5 text-green-500" />
-              <h3 className="text-[10px] font-bold text-zinc-100 uppercase tracking-wider truncate">Voice Command</h3>
-              <span className={`text-[8px] font-mono uppercase ${connectionTone}`}>{connectionState}</span>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setDisplayMode((prev) => prev === 'standard' ? 'command' : 'standard')}
-                className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border border-zinc-700 text-zinc-400 hover:text-zinc-300"
-                title={`Switch to ${displayMode === 'standard' ? 'command' : 'standard'} mode`}
-              >
-                {displayMode === 'standard' ? 'Std' : 'Cmd'}
-              </button>
-              <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-green-500 transition-colors" title="Collapse">
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="px-2 py-1 border-b border-zinc-700/30 bg-zinc-900/30">
+            {renderGlobalControlCluster()}
           </div>
 
-          <div className="px-2 py-2 flex-1 min-h-0 overflow-y-auto space-y-2">
-            {renderGlobalControlCluster()}
+          <div className="px-2 py-1 flex items-center gap-1 border-b border-zinc-700/30 bg-zinc-900/20">
+            <button
+              type="button"
+              onClick={() => setSelectedTab('nets')}
+              className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border ${
+                selectedTab === 'nets' ? 'text-green-400 bg-zinc-800 border-green-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700'
+              }`}
+            >
+              Nets
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedTab('fleet')}
+              className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border ${
+                selectedTab === 'fleet' ? 'text-green-400 bg-zinc-800 border-green-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700'
+              }`}
+            >
+              Fleet
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedTab('roster')}
+              className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border ${
+                selectedTab === 'roster' ? 'text-green-400 bg-zinc-800 border-green-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700'
+              }`}
+            >
+              Roster
+            </button>
+          </div>
 
-          {displayMode === 'standard' ? (
-            <>
-              {activeNet ? (
-                <div className="px-2 py-2 rounded border border-green-500/30 bg-green-500/10">
-                  <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
-                  <div className="text-[11px] font-bold text-green-300 mt-1 truncate">{activeNet.code || activeNet.id || activeNet.name}</div>
-                  <div className="text-[9px] text-zinc-400 mt-0.5 truncate">{activeNet.label || 'Voice lane active'}</div>
-                  <div className="mt-1 flex items-center gap-1.5 text-[9px] uppercase tracking-wider">
-                    <span className={`px-1.5 py-0.5 rounded border ${String(transmitNetId || '') === netIdentity(activeNet) ? 'border-green-500/40 text-green-300 bg-green-500/20' : 'border-zinc-700 text-zinc-500'}`}>TX</span>
-                    <span className={`px-1.5 py-0.5 rounded border ${isMonitoredNet(netIdentity(activeNet)) ? 'border-blue-500/40 text-blue-300 bg-blue-500/20' : 'border-zinc-700 text-zinc-500'}`}>MON</span>
-                    <span className="text-zinc-500">{participants.length} online</span>
-                  </div>
+          <div className="flex-1 min-h-0 px-2 py-1.5 space-y-1.5 overflow-hidden">
+            {selectedTab === 'nets' ? (
+              <>
+                <div className="space-y-1">
+                  <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-1">Quick Nets</div>
+                  {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) : (
+                    <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets available.</div>
+                  )}
                 </div>
-              ) : null}
 
-              <div className="space-y-1.5">
-                <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2">Voice Lanes</div>
-                {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) : (
-                  <div className="text-[9px] text-zinc-600 text-center py-4">No voice nets available</div>
-                )}
-              </div>
+                {quickPageCount > 1 ? (
+                  <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                    <button
+                      type="button"
+                      onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
+                      disabled={quickPage === 0}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                    >
+                      Prev
+                    </button>
+                    <span>{quickPage + 1}/{quickPageCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
+                      disabled={quickPage >= quickPageCount - 1}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                    >
+                      Next
+                    </button>
+                  </div>
+                ) : null}
 
-              {quickPageCount > 1 ? (
+                <div className="space-y-1">
+                  <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-1 flex items-center justify-between">
+                    <span>All Nets</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowNetCreator(true)}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-400 hover:border-green-500/60 hover:text-green-400 transition-colors flex items-center gap-1"
+                      title="Create new voice net"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                  {pagedNets.length > 0 ? pagedNets.map(renderQuickNetCard) : (
+                    <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets available.</div>
+                  )}
+                </div>
+
+                {netsPageCount > 1 ? (
+                  <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                    <button
+                      type="button"
+                      onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
+                      disabled={netsPage === 0}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                    >
+                      Prev
+                    </button>
+                    <span>{netsPage + 1}/{netsPageCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
+                      disabled={netsPage >= netsPageCount - 1}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                    >
+                      Next
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            {selectedTab === 'fleet' ? (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <NexusButton size="sm" intent={fleetView === 'cards' ? 'primary' : 'subtle'} onClick={() => setFleetView('cards')}>
+                      Cards
+                    </NexusButton>
+                    <NexusButton size="sm" intent={fleetView === 'schema' ? 'primary' : 'subtle'} onClick={() => setFleetView('schema')}>
+                      Schema
+                    </NexusButton>
+                  </div>
+                  <div className="text-[9px] text-zinc-500">Lane Pg {schemaChannelPage + 1}/{schemaChannelPageCount}</div>
+                </div>
+
                 <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
                   <button
                     type="button"
-                    onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
-                    disabled={quickPage === 0}
+                    onClick={() => setSchemaChannelPage((prev) => Math.max(0, prev - 1))}
+                    disabled={schemaChannelPage === 0}
                     className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
                   >
-                    Prev
+                    Lane Prev
                   </button>
-                  <span>{quickPage + 1}/{quickPageCount}</span>
                   <button
                     type="button"
-                    onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
-                    disabled={quickPage >= quickPageCount - 1}
+                    onClick={() => setSchemaChannelPage((prev) => Math.min(schemaChannelPageCount - 1, prev + 1))}
+                    disabled={schemaChannelPage >= schemaChannelPageCount - 1}
                     className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
                   >
-                    Next
+                    Lane Next
                   </button>
                 </div>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <div className="flex border border-zinc-700/40 bg-zinc-900/40 rounded">
-                <button
-                  type="button"
-                  onClick={() => setSelectedTab('nets')}
-                  className={`flex-1 px-2 py-1 text-[9px] font-bold uppercase tracking-wider transition-colors ${
-                    selectedTab === 'nets' ? 'text-green-400 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <Radio className="w-3 h-3 inline mr-1" />
-                  Nets
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTab('health')}
-                  className={`flex-1 px-2 py-1 text-[9px] font-bold uppercase tracking-wider transition-colors ${
-                    selectedTab === 'health' ? 'text-green-400 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <Activity className="w-3 h-3 inline mr-1" />
-                  Health
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTab('incidents')}
-                  className={`flex-1 px-2 py-1 text-[9px] font-bold uppercase tracking-wider transition-colors ${
-                    selectedTab === 'incidents' ? 'text-green-400 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <AlertTriangle className="w-3 h-3 inline mr-1" />
-                  Queue
-                </button>
-              </div>
 
-              {selectedTab === 'nets' ? (
-                <>
-                  {activeNet ? (
-                    <div className="px-2 py-2 rounded border border-green-500/30 bg-green-500/10">
-                      <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider">Active Net</div>
-                      <div className="text-[11px] font-bold text-green-300 mt-1">{activeNet.code || activeNet.id || activeNet.name}</div>
-                      <div className="text-[9px] text-zinc-400 mt-0.5">{activeNet.label || 'Voice lane active'}</div>
-                      <div className="flex gap-1 mt-2">
-                        <button
-                          type="button"
-                          onClick={() => onSetMicEnabled?.(!micEnabled)}
-                          className={`flex-1 h-6 text-[9px] px-2 rounded transition-colors flex items-center justify-center gap-1 ${
-                            micEnabled ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' : 'bg-zinc-800/40 hover:bg-zinc-700/40 text-zinc-400'
-                          }`}
-                        >
-                          {micEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
-                        </button>
-                        {renderPTTButton()}
-                      </div>
-                      <div className="grid grid-cols-2 gap-1 mt-2">
-                        {DISCIPLINE_MODES.map((mode) => (
-                          <button
-                            key={mode.id}
-                            type="button"
-                            onClick={() => onSetDisciplineMode?.(mode.id)}
-                            className={`h-6 text-[9px] px-1 rounded border transition-colors ${
-                              disciplineMode === mode.id
-                                ? 'border-green-500/40 bg-green-500/20 text-green-300'
-                                : 'border-zinc-700 bg-zinc-900/60 text-zinc-500 hover:border-zinc-500'
-                            }`}
-                          >
-                            {mode.label}
-                          </button>
-                        ))}
-                      </div>
+                {fleetView === 'cards' ? (
+                  <>
+                    <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                      <button
+                        type="button"
+                        onClick={() => setFleetCardPage((prev) => Math.max(0, prev - 1))}
+                        disabled={fleetCardPage === 0}
+                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                      >
+                        Card Prev
+                      </button>
+                      <span>{fleetCardPage + 1}/{fleetCardPageCount}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFleetCardPage((prev) => Math.min(fleetCardPageCount - 1, prev + 1))}
+                        disabled={fleetCardPage >= fleetCardPageCount - 1}
+                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                      >
+                        Card Next
+                      </button>
                     </div>
-                  ) : null}
 
-                  {voiceNets.length > 0 ? (
-                   <div className="space-y-1">
-                     <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2 flex items-center justify-between">
-                       <span>Available Nets</span>
-                       <button
-                         type="button"
-                         onClick={() => setShowNetCreator(true)}
-                         className="px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-400 hover:border-green-500/60 hover:text-green-400 transition-colors flex items-center gap-1"
-                         title="Create new voice net"
-                       >
-                         <Plus className="w-2.5 h-2.5" />
-                       </button>
-                     </div>
-                     {pagedNets.map(renderQuickNetCard)}
+                    <div className="space-y-1">
+                      {fleetCards.map((card) => (
+                        <article key={card.id} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="text-[10px] text-zinc-100 uppercase tracking-wide truncate inline-flex items-center gap-1">
+                                <img src={tokenAssets.comms.vehicle} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                {card.vehicleLabel}
+                              </div>
+                              <div className="text-[8px] text-zinc-500 uppercase tracking-wide truncate">{card.wingLabel} · {card.squadLabel}</div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <img src={vehicleStatusTokenIcon(card.vehicleStatus)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                              <NexusBadge tone={vehicleStatusTone(card.vehicleStatus)}>{card.vehicleStatus}</NexusBadge>
+                            </div>
+                          </div>
+                          <div className="mt-1 text-[9px] text-zinc-300 truncate inline-flex items-center gap-1">
+                            <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            {card.channelLabel}
+                          </div>
+                          <div className="mt-1 grid grid-cols-1 gap-0.5">
+                            {card.operators.length > 0 ? (
+                              card.operators.map((operator) => (
+                                <div key={operator.id} className="rounded border border-zinc-700/40 bg-zinc-950/55 px-1.5 py-0.5 flex items-center justify-between gap-1">
+                                  <span className="text-[9px] text-zinc-200 truncate inline-flex items-center gap-1 min-w-0">
+                                    <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                    {operator.callsign}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 shrink-0">
+                                    <img src={operatorStatusTokenIcon(operator.status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                    <NexusBadge tone={operatorStatusTone(operator.status)}>{operator.status}</NexusBadge>
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="rounded border border-zinc-700/40 bg-zinc-950/55 px-1.5 py-0.5 text-[9px] text-zinc-500">No operators assigned.</div>
+                            )}
+                          </div>
+                        </article>
+                      ))}
 
-                      {netsPageCount > 1 ? (
-                        <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
-                          <button
-                            type="button"
-                            onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
-                            disabled={netsPage === 0}
-                            className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
-                          >
-                            Prev
-                          </button>
-                          <span>{netsPage + 1}/{netsPageCount}</span>
-                          <button
-                            type="button"
-                            onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
-                            disabled={netsPage >= netsPageCount - 1}
-                            className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
-                          >
-                            Next
-                          </button>
+                      {fleetCards.length === 0 ? (
+                        <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">
+                          No fleet cards available for this lane page (cap {COMPACT_CHANNEL_CARD_PAGE_SIZE}).
                         </div>
                       ) : null}
                     </div>
-                  ) : (
-                    <div className="text-[9px] text-zinc-600 text-center py-4">No voice nets available</div>
-                  )}
-                </>
-              ) : selectedTab === 'health' ? (
-                <>
+                  </>
+                ) : (
                   <div className="space-y-1">
-                    <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2">
-                      Channel Health ({degradedChannelCount} degraded)
-                    </div>
-                    {visibleHealth.map((entry) => (
-                      <div key={entry.channelId} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[10px]">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-zinc-200 truncate">{entry.label}</span>
-                          <NexusBadge tone={entry.discipline === 'SATURATED' ? 'danger' : entry.discipline === 'BUSY' ? 'warning' : 'ok'}>
-                            {entry.discipline}
-                          </NexusBadge>
-                        </div>
-                        <div className="mt-1 text-[9px] text-zinc-500">Q {entry.qualityPct}% · {entry.latencyMs}ms</div>
-                      </div>
-                    ))}
-                    {visibleHealth.length === 0 ? (
-                      <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">
-                        No channel health data available.
-                      </div>
-                    ) : null}
-                  </div>
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-1 text-left rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1"
+                      onClick={() => toggleSchemaExpanded('fleet:redscar', true)}
+                    >
+                      {isSchemaExpanded('fleet:redscar', true) ? <ChevronDown className="w-3 h-3 text-zinc-400" /> : <ChevronRight className="w-3 h-3 text-zinc-400" />}
+                      <img src={tokenAssets.map.node.comms} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                      <span className="text-[10px] text-zinc-200 uppercase tracking-wide">REDSCAR Fleet</span>
+                      <NexusBadge tone="neutral" className="ml-auto">Wing {schemaTree.filter((wing) => wing.squads.length > 0).length}</NexusBadge>
+                    </button>
 
-                  {healthPageCount > 1 ? (
-                    <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
-                      <button
-                        type="button"
-                        onClick={() => setHealthPage((prev) => Math.max(0, prev - 1))}
-                        disabled={healthPage === 0}
-                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
-                      >
-                        Prev
-                      </button>
-                      <span>{healthPage + 1}/{healthPageCount}</span>
-                      <button
-                        type="button"
-                        onClick={() => setHealthPage((prev) => Math.min(healthPageCount - 1, prev + 1))}
-                        disabled={healthPage >= healthPageCount - 1}
-                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  ) : null}
+                    {isSchemaExpanded('fleet:redscar', true)
+                      ? schemaTree.map((wing) => {
+                          if (!wing.squads.length) return null;
+                          const wingKey = `wing:${wing.id}`;
+                          return (
+                            <div key={wing.id} className="pl-2 space-y-1">
+                              <button
+                                type="button"
+                                className="w-full flex items-center gap-1 text-left rounded border border-zinc-700/40 bg-zinc-900/35 px-2 py-1"
+                                onClick={() => toggleSchemaExpanded(wingKey, wing.id === 'CE')}
+                              >
+                                {isSchemaExpanded(wingKey, wing.id === 'CE') ? <ChevronDown className="w-3 h-3 text-zinc-400" /> : <ChevronRight className="w-3 h-3 text-zinc-400" />}
+                                <img src={wingTokenIcon(wing.id)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
+                                <span className="text-[10px] text-zinc-200 uppercase tracking-wide">{wing.label}</span>
+                                <NexusBadge tone="neutral" className="ml-auto">Squad {wing.squads.length}</NexusBadge>
+                              </button>
 
-                  {disciplineAlerts.length > 0 ? (
-                    <div className="space-y-1">
-                      <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2">Discipline Alerts</div>
-                      {disciplineAlerts.slice(0, 3).map((alert) => (
-                        <div key={alert.id} className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="text-[9px] text-zinc-200 uppercase tracking-wide truncate">{alert.title}</div>
-                            <NexusBadge tone={alert.severity === 'critical' ? 'danger' : alert.severity === 'warning' ? 'warning' : 'neutral'}>
-                              {alert.severity}
-                            </NexusBadge>
-                          </div>
-                          <div className="mt-0.5 text-[9px] text-zinc-500">{alert.detail}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <div className="space-y-1">
-                    <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2 flex items-center justify-between">
-                      <span>Priority Queue ({unresolvedIncidentCount})</span>
-                      {criticalIncidentCount > 0 ? <NexusBadge tone="danger">{criticalIncidentCount} CRIT</NexusBadge> : null}
-                    </div>
-                    {visibleIncidents.map((incident) => {
-                      const active = incident.id === selectedIncidentId;
-                      return (
-                        <button
-                          key={incident.id}
-                          type="button"
-                          className={`w-full text-left rounded border px-2 py-1.5 transition-colors ${
-                            active ? 'border-orange-500/60 bg-orange-500/10' : 'border-zinc-700/40 bg-zinc-900/40 hover:border-zinc-600'
-                          }`}
-                          onClick={() => setSelectedIncidentId(incident.id)}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] text-zinc-200 truncate">{incident.title}</span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <NexusBadge tone={incidentPriorityTone(incident.priority)}>{incident.priority.slice(0, 3)}</NexusBadge>
-                              <NexusBadge tone={incidentStatusTone(incident.status)}>{incident.status}</NexusBadge>
+                              {isSchemaExpanded(wingKey, wing.id === 'CE')
+                                ? wing.squads.slice(0, 3).map((squad) => (
+                                    <div key={squad.id} className="pl-2">
+                                      <div className="rounded border border-zinc-700/30 bg-zinc-900/25 px-2 py-1 text-[9px] text-zinc-300 uppercase tracking-wide inline-flex items-center gap-1 w-full">
+                                        <img src={squadTokenIcon(squad.label)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                        <span className="truncate">{squad.label}</span>
+                                      </div>
+                                      <div className="pl-3 pt-0.5 space-y-0.5">
+                                        {squad.channels.slice(0, 3).map((channel) => (
+                                          <div key={channel.id} className="rounded border border-zinc-700/30 bg-zinc-900/20 px-1.5 py-0.5 text-[9px] text-zinc-400 inline-flex items-center gap-1 w-full">
+                                            <img src={tokenAssets.comms.channel} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                                            <span className="truncate">{channel.label}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))
+                                : null}
                             </div>
-                          </div>
-                          <div className="mt-1 text-[9px] text-zinc-500 truncate">{incident.detail}</div>
-                        </button>
-                      );
-                    })}
-                    {visibleIncidents.length === 0 ? (
-                      <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">
-                        No priority incidents in scope.
-                      </div>
-                    ) : null}
+                          );
+                        })
+                      : null}
                   </div>
+                )}
 
-                  {incidentPageCount > 1 ? (
-                    <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
-                      <button
-                        type="button"
-                        onClick={() => setIncidentPage((prev) => Math.max(0, prev - 1))}
-                        disabled={incidentPage === 0}
-                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                      >
-                        Prev
-                      </button>
-                      <span>{incidentPage + 1}/{incidentPageCount}</span>
-                      <button
-                        type="button"
-                        onClick={() => setIncidentPage((prev) => Math.min(incidentPageCount - 1, prev + 1))}
-                        disabled={incidentPage >= incidentPageCount - 1}
-                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/60"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  ) : null}
+                <div className="text-[9px] text-zinc-500">Fleet lane cap {SCHEMA_CHANNEL_PAGE_SIZE} · card cap {COMPACT_CHANNEL_CARD_PAGE_SIZE}</div>
+              </>
+            ) : null}
 
-                  {selectedIncident ? (
-                    <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-[10px] text-zinc-200 truncate">{selectedIncident.title}</div>
-                        <span className="text-[9px] text-zinc-500">{formatAge(nowMs, selectedIncident.createdAtMs)} ago</span>
-                      </div>
-                      <div className="mt-1 text-[9px] text-zinc-500">{selectedIncident.detail}</div>
-                      <div className="mt-2 flex gap-1">
-                        <NexusButton
-                          size="sm"
-                          intent={canTransitionIncidentStatus(selectedIncident.status, 'ACKED') ? 'primary' : 'subtle'}
-                          onClick={() => transitionIncident('ACKED')}
-                          disabled={!canTransitionIncidentStatus(selectedIncident.status, 'ACKED')}
-                          className="flex-1 text-[9px] h-6"
-                        >
-                          Ack
-                        </NexusButton>
-                        <NexusButton
-                          size="sm"
-                          intent={canTransitionIncidentStatus(selectedIncident.status, 'ASSIGNED') ? 'primary' : 'subtle'}
-                          onClick={() => transitionIncident('ASSIGNED')}
-                          disabled={!canTransitionIncidentStatus(selectedIncident.status, 'ASSIGNED')}
-                          className="flex-1 text-[9px] h-6"
-                        >
-                          Assign
-                        </NexusButton>
-                        <NexusButton
-                          size="sm"
-                          intent={canTransitionIncidentStatus(selectedIncident.status, 'RESOLVED') ? 'primary' : 'subtle'}
-                          onClick={() => transitionIncident('RESOLVED')}
-                          disabled={!canTransitionIncidentStatus(selectedIncident.status, 'RESOLVED')}
-                          className="flex-1 text-[9px] h-6"
-                        >
-                          Resolve
-                        </NexusButton>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-2">
-                    <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Comms Directives</div>
-                    <div className="flex flex-col gap-1">
-                      <NexusButton size="sm" intent="subtle" onClick={() => dispatchDirective('REROUTE')} className="text-[9px] h-6">
-                        Reroute Net
-                      </NexusButton>
-                      <NexusButton size="sm" intent="subtle" onClick={() => dispatchDirective('RESTRICT')} className="text-[9px] h-6">
-                        Restrict Net
-                      </NexusButton>
-                      <NexusButton size="sm" intent="subtle" onClick={() => dispatchDirective('CHECKIN')} className="text-[9px] h-6">
-                        Broadcast Check-In
-                      </NexusButton>
-                    </div>
-                  </div>
-
-                  {deliverySurface.length > 0 ? (
-                    <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-2">
-                      <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Recent Dispatches</div>
-                      <div className="space-y-1">
-                        {deliverySurface.slice(0, 3).map((dispatch) => (
-                          <div key={dispatch.dispatchId} className="text-[9px] flex items-center justify-between gap-1">
-                            <span className="text-zinc-300 truncate">{dispatch.directive}</span>
-                            <NexusBadge tone={deliveryTone(dispatch.status)}>{dispatch.status}</NexusBadge>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-1.5 flex items-center gap-1 text-[8px]">
-                        <NexusBadge tone={deliveryStats.confidencePct >= 70 ? 'ok' : 'warning'}>
-                          Confidence {deliveryStats.confidencePct}%
-                        </NexusBadge>
-                      </div>
-                    </div>
-                  ) : null}
-                </>
-              )}
-
-              {selectedTab === 'roster' && participants.length > 0 ? (
-                <>
-                  <div className="space-y-1">
-                    <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider px-2">Participants ({participants.length})</div>
-                    {pagedParticipants.map((participant) => (
-                      <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-700/40 hover:border-green-500/30 transition-colors">
-                        <div className="flex items-center justify-between">
+            {selectedTab === 'roster' ? (
+              <>
+                <div className="space-y-1">
+                  {pagedParticipants.map((participant) => {
+                    const status = participantStatusLabel(participant);
+                    return (
+                      <div key={participant.id || participant.userId || participant.clientId || participant.callsign} className="px-2 py-1.5 rounded bg-zinc-900/40 border border-zinc-700/40">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="text-[10px] font-semibold text-zinc-300 truncate inline-flex items-center gap-1">
                             <img src={tokenAssets.comms.role.default} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                            {participant.callsign || participant.name}
+                            {participant.callsign || participant.name || participant.id}
                           </span>
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              const status = participantStatusLabel(participant);
-                              return (
-                                <>
-                                  <span className="text-[8px] text-zinc-500 uppercase inline-flex items-center gap-1">
-                                    <img src={participantStatusIcon(status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
-                                    {status}
-                                  </span>
-                                  <div className={`w-2 h-2 rounded-full ${status === 'TX' ? 'bg-orange-500' : status === 'MUTED' ? 'bg-zinc-500' : status === 'OFF-NET' ? 'bg-red-500' : 'bg-green-500'}`} />
-                                </>
-                              );
-                            })()}
-                          </div>
+                          <span className="inline-flex items-center gap-1">
+                            <img src={operatorStatusTokenIcon(status)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                            <NexusBadge tone={operatorStatusTone(status)}>{status}</NexusBadge>
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
 
-                  {rosterPageCount > 1 ? (
-                    <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
-                      <button
-                        type="button"
-                        onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
-                        disabled={rosterPage === 0}
-                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
-                      >
-                        Prev
-                      </button>
-                      <span>{rosterPage + 1}/{rosterPageCount}</span>
-                      <button
-                        type="button"
-                        onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
-                        disabled={rosterPage >= rosterPageCount - 1}
-                        className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
-                      >
-                        Next
-                      </button>
-                    </div>
+                  {pagedParticipants.length === 0 ? (
+                    <div className="rounded border border-zinc-700/40 bg-zinc-900/40 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div>
                   ) : null}
-                </>
-              ) : null}
-            </>
-          )}
+                </div>
 
-          {feedback ? (
-            <div className="px-2 py-1.5 rounded border border-orange-500/40 bg-orange-500/10 text-[9px] text-orange-300">
-              {feedback}
-            </div>
-          ) : null}
+                {rosterPageCount > 1 ? (
+                  <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                    <button
+                      type="button"
+                      onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
+                      disabled={rosterPage === 0}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                    >
+                      Prev
+                    </button>
+                    <span>{rosterPage + 1}/{rosterPageCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
+                      disabled={rosterPage >= rosterPageCount - 1}
+                      className="px-1.5 py-0.5 rounded border border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-green-500/60"
+                    >
+                      Next
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            {feedback ? (
+              <div className="px-2 py-1.5 rounded border border-orange-500/40 bg-orange-500/10 text-[9px] text-orange-300 inline-flex items-center gap-1">
+                <Radio className="w-3 h-3" />
+                {feedback}
+              </div>
+            ) : null}
           </div>
 
           {showNetCreator && (
@@ -1054,7 +752,7 @@ export default function VoiceCommsRail({
             </div>
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

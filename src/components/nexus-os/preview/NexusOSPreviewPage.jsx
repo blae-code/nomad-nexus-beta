@@ -33,6 +33,7 @@ import { useVoiceNet } from '@/components/voice/VoiceNetProvider';
 import useNexusSidePanelRuntime from './useNexusSidePanelRuntime';
 import { getActiveChannelId } from '../services/channelContextService';
 import { listStoredCqbEvents, storeCqbEvent, subscribeCqbEvents } from '../services/cqbEventService';
+import { buildCommsGraphSnapshot } from '../services/commsGraphService';
 import { computeControlZones } from '../services/controlZoneService';
 import { getFocusOperationId, listOperationsForUser, subscribeOperations } from '../services/operationService';
 import { runNexusRegistryValidatorsDevOnly } from '../validators';
@@ -174,6 +175,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
+  const [rightRailGraph, setRightRailGraph] = useState(null);
 
   const lifecycle = useNexusAppLifecycle(FOCUS_APP_CATALOG.map((entry) => entry.id));
   const reducedMotion = useReducedMotion();
@@ -343,6 +345,29 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       role: id === workspaceActorId ? 'Operator' : 'Roster TBD'
     }));
   }, [isWorkspaceMode, events, workspaceActorId, workspaceDisplayCallsign]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadRightRailGraph = async () => {
+      try {
+        const snapshot = await buildCommsGraphSnapshot({
+          variantId,
+          opId: resolvedOpId,
+          includeUserNodes: true,
+          roster: activeRoster,
+        });
+        if (cancelled) return;
+        setRightRailGraph(snapshot);
+      } catch (_error) {
+        if (cancelled) return;
+        setRightRailGraph(null);
+      }
+    };
+    loadRightRailGraph();
+    return () => {
+      cancelled = true;
+    };
+  }, [variantId, resolvedOpId, activeRoster, events.length]);
 
   const locationEstimates = useMemo(
     () => isWorkspaceMode ? [] : buildDevLocationEstimates({ events, roster: activeRoster, opId: resolvedOpId }),
@@ -908,11 +933,17 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           onMinimize={() => setRightPanelWidth(280)}>
 
           <VoiceCommsRail
+            variantId={variantId}
+            opId={resolvedOpId}
             voiceNets={effectiveVoiceNets}
             activeNetId={activeVoiceNetId}
             transmitNetId={voiceNet.transmitNetId || activeVoiceNetId}
             monitoredNetIds={voiceNet.monitoredNetIds || []}
             participants={effectiveVoiceParticipants}
+            roster={activeRoster}
+            events={events}
+            graphChannels={rightRailGraph?.channels || []}
+            graphEdges={rightRailGraph?.edges || []}
             connectionState={voiceNet.connectionState || 'IDLE'}
             micEnabled={voiceNet.micEnabled !== false}
             pttActive={Boolean(voiceNet.pttActive)}
