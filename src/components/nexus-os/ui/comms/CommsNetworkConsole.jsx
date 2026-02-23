@@ -26,24 +26,31 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
   canTransitionIncidentStatus,
   normalizeIncidentStatusById,
   sortCommsIncidents,
+  type CommsIncidentStatus,
 } from '../../services/commsIncidentService';
 import {
   buildCommsDirectiveThreads,
   buildCommsDisciplineAlerts,
   createDirectiveDispatchRecord,
   reconcileDirectiveDispatches,
+  type DirectiveDeliveryState,
+  type DisciplineAlert,
+  type DirectiveDispatchRecord,
 } from '../../services/commsFocusDirectiveService';
 import { DEFAULT_ACQUISITION_MODE, buildCaptureMetadata, toCaptureMetadataRecord } from '../../services/dataAcquisitionPolicyService';
+import type { CqbEventType } from '../../schemas/coreSchemas';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import { AnimatedMount, motionTokens, useReducedMotion } from '../motion';
 import { PanelLoadingState } from '../loading';
-import RadialMenu from '../map/RadialMenu';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import RadialMenu, { type RadialMenuItem } from '../map/RadialMenu';
 import { getTokenAssetUrl, tokenAssets, tokenCatalog } from '../tokens';
 import {
   channelStatusTokenIcon,
@@ -59,6 +66,15 @@ import {
   squadTokenIcon,
 } from './commsTokenSemantics';
 
+interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
+interface TopologyBridgeEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  status: 'active' | 'degraded';
+  createdAtMs: number;
+}
+
 const LIST_PAGE_SIZE = 5;
 const VOICE_LIST_PAGE_SIZE = 4;
 const ORDER_LIST_PAGE_SIZE = 5;
@@ -66,25 +82,25 @@ const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
 const NET_CONTROL_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS = {
+const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node) {
+function nodeFill(node: CommsGraphNode) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node) {
+function nodeBorder(node: CommsGraphNode) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function formatAge(nowMs, createdAtMs) {
+function formatAge(nowMs: number, createdAtMs: number) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -92,46 +108,46 @@ function formatAge(nowMs, createdAtMs) {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant): boolean {
+function isParticipantSpeaking(participant: any) {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity) {
+function disciplineAlertTone(severity: DisciplineAlert['severity']) {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status) {
+function deliveryTone(status: DirectiveDeliveryState) {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function clampPct(value) {
+function clampPct(value: number) {
   return Math.max(3, Math.min(97, value));
 }
 
-function extractChannelId(node) {
+function extractChannelId(node: CommsGraphNode | null | undefined) {
   if (!node) return '';
-  const explicit = String(node.meta?.channelId || '').trim();
+  const explicit = String((node.meta as any)?.channelId || '').trim();
   if (explicit) return explicit;
   if (node.id.startsWith('channel:')) return node.id.replace('channel:', '');
   return '';
 }
 
-function toToken(value): string {
+function toToken(value: unknown) {
   return String(value || '').trim().toLowerCase();
 }
 
-function isMutedParticipant(participant): boolean {
+function isMutedParticipant(participant: any) {
   if (participant?.muted === true) return true;
   return String(participant?.state || '').toUpperCase().includes('MUTE');
 }
 
-function resolveVehicleBucket(member, channelId) {
+function resolveVehicleBucket(member: { role: string; element: string; callsign: string }, channelId: string) {
   const roleToken = toToken(member.role);
   if (member.element === 'ACE' || roleToken.includes('pilot') || roleToken.includes('gunship')) {
     return {
@@ -157,7 +173,7 @@ function resolveVehicleBucket(member, channelId) {
   };
 }
 
-function operatorStatusPriority(status) {
+function operatorStatusPriority(status: string) {
   if (status === 'TX') return 0;
   if (status === 'ON-NET') return 1;
   if (status === 'MUTED') return 2;
@@ -171,49 +187,55 @@ export default function CommsNetworkConsole({
   events = [],
   actorId = '',
   onCreateMacroEvent,
-}) {
+}: CommsNetworkConsoleProps) {
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
-  const voiceNet = useVoiceNet();
-  const [snapshot, setSnapshot] = useState(null);
+  const voiceNet = useVoiceNet() as any;
+  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showMonitoring, setShowMonitoring] = useState(true);
   const [showUsers, setShowUsers] = useState(true);
   const [healthPage, setHealthPage] = useState(0);
   const [selectedIncidentId, setSelectedIncidentId] = useState('');
-  const [incidentStatusById, setIncidentStatusById] = useState({});
+  const [incidentStatusById, setIncidentStatusById] = useState<Record<string, CommsIncidentStatus>>({});
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [voicePage, setVoicePage] = useState(0);
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [crewCardPage, setCrewCardPage] = useState(0);
   const [selectedThreadId, setSelectedThreadId] = useState('');
-  const [rightPanelView, setRightPanelView] = useState('cards');
+  const [rightPanelView, setRightPanelView] = useState<'cards' | 'schema'>('cards');
   const [showTokenAtlas, setShowTokenAtlas] = useState(false);
-  const [managedNets, setManagedNets] = useState([]);
-  const [plannedManagedNets, setPlannedManagedNets] = useState([]);
-  const [managedVoicePolicy, setManagedVoicePolicy] = useState({});
+  const [managedNets, setManagedNets] = useState<any[]>([]);
+  const [plannedManagedNets, setPlannedManagedNets] = useState<any[]>([]);
+  const [managedVoicePolicy, setManagedVoicePolicy] = useState<Record<string, any>>({});
   const [netControlLoading, setNetControlLoading] = useState(false);
   const [netControlError, setNetControlError] = useState('');
   const [plannedNetPage, setPlannedNetPage] = useState(0);
   const [permanentNetPage, setPermanentNetPage] = useState(0);
   const [temporaryNetPage, setTemporaryNetPage] = useState(0);
-  const [directiveDispatches, setDirectiveDispatches] = useState([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState<DirectiveDispatchRecord[]>([]);
   const [ordersPage, setOrdersPage] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState('');
   const [bridgeDraftSourceId, setBridgeDraftSourceId] = useState('');
-  const [bridgeEdges, setBridgeEdges] = useState([]);
-  const [schemaExpandedById, setSchemaExpandedById] = useState({
+  const [bridgeEdges, setBridgeEdges] = useState<TopologyBridgeEdge[]>([]);
+  const [schemaExpandedById, setSchemaExpandedById] = useState<Record<string, boolean>>({
     'fleet:redscar': true,
     'wing:CE': true,
     'squad:CE:Command Cell': true,
   });
-  const [nodePositionOverrides, setNodePositionOverrides] = useState({});
+  const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const [radialOpen, setRadialOpen] = useState(false);
-  const [radialAnchor, setRadialAnchor] = useState({ x: 50, y: 50 });
-  const topologyRef = useRef(null);
-  const dragRef = useRef(null);
+  const [radialAnchor, setRadialAnchor] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const topologyRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    nodeId: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
   const activeEventId = useMemo(() => {
     const token = String(opId || '').trim();
     return token || null;
@@ -230,7 +252,7 @@ export default function CommsNetworkConsole({
         roster,
       });
       setSnapshot(next);
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'Failed to load comms graph.');
     } finally {
       setLoading(false);
@@ -263,7 +285,7 @@ export default function CommsNetworkConsole({
       if (response?.error && !response?.success) {
         setNetControlError(String(response.error));
       }
-    } catch (err) {
+    } catch (err: any) {
       setNetControlError(err?.message || 'Failed to load managed voice nets.');
     } finally {
       setNetControlLoading(false);
@@ -276,7 +298,7 @@ export default function CommsNetworkConsole({
 
   useEffect(() => {
     if (!bridgeDraftSourceId) return undefined;
-    const onKeyDown = (event) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       setBridgeDraftSourceId('');
@@ -299,7 +321,7 @@ export default function CommsNetworkConsole({
     }
     setNodePositionOverrides((prev) => {
       let changed = false;
-      const next = {};
+      const next: Record<string, { x: number; y: number }> = {};
       for (const node of nodes) {
         const prior = prev[node.id];
         const resolvedX = clampPct(prior?.x ?? node.x);
@@ -348,7 +370,7 @@ export default function CommsNetworkConsole({
         id: edge.id,
         sourceId: edge.sourceId,
         targetId: edge.targetId,
-        type: 'monitoring',
+        type: 'monitoring' as const,
         intensity: edge.status === 'degraded' ? 0.52 : 0.9,
         dashed: edge.status === 'degraded',
       })),
@@ -358,7 +380,7 @@ export default function CommsNetworkConsole({
 
   const nodeMap = useMemo(
     () =>
-      displayNodes.reduce((acc, node) => {
+      displayNodes.reduce<Record<string, CommsGraphNode>>((acc, node) => {
         acc[node.id] = node;
         return acc;
       }, {}),
@@ -426,7 +448,7 @@ export default function CommsNetworkConsole({
   const visibleHealth = channelHealth.slice(healthPage * LIST_PAGE_SIZE, healthPage * LIST_PAGE_SIZE + LIST_PAGE_SIZE);
   const selectedIncident = incidents.find((incident) => incident.id === selectedIncidentId) || null;
   const bridgedChannelIds = useMemo(() => {
-    const result = new Set();
+    const result = new Set<string>();
     for (const edge of bridgeEdges) {
       const sourceId = extractChannelId(nodeMap[edge.sourceId]);
       const targetId = extractChannelId(nodeMap[edge.targetId]);
@@ -458,7 +480,7 @@ export default function CommsNetworkConsole({
   const voicePageCount = Math.max(1, Math.ceil(voiceNets.length / VOICE_LIST_PAGE_SIZE));
   const visibleVoiceNets = voiceNets.slice(voicePage * VOICE_LIST_PAGE_SIZE, voicePage * VOICE_LIST_PAGE_SIZE + VOICE_LIST_PAGE_SIZE);
   const monitoredVoiceSet = useMemo(
-    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id) => String(id || ''))),
+    () => new Set((Array.isArray(voiceNet.monitoredNetIds) ? voiceNet.monitoredNetIds : []).map((id: unknown) => String(id || ''))),
     [voiceNet.monitoredNetIds]
   );
   const voiceParticipants = useMemo(
@@ -466,7 +488,7 @@ export default function CommsNetworkConsole({
     [voiceNet.participants]
   );
   const activeSpeakers = useMemo(
-    () => voiceParticipants.filter((participant) => isParticipantSpeaking(participant)).slice(0, 4),
+    () => voiceParticipants.filter((participant: any) => isParticipantSpeaking(participant)).slice(0, 4),
     [voiceParticipants]
   );
   const disciplineAlerts = useMemo(
@@ -485,14 +507,14 @@ export default function CommsNetworkConsole({
   const secureModeEnabled = Boolean(activeVoiceNetId && voiceNet.secureModeByNet?.[activeVoiceNetId]?.enabled);
   const channelHealthById = useMemo(
     () =>
-      channelHealth.reduce((acc, entry) => {
+      channelHealth.reduce<Record<string, (typeof channelHealth)[number]>>((acc, entry) => {
         acc[entry.channelId] = entry;
         return acc;
       }, {}),
     [channelHealth]
   );
   const participantByMemberId = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, any>();
     for (const participant of voiceParticipants) {
       const id = String(participant?.memberProfileId || participant?.userId || participant?.id || '').trim();
       if (!id) continue;
@@ -501,7 +523,7 @@ export default function CommsNetworkConsole({
     return map;
   }, [voiceParticipants]);
   const explicitChannelMembersById = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, string[]>();
     for (const edge of edges) {
       if (edge.type !== 'membership') continue;
       if (!edge.sourceId.startsWith('user:') || !edge.targetId.startsWith('channel:')) continue;
@@ -515,7 +537,7 @@ export default function CommsNetworkConsole({
     return map;
   }, [edges]);
   const fallbackChannelMembersById = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, string[]>();
     for (const channel of channels) {
       const token = toToken(`${channel.id} ${channel.label}`);
       const memberIds = roster
@@ -553,7 +575,7 @@ export default function CommsNetworkConsole({
       { id: 'GCE', label: wingLabelByElement('GCE') },
     ];
     return wings.map((wing) => {
-      const squadByLabel = new Map();
+      const squadByLabel = new Map<string, any>();
       for (const channel of visibleSchemaChannels) {
         const channelId = channel.id;
         const explicitIds = explicitChannelMembersById.get(channelId) || [];
@@ -572,7 +594,7 @@ export default function CommsNetworkConsole({
             channels: [],
           };
 
-        const vehiclesById = new Map();
+        const vehiclesById = new Map<string, any>();
         for (const member of channelMembers) {
           const vehicle = resolveVehicleBucket(member, channel.id);
           const bucket =
@@ -600,8 +622,8 @@ export default function CommsNetworkConsole({
         }
 
         const vehicles = [...vehiclesById.values()].map((vehicle) => {
-          const txCount = vehicle.operators.filter((entry) => entry.status === 'TX').length;
-          const mutedCount = vehicle.operators.filter((entry) => entry.status === 'MUTED').length;
+          const txCount = vehicle.operators.filter((entry: any) => entry.status === 'TX').length;
+          const mutedCount = vehicle.operators.filter((entry: any) => entry.status === 'MUTED').length;
           const channelState = channelHealthById[channelId];
           const basicStatus =
             channelState?.discipline === 'SATURATED'
@@ -644,7 +666,19 @@ export default function CommsNetworkConsole({
     channelHealthById,
   ]);
   const crewCards = useMemo(() => {
-    const cards = [];
+    const cards: Array<{
+      id: string;
+      wingId: string;
+      wingLabel: string;
+      squadLabel: string;
+      channelId: string;
+      channelLabel: string;
+      channelStatus: string;
+      vehicleLabel: string;
+      vehicleStatus: string;
+      crewCount: number;
+      operators: Array<{ id: string; callsign: string; role: string; status: string }>;
+    }> = [];
 
     for (const wing of schemaTree) {
       for (const squad of wing.squads) {
@@ -667,7 +701,7 @@ export default function CommsNetworkConsole({
           }
 
           for (const vehicle of channel.vehicles) {
-            const sortedOperators = [...vehicle.operators].sort((a, b) => {
+            const sortedOperators = [...vehicle.operators].sort((a: any, b: any) => {
               const priorityDelta = operatorStatusPriority(a.status) - operatorStatusPriority(b.status);
               if (priorityDelta !== 0) return priorityDelta;
               return String(a.callsign || a.id).localeCompare(String(b.callsign || b.id));
@@ -763,7 +797,7 @@ export default function CommsNetworkConsole({
         if (!Number.isFinite(atMs)) return null;
         return { atMs, activation };
       })
-      .filter(Boolean);
+      .filter(Boolean) as Array<{ atMs: number; activation: string }>;
     if (!candidates.length) return null;
     const sorted = [...candidates].sort((a, b) => a.atMs - b.atMs);
     return sorted[0];
@@ -781,27 +815,27 @@ export default function CommsNetworkConsole({
         return {
           label: 'Acknowledge Incident',
           detail: 'Confirm ownership before dispatching reroutes.',
-          action: 'ACK',
+          action: 'ACK' as const,
         };
       }
       if (selectedIncident.status === 'ACKED') {
         return {
           label: 'Assign Resolution Element',
           detail: 'Lock responsible team and begin mitigation.',
-          action: 'ASSIGN',
+          action: 'ASSIGN' as const,
         };
       }
       if (selectedIncident.status === 'ASSIGNED') {
         return {
           label: 'Issue Reroute Directive',
           detail: 'Reduce traffic pressure while recovery executes.',
-          action: 'REROUTE',
+          action: 'REROUTE' as const,
         };
       }
       return {
         label: 'Incident Resolved',
         detail: 'Run check-in broadcast to confirm net stability.',
-        action: 'CHECKIN',
+        action: 'CHECKIN' as const,
       };
     }
 
@@ -809,7 +843,7 @@ export default function CommsNetworkConsole({
       return {
         label: 'Prioritize Critical Queue',
         detail: 'Select a critical incident and acknowledge immediately.',
-        action: 'FOCUS_CRITICAL',
+        action: 'FOCUS_CRITICAL' as const,
       };
     }
 
@@ -817,14 +851,14 @@ export default function CommsNetworkConsole({
       return {
         label: 'Stabilize Degraded Lanes',
         detail: 'Issue restriction directive to protect command traffic.',
-        action: 'RESTRICT',
+        action: 'RESTRICT' as const,
       };
     }
 
     return {
       label: 'Maintain Readiness',
       detail: 'Run periodic check-in to verify net discipline.',
-      action: 'CHECKIN',
+      action: 'CHECKIN' as const,
     };
   }, [selectedIncident, criticalIncidentCount, degradedChannelCount]);
 
@@ -892,7 +926,7 @@ export default function CommsNetworkConsole({
   }, [displayNodes, selectedNodeId]);
 
   const emitMacro = useCallback(
-    (eventType, payload, successMessage) => {
+    (eventType: CqbEventType, payload: Record<string, unknown>, successMessage: string) => {
       if (onCreateMacroEvent) onCreateMacroEvent(eventType, payload);
       setFeedback(onCreateMacroEvent ? successMessage : `${successMessage} (preview)`);
     },
@@ -900,7 +934,15 @@ export default function CommsNetworkConsole({
   );
 
   const emitDirectiveMacro = useCallback(
-    (input) => {
+    (input: {
+      eventType: CqbEventType;
+      channelId: string;
+      directive: string;
+      successMessage: string;
+      incidentId?: string;
+      laneId?: string;
+      payload?: Record<string, unknown>;
+    }) => {
       const dispatch = createDirectiveDispatchRecord({
         channelId: input.channelId,
         laneId: input.laneId,
@@ -937,7 +979,7 @@ export default function CommsNetworkConsole({
   );
 
   const transitionIncident = useCallback(
-    (nextStatus) => {
+    (nextStatus: 'ACKED' | 'ASSIGNED' | 'RESOLVED') => {
       if (!selectedIncident) return;
       if (!canTransitionIncidentStatus(selectedIncident.status, nextStatus)) return;
 
@@ -959,7 +1001,10 @@ export default function CommsNetworkConsole({
   );
 
   const dispatchDirective = useCallback(
-    (directive, options) => {
+    (
+      directive: 'REROUTE' | 'RESTRICT' | 'CHECKIN',
+      options?: { channelId?: string; laneId?: string; incidentId?: string }
+    ) => {
       const fallbackChannelId = channelHealth[0]?.channelId;
       const incidentChannelId = selectedIncident?.channelId && selectedIncident.channelId !== 'UNSCOPED' ? selectedIncident.channelId : '';
       const threadChannelId = selectedThread?.channelId && selectedThread.channelId !== 'UNSCOPED' ? selectedThread.channelId : '';
@@ -1005,7 +1050,7 @@ export default function CommsNetworkConsole({
   );
 
   const emitVoiceGovernanceOrder = useCallback(
-    (directive: string, net, detailMessage: string) => {
+    (directive: string, net: any, detailMessage: string) => {
       const channelId =
         String(net?.event_id || '').trim() ||
         String(net?.code || '').trim() ||
@@ -1030,7 +1075,7 @@ export default function CommsNetworkConsole({
   );
 
   const createManagedNetAction = useCallback(
-    async (scope) => {
+    async (scope: 'permanent' | 'temp_adhoc' | 'temp_operation') => {
       const canCreatePermanent = Boolean(managedVoicePolicy?.canCreatePermanent || managedVoicePolicy?.hasGlobalOverride);
       if (scope === 'permanent' && !canCreatePermanent) {
         setFeedback('Permanent net creation requires System Admin or Pioneer.');
@@ -1064,7 +1109,7 @@ export default function CommsNetworkConsole({
         });
         await Promise.all([loadManagedNets(), loadGraph()]);
         emitVoiceGovernanceOrder('VOICE_NET_CREATE', result?.net || { code, lifecycle_scope: scope }, `${code} created`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Failed to create voice net.');
       }
     },
@@ -1072,13 +1117,13 @@ export default function CommsNetworkConsole({
   );
 
   const closeManagedNetAction = useCallback(
-    async (net) => {
+    async (net: any) => {
       if (!net?.id) return;
       try {
         await closeManagedVoiceNet(net.id, 'comms_focus_close');
         await Promise.all([loadManagedNets(), loadGraph()]);
         emitVoiceGovernanceOrder('VOICE_NET_CLOSE', net, `${net.code || net.label} closed`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Failed to close voice net.');
       }
     },
@@ -1086,14 +1131,14 @@ export default function CommsNetworkConsole({
   );
 
   const toggleManagedNetDiscipline = useCallback(
-    async (net) => {
+    async (net: any) => {
       if (!net?.id) return;
       const nextDiscipline = String(net?.discipline || 'casual').toLowerCase() === 'focused' ? 'casual' : 'focused';
       try {
         await updateManagedVoiceNet(net.id, { discipline: nextDiscipline });
         await loadManagedNets();
         emitVoiceGovernanceOrder('VOICE_NET_EDIT', net, `${net.code || net.label} set ${nextDiscipline}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Failed to update voice net discipline.');
       }
     },
@@ -1101,7 +1146,7 @@ export default function CommsNetworkConsole({
   );
 
   const transferManagedNetOwnerAction = useCallback(
-    async (net) => {
+    async (net: any) => {
       if (!net?.id) return;
       if (typeof window === 'undefined') return;
       const initial = actorMemberProfileId || String(net?.owner_member_profile_id || '');
@@ -1111,7 +1156,7 @@ export default function CommsNetworkConsole({
         await transferManagedVoiceNetOwner(net.id, targetOwnerId.trim());
         await loadManagedNets();
         emitVoiceGovernanceOrder('VOICE_NET_TRANSFER_OWNER', net, `${net.code || net.label} owner updated`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Failed to transfer voice net owner.');
       }
     },
@@ -1171,7 +1216,7 @@ export default function CommsNetworkConsole({
   }, [commandRecommendation, transitionIncident, dispatchDirective, incidents]);
 
   const joinVoiceNet = useCallback(
-    async (netId, monitorOnly = false) => {
+    async (netId: string, monitorOnly = false) => {
       if (!netId) return;
       if (!voiceRuntimeUser?.id) {
         setFeedback('Voice profile unavailable.');
@@ -1190,7 +1235,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(monitorOnly ? `Monitoring ${netId}` : `Joined ${netId}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Voice join failed.');
       }
     },
@@ -1198,7 +1243,7 @@ export default function CommsNetworkConsole({
   );
 
   const setTransmitVoiceNet = useCallback(
-    async (netId) => {
+    async (netId: string) => {
       if (!netId) return;
       if (!voiceRuntimeUser?.id) {
         setFeedback('Voice profile unavailable.');
@@ -1211,7 +1256,7 @@ export default function CommsNetworkConsole({
           return;
         }
         setFeedback(`TX lane set: ${netId}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Unable to set transmit net.');
       }
     },
@@ -1219,11 +1264,11 @@ export default function CommsNetworkConsole({
   );
 
   const leaveVoiceNet = useCallback(
-    async (netId) => {
+    async (netId: string) => {
       try {
         await voiceNet.leaveNet?.(netId);
         setFeedback(`Left ${netId}`);
-      } catch (err) {
+      } catch (err: any) {
         setFeedback(err?.message || 'Unable to leave net.');
       }
     },
@@ -1236,7 +1281,7 @@ export default function CommsNetworkConsole({
   );
 
   const applyBridgeOrder = useCallback(
-    (sourceNodeId, targetNodeId) => {
+    (sourceNodeId: string, targetNodeId: string) => {
       if (!sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId) return;
       const sourceNode = nodeMap[sourceNodeId];
       const targetNode = nodeMap[targetNodeId];
@@ -1271,7 +1316,7 @@ export default function CommsNetworkConsole({
     [nodeMap, emitDirectiveMacro]
   );
 
-  const updateNodeFromClientPoint = useCallback((nodeId, clientX, clientY) => {
+  const updateNodeFromClientPoint = useCallback((nodeId: string, clientX: number, clientY: number) => {
     const host = topologyRef.current;
     if (!host || !nodeId) return;
     const rect = host.getBoundingClientRect();
@@ -1284,7 +1329,7 @@ export default function CommsNetworkConsole({
     }));
   }, []);
 
-  const handleNodePointerDown = useCallback((event, nodeId) => {
+  const handleNodePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
     if (event.button !== 0) return;
     dragRef.current = {
       nodeId,
@@ -1298,7 +1343,7 @@ export default function CommsNetworkConsole({
     event.currentTarget.setPointerCapture(event.pointerId);
   }, []);
 
-  const handleNodePointerMove = useCallback((event, nodeId) => {
+  const handleNodePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
     const current = dragRef.current;
     if (!current || current.nodeId !== nodeId || current.pointerId !== event.pointerId) return;
     const movedX = Math.abs(event.clientX - current.startX);
@@ -1309,7 +1354,7 @@ export default function CommsNetworkConsole({
     }
   }, [updateNodeFromClientPoint]);
 
-  const handleNodePointerUp = useCallback((event, nodeId) => {
+  const handleNodePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
     const current = dragRef.current;
     if (!current || current.nodeId !== nodeId || current.pointerId !== event.pointerId) return;
     if (!current.moved) {
@@ -1323,7 +1368,7 @@ export default function CommsNetworkConsole({
     event.currentTarget.releasePointerCapture(event.pointerId);
   }, [applyBridgeOrder, bridgeDraftSourceId]);
 
-  const handleNodeContextMenu = useCallback((event, nodeId) => {
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>, nodeId: string) => {
     event.preventDefault();
     const host = topologyRef.current;
     if (!host) return;
@@ -1340,12 +1385,12 @@ export default function CommsNetworkConsole({
     setFeedback('Bridge target mode cleared.');
   }, []);
 
-  const radialItems = useMemo(() => {
+  const radialItems = useMemo<RadialMenuItem[]>(() => {
     if (!selectedNode) return [];
     const channelId = extractChannelId(selectedNode);
     const canCommandChannel = selectedNode.type === 'channel' && Boolean(channelId);
 
-    const items = [
+    const items: RadialMenuItem[] = [
       {
         id: 'reroute',
         label: 'Reroute',
@@ -1419,7 +1464,7 @@ export default function CommsNetworkConsole({
   }, [selectedNode, bridgeDraftSourceId, dispatchDirective, cancelBridgeDraft]);
 
   const isSchemaExpanded = useCallback(
-    (id, fallback = false) => {
+    (id: string, fallback = false) => {
       if (Object.prototype.hasOwnProperty.call(schemaExpandedById, id)) return Boolean(schemaExpandedById[id]);
       return fallback;
     },
@@ -1437,7 +1482,7 @@ export default function CommsNetworkConsole({
   }, []);
 
   const tokenAtlasEntriesByFamily = useMemo(() => {
-    const grouped = new Map();
+    const grouped = new Map<string, (typeof tokenCatalog.entries)[number][]>();
     for (const entry of tokenCatalog.entries) {
       const rows = grouped.get(entry.family) || [];
       rows.push(entry);
@@ -1543,7 +1588,7 @@ export default function CommsNetworkConsole({
             }} />
 
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-              {renderedEdges.map((edge) => {
+              {renderedEdges.map((edge: CommsGraphEdge) => {
                 const source = nodeMap[edge.sourceId];
                 const target = nodeMap[edge.targetId];
                 if (!source || !target) return null;
@@ -1907,7 +1952,7 @@ export default function CommsNetworkConsole({
 
                                   {isSchemaExpanded(squadKey, squad.label === 'Command Cell') ? (
                                     <div className="space-y-1 pl-2">
-                                      {squad.channels.map((channel, channelIndex: number) => {
+                                      {squad.channels.map((channel: any, channelIndex: number) => {
                                         const channelKey = `channel:${wing.id}:${channel.id}`;
                                         const defaultChannelExpanded = channelIndex === 0;
                                         return (
@@ -1936,7 +1981,7 @@ export default function CommsNetworkConsole({
                                             {isSchemaExpanded(channelKey, defaultChannelExpanded) ? (
                                               <div className="space-y-1 pl-3 pt-0.5">
                                                 {channel.vehicles.length > 0 ? (
-                                                  channel.vehicles.map((vehicle, vehicleIndex: number) => {
+                                                  channel.vehicles.map((vehicle: any, vehicleIndex: number) => {
                                                     const vehicleKey = `vehicle:${channel.id}:${vehicle.id}`;
                                                     const defaultVehicleExpanded = vehicleIndex === 0;
                                                     return (
@@ -1961,7 +2006,7 @@ export default function CommsNetworkConsole({
 
                                                         {isSchemaExpanded(vehicleKey, defaultVehicleExpanded) ? (
                                                           <div className="space-y-0.5 pl-4">
-                                                            {vehicle.operators.map((operator) => (
+                                                            {vehicle.operators.map((operator: any) => (
                                                               <div key={operator.id} className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-950/45 px-2 py-0.5">
                                                                 <div className="min-w-0 flex items-center gap-1.5">
                                                                   <img src={roleTokenIcon(operator.role)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 shrink-0" />
