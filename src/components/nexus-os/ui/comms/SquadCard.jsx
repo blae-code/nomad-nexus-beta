@@ -119,25 +119,25 @@ export default function SquadCard({
               <button
                 type="button"
                 onClick={(e) => toggleVehicle(e, vehicle.id)}
-                className="w-full flex items-center justify-between gap-1 px-1 py-0.5 text-[8px] text-zinc-400 uppercase tracking-wide hover:bg-zinc-900/40 transition-colors"
+                className="w-full flex items-center justify-between gap-1 px-1.5 py-1 text-[10px] text-zinc-300 uppercase tracking-wide font-semibold hover:bg-zinc-900/40 transition-colors"
               >
                 <div className="flex items-center gap-1 min-w-0">
                   <ChevronDown
-                    className={`w-2.5 h-2.5 flex-shrink-0 transition-transform ${
+                    className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${
                       isExpanded ? 'rotate-180' : ''
                     }`}
                   />
                   <img
                     src={tokenAssets.comms.vehicle}
                     alt=""
-                    className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
+                    className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
                   />
                   <span className="truncate">{vehicle.label}</span>
                 </div>
                 <img
                   src={vehicleStatusTokenIcon(vehicle.status)}
                   alt=""
-                  className="w-2.5 h-2.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
+                  className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60 flex-shrink-0"
                 />
               </button>
               {isExpanded && (
