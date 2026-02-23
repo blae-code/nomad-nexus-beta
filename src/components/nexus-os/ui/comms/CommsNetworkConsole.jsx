@@ -26,6 +26,7 @@ import {
   updateManagedVoiceNet,
 } from '@/components/voice/voiceNetGovernanceClient';
 import { buildCommsGraphSnapshot } from '../../services/commsGraphService';
+import type { CommsGraphEdge, CommsGraphNode, CommsGraphSnapshot } from '../../services/commsGraphService';
 import {
   buildCommsChannelHealth,
   buildCommsIncidentCandidates,
@@ -72,25 +73,25 @@ const SCHEMA_CHANNEL_PAGE_SIZE = 5;
 const CREW_CARD_PAGE_SIZE = 4;
 const NET_CONTROL_PAGE_SIZE = 5;
 
-const INCIDENT_EVENT_BY_STATUS: Record<'ACKED' | 'ASSIGNED' | 'RESOLVED', CqbEventType> = {
+const INCIDENT_EVENT_BY_STATUS = {
   ACKED: 'ROGER',
   ASSIGNED: 'WILCO',
   RESOLVED: 'CLEAR_COMMS',
 };
 
-function nodeFill(node: CommsGraphNode): string {
+function nodeFill(node) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.24)';
   if (node.type === 'team') return 'rgba(130,110,94,0.22)';
   return 'rgba(110,110,110,0.22)';
 }
 
-function nodeBorder(node: CommsGraphNode): string {
+function nodeBorder(node) {
   if (node.type === 'channel') return 'rgba(179,90,47,0.7)';
   if (node.type === 'team') return 'rgba(160,130,110,0.58)';
   return 'rgba(150,150,150,0.5)';
 }
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -98,46 +99,46 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function isParticipantSpeaking(participant: any): boolean {
+function isParticipantSpeaking(participant) {
   if (participant?.isSpeaking) return true;
   const state = String(participant?.state || '').toUpperCase();
   return state.includes('TALK') || state.includes('TX') || state.includes('SPEAK');
 }
 
-function disciplineAlertTone(severity: DisciplineAlert['severity']): 'danger' | 'warning' | 'neutral' {
+function disciplineAlertTone(severity) {
   if (severity === 'critical') return 'danger';
   if (severity === 'warning') return 'warning';
   return 'neutral';
 }
 
-function deliveryTone(status: DirectiveDeliveryState): 'warning' | 'active' | 'ok' {
+function deliveryTone(status) {
   if (status === 'QUEUED') return 'warning';
   if (status === 'PERSISTED') return 'active';
   return 'ok';
 }
 
-function clampPct(value: number): number {
+function clampPct(value) {
   return Math.max(3, Math.min(97, value));
 }
 
-function extractChannelId(node: CommsGraphNode | null | undefined): string {
+function extractChannelId(node) {
   if (!node) return '';
-  const explicit = String((node.meta as any)?.channelId || '').trim();
+  const explicit = String((node.meta)?.channelId || '').trim();
   if (explicit) return explicit;
   if (node.id.startsWith('channel:')) return node.id.replace('channel:', '');
   return '';
 }
 
-function toToken(value: unknown): string {
+function toToken(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-function isMutedParticipant(participant: any): boolean {
+function isMutedParticipant(participant) {
   if (participant?.muted === true) return true;
   return String(participant?.state || '').toUpperCase().includes('MUTE');
 }
 
-function resolveVehicleBucket(member: { role: string; element: string; callsign: string }, channelId: string): { id: string; label: string } {
+function resolveVehicleBucket(member, channelId) {
   const roleToken = toToken(member.role);
   if (member.element === 'ACE' || roleToken.includes('pilot') || roleToken.includes('gunship')) {
     return {
@@ -163,7 +164,7 @@ function resolveVehicleBucket(member: { role: string; element: string; callsign:
   };
 }
 
-function operatorStatusPriority(status: string): number {
+function operatorStatusPriority(status) {
   if (status === 'TX') return 0;
   if (status === 'ON-NET') return 1;
   if (status === 'MUTED') return 2;
