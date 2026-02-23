@@ -582,26 +582,11 @@ export default function VoiceCommsRail({
             {fleetExpanded &&
             <>
                  <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
-                  <div className="flex items-center gap-1.5">
-                    <button
-                  type="button"
-                  onClick={() => setFleetView('schema')}
-                  className={`h-5 px-2 text-[8px] uppercase tracking-wider rounded border transition-colors font-bold ${
-                  fleetView === 'schema' ? 'text-orange-400 bg-orange-500/10 border-orange-500/40' : 'text-zinc-500 border-zinc-700/40'}`
-                  }>
-                      Schema
-                    </button>
-                    <button
-                  type="button"
-                  onClick={() => setFleetView('cards')}
-                  className={`h-5 px-2 text-[8px] uppercase tracking-wider rounded border transition-colors font-bold ${
-                  fleetView === 'cards' ? 'text-orange-400 bg-orange-500/10 border-orange-500/40' : 'text-zinc-500 border-zinc-700/40'}`
-                  }>
-                      Cards
-                      </button>
-                      </div>
-                      <span className="text-[9px] text-zinc-400 uppercase tracking-wide">{fleetChannels.length}L</span>
-                 </div>
+                   <div className="flex items-center gap-1.5">
+                     <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-300">Schema</span>
+                   </div>
+                   <span className="text-[9px] text-zinc-400 uppercase tracking-wide">{fleetChannels.length}L</span>
+                  </div>
 
                 {fleetView === 'schema' &&
             <>
