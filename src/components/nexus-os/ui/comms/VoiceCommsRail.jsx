@@ -317,7 +317,30 @@ export default function VoiceCommsRail({
   };
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-black/95 border-l border-red-700/30">
+    <div className={`${isExpanded ? 'w-80' : 'w-12'} bg-black/98 border-l-2 border-red-700/50 flex flex-col overflow-hidden z-[900] relative transition-all duration-200 h-full min-h-0`}>
+      {/* Header */}
+      <div className="h-12 border-b-2 border-red-700/50 flex items-center justify-between px-3 flex-shrink-0 bg-gradient-to-r from-red-950/40 to-black/60 backdrop-blur-sm">
+        {isExpanded && (
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-6 bg-red-500 rounded-sm" />
+            <div>
+              <h2 className="text-xs font-black uppercase text-white tracking-[0.2em]">Comms Core</h2>
+              <p className="text-[9px] text-zinc-600 uppercase tracking-wider font-mono mt-0.5">Voice Systems</p>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-1 ml-auto">
+          <button
+            type="button"
+            size="icon"
+            onClick={() => onToggleExpand?.(!isExpanded)}
+            className="h-6 w-6 text-zinc-600 hover:text-red-400 border-0 bg-transparent p-1 rounded"
+            title={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            <ChevronLeft className={`w-4 h-4 transition-transform ${isExpanded ? '' : 'rotate-180'}`} />
+          </button>
+        </div>
+      </div>
 
 
 
@@ -336,112 +359,112 @@ export default function VoiceCommsRail({
 
 
 
-
-
-
-      {isExpanded ?
-      <>
-          <div className="px-2 py-1.5 border-b border-red-700/25 bg-zinc-900/40">
-            {renderGlobalControlCluster()}
+      {isExpanded && (
+        <>
+          <div className="flex-shrink-0 border-b border-red-700/40 bg-black/40">
+            <div className="px-3 py-2 border-b border-red-700/40">
+              <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Controls</div>
+            </div>
+            <div className="px-2 py-1.5 bg-black/40">
+              {renderGlobalControlCluster()}
+            </div>
           </div>
 
-          <div className="px-2 py-1 flex items-center gap-1 border-b border-red-700/20 bg-zinc-900/30">
+          <div className="flex-shrink-0 px-2 py-1 flex items-center gap-1 border-b border-red-700/40 bg-black/40">
             <button
             type="button"
             onClick={() => setSelectedTab('nets')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border transition-colors ${
-            selectedTab === 'nets' ? 'text-orange-300 bg-orange-500/15 border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700 hover:border-red-700/40'}`
+            className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+            selectedTab === 'nets' ? 'text-red-400 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
             }>
-
               Nets
             </button>
             <button
             type="button"
             onClick={() => setSelectedTab('roster')}
-            className={`h-6 px-2 text-[9px] uppercase tracking-wide rounded border transition-colors ${
-            selectedTab === 'roster' ? 'text-orange-300 bg-orange-500/15 border-orange-500/40' : 'text-zinc-500 hover:text-zinc-300 border-zinc-700 hover:border-red-700/40'}`
+            className={`h-6 px-2 text-[9px] uppercase tracking-wider rounded border transition-colors font-bold ${
+            selectedTab === 'roster' ? 'text-red-400 bg-red-950/40 border-red-700/50' : 'text-zinc-600 hover:text-zinc-400 border-red-700/30 hover:border-red-700/50'}`
             }>
-
               Roster
             </button>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-2">
-            {selectedTab === 'nets' ?
-          <>
-                <div className="space-y-1">
-                  <div className="text-[9px] font-bold text-orange-400 uppercase tracking-wider px-1">Quick Nets</div>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {selectedTab === 'nets' && (
+              <>
+                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
+                  <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Quick Nets</div>
+                </div>
+                <div className="px-2 py-1.5 space-y-1">
                   {quickVisibleNets.length > 0 ? quickVisibleNets.map(renderQuickNetCard) :
-              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets available.</div>
-              }
+                    <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No quick nets.</div>
+                  }
                 </div>
 
-                {quickPageCount > 1 ?
-            <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                {quickPageCount > 1 && (
+                  <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                     <button
-                type="button"
-                onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
-                disabled={quickPage === 0}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
-
+                    type="button"
+                    onClick={() => setQuickPage((prev) => Math.max(0, prev - 1))}
+                    disabled={quickPage === 0}
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Prev
                     </button>
-                    <span>{quickPage + 1}/{quickPageCount}</span>
+                    <span className="text-[8px]">{quickPage + 1}/{quickPageCount}</span>
                     <button
-                type="button"
-                onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
-                disabled={quickPage >= quickPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
-
+                    type="button"
+                    onClick={() => setQuickPage((prev) => Math.min(quickPageCount - 1, prev + 1))}
+                    disabled={quickPage >= quickPageCount - 1}
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Next
-                    </button>
-                  </div> :
-            null}
-
-                <div className="space-y-1">
-                  <div className="text-[9px] font-bold text-orange-400 uppercase tracking-wider px-1 flex items-center justify-between">
-                    <span>All Nets</span>
-                    <button
-                  type="button"
-                  onClick={() => setShowNetCreator(true)}
-                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 text-zinc-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-400 transition-colors flex items-center gap-1"
-                  title="Create new voice net">
-
-                      <Plus className="w-2.5 h-2.5" />
                     </button>
                   </div>
+                )}
+
+                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40 flex items-center justify-between">
+                  <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">All Nets</div>
+                  <button
+                  type="button"
+                  onClick={() => setShowNetCreator(true)}
+                  className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 text-zinc-500 hover:border-red-700/50 hover:text-red-400 transition-colors flex items-center gap-1"
+                  title="Create new voice net">
+                    <Plus className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+                <div className="px-2 py-1.5 space-y-1">
                   {pagedNets.length > 0 ? pagedNets.map(renderQuickNetCard) :
-              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets available.</div>
-              }
+                    <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No voice nets.</div>
+                  }
                 </div>
 
-                {netsPageCount > 1 ?
-            <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                {netsPageCount > 1 && (
+                  <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                     <button
-                type="button"
-                onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
-                disabled={netsPage === 0}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
-
+                    type="button"
+                    onClick={() => setNetsPage((prev) => Math.max(0, prev - 1))}
+                    disabled={netsPage === 0}
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Prev
                     </button>
-                    <span>{netsPage + 1}/{netsPageCount}</span>
+                    <span className="text-[8px]">{netsPage + 1}/{netsPageCount}</span>
                     <button
-                type="button"
-                onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
-                disabled={netsPage >= netsPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
-
+                    type="button"
+                    onClick={() => setNetsPage((prev) => Math.min(netsPageCount - 1, prev + 1))}
+                    disabled={netsPage >= netsPageCount - 1}
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Next
                     </button>
-                  </div> :
-            null}
-              </> :
-          null}
+                  </div>
+                )}
+              </>
+            )}
 
-            {selectedTab === 'roster' ?
-          <>
-                <div className="space-y-1">
+            {selectedTab === 'roster' && (
+              <>
+                <div className="px-3 py-2 border-b border-red-700/40 bg-black/40">
+                  <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-bold">Roster</div>
+                </div>
+                <div className="px-2 py-1.5 space-y-1">
                   {pagedParticipants.map((participant) => {
                 const status = participantStatusLabel(participant);
                 const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
@@ -461,58 +484,55 @@ export default function VoiceCommsRail({
 
               })}
 
-                  {pagedParticipants.length === 0 ?
-              <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div> :
-              null}
+                  {pagedParticipants.length === 0 && (
+                    <div className="rounded border border-red-700/30 bg-zinc-950/60 px-2 py-1.5 text-[9px] text-zinc-500">No participants online.</div>
+                  )}
                 </div>
-
-                {rosterPageCount > 1 ?
-            <div className="flex items-center justify-end gap-2 text-[9px] text-zinc-500">
+                {rosterPageCount > 1 && (
+                  <div className="px-2 flex items-center justify-between gap-1 text-[9px] text-zinc-500 border-t border-red-700/40 py-1">
                     <button
-                type="button"
-                onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
-                disabled={rosterPage === 0}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
-
+                    type="button"
+                    onClick={() => setRosterPage((prev) => Math.max(0, prev - 1))}
+                    disabled={rosterPage === 0}
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Prev
                     </button>
-                    <span>{rosterPage + 1}/{rosterPageCount}</span>
+                    <span className="text-[8px]">{rosterPage + 1}/{rosterPageCount}</span>
                     <button
-                type="button"
-                onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
-                disabled={rosterPage >= rosterPageCount - 1}
-                className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors">
-
+                    type="button"
+                    onClick={() => setRosterPage((prev) => Math.min(rosterPageCount - 1, prev + 1))}
+                    disabled={rosterPage >= rosterPageCount - 1}
+                    className="px-1.5 py-0.5 rounded border border-red-700/30 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-red-700/50 transition-colors text-[8px]">
                       Next
                     </button>
-                  </div> :
-            null}
-              </> :
-          null}
+                  </div>
+                )}
+              </>
+            )}
 
-            {feedback ?
-          <div className="px-2 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-[9px] text-red-300 inline-flex items-center gap-1">
+            {feedback && (
+              <div className="px-2 py-1.5 rounded border border-red-500/40 bg-red-500/10 text-[9px] text-red-300 inline-flex items-center gap-1">
                 <Radio className="w-3 h-3" />
                 {feedback}
-              </div> :
-          null}
+              </div>
+            )}
           </div>
 
-          {showNetCreator &&
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          {showNetCreator && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
               <div className="w-full max-w-md bg-zinc-950 border border-red-700/40 rounded-lg p-4 m-4 shadow-2xl shadow-red-500/10">
                 <VoiceNetCreator
-              onSuccess={() => {
-                setShowNetCreator(false);
-                setFeedback('Voice net created successfully');
-              }}
-              onCancel={() => setShowNetCreator(false)} />
-
+                  onSuccess={() => {
+                    setShowNetCreator(false);
+                    setFeedback('Voice net created successfully');
+                  }}
+                  onCancel={() => setShowNetCreator(false)}
+                />
               </div>
             </div>
-        }
-        </> :
-      null}
+          )}
+          </>
+          )}
     </div>);
 
 }
