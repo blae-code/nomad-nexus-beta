@@ -575,17 +575,7 @@ export default function VoiceCommsRail({
 
             {fleetExpanded &&
             <>
-                 <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
-                   <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Fleet</div>
-                   <div className="flex items-center gap-1.5 text-[8px] text-zinc-500 uppercase tracking-wide">
-                     <span>OP {String(opId || 'N/A')}</span>
-                     <NexusBadge tone={String(connectionState || '').toUpperCase() === 'CONNECTED' ? 'ok' : 'warning'}>
-                       {String(connectionState || 'IDLE').toUpperCase()}
-                     </NexusBadge>
-                   </div>
-                 </div>
-
-                <div className="px-2 py-1 flex items-center justify-between gap-1 border-b border-zinc-700/40 bg-zinc-900/30">
+                 <div className="px-2 py-1 flex items-center justify-between gap-1 border-b border-zinc-700/40 bg-zinc-900/30">
                   <div className="flex items-center gap-1">
                     <button
                   type="button"
