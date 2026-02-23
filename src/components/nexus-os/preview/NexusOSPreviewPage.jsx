@@ -909,11 +909,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         <main className="flex-1 overflow-hidden flex flex-col px-2 py-2">
           {commandFeedback &&
-          <section aria-live="polite" className="nx-inline-feedback nexus-console-text mb-2">
+          <section aria-live="polite" className="nx-inline-feedback rounded-lg border border-zinc-700/40 bg-zinc-900/40 px-3 py-2 text-[11px] text-orange-400 font-semibold uppercase tracking-wide mb-2 hover:border-orange-500/40 hover:bg-zinc-800/60 transition-colors">
               {commandFeedback}
             </section>
           }
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40">
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40 bg-zinc-950/20 hover:border-orange-500/40 transition-colors">
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
