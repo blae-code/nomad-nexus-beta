@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pin, PinOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pin, PinOff, ChevronDown } from 'lucide-react';
 import { NexusButton, NexusBadge } from '../primitives';
 import { wingTokenIcon, squadTokenIcon, vehicleStatusTokenIcon, operatorStatusTokenIcon, roleTokenIcon } from './commsTokenSemantics';
 import { tokenAssets } from '../tokens';
