@@ -112,7 +112,10 @@ function LayoutContent({ currentPageName, children, isNexusWorkspace }) {
   usePresenceHeartbeat();
   useRealtimeNotifications();
   useVoiceCommands();
-  useGlobalHotkeys();
+  // useGlobalHotkeys only in standard shell mode (inside CommandPaletteProvider)
+  if (!isNexusWorkspace) {
+    useGlobalHotkeys();
+  }
 
   const { isContextPanelOpen, isCommsDockOpen, dockMinimized, contextPanelMinimized, toggleContextPanel, toggleCommsDock, setDockMinimized, setContextPanelMinimized } = useShellUI();
   const { triggerEventAlert, triggerSystemAlert } = useAlertSimulator();
