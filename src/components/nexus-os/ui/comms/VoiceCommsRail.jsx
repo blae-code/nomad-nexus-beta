@@ -461,10 +461,6 @@ export default function VoiceCommsRail({
 
             {rosterExpanded &&
             <>
-                 <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
-                   <div className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Roster</div>
-                 </div>
-
                  <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1" onClick={closeContextMenu}>
                   {pagedParticipants.map((user) => {
                 const userId = String(user.id || user.userId || user.email || '').trim();
