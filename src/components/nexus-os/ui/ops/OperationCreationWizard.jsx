@@ -1253,8 +1253,8 @@ export default function OperationCreationWizard({
         Seed role mandates: {archetype.seedBundle.roleMandates.length} | seed asset mandates: {archetype.seedBundle.assetMandates.length}
       </div> : null}
       {stepId === 'COMMS' ? <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
-        <select value={commsTemplateInput} onChange={(event) => setCommsTemplateInput(event.target.value as CommsTemplateId)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
-          {(Object.keys(CommsTemplateRegistry) as CommsTemplateId[]).map((id) => <option key={id} value={id}>{id}</option>)}
+        <select value={commsTemplateInput} onChange={(event) => setCommsTemplateInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+          {Object.keys(CommsTemplateRegistry).map((id) => <option key={id} value={id}>{id}</option>)}
         </select>
         <input value={ttlProfileInput} onChange={(event) => setTtlProfileInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="TTL profile" />
         <div className="text-[11px] text-zinc-500 flex items-center">Notifications: in-app feed + badges</div>
