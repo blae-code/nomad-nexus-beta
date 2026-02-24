@@ -1039,6 +1039,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
         onClose={() => setCommandDeckOpen(false)}
         commandCatalog={commandCatalog}
         contextSummary={`Bridge ${bridgeId} · Focus ${focusStatusLabel} · ${online ? 'Link up' : 'Link down'} · ${alertStatusLabel}`}
+        activeFocusMode={workbenchFocusMode}
+        recentActions={events.slice(0, 5).map((event) => event.eventType)}
         onRunCommand={(command) => {
           const result = runNexusCommand(command);
           setCommandFeedback(result);
