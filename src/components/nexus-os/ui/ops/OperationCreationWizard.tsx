@@ -33,6 +33,7 @@ import { CommsTemplateRegistry, type CommsTemplateId } from '../../registries/co
 import {
   appendOperationEvent,
   createOperation,
+  createOperationTemplateFromOperation,
   setFocusOperation,
 } from '../../services/operationService';
 import {
@@ -64,9 +65,21 @@ import {
 } from '../../services/operationFeatureFlagService';
 import type { CqbActorProfile } from '../cqb/cqbTypes';
 import { NexusBadge, NexusButton } from '../primitives';
+import {
+  applyFoundryQuickStartPreset,
+  deriveFoundryStepStatuses,
+  FOUNDRY_STEPS,
+  type FoundryQuickStartPreset,
+  type FoundryStepStatus,
+  type FoundryWizardStep,
+} from './operationFoundryRuntime';
+import {
+  foundryStepStatusTokenIcon,
+  operationRiskBandTokenIcon,
+} from './operationTokenSemantics';
 
-type WizardStep = 'ARCHETYPE' | 'IDENTITY' | 'SCENARIO' | 'FORCE' | 'COMMS' | 'READINESS' | 'REVIEW';
-const STEPS: WizardStep[] = ['ARCHETYPE', 'IDENTITY', 'SCENARIO', 'FORCE', 'COMMS', 'READINESS', 'REVIEW'];
+type WizardStep = FoundryWizardStep;
+const STEPS: WizardStep[] = FOUNDRY_STEPS;
 const MINING_TIER_OPTIONS: OperationMiningTier[] = ['SHIP_SPACE', 'SHIP_SURFACE', 'ROC_GEO', 'HAND_MINING', 'RING_SWEEP'];
 const MINING_ENVIRONMENT_OPTIONS: OperationMiningEnvironment[] = [
   'SPACE_BELT',
@@ -108,6 +121,12 @@ function toNumberInput(value: string): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return parsed;
+}
+
+function stepStatusTone(status: FoundryStepStatus): 'ok' | 'warning' | 'danger' {
+  if (status === 'DONE') return 'ok';
+  if (status === 'READY') return 'warning';
+  return 'danger';
 }
 
 export default function OperationCreationWizard({
@@ -254,6 +273,8 @@ export default function OperationCreationWizard({
   const [icsPreview, setIcsPreview] = useState('');
   const [errorText, setErrorText] = useState('');
   const [createdOpId, setCreatedOpId] = useState('');
+  const [saveAsTemplateAfterCreate, setSaveAsTemplateAfterCreate] = useState(false);
+  const [foundryTemplateNameInput, setFoundryTemplateNameInput] = useState('Operation Foundry Template');
 
   const stepId = STEPS[stepIndex];
   const archetype = useMemo(() => getOperationArchetype(archetypeId), [archetypeId]);
@@ -548,10 +569,10 @@ export default function OperationCreationWizard({
     pvpOpponentIntelConfidenceInput,
   ]);
 
-  const canAdvance = (): boolean => {
-    if (stepId === 'ARCHETYPE') return createPermission.allowed;
-    if (stepId === 'IDENTITY') return Boolean(nameInput.trim()) && scheduleValidation.valid;
-    if (stepId === 'SCENARIO') {
+  const isStepComplete = (step: WizardStep): boolean => {
+    if (step === 'ARCHETYPE') return createPermission.allowed;
+    if (step === 'IDENTITY') return Boolean(nameInput.trim()) && scheduleValidation.valid;
+    if (step === 'SCENARIO') {
       if (selectedVariantOption && !selectedVariantOption.available) return false;
       if (archetypeId === 'INDUSTRIAL_MINING') {
         return (
@@ -581,7 +602,84 @@ export default function OperationCreationWizard({
         );
       }
     }
-    return true;
+    if (step === 'FORCE') {
+      return archetype.seedBundle.roleMandates.length + archetype.seedBundle.assetMandates.length > 0;
+    }
+    if (step === 'COMMS') {
+      return Boolean(commsTemplateInput) && Boolean(ttlProfileInput.trim());
+    }
+    if (step === 'READINESS') {
+      return effectiveGates.length > 0 && effectiveGates.every((gate) => Boolean(gate.label.trim()) && Boolean(gate.ownerRole.trim()));
+    }
+    return createPermission.allowed
+      && scheduleValidation.valid
+      && (!selectedVariantOption || selectedVariantOption.available)
+      && (archetypeId !== 'INDUSTRIAL_SALVAGE' || selectedMethodAvailability.available);
+  };
+
+  const canAdvance = (): boolean => isStepComplete(stepId);
+
+  const stepStatuses = useMemo(
+    () =>
+      deriveFoundryStepStatuses({
+        ARCHETYPE: isStepComplete('ARCHETYPE'),
+        IDENTITY: isStepComplete('IDENTITY'),
+        SCENARIO: isStepComplete('SCENARIO'),
+        FORCE: isStepComplete('FORCE'),
+        COMMS: isStepComplete('COMMS'),
+        READINESS: isStepComplete('READINESS'),
+        REVIEW: isStepComplete('REVIEW'),
+      }),
+    [
+      createPermission.allowed,
+      nameInput,
+      scheduleValidation.valid,
+      selectedVariantOption?.available,
+      archetypeId,
+      miningRouteInput,
+      miningRefineryInput,
+      miningEscortInput,
+      miningOreTargetsInput,
+      salvageObjectiveInput,
+      salvageRouteInput,
+      salvageProcessingInput,
+      salvageClaimInput,
+      selectedMethodAvailability.available,
+      pvpObjectiveInput,
+      pvpCommandIntentInput,
+      pvpRoeInput,
+      pvpOpponentInput,
+      pvpFriendlyPlannedInput,
+      pvpHostileEstimatedInput,
+      archetype.seedBundle.roleMandates.length,
+      archetype.seedBundle.assetMandates.length,
+      commsTemplateInput,
+      ttlProfileInput,
+      effectiveGates,
+    ]
+  );
+
+  const applyQuickStartPreset = (preset: FoundryQuickStartPreset) => {
+    const next = applyFoundryQuickStartPreset(
+      preset,
+      {
+        startInput,
+        endInput,
+        commsTemplateInput,
+        ttlProfileInput,
+        gateRows: effectiveGates.map((gate) => ({
+          label: gate.label,
+          ownerRole: gate.ownerRole,
+          required: Boolean(gate.required),
+        })),
+      },
+      Date.now()
+    );
+    setStartInput(next.startInput);
+    setEndInput(next.endInput);
+    setCommsTemplateInput(next.commsTemplateInput);
+    setTtlProfileInput(next.ttlProfileInput);
+    setGateRows(next.gateRows);
   };
 
   const goStep = (offset: number) => {
@@ -852,6 +950,12 @@ export default function OperationCreationWizard({
       });
       setFocusOperation(actorId, operation.id);
       setCreatedOpId(operation.id);
+      if (saveAsTemplateAfterCreate) {
+        createOperationTemplateFromOperation(operation.id, actorId, {
+          name: foundryTemplateNameInput.trim() || `${operation.name} Template`,
+          description: `Saved from Operation Foundry for ${operation.name}.`,
+        });
+      }
       onCreated?.(operation);
     } catch (error: any) {
       const message = error?.message || 'Failed to create operation.';
@@ -901,19 +1005,65 @@ export default function OperationCreationWizard({
     && (!selectedVariantOption || selectedVariantOption.available)
     && (archetypeId !== 'INDUSTRIAL_SALVAGE' || selectedMethodAvailability.available);
 
+  const foundryRiskBand: 'LOW' | 'MEDIUM' | 'HIGH' | 'N/A' = useMemo(() => {
+    if (archetypeId === 'INDUSTRIAL_MINING') return scenarioConfig.mining?.riskProfile?.threatBand || 'N/A';
+    if (archetypeId === 'INDUSTRIAL_SALVAGE') return scenarioConfig.salvage?.riskProfile?.threatBand || 'N/A';
+    if (archetypeId === 'PVP_ORG_V_ORG') return scenarioConfig.pvp?.riskProfile?.threatBand || 'N/A';
+    return 'N/A';
+  }, [archetypeId, scenarioConfig]);
+
+  const launchReadout = useMemo(() => {
+    const readinessRequired = effectiveGates.filter((gate) => gate.required).length;
+    return {
+      archetypeLabel: archetype.label,
+      releaseTrackLabel: releaseTrackInput === 'LIVE_4_6' ? 'LIVE 4.6' : '4.7 PREVIEW',
+      variantSupport: selectedVariantOption ? `${selectedVariantOption.badgeLabel} / ${selectedVariantOption.confidence}` : 'DEFAULT',
+      scheduleOk: scheduleValidation.valid,
+      scheduleReason: scheduleValidation.reason,
+      seededObjectives: archetype.seedBundle.objectives.length,
+      seededPhases: archetype.seedBundle.phases.length,
+      seededTasks: archetype.seedBundle.tasks.length,
+      readinessRequired,
+      readinessTotal: effectiveGates.length,
+      commsTemplateId: commsTemplateInput,
+      ttlProfileId: ttlProfileInput.trim() || archetype.defaults.ttlProfileId,
+      riskBand: foundryRiskBand,
+    };
+  }, [
+    archetype,
+    commsTemplateInput,
+    effectiveGates,
+    foundryRiskBand,
+    releaseTrackInput,
+    scheduleValidation.reason,
+    scheduleValidation.valid,
+    selectedVariantOption,
+    ttlProfileInput,
+  ]);
+
   return (
     <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2 nexus-terminal-panel">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Operation Creation Wizard</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Operation Foundry</h4>
         <NexusBadge tone={createPermission.allowed ? 'ok' : 'locked'}>{createPermission.allowed ? 'READY' : 'LOCKED'}</NexusBadge>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {STEPS.map((step, index) => (
-          <NexusButton key={step} size="sm" intent={stepIndex === index ? 'primary' : 'subtle'} onClick={() => setStepIndex(index)}>
+          <NexusButton key={step} size="sm" intent={stepIndex === index ? 'primary' : 'subtle'} onClick={() => setStepIndex(index)} className="inline-flex items-center gap-1.5">
+            <img src={foundryStepStatusTokenIcon(stepStatuses[step])} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
             {index + 1}. {step}
+            <NexusBadge tone={stepStatusTone(stepStatuses[step])}>{stepStatuses[step]}</NexusBadge>
           </NexusButton>
         ))}
       </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] uppercase tracking-wide text-zinc-500">Quick Start</span>
+        <NexusButton size="sm" intent="subtle" onClick={() => applyQuickStartPreset('RAPID_DEPLOY')}>Rapid Deploy</NexusButton>
+        <NexusButton size="sm" intent="subtle" onClick={() => applyQuickStartPreset('DOCTRINE_LOCK')}>Doctrine Lock</NexusButton>
+        <NexusButton size="sm" intent="subtle" onClick={() => applyQuickStartPreset('TRAINING_LANE')}>Training Lane</NexusButton>
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)] gap-2">
+        <div className="space-y-2">
       {stepId === 'ARCHETYPE' ? (
         <div className="space-y-2">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
@@ -1304,13 +1454,59 @@ export default function OperationCreationWizard({
               </div>
             ) : null}
           </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1.5">
+            <label className="text-[11px] text-zinc-300 inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={saveAsTemplateAfterCreate}
+                onChange={(event) => setSaveAsTemplateAfterCreate(event.target.checked)}
+              />
+              Save as template after launch
+            </label>
+            <input
+              value={foundryTemplateNameInput}
+              onChange={(event) => setFoundryTemplateNameInput(event.target.value)}
+              className="h-8 flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
+              placeholder="Template name"
+              disabled={!saveAsTemplateAfterCreate}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
           <NexusButton size="sm" intent="subtle" onClick={exportDraftIcs}>Export Draft ICS</NexusButton>
-          <NexusButton size="sm" intent="primary" disabled={!canCreateOperationNow} onClick={createFromWizard}>Create Operation</NexusButton>
+          <NexusButton size="sm" intent="primary" disabled={!canCreateOperationNow} onClick={createFromWizard}>Launch Operation</NexusButton>
           {createdOpId ? <NexusBadge tone="ok">Created {createdOpId}</NexusBadge> : null}
+          </div>
         </div>
         {icsPreview ? <textarea value={icsPreview} readOnly className="h-20 w-full resize-none rounded border border-zinc-800 bg-zinc-950/55 px-2 py-1 text-[10px] text-zinc-500" /> : null}
       </div> : null}
+        </div>
+        <aside className="rounded border border-zinc-800 bg-zinc-950/55 p-2 space-y-2">
+          <div className="text-[11px] uppercase tracking-wide text-zinc-400">Launch Readout</div>
+          <div className="space-y-1 text-[11px] text-zinc-300">
+            <div>Archetype: {launchReadout.archetypeLabel}</div>
+            <div>Track: {launchReadout.releaseTrackLabel}</div>
+            <div>Variant: {launchReadout.variantSupport}</div>
+            <div className="flex items-center gap-1.5">
+              <img src={operationRiskBandTokenIcon(launchReadout.riskBand)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+              <span>Risk: {launchReadout.riskBand}</span>
+            </div>
+          </div>
+          <div className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px] text-zinc-400 space-y-0.5">
+            <div>Schedule: {launchReadout.scheduleOk ? 'VALID' : 'INVALID'}</div>
+            <div className="truncate">{launchReadout.scheduleReason}</div>
+          </div>
+          <div className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px] text-zinc-400">
+            Seed: {launchReadout.seededObjectives} objectives · {launchReadout.seededPhases} phases · {launchReadout.seededTasks} tasks
+          </div>
+          <div className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px] text-zinc-400">
+            Gates: {launchReadout.readinessRequired} required / {launchReadout.readinessTotal} total
+          </div>
+          <div className="rounded border border-zinc-800 bg-zinc-900/55 px-2 py-1 text-[11px] text-zinc-400">
+            Comms: {launchReadout.commsTemplateId} · {launchReadout.ttlProfileId}
+          </div>
+        </aside>
+      </div>
       {errorText ? <div className="rounded border border-red-900/60 bg-red-950/30 px-2 py-1 text-xs text-red-300">{errorText}</div> : null}
       <div className="flex items-center justify-between gap-2">
         <NexusButton size="sm" intent="subtle" onClick={() => goStep(-1)} disabled={stepIndex === 0}>Back</NexusButton>

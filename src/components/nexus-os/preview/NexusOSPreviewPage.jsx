@@ -4,6 +4,7 @@ import {
   BRIDGE_DEFAULT_PRESET,
   getBridgeThemeCssVars,
   CommsNetworkConsole,
+  CommsPeekPanel,
   CqbCommandConsole,
   buildDevControlSignals,
   buildDevLocationEstimates,
@@ -894,7 +895,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
           onResize={() => setIsResizingLeft(true)}
           isResizing={isResizingLeft}
-          title="Text Comms"
+          title={workbenchFocusMode === 'comms' ? 'Comms Snapshot' : 'Text Comms'}
           icon={Radio}
           className="rounded-lg"
           statusMetrics={sidePanelRuntime.leftPanelMetrics}
@@ -906,6 +907,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           headerSignalTone={sidePanelRuntime.leftPanelHeader.signalTone}
           onMaximize={() => setLeftPanelWidth(600)}
           onMinimize={() => setLeftPanelWidth(280)}>
+
+          {workbenchFocusMode === 'comms' ?
+          <CommsPeekPanel
+            {...sharedPanelProps}
+            onOpenCommsNetwork={() => openFocusApp('comms')} /> :
 
           <CommsHub
             operations={operations}
@@ -923,6 +929,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             focusMode={workbenchFocusMode}
             isExpanded={!leftPanelCollapsed}
             onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)} />
+          }
 
         </TacticalSidePanel>
 

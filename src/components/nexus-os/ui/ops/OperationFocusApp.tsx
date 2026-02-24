@@ -109,6 +109,12 @@ import CoalitionOutreachPanel from './CoalitionOutreachPanel';
 import OperationCommsControlPanel from './OperationCommsControlPanel';
 import OperationCreationWizard from './OperationCreationWizard';
 import OperationExecutionBoard from './OperationExecutionBoard';
+import { buildOperationCommandGridSnapshot } from './operationCommandGridRuntime';
+import {
+  operationMetricTokenIcon,
+  operationPostureTokenIcon,
+  operationStatusTokenIcon,
+} from './operationTokenSemantics';
 import { deriveOperationStagePolicy } from './stagePolicy';
 
 type TabId = 'EXECUTION' | 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'TIMELINE' | 'NARRATIVE' | 'COALITION';
@@ -134,6 +140,8 @@ interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
 const TABS: TabId[] = ['EXECUTION', 'PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
 const TIMELINE_FILTERS: TimelineFilter[] = ['ALL', 'AUDIT', 'DECISION', 'EVENT'];
 const DEFAULT_PAGE_SIZE = 6;
+const ORDER_ACK_EVENT_SET = new Set(['ROGER', 'WILCO', 'CLEAR_COMMS']);
+const ORDER_DIRECTIVE_EVENT_SET = new Set(['MOVE_OUT', 'HOLD', 'SELF_CHECK', ...ORDER_ACK_EVENT_SET]);
 
 interface PagedItems<T> {
   page: number;
@@ -546,6 +554,20 @@ export default function OperationFocusApp({
     () => timelineEntries.filter((entry) => entry.severity === 'HIGH').length,
     [timelineEntries]
   );
+  const readinessGateRequiredTotal = useMemo(
+    () => (selectedOp?.readinessGates || []).filter((gate) => gate.required).length,
+    [selectedOp?.readinessGates]
+  );
+  const readinessGateRequiredReady = useMemo(
+    () => (selectedOp?.readinessGates || []).filter((gate) => gate.required && gate.status === 'READY').length,
+    [selectedOp?.readinessGates]
+  );
+  const orderDisciplineCounts = useMemo(() => {
+    const relevant = opEvents.filter((entry) => ORDER_DIRECTIVE_EVENT_SET.has(String(entry.kind || '').toUpperCase()));
+    const acked = relevant.filter((entry) => ORDER_ACK_EVENT_SET.has(String(entry.kind || '').toUpperCase())).length;
+    const persisted = Math.max(0, relevant.length - acked);
+    return { acked, persisted, total: relevant.length };
+  }, [opEvents]);
   const threadSummaries = useMemo(
     () => (selectedOp ? listThreadSummaries(selectedOp.id, actorId) : []),
     [selectedOp?.id, actorId, threadVersion]
@@ -615,6 +637,45 @@ export default function OperationFocusApp({
   const activeThreadComments = activeThreadSummary
     ? [activeThreadSummary.root, ...activeThreadSummary.replies]
     : comments;
+  const commandGridSnapshot = useMemo(
+    () =>
+      buildOperationCommandGridSnapshot({
+        requiredReady: readinessGateRequiredReady,
+        requiredTotal: readinessGateRequiredTotal,
+        activeEntries: entries.filter((entry) => entry.status !== 'WITHDRAWN').length,
+        openSeats: summary?.openSeats.reduce((count, seat) => count + seat.openQty, 0) || 0,
+        hardViolations: summary?.hardViolations || 0,
+        softFlags: summary?.softFlags || 0,
+        phasesDone: phases.filter((phase) => phase.status === 'DONE').length,
+        phasesTotal: phases.length,
+        tasksDone: tasks.filter((task) => task.status === 'DONE').length,
+        tasksTotal: tasks.length,
+        challengedAssumptions: assumptions.filter((assumption) => assumption.status === 'CHALLENGED').length,
+        unreadThreadReplies: threadSummaries.reduce((total, entry) => total + entry.unreadReplies, 0),
+        timelineHighSeverityCount,
+        orderAcked: orderDisciplineCounts.acked,
+        orderPersisted: orderDisciplineCounts.persisted,
+        leadAlertsHighSeverity: leadAlerts.filter((alert) => alert.severity === 'HIGH' || alert.severity === 'CRITICAL').length,
+        leadAlertsTotal: leadAlerts.length,
+        unresolvedIncidentEquivalent: leadAlerts.filter((alert) => alert.severity !== 'LOW').length,
+      }),
+    [
+      assumptions,
+      entries,
+      leadAlerts,
+      orderDisciplineCounts.acked,
+      orderDisciplineCounts.persisted,
+      phases,
+      readinessGateRequiredReady,
+      readinessGateRequiredTotal,
+      summary?.hardViolations,
+      summary?.openSeats,
+      summary?.softFlags,
+      tasks,
+      threadSummaries,
+      timelineHighSeverityCount,
+    ]
+  );
   const pagedAuditEvents = usePagedItems(auditEvents, 4);
   const pagedObjectives = usePagedItems(objectives, 5);
   const pagedPhaseTaskRows = usePagedItems(phaseTaskRows, 6);
@@ -801,10 +862,22 @@ export default function OperationFocusApp({
           <select value={selectedOp.id} onChange={(e) => setSelectedOpId(e.target.value)} className="h-8 min-w-[15rem] rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
             {operations.map((op) => <option key={op.id} value={op.id}>{op.name} ({op.posture}/{op.status})</option>)}
           </select>
-          <NexusBadge tone={selectedOp.posture === 'FOCUSED' ? 'active' : 'warning'}>{selectedOp.posture}</NexusBadge>
-          <NexusBadge tone={toneForStatus(selectedOp.status)}>{selectedOp.status}</NexusBadge>
+          <span className="inline-flex items-center gap-1">
+            <img src={operationPostureTokenIcon(selectedOp.posture)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+            <NexusBadge tone={selectedOp.posture === 'FOCUSED' ? 'active' : 'warning'}>{selectedOp.posture}</NexusBadge>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <img src={operationStatusTokenIcon(selectedOp.status)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+            <NexusBadge tone={toneForStatus(selectedOp.status)}>{selectedOp.status}</NexusBadge>
+          </span>
           <NexusBadge tone={(summary?.hardViolations || 0) > 0 ? 'warning' : 'neutral'}>
             Violations {(summary?.hardViolations || 0)}
+          </NexusBadge>
+          <NexusBadge tone={timelineHighSeverityCount > 0 ? 'warning' : 'neutral'}>
+            Timeline {timelineHighSeverityCount} High
+          </NexusBadge>
+          <NexusBadge tone={orderDisciplineCounts.total > 0 && orderDisciplineCounts.acked === orderDisciplineCounts.total ? 'ok' : 'active'}>
+            ACK {orderDisciplineCounts.acked}/{orderDisciplineCounts.total}
           </NexusBadge>
           <NexusBadge tone={effectiveRoleView === 'COMMAND' ? 'active' : effectiveRoleView === 'LEAD' ? 'warning' : 'neutral'}>
             {effectiveRoleView} VIEW
@@ -1101,6 +1174,58 @@ export default function OperationFocusApp({
         ) : null}
 
         {errorText ? <div className="rounded border border-red-900/60 bg-red-950/35 px-2 py-1 text-xs text-red-300">{errorText}</div> : null}
+      </section>
+
+      <section className="rounded border border-zinc-800 bg-zinc-950/55 p-2.5 space-y-2 nexus-terminal-panel">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-100">Command Decision Grid</h4>
+          <NexusBadge tone={commandGridSnapshot.overallTone}>Load {Math.round(commandGridSnapshot.overallPressure * 100)}%</NexusBadge>
+        </div>
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+          {commandGridSnapshot.metrics.map((metric) => (
+            <article key={metric.id} className="rounded border border-zinc-800 bg-zinc-900/55 p-2 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="inline-flex items-center gap-1.5">
+                  <img src={operationMetricTokenIcon(metric.id, metric.tone)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                  <span className="text-[11px] text-zinc-200 uppercase tracking-wide">{metric.label}</span>
+                </div>
+                <NexusBadge tone={metric.tone}>{metric.tone.toUpperCase()}</NexusBadge>
+              </div>
+              <div className="text-sm font-semibold text-zinc-100">{metric.valueText}</div>
+              <div className="text-[10px] text-zinc-500 truncate">{metric.detail}</div>
+            </article>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <NexusButton size="sm" intent="subtle" onClick={() => runAction(() => setFocusOperation(actorId, selectedOp.id))}>Set Focus</NexusButton>
+          <NexusButton size="sm" intent="subtle" onClick={() => exportOperationScheduleIcs(selectedOp)}>Export ICS</NexusButton>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            onClick={() =>
+              runAction(() =>
+                refreshOperationLeadAlerts({
+                  opId: selectedOp.id,
+                  posture: selectedOp.posture,
+                  candidates: candidatePool,
+                  demands: seatDemands,
+                })
+              )
+            }
+          >
+            Refresh Matching Alerts
+          </NexusButton>
+          <NexusButton
+            size="sm"
+            intent="subtle"
+            disabled={commsLocked}
+            onClick={() => runAction(() => applyCommsTemplate(selectedOp.id, selectedOp.commsTemplateId as CommsTemplateId, actorId))}
+          >
+            Reapply Template
+          </NexusButton>
+          {onOpenForceDesign ? <NexusButton size="sm" intent="subtle" onClick={() => onOpenForceDesign(selectedOp.id)}>Force Coverage</NexusButton> : null}
+          {onOpenReports ? <NexusButton size="sm" intent="subtle" onClick={() => onOpenReports(selectedOp.id)}>Reports</NexusButton> : null}
+        </div>
       </section>
 
       <section className="rounded border border-zinc-800 bg-zinc-950/55 px-2 py-2 flex items-center gap-2 nexus-terminal-panel">

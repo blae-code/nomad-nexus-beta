@@ -49,7 +49,7 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
   await expect(page.locator('[data-comms-command-bar=\"true\"]').first()).toBeVisible();
   await expect(page.locator('[data-comms-template-select=\"true\"]').first()).toBeVisible();
   await expect(page.locator('[data-comms-ttl-select=\"true\"]').first()).toBeVisible();
-  await expect(page.getByText(/Text Comms/i).first()).toBeVisible();
+  await expect(page.getByText(/Text Comms|Comms Snapshot/i).first()).toBeVisible();
   await expect(page.getByText(/Voice Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Global Voice Controls/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /Fleet/i }).first()).toBeVisible();
@@ -116,8 +116,8 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
   if (hasCommsTab) {
     await expect(opsCommsTab).toBeVisible();
     await opsCommsTab.dispatchEvent('click');
-    await expect(page.getByText(/Operational Comms Control/i)).toBeVisible();
-    await expect(page.getByText(/Net Control/i).first()).toBeVisible();
+    await expect(page.getByText(/Operational Signals Control/i)).toBeVisible();
+    await expect(page.getByText(/Voice net controls are in the right-side Voice Comms panel/i)).toBeVisible();
     await expect(page.getByText(/Orders Feed/i).first()).toBeVisible();
     if (issuedCommsAction) {
       await expect.poll(() => readDeliveryTotal(page), { timeout: 10000 }).toBeGreaterThan(0);
