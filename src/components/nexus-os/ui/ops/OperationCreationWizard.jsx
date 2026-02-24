@@ -1,21 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { DataClassification } from '../../schemas/crossOrgSchemas';
-import type {
-  Operation,
-  OperationArchetypeId,
-  OperationReleaseTrack,
-  OperationMiningEnvironment,
-  OperationMiningExtractionMethod,
-  OperationMiningTier,
-  OperationPvpEngagementProfile,
-  OperationPvpEnvironment,
-  OperationPvpOpsecLevel,
-  OperationSalvageEnvironment,
-  OperationSalvageExtractionMethod,
-  OperationSalvageMode,
-  OperationReadinessGate,
-  OperationScenarioConfig,
-} from '../../schemas/opSchemas';
 import {
   buildRedactedOpponentProjection,
   getMiningVariantProfile,
@@ -29,7 +12,7 @@ import {
   getMethodAvailability,
   getMethodDisplayBadge,
 } from '../../registries/starCitizenReleaseRegistry';
-import { CommsTemplateRegistry, type CommsTemplateId } from '../../registries/commsTemplateRegistry';
+import { CommsTemplateRegistry } from '../../registries/commsTemplateRegistry';
 import {
   appendOperationEvent,
   createOperation,
@@ -62,29 +45,25 @@ import {
   setOperationExperimentalGameplayEnabled,
   setOperationSc47PreviewEnabled,
 } from '../../services/operationFeatureFlagService';
-import type { CqbActorProfile } from '../cqb/cqbTypes';
 import { NexusBadge, NexusButton } from '../primitives';
 
-type WizardStep = 'ARCHETYPE' | 'IDENTITY' | 'SCENARIO' | 'FORCE' | 'COMMS' | 'READINESS' | 'REVIEW';
-const STEPS: WizardStep[] = ['ARCHETYPE', 'IDENTITY', 'SCENARIO', 'FORCE', 'COMMS', 'READINESS', 'REVIEW'];
-const MINING_TIER_OPTIONS: OperationMiningTier[] = ['SHIP_SPACE', 'SHIP_SURFACE', 'ROC_GEO', 'HAND_MINING', 'RING_SWEEP'];
-const MINING_ENVIRONMENT_OPTIONS: OperationMiningEnvironment[] = [
+const STEPS = ['ARCHETYPE', 'IDENTITY', 'SCENARIO', 'FORCE', 'COMMS', 'READINESS', 'REVIEW'];
+const MINING_TIER_OPTIONS = ['SHIP_SPACE', 'SHIP_SURFACE', 'ROC_GEO', 'HAND_MINING', 'RING_SWEEP'];
+const MINING_ENVIRONMENT_OPTIONS = [
   'SPACE_BELT',
   'PLANETARY_SURFACE',
   'MOON_SURFACE',
   'PLANETARY_RING',
   'CAVE_INTERIOR',
 ];
-const MINING_METHOD_OPTIONS: OperationMiningExtractionMethod[] = ['SHIP_LASER', 'ROC_BEAM', 'HAND_TOOL'];
-const RELEASE_TRACK_OPTIONS: OperationReleaseTrack[] = ['LIVE_4_6', 'PREVIEW_4_7'];
-const PVP_ENVIRONMENT_OPTIONS: OperationPvpEnvironment[] = ['SPACE', 'SURFACE', 'INTERIOR', 'MIXED'];
-const PVP_PROFILE_OPTIONS: OperationPvpEngagementProfile[] = ['RAID', 'BOARDING', 'CONVOY_ESCORT', 'INTERDICTION', 'DEFENSE'];
-const PVP_OPSEC_OPTIONS: OperationPvpOpsecLevel[] = ['STANDARD', 'RESTRICTED', 'BLACK'];
-const SALVAGE_MODE_OPTIONS: OperationSalvageMode[] = ['HULL_STRIP', 'COMPONENT_RECOVERY', 'CARGO_RETRIEVAL', 'BLACKBOX_RECOVERY', 'CONTESTED_RECOVERY'];
-const SALVAGE_ENVIRONMENT_OPTIONS: OperationSalvageEnvironment[] = ['SPACE_DERELICT', 'SURFACE_WRECK', 'DEBRIS_FIELD', 'CONTESTED_ZONE'];
-const SALVAGE_METHOD_OPTIONS: OperationSalvageExtractionMethod[] = ['SCRAPER', 'TRACTOR', 'SALVAGE_DRONE', 'MULTI_TOOL'];
-
-interface OperationCreationWizardProps {
+const MINING_METHOD_OPTIONS = ['SHIP_LASER', 'ROC_BEAM', 'HAND_TOOL'];
+const RELEASE_TRACK_OPTIONS = ['LIVE_4_6', 'PREVIEW_4_7'];
+const PVP_ENVIRONMENT_OPTIONS = ['SPACE', 'SURFACE', 'INTERIOR', 'MIXED'];
+const PVP_PROFILE_OPTIONS = ['RAID', 'BOARDING', 'CONVOY_ESCORT', 'INTERDICTION', 'DEFENSE'];
+const PVP_OPSEC_OPTIONS = ['STANDARD', 'RESTRICTED', 'BLACK'];
+const SALVAGE_MODE_OPTIONS = ['HULL_STRIP', 'COMPONENT_RECOVERY', 'CARGO_RETRIEVAL', 'BLACKBOX_RECOVERY', 'CONTESTED_RECOVERY'];
+const SALVAGE_ENVIRONMENT_OPTIONS = ['SPACE_DERELICT', 'SURFACE_WRECK', 'DEBRIS_FIELD', 'CONTESTED_ZONE'];
+const SALVAGE_METHOD_OPTIONS = ['SCRAPER', 'TRACTOR', 'SALVAGE_DRONE', 'MULTI_TOOL'];
   open: boolean;
   onClose: () => void;
   actorId: string;
@@ -155,17 +134,17 @@ export default function OperationCreationWizard({
   const [nameInput, setNameInput] = useState('Operation');
   const [hostOrgInput, setHostOrgInput] = useState(actorProfile?.orgId || 'ORG-LOCAL');
   const [invitedOrgsInput, setInvitedOrgsInput] = useState('');
-  const [classificationInput, setClassificationInput] = useState<DataClassification>('INTERNAL');
+  const [classificationInput, setClassificationInput] = useState('INTERNAL');
   const [startInput, setStartInput] = useState(nowLocalInput(1));
   const [endInput, setEndInput] = useState(nowLocalInput(3));
   const [timezoneInput, setTimezoneInput] = useState('UTC');
-  const [releaseTrackInput, setReleaseTrackInput] = useState<OperationReleaseTrack>('LIVE_4_6');
+  const [releaseTrackInput, setReleaseTrackInput] = useState('LIVE_4_6');
   const [sc47PreviewEnabled, setSc47PreviewEnabledState] = useState<boolean>(() => isOperationSc47PreviewEnabled());
-  const [experimentalGameplayEnabled, setExperimentalGameplayEnabledState] = useState<boolean>(() => isOperationExperimentalGameplayEnabled());
+  const [experimentalGameplayEnabled, setExperimentalGameplayEnabledState] = useState(() => isOperationExperimentalGameplayEnabled());
   const [variantInput, setVariantInput] = useState(defaultMiningVariant);
-  const [miningTierInput, setMiningTierInput] = useState<OperationMiningTier>(defaultMiningProfile.tier);
-  const [miningEnvironmentInput, setMiningEnvironmentInput] = useState<OperationMiningEnvironment>(defaultMiningProfile.environment);
-  const [miningMethodInput, setMiningMethodInput] = useState<OperationMiningExtractionMethod>(defaultMiningProfile.extractionMethod);
+  const [miningTierInput, setMiningTierInput] = useState(defaultMiningProfile.tier);
+  const [miningEnvironmentInput, setMiningEnvironmentInput] = useState(defaultMiningProfile.environment);
+  const [miningMethodInput, setMiningMethodInput] = useState(defaultMiningProfile.extractionMethod);
   const [miningRouteInput, setMiningRouteInput] = useState(defaultMiningProfile.defaultRoutePlan);
   const [miningRefineryInput, setMiningRefineryInput] = useState(defaultMiningProfile.defaultRefineryPlan);
   const [miningEscortInput, setMiningEscortInput] = useState(defaultMiningProfile.defaultEscortPolicy);
@@ -185,13 +164,13 @@ export default function OperationCreationWizard({
   const [miningIdleHaulInput, setMiningIdleHaulInput] = useState('10');
   const [miningRefineryQueueInput, setMiningRefineryQueueInput] = useState('25');
   const [miningRegolithEnabled, setMiningRegolithEnabled] = useState(true);
-  const [miningRegolithSourceInput, setMiningRegolithSourceInput] = useState<'NONE' | 'MANUAL' | 'REGOLITH'>('REGOLITH');
+  const [miningRegolithSourceInput, setMiningRegolithSourceInput] = useState('REGOLITH');
   const [miningRegolithSessionInput, setMiningRegolithSessionInput] = useState('');
   const [miningRegolithWorkOrderInput, setMiningRegolithWorkOrderInput] = useState('');
   const [miningRegolithFindsInput, setMiningRegolithFindsInput] = useState('');
-  const [salvageModeInput, setSalvageModeInput] = useState<OperationSalvageMode>(defaultSalvageProfile.mode);
-  const [salvageEnvironmentInput, setSalvageEnvironmentInput] = useState<OperationSalvageEnvironment>(defaultSalvageProfile.environment);
-  const [salvageMethodInput, setSalvageMethodInput] = useState<OperationSalvageExtractionMethod>(defaultSalvageProfile.extractionMethod);
+  const [salvageModeInput, setSalvageModeInput] = useState(defaultSalvageProfile.mode);
+  const [salvageEnvironmentInput, setSalvageEnvironmentInput] = useState(defaultSalvageProfile.environment);
+  const [salvageMethodInput, setSalvageMethodInput] = useState(defaultSalvageProfile.extractionMethod);
   const [salvageObjectiveInput, setSalvageObjectiveInput] = useState(defaultSalvageProfile.defaultObjectiveType);
   const [salvageTargetWreckInput, setSalvageTargetWreckInput] = useState('Large derelict hull');
   const [salvageClaimInput, setSalvageClaimInput] = useState('Private contract claim');
@@ -217,14 +196,14 @@ export default function OperationCreationWizard({
   const [salvageRiskReserveInput, setSalvageRiskReserveInput] = useState('80000');
   const [salvageEvidenceInput, setSalvageEvidenceInput] = useState('');
   const [salvageCompanionEnabled, setSalvageCompanionEnabled] = useState(true);
-  const [salvageCompanionSourceInput, setSalvageCompanionSourceInput] = useState<'NONE' | 'MANUAL'>('MANUAL');
+  const [salvageCompanionSourceInput, setSalvageCompanionSourceInput] = useState('MANUAL');
   const [salvageCompanionRefsInput, setSalvageCompanionRefsInput] = useState('');
-  const [pvpEnvironmentInput, setPvpEnvironmentInput] = useState<OperationPvpEnvironment>(defaultPvpProfile.environment);
-  const [pvpEngagementInput, setPvpEngagementInput] = useState<OperationPvpEngagementProfile>(defaultPvpProfile.engagementProfile);
+  const [pvpEnvironmentInput, setPvpEnvironmentInput] = useState(defaultPvpProfile.environment);
+  const [pvpEngagementInput, setPvpEngagementInput] = useState(defaultPvpProfile.engagementProfile);
   const [pvpObjectiveInput, setPvpObjectiveInput] = useState(defaultPvpProfile.defaultObjectiveType);
   const [pvpCommandIntentInput, setPvpCommandIntentInput] = useState(defaultPvpProfile.defaultCommandIntent);
   const [pvpRoeInput, setPvpRoeInput] = useState(defaultPvpProfile.defaultRoe);
-  const [pvpOpsecInput, setPvpOpsecInput] = useState<OperationPvpOpsecLevel>('RESTRICTED');
+  const [pvpOpsecInput, setPvpOpsecInput] = useState('RESTRICTED');
   const [pvpRallyPointsInput, setPvpRallyPointsInput] = useState('RP-ALPHA, RP-BRAVO');
   const [pvpIngressInput, setPvpIngressInput] = useState(defaultPvpProfile.defaultIngressPlan);
   const [pvpQrfInput, setPvpQrfInput] = useState(defaultPvpProfile.defaultQrfPlan);
@@ -245,16 +224,16 @@ export default function OperationCreationWizard({
   const [pvpCommsDisruptionsInput, setPvpCommsDisruptionsInput] = useState('0');
   const [pvpReactionLatencyInput, setPvpReactionLatencyInput] = useState('9');
   const [pvpCompanionEnabled, setPvpCompanionEnabled] = useState(true);
-  const [pvpCompanionSourceInput, setPvpCompanionSourceInput] = useState<'NONE' | 'MANUAL'>('MANUAL');
+  const [pvpCompanionSourceInput, setPvpCompanionSourceInput] = useState('MANUAL');
   const [pvpCompanionRefsInput, setPvpCompanionRefsInput] = useState('');
   const [pvpOpponentInput, setPvpOpponentInput] = useState('Opposing Org');
   const [pvpOpponentDoctrineInput, setPvpOpponentDoctrineInput] = useState('');
   const [pvpOpponentStrengthInput, setPvpOpponentStrengthInput] = useState('medium strike package');
   const [pvpOpponentAssetProfileInput, setPvpOpponentAssetProfileInput] = useState('');
-  const [pvpOpponentIntelConfidenceInput, setPvpOpponentIntelConfidenceInput] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
-  const [commsTemplateInput, setCommsTemplateInput] = useState<CommsTemplateId>('SQUAD_NETS');
+  const [pvpOpponentIntelConfidenceInput, setPvpOpponentIntelConfidenceInput] = useState('MEDIUM');
+  const [commsTemplateInput, setCommsTemplateInput] = useState('SQUAD_NETS');
   const [ttlProfileInput, setTtlProfileInput] = useState('TTL-OP-CASUAL');
-  const [gateRows, setGateRows] = useState<Array<Pick<OperationReadinessGate, 'label' | 'ownerRole' | 'required'>>>([]);
+  const [gateRows, setGateRows] = useState([]);
   const [icsPreview, setIcsPreview] = useState('');
   const [errorText, setErrorText] = useState('');
   const [createdOpId, setCreatedOpId] = useState('');
@@ -318,7 +297,7 @@ export default function OperationCreationWizard({
   );
   const effectiveGates = gateRows.length > 0 ? gateRows : archetype.seedBundle.readinessGates;
 
-  const scenarioConfig = useMemo<OperationScenarioConfig>(() => {
+  const scenarioConfig = useMemo(() => {
     if (archetypeId === 'INDUSTRIAL_MINING') {
       return {
         mining: {
@@ -552,7 +531,7 @@ export default function OperationCreationWizard({
     pvpOpponentIntelConfidenceInput,
   ]);
 
-  const canAdvance = (): boolean => {
+  const canAdvance = () => {
     if (stepId === 'ARCHETYPE') return createPermission.allowed;
     if (stepId === 'IDENTITY') return Boolean(nameInput.trim()) && scheduleValidation.valid;
     if (stepId === 'SCENARIO') {
@@ -588,7 +567,7 @@ export default function OperationCreationWizard({
     return true;
   };
 
-  const goStep = (offset: number) => {
+  const goStep = (offset) => {
     if (offset > 0 && !canAdvance()) {
       setErrorText('Complete required fields before continuing.');
       return;
@@ -597,7 +576,7 @@ export default function OperationCreationWizard({
     setStepIndex((current) => Math.max(0, Math.min(STEPS.length - 1, current + offset)));
   };
 
-  const selectArchetype = (nextId: OperationArchetypeId) => {
+  const selectArchetype = (nextId) => {
     const next = getOperationArchetype(nextId);
     const nextVariantOptions = listReleaseFilteredArchetypeVariantOptions(nextId, releaseTrackInput, {
       includeLocked: false,
@@ -652,7 +631,7 @@ export default function OperationCreationWizard({
     }
   };
 
-  const updateScenarioVariant = (nextVariant: string) => {
+  const updateScenarioVariant = (nextVariant) => {
     const variantEntry = variantOptions.find((entry) => entry.id === nextVariant);
     if (variantEntry && !variantEntry.available) {
       setErrorText(variantEntry.reason || 'Variant is locked for the selected release track.');
@@ -740,7 +719,7 @@ export default function OperationCreationWizard({
     }
   }, [archetypeId, variantInput, variantOptions]);
 
-  const buildReadinessGates = (): OperationReadinessGate[] => {
+  const buildReadinessGates = () => {
     const nowIso = new Date().toISOString();
     return effectiveGates.map((gate, index) => ({
       id: `gate_${index + 1}`,
@@ -754,7 +733,7 @@ export default function OperationCreationWizard({
     }));
   };
 
-  const seedOperation = (operation: Operation) => {
+  const seedOperation = (operation) => {
     const seed = archetype.seedBundle;
     seed.objectives.forEach((objective) => {
       createObjective({
@@ -954,7 +933,7 @@ export default function OperationCreationWizard({
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
             <select
               value={releaseTrackInput}
-              onChange={(event) => setReleaseTrackInput(event.target.value as OperationReleaseTrack)}
+              onChange={(event) => setReleaseTrackInput(event.target.value)}
               className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
             >
               {RELEASE_TRACK_OPTIONS.map((track) => (
@@ -1000,7 +979,7 @@ export default function OperationCreationWizard({
           <input value={nameInput} onChange={(event) => setNameInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 xl:col-span-2" placeholder="Operation name" />
           <input value={hostOrgInput} onChange={(event) => setHostOrgInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Host org id" />
           <input value={invitedOrgsInput} onChange={(event) => setInvitedOrgsInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Invited org ids (csv)" />
-          <select value={classificationInput} onChange={(event) => setClassificationInput(event.target.value as DataClassification)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+          <select value={classificationInput} onChange={(event) => setClassificationInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
             <option value="INTERNAL">INTERNAL</option><option value="ALLIED">ALLIED</option><option value="PUBLIC">PUBLIC</option>
           </select>
           <input type="datetime-local" value={startInput} onChange={(event) => setStartInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" />
@@ -1042,13 +1021,13 @@ export default function OperationCreationWizard({
           {archetypeId === 'INDUSTRIAL_MINING' ? (
             <div className="space-y-2">
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
-                <select value={miningTierInput} onChange={(event) => setMiningTierInput(event.target.value as OperationMiningTier)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={miningTierInput} onChange={(event) => setMiningTierInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {MINING_TIER_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-                <select value={miningEnvironmentInput} onChange={(event) => setMiningEnvironmentInput(event.target.value as OperationMiningEnvironment)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={miningEnvironmentInput} onChange={(event) => setMiningEnvironmentInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {MINING_ENVIRONMENT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-                <select value={miningMethodInput} onChange={(event) => setMiningMethodInput(event.target.value as OperationMiningExtractionMethod)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={miningMethodInput} onChange={(event) => setMiningMethodInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {MINING_METHOD_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
                 <input value={miningStagingNodeInput} onChange={(event) => setMiningStagingNodeInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Staging node id" />
@@ -1061,7 +1040,7 @@ export default function OperationCreationWizard({
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
                 <input value={miningOreTargetsInput} onChange={(event) => setMiningOreTargetsInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Ore targets (csv)" />
                 <input value={miningHazardsInput} onChange={(event) => setMiningHazardsInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Hazards (csv)" />
-                <select value={miningThreatBandInput} onChange={(event) => setMiningThreatBandInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={miningThreatBandInput} onChange={(event) => setMiningThreatBandInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW threat</option>
                   <option value="MEDIUM">MEDIUM threat</option>
                   <option value="HIGH">HIGH threat</option>
@@ -1087,7 +1066,7 @@ export default function OperationCreationWizard({
                   <input type="checkbox" checked={miningRegolithEnabled} onChange={(event) => setMiningRegolithEnabled(event.target.checked)} />
                   Regolith companion enabled
                 </label>
-                <select value={miningRegolithSourceInput} onChange={(event) => setMiningRegolithSourceInput(event.target.value as 'NONE' | 'MANUAL' | 'REGOLITH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" disabled={!miningRegolithEnabled}>
+                <select value={miningRegolithSourceInput} onChange={(event) => setMiningRegolithSourceInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" disabled={!miningRegolithEnabled}>
                   <option value="REGOLITH">REGOLITH</option>
                   <option value="MANUAL">MANUAL</option>
                   <option value="NONE">NONE</option>
@@ -1101,13 +1080,13 @@ export default function OperationCreationWizard({
           {archetypeId === 'INDUSTRIAL_SALVAGE' ? (
             <div className="space-y-2">
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
-                <select value={salvageModeInput} onChange={(event) => setSalvageModeInput(event.target.value as OperationSalvageMode)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={salvageModeInput} onChange={(event) => setSalvageModeInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {SALVAGE_MODE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-                <select value={salvageEnvironmentInput} onChange={(event) => setSalvageEnvironmentInput(event.target.value as OperationSalvageEnvironment)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={salvageEnvironmentInput} onChange={(event) => setSalvageEnvironmentInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {SALVAGE_ENVIRONMENT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-                <select value={salvageMethodInput} onChange={(event) => setSalvageMethodInput(event.target.value as OperationSalvageExtractionMethod)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={salvageMethodInput} onChange={(event) => setSalvageMethodInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {salvageMethodOptions.map((entry) => (
                     <option key={entry.id} value={entry.id} disabled={!entry.availability.available && entry.id !== salvageMethodInput}>
                       {entry.id} [{entry.badge.label}]
@@ -1141,17 +1120,17 @@ export default function OperationCreationWizard({
                 <input value={salvageHazardsInput} onChange={(event) => setSalvageHazardsInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Hazards (csv)" />
               </div>
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
-                <select value={salvageThreatBandInput} onChange={(event) => setSalvageThreatBandInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={salvageThreatBandInput} onChange={(event) => setSalvageThreatBandInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW threat</option>
                   <option value="MEDIUM">MEDIUM threat</option>
                   <option value="HIGH">HIGH threat</option>
                 </select>
-                <select value={salvageLegalRiskInput} onChange={(event) => setSalvageLegalRiskInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={salvageLegalRiskInput} onChange={(event) => setSalvageLegalRiskInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW legal risk</option>
                   <option value="MEDIUM">MEDIUM legal risk</option>
                   <option value="HIGH">HIGH legal risk</option>
                 </select>
-                <select value={salvageInterdictionRiskInput} onChange={(event) => setSalvageInterdictionRiskInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={salvageInterdictionRiskInput} onChange={(event) => setSalvageInterdictionRiskInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW interdiction</option>
                   <option value="MEDIUM">MEDIUM interdiction</option>
                   <option value="HIGH">HIGH interdiction</option>
@@ -1179,7 +1158,7 @@ export default function OperationCreationWizard({
                   <input type="checkbox" checked={salvageCompanionEnabled} onChange={(event) => setSalvageCompanionEnabled(event.target.checked)} />
                   Salvage companion refs enabled
                 </label>
-                <select value={salvageCompanionSourceInput} onChange={(event) => setSalvageCompanionSourceInput(event.target.value as 'NONE' | 'MANUAL')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" disabled={!salvageCompanionEnabled}>
+                <select value={salvageCompanionSourceInput} onChange={(event) => setSalvageCompanionSourceInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" disabled={!salvageCompanionEnabled}>
                   <option value="MANUAL">MANUAL</option>
                   <option value="NONE">NONE</option>
                 </select>
@@ -1190,13 +1169,13 @@ export default function OperationCreationWizard({
           {archetypeId === 'PVP_ORG_V_ORG' ? (
             <div className="space-y-2">
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
-                <select value={pvpEnvironmentInput} onChange={(event) => setPvpEnvironmentInput(event.target.value as OperationPvpEnvironment)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpEnvironmentInput} onChange={(event) => setPvpEnvironmentInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {PVP_ENVIRONMENT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-                <select value={pvpEngagementInput} onChange={(event) => setPvpEngagementInput(event.target.value as OperationPvpEngagementProfile)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpEngagementInput} onChange={(event) => setPvpEngagementInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {PVP_PROFILE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-                <select value={pvpOpsecInput} onChange={(event) => setPvpOpsecInput(event.target.value as OperationPvpOpsecLevel)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpOpsecInput} onChange={(event) => setPvpOpsecInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   {PVP_OPSEC_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
                 <input value={pvpObjectiveInput} onChange={(event) => setPvpObjectiveInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Objective type" />
@@ -1225,17 +1204,17 @@ export default function OperationCreationWizard({
                 <input value={pvpOpponentStrengthInput} onChange={(event) => setPvpOpponentStrengthInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Opponent strength hint" />
               </div>
               <div className="grid grid-cols-1 xl:grid-cols-5 gap-2">
-                <select value={pvpThreatBandInput} onChange={(event) => setPvpThreatBandInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpThreatBandInput} onChange={(event) => setPvpThreatBandInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW threat</option>
                   <option value="MEDIUM">MEDIUM threat</option>
                   <option value="HIGH">HIGH threat</option>
                 </select>
-                <select value={pvpCyberRiskInput} onChange={(event) => setPvpCyberRiskInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpCyberRiskInput} onChange={(event) => setPvpCyberRiskInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW cyber/ewar</option>
                   <option value="MEDIUM">MEDIUM cyber/ewar</option>
                   <option value="HIGH">HIGH cyber/ewar</option>
                 </select>
-                <select value={pvpDeceptionRiskInput} onChange={(event) => setPvpDeceptionRiskInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpDeceptionRiskInput} onChange={(event) => setPvpDeceptionRiskInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">LOW deception</option>
                   <option value="MEDIUM">MEDIUM deception</option>
                   <option value="HIGH">HIGH deception</option>
@@ -1255,11 +1234,11 @@ export default function OperationCreationWizard({
                   <input type="checkbox" checked={pvpCompanionEnabled} onChange={(event) => setPvpCompanionEnabled(event.target.checked)} />
                   PvP companion refs enabled
                 </label>
-                <select value={pvpCompanionSourceInput} onChange={(event) => setPvpCompanionSourceInput(event.target.value as 'NONE' | 'MANUAL')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" disabled={!pvpCompanionEnabled}>
+                <select value={pvpCompanionSourceInput} onChange={(event) => setPvpCompanionSourceInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" disabled={!pvpCompanionEnabled}>
                   <option value="MANUAL">MANUAL</option>
                   <option value="NONE">NONE</option>
                 </select>
-                <select value={pvpOpponentIntelConfidenceInput} onChange={(event) => setPvpOpponentIntelConfidenceInput(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={pvpOpponentIntelConfidenceInput} onChange={(event) => setPvpOpponentIntelConfidenceInput(event.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="LOW">Opponent intel LOW</option>
                   <option value="MEDIUM">Opponent intel MEDIUM</option>
                   <option value="HIGH">Opponent intel HIGH</option>
