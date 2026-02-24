@@ -932,7 +932,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
               {commandFeedback}
             </section>
           }
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-md border border-zinc-700/50 bg-gradient-to-br from-zinc-950/40 to-zinc-900/30 hover:border-orange-500/40 transition-all duration-200 p-4 backdrop-blur-sm shadow-lg">
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-800/60 bg-gradient-to-br from-zinc-950/60 via-zinc-900/40 to-zinc-950/50 hover:border-orange-500/50 hover:shadow-[0_0_24px_rgba(249,115,22,0.15)] transition-all duration-300 p-4 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative before:absolute before:inset-0 before:rounded-lg before:border before:border-white/[0.02] before:pointer-events-none">
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
