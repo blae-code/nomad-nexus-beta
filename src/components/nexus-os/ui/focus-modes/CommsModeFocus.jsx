@@ -1,5 +1,5 @@
 import React from 'react';
-import CommsNetworkConsole from '../comms/CommsNetworkConsole';
+import CommsNetworkConsole from '../comms/CommsNetworkConsole.tsx';
 
 export default function CommsModeFocus(props) {
   const sharedProps = {
