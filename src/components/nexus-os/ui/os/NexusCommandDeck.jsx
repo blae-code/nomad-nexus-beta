@@ -2,37 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Command, History, Sparkles, TerminalSquare, X, Zap } from 'lucide-react';
 import { NexusButton } from '../primitives';
 
-interface NexusCommandCatalogItem {
-  id: string;
-  label: string;
-  command: string;
-  detail?: string;
-}
-
-interface NexusCommandDeckProps {
-  open: boolean;
-  onClose: () => void;
-  onRunCommand: (command: string) => string;
-  commandCatalog?: NexusCommandCatalogItem[];
-  contextSummary?: string;
-  activeFocusMode?: string;
-  recentActions?: string[];
-}
-
-interface CommandResultEntry {
-  id: string;
-  command: string;
-  result: string;
-  timestamp: string;
-}
-
 const CATALOG_PAGE_SIZE = 6;
 const OUTPUT_PAGE_SIZE = 4;
 const HISTORY_PAGE_SIZE = 4;
 const HISTORY_STORAGE_KEY = 'nexus.commandDeck.history';
 const MAX_HISTORY = 32;
 
-const DEFAULT_CATALOG: NexusCommandCatalogItem[] = [
+const DEFAULT_CATALOG = [
   { id: 'help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
   { id: 'status', label: 'System Status', command: 'status', detail: 'Show bridge/link/focus status.' },
   { id: 'open-map', label: 'Focus Map', command: 'open map', detail: 'Open tactical map focus mode.' },
@@ -48,7 +24,7 @@ function toTimestampLabel() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function loadPersistedHistory(): string[] {
+function loadPersistedHistory() {
   if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -60,20 +36,16 @@ function loadPersistedHistory(): string[] {
   }
 }
 
-function persistHistory(history: string[]): void {
+function persistHistory(history) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
   } catch {}
 }
 
-function buildContextSuggestions(
-  catalog: NexusCommandCatalogItem[],
-  activeFocusMode?: string,
-  recentActions?: string[]
-): NexusCommandCatalogItem[] {
-  const suggestions: NexusCommandCatalogItem[] = [];
-  const addedIds = new Set<string>();
+function buildContextSuggestions(catalog, activeFocusMode, recentActions) {
+  const suggestions = [];
+  const addedIds = new Set();
 
   // Focus mode suggestions
   if (activeFocusMode) {
@@ -138,11 +110,11 @@ export default function NexusCommandDeck({
   contextSummary = 'Execute workspace controls and bridge commands.',
   activeFocusMode,
   recentActions = [],
-}: NexusCommandDeckProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+}) {
+  const inputRef = useRef(null);
   const [command, setCommand] = useState('');
-  const [results, setResults] = useState<CommandResultEntry[]>([]);
-  const [history, setHistory] = useState<string[]>(() => loadPersistedHistory());
+  const [results, setResults] = useState([]);
+  const [history, setHistory] = useState(() => loadPersistedHistory());
   const [historyCursor, setHistoryCursor] = useState(-1);
   const [catalogPage, setCatalogPage] = useState(0);
   const [outputPage, setOutputPage] = useState(0);
@@ -236,7 +208,7 @@ export default function NexusCommandDeck({
     inputRef.current?.focus();
   };
 
-  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const onInputKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       executeCommand();
