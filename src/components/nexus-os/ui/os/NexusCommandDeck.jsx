@@ -186,7 +186,7 @@ export default function NexusCommandDeck({
     [history, historyPage]
   );
 
-  const executeCommand = (nextCommand?: string) => {
+  const executeCommand = (nextCommand) => {
     const payload = String(nextCommand ?? command).trim();
     if (!payload) return;
     const result = String(onRunCommand(payload) || '');
@@ -202,7 +202,7 @@ export default function NexusCommandDeck({
     setCommand('');
   };
 
-  const recallHistory = (historyCommand: string) => {
+  const recallHistory = (historyCommand) => {
     setCommand(historyCommand);
     setHistoryCursor(-1);
     inputRef.current?.focus();
