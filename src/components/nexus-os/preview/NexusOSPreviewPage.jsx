@@ -815,61 +815,60 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       <div className="nexus-shell-grid" />
       <div className="nexus-shell-vignette" />
 
-      <header className="pt-1 pb-1 nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0" role="banner">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-orange-500/20 bg-orange-500/5">
-            <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+      <header className="pt-2 pb-2 px-4 nx-shell-topbar nexus-top-rail nexus-panel-glow flex-shrink-0" role="banner">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-orange-600/5">
+            <Shield className="w-4 h-4 text-orange-400 shrink-0" />
             <div className="min-w-0">
-              <h1 className="text-[10px] font-black uppercase tracking-[0.15em] text-white leading-none">NexusOS</h1>
-              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.2em] leading-none mt-0.5">Command Surface</p>
+              <h1 className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-100 leading-none">NexusOS</h1>
+              <p className="text-[8px] text-orange-300/70 uppercase tracking-[0.22em] leading-none mt-0.5 font-semibold">Command Surface</p>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5">
-            <div className="h-3 w-px bg-zinc-700/50" />
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-700/30 bg-zinc-900/30">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-200">{workspaceDisplayCallsign}</span>
-              <span className="text-[8px] text-zinc-600">•</span>
-              <span className="text-[9px] uppercase tracking-wider text-zinc-300">{user?.member_profile_data?.rank || 'Vagrant'}</span>
-              <span className="text-[8px] text-zinc-600">•</span>
-              <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[8px] font-semibold">{online ? 'Ready' : 'Offline'}</NexusBadge>
+          <div className="hidden md:flex items-center gap-3">
+            <div className="h-5 w-px bg-zinc-700/60" />
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-zinc-700/50 bg-zinc-900/60 hover:bg-zinc-900/80 hover:border-zinc-700/70 transition-all duration-200">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-zinc-100">{workspaceDisplayCallsign}</span>
+              <span className="text-[9px] text-zinc-600 font-bold">•</span>
+              <span className="text-[10px] uppercase tracking-[0.08em] text-zinc-300 font-semibold">{user?.member_profile_data?.rank || 'Vagrant'}</span>
+              <span className="text-[9px] text-zinc-600 font-bold">•</span>
+              <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[8px] font-bold uppercase tracking-[0.1em]">{online ? 'Ready' : 'Offline'}</NexusBadge>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px] font-semibold">{online ? 'Link Ready' : 'Link Down'}</NexusBadge>
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-zinc-700/50 bg-zinc-900/60">
+            <div className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-400 animate-pulse shadow-[0_0_12px_rgba(52,211,153,0.7)]' : 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)]'}`} />
+            <NexusBadge tone={online ? 'ok' : 'danger'} className="text-[9px] font-bold uppercase tracking-[0.1em]">{online ? 'Link Ready' : 'Link Down'}</NexusBadge>
           </div>
         </div>
 
         <button
           type="button"
-          className="bg-zinc-900/40 px-2 py-1 rounded-lg flex items-center gap-2 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group min-w-[240px]"
+          className="bg-zinc-900/50 px-3 py-1.5 rounded-md flex items-center gap-2.5 border border-zinc-700/50 hover:bg-zinc-800/70 hover:border-orange-500/50 transition-all duration-200 group min-w-[260px]"
           onClick={() => setCommandDeckOpen(true)}
           title="Open command deck (Ctrl+Shift+P)"
           aria-label="Open command deck"
           aria-keyshortcuts="Control+Shift+P">
-          <Search className="w-4 h-4 text-zinc-400 group-hover:text-orange-400 transition-colors" />
-          <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors uppercase tracking-wide">Command Deck</span>
-          <kbd className="bg-zinc-800/80 text-orange-300 ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded hidden xl:inline-flex items-center gap-0.5 border border-orange-500/40">Ctrl+Shift+P</kbd>
+          <Search className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+          <span className="text-[11px] font-bold text-zinc-200 group-hover:text-orange-100 transition-colors uppercase tracking-[0.12em]">Command Deck</span>
+          <kbd className="bg-zinc-800/90 text-orange-300 ml-auto px-2 py-0.5 text-[9px] font-mono rounded border border-orange-500/50 hidden xl:inline-flex items-center gap-0.5 font-bold">Ctrl+Shift+P</kbd>
         </button>
 
-        <div className="flex items-center gap-2 ml-auto">
-          <div className="bg-zinc-900/40 pr-3 pl-3 rounded-lg hidden xl:flex items-center gap-4 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group cursor-default"
-
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="bg-zinc-900/50 px-3 py-1.5 rounded-md hidden xl:flex items-center gap-5 border border-zinc-700/50 hover:bg-zinc-800/70 hover:border-orange-500/50 transition-all duration-200 group cursor-default"
           title="System Time: Local and UTC">
             <Clock3 className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
-            <div className="mx-auto flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Local</span>
-                <span className="text-[13px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-bold">
+            <div className="flex items-center gap-5">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] uppercase tracking-[0.15em] text-zinc-500 font-bold leading-none">Local</span>
+                <span className="text-[13px] font-mono text-orange-400 group-hover:text-orange-300 transition-colors leading-none font-extrabold tabular-nums">
                   {new Date(clockNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                 </span>
               </div>
-              <div className="w-px h-8 bg-zinc-700/30" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">UTC</span>
-                <span className="text-[11px] font-mono text-zinc-300 group-hover:text-zinc-100 transition-colors leading-none font-bold">
+              <div className="w-px h-9 bg-zinc-700/40" />
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] uppercase tracking-[0.15em] text-zinc-500 font-bold leading-none">UTC</span>
+                <span className="text-[11px] font-mono text-zinc-300 group-hover:text-zinc-100 transition-colors leading-none font-extrabold tabular-nums">
                   {new Date(clockNowMs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' })}Z
                 </span>
               </div>
@@ -878,11 +877,11 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
           <button
             type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-700/40 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-orange-500/40 transition-all group"
+            className="flex items-center justify-center w-10 h-10 rounded-md border border-zinc-700/50 bg-zinc-900/50 hover:bg-zinc-800/70 hover:border-orange-500/50 transition-all duration-200 group"
             onClick={() => setSettingsPanelOpen(true)}
             title="Open settings (preferences, keybinds, themes)"
             aria-label="Open settings console">
-            <Settings className="w-5 h-5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+            <Settings className="w-5 h-5 text-zinc-500 group-hover:text-orange-400 transition-colors" />
           </button>
         </div>
       </header>
@@ -927,13 +926,13 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         </TacticalSidePanel>
 
-        <main className="px-3 flex-1 overflow-hidden flex flex-col">
+        <main className="px-4 flex-1 overflow-hidden flex flex-col gap-3">
           {commandFeedback &&
-          <section aria-live="polite" className="nx-inline-feedback rounded-lg border border-zinc-700/40 bg-zinc-900/40 px-3 py-2 text-[11px] text-orange-400 font-semibold uppercase tracking-wide mb-2 hover:border-orange-500/40 hover:bg-zinc-800/60 transition-colors">
+          <section aria-live="polite" className="nx-inline-feedback rounded-md border border-orange-500/40 bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-4 py-2.5 text-[11px] text-orange-300 font-bold uppercase tracking-[0.12em] hover:border-orange-500/60 hover:from-orange-500/15 hover:to-orange-600/10 transition-all duration-200 shadow-sm">
               {commandFeedback}
             </section>
           }
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-700/40 bg-zinc-950/30 hover:border-orange-500/40 transition-colors p-3 backdrop-blur-sm">
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-md border border-zinc-700/50 bg-gradient-to-br from-zinc-950/40 to-zinc-900/30 hover:border-orange-500/40 transition-all duration-200 p-4 backdrop-blur-sm shadow-lg">
             <FocusShell
               mode={workbenchFocusMode}
               sharedPanelProps={sharedPanelProps}
