@@ -13,6 +13,7 @@ import {
   Trash2,
   Wrench,
 } from 'lucide-react';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { NexusBadge, NexusButton } from '../primitives';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { getDefaultMembershipForRank, MEMBERSHIP_LIST } from '@/components/constants/membership';
@@ -26,10 +27,40 @@ import {
   wipeSeededOnly,
 } from '@/components/services/dataRegistry';
 
-/**
- * @typedef {'SYSTEM_ADMIN' | 'PIONEER'} PersonaMode
- * @typedef {'neutral' | 'ok' | 'warning' | 'danger'} LogTone
- */
+type PersonaMode = 'SYSTEM_ADMIN' | 'PIONEER';
+type LogTone = 'neutral' | 'ok' | 'warning' | 'danger';
+
+interface SystemAdminFocusAppProps extends Partial<CqbPanelSharedProps> {
+  actorId: string;
+  onClose?: () => void;
+}
+
+interface ActionLogEntry {
+  id: string;
+  tone: LogTone;
+  summary: string;
+  detail: string;
+  createdAt: string;
+}
+
+interface DirectoryUser {
+  id: string;
+  username: string;
+  callsign: string;
+  rank: string;
+  membership: string;
+}
+
+interface AccessKeyRecord {
+  id: string;
+  code: string;
+  status: string;
+  grants_rank: string;
+  grants_membership: string;
+  grants_roles: string[];
+  redeemed_by_member_profile_ids: string[];
+  created_date?: string;
+}
 
 const PERSONA_STORAGE_KEY = 'nexus.admin.focus.persona';
 const DOMAIN_PAGE_SIZE = 6;
@@ -37,8 +68,8 @@ const LOG_PAGE_SIZE = 5;
 const PROTECTED_DOMAIN_KEYS = ['memberProfiles', 'accessKeys'];
 const IDENTITY_USER_PAGE_SIZE = 5;
 const IDENTITY_KEY_PAGE_SIZE = 6;
-const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
-const RANK_GRANTS_CONFIG = {
+const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'] as const;
+const RANK_GRANTS_CONFIG: Record<string, string[]> = {
   VAGRANT: ['read_only'],
   SCOUT: ['read_only', 'comms_access'],
   VOYAGER: ['read_only', 'comms_access', 'event_creation'],
@@ -46,7 +77,7 @@ const RANK_GRANTS_CONFIG = {
   FOUNDER: ['admin_access'],
 };
 
-function normalizeUsername(input) {
+function normalizeUsername(input: any): string {
   return String(
     input?.display_callsign ||
       input?.callsign ||
@@ -58,7 +89,7 @@ function normalizeUsername(input) {
   ).trim();
 }
 
-function normalizeDirectoryUsers(raw) {
+function normalizeDirectoryUsers(raw: any[]): DirectoryUser[] {
   const mapped = (Array.isArray(raw) ? raw : []).map((entry) => ({
     id: String(entry?.id || '').trim(),
     username: normalizeUsername(entry),
@@ -69,7 +100,7 @@ function normalizeDirectoryUsers(raw) {
   return mapped.filter((entry) => Boolean(entry.id));
 }
 
-function normalizeAccessKeys(raw) {
+function normalizeAccessKeys(raw: any[]): AccessKeyRecord[] {
   return (Array.isArray(raw) ? raw : [])
     .map((entry) => ({
       id: String(entry?.id || '').trim(),
@@ -90,7 +121,7 @@ function normalizeAccessKeys(raw) {
     .filter((entry) => Boolean(entry.id) && Boolean(entry.code));
 }
 
-function accessKeyTone(status) {
+function accessKeyTone(status: string): 'ok' | 'warning' | 'danger' | 'neutral' | 'active' {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'ACTIVE') return 'ok';
   if (normalized === 'REDEEMED') return 'active';
@@ -99,24 +130,24 @@ function accessKeyTone(status) {
   return 'neutral';
 }
 
-function maskKeyCode(code) {
+function maskKeyCode(code: string): string {
   const normalized = String(code || '').trim();
   if (normalized.length <= 8) return normalized;
   return `${normalized.slice(0, 4)}...${normalized.slice(-4)}`;
 }
 
-function titleizeDomainKey(key) {
+function titleizeDomainKey(key: string): string {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase()).trim();
 }
 
-function toneForLog(entry) {
+function toneForLog(entry: LogTone): 'ok' | 'warning' | 'danger' | 'neutral' {
   if (entry === 'ok') return 'ok';
   if (entry === 'warning') return 'warning';
   if (entry === 'danger') return 'danger';
   return 'neutral';
 }
 
-function formatClock(value) {
+function formatClock(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '--:--';
   return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -131,30 +162,35 @@ export default function SystemAdminFocusApp({
   onOpenOperationFocus,
   onOpenCommsNetwork,
   onCreateMacroEvent,
-}) {
-  const [persona, setPersona] = useState('SYSTEM_ADMIN');
+}: SystemAdminFocusAppProps) {
+  const [persona, setPersona] = useState<PersonaMode>('SYSTEM_ADMIN');
   const [busyId, setBusyId] = useState('');
-  const [domainCounts, setDomainCounts] = useState({});
+  const [domainCounts, setDomainCounts] = useState<Record<string, number>>({});
   const [domainPage, setDomainPage] = useState(0);
   const [logPage, setLogPage] = useState(0);
   const [preserveSeededOnSafeWipe, setPreserveSeededOnSafeWipe] = useState(false);
   const [safeWipeArmed, setSafeWipeArmed] = useState(false);
-  const [integritySnapshot, setIntegritySnapshot] = useState(null);
-  const [actionLog, setActionLog] = useState([]);
-  const [directoryUsers, setDirectoryUsers] = useState([]);
-  const [accessKeys, setAccessKeys] = useState([]);
+  const [integritySnapshot, setIntegritySnapshot] = useState<{
+    at: string;
+    totalRecords: number;
+    issueCount: number;
+    errorCount: number;
+  } | null>(null);
+  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
+  const [directoryUsers, setDirectoryUsers] = useState<DirectoryUser[]>([]);
+  const [accessKeys, setAccessKeys] = useState<AccessKeyRecord[]>([]);
   const [identityUserSearch, setIdentityUserSearch] = useState('');
   const [identityKeySearch, setIdentityKeySearch] = useState('');
   const [identityUserPage, setIdentityUserPage] = useState(0);
   const [identityKeyPage, setIdentityKeyPage] = useState(0);
   const [selectedIdentityUserId, setSelectedIdentityUserId] = useState('');
-  const [identityRank, setIdentityRank] = useState('VAGRANT');
+  const [identityRank, setIdentityRank] = useState<(typeof RANK_OPTIONS)[number]>('VAGRANT');
   const [identityMembership, setIdentityMembership] = useState(getDefaultMembershipForRank('VAGRANT'));
   const [inviteMessage, setInviteMessage] = useState('');
 
   const focusOpId = String(focusOperationId || opId || operations[0]?.id || '');
 
-  const pushLog = useCallback((tone, summary, detail) => {
+  const pushLog = useCallback((tone: LogTone, summary: string, detail: string) => {
     setActionLog((previous) => [
       {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -168,11 +204,11 @@ export default function SystemAdminFocusApp({
   }, []);
 
   const runTask = useCallback(
-    async (id, task) => {
+    async (id: string, task: () => Promise<void>) => {
       setBusyId(id);
       try {
         await task();
-      } catch (error) {
+      } catch (error: any) {
         pushLog('danger', 'Action failed', error?.message || 'Operation did not complete.');
       } finally {
         setBusyId('');
@@ -333,7 +369,7 @@ export default function SystemAdminFocusApp({
     setSelectedIdentityUserId(firstUserId);
   }, [selectedIdentityUserId, directoryUserById, directoryUsers]);
 
-  const parseResponseData = useCallback((response) => response?.data || response || {}, []);
+  const parseResponseData = useCallback((response: any) => response?.data || response || {}, []);
 
   const refreshIdentityAccess = useCallback(async () => {
     const directoryResponse = await invokeMemberFunction('getUserDirectory', { includeDetails: false });
@@ -354,7 +390,7 @@ export default function SystemAdminFocusApp({
   }, [runTask, refreshIdentityAccess]);
 
   const generateInviteForKey = useCallback(
-    async (keyCode, rank, membership) => {
+    async (keyCode: string, rank: string, membership: string) => {
       const invitationResponse = await invokeMemberFunction('generateDiscordInvitation', {
         accessKeyCode: keyCode,
         accessKeyRank: rank,
@@ -410,7 +446,7 @@ export default function SystemAdminFocusApp({
   ]);
 
   const revokeKeyById = useCallback(
-    async (keyId, code) => {
+    async (keyId: string, code: string) => {
       const approved = window.confirm(`Revoke access key ${code}?`);
       if (!approved) return;
       await runTask(`identity-revoke-${keyId}`, async () => {
@@ -450,7 +486,7 @@ export default function SystemAdminFocusApp({
     });
   }, [selectedDirectoryUser, keyRows, runTask, refreshIdentityAccess, pushLog]);
 
-  const copyToClipboard = useCallback((value, summary) => {
+  const copyToClipboard = useCallback((value: string, summary: string) => {
     if (!value) return;
     void navigator.clipboard.writeText(value).then(() => {
       pushLog('ok', summary, value.length > 64 ? `${value.slice(0, 60)}...` : value);
@@ -458,7 +494,7 @@ export default function SystemAdminFocusApp({
   }, [pushLog]);
 
   const invokeQuickOpen = useCallback(
-    (label, fn) => {
+    (label: string, fn: (() => void) | undefined) => {
       if (!fn) {
         pushLog('warning', `${label} unavailable`, 'No handler is registered in this workspace context.');
         return;
@@ -470,11 +506,11 @@ export default function SystemAdminFocusApp({
   );
 
   const runIntegrityValidation = useCallback(async () => {
-     await runTask('validate', async () => {
-       const report = await validateAll();
+    await runTask('validate', async () => {
+      const report: any = await validateAll();
       const issueCount = Array.isArray(report?.issues) ? report.issues.length : 0;
       const errorCount = Array.isArray(report?.issues)
-        ? report.issues.filter((entry) => String(entry?.severity || '').toLowerCase() === 'error').length
+        ? report.issues.filter((entry: any) => String(entry?.severity || '').toLowerCase() === 'error').length
         : 0;
       setIntegritySnapshot({
         at: new Date().toISOString(),
@@ -491,16 +527,16 @@ export default function SystemAdminFocusApp({
   }, [runTask, pushLog]);
 
   const runRepair = useCallback(async () => {
-     await runTask('repair', async () => {
-       const result = await repairAll();
+    await runTask('repair', async () => {
+      const result: any = await repairAll();
       pushLog('ok', 'Repair routine finished', String(result?.message || 'Repair flow completed.'));
     });
   }, [runTask, pushLog]);
 
   const runSeed = useCallback(
-    async (intensity) => {
-       await runTask(`seed-${intensity}`, async () => {
-         const result = await seedImmersive({ intensity });
+    async (intensity: 'light' | 'full') => {
+      await runTask(`seed-${intensity}`, async () => {
+        const result: any = await seedImmersive({ intensity });
         await refreshDomainCounts();
         pushLog(result?.success ? 'ok' : 'warning', `Seed ${intensity} executed`, String(result?.message || result?.error || 'Seed task finished.'));
       });
@@ -512,7 +548,7 @@ export default function SystemAdminFocusApp({
     const approved = window.confirm('Delete seeded demo data only? Non-seeded records stay intact.');
     if (!approved) return;
     await runTask('wipe-seeded', async () => {
-        const result = await wipeSeededOnly();
+      const result: any = await wipeSeededOnly();
       await refreshDomainCounts();
       pushLog('warning', 'Seeded data purged', `${Number(result?.totalDeleted || 0)} seeded records removed.`);
     });
@@ -528,7 +564,7 @@ export default function SystemAdminFocusApp({
     );
     if (!approved) return;
     await runTask('safe-wipe', async () => {
-      const result = await wipeAll({
+      const result: any = await wipeAll({
         preserveSeeded: preserveSeededOnSafeWipe,
         excludeDomainKeys: PROTECTED_DOMAIN_KEYS,
       });
@@ -561,27 +597,27 @@ export default function SystemAdminFocusApp({
   return (
     <div className="h-full min-h-0 overflow-hidden bg-zinc-950/45" data-admin-focus="true">
       <div className="h-full min-h-0 p-2 lg:p-3 grid grid-rows-[auto_minmax(0,1fr)] gap-2">
-        <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 px-3 py-2">
+        <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 px-2.5 py-1.5">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100 truncate">System Admin Focus</h3>
-              <p className="text-[10px] text-zinc-400 uppercase tracking-wide">
+              <h3 className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-zinc-100 truncate leading-none">System Admin Focus</h3>
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.14em] leading-none mt-1">
                 Control plane for administrators and pioneer-level operators
               </p>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <NexusBadge tone={persona === 'SYSTEM_ADMIN' ? 'active' : 'neutral'}>System Admin</NexusBadge>
               <NexusBadge tone={persona === 'PIONEER' ? 'active' : 'neutral'}>Pioneer</NexusBadge>
             </div>
           </div>
 
-          <div className="mt-1 flex items-center gap-1">
-            <NexusButton intent={persona === 'SYSTEM_ADMIN' ? 'primary' : 'subtle'} onClick={() => setPersona('SYSTEM_ADMIN')} className="h-7 text-xs px-2">
-              <ShieldCheck className="w-3 h-3 mr-0.5" />
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <NexusButton intent={persona === 'SYSTEM_ADMIN' ? 'primary' : 'subtle'} onClick={() => setPersona('SYSTEM_ADMIN')}>
+              <ShieldCheck className="w-3 h-3 mr-1" />
               System
             </NexusButton>
-            <NexusButton intent={persona === 'PIONEER' ? 'primary' : 'subtle'} onClick={() => setPersona('PIONEER')} className="h-7 text-xs px-2">
-              <Rocket className="w-3 h-3 mr-0.5" />
+            <NexusButton intent={persona === 'PIONEER' ? 'primary' : 'subtle'} onClick={() => setPersona('PIONEER')}>
+              <Rocket className="w-3 h-3 mr-1" />
               Pioneer
             </NexusButton>
           </div>
@@ -589,21 +625,44 @@ export default function SystemAdminFocusApp({
 
         <div className="min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2">
           <div className="min-h-0 lg:col-span-7 grid grid-rows-[auto_auto_auto_minmax(0,1fr)] gap-2">
-            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 p-2">
+            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 p-1.5">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-100">Identity Access Control</h4>
-                <div className="flex items-center gap-1.5">
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Workspace Launchers</h4>
+                <NexusButton intent="subtle" onClick={emitControlPulse} disabled={Boolean(busyId)}>
+                  Pulse
+                </NexusButton>
+              </div>
+              <div className="mt-1.5 grid grid-cols-3 gap-1">
+                <NexusButton intent="subtle" onClick={() => invokeQuickOpen('Map focus', onOpenMapFocus)}>
+                  <Compass className="w-3 h-3 mr-1" />
+                  Map
+                </NexusButton>
+                <NexusButton intent="subtle" onClick={() => invokeQuickOpen('Ops focus', onOpenOperationFocus)}>
+                  <ClipboardList className="w-3 h-3 mr-1" />
+                  Ops
+                </NexusButton>
+                <NexusButton intent="subtle" onClick={() => invokeQuickOpen('Comms focus', onOpenCommsNetwork)}>
+                  <Radio className="w-3 h-3 mr-1" />
+                  Comms
+                </NexusButton>
+              </div>
+            </section>
+
+            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 p-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Identity Access Control</h4>
+                <div className="flex items-center gap-1">
                   <NexusBadge tone="neutral">{directoryUsers.length} users</NexusBadge>
                   <NexusBadge tone="active">{accessKeys.length} keys</NexusBadge>
                 </div>
               </div>
 
-              <div className="mt-2 grid grid-cols-1 xl:grid-cols-2 gap-2">
-                <div className="rounded border border-zinc-800/70 bg-zinc-950/45 p-2 space-y-2">
+              <div className="mt-1.5 grid grid-cols-1 xl:grid-cols-2 gap-1.5">
+                <div className="rounded border border-zinc-800/70 bg-zinc-950/45 p-1.5 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-[10px] text-zinc-400 uppercase tracking-wide">User Directory</div>
+                    <div className="text-[8px] text-zinc-400 uppercase tracking-[0.14em] leading-none">User Directory</div>
                     <NexusButton intent="subtle" onClick={() => void runTask('identity-refresh', refreshIdentityAccess)} disabled={Boolean(busyId)}>
-                      <RefreshCcw className="w-3.5 h-3.5 mr-1" />
+                      <RefreshCcw className="w-3 h-3 mr-1" />
                       Refresh
                     </NexusButton>
                   </div>
@@ -612,7 +671,7 @@ export default function SystemAdminFocusApp({
                     value={identityUserSearch}
                     onChange={(event) => setIdentityUserSearch(event.target.value)}
                     placeholder="Search username/callsign"
-                    className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-[11px] text-zinc-100"
+                    className="h-7 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-[10px] text-zinc-100"
                   />
 
                   <div className="space-y-1">
@@ -623,7 +682,7 @@ export default function SystemAdminFocusApp({
                           type="button"
                           onClick={() => {
                             setSelectedIdentityUserId(entry.id);
-                            setIdentityRank(entry.rank);
+                            setIdentityRank(entry.rank as (typeof RANK_OPTIONS)[number]);
                             setIdentityMembership(entry.membership || getDefaultMembershipForRank(entry.rank));
                           }}
                           className={`w-full rounded border px-2 py-1.5 text-left transition-colors ${
@@ -633,23 +692,23 @@ export default function SystemAdminFocusApp({
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-zinc-100 uppercase tracking-wide truncate">{entry.username}</span>
+                            <span className="text-[9px] text-zinc-100 uppercase tracking-[0.12em] truncate font-semibold leading-none">{entry.username}</span>
                             <NexusBadge tone="neutral">{entry.rank}</NexusBadge>
                           </div>
-                          <div className="mt-1 text-[10px] text-zinc-500 truncate">
+                          <div className="mt-1 text-[8px] text-zinc-500 truncate leading-none">
                             {entry.callsign || '--'} · {getMembershipLabel(entry.membership)}
                           </div>
                         </button>
                       ))
                     ) : (
-                      <div className="rounded border border-zinc-800/70 bg-zinc-950/35 px-2 py-2 text-[10px] text-zinc-500 uppercase tracking-wide">
+                      <div className="rounded border border-zinc-800/70 bg-zinc-950/35 px-2 py-1.5 text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">
                         No users matched.
                       </div>
                     )}
                   </div>
 
                   {identityUserPageCount > 1 ? (
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1">
                       <NexusButton intent="subtle" onClick={() => setIdentityUserPage((page) => Math.max(0, page - 1))} disabled={identityUserPage === 0}>
                         Prev
                       </NexusButton>
@@ -665,17 +724,17 @@ export default function SystemAdminFocusApp({
                   ) : null}
                 </div>
 
-                <div className="rounded border border-zinc-800/70 bg-zinc-950/45 p-2 space-y-2">
-                  <div className="text-[10px] text-zinc-400 uppercase tracking-wide">Key + Invite Actions</div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                <div className="rounded border border-zinc-800/70 bg-zinc-950/45 p-1.5 space-y-1.5">
+                  <div className="text-[8px] text-zinc-400 uppercase tracking-[0.14em] leading-none">Key + Invite Actions</div>
+                  <div className="grid grid-cols-2 gap-1">
                     <select
-                    value={identityRank}
-                    onChange={(event) => {
-                    const nextRank = event.target.value;
+                      value={identityRank}
+                      onChange={(event) => {
+                        const nextRank = event.target.value as (typeof RANK_OPTIONS)[number];
                         setIdentityRank(nextRank);
                         setIdentityMembership(getDefaultMembershipForRank(nextRank));
                       }}
-                      className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-[11px] text-zinc-100"
+                      className="h-7 rounded border border-zinc-700 bg-zinc-900 px-1.5 text-[9px] text-zinc-100"
                     >
                       {RANK_OPTIONS.map((rank) => (
                         <option key={rank} value={rank}>
@@ -686,7 +745,7 @@ export default function SystemAdminFocusApp({
                     <select
                       value={identityMembership}
                       onChange={(event) => setIdentityMembership(event.target.value)}
-                      className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-[11px] text-zinc-100"
+                      className="h-7 rounded border border-zinc-700 bg-zinc-900 px-1.5 text-[9px] text-zinc-100"
                     >
                       {MEMBERSHIP_LIST.map((entry) => (
                         <option key={entry} value={entry}>
@@ -695,13 +754,13 @@ export default function SystemAdminFocusApp({
                       ))}
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 gap-1">
                     <NexusButton intent="primary" onClick={() => void issueBoundAccessKey()} disabled={Boolean(busyId) || !selectedIdentityUserId}>
-                      <Key className="w-3.5 h-3.5 mr-1" />
+                      <Key className="w-3 h-3 mr-1" />
                       Issue Key
                     </NexusButton>
                     <NexusButton intent="danger" onClick={() => void revokeAllSelectedUserKeys()} disabled={Boolean(busyId) || !selectedIdentityUserId}>
-                      <Lock className="w-3.5 h-3.5 mr-1" />
+                      <Lock className="w-3 h-3 mr-1" />
                       Revoke User Keys
                     </NexusButton>
                     <NexusButton
@@ -709,7 +768,7 @@ export default function SystemAdminFocusApp({
                       onClick={() => copyToClipboard(inviteMessage, 'Invitation copied')}
                       disabled={!inviteMessage}
                     >
-                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      <Copy className="w-3 h-3 mr-1" />
                       Copy Invite
                     </NexusButton>
                   </div>
@@ -718,47 +777,47 @@ export default function SystemAdminFocusApp({
                     value={identityKeySearch}
                     onChange={(event) => setIdentityKeySearch(event.target.value)}
                     placeholder={selectedDirectoryUser ? `Filter keys for ${selectedDirectoryUser.username}` : 'Filter key list'}
-                    className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-[11px] text-zinc-100"
+                    className="h-7 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-[10px] text-zinc-100"
                   />
 
-                  <div className="rounded border border-zinc-800/70 bg-zinc-950/35 p-2 space-y-1">
+                  <div className="rounded border border-zinc-800/70 bg-zinc-950/35 p-1.5 space-y-1">
                     {selectedDirectoryUser ? (
                       <>
-                        <div className="text-[11px] text-zinc-100 uppercase tracking-wide truncate">{selectedDirectoryUser.username}</div>
-                        <div className="text-[10px] text-zinc-500">
+                        <div className="text-[9px] text-zinc-100 uppercase tracking-[0.12em] truncate font-semibold leading-none">{selectedDirectoryUser.username}</div>
+                        <div className="text-[8px] text-zinc-500 leading-none">
                           Active keys in scope: {activeSelectedUserKeys.length}
                         </div>
                       </>
                     ) : (
-                      <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Select a user to bind key actions.</div>
+                      <div className="text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">Select a user to bind key actions.</div>
                     )}
                   </div>
 
                   {inviteMessage ? (
-                    <div className="rounded border border-zinc-800/70 bg-zinc-950/35 p-2">
-                      <div className="text-[10px] text-zinc-400 uppercase tracking-wide mb-1">Latest Invitation</div>
-                      <pre className="text-[10px] text-zinc-500 whitespace-pre-wrap line-clamp-4">{inviteMessage}</pre>
+                    <div className="rounded border border-zinc-800/70 bg-zinc-950/35 p-1.5">
+                      <div className="text-[8px] text-zinc-400 uppercase tracking-[0.14em] mb-1 leading-none">Latest Invitation</div>
+                      <pre className="text-[8px] text-zinc-500 whitespace-pre-wrap line-clamp-4">{inviteMessage}</pre>
                     </div>
                   ) : null}
                 </div>
               </div>
             </section>
 
-            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 p-2">
+            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 p-1.5">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-100">Integrity + Lifecycle</h4>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wide">{busyId ? 'Running' : 'Ready'}</span>
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Integrity + Lifecycle</h4>
+                <span className="text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">{busyId ? 'Running' : 'Ready'}</span>
               </div>
-              <div className="mt-2 grid grid-cols-2 xl:grid-cols-4 gap-1.5">
+              <div className="mt-1.5 grid grid-cols-2 xl:grid-cols-4 gap-1">
                 <NexusButton intent="subtle" onClick={() => void runTask('refresh-counts', refreshDomainCounts)} disabled={Boolean(busyId)}>
-                  <RefreshCcw className="w-3.5 h-3.5 mr-1" />
+                  <RefreshCcw className="w-3 h-3 mr-1" />
                   Refresh
                 </NexusButton>
                 <NexusButton intent="subtle" onClick={() => void runIntegrityValidation()} disabled={Boolean(busyId)}>
                   Validate
                 </NexusButton>
                 <NexusButton intent="subtle" onClick={() => void runRepair()} disabled={Boolean(busyId)}>
-                  <Wrench className="w-3.5 h-3.5 mr-1" />
+                  <Wrench className="w-3 h-3 mr-1" />
                   Repair
                 </NexusButton>
                 <NexusButton intent="subtle" onClick={() => void runWipeSeeded()} disabled={Boolean(busyId)}>
@@ -770,58 +829,58 @@ export default function SystemAdminFocusApp({
                 <NexusButton intent="subtle" onClick={() => void runSeed('full')} disabled={Boolean(busyId)}>
                   Seed Full
                 </NexusButton>
-                <label className="col-span-2 flex items-center gap-2 rounded border border-zinc-700/50 bg-zinc-950/40 px-2 py-1">
+                <label className="col-span-2 flex items-center gap-1.5 rounded border border-zinc-700/50 bg-zinc-950/40 px-1.5 py-1">
                   <input
                     type="checkbox"
                     checked={preserveSeededOnSafeWipe}
                     onChange={(event) => setPreserveSeededOnSafeWipe(event.target.checked)}
-                    className="h-3.5 w-3.5"
+                    className="h-3 w-3"
                   />
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wide">Preserve seeded on safe wipe</span>
+                  <span className="text-[8px] text-zinc-400 uppercase tracking-[0.14em] leading-none">Preserve seeded on safe wipe</span>
                 </label>
               </div>
-              <div className="mt-2 flex items-center gap-2">
-                <label className="flex items-center gap-2 rounded border border-red-700/40 bg-red-950/20 px-2 py-1">
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <label className="flex items-center gap-1.5 rounded border border-red-700/40 bg-red-950/20 px-1.5 py-1">
                   <input
                     type="checkbox"
                     checked={safeWipeArmed}
                     onChange={(event) => setSafeWipeArmed(event.target.checked)}
-                    className="h-3.5 w-3.5"
+                    className="h-3 w-3"
                   />
-                  <span className="text-[10px] text-red-200 uppercase tracking-wide">Arm safe wipe</span>
+                  <span className="text-[8px] text-red-200 uppercase tracking-[0.14em] leading-none">Arm safe wipe</span>
                 </label>
                 <NexusButton intent="danger" onClick={() => void runSafeWipe()} disabled={Boolean(busyId) || !safeWipeArmed}>
-                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  <Trash2 className="w-3 h-3 mr-1" />
                   Safe Wipe
                 </NexusButton>
               </div>
             </section>
 
-            <section className="min-h-0 rounded-md border border-zinc-700/60 bg-zinc-900/55 p-2 flex flex-col">
+            <section className="min-h-0 rounded-md border border-zinc-700/60 bg-zinc-900/55 p-1.5 flex flex-col">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-100">Domain Footprint</h4>
-                <div className="flex items-center gap-1.5">
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Domain Footprint</h4>
+                <div className="flex items-center gap-1">
                   <NexusBadge tone="neutral">{nonEmptyDomains} active</NexusBadge>
                   <NexusBadge tone="active">{totalRecords} records</NexusBadge>
                 </div>
               </div>
-              <div className="mt-2 flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)_auto] gap-2">
+              <div className="mt-1.5 flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)_auto] gap-1.5">
                 <div className="space-y-1">
                   {visibleDomains.length ? (
                     visibleDomains.map((entry) => (
-                      <div key={entry.key} className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-1.5 flex items-center justify-between gap-2">
-                        <span className="text-[10px] text-zinc-300 uppercase tracking-wide truncate">{entry.label}</span>
-                        <span className="text-[11px] font-mono text-zinc-100">{entry.count}</span>
+                      <div key={entry.key} className="rounded border border-zinc-800/70 bg-zinc-950/45 px-1.5 py-1 flex items-center justify-between gap-2">
+                        <span className="text-[8px] text-zinc-300 uppercase tracking-[0.14em] truncate leading-none">{entry.label}</span>
+                        <span className="text-[9px] font-mono text-zinc-100 font-semibold">{entry.count}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-3 text-[10px] text-zinc-500 uppercase tracking-wide">
+                    <div className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-2 text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">
                       No domain counts captured yet.
                     </div>
                   )}
                 </div>
                 {domainPageCount > 1 ? (
-                  <div className="flex items-center justify-end gap-1.5">
+                  <div className="flex items-center justify-end gap-1">
                     <NexusButton intent="subtle" onClick={() => setDomainPage((page) => Math.max(0, page - 1))} disabled={domainPage === 0}>
                       Prev
                     </NexusButton>
@@ -840,26 +899,26 @@ export default function SystemAdminFocusApp({
           </div>
 
           <div className="min-h-0 lg:col-span-5 grid grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
-            <section className="min-h-0 rounded-md border border-zinc-700/60 bg-zinc-900/55 p-2 flex flex-col">
+            <section className="min-h-0 rounded-md border border-zinc-700/60 bg-zinc-900/55 p-1.5 flex flex-col">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-100">Auth Key Registry</h4>
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Auth Key Registry</h4>
                 <NexusBadge tone="neutral">{filteredKeyRows.length}</NexusBadge>
               </div>
-              <div className="mt-2 flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)_auto] gap-2">
+              <div className="mt-1.5 flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)_auto] gap-1.5">
                 <div className="space-y-1">
                   {visibleKeyRows.length ? (
                     visibleKeyRows.map((row) => (
-                      <div key={row.id} className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-1.5">
+                      <div key={row.id} className="rounded border border-zinc-800/70 bg-zinc-950/45 px-1.5 py-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-zinc-100 font-mono truncate">{maskKeyCode(row.code)}</span>
+                          <span className="text-[9px] text-zinc-100 font-mono truncate font-semibold leading-none">{maskKeyCode(row.code)}</span>
                           <NexusBadge tone={accessKeyTone(row.status)}>{row.status}</NexusBadge>
                         </div>
-                        <div className="mt-1 text-[10px] text-zinc-500 truncate">
+                        <div className="mt-1 text-[8px] text-zinc-500 truncate leading-none">
                           {row.boundUsername} · {row.grants_rank}/{getMembershipLabel(row.grants_membership)}
                         </div>
-                        <div className="mt-1 flex items-center justify-end gap-1.5">
+                        <div className="mt-1 flex items-center justify-end gap-1">
                           <NexusButton intent="subtle" onClick={() => copyToClipboard(row.code, 'Access key copied')}>
-                            <Copy className="w-3.5 h-3.5 mr-1" />
+                            <Copy className="w-3 h-3 mr-1" />
                             Copy
                           </NexusButton>
                           <NexusButton
@@ -885,13 +944,13 @@ export default function SystemAdminFocusApp({
                       </div>
                     ))
                   ) : (
-                    <div className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-3 text-[10px] text-zinc-500 uppercase tracking-wide">
+                    <div className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-2 text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">
                       No keys matched the current scope.
                     </div>
                   )}
                 </div>
                 {identityKeyPageCount > 1 ? (
-                  <div className="flex items-center justify-end gap-1.5">
+                  <div className="flex items-center justify-end gap-1">
                     <NexusButton intent="subtle" onClick={() => setIdentityKeyPage((page) => Math.max(0, page - 1))} disabled={identityKeyPage === 0}>
                       Prev
                     </NexusButton>
@@ -904,31 +963,31 @@ export default function SystemAdminFocusApp({
               </div>
             </section>
 
-            <section className="min-h-0 rounded-md border border-zinc-700/60 bg-zinc-900/55 p-2 flex flex-col">
+            <section className="min-h-0 rounded-md border border-zinc-700/60 bg-zinc-900/55 p-1.5 flex flex-col">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-100">Action Feed</h4>
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Action Feed</h4>
                 <NexusBadge tone="neutral">{actionLog.length}</NexusBadge>
               </div>
-              <div className="mt-2 flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)_auto] gap-2">
+              <div className="mt-1.5 flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)_auto] gap-1.5">
                 <div className="space-y-1">
                   {visibleLogs.length ? (
                     visibleLogs.map((entry) => (
-                      <div key={entry.id} className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-1.5">
+                      <div key={entry.id} className="rounded border border-zinc-800/70 bg-zinc-950/45 px-1.5 py-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{entry.summary}</span>
+                          <span className="text-[8px] text-zinc-100 uppercase tracking-[0.14em] truncate leading-none">{entry.summary}</span>
                           <NexusBadge tone={toneForLog(entry.tone)}>{formatClock(entry.createdAt)}</NexusBadge>
                         </div>
-                        <div className="mt-1 text-[10px] text-zinc-500 truncate">{entry.detail}</div>
+                        <div className="mt-1 text-[8px] text-zinc-500 truncate leading-none">{entry.detail}</div>
                       </div>
                     ))
                   ) : (
-                    <div className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-3 text-[10px] text-zinc-500 uppercase tracking-wide">
+                    <div className="rounded border border-zinc-800/70 bg-zinc-950/45 px-2 py-2 text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">
                       No actions executed yet.
                     </div>
                   )}
                 </div>
                 {logPageCount > 1 ? (
-                  <div className="flex items-center justify-end gap-1.5">
+                  <div className="flex items-center justify-end gap-1">
                     <NexusButton intent="subtle" onClick={() => setLogPage((page) => Math.max(0, page - 1))} disabled={logPage === 0}>
                       Prev
                     </NexusButton>
@@ -941,23 +1000,23 @@ export default function SystemAdminFocusApp({
               </div>
             </section>
 
-            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 px-2.5 py-2">
+            <section className="rounded-md border border-zinc-700/60 bg-zinc-900/55 px-2 py-1.5">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-100">Protection Rails</h4>
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
+                <h4 className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-zinc-100 leading-none">Protection Rails</h4>
+                <AlertTriangle className="w-3 h-3 text-amber-300" />
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <div className="mt-1.5 grid grid-cols-2 gap-1">
                 {PROTECTED_DOMAIN_KEYS.map((key) => (
                   <NexusBadge key={key} tone="warning" className="justify-center">
                     {titleizeDomainKey(key)}
                   </NexusBadge>
                 ))}
               </div>
-              <div className="mt-2 text-[10px] text-zinc-500 uppercase tracking-wide">
+              <div className="mt-1.5 text-[8px] text-zinc-500 uppercase tracking-[0.14em] leading-none">
                 Protected domains are excluded from safe wipe workflows.
               </div>
               {integritySnapshot ? (
-                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                <div className="mt-1.5 flex items-center gap-1 flex-wrap">
                   <NexusBadge tone={integritySnapshot.errorCount > 0 ? 'danger' : 'ok'}>
                     Errors {integritySnapshot.errorCount}
                   </NexusBadge>
