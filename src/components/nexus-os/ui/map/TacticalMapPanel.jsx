@@ -1,3 +1,15 @@
+/**
+ * TacticalMapPanel - Tactical map control and rendering component
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: Headers text-xs font-semibold, labels text-[11px]/[10px]
+ * - Spacing: p-2.5, gap-2
+ * - Icons: Integrated via MapStageCanvas
+ * - Tokens: ✅ Presence (circle), Intel (objective/target-alt), Comms (triangle), Logistics (resource family)
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -24,12 +36,8 @@ import {
   subscribeIntentDrafts,
   updateDraft,
 } from '../../services/intentDraftService';
-import {
-  buildMapLogisticsOverlay,
-} from '../../services/mapLogisticsOverlayService';
-import {
-  buildMapCommandSurface,
-} from '../../services/mapCommandSurfaceService';
+import { buildMapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
+import { buildMapCommandSurface } from '../../services/mapCommandSurfaceService';
 import { buildMapTimelineSnapshot } from '../../services/mapTimelineService';
 import {
   loadTacticalMapPreferences,
@@ -304,7 +312,7 @@ export default function TacticalMapPanel({
               includeGlobal: !scopedCommsOpId,
               limit: 160,
             });
-          } catch (err) {
+          } catch {
             usedFallback = true;
             response = await invokeMemberFunction('updateCommsConsole', {
               action: 'get_comms_topology_snapshot',
@@ -416,7 +424,7 @@ export default function TacticalMapPanel({
   }, [intelObjects, selectedIntelId]);
   const selectedIntelComments = useMemo(() => (selectedIntel ? listIntelComments(selectedIntel.id) : []), [selectedIntel, intelVersion]);
 
-  const layerEnabled = (id) => layers.find((entry) => entry.id === id)?.enabled === true;
+  const layerEnabled = (id: TacticalLayerId) => layers.find((entry) => entry.id === id)?.enabled === true;
 
   const opsOverlay = useMemo(
     () =>
@@ -508,7 +516,7 @@ export default function TacticalMapPanel({
     if (mapViewMode === 'SYSTEM') {
       const focusSystemTag = selectedNode.systemTag;
       const focusSystemId = `system-${focusSystemTag.toLowerCase()}`;
-      const adjacentSystems = new Set([focusSystemId]);
+      const adjacentSystems = new Set<string>([focusSystemId]);
       for (const edge of TACTICAL_MAP_EDGES) {
         if (edge.kind !== 'jump') continue;
         if (edge.fromNodeId === focusSystemId) adjacentSystems.add(edge.toNodeId);
@@ -756,7 +764,7 @@ export default function TacticalMapPanel({
     setMacroExecutionError(null);
     setMacroExecutionMessage(null);
     try {
-      const response = await invokeMemberFunction('updateCommsConsole', {
+      const response: any = await invokeMemberFunction('updateCommsConsole', {
         action: 'execute_map_command_macro',
         macroId,
         eventId: scopedCommsOpId || undefined,
@@ -765,7 +773,7 @@ export default function TacticalMapPanel({
       });
       setCommsRefreshNonce((prev) => prev + 1);
       setMacroExecutionMessage(Array.isArray(response?.effects) ? response.effects.join(' | ') : `Executed ${macroId}.`);
-      } catch (error) {
+    } catch (error) {
       const message = error?.message || 'Macro execution failed.';
       setMacroExecutionError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -794,7 +802,7 @@ export default function TacticalMapPanel({
       setQuickBroadcastMessage('');
       setMacroExecutionMessage(`Broadcast transmitted (${quickBroadcastPriority}).`);
       setCommsRefreshNonce((prev) => prev + 1);
-      } catch (error) {
+    } catch (error) {
       const message = getErrorText(error) || 'Broadcast failed.';
       setQuickBroadcastError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -819,7 +827,7 @@ export default function TacticalMapPanel({
       });
       const answer = response?.data?.answer || response?.data?.response?.answer || response?.data?.summary || response?.data?.response || '';
       setAiInferenceText(String(answer || '').trim() || 'No AI estimate returned for current scoped records.');
-      } catch (error) {
+    } catch (error) {
       setAiInferenceError(error?.message || 'AI estimate unavailable.');
     } finally {
       setAiInferenceLoading(false);
@@ -838,7 +846,7 @@ export default function TacticalMapPanel({
       setDraftError(null);
       setDraftVersion((prev) => prev + 1);
       setIntelVersion((prev) => prev + 1);
-      } catch (error) {
+    } catch (error) {
       setDraftError(error?.message || 'Failed to confirm draft');
     }
   };
@@ -1119,7 +1127,7 @@ export default function TacticalMapPanel({
           <input
             value={quickBroadcastMessage}
             onChange={(event) => setQuickBroadcastMessage(event.target.value)}
-            onKeyDown={(event) => {
+            onKeyPress={(event) => {
               if (event.key !== 'Enter') return;
               event.preventDefault();
               void sendQuickBroadcast();
@@ -1155,7 +1163,7 @@ export default function TacticalMapPanel({
       <section className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5 space-y-2">
         <div className="flex items-center justify-between"><h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-200">Intel</h4><NexusBadge tone={availabilityTone(intelAvailability)}>{availabilityLabel(intelAvailability)}</NexusBadge></div>
         {visibleIntel.slice(0, 6).map((intel) => (
-          <button key={intel.id} type="button" onClick={() => setSelectedIntelId(intel.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedIntel && selectedIntel.id === intel.id ? 'border-sky-500/60 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
+          <button key={intel.id} type="button" onClick={() => setSelectedIntelId(intel.id)} className={`w-full text-left rounded border px-2 py-1.5 ${selectedIntel?.id === intel.id ? 'border-sky-500/60 bg-zinc-900/80' : 'border-zinc-800 bg-zinc-950/55'}`}>
             <div className="flex items-center justify-between text-[11px]"><span className="text-zinc-200 truncate">{intel.title}</span><NexusBadge tone={intel.stratum === 'COMMAND_ASSESSED' ? 'danger' : intel.stratum === 'OPERATIONAL' ? 'warning' : intel.stratum === 'SHARED_COMMONS' ? 'active' : 'neutral'}>{intel.stratum}</NexusBadge></div>
             <div className="mt-1 text-[11px] text-zinc-500">{intel.type} · {intel.ttl.stale ? 'stale' : `${intel.ttl.remainingSeconds}s`}</div>
           </button>
@@ -1265,8 +1273,6 @@ export default function TacticalMapPanel({
             activeRadial={activeRadial}
             radialItems={radialItems}
             hasAnyOverlay={hasAnyOverlay}
-            operationId={scopedCommsOpId}
-            actorId={actorId}
             onClearRadial={() => setActiveRadial(null)}
             onSelectZone={setSelectedZoneId}
             onSelectIntel={setSelectedIntelId}

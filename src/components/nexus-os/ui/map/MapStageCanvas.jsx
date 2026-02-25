@@ -1,14 +1,35 @@
+/**
+ * MapStageCanvas - Tactical map rendering engine with SVG overlays
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: HUD panels text-[11px] uppercase
+ * - Icons: SVG markers, zoom controls
+ * - Tokens: ✅ Presence markers (circle), intel markers (objective), comms callouts (triangle)
+ * - Token opportunities: Intel markers should use objective/target-alt family
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { ControlZone, TacticalLayerId } from '../../schemas/mapSchemas';
+import type { IntelRenderable } from '../../services/intelService';
+import type { MapCommsOverlay, MapCommsOverlayCallout, MapCommsOverlayLink } from '../../services/mapCommsOverlayService';
+import type { MapLogisticsLane, MapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
+import type {
+  MapRadialState,
+  MapCommsAnchor,
+  OpsOverlayNode,
+  RenderablePresence,
+  TacticalRenderableNode,
+  TacticalMapViewMode,
+} from './mapTypes';
 import RadialMenu from './RadialMenu';
 import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
-import MapDrawingTools from './MapDrawingTools';
-import MapCollaborativeCursors from './MapCollaborativeCursors';
-import MapDrawingLayer from './MapDrawingLayer';
-import MapShareDialog from './MapShareDialog';
-import { useMapCollaboration } from '../../hooks/useMapCollaboration';
-import { getTokenAssetUrl } from '../tokens';
+import { tokenAssets } from '../tokens';
+
+
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -104,48 +125,44 @@ function shouldRenderLabel(node, viewMode, selectedNodeId) {
   return false;
 }
 
-function tokenForPresence(entry) {
-  if (entry.displayState === 'DECLARED') return getTokenAssetUrl('target', 'blue');
-  if (entry.displayState === 'INFERRED') return getTokenAssetUrl('target', 'orange');
-  return getTokenAssetUrl('target', 'red');
+function getIntelTokenAsset(type, confidence) {
+  if (type === 'MARKER') {
+    if (confidence === 'HIGH') return tokenAssets.tactical['target-alt-green'];
+    if (confidence === 'MED') return tokenAssets.tactical['target-alt-yellow'];
+    return tokenAssets.tactical['target-alt-red'];
+  }
+  if (type === 'PIN') {
+    if (confidence === 'HIGH') return tokenAssets.tactical['objective-green'];
+    if (confidence === 'MED') return tokenAssets.tactical['objective-yellow'];
+    return tokenAssets.tactical['objective-orange'];
+  }
+  return tokenAssets.tactical['objective-cyan'];
 }
 
-function tokenForCommsPriority(priority) {
-  if (priority === 'CRITICAL') return getTokenAssetUrl('triangle', 'red');
-  if (priority === 'HIGH') return getTokenAssetUrl('triangle', 'orange');
-  return getTokenAssetUrl('triangle', 'blue');
+function getPresenceTokenAsset(displayState, confidenceBand) {
+  if (displayState === 'DECLARED') {
+    if (confidenceBand === 'HIGH') return tokenAssets.shapes['circle-green'];
+    if (confidenceBand === 'MED') return tokenAssets.shapes['circle-cyan'];
+    return tokenAssets.shapes['circle-blue'];
+  }
+  if (displayState === 'INFERRED') {
+    return tokenAssets.shapes['circle-yellow'];
+  }
+  return tokenAssets.shapes['circle-grey'];
 }
 
-function tokenForLogisticsLane(lane) {
-  if (lane.resourceKind === 'FUEL') return getTokenAssetUrl('fuel', lane.stale ? 'grey' : 'orange');
-  if (lane.resourceKind === 'AMMO') return getTokenAssetUrl('ammunition', lane.stale ? 'grey' : 'yellow');
-  if (lane.resourceKind === 'MEDICAL') return getTokenAssetUrl('hospital', lane.stale ? 'grey' : 'green');
-  if (lane.resourceKind === 'FOOD') return getTokenAssetUrl('food', lane.stale ? 'grey' : 'green');
-  if (lane.resourceKind === 'ENERGY') return getTokenAssetUrl('energy', lane.stale ? 'grey' : 'blue');
-  if (lane.resourceKind === 'SHELTER') return getTokenAssetUrl('shelter', lane.stale ? 'grey' : 'cyan');
-  if (lane.resourceKind === 'REPAIR' || lane.resourceKind === 'MECHANICS') return getTokenAssetUrl('mechanics', lane.stale ? 'grey' : 'cyan');
-  return getTokenAssetUrl('objective', lane.stale ? 'grey' : 'cyan');
+function getCommsCalloutTokenAsset(priority) {
+  if (priority === 'CRITICAL') return tokenAssets.shapes['triangle-red'];
+  if (priority === 'HIGH') return tokenAssets.shapes['triangle-yellow'];
+  return tokenAssets.shapes['triangle-cyan'];
 }
 
-function tokenForIntel(intel) {
-  if (intel.type === 'PIN') return getTokenAssetUrl('objective', intel.ttl.stale ? 'grey' : 'yellow');
-  if (intel.type === 'MARKER') return getTokenAssetUrl('target-alt', intel.ttl.stale ? 'grey' : 'orange');
-  return getTokenAssetUrl('square', intel.ttl.stale ? 'grey' : 'blue');
-}
-
-function tokenForZone(zone) {
-  if (zone.contestationLevel >= 0.45) return getTokenAssetUrl('hex', 'red');
-  if (zone.assertedControllers.length > 1) return getTokenAssetUrl('penta', 'yellow');
-  return getTokenAssetUrl('circle', 'green');
-}
-
-function tokenForOp(entry) {
-  const status = String(entry?.status || '').toUpperCase();
-  if (status === 'ACTIVE') return getTokenAssetUrl('penta', 'green');
-  if (status === 'PLANNING') return getTokenAssetUrl('penta', 'blue');
-  if (status === 'DEBRIEF') return getTokenAssetUrl('penta', 'yellow');
-  if (status === 'ARCHIVED') return getTokenAssetUrl('penta', 'grey');
-  return getTokenAssetUrl('penta', entry?.isFocus ? 'orange' : 'cyan');
+function getLogisticsTokenAsset(laneKind, stale) {
+  if (stale) return tokenAssets.resources['logistics-grey'];
+  if (laneKind === 'EXTRACT') return tokenAssets.resources['logistics-green'];
+  if (laneKind === 'HOLD') return tokenAssets.resources['ammunition-yellow'];
+  if (laneKind === 'AVOID') return tokenAssets.resources['energy-red'];
+  return tokenAssets.resources['logistics-cyan'];
 }
 
 export default function MapStageCanvas({
@@ -166,8 +183,6 @@ export default function MapStageCanvas({
   activeRadial,
   radialItems,
   hasAnyOverlay,
-  operationId,
-  actorId,
   onClearRadial,
   onSelectZone,
   onSelectIntel,
@@ -177,25 +192,13 @@ export default function MapStageCanvas({
   const minimapRef = useRef(null);
   const dragStateRef = useRef(null);
   const recenterKeyRef = useRef('');
-  const drawStartRef = useRef(null);
-  const pathPointsRef = useRef([]);
   const [zoom, setZoom] = useState(1);
   const [viewportCenter, setViewportCenter] = useState({ x: 50, y: 50 });
-  const [cursorCoords, setCursorCoords] = useState({ x: 50, y: 50 });
+  const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [isPointerActive, setIsPointerActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [drawMode, setDrawMode] = useState(null);
-  const [drawingPreview, setDrawingPreview] = useState(null);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [selectedElementId, setSelectedElementId] = useState(null);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
   const mapScaleLabel = `${Math.max(1, Math.round(500_000 / zoom)).toLocaleString()} km`;
-
-  const collaboration = useMapCollaboration({
-    operationId: operationId || '',
-    actorId: actorId || '',
-    enabled: Boolean(operationId && actorId),
-  });
 
   const mapTransform = useMemo(() => {
     const scale = clamp(Number.isFinite(zoom) ? zoom : 1, 0.8, 2.2);
@@ -235,7 +238,7 @@ export default function MapStageCanvas({
             dashed: node.category !== 'moon',
           };
         })
-        .filter(Boolean),
+        .filter(Boolean) as Array<{ id: string; x: number; y: number; radius: number; dashed: boolean }>,
     [visibleMapNodes, mapViewMode]
   );
   const mapNodeIdSet = useMemo(() => new Set(visibleMapNodes.map((node) => node.id)), [visibleMapNodes]);
@@ -285,48 +288,12 @@ export default function MapStageCanvas({
     const x = clamp(viewportCenter.x + (centeredX - 50) / zoom, 0, 100);
     const y = clamp(viewportCenter.y + (centeredY - 50) / zoom, 0, 100);
     setCursorCoords({ x, y });
-    
-    // Update collaborative cursor
-    collaboration.updateCursor(x, y);
   };
 
   const handlePointerDown = (event) => {
     if (event.button !== 0) return;
-    const target = event.target;
+    const target = event.target as HTMLElement;
     if (target.closest('[data-map-interactive="true"]')) return;
-    
-    // Handle drawing modes
-    if (drawMode) {
-      event.stopPropagation();
-      
-      if (drawMode === 'marker') {
-        // Place marker immediately
-        collaboration.addElement({
-          type: 'marker',
-          data: {
-            x: cursorCoords.x,
-            y: cursorCoords.y,
-            fill: 'rgba(239, 68, 68, 0.7)',
-            stroke: 'rgba(239, 68, 68, 1)',
-            label: 'Marker',
-          },
-        });
-        setDrawMode(null);
-        return;
-      }
-      
-      if (drawMode === 'zone') {
-        drawStartRef.current = { x: cursorCoords.x, y: cursorCoords.y };
-        return;
-      }
-      
-      if (drawMode === 'path') {
-        pathPointsRef.current.push({ x: cursorCoords.x, y: cursorCoords.y });
-        setDrawingPreview({ type: 'path', points: [...pathPointsRef.current] });
-        return;
-      }
-    }
-    
     if (!stageRef.current) return;
     stageRef.current.setPointerCapture(event.pointerId);
     dragStateRef.current = {
@@ -340,21 +307,6 @@ export default function MapStageCanvas({
 
   const handlePointerMove = (event) => {
     handleCursorUpdate(event);
-    
-    // Handle zone drawing preview
-    if (drawMode === 'zone' && drawStartRef.current) {
-      const dx = cursorCoords.x - drawStartRef.current.x;
-      const dy = cursorCoords.y - drawStartRef.current.y;
-      const radius = Math.sqrt(dx * dx + dy * dy);
-      setDrawingPreview({
-        type: 'zone',
-        cx: drawStartRef.current.x,
-        cy: drawStartRef.current.y,
-        radius,
-      });
-      return;
-    }
-    
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId || !stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
@@ -380,25 +332,6 @@ export default function MapStageCanvas({
   };
 
   const handlePointerUp = (event) => {
-    // Complete zone drawing
-    if (drawMode === 'zone' && drawStartRef.current && drawingPreview) {
-      collaboration.addElement({
-        type: 'circle',
-        data: {
-          cx: drawingPreview.cx,
-          cy: drawingPreview.cy,
-          radius: drawingPreview.radius,
-          fill: 'rgba(59, 130, 246, 0.2)',
-          stroke: 'rgba(59, 130, 246, 0.8)',
-          strokeWidth: 0.4,
-        },
-      });
-      drawStartRef.current = null;
-      setDrawingPreview(null);
-      setDrawMode(null);
-      return;
-    }
-    
     if (stageRef.current && stageRef.current.hasPointerCapture(event.pointerId)) {
       stageRef.current.releasePointerCapture(event.pointerId);
     }
@@ -464,51 +397,17 @@ export default function MapStageCanvas({
     y: clamp(50 + (y - viewportCenter.y) * zoom, 6, 94),
   });
 
-  const handleKeyDown = (event) => {
-    if (drawMode === 'path' && event.key === 'Enter') {
-      // Complete path
-      if (pathPointsRef.current.length >= 2) {
-        collaboration.addElement({
-          type: 'path',
-          data: {
-            points: [...pathPointsRef.current],
-            stroke: 'rgba(251, 191, 36, 0.8)',
-            strokeWidth: 0.3,
-          },
-        });
-      }
-      pathPointsRef.current = [];
-      setDrawingPreview(null);
-      setDrawMode(null);
-    } else if (drawMode && event.key === 'Escape') {
-      // Cancel drawing
-      drawStartRef.current = null;
-      pathPointsRef.current = [];
-      setDrawingPreview(null);
-      setDrawMode(null);
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [drawMode, collaboration]);
-
   return (
     <div
       ref={stageRef}
       className={`h-full min-h-[280px] rounded border border-zinc-800 bg-zinc-950/60 relative overflow-hidden nexus-map-stage ${
-        isDragging ? 'cursor-grabbing' : drawMode ? 'cursor-crosshair' : 'cursor-grab'
+        isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
       data-dragging={isDragging ? 'true' : 'false'}
-      onClick={(e) => {
-        if (!drawMode) onClearRadial();
-      }}
+      onClick={onClearRadial}
       onDoubleClick={() => {
-        if (!drawMode) {
-          setZoom(1);
-          setViewportCenter({ x: 50, y: 50 });
-        }
+        setZoom(1);
+        setViewportCenter({ x: 50, y: 50 });
       }}
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
@@ -571,7 +470,6 @@ export default function MapStageCanvas({
           ? opsOverlay.map((entry) => {
               const anchorNode = TACTICAL_MAP_NODE_BY_ID[entry.nodeId];
               if (!anchorNode) return null;
-              const tokenHref = tokenForOp(entry);
               return (
                 <g key={`ops:${entry.id}`}>
                   <circle
@@ -583,14 +481,6 @@ export default function MapStageCanvas({
                     strokeWidth={entry.isFocus ? 0.72 : 0.46}
                     strokeDasharray={entry.isFocus ? '1.8 1' : '1.2 1.2'}
                     opacity={entry.isFocus ? 0.9 : 0.45}
-                  />
-                  <image
-                    href={tokenHref}
-                    x={anchorNode.x - 1}
-                    y={anchorNode.y - anchorNode.radius - 2.1}
-                    width="2"
-                    height="2"
-                    opacity={entry.isFocus ? 0.94 : 0.78}
                   />
                 </g>
               );
@@ -674,7 +564,6 @@ export default function MapStageCanvas({
                       />
                     ))
                   )}
-                  <image href={tokenForZone(zone)} x={anchorNode.x - 1} y={anchorNode.y - 1} width="2" height="2" opacity="0.92" />
                 </g>
               );
             })
@@ -723,14 +612,6 @@ export default function MapStageCanvas({
                     strokeWidth={net.speaking > 0 ? 0.64 : 0.36}
                     opacity={net.participants > 0 ? 0.95 : 0.55}
                   />
-                  <image
-                    href={getTokenAssetUrl('hex', net.quality === 'CONTESTED' ? 'red' : net.quality === 'DEGRADED' ? 'yellow' : 'green')}
-                    x={anchor.x - 0.85}
-                    y={anchor.y - 0.85}
-                    width="1.7"
-                    height="1.7"
-                    opacity={net.participants > 0 ? 0.95 : 0.55}
-                  />
                 </g>
               );
             })
@@ -743,13 +624,11 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = anchorNet ? anchorNet.x + (((index % 2) * 2) - 1) * 0.8 : node.x + (((index % 3) - 1) * 0.9);
               const y = anchorNet ? anchorNet.y - 1.7 : node.y - node.radius - 1.8 - (index % 2) * 0.6;
-              const color = commsPriorityColor(callout.priority);
-              const opacity = callout.stale ? 0.44 : 0.92;
-              const tokenHref = tokenForCommsPriority(callout.priority);
+              const opacity = callout.stale ? 0.44 : 0.96;
+              const tokenAsset = getCommsCalloutTokenAsset(callout.priority);
               return (
                 <g key={`comms-callout:${callout.id}`} opacity={opacity}>
-                  <image href={tokenHref} x={x - 0.95} y={y - 0.95} width="1.9" height="1.9" />
-                  <circle cx={x} cy={y + 0.18} r={0.18} fill={color} />
+                  <image href={tokenAsset} x={x - 1.1} y={y - 1.3} width={2.2} height={2.2} />
                 </g>
               );
             })
@@ -766,6 +645,7 @@ export default function MapStageCanvas({
               const y1 = fromNode.y + offset;
               const x2 = toNode.x + offset;
               const y2 = toNode.y + offset;
+              const tokenAsset = getLogisticsTokenAsset(lane.laneKind, lane.stale);
               return (
                 <g key={lane.id} opacity={lane.stale ? 0.45 : 0.92}>
                   <line
@@ -777,7 +657,7 @@ export default function MapStageCanvas({
                     strokeWidth={lane.laneKind === 'EXTRACT' ? 0.54 : 0.38}
                     strokeDasharray={lane.laneKind === 'HOLD' ? '1 1' : lane.laneKind === 'ROUTE_HYPOTHESIS' ? '1.4 1' : '1.6 1'}
                   />
-                  <image href={tokenForLogisticsLane(lane)} x={x2 - 0.85} y={y2 - 0.85} width="1.7" height="1.7" />
+                  <image href={tokenAsset} x={x2 - 0.7} y={y2 - 0.7} width={1.4} height={1.4} />
                 </g>
               );
             })
@@ -893,10 +773,10 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = node.x + ((index % 3) - 1) * 1.9;
               const y = node.y - node.radius - 2.2 - ((index % 2) * 1.2);
-              const tokenHref = tokenForPresence(entry);
+              const tokenAsset = getPresenceTokenAsset(entry.displayState, entry.confidenceBand);
               return (
                 <g key={entry.id}>
-                  <image href={tokenHref} x={x - 0.95} y={y - 0.95} width="1.9" height="1.9" />
+                  <image href={tokenAsset} x={x - 0.85} y={y - 0.85} width={1.7} height={1.7} opacity={0.92} />
                   <text
                     x={x + 1.8}
                     y={y + 0.34}
@@ -919,11 +799,8 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = node.x + Number(intel.anchor.dx || 0);
               const y = node.y + Number(intel.anchor.dy || 0);
-              const strokeWidth = confidenceBandToStroke(intel.confidence);
-              const opacity = intel.ttl.stale ? 0.18 : Math.max(0.24, Math.min(0.9, intel.ttl.decayRatio));
-              const stroke = confidenceBandToColor(intel.confidence);
-              const fill = glyphFillForIntelType(intel.type);
-              const tokenHref = tokenForIntel(intel);
+              const opacity = intel.ttl.stale ? 0.28 : Math.max(0.42, Math.min(0.96, intel.ttl.decayRatio));
+              const tokenAsset = getIntelTokenAsset(intel.type, intel.confidence);
               return (
                 <g
                   key={keyForIntel(intel)}
@@ -968,86 +845,16 @@ export default function MapStageCanvas({
                   style={{ cursor: 'pointer', opacity }}
                 >
                   <title>{intelTooltip(intel)}</title>
-                  <rect x={x - 1.2} y={y - 1.2} width={2.4} height={2.4} fill={fill} stroke={stroke} strokeWidth={strokeWidth} opacity={0.65} />
-                  <image href={tokenHref} x={x - 1} y={y - 1} width="2" height="2" />
+                  <image href={tokenAsset} x={x - 1.7} y={y - 1.7} width={3.4} height={3.4} />
                 </g>
               );
             })
           : null}
-
-        {/* Collaborative drawn elements */}
-        <MapDrawingLayer 
-          elements={collaboration.elements}
-          mapTransform=""
-          onSelectElement={setSelectedElementId}
-        />
-
-        {/* Drawing preview */}
-        {drawingPreview && drawingPreview.type === 'zone' && (
-          <circle
-            cx={drawingPreview.cx}
-            cy={drawingPreview.cy}
-            r={drawingPreview.radius}
-            fill="rgba(59, 130, 246, 0.15)"
-            stroke="rgba(59, 130, 246, 0.6)"
-            strokeWidth={0.3}
-            strokeDasharray="1 1"
-          />
-        )}
-        {drawingPreview && drawingPreview.type === 'path' && drawingPreview.points?.length > 0 && (
-          <path
-            d={drawingPreview.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
-            fill="none"
-            stroke="rgba(251, 191, 36, 0.6)"
-            strokeWidth={0.25}
-            strokeDasharray="0.8 0.8"
-          />
-        )}
-
-        {/* Collaborative cursors */}
-        <MapCollaborativeCursors
-          participants={collaboration.participants}
-          currentUserId={actorId}
-          mapTransform=""
-        />
         </g>
       </svg>
 
       <div className="pointer-events-none absolute inset-0 nexus-map-crt-overlay" />
       <div className="pointer-events-none absolute inset-0 nexus-map-noise-overlay" />
-
-      <MapDrawingTools
-        drawMode={drawMode}
-        onChangeDrawMode={setDrawMode}
-        onSaveLayout={() => {
-          const code = collaboration.exportLayout();
-          if (code) {
-            navigator.clipboard.writeText(code);
-            alert('Map layout copied to clipboard!');
-          }
-        }}
-        onShareLayout={() => setShareDialogOpen(true)}
-        onImportLayout={() => setShareDialogOpen(true)}
-        onClearElements={() => {
-          if (confirm('Clear all drawn elements?')) {
-            collaboration.clearAllElements();
-          }
-        }}
-        elementCount={collaboration.elements.length}
-        sessionActive={Boolean(collaboration.session)}
-        participants={collaboration.participants}
-      />
-
-      <MapShareDialog
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        layoutCode={collaboration.exportLayout()}
-        onImport={(code) => {
-          collaboration.importLayout(code);
-          setShareDialogOpen(false);
-        }}
-        elementCount={collaboration.elements.length}
-      />
 
       <div className="absolute top-3 left-3 nexus-map-hud-panel text-[11px] z-[12]">
         <div className="nexus-map-hud-title">Stanton Tactical Ops</div>
