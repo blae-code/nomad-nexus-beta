@@ -1,64 +1,115 @@
+/**
+ * NexusRosterBadge - Composite participant badge with tokens
+ * 
+ * Renders: number token + callsign + role token + status token.
+ * Use for: voice net rosters, squad lists, team displays.
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: text-[9px] font-semibold uppercase
+ * - Spacing: gap-1 (horizontal), gap-0.5 (compact)
+ * - Token sizing: sm (12px) for density
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React from 'react';
-import NexusStatusToken from './NexusStatusToken';
 import NexusTokenIcon from './NexusTokenIcon';
+import NexusStatusToken from './NexusStatusToken';
 
-function clampNumber(value) {
-  const parsed = Number.parseInt(String(value || '0'), 10);
-  if (!Number.isFinite(parsed)) return 0;
-  return Math.max(0, Math.min(13, parsed));
-}
-
-function roleTokenFamily(role) {
-  const token = String(role || '').trim().toLowerCase();
-  if (token.includes('medic') || token.includes('hospital')) return 'hospital';
-  if (token.includes('engineer') || token.includes('repair') || token.includes('mechanic')) return 'mechanics';
-  if (token.includes('pilot') || token.includes('fuel') || token.includes('flight')) return 'fuel';
-  if (token.includes('ammo') || token.includes('gunner')) return 'ammunition';
-  if (token.includes('comms') || token.includes('signal')) return 'hex';
-  if (token.includes('command') || token.includes('lead')) return 'target';
-  return 'square';
-}
-
-function elementLabel(element) {
-  const normalized = String(element || '').trim().toUpperCase();
-  if (normalized === 'CE' || normalized === 'ACE' || normalized === 'GCE') return normalized;
-  return '';
-}
+const ROLE_TOKEN_MAP = {
+  command: { family: 'target', color: 'orange' },
+  commander: { family: 'target', color: 'orange' },
+  medical: { family: 'hospital', color: 'green' },
+  medic: { family: 'hospital', color: 'green' },
+  engineer: { family: 'mechanics', color: 'cyan' },
+  mechanics: { family: 'mechanics', color: 'cyan' },
+  pilot: { family: 'fuel', color: 'blue' },
+  flight: { family: 'fuel', color: 'blue' },
+  marine: { family: 'ammunition', color: 'red' },
+  gunner: { family: 'ammunition', color: 'red' },
+  support: { family: 'square', color: 'cyan' },
+  logistics: { family: 'square', color: 'cyan' },
+  default: { family: 'square', color: 'cyan' },
+};
 
 /**
- * NexusRosterBadge - compact participant row built from semantic tokens.
+ * @param {Object} props
+ * @param {number} props.number - Roster position (1-13)
+ * @param {string} props.callsign - Member callsign
+ * @param {string} [props.role] - Role key (command, medical, engineer, pilot, marine, support)
+ * @param {string} [props.element] - Element designation (CE, ACE, GCE)
+ * @param {string} [props.state='ready'] - Status (ready, active, offline, etc.)
+ * @param {string} [props.layout='horizontal'] - Layout mode (horizontal, compact, vertical)
+ * @param {string} [props.className] - Additional classes
  */
 export default function NexusRosterBadge({
-  number = 0,
-  callsign = 'Unknown',
-  role = '',
-  element = '',
-  state = 'offline',
+  number,
+  callsign,
+  role = null,
+  element = null,
+  state = 'ready',
   layout = 'horizontal',
   className = '',
 }) {
-  const numberFamily = `number-${clampNumber(number)}`;
-  const roleFamily = roleTokenFamily(role);
-  const showVertical = layout === 'vertical';
-  const elementCode = elementLabel(element);
-  const rootClass = showVertical ? 'flex flex-col items-start gap-1' : 'flex items-center gap-1';
-
+  const roleToken = role ? (ROLE_TOKEN_MAP[role.toLowerCase()] || ROLE_TOKEN_MAP.default) : null;
+  
+  if (layout === 'vertical') {
+    return (
+      <div className={`flex flex-col items-center gap-0.5 ${className}`}>
+        <NexusTokenIcon
+          family={`number-${Math.min(13, Math.max(0, number))}`}
+          color="blue"
+          size="sm"
+        />
+        <span className="text-[9px] font-semibold uppercase">{callsign}</span>
+        <div className="flex items-center gap-0.5">
+          {roleToken && (
+            <NexusTokenIcon
+              family={roleToken.family}
+              color={roleToken.color}
+              size="sm"
+            />
+          )}
+          <NexusStatusToken status={state} size="sm" showLabel={false} />
+        </div>
+      </div>
+    );
+  }
+  
+  if (layout === 'compact') {
+    return (
+      <div className={`flex items-center gap-0.5 ${className}`}>
+        <NexusTokenIcon
+          family={`number-${Math.min(13, Math.max(0, number))}`}
+          color="blue"
+          size="sm"
+        />
+        <span className="text-[8px] font-semibold uppercase">{callsign}</span>
+        <NexusStatusToken status={state} size="sm" showLabel={false} />
+      </div>
+    );
+  }
+  
+  // Horizontal (default)
   return (
-    <div className={`${rootClass} ${className}`.trim()} aria-label={`${callsign} ${state}`}>
-      <div className="inline-flex items-center gap-1 min-w-0">
-        <NexusTokenIcon family={numberFamily} color="blue" size="sm" alt={`Roster ${number}`} />
-        <span className="text-[8px] font-semibold uppercase tracking-[0.14em] leading-none text-zinc-200 truncate">{callsign}</span>
-        {elementCode ? (
-          <span className="px-1 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/50 text-[8px] font-semibold uppercase tracking-[0.14em] text-zinc-300">
-            {elementCode}
-          </span>
-        ) : null}
-      </div>
-      <div className="inline-flex items-center gap-1">
-        <NexusTokenIcon family={roleFamily} color="cyan" size="sm" alt={`${role || 'role'} token`} />
-        <NexusStatusToken status={state} size="sm" showLabel={false} ariaLabel={`${callsign} ${state}`} />
-      </div>
+    <div className={`flex items-center gap-1 ${className}`}>
+      <NexusTokenIcon
+        family={`number-${Math.min(13, Math.max(0, number))}`}
+        color="blue"
+        size="sm"
+      />
+      <span className="text-[9px] font-semibold uppercase">{callsign}</span>
+      {element && (
+        <span className="text-[7px] font-bold text-zinc-400 uppercase">[{element}]</span>
+      )}
+      {roleToken && (
+        <NexusTokenIcon
+          family={roleToken.family}
+          color={roleToken.color}
+          size="sm"
+        />
+      )}
+      <NexusStatusToken status={state} size="sm" showLabel={false} />
     </div>
   );
 }
-

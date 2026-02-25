@@ -1,54 +1,62 @@
-import React, { useMemo, useState } from 'react';
-import { NX_TOKEN_SIZES } from '../theme/design-tokens';
-import { getNumberTokenAssetUrl, getTokenAssetUrl } from '../tokens';
+/**
+ * NexusTokenIcon - Standardized tactical token renderer
+ * 
+ * Renders PNG token assets with consistent sizing and accessibility.
+ * Use for all operational icons: status, objectives, roles, priorities.
+ * 
+ * DESIGN COMPLIANCE:
+ * - Sizing: w-3 (sm), w-4 (md), w-5 (lg), w-6 (xl)
+ * - Always includes alt text and optional tooltip
+ * - Color semantics enforced via tokenAssetMap
+ * 
+ * @see components/nexus-os/ui/tokens/TOKEN_USAGE_GUIDE.md
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
 
-const FALLBACK_TOKEN = { family: 'square', color: 'grey', variant: 'base' };
+import React from 'react';
+import { getTokenAssetUrl } from '../tokens/tokenAssetMap';
 
-function isNumberFamily(family) {
-  return /^number-(\d{1,2})$/.test(String(family || ''));
-}
-
-function numberFromFamily(family) {
-  const match = String(family || '').match(/^number-(\d{1,2})$/);
-  if (!match) return null;
-  const parsed = Number.parseInt(match[1], 10);
-  return Number.isFinite(parsed) ? parsed : null;
-}
+const SIZE_CLASSES = {
+  sm: 'w-3 h-3',   // 12px
+  md: 'w-4 h-4',   // 16px
+  lg: 'w-5 h-5',   // 20px
+  xl: 'w-6 h-6',   // 24px
+};
 
 /**
- * NexusTokenIcon - normalized tactical token image renderer.
+ * @param {Object} props
+ * @param {string} props.family - Token family (circle, hex, target, penta, etc.)
+ * @param {string} props.color - Token color (red, orange, yellow, green, blue, cyan, grey, purple, violet)
+ * @param {string} [props.variant='base'] - Token variant (base, v1, v2) - only for number tokens
+ * @param {string} [props.size='md'] - Size preset (sm, md, lg, xl)
+ * @param {string} [props.className] - Additional classes
+ * @param {string} [props.tooltip] - Tooltip text (shows on hover)
+ * @param {string} [props.alt] - Alt text override (auto-generated if not provided)
  */
 export default function NexusTokenIcon({
-  family = 'square',
+  family,
   color = 'grey',
   variant = 'base',
   size = 'md',
   className = '',
-  tooltip = '',
-  alt = '',
-  loading = 'lazy',
+  tooltip,
+  alt,
+  ...props
 }) {
-  const [broken, setBroken] = useState(false);
-  const sizeClass = NX_TOKEN_SIZES[size] || NX_TOKEN_SIZES.md;
-  const resolved = broken ? FALLBACK_TOKEN : { family, color, variant };
-  const src = useMemo(() => {
-    if (isNumberFamily(resolved.family)) {
-      const value = numberFromFamily(resolved.family);
-      if (value !== null) return getNumberTokenAssetUrl(value, resolved.color, { variant: resolved.variant });
-    }
-    return getTokenAssetUrl(resolved.family, resolved.color, { variant: resolved.variant });
-  }, [resolved.family, resolved.color, resolved.variant]);
-
+  const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.md;
+  const tokenUrl = getTokenAssetUrl(family, color, { variant });
+  
+  // Auto-generate alt text if not provided
+  const altText = alt || `${color} ${family} token`;
+  
   return (
     <img
-      src={src}
-      alt={alt || `${resolved.family}-${resolved.color}`}
-      title={tooltip || undefined}
-      loading={loading}
-      className={`${sizeClass} object-contain ${className}`.trim()}
-      onError={() => setBroken(true)}
-      aria-hidden={alt ? undefined : true}
+      src={tokenUrl}
+      alt={altText}
+      title={tooltip}
+      className={`${sizeClass} ${className} inline-block flex-shrink-0`}
+      loading="lazy"
+      {...props}
     />
   );
 }
-
