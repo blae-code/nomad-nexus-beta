@@ -1,3 +1,15 @@
+/**
+ * SquadCard - Fleet squad information card with vehicle hierarchy
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: Squad label text-[10px], crew text-[9px], metadata text-[8px]
+ * - Spacing: px-2 py-1.5 (card), gap-1/1.5
+ * - Icons: w-2.5 h-2.5 (inline tokens), w-3 h-3 (action icons)
+ * - Tokens: ✅ Uses vehicle status, operator status, role tokens, SLA tokens
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Pin, PinOff, ChevronDown } from 'lucide-react';
 import { NexusButton, NexusBadge } from '../primitives';

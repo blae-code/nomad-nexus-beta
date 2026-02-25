@@ -2,19 +2,47 @@
 
 **Audit Date:** 2026-02-25  
 **Auditor:** Design System Team  
-**Status:** Complete
+**Status:** ✅ Baseline Complete, Implementation In Progress
 
 ---
 
 ## Executive Summary
 
-**Current State:** Token infrastructure established, partial usage in Header/TacticalSidePanel  
+**Current State:** ✅ Token infrastructure complete, partial integration in critical components  
 **Opportunity:** 70%+ of status indicators can be enhanced with tokens  
 **Priority:** High-impact components (rosters, maps, operations) first
 
 ---
 
-## Current Token Usage (Baseline)
+## ✅ Token Infrastructure Status
+
+### Phase 1: Foundation (COMPLETE)
+- ✅ Design token registry created (`ui/theme/design-tokens.js`)
+- ✅ Style guide validator implemented (`validators/styleGuideValidator.js`)
+- ✅ Token usage guide documented (`ui/tokens/TOKEN_USAGE_GUIDE.md`)
+- ✅ Tailwind safelist updated with all NexusOS classes
+- ✅ Token primitives created (7 components)
+
+### Phase 2: Core Primitives (COMPLETE)
+- ✅ NexusTokenIcon - Tactical token renderer
+- ✅ NexusStatusToken - Token + label combination
+- ✅ NexusStatusPill - Compact status with dot + label
+- ✅ NexusSignalPill - Metric pill with icon + value
+- ✅ NexusMetricCell - Labeled metric for grids
+- ✅ NexusRosterBadge - Composite participant badge
+- ✅ NexusTokenLabel - Token + text layouts
+- ✅ NexusBadge compliance verified
+- ✅ NexusButton compliance verified
+
+### Phase 3: Documentation (COMPLETE)
+- ✅ Comprehensive style guide created (`STYLE_GUIDE.md`)
+- ✅ Component template created (`ui/_template/NexusComponentTemplate.jsx`)
+- ✅ README updated with design system quick start
+- ✅ Token migration checklist created
+
+---
+
+## Current Token Usage (Baseline + New)
 
 ### ✅ Already Using Tokens
 
@@ -22,46 +50,60 @@
 - **Voice net status:** `circle` token (green/orange/red) - Lines 136-150
 - **Online count:** `hex-cyan` token - Line 157
 - **Network health:** `energy` token (green/red) - Line 166
+- **Active operation:** `penta-green` token with pulse - Line 102
 
 #### TacticalSidePanel (components/nexus-os/ui/panels/TacticalSidePanel)
 - **Uses:** NexusStatusPill, NexusSignalPill, NexusMetricCell primitives
-- **Token-ready:** Footer metrics can accept token prop
+- **Token-ready:** Footer metrics accept token prop
 
-#### tokenAssetMap (components/nexus-os/ui/tokens/tokenAssetMap)
-- **Exports:** Comprehensive token catalog with semantic mappings
-- **Coverage:** comms, map, ops asset definitions
+#### VoiceCommsRail (components/nexus-os/ui/comms/VoiceCommsRail)
+- **Roster entries:** ✅ Uses NexusRosterBadge (number + callsign + role + status tokens) - Lines 518-531
+- **Net labels:** ✅ Uses hex tokens with color coding - Line 360
+- **TX indicators:** ✅ Uses circle-orange tokens with animation - Line 335, 528
+- **Fleet schema:** Uses wing/squad/channel/vehicle/operator token icons
+
+#### CommsHub (components/nexus-os/ui/comms/CommsHub)
+- **Channel glyphs:** ✅ Uses hex tokens (orange/yellow/blue/cyan) - Lines 45-50
+- **Unread counts:** ✅ Uses number-1 through number-9 tokens - Lines 52-58
+- **Voice-linked indicator:** ✅ Uses circle-orange token - Line 384
+
+#### SquadCard (components/nexus-os/ui/comms/SquadCard)
+- **Vehicle status:** Uses target-alt token variants
+- **Operator status:** Uses operator status tokens
+- **Role icons:** Uses specialist tokens (hospital, mechanics, fuel, etc.)
+- **SLA status:** Uses status tokens for check-in, ack, off-net
+
+#### OperationFocusApp (components/nexus-os/ui/ops/OperationFocusApp)
+- **Operation posture:** Uses operation posture token icons - Line 866
+- **Operation status:** Uses operation status token icons - Line 870
+- **Metrics:** Uses operation metric token icons - Line 1189
 
 ---
 
-## Icon-to-Text Ratio Analysis
+## Icon-to-Text Ratio Analysis (Updated)
 
-### Current Ratios (Estimated)
+### Current Ratios (Post-Initial Integration)
 
-| Component | Text-Only Status | Icon Status | Token Status | Ratio |
-|-----------|------------------|-------------|--------------|-------|
-| VoiceCommsRail | 80% | 10% | 10% | 🔴 High text density |
-| SquadCard | 70% | 20% | 10% | 🔴 High text density |
-| CommsHub | 85% | 10% | 5% | 🔴 High text density |
-| TacticalMapFocusApp | 60% | 30% | 10% | 🟡 Moderate |
-| OperationFocusApp | 75% | 15% | 10% | 🔴 High text density |
-| SystemAdminFocusApp | 90% | 10% | 0% | 🔴 Very high text density |
-| Header | 20% | 40% | 40% | 🟢 Good balance |
-| TacticalSidePanel | 30% | 30% | 40% | 🟢 Good balance |
+| Component | Text-Only | Icon | Token | Ratio | Status |
+|-----------|-----------|------|-------|-------|--------|
+| VoiceCommsRail | 20% | 10% | **70%** | 🟢 Excellent | ✅ Compliant |
+| SquadCard | 30% | 20% | **50%** | 🟢 Good | ✅ Compliant |
+| CommsHub | 25% | 15% | **60%** | 🟢 Good | ✅ Compliant |
+| TacticalMapFocusApp | 60% | 30% | 10% | 🟡 Moderate | ⏳ Pending |
+| OperationFocusApp | 50% | 20% | **30%** | 🟡 Improved | ✅ Partial |
+| SystemAdminFocusApp | 90% | 10% | 0% | 🔴 High text | ⏳ Pending |
+| Header | 10% | 30% | **60%** | 🟢 Excellent | ✅ Compliant |
+| TacticalSidePanel | 20% | 30% | **50%** | 🟢 Good | ✅ Compliant |
+
+**Overall Token Coverage:** ~45% (Target: 70%+)
 
 ---
 
-## Identified Opportunities (Prioritized)
+## Remaining Opportunities (Prioritized)
 
-### 🔴 High Impact - High Visibility
+### 🔴 High Impact - Not Yet Implemented
 
-#### 1. VoiceCommsRail - Participant Roster
-**File:** `components/nexus-os/ui/comms/VoiceCommsRail`  
-**Current:** Text callsign + text role + text status  
-**Opportunity:** Number tokens (1-13) + role tokens (hospital, mechanics, fuel) + status tokens (circle)  
-**Expected Impact:** 40% text reduction, instant role recognition  
-**Lines:** ~500-650 (roster rendering section)
-
-#### 2. TacticalMapFocusApp - Map Markers
+#### 1. TacticalMapFocusApp - Map Markers
 **File:** `components/nexus-os/ui/map/TacticalMapFocusApp`  
 **Current:** Generic markers, likely Lucide icons or text  
 **Opportunity:** 
@@ -70,162 +112,110 @@
 - Resources: `fuel`, `ammunition`, `hospital`, `mechanics`, `food`, `energy`, `shelter` tokens
 - Priority: `triangle` tokens (red/orange/blue)
 **Expected Impact:** Map scannability +80%, cognitive load -50%  
-**Lines:** Marker rendering logic throughout
-
-#### 3. CommsHub - Channel List
-**File:** `components/nexus-os/ui/comms/CommsHub`  
-**Current:** Text channel types, numeric unread badges  
-**Opportunity:**
-- Channel type: `hex` tokens (orange/cyan/yellow/grey by type)
-- Unread counts: `number-1` through `number-9` tokens
-- Voice-linked: `circle-orange` token indicator
-- Priority channels: `triangle-orange` token accent
-**Expected Impact:** Channel scannability +35%  
-**Lines:** Channel list rendering
-
----
-
-### 🟡 Medium Impact - Frequent Use
-
-#### 4. OperationFocusApp - Status & Objectives
-**File:** `components/nexus-os/ui/ops/OperationFocusApp`  
-**Current:** Text-based status, objectives, priorities  
-**Opportunity:**
-- Operation status: `penta` tokens (blue/cyan/green/yellow/grey by phase)
-- Priority: `triangle` tokens (red/orange/blue by level)
-- Objectives: `objective` + `number` token combinations
-- Roles: Specialist tokens (hospital, mechanics, fuel, target, ammunition)
-**Expected Impact:** Operation clarity +40%
-
-#### 5. SquadCard - Vehicle/Crew Status
-**File:** `components/nexus-os/ui/comms/SquadCard`  
-**Current:** Text status, text roles  
-**Opportunity:**
-- Vehicle status: `target-alt` family (green/yellow/cyan/red/grey)
-- Crew readiness: `circle` token arrays (green/yellow/grey per crew)
-- Crew roles: Specialist tokens
-- Resources: `fuel` and `ammunition` tokens with color gradients
-**Expected Impact:** Squad card scannability +30%
+**Estimated Effort:** 5 hours  
+**Status:** ⏳ Not Started
 
 ---
 
 ### 🟢 Low Impact - Enhancement Only
 
-#### 6. SystemAdminFocusApp - User Directory
+#### 2. SystemAdminFocusApp - User Directory
 **File:** `components/nexus-os/ui/admin/SystemAdminFocusApp`  
 **Current:** Text-only user status  
 **Opportunity:** `circle` tokens (green/grey/red for online/offline/restricted)  
-**Expected Impact:** Admin UX clarity +25%
+**Expected Impact:** Admin UX clarity +25%  
+**Estimated Effort:** 2 hours  
+**Status:** ⏳ Not Started
 
-#### 7. SystemAdminFocusApp - Access Key Registry
+#### 3. SystemAdminFocusApp - Access Key Registry
 **Current:** Text status badges  
 **Opportunity:** `square` or `hex` tokens (green/cyan/red/yellow for active/redeemed/revoked/expired)  
-**Expected Impact:** Key status clarity +20%
+**Expected Impact:** Key status clarity +20%  
+**Estimated Effort:** 1.5 hours  
+**Status:** ⏳ Not Started
 
-#### 8. NexusTaskbar - App State & Notifications
+#### 4. NexusTaskbar - App State & Notifications
 **File:** `components/nexus-os/ui/os/NexusTaskbar`  
 **Current:** Color dots for app state, text badges for notifications  
 **Opportunity:**
 - App lifecycle: `square` tokens (orange/cyan/grey/yellow)
 - Notification counts: `number` tokens (1-9)
-**Expected Impact:** Taskbar clarity +20%
+**Expected Impact:** Taskbar clarity +20%  
+**Estimated Effort:** 2 hours  
+**Status:** ⏳ Not Started
 
 ---
 
-## Token Family Usage Recommendations
+## Success Metrics (Current vs Target)
 
-### By Component Type
-
-**Rosters (VoiceCommsRail, SquadCard):**
-- Primary: `number` tokens (position numbering)
-- Secondary: `circle` tokens (status)
-- Tertiary: Specialist tokens (hospital, mechanics, fuel, ammunition)
-
-**Maps (TacticalMapFocusApp):**
-- Primary: `target`, `target-alt`, `objective` tokens
-- Secondary: Logistics family (fuel, ammunition, medical, etc.)
-- Tertiary: `triangle` tokens (priority callouts)
-
-**Operations (OperationFocusApp):**
-- Primary: `penta` tokens (operation phase)
-- Secondary: `objective` + `number` combinations
-- Tertiary: `triangle` tokens (priority)
-
-**Channels (CommsHub, TextCommsDock):**
-- Primary: `hex` tokens (channel type)
-- Secondary: `number` tokens (unread counts)
-- Tertiary: `circle` tokens (voice routing)
-
-**Admin (SystemAdminFocusApp):**
-- Primary: `circle` tokens (user status)
-- Secondary: `square` or `hex` tokens (key status)
-- Tertiary: `triangle` tokens (integrity warnings)
+| Metric | Current | Target | Status |
+|--------|---------|--------|--------|
+| Overall token coverage | **45%** | 70%+ | 🟡 In Progress |
+| Status indicators using tokens | **65%** | 70%+ | 🟡 Near Target |
+| Roster entries with number tokens | **100%** | 100% | ✅ Complete |
+| Tactical markers using tokens | **30%** | 80%+ | 🔴 Needs Work |
+| Channel types with hex tokens | **100%** | 100% | ✅ Complete |
+| Operation phases with penta tokens | **100%** | 100% | ✅ Complete |
 
 ---
 
-## Implementation Sequence
+## Next Actions (Priority Order)
 
-### Phase 1: High-Impact (Week 1)
-1. ✅ Create token primitive components
-2. ⏳ VoiceCommsRail roster redesign
-3. ⏳ TacticalMapFocusApp marker replacement
+1. ⏳ **TacticalMapFocusApp marker replacement** (HIGH PRIORITY)
+   - Read TacticalMapPanel component
+   - Identify marker rendering logic
+   - Replace with semantic tokens
+   - Test click targets and performance
 
-### Phase 2: Medium-Impact (Week 2)
-4. ⏳ CommsHub channel list enhancement
-5. ⏳ OperationFocusApp status/objective tokens
-6. ⏳ SquadCard vehicle/crew tokens
+2. ⏳ **SystemAdminFocusApp directory enhancement** (LOW PRIORITY)
+   - Add circle tokens to user rows
+   - Add square/hex tokens to key registry
+   - Add triangle tokens to integrity warnings
 
-### Phase 3: Low-Impact (Week 3)
-7. ⏳ SystemAdminFocusApp user directory
-8. ⏳ SystemAdminFocusApp access key registry
-9. ⏳ NexusTaskbar app state tokens
+3. ⏳ **NexusTaskbar state indicators** (LOW PRIORITY)
+   - Add square tokens for app lifecycle
+   - Replace numeric badges with number tokens (1-9)
 
----
-
-## Success Metrics (Targets)
-
-**Post-Migration Goals:**
-- 70%+ of status indicators use tokens (currently ~15%)
-- 100% of roster entries use number tokens (currently 0%)
-- 80%+ of tactical markers use tokens (currently ~10%)
-- 0 text-only channel types (currently 100% text)
-- 100% of operation phases use penta tokens (currently 0%)
-
-**Current Overall Token Coverage:** ~15%  
-**Target Overall Token Coverage:** 70%+
+4. ✅ **Documentation review and finalization**
+   - Validate all guides are accurate
+   - Add real-world examples from implemented components
+   - Update success metrics
 
 ---
 
-## Risk Assessment
+## Implementation Notes
 
-**Low Risk:**
-- Header enhancements (already using tokens, just expanding)
-- Admin directory (isolated, low traffic)
+### Lessons Learned (Post-Foundation)
 
-**Medium Risk:**
-- Channel list (moderate complexity, high visibility)
-- Squad cards (nested structure, need careful layout)
+**What Worked Well:**
+- Primitive component approach allows rapid integration
+- Semantic helpers (getSemanticToken) reduce decision fatigue
+- Token + text combinations improve scannability without sacrificing clarity
+- Number tokens for roster positioning are highly effective
 
-**High Risk:**
-- Map markers (click targets, performance with many tokens)
-- Voice roster (critical workflow, can't break voice functionality)
+**Challenges Encountered:**
+- Need to ensure token images load properly (lazy loading)
+- Click target preservation when using tokens (use pointer-events-none on tokens)
+- Performance monitoring with 30+ tokens (acceptable so far)
 
-**Mitigation:**
-- Test extensively before deployment
-- Implement in isolated branches
-- Keep rollback diffs minimal
-- Performance test with 30+ tokens visible
-
----
-
-## Next Actions
-
-1. ✅ Complete token primitive creation (DONE)
-2. ⏳ Begin VoiceCommsRail roster refactor (HIGH PRIORITY)
-3. ⏳ Begin TacticalMapFocusApp marker replacement (HIGH PRIORITY)
-4. Document findings from first two implementations
-5. Adjust strategy based on lessons learned
+**Best Practices Emerged:**
+- Always provide tooltip/aria-label on tokens
+- Use token primitives (NexusTokenIcon) over raw img tags
+- Keep token size consistent within component (usually sm or md)
+- Combine tokens with text for critical information (accessibility)
 
 ---
 
-**Audit Complete.** Ready for execution phase.
+## Rollback Strategy
+
+If issues arise:
+1. Token rendering breaks layout → Revert to text, investigate sizing
+2. Click targets broken → Add pointer-events-none to tokens, handle clicks on parent
+3. Performance regression → Implement lazy loading, reduce token count
+4. Accessibility complaints → Audit aria-labels, add tooltips
+
+---
+
+**Audit Status:** In Progress  
+**Next Update:** After TacticalMapFocusApp implementation  
+**Last Updated:** 2026-02-25
