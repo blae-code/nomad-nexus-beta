@@ -13,7 +13,6 @@ import {
   Trash2,
   Wrench,
 } from 'lucide-react';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { NexusBadge, NexusButton } from '../primitives';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { getDefaultMembershipForRank, MEMBERSHIP_LIST } from '@/components/constants/membership';
@@ -27,49 +26,14 @@ import {
   wipeSeededOnly,
 } from '@/components/services/dataRegistry';
 
-type PersonaMode = 'SYSTEM_ADMIN' | 'PIONEER';
-type LogTone = 'neutral' | 'ok' | 'warning' | 'danger';
-
-interface SystemAdminFocusAppProps extends Partial<CqbPanelSharedProps> {
-  actorId: string;
-  onClose?: () => void;
-}
-
-interface ActionLogEntry {
-  id: string;
-  tone: LogTone;
-  summary: string;
-  detail: string;
-  createdAt: string;
-}
-
-interface DirectoryUser {
-  id: string;
-  username: string;
-  callsign: string;
-  rank: string;
-  membership: string;
-}
-
-interface AccessKeyRecord {
-  id: string;
-  code: string;
-  status: string;
-  grants_rank: string;
-  grants_membership: string;
-  grants_roles: string[];
-  redeemed_by_member_profile_ids: string[];
-  created_date?: string;
-}
-
 const PERSONA_STORAGE_KEY = 'nexus.admin.focus.persona';
 const DOMAIN_PAGE_SIZE = 6;
 const LOG_PAGE_SIZE = 5;
 const PROTECTED_DOMAIN_KEYS = ['memberProfiles', 'accessKeys'];
 const IDENTITY_USER_PAGE_SIZE = 5;
 const IDENTITY_KEY_PAGE_SIZE = 6;
-const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'] as const;
-const RANK_GRANTS_CONFIG: Record<string, string[]> = {
+const RANK_OPTIONS = ['VAGRANT', 'SCOUT', 'VOYAGER', 'PIONEER', 'FOUNDER'];
+const RANK_GRANTS_CONFIG = {
   VAGRANT: ['read_only'],
   SCOUT: ['read_only', 'comms_access'],
   VOYAGER: ['read_only', 'comms_access', 'event_creation'],
@@ -77,7 +41,7 @@ const RANK_GRANTS_CONFIG: Record<string, string[]> = {
   FOUNDER: ['admin_access'],
 };
 
-function normalizeUsername(input: any): string {
+function normalizeUsername(input) {
   return String(
     input?.display_callsign ||
       input?.callsign ||
@@ -89,7 +53,7 @@ function normalizeUsername(input: any): string {
   ).trim();
 }
 
-function normalizeDirectoryUsers(raw: any[]): DirectoryUser[] {
+function normalizeDirectoryUsers(raw) {
   const mapped = (Array.isArray(raw) ? raw : []).map((entry) => ({
     id: String(entry?.id || '').trim(),
     username: normalizeUsername(entry),
@@ -100,7 +64,7 @@ function normalizeDirectoryUsers(raw: any[]): DirectoryUser[] {
   return mapped.filter((entry) => Boolean(entry.id));
 }
 
-function normalizeAccessKeys(raw: any[]): AccessKeyRecord[] {
+function normalizeAccessKeys(raw) {
   return (Array.isArray(raw) ? raw : [])
     .map((entry) => ({
       id: String(entry?.id || '').trim(),
@@ -121,7 +85,7 @@ function normalizeAccessKeys(raw: any[]): AccessKeyRecord[] {
     .filter((entry) => Boolean(entry.id) && Boolean(entry.code));
 }
 
-function accessKeyTone(status: string): 'ok' | 'warning' | 'danger' | 'neutral' | 'active' {
+function accessKeyTone(status) {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'ACTIVE') return 'ok';
   if (normalized === 'REDEEMED') return 'active';
@@ -130,24 +94,24 @@ function accessKeyTone(status: string): 'ok' | 'warning' | 'danger' | 'neutral' 
   return 'neutral';
 }
 
-function maskKeyCode(code: string): string {
+function maskKeyCode(code) {
   const normalized = String(code || '').trim();
   if (normalized.length <= 8) return normalized;
   return `${normalized.slice(0, 4)}...${normalized.slice(-4)}`;
 }
 
-function titleizeDomainKey(key: string): string {
+function titleizeDomainKey(key) {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase()).trim();
 }
 
-function toneForLog(entry: LogTone): 'ok' | 'warning' | 'danger' | 'neutral' {
+function toneForLog(entry) {
   if (entry === 'ok') return 'ok';
   if (entry === 'warning') return 'warning';
   if (entry === 'danger') return 'danger';
   return 'neutral';
 }
 
-function formatClock(value: string): string {
+function formatClock(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '--:--';
   return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -162,35 +126,30 @@ export default function SystemAdminFocusApp({
   onOpenOperationFocus,
   onOpenCommsNetwork,
   onCreateMacroEvent,
-}: SystemAdminFocusAppProps) {
-  const [persona, setPersona] = useState<PersonaMode>('SYSTEM_ADMIN');
+}) {
+  const [persona, setPersona] = useState('SYSTEM_ADMIN');
   const [busyId, setBusyId] = useState('');
-  const [domainCounts, setDomainCounts] = useState<Record<string, number>>({});
+  const [domainCounts, setDomainCounts] = useState({});
   const [domainPage, setDomainPage] = useState(0);
   const [logPage, setLogPage] = useState(0);
   const [preserveSeededOnSafeWipe, setPreserveSeededOnSafeWipe] = useState(false);
   const [safeWipeArmed, setSafeWipeArmed] = useState(false);
-  const [integritySnapshot, setIntegritySnapshot] = useState<{
-    at: string;
-    totalRecords: number;
-    issueCount: number;
-    errorCount: number;
-  } | null>(null);
-  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
-  const [directoryUsers, setDirectoryUsers] = useState<DirectoryUser[]>([]);
-  const [accessKeys, setAccessKeys] = useState<AccessKeyRecord[]>([]);
+  const [integritySnapshot, setIntegritySnapshot] = useState(null);
+  const [actionLog, setActionLog] = useState([]);
+  const [directoryUsers, setDirectoryUsers] = useState([]);
+  const [accessKeys, setAccessKeys] = useState([]);
   const [identityUserSearch, setIdentityUserSearch] = useState('');
   const [identityKeySearch, setIdentityKeySearch] = useState('');
   const [identityUserPage, setIdentityUserPage] = useState(0);
   const [identityKeyPage, setIdentityKeyPage] = useState(0);
   const [selectedIdentityUserId, setSelectedIdentityUserId] = useState('');
-  const [identityRank, setIdentityRank] = useState<(typeof RANK_OPTIONS)[number]>('VAGRANT');
+  const [identityRank, setIdentityRank] = useState('VAGRANT');
   const [identityMembership, setIdentityMembership] = useState(getDefaultMembershipForRank('VAGRANT'));
   const [inviteMessage, setInviteMessage] = useState('');
 
   const focusOpId = String(focusOperationId || opId || operations[0]?.id || '');
 
-  const pushLog = useCallback((tone: LogTone, summary: string, detail: string) => {
+  const pushLog = useCallback((tone, summary, detail) => {
     setActionLog((previous) => [
       {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -204,11 +163,11 @@ export default function SystemAdminFocusApp({
   }, []);
 
   const runTask = useCallback(
-    async (id: string, task: () => Promise<void>) => {
+    async (id, task) => {
       setBusyId(id);
       try {
         await task();
-      } catch (error: any) {
+      } catch (error) {
         pushLog('danger', 'Action failed', error?.message || 'Operation did not complete.');
       } finally {
         setBusyId('');
@@ -369,7 +328,7 @@ export default function SystemAdminFocusApp({
     setSelectedIdentityUserId(firstUserId);
   }, [selectedIdentityUserId, directoryUserById, directoryUsers]);
 
-  const parseResponseData = useCallback((response: any) => response?.data || response || {}, []);
+  const parseResponseData = useCallback((response) => response?.data || response || {}, []);
 
   const refreshIdentityAccess = useCallback(async () => {
     const directoryResponse = await invokeMemberFunction('getUserDirectory', { includeDetails: false });
@@ -390,7 +349,7 @@ export default function SystemAdminFocusApp({
   }, [runTask, refreshIdentityAccess]);
 
   const generateInviteForKey = useCallback(
-    async (keyCode: string, rank: string, membership: string) => {
+    async (keyCode, rank, membership) => {
       const invitationResponse = await invokeMemberFunction('generateDiscordInvitation', {
         accessKeyCode: keyCode,
         accessKeyRank: rank,
@@ -446,7 +405,7 @@ export default function SystemAdminFocusApp({
   ]);
 
   const revokeKeyById = useCallback(
-    async (keyId: string, code: string) => {
+    async (keyId, code) => {
       const approved = window.confirm(`Revoke access key ${code}?`);
       if (!approved) return;
       await runTask(`identity-revoke-${keyId}`, async () => {
@@ -486,7 +445,7 @@ export default function SystemAdminFocusApp({
     });
   }, [selectedDirectoryUser, keyRows, runTask, refreshIdentityAccess, pushLog]);
 
-  const copyToClipboard = useCallback((value: string, summary: string) => {
+  const copyToClipboard = useCallback((value, summary) => {
     if (!value) return;
     void navigator.clipboard.writeText(value).then(() => {
       pushLog('ok', summary, value.length > 64 ? `${value.slice(0, 60)}...` : value);
@@ -494,7 +453,7 @@ export default function SystemAdminFocusApp({
   }, [pushLog]);
 
   const invokeQuickOpen = useCallback(
-    (label: string, fn: (() => void) | undefined) => {
+    (label, fn) => {
       if (!fn) {
         pushLog('warning', `${label} unavailable`, 'No handler is registered in this workspace context.');
         return;
@@ -507,10 +466,10 @@ export default function SystemAdminFocusApp({
 
   const runIntegrityValidation = useCallback(async () => {
     await runTask('validate', async () => {
-      const report: any = await validateAll();
+      const report = await validateAll();
       const issueCount = Array.isArray(report?.issues) ? report.issues.length : 0;
       const errorCount = Array.isArray(report?.issues)
-        ? report.issues.filter((entry: any) => String(entry?.severity || '').toLowerCase() === 'error').length
+        ? report.issues.filter((entry) => String(entry?.severity || '').toLowerCase() === 'error').length
         : 0;
       setIntegritySnapshot({
         at: new Date().toISOString(),
@@ -528,15 +487,15 @@ export default function SystemAdminFocusApp({
 
   const runRepair = useCallback(async () => {
     await runTask('repair', async () => {
-      const result: any = await repairAll();
+      const result = await repairAll();
       pushLog('ok', 'Repair routine finished', String(result?.message || 'Repair flow completed.'));
     });
   }, [runTask, pushLog]);
 
   const runSeed = useCallback(
-    async (intensity: 'light' | 'full') => {
+    async (intensity) => {
       await runTask(`seed-${intensity}`, async () => {
-        const result: any = await seedImmersive({ intensity });
+        const result = await seedImmersive({ intensity });
         await refreshDomainCounts();
         pushLog(result?.success ? 'ok' : 'warning', `Seed ${intensity} executed`, String(result?.message || result?.error || 'Seed task finished.'));
       });
@@ -548,7 +507,7 @@ export default function SystemAdminFocusApp({
     const approved = window.confirm('Delete seeded demo data only? Non-seeded records stay intact.');
     if (!approved) return;
     await runTask('wipe-seeded', async () => {
-      const result: any = await wipeSeededOnly();
+      const result = await wipeSeededOnly();
       await refreshDomainCounts();
       pushLog('warning', 'Seeded data purged', `${Number(result?.totalDeleted || 0)} seeded records removed.`);
     });
@@ -564,7 +523,7 @@ export default function SystemAdminFocusApp({
     );
     if (!approved) return;
     await runTask('safe-wipe', async () => {
-      const result: any = await wipeAll({
+      const result = await wipeAll({
         preserveSeeded: preserveSeededOnSafeWipe,
         excludeDomainKeys: PROTECTED_DOMAIN_KEYS,
       });
@@ -682,7 +641,7 @@ export default function SystemAdminFocusApp({
                           type="button"
                           onClick={() => {
                             setSelectedIdentityUserId(entry.id);
-                            setIdentityRank(entry.rank as (typeof RANK_OPTIONS)[number]);
+                            setIdentityRank(entry.rank);
                             setIdentityMembership(entry.membership || getDefaultMembershipForRank(entry.rank));
                           }}
                           className={`w-full rounded border px-2 py-1.5 text-left transition-colors ${
@@ -730,7 +689,7 @@ export default function SystemAdminFocusApp({
                     <select
                       value={identityRank}
                       onChange={(event) => {
-                        const nextRank = event.target.value as (typeof RANK_OPTIONS)[number];
+                        const nextRank = event.target.value;
                         setIdentityRank(nextRank);
                         setIdentityMembership(getDefaultMembershipForRank(nextRank));
                       }}
