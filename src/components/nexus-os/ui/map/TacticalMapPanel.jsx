@@ -1,24 +1,24 @@
-/**
- * TacticalMapPanel - Tactical map control and rendering component
- * 
- * DESIGN COMPLIANCE:
- * - Typography: Headers text-xs font-semibold, labels text-[11px]/[10px]
- * - Spacing: p-2.5, gap-2
- * - Icons: Integrated via MapStageCanvas
- * - Tokens: ✅ Presence (circle), Intel (objective/target-alt), Comms (triangle), Logistics (resource family)
- * 
- * @see components/nexus-os/STYLE_GUIDE.md
- */
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
+import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
+import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
+import type {
+  ControlSignal,
+  MapLayerState,
+  TacticalLayerId,
+  TacticalMapDockId,
+  TacticalMapMode,
+} from '../../schemas/mapSchemas';
 import { getRenderableLocationEstimates } from '../../services/locationEstimateService';
 import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
+  type CommsPriority,
+  type MapCommsOverlay,
+  type MapCommsOverlayNet,
 } from '../../services/mapCommsOverlayService';
 import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
@@ -36,8 +36,15 @@ import {
   subscribeIntentDrafts,
   updateDraft,
 } from '../../services/intentDraftService';
-import { buildMapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
-import { buildMapCommandSurface } from '../../services/mapCommandSurfaceService';
+import {
+  buildMapLogisticsOverlay,
+  type MapLogisticsLane,
+} from '../../services/mapLogisticsOverlayService';
+import {
+  buildMapCommandSurface,
+  type MapCommandAlert,
+  type TacticalMacroId,
+} from '../../services/mapCommandSurfaceService';
 import { buildMapTimelineSnapshot } from '../../services/mapTimelineService';
 import {
   loadTacticalMapPreferences,
@@ -424,7 +431,7 @@ export default function TacticalMapPanel({
   }, [intelObjects, selectedIntelId]);
   const selectedIntelComments = useMemo(() => (selectedIntel ? listIntelComments(selectedIntel.id) : []), [selectedIntel, intelVersion]);
 
-  const layerEnabled = (id: TacticalLayerId) => layers.find((entry) => entry.id === id)?.enabled === true;
+  const layerEnabled = (id) => layers.find((entry) => entry.id === id)?.enabled === true;
 
   const opsOverlay = useMemo(
     () =>
@@ -764,7 +771,7 @@ export default function TacticalMapPanel({
     setMacroExecutionError(null);
     setMacroExecutionMessage(null);
     try {
-      const response: any = await invokeMemberFunction('updateCommsConsole', {
+      const response = await invokeMemberFunction('updateCommsConsole', {
         action: 'execute_map_command_macro',
         macroId,
         eventId: scopedCommsOpId || undefined,
@@ -1127,7 +1134,7 @@ export default function TacticalMapPanel({
           <input
             value={quickBroadcastMessage}
             onChange={(event) => setQuickBroadcastMessage(event.target.value)}
-            onKeyPress={(event) => {
+            onKeyDown={(event) => {
               if (event.key !== 'Enter') return;
               event.preventDefault();
               void sendQuickBroadcast();

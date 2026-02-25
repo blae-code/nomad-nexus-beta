@@ -1,15 +1,3 @@
-/**
- * SystemAdminFocusApp - System administration and data operations control center
- * 
- * DESIGN COMPLIANCE:
- * - Typography: Headers text-[11px] font-semibold, labels text-[10px]
- * - Spacing: p-2/2.5, gap-1.5/2
- * - Icons: w-3.5 h-3.5 (actions)
- * - Tokens: ✅ Uses circle tokens for user status, hex tokens for key status
- * 
- * @see components/nexus-os/STYLE_GUIDE.md
- */
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -37,8 +25,6 @@ import {
   wipeAll,
   wipeSeededOnly,
 } from '@/components/services/dataRegistry';
-
-
 
 const PERSONA_STORAGE_KEY = 'nexus.admin.focus.persona';
 const DOMAIN_PAGE_SIZE = 6;
@@ -363,7 +349,7 @@ export default function SystemAdminFocusApp({
   }, [runTask, refreshIdentityAccess]);
 
   const generateInviteForKey = useCallback(
-    async (keyCode: string, rank: string, membership: string) => {
+    async (keyCode, rank, membership) => {
       const invitationResponse = await invokeMemberFunction('generateDiscordInvitation', {
         accessKeyCode: keyCode,
         accessKeyRank: rank,
@@ -419,7 +405,7 @@ export default function SystemAdminFocusApp({
   ]);
 
   const revokeKeyById = useCallback(
-    async (keyId: string, code: string) => {
+    async (keyId, code) => {
       const approved = window.confirm(`Revoke access key ${code}?`);
       if (!approved) return;
       await runTask(`identity-revoke-${keyId}`, async () => {
