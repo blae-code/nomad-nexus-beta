@@ -1,15 +1,3 @@
-/**
- * NexusCommandDeck - Command-line interface for workspace controls
- * 
- * DESIGN COMPLIANCE:
- * - Typography: Headers text-[10px] font-extrabold, labels text-[8px] font-semibold
- * - Spacing: p-1.5, gap-1/1.5, px-2 py-1 (inputs)
- * - Icons: w-3.5 h-3.5 (headers), w-3 h-3 (pagination)
- * - Pagination: 6 catalog, 4 results, 4 history per page
- * 
- * @see components/nexus-os/STYLE_GUIDE.md
- */
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Command, History, Sparkles, TerminalSquare, X, Zap } from 'lucide-react';
 import { NexusButton } from '../primitives';
@@ -109,8 +97,8 @@ export default function NexusCommandDeck({
     [history, historyPage]
   );
 
-  const executeCommand = (nextCommand?: string) => {
-    const payload = String(nextCommand ?? command).trim();
+  const executeCommand = (nextCommand) => {
+    const payload = String(nextCommand || command).trim();
     if (!payload) return;
     const result = String(onRunCommand(payload) || '');
     const timestamp = toTimestampLabel();
