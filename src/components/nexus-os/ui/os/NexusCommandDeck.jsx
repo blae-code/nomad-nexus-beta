@@ -1,14 +1,46 @@
+/**
+ * NexusCommandDeck - Command-line interface for workspace controls
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: Headers text-[10px] font-extrabold, labels text-[8px] font-semibold
+ * - Spacing: p-1.5, gap-1/1.5, px-2 py-1 (inputs)
+ * - Icons: w-3.5 h-3.5 (headers), w-3 h-3 (pagination)
+ * - Pagination: 6 catalog, 4 results, 4 history per page
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Command, History, Sparkles, TerminalSquare, X, Zap } from 'lucide-react';
 import { NexusButton } from '../primitives';
 
+interface NexusCommandCatalogItem {
+  id: string;
+  label: string;
+  command: string;
+  detail?: string;
+}
+
+interface NexusCommandDeckProps {
+  open: boolean;
+  onClose: () => void;
+  onRunCommand: (command: string) => string;
+  commandCatalog?: NexusCommandCatalogItem[];
+  contextSummary?: string;
+}
+
+interface CommandResultEntry {
+  id: string;
+  command: string;
+  result: string;
+  timestamp: string;
+}
+
 const CATALOG_PAGE_SIZE = 6;
 const OUTPUT_PAGE_SIZE = 4;
 const HISTORY_PAGE_SIZE = 4;
-const HISTORY_STORAGE_KEY = 'nexus.commandDeck.history';
-const MAX_HISTORY = 32;
 
-const DEFAULT_CATALOG = [
+const DEFAULT_CATALOG: NexusCommandCatalogItem[] = [
   { id: 'help', label: 'Help', command: 'help', detail: 'Show supported command syntax.' },
   { id: 'status', label: 'System Status', command: 'status', detail: 'Show bridge/link/focus status.' },
   { id: 'open-map', label: 'Focus Map', command: 'open map', detail: 'Open tactical map focus mode.' },
@@ -24,102 +56,21 @@ function toTimestampLabel() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function loadPersistedHistory() {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_HISTORY) : [];
-  } catch {
-    return [];
-  }
-}
-
-function persistHistory(history) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
-  } catch {}
-}
-
-function buildContextSuggestions(catalog, activeFocusMode, recentActions) {
-  const suggestions = [];
-  const addedIds = new Set();
-
-  // Focus mode suggestions
-  if (activeFocusMode) {
-    const closeCmd = catalog.find((entry) => entry.command === 'close');
-    if (closeCmd && !addedIds.has(closeCmd.id)) {
-      suggestions.push(closeCmd);
-      addedIds.add(closeCmd.id);
-    }
-
-    const otherFocusModes = ['map', 'ops', 'comms', 'admin'].filter((mode) => mode !== activeFocusMode);
-    otherFocusModes.forEach((mode) => {
-      const cmd = catalog.find((entry) => entry.command === `open ${mode}`);
-      if (cmd && !addedIds.has(cmd.id)) {
-        suggestions.push(cmd);
-        addedIds.add(cmd.id);
-      }
-    });
-  } else {
-    // No focus mode active, suggest opening one
-    ['comms', 'map', 'ops'].forEach((mode) => {
-      const cmd = catalog.find((entry) => entry.command === `open ${mode}`);
-      if (cmd && !addedIds.has(cmd.id)) {
-        suggestions.push(cmd);
-        addedIds.add(cmd.id);
-      }
-    });
-  }
-
-  // Recent action suggestions
-  if (recentActions && recentActions.length > 0) {
-    const statusCmd = catalog.find((entry) => entry.command === 'status');
-    if (statusCmd && !addedIds.has(statusCmd.id)) {
-      suggestions.push(statusCmd);
-      addedIds.add(statusCmd.id);
-    }
-  }
-
-  // Bridge commands
-  const bridgeNext = catalog.find((entry) => entry.command === 'bridge next');
-  if (bridgeNext && !addedIds.has(bridgeNext.id)) {
-    suggestions.push(bridgeNext);
-    addedIds.add(bridgeNext.id);
-  }
-
-  // Fill remaining with catalog items
-  catalog.forEach((entry) => {
-    if (suggestions.length >= CATALOG_PAGE_SIZE) return;
-    if (!addedIds.has(entry.id)) {
-      suggestions.push(entry);
-      addedIds.add(entry.id);
-    }
-  });
-
-  return suggestions.slice(0, CATALOG_PAGE_SIZE * 2);
-}
-
 export default function NexusCommandDeck({
   open,
   onClose,
   onRunCommand,
   commandCatalog = DEFAULT_CATALOG,
   contextSummary = 'Execute workspace controls and bridge commands.',
-  activeFocusMode,
-  recentActions = [],
-}) {
-  const inputRef = useRef(null);
+}: NexusCommandDeckProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [command, setCommand] = useState('');
-  const [results, setResults] = useState([]);
-  const [history, setHistory] = useState(() => loadPersistedHistory());
+  const [results, setResults] = useState<CommandResultEntry[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
   const [historyCursor, setHistoryCursor] = useState(-1);
   const [catalogPage, setCatalogPage] = useState(0);
   const [outputPage, setOutputPage] = useState(0);
   const [historyPage, setHistoryPage] = useState(0);
-  const [showContextSuggestions, setShowContextSuggestions] = useState(true);
 
   useEffect(() => {
     if (!open) return;
@@ -137,23 +88,17 @@ export default function NexusCommandDeck({
     return commandCatalog.slice(0, 18);
   }, [commandCatalog]);
 
-  const contextSuggestions = useMemo(
-    () => buildContextSuggestions(normalizedCatalog, activeFocusMode, recentActions),
-    [normalizedCatalog, activeFocusMode, recentActions]
-  );
-
   const filteredCatalog = useMemo(() => {
     const query = command.trim().toLowerCase();
-    const baseCatalog = showContextSuggestions && !query ? contextSuggestions : normalizedCatalog;
-    if (!query) return baseCatalog;
-    const startsWith = baseCatalog.filter((entry) => entry.command.toLowerCase().startsWith(query));
-    const includes = baseCatalog.filter(
+    if (!query) return normalizedCatalog;
+    const startsWith = normalizedCatalog.filter((entry) => entry.command.toLowerCase().startsWith(query));
+    const includes = normalizedCatalog.filter(
       (entry) =>
         !startsWith.some((candidate) => candidate.id === entry.id) &&
         `${entry.label} ${entry.command} ${entry.detail || ''}`.toLowerCase().includes(query)
     );
     return [...startsWith, ...includes];
-  }, [command, normalizedCatalog, contextSuggestions, showContextSuggestions]);
+  }, [command, normalizedCatalog]);
 
   const catalogPageCount = Math.max(1, Math.ceil(filteredCatalog.length / CATALOG_PAGE_SIZE));
   const outputPageCount = Math.max(1, Math.ceil(results.length / OUTPUT_PAGE_SIZE));
@@ -186,29 +131,21 @@ export default function NexusCommandDeck({
     [history, historyPage]
   );
 
-  const executeCommand = (nextCommand) => {
+  const executeCommand = (nextCommand?: string) => {
     const payload = String(nextCommand ?? command).trim();
     if (!payload) return;
     const result = String(onRunCommand(payload) || '');
     const timestamp = toTimestampLabel();
 
     setResults((prev) => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, command: payload, result, timestamp }, ...prev].slice(0, 16));
-    const newHistory = [payload, ...history.filter((entry) => entry !== payload)].slice(0, MAX_HISTORY);
-    setHistory(newHistory);
-    persistHistory(newHistory);
+    setHistory((prev) => [payload, ...prev.filter((entry) => entry !== payload)].slice(0, 16));
     setHistoryCursor(-1);
     setOutputPage(0);
     setHistoryPage(0);
     setCommand('');
   };
 
-  const recallHistory = (historyCommand) => {
-    setCommand(historyCommand);
-    setHistoryCursor(-1);
-    inputRef.current?.focus();
-  };
-
-  const onInputKeyDown = (event) => {
+  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       executeCommand();
@@ -289,17 +226,9 @@ export default function NexusCommandDeck({
         <div className="nx-command-deck-content">
           <section className="nx-command-block">
             <div className="nx-command-block-head">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-orange-300" />
-                <span>{showContextSuggestions && !command ? 'Context-Aware Suggestions' : 'Command Catalog'}</span>
-                <button
-                  type="button"
-                  onClick={() => setShowContextSuggestions(!showContextSuggestions)}
-                  className="text-[8px] uppercase tracking-wider text-orange-400 hover:text-orange-300 font-semibold"
-                  title="Toggle context suggestions"
-                >
-                  {showContextSuggestions ? 'Show All' : 'Smart'}
-                </button>
+                <span>Suggested Commands</span>
               </div>
               <span>{filteredCatalog.length}</span>
             </div>
@@ -374,16 +303,8 @@ export default function NexusCommandDeck({
 
             <div className="nx-command-history-strip">
               {visibleHistory.length > 0 ? (
-                visibleHistory.map((entry, index) => (
-                  <button
-                    key={`${entry}:history:${index}`}
-                    type="button"
-                    className="nx-command-history-chip group"
-                    onClick={() => recallHistory(entry)}
-                    onDoubleClick={() => executeCommand(entry)}
-                    title="Click to recall, double-click to execute"
-                  >
-                    <History className="w-3 h-3 mr-1 text-zinc-500 group-hover:text-orange-400" />
+                visibleHistory.map((entry) => (
+                  <button key={`${entry}:history`} type="button" className="nx-command-history-chip" onClick={() => setCommand(entry)}>
                     {entry}
                   </button>
                 ))
