@@ -1130,6 +1130,41 @@ export default function CommsNetworkCardConsole({
     );
   }
 
+  const cardsOnlyView = true;
+  if (cardsOnlyView) {
+    return (
+      <div className="h-full min-h-0 grid grid-cols-1 gap-1.5">
+        {visibleSquadCards.map((card) => {
+          const sla = slaBySquadId[card.id];
+          return (
+            <article
+              key={card.id}
+              data-comms-squad-card="true"
+              className="rounded border border-zinc-800 bg-zinc-950/70 px-2 py-1.5"
+            >
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="min-w-0 inline-flex items-center gap-1.5">
+                  <img src={squadTokenIcon(card.squadLabel, sla?.overallStatus || 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                  <img src={wingTokenIcon(card.wingId, sla?.overallStatus || 'ready')} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/60" />
+                  <span className="text-[10px] text-zinc-100 uppercase tracking-wide truncate">{card.squadLabel}</span>
+                </div>
+                <span className="text-[9px] text-zinc-500 uppercase tracking-wide">TX {card.txCount}</span>
+              </div>
+              <div className="mt-1 grid grid-cols-3 gap-1 text-[8px] text-zinc-500 uppercase tracking-wide">
+                <span>Ships {card.vehicles.length}</span>
+                <span>Crew {card.operators.length}</span>
+                <span>Links {card.linkedSquadIds.length}</span>
+              </div>
+            </article>
+          );
+        })}
+        {visibleSquadCards.length === 0 ? (
+          <div className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-2 text-[10px] text-zinc-500">No squad cards available.</div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full min-h-0 grid grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] gap-2">
       <div className="flex items-center justify-between gap-2">
