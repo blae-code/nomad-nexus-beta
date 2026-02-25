@@ -1,3 +1,14 @@
+/**
+ * NexusButton - Standardized button component
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: text-[10px] font-semibold uppercase tracking-[0.12em]
+ * - Icons: w-3 h-3 enforced
+ * - Transitions: duration-200 hover:brightness-105
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { getNexusCssVars } from '../tokens';

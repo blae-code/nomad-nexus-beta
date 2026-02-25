@@ -1,3 +1,14 @@
+/**
+ * NexusBadge - Standardized badge component
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: text-[10px] font-semibold uppercase tracking-[0.14em]
+ * - Borders: Semantic colors with 45-60% opacity
+ * - Backgrounds: Semantic colors with low opacity
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { getNexusCssVars } from '../tokens';
