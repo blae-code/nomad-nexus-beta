@@ -1,11 +1,28 @@
+/**
+ * TacticalMapFocusApp - Full-screen tactical map view
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: Headers text-sm font-semibold (larger for focus view), body text-xs
+ * - Primitives: Uses NexusButton, NexusBadge
+ * - Token opportunities: Map markers (objective, target-alt, logistics family)
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React from 'react';
-import { NexusBadge, NexusButton, NexusTokenLabel } from '../primitives';
+import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
+import type { ControlSignal } from '../../schemas/mapSchemas';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+import { NexusBadge, NexusButton } from '../primitives';
 import TacticalMapPanel from './TacticalMapPanel';
 
-/**
- * TacticalMapFocusApp (JSX canonical)
- * TSX counterpart is legacy and should not receive new feature work.
- */
+interface TacticalMapFocusAppProps extends Partial<CqbPanelSharedProps> {
+  locationEstimates?: LocationEstimate[];
+  controlSignals?: ControlSignal[];
+  viewerScope?: VisibilityScope;
+  onClose?: () => void;
+}
+
 export default function TacticalMapFocusApp({
   locationEstimates = [],
   controlSignals = [],
@@ -15,18 +32,17 @@ export default function TacticalMapFocusApp({
   operations,
   focusOperationId,
   onClose,
-}) {
+}: TacticalMapFocusAppProps) {
   return (
-    <div className="h-full min-h-0 flex flex-col gap-1.5">
-      <section className="rounded border border-zinc-700/40 bg-zinc-950/55 backdrop-blur-sm px-2.5 py-2 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-100 leading-none">Tactical Map Focus</h3>
-          <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.14em] text-zinc-500 leading-none truncate">
-            Doctrine: scoped data only, no fabricated telemetry.
+    <div className="h-full min-h-0 flex flex-col gap-3">
+      <section className="rounded border border-zinc-800 bg-zinc-950/55 px-3 py-2.5 flex items-center justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-100">Tactical Map Focus</h3>
+          <p className="text-xs text-zinc-500">
+            Doctrine: no telemetry fabrication, fading claims only, scope-gated visibility.
           </p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <NexusTokenLabel token={{ family: 'objective', color: 'yellow' }} label={viewerScope} layout="inline" size="sm" />
+        <div className="flex items-center gap-2">
           <NexusBadge tone="warning">{viewerScope}</NexusBadge>
           {onClose ? (
             <NexusButton size="sm" intent="subtle" onClick={onClose}>
@@ -50,4 +66,3 @@ export default function TacticalMapFocusApp({
     </div>
   );
 }
-

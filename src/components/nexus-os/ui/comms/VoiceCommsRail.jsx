@@ -1,3 +1,16 @@
+/**
+ * VoiceCommsRail - Global voice control and roster display
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: Headers text-[10px] font-black, labels text-[9px]/[8px] font-semibold
+ * - Spacing: px-2.5 py-2 (headers), gap-1/1.5
+ * - Icons: w-3.5 h-3.5 (headers), w-3 h-3 (controls)
+ * - Tokens: ✅ Uses NexusRosterBadge, hex tokens, circle tokens extensively
+ * - Pagination: 5 items per page
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronLeft,
