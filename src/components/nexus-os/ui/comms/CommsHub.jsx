@@ -1,55 +1,62 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ArrowRight,
-  AtSign,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Hash,
-  MessageSquare,
-  Send,
-  X,
-  Plus,
-  Users,
-  FolderPlus,
-  CornerDownRight,
-  Network,
-} from 'lucide-react';
-import { NexusBadge } from '../primitives';
+import { BellRing, ChevronLeft, ChevronRight, CornerDownRight, MessageSquare, Pin, Search, Send } from 'lucide-react';
+import { NexusBadge, NexusButton, NexusTokenIcon } from '../primitives';
 import RadialMenu from '../map/RadialMenu';
-import { tokenAssets } from '../tokens';
-import CommsNetworkViz from './CommsNetworkViz';
+import {
+  appendOrderDispatch,
+  createOrderDispatch,
+  deliveryTone,
+  MAX_DISPATCH_HISTORY,
+} from './commsOrderRuntime';
+import CommsHubLegacy from './CommsHubLegacy';
+import TextCommsExpandDrawer from './TextCommsExpandDrawer';
+import {
+  buildChannelGroups,
+  buildCurrentMessages,
+  buildMentionsInbox,
+  buildOrdersRuntime,
+  buildPinsView,
+  buildSearchPreview,
+  buildThreadSummaries,
+  CHANNEL_CATEGORIES,
+  clampPage,
+  filterMessages,
+  flattenChannelGroups,
+  paginate,
+  TEXT_COMMS_PAGE_SIZES,
+} from './useTextCommsRailRuntime';
 
-const CHANNEL_PAGE_SIZE = 6;
-const MESSAGE_PAGE_SIZE = 6;
-const STANDARD_CHANNEL_PAGE_SIZE = 7;
-const TOPOLOGY_NODE_LIMIT = 9;
-const ORDER_PAGE_SIZE = 5;
-const CHANNEL_CATEGORIES = ['tactical', 'operations', 'social', 'direct'];
 const MESSAGE_FILTERS = ['all', 'event', 'local'];
+const PRIORITY_LEVELS = ['STANDARD', 'HIGH', 'CRITICAL'];
+const CATEGORY_LABELS = { tactical: 'Tactical', operations: 'Operations', social: 'Social', direct: 'Direct' };
 
-function clampPct(value) {
-  return Math.max(3, Math.min(97, value));
+function t(value, fallback = '') {
+  const text = String(value || '').trim();
+  return text || fallback;
 }
 
-function categoryTokenIcon(category) {
-  if (category === 'tactical') return tokenAssets.comms.role.command;
-  if (category === 'operations') return tokenAssets.map.node.objective;
-  if (category === 'social') return tokenAssets.comms.role.default;
-  if (category === 'direct') return tokenAssets.comms.operatorStatus.onNet;
-  return tokenAssets.comms.channel;
+function age(ms, now = Date.now()) {
+  const diff = Math.max(0, now - Number(ms || now));
+  if (diff < 60000) return `${Math.floor(diff / 1000)}s`;
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
+  return `${Math.floor(diff / 3600000)}h`;
 }
 
-function channelTokenIcon(channel) {
-  if (!channel) return tokenAssets.comms.channel;
-  if (channel.category === 'direct') return tokenAssets.comms.role.command;
-  if (channel.category === 'operations') return tokenAssets.map.node.objective;
-  return tokenAssets.comms.channel;
+function ChannelGlyph({ category }) {
+  if (category === 'direct') return <NexusTokenIcon family="hex" color="blue" size="sm" />;
+  if (category === 'operations') return <NexusTokenIcon family="hex" color="yellow" size="sm" />;
+  if (category === 'tactical') return <NexusTokenIcon family="hex" color="orange" size="sm" />;
+  return <NexusTokenIcon family="hex" color="cyan" size="sm" />;
 }
 
-/**
- * CommsHub — streamlined comms surface with Standard and Command modes.
- */
+function UnreadIndicator({ unread = 0, tone = 'warning' }) {
+  if (unread <= 0) return null;
+  if (unread <= 9) {
+    return <NexusTokenIcon family={`number-${unread}`} color={tone === 'danger' ? 'red' : 'yellow'} size="sm" alt={`${unread} unread`} />;
+  }
+  return <NexusBadge tone={tone}>{unread}</NexusBadge>;
+}
+
 export default function CommsHub({
   operations = [],
   focusOperationId,
@@ -59,6 +66,7 @@ export default function CommsHub({
   actorId = '',
   eventMessagesByChannel = {},
   unreadByChannel = {},
+  events = [],
   channelVoiceMap = {},
   voiceState = null,
   onRouteVoiceNet,
@@ -66,882 +74,386 @@ export default function CommsHub({
   focusMode = '',
   isExpanded = true,
   onToggleExpand,
+  variantId = 'CQB-01',
+  opId = '',
+  experienceMode = 'text-rail-v2',
+  featureFlags = { progressiveParity: true },
+  onOpenExpandedComms,
 }) {
-  const [selectedChannel, setSelectedChannel] = useState(null);
-  const [chatPanelOpen, setChatPanelOpen] = useState(false);
-  const [hoveredChannel, setHoveredChannel] = useState(null);
-  const [messages, setMessages] = useState({});
-  const [threads, setThreads] = useState({});
-  const [activeThread, setActiveThread] = useState(null);
-  const [threadInput, setThreadInput] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState({
-    tactical: true,
-    operations: true,
-    social: false,
-    direct: false,
-  });
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [customCategories, setCustomCategories] = useState([]);
-  const [channelPages, setChannelPages] = useState({
-    tactical: 0,
-    operations: 0,
-    social: 0,
-    direct: 0,
-  });
-  const [messagePage, setMessagePage] = useState(0);
-  const [standardChannelPage, setStandardChannelPage] = useState(0);
-  const [messageInput, setMessageInput] = useState('');
-  const [panelFeedback, setPanelFeedback] = useState('');
-  const [messageFilter, setMessageFilter] = useState('all');
-  const [acknowledgedUnreadByChannel, setAcknowledgedUnreadByChannel] = useState({});
-
-  const [chatViewMode, setChatViewMode] = useState('messages'); // 'messages' or 'network'
-  const selectedVoiceNetId = selectedChannel ? channelVoiceMap[selectedChannel] : '';
-
-  const channels = useMemo(() => {
-    const unreadCount = (channelId, fallback = 0) => {
-      const direct = Number(unreadByChannel[channelId]);
-      const baseCount = Number.isFinite(direct) && direct >= 0 ? direct : fallback;
-      const acknowledgedCount = Number(acknowledgedUnreadByChannel[channelId] || 0);
-      return Math.max(0, baseCount - acknowledgedCount);
-    };
-
-    const tactical = [
-      { id: 'command', name: 'Command Net', icon: Hash, category: 'tactical', unread: unreadCount('command', 0) },
-      { id: 'alpha-squad', name: 'Alpha Squad', icon: Hash, category: 'tactical', unread: unreadCount('alpha-squad', 0) },
-      { id: 'logistics', name: 'Logistics', icon: Hash, category: 'tactical', unread: unreadCount('logistics', 0) },
-    ];
-
-    const operational = operations.slice(0, 12).map((op) => ({
-      id: `op-${op.id}`,
-      name: op.name || 'Unnamed Op',
-      icon: Hash,
-      category: 'operations',
-      unread: unreadCount(`op-${op.id}`, focusOperationId && focusOperationId === op.id ? 1 : 0),
-    }));
-
-    const social = [
-      { id: 'general', name: 'General', icon: Hash, category: 'social', unread: unreadCount('general', 0) },
-      { id: 'random', name: 'Random', icon: Hash, category: 'social', unread: unreadCount('random', 0) },
-    ];
-
-    const direct = [
-      { id: 'dm-command', name: 'Command Officer', icon: AtSign, category: 'direct', unread: unreadCount('dm-command', online ? 1 : 0) },
-      { id: 'dm-ops', name: `${bridgeId} Ops Desk`, icon: AtSign, category: 'direct', unread: unreadCount('dm-ops', 0) },
-    ];
-
-    return { tactical, operations: operational, social, direct };
-  }, [operations, focusOperationId, online, bridgeId, unreadByChannel, acknowledgedUnreadByChannel]);
-
-  const allChannels = useMemo(() => Object.values(channels).flat(), [channels]);
-
-  const standardChannels = useMemo(() => {
-    const selected = allChannels.find((entry) => entry.id === selectedChannel);
-    const unreadPriority = allChannels.filter((entry) => entry.unread > 0 && entry.id !== selectedChannel);
-    const tacticalPriority = allChannels.filter((entry) => entry.category === 'tactical' && entry.unread === 0 && entry.id !== selectedChannel);
-    const operationPriority = allChannels.filter((entry) => entry.category === 'operations' && entry.unread === 0 && entry.id !== selectedChannel);
-    const tail = allChannels.filter(
-      (entry) =>
-        entry.id !== selectedChannel &&
-        !unreadPriority.some((target) => target.id === entry.id) &&
-        !tacticalPriority.some((target) => target.id === entry.id) &&
-        !operationPriority.some((target) => target.id === entry.id)
+  if (experienceMode === 'legacy') {
+    return (
+      <CommsHubLegacy
+        operations={operations}
+        focusOperationId={focusOperationId}
+        activeAppId={activeAppId}
+        online={online}
+        bridgeId={bridgeId}
+        actorId={actorId}
+        eventMessagesByChannel={eventMessagesByChannel}
+        unreadByChannel={unreadByChannel}
+        channelVoiceMap={channelVoiceMap}
+        voiceState={voiceState}
+        onRouteVoiceNet={onRouteVoiceNet}
+        onIssueCommsOrder={onIssueCommsOrder}
+        focusMode={focusMode}
+        isExpanded={isExpanded}
+        onToggleExpand={onToggleExpand}
+      />
     );
+  }
 
-    return [selected, ...unreadPriority, ...tacticalPriority, ...operationPriority, ...tail].filter(Boolean).slice(0, 28);
-  }, [allChannels, selectedChannel]);
+  const rootRef = useRef(null);
+  const [selectedChannel, setSelectedChannel] = useState('');
+  const [channelPages, setChannelPages] = useState({ tactical: 0, operations: 0, social: 0, direct: 0 });
+  const [messageFilter, setMessageFilter] = useState('all');
+  const [messagePage, setMessagePage] = useState(0);
+  const [mentionsPage, setMentionsPage] = useState(0);
+  const [threadPage, setThreadPage] = useState(0);
+  const [pinsPage, setPinsPage] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(0);
+  const [searchPage, setSearchPage] = useState(0);
+  const [composerPriority, setComposerPriority] = useState('STANDARD');
+  const [messageInput, setMessageInput] = useState('');
+  const [threadReplyInput, setThreadReplyInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeQuickView, setActiveQuickView] = useState('mentions');
+  const [localMessagesByChannel, setLocalMessagesByChannel] = useState({});
+  const [threadsByMessageId, setThreadsByMessageId] = useState({});
+  const [activeThreadMessageId, setActiveThreadMessageId] = useState('');
+  const [pinnedMessageIdsByChannel, setPinnedMessageIdsByChannel] = useState({});
+  const [ackUnreadByChannel, setAckUnreadByChannel] = useState({});
+  const [dispatches, setDispatches] = useState([]);
+  const [drawerView, setDrawerView] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [radial, setRadial] = useState({ open: false, anchor: { x: 50, y: 50 }, kind: '', channelId: '', messageId: '' });
 
-  const standardChannelPageCount = Math.max(1, Math.ceil(standardChannels.length / STANDARD_CHANNEL_PAGE_SIZE));
-  const standardVisibleChannels = useMemo(
-    () => standardChannels.slice(
-      standardChannelPage * STANDARD_CHANNEL_PAGE_SIZE,
-      standardChannelPage * STANDARD_CHANNEL_PAGE_SIZE + STANDARD_CHANNEL_PAGE_SIZE
-    ),
-    [standardChannels, standardChannelPage]
-  );
+  const channelGroups = useMemo(() => buildChannelGroups({
+    operations,
+    focusOperationId,
+    online,
+    bridgeId,
+    unreadByChannel,
+    acknowledgedUnreadByChannel: ackUnreadByChannel,
+  }), [operations, focusOperationId, online, bridgeId, unreadByChannel, ackUnreadByChannel]);
 
-  const categoryPageCounts = useMemo(() => {
-    return CHANNEL_CATEGORIES.reduce((acc, category) => {
-      const items = channels[category] || [];
-      acc[category] = Math.max(1, Math.ceil(items.length / CHANNEL_PAGE_SIZE));
-      return acc;
-    }, {});
-  }, [channels]);
+  const channels = useMemo(() => flattenChannelGroups(channelGroups), [channelGroups]);
+  const categoryPaging = useMemo(() => {
+    const out = {};
+    for (const category of CHANNEL_CATEGORIES) out[category] = paginate(channelGroups?.[category] || [], channelPages?.[category] || 0, TEXT_COMMS_PAGE_SIZES.channels);
+    return out;
+  }, [channelGroups, channelPages]);
+
+  const mergedMessagesByChannel = useMemo(() => channels.reduce((acc, ch) => {
+    acc[ch.id] = buildCurrentMessages({ selectedChannel: ch.id, eventMessagesByChannel, localMessagesByChannel });
+    return acc;
+  }, {}), [channels, eventMessagesByChannel, localMessagesByChannel]);
+
+  const selectedChannelData = useMemo(() => channels.find((entry) => entry.id === selectedChannel) || null, [channels, selectedChannel]);
+  const currentMessages = useMemo(() => mergedMessagesByChannel[selectedChannel] || [], [mergedMessagesByChannel, selectedChannel]);
+  const filteredMessages = useMemo(() => filterMessages(currentMessages, messageFilter), [currentMessages, messageFilter]);
+  const messagesPaged = useMemo(() => paginate(filteredMessages, messagePage, TEXT_COMMS_PAGE_SIZES.messages), [filteredMessages, messagePage]);
+
+  const mentionsInbox = useMemo(() => buildMentionsInbox({ messages: Object.values(mergedMessagesByChannel).flat(), actorId }), [mergedMessagesByChannel, actorId]);
+  const mentionsPaged = useMemo(() => paginate(mentionsInbox, mentionsPage, TEXT_COMMS_PAGE_SIZES.inbox), [mentionsInbox, mentionsPage]);
+  const threads = useMemo(() => buildThreadSummaries({ selectedChannel, currentMessages, threadsByMessageId }), [selectedChannel, currentMessages, threadsByMessageId]);
+  const threadsPaged = useMemo(() => paginate(threads, threadPage, TEXT_COMMS_PAGE_SIZES.threadPreview), [threads, threadPage]);
+  const pins = useMemo(() => buildPinsView({ selectedChannel, currentMessages, pinnedMessageIdsByChannel }), [selectedChannel, currentMessages, pinnedMessageIdsByChannel]);
+  const pinsPaged = useMemo(() => paginate(pins, pinsPage, TEXT_COMMS_PAGE_SIZES.pins), [pins, pinsPage]);
+  const searchHits = useMemo(() => buildSearchPreview({ query: searchQuery, allMessagesByChannel: mergedMessagesByChannel }), [searchQuery, mergedMessagesByChannel]);
+  const searchPaged = useMemo(() => paginate(searchHits, searchPage, TEXT_COMMS_PAGE_SIZES.inbox), [searchHits, searchPage]);
+  const orders = useMemo(() => buildOrdersRuntime({ dispatches, events, incidents: [], nowMs: Date.now(), page: ordersPage }), [dispatches, events, ordersPage]);
+  const activeThreadReplies = useMemo(() => Array.isArray(threadsByMessageId?.[activeThreadMessageId]) ? threadsByMessageId[activeThreadMessageId] : [], [threadsByMessageId, activeThreadMessageId]);
+
+  const totalUnread = useMemo(() => channels.reduce((sum, channel) => sum + Number(channel.unread || 0), 0), [channels]);
+  const voiceStateLabel = t(voiceState?.connectionState, 'IDLE').toUpperCase();
+  const selectedVoiceNetId = selectedChannel ? t(channelVoiceMap?.[selectedChannel]) : '';
+
+  const quickViews = {
+    mentions: { rows: mentionsPaged.visible, paged: mentionsPaged, total: mentionsInbox.length },
+    threads: { rows: threadsPaged.visible, paged: threadsPaged, total: threads.length },
+    pins: { rows: pinsPaged.visible, paged: pinsPaged, total: pins.length },
+    search: { rows: searchPaged.visible, paged: searchPaged, total: searchHits.length },
+  };
+  const activeQuick = quickViews[activeQuickView] || quickViews.mentions;
+
+  useEffect(() => {
+    if (selectedChannel && channels.some((entry) => entry.id === selectedChannel)) return;
+    setSelectedChannel(channels.find((entry) => entry.category === 'tactical')?.id || channels[0]?.id || '');
+  }, [channels, selectedChannel]);
 
   useEffect(() => {
     setChannelPages((prev) => {
       let changed = false;
       const next = { ...prev };
       for (const category of CHANNEL_CATEGORIES) {
-        const maxIndex = Math.max(0, (categoryPageCounts[category] || 1) - 1);
-        if ((next[category] || 0) > maxIndex) {
-          next[category] = maxIndex;
+        const clamped = clampPage(next?.[category] || 0, categoryPaging?.[category]?.pageCount || 1);
+        if (clamped !== (next?.[category] || 0)) {
+          next[category] = clamped;
           changed = true;
         }
       }
       return changed ? next : prev;
     });
-  }, [categoryPageCounts]);
+  }, [categoryPaging]);
 
+  useEffect(() => setMessagePage((prev) => clampPage(prev, messagesPaged.pageCount)), [messagesPaged.pageCount]);
+  useEffect(() => setMentionsPage((prev) => clampPage(prev, mentionsPaged.pageCount)), [mentionsPaged.pageCount]);
+  useEffect(() => setThreadPage((prev) => clampPage(prev, threadsPaged.pageCount)), [threadsPaged.pageCount]);
+  useEffect(() => setPinsPage((prev) => clampPage(prev, pinsPaged.pageCount)), [pinsPaged.pageCount]);
+  useEffect(() => setSearchPage((prev) => clampPage(prev, searchPaged.pageCount)), [searchPaged.pageCount]);
+  useEffect(() => setOrdersPage((prev) => clampPage(prev, orders.pageCount)), [orders.pageCount]);
   useEffect(() => {
-    if (selectedChannel) return;
-    const fallback = channels.tactical?.[0]?.id || channels.operations?.[0]?.id || channels.social?.[0]?.id || channels.direct?.[0]?.id || null;
-    if (fallback) setSelectedChannel(fallback);
-  }, [selectedChannel, channels]);
-
-  useEffect(() => {
-    setStandardChannelPage((current) => Math.min(current, standardChannelPageCount - 1));
-  }, [standardChannelPageCount]);
-
-  const currentMessages = useMemo(() => {
-    if (!selectedChannel) return [];
-    const runtimeFeed = Array.isArray(eventMessagesByChannel[selectedChannel]) ? eventMessagesByChannel[selectedChannel] : [];
-    const localFeed = Array.isArray(messages[selectedChannel]) ? messages[selectedChannel] : [];
-    return [...runtimeFeed, ...localFeed]
-      .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
-      .slice(0, 48);
-  }, [selectedChannel, eventMessagesByChannel, messages]);
-
-  const orderedMessages = useMemo(() => {
-    if (messageFilter === 'all') return currentMessages;
-    return currentMessages.filter((message) => message.source === messageFilter);
-  }, [currentMessages, messageFilter]);
-  const messagePageCount = Math.max(1, Math.ceil(orderedMessages.length / MESSAGE_PAGE_SIZE));
-  const pagedMessages = useMemo(
-    () => orderedMessages.slice(messagePage * MESSAGE_PAGE_SIZE, messagePage * MESSAGE_PAGE_SIZE + MESSAGE_PAGE_SIZE),
-    [orderedMessages, messagePage]
-  );
-
-  useEffect(() => {
-    setMessagePage((prev) => Math.min(prev, messagePageCount - 1));
-  }, [messagePageCount]);
-
-  useEffect(() => {
-    setMessagePage(0);
-  }, [selectedChannel]);
-
-  const selectedChannelData = useMemo(
-    () => allChannels.find((entry) => entry.id === selectedChannel),
-    [allChannels, selectedChannel]
-  );
-  const totalUnread = useMemo(
-    () => allChannels.reduce((sum, channel) => sum + Number(channel.unread || 0), 0),
-    [allChannels]
-  );
-  const channelsWithUnread = useMemo(
-    () => allChannels.filter((channel) => Number(channel.unread || 0) > 0),
-    [allChannels]
-  );
-  const priorityChannels = useMemo(
-    () =>
-      [...channelsWithUnread]
-        .sort((a, b) => Number(b.unread || 0) - Number(a.unread || 0))
-        .slice(0, 3),
-    [channelsWithUnread]
-  );
-  const selectedChannelUnread = Number(selectedChannelData?.unread || 0);
-  const commandIntent = useMemo(() => {
-    if (!online) {
-      return {
-        tone: 'danger',
-        label: 'Link Degraded',
-        detail: 'Prepare contingency text burst when transport returns.',
-        actionLabel: 'Prime Contingency',
-        action: 'prime-contingency',
-      };
-    }
-    if (selectedChannelUnread >= 3) {
-      return {
-        tone: 'warning',
-        label: 'Unread Surge',
-        detail: `${selectedChannelUnread} pending in ${selectedChannelData?.name || 'active channel'}.`,
-        actionLabel: 'Acknowledge Queue',
-        action: 'ack-channel',
-      };
-    }
-    if (!selectedVoiceNetId && onRouteVoiceNet) {
-      return {
-        tone: 'active',
-        label: 'Voice Link Missing',
-        detail: 'Selected channel is not mapped to a live voice lane.',
-        actionLabel: 'Route Voice Lane',
-        action: 'route-voice',
-      };
-    }
-    return {
-      tone: 'ok',
-      label: 'Channel Ready',
-      detail: 'Push a short check-in to maintain cadence.',
-      actionLabel: 'Prime Check-In',
-      action: 'prime-checkin',
-    };
-  }, [online, selectedChannelUnread, selectedChannelData?.name, selectedVoiceNetId, onRouteVoiceNet]);
-
-  useEffect(() => {
-    if (!panelFeedback) return undefined;
-    const timer = window.setTimeout(() => setPanelFeedback(''), 3200);
+    if (!feedback) return undefined;
+    const timer = window.setTimeout(() => setFeedback(''), 3200);
     return () => window.clearTimeout(timer);
-  }, [panelFeedback]);
+  }, [feedback]);
 
+  const acknowledge = useCallback((channelId = selectedChannel) => {
+    if (!channelId) return;
+    const channel = channels.find((entry) => entry.id === channelId);
+    const pending = Number(channel?.unread || 0);
+    if (pending <= 0) {
+      setFeedback(`${channel?.name || channelId} already clear.`);
+      return;
+    }
+    setAckUnreadByChannel((prev) => ({ ...prev, [channelId]: Number(prev?.[channelId] || 0) + pending }));
+    setFeedback(`${channel?.name || channelId} reviewed.`);
+  }, [channels, selectedChannel]);
 
-
-  const toggleCategory = useCallback((category) => {
-    setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
-  }, []);
-
-  const pageCategory = useCallback((category, direction) => {
-    setChannelPages((prev) => {
-      const pageCount = categoryPageCounts[category] || 1;
-      const current = prev[category] || 0;
-      const nextPage = direction === 'next' ? Math.min(pageCount - 1, current + 1) : Math.max(0, current - 1);
-      if (nextPage === current) return prev;
-      return { ...prev, [category]: nextPage };
+  const issueOrder = useCallback(({ channelId, directive, eventType, detail = '' }) => {
+    if (!channelId) return;
+    const dispatch = createOrderDispatch({ channelId, laneId: `lane:${channelId}`, directive, eventType, nowMs: Date.now() });
+    setDispatches((prev) => appendOrderDispatch(prev, dispatch, MAX_DISPATCH_HISTORY));
+    setOrdersPage(0);
+    onIssueCommsOrder?.(eventType, {
+      channelId,
+      dispatchId: dispatch.dispatchId,
+      directive,
+      detail,
+      source: 'text-comms-rail-v2',
+      variantId,
+      eventId: opId || undefined,
+      priority: composerPriority,
     });
-  }, [categoryPageCounts]);
+    setFeedback(`${directive.replace(/_/g, ' ')} queued on ${channelId}.`);
+  }, [onIssueCommsOrder, variantId, opId, composerPriority]);
 
-  const pickChannel = useCallback((channelId) => {
-    setSelectedChannel(channelId);
-    setChatPanelOpen(true);
-  }, []);
-
-  const createCategory = useCallback(() => {
-    if (!newCategoryName.trim()) return;
-    const categoryId = newCategoryName.toLowerCase().replace(/\s+/g, '-');
-    setCustomCategories((prev) => [...prev, { id: categoryId, name: newCategoryName, channels: [] }]);
-    setExpandedCategories((prev) => ({ ...prev, [categoryId]: true }));
-    setNewCategoryName('');
-    setShowCreateMenu(false);
-    setPanelFeedback(`Category "${newCategoryName}" created.`);
-  }, [newCategoryName]);
-
-  const createDirectMessage = useCallback(() => {
-    const dmId = `dm-${Date.now()}`;
-    const dmChannel = {
-      id: dmId,
-      name: 'New DM',
-      icon: AtSign,
-      category: 'direct',
-      unread: 0,
-    };
-    setShowCreateMenu(false);
-    pickChannel(dmId);
-    setPanelFeedback('Direct message started.');
-  }, [pickChannel]);
-
-  const createGroupMessage = useCallback(() => {
-    const groupId = `group-${Date.now()}`;
-    const groupChannel = {
-      id: groupId,
-      name: 'New Group',
-      icon: Users,
-      category: 'social',
-      unread: 0,
-    };
-    setShowCreateMenu(false);
-    pickChannel(groupId);
-    setPanelFeedback('Group message created.');
-  }, [pickChannel]);
-
-  const createThread = useCallback((parentMessage) => {
-    if (!parentMessage || !selectedChannel) return;
-    const threadId = `thread-${parentMessage.id}`;
-    setThreads((prev) => ({
+  const sendMessage = useCallback(() => {
+    const text = t(messageInput);
+    if (!text || !selectedChannel) return;
+    const nowMs = Date.now();
+    setLocalMessagesByChannel((prev) => ({
       ...prev,
-      [threadId]: {
-        id: threadId,
-        parentMessageId: parentMessage.id,
-        channelId: selectedChannel,
-        messages: [],
-      },
+      [selectedChannel]: [{
+        id: `local:${nowMs}`,
+        text,
+        author: actorId || 'You',
+        source: 'local',
+        createdAtMs: nowMs,
+        timestamp: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        threadCount: 0,
+      }, ...(prev?.[selectedChannel] || [])].slice(0, 48),
     }));
-    setActiveThread(threadId);
-    setPanelFeedback(`Thread started on message.`);
-  }, [selectedChannel]);
+    issueOrder({ channelId: selectedChannel, directive: 'TEXT_BROADCAST', eventType: 'SELF_CHECK', detail: text });
+    setMessageInput('');
+    setMessagePage(0);
+  }, [messageInput, selectedChannel, actorId, issueOrder]);
 
-  const closeThread = useCallback(() => {
-    setActiveThread(null);
-    setThreadInput('');
+  const openThread = useCallback((messageId) => {
+    if (!messageId) return;
+    setActiveThreadMessageId(messageId);
+    setThreadsByMessageId((prev) => Array.isArray(prev?.[messageId]) ? prev : { ...prev, [messageId]: [] });
   }, []);
 
   const sendThreadReply = useCallback(() => {
-    if (!threadInput.trim() || !activeThread) return;
+    const text = t(threadReplyInput);
+    if (!text || !activeThreadMessageId || !selectedChannel) return;
     const nowMs = Date.now();
-    const newReply = {
-      id: `reply-${nowMs}`,
-      text: threadInput,
+    const reply = {
+      id: `reply:${nowMs}`,
+      text,
       author: actorId || 'You',
-      timestamp: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       createdAtMs: nowMs,
+      timestamp: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-
-    setThreads((prev) => {
-      const thread = prev[activeThread];
-      if (!thread) return prev;
+    setThreadsByMessageId((prev) => ({ ...prev, [activeThreadMessageId]: [...(prev?.[activeThreadMessageId] || []), reply].slice(-48) }));
+    setLocalMessagesByChannel((prev) => {
+      const messages = Array.isArray(prev?.[selectedChannel]) ? prev[selectedChannel] : [];
       return {
         ...prev,
-        [activeThread]: {
-          ...thread,
-          messages: [...thread.messages, newReply],
-        },
+        [selectedChannel]: messages.map((entry) => entry.id === activeThreadMessageId ? { ...entry, threadCount: Number(entry.threadCount || 0) + 1 } : entry),
       };
     });
+    issueOrder({ channelId: selectedChannel, directive: 'THREAD_REPLY', eventType: 'WILCO', detail: text });
+    setThreadReplyInput('');
+  }, [threadReplyInput, activeThreadMessageId, selectedChannel, actorId, issueOrder]);
 
-    setMessages((prev) => {
-      const channelId = threads[activeThread]?.channelId;
-      if (!channelId) return prev;
-      const channelMessages = prev[channelId] || [];
-      const parentId = threads[activeThread]?.parentMessageId;
-      return {
-        ...prev,
-        [channelId]: channelMessages.map((msg) =>
-          msg.id === parentId
-            ? { ...msg, threadCount: (msg.threadCount || 0) + 1 }
-            : msg
-        ),
-      };
+  const togglePin = useCallback((messageId) => {
+    if (!selectedChannel || !messageId) return;
+    setPinnedMessageIdsByChannel((prev) => {
+      const current = Array.isArray(prev?.[selectedChannel]) ? prev[selectedChannel] : [];
+      const next = current.includes(messageId) ? current.filter((id) => id !== messageId) : [messageId, ...current].slice(0, 24);
+      return { ...prev, [selectedChannel]: next };
     });
+    setFeedback('Pinboard updated.');
+  }, [selectedChannel]);
 
-    setThreadInput('');
-    setPanelFeedback('Reply sent to thread.');
-  }, [threadInput, activeThread, actorId, threads]);
-
-  const acknowledgeChannel = useCallback((channelId = selectedChannel) => {
-    if (!channelId) return;
-    const channel = allChannels.find((entry) => entry.id === channelId);
-    const pendingCount = Number(channel?.unread || 0);
-    if (pendingCount <= 0) {
-      setPanelFeedback(`${channel?.name || channelId} already clear.`);
-      return;
-    }
-    setAcknowledgedUnreadByChannel((prev) => ({
-      ...prev,
-      [channelId]: Number(prev[channelId] || 0) + pendingCount,
-    }));
-    setPanelFeedback(`${channel?.name || channelId} marked reviewed.`);
-  }, [selectedChannel, allChannels]);
-
-  const primeMessage = useCallback((channelId, text, feedback) => {
-    if (channelId) setSelectedChannel(channelId);
-    setMessageInput(text);
-    setPanelFeedback(feedback);
+  const openRadialAt = useCallback((clientX, clientY, kind, channelId, messageId = '') => {
+    const bounds = rootRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+    const x = ((clientX - bounds.left) / bounds.width) * 100;
+    const y = ((clientY - bounds.top) / bounds.height) * 100;
+    setRadial({
+      open: true,
+      anchor: { x: Math.max(8, Math.min(92, x)), y: Math.max(10, Math.min(90, y)) },
+      kind,
+      channelId,
+      messageId,
+    });
   }, []);
 
-  const executeCommandIntent = useCallback(() => {
-    if (!selectedChannel) return;
-    if (commandIntent.action === 'route-voice') {
-      onRouteVoiceNet?.(selectedChannel);
-      setPanelFeedback('Voice lane route requested.');
-      return;
+  const openRadialKeyboard = useCallback((event, kind, channelId, messageId = '') => {
+    if (!(event.currentTarget instanceof HTMLElement)) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    openRadialAt(rect.left + rect.width / 2, rect.top + rect.height / 2, kind, channelId, messageId);
+  }, [openRadialAt]);
+
+  const radialItems = useMemo(() => {
+    if (!radial.open) return [];
+    const channelId = radial.channelId || selectedChannel;
+    if (!channelId) return [];
+    if (radial.kind === 'message') {
+      return [
+        { id: 'ack', label: 'Ack Message', icon: 'ack', shortcut: '1', onSelect: () => { issueOrder({ channelId, directive: 'ACK_MESSAGE', eventType: 'ROGER' }); setRadial((prev) => ({ ...prev, open: false })); } },
+        { id: 'escalate', label: 'Escalate', icon: 'danger', tone: 'warning', shortcut: '2', onSelect: () => { issueOrder({ channelId, directive: 'ESCALATE_TRAFFIC', eventType: 'MOVE_OUT' }); setRadial((prev) => ({ ...prev, open: false })); } },
+        { id: 'thread', label: 'Open Thread', icon: 'message', shortcut: '3', onSelect: () => { openThread(radial.messageId); setRadial((prev) => ({ ...prev, open: false })); } },
+        { id: 'pin', label: 'Pin Toggle', icon: 'objective', shortcut: '4', onSelect: () => { togglePin(radial.messageId); setRadial((prev) => ({ ...prev, open: false })); } },
+      ];
     }
-    if (commandIntent.action === 'ack-channel') {
-      acknowledgeChannel(selectedChannel);
-      primeMessage(
-        selectedChannel,
-        'Command copy. Reviewing backlog now. Stand by for updates.',
-        'Acknowledgement draft primed.'
-      );
-      return;
-    }
-    if (commandIntent.action === 'prime-contingency') {
-      primeMessage(
-        selectedChannel,
-        'Contingency broadcast: Data link degraded. Maintain radio discipline and await restore signal.',
-        'Contingency draft primed.'
-      );
-      return;
-    }
-    primeMessage(
-      selectedChannel,
-      'Status check-in: maintain comms discipline, report anomalies immediately.',
-      'Check-in draft primed.'
-    );
-  }, [selectedChannel, commandIntent.action, onRouteVoiceNet, acknowledgeChannel, primeMessage]);
+    return [
+      { id: 'checkin', label: 'Check In', icon: 'broadcast', shortcut: '1', onSelect: () => { issueOrder({ channelId, directive: 'CHECK_IN_REQUEST', eventType: 'SELF_CHECK' }); setRadial((prev) => ({ ...prev, open: false })); } },
+      { id: 'hold', label: 'Hold Lane', icon: 'hold', tone: 'warning', shortcut: '2', onSelect: () => { issueOrder({ channelId, directive: 'HOLD_CHANNEL', eventType: 'HOLD' }); setRadial((prev) => ({ ...prev, open: false })); } },
+      { id: 'clear', label: 'Clear Net', icon: 'clear', tone: 'danger', shortcut: '3', onSelect: () => { issueOrder({ channelId, directive: 'CLEAR_NON_ESSENTIAL', eventType: 'CLEAR_COMMS' }); setRadial((prev) => ({ ...prev, open: false })); } },
+      { id: 'voice', label: 'Route Voice', icon: 'route', shortcut: '4', onSelect: () => { onRouteVoiceNet?.(channelId); setFeedback(`Voice route requested for ${channelId}.`); setRadial((prev) => ({ ...prev, open: false })); } },
+    ];
+  }, [radial, selectedChannel, issueOrder, openThread, togglePin, onRouteVoiceNet]);
 
-  const handleSendMessage = useCallback(() => {
-    if (!messageInput.trim() || !selectedChannel) return;
-    const nowMs = Date.now();
+  const drawerRows = drawerView === 'mentions' ? mentionsInbox : drawerView === 'threads' ? threads : drawerView === 'pins' ? pins : drawerView === 'search' ? searchHits : [];
 
-    const newMessage = {
-      id: Date.now(),
-      text: messageInput,
-      author: actorId || 'You',
-      timestamp: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      createdAtMs: nowMs,
-      source: 'local',
-    };
-
-    setMessages((prev) => ({
-      ...prev,
-      [selectedChannel]: [...(prev[selectedChannel] || []), newMessage],
-    }));
-    setMessageInput('');
-    setMessagePage(0);
-
-    setPanelFeedback(`Sent to ${selectedChannelData?.name || selectedChannel}.`);
-  }, [messageInput, selectedChannel, actorId, selectedChannelData?.name]);
-
-
-
-  const renderCategory = (category, label) => {
-    const items = channels[category] || [];
-    if (!items.length && category !== 'operations' && !customCategories.find(c => c.id === category)) return null;
-
-    const page = channelPages[category] || 0;
-    const pageCount = categoryPageCounts[category] || 1;
-    const pagedChannels = items.slice(page * CHANNEL_PAGE_SIZE, page * CHANNEL_PAGE_SIZE + CHANNEL_PAGE_SIZE);
-    const categoryUnread = items.reduce((sum, ch) => sum + Number(ch.unread || 0), 0);
-
+  if (!isExpanded) {
     return (
-      <div key={category} className="mb-0.5">
-        <button
-           type="button"
-           onClick={() => toggleCategory(category)}
-           className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-[9px] font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 rounded transition-colors uppercase tracking-wider"
-         >
-           <div className="flex items-center gap-1.5">
-             <ChevronRight className={`w-3 h-3 transition-transform ${expandedCategories[category] ? 'rotate-90' : ''}`} />
-             <img src={categoryTokenIcon(category)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
-             <span>{label}</span>
-            <span className="text-zinc-600 font-normal">({items.length})</span>
-          </div>
-          {categoryUnread > 0 ? (
-            <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[9px] font-bold">
-              {categoryUnread}
-            </div>
-          ) : null}
+      <div className="h-full min-h-0 flex items-center justify-center">
+        <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Expand text comms rail">
+          <ChevronRight className="w-4 h-4" />
         </button>
-
-        {expandedCategories[category] ? (
-          <div className="ml-3 space-y-0.5 mt-0.5">
-            {pagedChannels.length > 0 ? (
-              pagedChannels.map((channel) => (
-                <button
-                  key={channel.id}
-                  type="button"
-                  onClick={() => pickChannel(channel.id)}
-                  onMouseEnter={() => setHoveredChannel(channel.id)}
-                  onMouseLeave={() => setHoveredChannel(null)}
-                  className={`w-full text-left px-2 py-1.5 rounded transition-all flex items-center justify-between gap-2 text-[10px] ${
-                    selectedChannel === channel.id 
-                      ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300' 
-                      : hoveredChannel === channel.id
-                        ? 'bg-zinc-800/60 text-zinc-100 border border-zinc-700/40'
-                        : 'text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <img src={channelTokenIcon(channel)} alt="" className="w-3 h-3 rounded-sm border border-zinc-800/70 bg-zinc-900/65 flex-shrink-0" />
-                    <span className="truncate">{channel.name}</span>
-                  </div>
-                  {channel.unread > 0 ? (
-                    <div className="flex-shrink-0 px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
-                      {channel.unread}
-                    </div>
-                  ) : null}
-                </button>
-              ))
-            ) : (
-              <div className="px-2 py-1 text-[10px] text-zinc-600">No channels</div>
-            )}
-
-            {pageCount > 1 ? (
-              <div className="flex items-center justify-end gap-2 pt-1 pr-1 text-[9px] text-zinc-500">
-                <button
-                  type="button"
-                  onClick={() => pageCategory(category, 'prev')}
-                  disabled={page === 0}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
-                  >
-                  ‹
-                  </button>
-                  <span>{page + 1}/{pageCount}</span>
-                  <button
-                  type="button"
-                  onClick={() => pageCategory(category, 'next')}
-                  disabled={page >= pageCount - 1}
-                  className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
-                >
-                  ›
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     );
-  };
+  }
 
   return (
-    <div className={`flex h-full bg-black/98 border-r border-zinc-700/40 transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'w-full' : 'w-12'}`}>
-       {!isExpanded ? (
-         <div className="flex items-center justify-center py-2">
-           <button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Expand">
-             <ChevronRight className="w-4 h-4" />
-           </button>
-         </div>
-       ) : (
-         <div className="flex w-full h-full overflow-hidden">
-           {/* Channel Tree Panel */}
-            <div className="flex flex-col w-64 flex-shrink-0 border-r border-zinc-700/40 h-full overflow-hidden">
-              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 flex items-center justify-between gap-2 nexus-top-rail">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">Channels</h3>
-                {totalUnread > 0 ? (
-                  <div className="px-1.5 py-0.5 rounded-full bg-orange-500/30 text-orange-300 text-[8px] font-bold">
-                    {totalUnread}
-                  </div>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateMenu((prev) => !prev)}
-                  className="p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors"
-                  title="Create new"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-                <button type="button" onClick={onToggleExpand} className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse">
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+    <div ref={rootRef} data-text-comms-rail="true" className="relative h-full min-h-0 flex flex-col gap-1.5 bg-black/95 border-r border-zinc-700/40 overflow-hidden">
+      <section className="rounded border border-zinc-800 bg-zinc-900/45 px-2.5 py-2 grid grid-cols-2 gap-1.5">
+        <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1"><div className="text-[8px] uppercase tracking-wide text-zinc-500">Link</div><div className="text-[10px] text-zinc-200 uppercase tracking-wide">{online ? 'ONLINE' : 'OFFLINE'}</div></div>
+        <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1"><div className="text-[8px] uppercase tracking-wide text-zinc-500">Voice</div><div className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{voiceStateLabel}</div></div>
+        <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1"><div className="text-[8px] uppercase tracking-wide text-zinc-500">Unread</div><div className="text-[10px] text-zinc-200 uppercase tracking-wide">{totalUnread}</div></div>
+        <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1"><div className="text-[8px] uppercase tracking-wide text-zinc-500">Orders</div><div className="text-[10px] text-zinc-200 uppercase tracking-wide">Q{orders.stats.queued} / A{orders.stats.acked}</div></div>
+      </section>
 
-            {showCreateMenu ? (
-               <div className="flex-shrink-0 border-b border-zinc-700/40 bg-zinc-900/40 p-2 space-y-1.5">
-                <div className="text-[9px] uppercase tracking-wide text-zinc-500 mb-1">Create New</div>
-                <button
-                  type="button"
-                  onClick={createDirectMessage}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-zinc-700/40 bg-zinc-950/60 text-[10px] text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600/40 transition-colors"
-                >
-                  <AtSign className="w-3.5 h-3.5 text-orange-500" />
-                  Direct Message
-                </button>
-                <button
-                  type="button"
-                  onClick={createGroupMessage}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-zinc-700/40 bg-zinc-950/60 text-[10px] text-zinc-300 hover:bg-zinc-800/50 hover:border-zinc-600/40 transition-colors"
-                >
-                  <Users className="w-3.5 h-3.5 text-orange-500" />
-                  Group Message
-                </button>
-                <div className="pt-1 border-t border-zinc-700/40">
-                  <div className="flex gap-1">
-                    <input
-                      type="text"
-                      placeholder="Category name..."
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') createCategory();
-                        if (e.key === 'Escape') setShowCreateMenu(false);
-                      }}
-                      className="flex-1 bg-zinc-950/60 border border-zinc-700/40 rounded px-2 py-1 text-[10px] text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-600/40 focus:ring-1 focus:ring-zinc-600/20"
-                      />
-                      <button
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1">
+        {CHANNEL_CATEGORIES.map((category) => {
+          const paged = categoryPaging?.[category];
+          const catUnread = (channelGroups?.[category] || []).reduce((sum, entry) => sum + Number(entry.unread || 0), 0);
+          return (
+            <div key={category} className="rounded border border-zinc-800 bg-zinc-950/45 px-1.5 py-1">
+              <div className="flex items-center justify-between gap-2"><span className="text-[9px] uppercase tracking-wide text-zinc-500">{CATEGORY_LABELS[category]}</span><span className="text-[9px] text-zinc-500">{catUnread > 0 ? `${catUnread} unread` : 'clear'}</span></div>
+              <div className="mt-1 space-y-0.5">
+                {paged.visible.map((channel) => {
+                  const selected = selectedChannel === channel.id;
+                  return (
+                    <button
+                      key={channel.id}
                       type="button"
-                      onClick={createCategory}
-                      disabled={!newCategoryName.trim()}
-                      className="px-2 py-1 rounded border border-zinc-700/40 bg-orange-500/15 hover:bg-orange-500/25 text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Create category"
+                      className={`w-full flex items-center justify-between gap-1.5 rounded border px-1.5 py-1 text-left ${selected ? 'border-orange-500/40 bg-orange-500/12 text-orange-200' : 'border-zinc-800 bg-zinc-950/55 text-zinc-300'}`}
+                      onClick={() => setSelectedChannel(channel.id)}
+                      onContextMenu={(event) => { event.preventDefault(); openRadialAt(event.clientX, event.clientY, 'channel', channel.id); }}
+                      onKeyDown={(event) => { if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.preventDefault(); openRadialKeyboard(event, 'channel', channel.id); } }}
                     >
-                      <FolderPlus className="w-3.5 h-3.5" />
+                      <span className="inline-flex items-center gap-1 min-w-0">
+                        <ChannelGlyph category={channel.category} />
+                        <span className="text-[10px] truncate">{channel.name}</span>
+                        {channelVoiceMap?.[channel.id] ? <NexusTokenIcon family="circle" color="orange" size="sm" alt="Voice linked" /> : null}
+                      </span>
+                      <UnreadIndicator unread={channel.unread} tone={channel.unread >= 5 ? 'danger' : 'warning'} />
                     </button>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            ) : null}
-
-            <div className="flex-1 min-h-0 overflow-y-auto p-2">
-              <div className="space-y-1">
-                {renderCategory('tactical', 'Tactical')}
-                {renderCategory('operations', 'Operations')}
-                {renderCategory('social', 'Social')}
-                {renderCategory('direct', 'Direct')}
-                {customCategories.map((cat) => renderCategory(cat.id, cat.name))}
-              </div>
-            </div>
-          </div>
-
-          {/* Chat Panel - slides in when channel selected */}
-          <div
-            className={`flex flex-col flex-1 border-l border-zinc-700/40 bg-zinc-950/60 transition-all duration-300 overflow-hidden ${
-              chatPanelOpen && selectedChannel ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute inset-0 pointer-events-none'
-            }`}
-          >
-            {selectedChannel ? (
-              <>
-                <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <img src={channelTokenIcon(selectedChannelData)} alt="" className="w-3.5 h-3.5 rounded-sm border border-zinc-800/70 bg-zinc-900/65" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200 truncate">{selectedChannelData?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {selectedChannelUnread > 0 ? <NexusBadge tone="warning">{selectedChannelUnread}</NexusBadge> : null}
-                             <button
-                               type="button"
-                               onClick={() => setChatViewMode(chatViewMode === 'network' ? 'messages' : 'network')}
-                                 className={`p-0.5 rounded text-zinc-500 hover:text-orange-500 transition-colors ${chatViewMode === 'network' ? 'text-orange-500' : ''}`}
-                               title={chatViewMode === 'network' ? 'Messages' : 'Network'}
-                             >
-                               <Network className="w-3.5 h-3.5" />
-                             </button>
-                      <button
-                        type="button"
-                        onClick={() => setChatPanelOpen(false)}
-                          className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
-                        title="Close"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                <div className="p-2 rounded border border-zinc-700/40 bg-zinc-900/40">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <div className="text-[9px] font-bold uppercase tracking-wider text-zinc-300">{commandIntent.label}</div>
-                    <NexusBadge tone={commandIntent.tone}>Live</NexusBadge>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={executeCommandIntent}
-                    className="w-full h-6 px-2 rounded border border-zinc-700/40 bg-zinc-900/40 text-[8px] text-zinc-500 hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300 transition-colors inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider"
-                  >
-                    {commandIntent.actionLabel}
-                    <ArrowRight className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-
-                {chatViewMode === 'network' ? (
-                  <div className="flex-1 min-h-0 p-2 overflow-hidden">
-                    <CommsNetworkViz 
-                      channels={channels} 
-                      selectedChannel={selectedChannel}
-                      onSelectChannel={pickChannel}
-                      unreadByChannel={unreadByChannel}
-                    />
-                  </div>
-                ) : null}
-                </div>
-
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                <div className="flex-shrink-0 flex items-center justify-between gap-1 px-2 py-1 border-b border-zinc-700/40 bg-zinc-900/30">
-                  <div className="text-[8px] uppercase tracking-wider text-zinc-500 font-bold">Filter</div>
-                  <div className="flex items-center gap-0.5">
-                    {MESSAGE_FILTERS.map((filterId) => (
-                      <button
-                        key={filterId}
-                        type="button"
-                        onClick={() => setMessageFilter(filterId)}
-                        className={`h-5 px-1.5 rounded text-[7px] font-bold uppercase tracking-wider border transition-colors ${
-                          messageFilter === filterId
-                            ? 'bg-orange-500/15 border-orange-500/40 text-orange-300'
-                            : 'border-zinc-700/40 bg-zinc-900/40 text-zinc-500'
-                        }`}
-                      >
-                        {filterId}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
-
-                {pagedMessages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2 px-4 text-center">
-                          <MessageSquare className="w-8 h-8 text-zinc-700/50" />
-                          <div className="text-[10px] font-bold uppercase tracking-wider">No messages</div>
-                        </div>
-                      ) : (
-                  pagedMessages.map((message) => {
-                    const threadId = `thread-${message.id}`;
-                    const threadData = threads[threadId];
-                    const threadCount = message.threadCount || threadData?.messages?.length || 0;
-                    return (
-                      <div key={message.id} className="group px-2 py-1.5 rounded bg-zinc-950/60 border border-zinc-700/40 hover:border-zinc-600/40 transition-colors">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                              <span className="text-[10px] font-semibold text-zinc-300">{message.author}</span>
-                              <span className="text-[8px] text-zinc-600">{message.timestamp}</span>
-                              {message.source === 'event' ? (
-                                <span className="px-1 py-0.5 rounded text-[7px] font-bold uppercase bg-zinc-700/30 text-zinc-400">
-                                  Feed
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <div className="text-[10px] text-zinc-200 leading-relaxed">{message.text}</div>
-
-                            {threadCount === 0 ? (
-                              <button
-                                type="button"
-                                onClick={() => createThread(message)}
-                                className="mt-1 text-[8px] text-zinc-600 hover:text-orange-400 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Reply"
-                              >
-                                <CornerDownRight className="w-2.5 h-2.5" />
-                                Thread
-                              </button>
-                            ) : null}
-
-                            {threadCount > 0 ? (
-                              <button
-                                type="button"
-                                onClick={() => setActiveThread(threadId)}
-                                className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/15 transition-colors"
-                              >
-                                <CornerDownRight className="w-2.5 h-2.5 text-orange-400" />
-                                <span className="text-[8px] text-orange-300 font-bold uppercase">{threadCount}</span>
-                              </button>
-                            ) : null}
-
-
-                          </div>
-                          <button type="button" className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-orange-500 transition-all" title="Archive message preview">
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                    })
-                    )}
-                    </div>
-                    </div>
-
-              {messagePageCount > 1 ? (
-                <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/40 flex items-center justify-end gap-2 text-[9px] text-zinc-500">
-                  <button
-                    type="button"
-                    onClick={() => setMessagePage((prev) => Math.max(0, prev - 1))}
-                    disabled={messagePage === 0}
-                    className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
+              {paged.pageCount > 1 ? (
+                <div className="mt-1 flex items-center justify-between gap-1 text-[8px] uppercase tracking-[0.14em] text-zinc-500">
+                  <NexusButton
+                    size="sm"
+                    intent="subtle"
+                    className="text-[8px] px-1.5 py-0.5"
+                    disabled={paged.page <= 0}
+                    onClick={() => setChannelPages((prev) => ({ ...prev, [category]: Math.max(0, (prev?.[category] || 0) - 1) }))}
                   >
                     Prev
-                  </button>
-                  <span>{messagePage + 1}/{messagePageCount}</span>
-                  <button
-                    type="button"
-                    onClick={() => setMessagePage((prev) => Math.min(messagePageCount - 1, prev + 1))}
-                    disabled={messagePage >= messagePageCount - 1}
-                    className="px-1.5 py-0.5 rounded border border-zinc-700/40 bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors"
+                  </NexusButton>
+                  <span>{paged.page + 1}/{paged.pageCount}</span>
+                  <NexusButton
+                    size="sm"
+                    intent="subtle"
+                    className="text-[8px] px-1.5 py-0.5"
+                    disabled={paged.page >= paged.pageCount - 1}
+                    onClick={() => setChannelPages((prev) => ({ ...prev, [category]: Math.min(paged.pageCount - 1, (prev?.[category] || 0) + 1) }))}
                   >
                     Next
-                  </button>
+                  </NexusButton>
                 </div>
               ) : null}
-
-              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
-                  <input
-                    type="text"
-                    placeholder="Message..."
-                    value={messageInput}
-                    onChange={(event) => setMessageInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' && event.currentTarget.value.trim()) handleSendMessage();
-                    }}
-                    className="flex-1 text-[10px] bg-zinc-900/40 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendMessage}
-                    disabled={!messageInput.trim()}
-                    className="h-6 px-2 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-orange-500/15 hover:border-orange-500/50 text-zinc-500 hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    title="Send (Enter)"
-                  >
-                    <Send className="w-3 h-3" />
-                  </button>
-                </div>
-
-                {panelFeedback ? (
-                  <div className="flex-shrink-0 px-2 py-1 border-t border-zinc-700/40 bg-zinc-900/30 text-[9px] text-orange-400">
-                    {panelFeedback}
-                  </div>
-                ) : null}
-              </>
-            ) : null}
-          </div>
-
-          {/* Thread Panel - slides over chat panel */}
-          {activeThread && threads[activeThread] ? (
-            <div className="absolute inset-0 bg-black/98 backdrop-blur-sm flex flex-col z-10 animate-in slide-in-from-right duration-300">
-              <div className="flex-shrink-0 px-2.5 py-2 border-b border-zinc-700/40 bg-zinc-900/40 nexus-top-rail">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-100">Thread</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={closeThread}
-                    className="p-0.5 text-zinc-500 hover:text-orange-500 transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                {(() => {
-                  const parentId = threads[activeThread].parentMessageId;
-                  const parentMsg = currentMessages.find((m) => m.id === parentId);
-                  return parentMsg ? (
-                    <div className="px-2 py-1.5 rounded bg-zinc-900/60 border border-orange-500/30">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-semibold text-orange-300">{parentMsg.author}</span>
-                        <span className="text-[9px] text-zinc-600">{parentMsg.timestamp}</span>
-                      </div>
-                      <div className="text-[10px] text-zinc-400 leading-relaxed">{parentMsg.text}</div>
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-
-              <div className="flex-1 min-h-0 p-2 space-y-1 overflow-y-auto">
-                {threads[activeThread].messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2 px-4 text-center">
-                    <CornerDownRight className="w-8 h-8 text-zinc-700/50" />
-                    <div className="text-[10px] font-bold uppercase tracking-wider">No replies</div>
-                  </div>
-                ) : (
-                  threads[activeThread].messages.map((reply) => (
-                    <div key={reply.id} className="px-2 py-1.5 rounded bg-zinc-950/60 border border-zinc-700/40">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-semibold text-zinc-300">{reply.author}</span>
-                        <span className="text-[9px] text-zinc-600">{reply.timestamp}</span>
-                      </div>
-                      <div className="text-[10px] text-zinc-400 leading-relaxed">{reply.text}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="flex-shrink-0 flex gap-1 p-2 border-t border-zinc-700/40 bg-zinc-900/40">
-                <input
-                  type="text"
-                  placeholder="Reply..."
-                  value={threadInput}
-                  onChange={(event) => setThreadInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && event.currentTarget.value.trim()) sendThreadReply();
-                  }}
-                  className="flex-1 text-[10px] bg-zinc-900/40 border border-zinc-700/40 rounded px-2 py-1.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20"
-                />
-                <button
-                  type="button"
-                  onClick={sendThreadReply}
-                  disabled={!threadInput.trim()}
-                  className="h-6 px-2 rounded border border-zinc-700/40 bg-zinc-900/40 hover:bg-orange-500/15 hover:border-orange-500/50 text-zinc-500 hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  title="Send"
-                >
-                  <Send className="w-3 h-3" />
-                </button>
-              </div>
             </div>
-          ) : null}
+          );
+        })}
+      </section>
+
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1">
+        <div className="flex items-center justify-between gap-1.5"><div className="min-w-0"><div className="text-[9px] uppercase tracking-wide text-zinc-500">Channel</div><div className="text-[10px] text-zinc-200 uppercase tracking-wide truncate">{selectedChannelData?.name || 'None'}</div></div><div className="inline-flex items-center gap-1">{PRIORITY_LEVELS.map((priority) => <NexusButton key={priority} size="sm" intent={composerPriority === priority ? 'primary' : 'subtle'} className="text-[8px] px-1.5" onClick={() => setComposerPriority(priority)}>{priority === 'STANDARD' ? 'STD' : priority}</NexusButton>)}</div></div>
+        <div className="flex items-center gap-1 flex-wrap"><NexusButton size="sm" intent="subtle" className="text-[8px]" onClick={() => acknowledge(selectedChannel)}>Ack</NexusButton><NexusButton size="sm" intent="subtle" className="text-[8px]" disabled={!selectedChannel} onClick={() => issueOrder({ channelId: selectedChannel, directive: 'CHECK_IN_REQUEST', eventType: 'SELF_CHECK' })}>Check-In</NexusButton><NexusButton size="sm" intent="subtle" className="text-[8px]" disabled={!selectedChannel} onClick={() => { if (!selectedChannel) return; onRouteVoiceNet?.(selectedChannel); setFeedback(`Voice route requested for ${selectedChannel}.`); }}>Voice</NexusButton><NexusBadge tone={selectedVoiceNetId ? 'ok' : 'warning'}>{selectedVoiceNetId ? 'Mapped' : 'Unmapped'}</NexusBadge></div>
+        <div className="flex items-center gap-1">{MESSAGE_FILTERS.map((id) => <NexusButton key={id} size="sm" intent={messageFilter === id ? 'primary' : 'subtle'} className="text-[8px]" onClick={() => setMessageFilter(id)}>{id}</NexusButton>)}</div>
+      </section>
+
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1">
+        <div className="flex items-center justify-between gap-1"><span className="text-[9px] uppercase tracking-wide text-zinc-500">Messages</span><span className="text-[9px] text-zinc-500">{messagesPaged.page + 1}/{messagesPaged.pageCount}</span></div>
+        <div className="space-y-1">
+          {messagesPaged.visible.length > 0 ? messagesPaged.visible.map((message) => (
+            <div key={message.id} className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1" onContextMenu={(event) => { event.preventDefault(); openRadialAt(event.clientX, event.clientY, 'message', selectedChannel, message.id); }} onKeyDown={(event) => { if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.preventDefault(); openRadialKeyboard(event, 'message', selectedChannel, message.id); } }} tabIndex={0}>
+              <div className="flex items-center justify-between gap-1"><span className="text-[9px] text-zinc-300 truncate">{message.author}</span><span className="text-[8px] text-zinc-500">{message.timestamp}</span></div>
+              <div className="text-[10px] text-zinc-200 truncate">{message.text}</div>
+              <div className="mt-0.5 flex items-center gap-1"><NexusButton size="sm" intent="subtle" className="text-[8px]" onClick={() => openThread(message.id)}><CornerDownRight className="w-3 h-3" />Thread</NexusButton><NexusButton size="sm" intent="subtle" className="text-[8px]" onClick={() => togglePin(message.id)}><Pin className="w-3 h-3" />Pin</NexusButton></div>
+            </div>
+          )) : <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1 text-[10px] text-zinc-500">No messages in current filter.</div>}
         </div>
-      )}
+      </section>
+
+      {activeThreadMessageId ? <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1"><div className="flex items-center justify-between gap-1"><span className="text-[9px] uppercase tracking-wide text-zinc-500">Thread Reply</span><NexusButton size="sm" intent="subtle" className="text-[8px]" onClick={() => setActiveThreadMessageId('')}>Close</NexusButton></div><div className="space-y-0.5">{activeThreadReplies.slice(-5).map((reply) => <div key={reply.id} className="rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-0.5 text-[9px] text-zinc-300 truncate">{reply.author}: {reply.text}</div>)}{activeThreadReplies.length === 0 ? <div className="rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-0.5 text-[9px] text-zinc-500">No replies yet.</div> : null}</div><div className="flex items-center gap-1"><input value={threadReplyInput} onChange={(event) => setThreadReplyInput(event.target.value)} onKeyDown={(event) => { if (event.key !== 'Enter') return; event.preventDefault(); sendThreadReply(); }} className="flex-1 min-w-0 rounded border border-zinc-800 bg-zinc-950/80 px-2 py-1 text-[10px] text-zinc-200 focus:outline-none focus:border-zinc-600" placeholder="Reply to thread..." /><NexusButton size="sm" intent="primary" className="text-[8px]" disabled={!t(threadReplyInput)} onClick={sendThreadReply}>Reply</NexusButton></div></section> : null}
+
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1"><div className="flex items-center gap-1"><input value={messageInput} onChange={(event) => setMessageInput(event.target.value)} onKeyDown={(event) => { if (event.key !== 'Enter') return; event.preventDefault(); sendMessage(); }} className="flex-1 min-w-0 rounded border border-zinc-800 bg-zinc-950/80 px-2 py-1 text-[10px] text-zinc-200 focus:outline-none focus:border-zinc-600" placeholder="Transmit text update..." /><NexusButton size="sm" intent="primary" className="text-[8px]" disabled={!t(messageInput)} onClick={sendMessage}><Send className="w-3 h-3" />Send</NexusButton></div></section>
+
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1">
+        <div className="flex items-center justify-between gap-1"><div className="flex items-center gap-1 flex-wrap"><NexusButton size="sm" intent={activeQuickView === 'mentions' ? 'primary' : 'subtle'} className="text-[8px]" onClick={() => setActiveQuickView('mentions')}><BellRing className="w-3 h-3" />Mentions</NexusButton><NexusButton size="sm" intent={activeQuickView === 'threads' ? 'primary' : 'subtle'} className="text-[8px]" onClick={() => setActiveQuickView('threads')}><MessageSquare className="w-3 h-3" />Threads</NexusButton><NexusButton size="sm" intent={activeQuickView === 'pins' ? 'primary' : 'subtle'} className="text-[8px]" onClick={() => setActiveQuickView('pins')}><Pin className="w-3 h-3" />Pins</NexusButton><NexusButton size="sm" intent={activeQuickView === 'search' ? 'primary' : 'subtle'} className="text-[8px]" onClick={() => setActiveQuickView('search')}><Search className="w-3 h-3" />Search</NexusButton></div><NexusButton size="sm" intent="subtle" className="text-[8px]" onClick={() => { setDrawerView(activeQuickView); onOpenExpandedComms?.(activeQuickView); }}>Expand</NexusButton></div>
+        {activeQuickView === 'search' ? <div className="flex items-center gap-1"><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="flex-1 min-w-0 rounded border border-zinc-800 bg-zinc-950/80 px-2 py-1 text-[10px] text-zinc-200 focus:outline-none focus:border-zinc-600" placeholder="Search channel text..." /></div> : null}
+        <div className="space-y-0.5">{activeQuick.rows.length > 0 ? activeQuick.rows.map((entry) => <div key={`${activeQuickView}:${entry.messageId || entry.id}`} className="rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-1 text-[9px] text-zinc-300 truncate">{activeQuickView === 'threads' ? `${entry.parentAuthor}: ${entry.parentText}` : `${entry.author}: ${entry.text}`}</div>) : <div className="rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-1 text-[9px] text-zinc-500">{featureFlags?.progressiveParity ? 'No items in this view for current runtime scope.' : 'Unavailable in current runtime mode.'}</div>}</div>
+      </section>
+
+      <section className="rounded border border-zinc-800 bg-zinc-900/35 px-2 py-1.5 space-y-1"><div className="flex items-center justify-between gap-1"><span className="text-[9px] uppercase tracking-wide text-zinc-500">Orders Feed</span><span className="text-[9px] text-zinc-500">{ordersPage + 1}/{orders.pageCount}</span></div><div className="flex items-center gap-1 flex-wrap"><NexusBadge tone={orders.stats.queued > 0 ? 'warning' : 'neutral'}>Queued {orders.stats.queued}</NexusBadge><NexusBadge tone={orders.stats.persisted > 0 ? 'active' : 'neutral'}>Persisted {orders.stats.persisted}</NexusBadge><NexusBadge tone={orders.stats.acked > 0 ? 'ok' : 'neutral'}>Acked {orders.stats.acked}</NexusBadge></div><div className="space-y-0.5">{orders.visible.length > 0 ? orders.visible.map((entry) => <div key={entry.dispatchId} className="rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-1"><div className="flex items-center justify-between gap-1"><span className="text-[9px] text-zinc-200 uppercase tracking-wide truncate">{entry.directive}</span><NexusBadge tone={deliveryTone(entry.status)}>{entry.status}</NexusBadge></div><div className="text-[9px] text-zinc-500 truncate">{entry.channelId} · {age(entry.issuedAtMs)} ago</div></div>) : <div className="rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-1 text-[9px] text-zinc-500">No dispatched orders yet.</div>}</div></section>
+
+      {feedback ? <div className="px-2 py-1 text-[9px] text-orange-300 truncate">{feedback}</div> : null}
+      <div className="flex-shrink-0 flex items-center justify-between gap-1 px-2 pb-1"><span className="text-[8px] text-zinc-500 uppercase tracking-wide">{activeAppId || focusMode || 'comms'} • v2</span><button type="button" onClick={onToggleExpand} className="text-zinc-500 hover:text-orange-500 transition-colors" title="Collapse rail"><ChevronLeft className="w-4 h-4" /></button></div>
+
+      <RadialMenu open={radial.open} title={radial.kind === 'message' ? 'Message Action' : 'Channel Action'} anchor={radial.anchor} items={radialItems} onClose={() => setRadial((prev) => ({ ...prev, open: false }))} />
+      <TextCommsExpandDrawer open={Boolean(drawerView)} title={`${t(drawerView, 'view').toUpperCase()} EXPANDED`} subtitle="Deep detail view" count={drawerRows.length} onClose={() => setDrawerView('')}>
+        {drawerRows.length > 0 ? drawerRows.map((entry) => <div key={`drawer:${entry.id || entry.messageId}`} className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1.5"><div className="text-[10px] text-zinc-200 truncate">{t(entry.text || entry.parentText, 'No content.')}</div><div className="mt-0.5 text-[9px] text-zinc-500 uppercase tracking-wide">{t(entry.author || entry.parentAuthor || entry.channelId, 'runtime')}</div></div>) : <div className="rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1.5 text-[10px] text-zinc-500">No records available for expanded view.</div>}
+      </TextCommsExpandDrawer>
     </div>
   );
 }

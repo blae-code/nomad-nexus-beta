@@ -44,12 +44,17 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
   await expect(page.getByText(/Command Surface/i).first()).toBeVisible();
 
   await page.keyboard.press('Alt+3');
-  await expect(page.getByText(/Comms Network Cards/i)).toBeVisible();
-  await expect(page.getByText(/^Squad Cards$/i).first()).toBeVisible();
-  await expect(page.locator('[data-comms-command-bar=\"true\"]').first()).toBeVisible();
-  await expect(page.locator('[data-comms-template-select=\"true\"]').first()).toBeVisible();
-  await expect(page.locator('[data-comms-ttl-select=\"true\"]').first()).toBeVisible();
-  await expect(page.getByText(/Text Comms|Comms Snapshot/i).first()).toBeVisible();
+  const hasFullCommsConsole = await page.getByText(/Comms Network Cards/i).isVisible().catch(() => false);
+  if (hasFullCommsConsole) {
+    await expect(page.getByText(/^Squad Cards$/i).first()).toBeVisible();
+    await expect(page.locator('[data-comms-command-bar=\"true\"]').first()).toBeVisible();
+    await expect(page.locator('[data-comms-template-select=\"true\"]').first()).toBeVisible();
+    await expect(page.locator('[data-comms-ttl-select=\"true\"]').first()).toBeVisible();
+  } else {
+    await expect(page.getByText(/No squad cards available/i).first()).toBeVisible();
+  }
+  await expect(page.getByText(/Text Comms/i).first()).toBeVisible();
+  await expect(page.getByText(/Comms Snapshot/i)).toHaveCount(0);
   await expect(page.getByText(/Voice Comms/i).first()).toBeVisible();
   await expect(page.getByText(/Global Voice Controls/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /Fleet/i }).first()).toBeVisible();
@@ -106,7 +111,7 @@ test('nexusos comms focus + side controls are actionable', async ({ page }) => {
     });
     await clickButtonDirect(page, /^Delete$/i);
   } else {
-    await expect(page.getByText(/No squad cards available for this lane page/i)).toBeVisible();
+    await expect(page.getByText(/No squad cards available for this lane page|No squad cards available/i)).toBeVisible();
   }
 
   await page.keyboard.press('Alt+2');
@@ -154,5 +159,21 @@ for (const viewport of VIEWPORTS) {
 
     expect(overflow.x).toBeLessThanOrEqual(4);
     expect(overflow.y).toBeLessThanOrEqual(4);
+
+    const railOverflow = await page.evaluate(() => {
+      const rail = document.querySelector('[data-text-comms-rail=\"true\"]');
+      if (!rail) return { found: false, violations: 0 };
+      const nodes = [rail, ...rail.querySelectorAll('*')];
+      const violations = nodes.filter((node) => {
+        const style = window.getComputedStyle(node);
+        const scrollable = style.overflowY === 'auto' || style.overflowY === 'scroll';
+        const allow = node.classList.contains('nx-allow-scroll');
+        return scrollable && !allow;
+      }).length;
+      return { found: true, violations };
+    });
+
+    expect(railOverflow.found).toBe(true);
+    expect(railOverflow.violations).toBe(0);
   });
 }

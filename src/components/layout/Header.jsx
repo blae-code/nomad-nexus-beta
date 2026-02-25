@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { VOICE_CONNECTION_STATE } from '@/components/constants/voiceNet';
 import VerseClock from '@/components/header/VerseClock';
 import StatusSelector from '@/components/presence/StatusSelector';
+import NexusTokenIcon from '../nexus-os/ui/primitives/NexusTokenIcon';
 
 /**
  * Header — Control plane v1
@@ -98,7 +99,7 @@ export default function Header() {
          <div className="flex-1 min-w-0 flex items-center gap-2">
            {activeEvent && (
              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 rounded border border-orange-500/30 text-[10px] font-bold text-orange-300 flex-shrink-0 whitespace-nowrap uppercase tracking-[0.15em]">
-               <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
+               <NexusTokenIcon family="penta" color="green" size="sm" className="animate-pulse" />
                <span className="max-w-[150px] truncate">{activeEvent.title}</span>
              </div>
            )}
@@ -132,12 +133,18 @@ export default function Header() {
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'text-green-400' :
                 voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'text-orange-400' : 'text-red-400'
               }`}>
+                <NexusTokenIcon
+                  family="circle"
+                  color={voiceNet.connectionState === VOICE_CONNECTION_STATE.CONNECTED ? 'green' : voiceNet.connectionState === VOICE_CONNECTION_STATE.RECONNECTING ? 'orange' : 'red'}
+                  size="sm"
+                />
                 <Radio className="w-3 h-3" />
                 <span className="font-mono text-[10px] font-bold">{voiceNet.participants?.length || 0}</span>
                 <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-zinc-600">
+                <NexusTokenIcon family="circle" color="grey" size="sm" />
                 <Radio className="w-3 h-3" />
                 <span className="font-mono text-[10px]">—</span>
               </div>
@@ -147,6 +154,7 @@ export default function Header() {
             
             {/* Online Members */}
             <div className="flex items-center gap-1.5 text-orange-400">
+              <NexusTokenIcon family="hex" color="cyan" size="sm" />
               <Users className="w-3 h-3" />
               <span className="font-mono text-[10px] font-bold">{onlineCount}</span>
             </div>
@@ -155,6 +163,7 @@ export default function Header() {
             
             {/* Network Health */}
             <div className={`flex items-center gap-1.5 ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
+              <NexusTokenIcon family="energy" color={isHealthy ? 'green' : 'red'} size="sm" />
               <Activity className="w-3 h-3" />
               <span className="font-mono text-[10px] font-bold">{latencyMs}<span className="text-[9px] ml-0.5">ms</span></span>
             </div>

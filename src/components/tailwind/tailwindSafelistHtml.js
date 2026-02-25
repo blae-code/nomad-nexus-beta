@@ -175,6 +175,11 @@ export const TAILWIND_SAFELIST_HTML = `
     <div class="data-[state=checked]:bg-red-600"></div>
     <div class="placeholder:text-slate-500"></div>
     <div class="resize-none"></div>
+    <div class="text-[8px] text-[10px] tracking-[0.12em] tracking-[0.14em] tracking-[0.15em] font-black font-extrabold font-semibold uppercase leading-none"></div>
+    <div class="p-1.5 p-2 p-2.5 px-1.5 py-1 px-2 py-1.5 px-2.5 py-2 gap-1 gap-1.5 gap-2"></div>
+    <div class="border-zinc-700/40 border-zinc-700/60 border-zinc-800/60 bg-zinc-950/80 bg-zinc-900/40 backdrop-blur-sm"></div>
+    <div class="w-2.5 h-2.5 w-3 h-3 w-3.5 h-3.5 w-4 h-4 w-5 h-5 w-6 h-6"></div>
+    <div class="bg-green-500/30 bg-amber-600/60 bg-red-500/30 bg-orange-500/14 border-orange-500/45 border-red-600/60 border-amber-600/60 border-green-600/60"></div>
   </div>
 </div>
 `;

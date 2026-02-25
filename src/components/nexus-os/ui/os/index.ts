@@ -5,5 +5,5 @@ export * from './sessionPersistence';
 export * from './trayNotifications';
 export * from './useNexusWorkspaceSession';
 export { default as NexusBootOverlay } from './NexusBootOverlay';
-export { default as NexusTaskbar } from './NexusTaskbar';
-export { default as NexusCommandDeck } from './NexusCommandDeck';
+export { default as NexusTaskbar } from './NexusTaskbar.jsx';
+export { default as NexusCommandDeck } from './NexusCommandDeck.jsx';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
-import { NexusBadge, NexusButton } from '../primitives';
+import { NexusBadge, NexusButton, NexusTokenIcon } from '../primitives';
 // JSX-only, no TypeScript types
 
 function toneForNotificationLevel(level) {
@@ -11,11 +11,11 @@ function toneForNotificationLevel(level) {
 }
 
 function dotForState(state) {
-  if (state === 'foreground') return 'bg-emerald-400';
-  if (state === 'background') return 'bg-sky-400';
-  if (state === 'suspended') return 'bg-amber-400';
-  if (state === 'error') return 'bg-red-400';
-  return 'bg-zinc-600';
+  if (state === 'foreground') return { family: 'square', color: 'orange' };
+  if (state === 'background') return { family: 'square', color: 'cyan' };
+  if (state === 'suspended') return { family: 'square', color: 'yellow' };
+  if (state === 'error') return { family: 'square', color: 'red' };
+  return { family: 'square', color: 'grey' };
 }
 
 function ageLabel(timestamp) {
@@ -136,7 +136,7 @@ export default function NexusTaskbar({
                 }`}
                 title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
               >
-                <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${dotForState(state)}`} />
+                <NexusTokenIcon {...dotForState(state)} size="sm" />
                 <span className="truncate">{compactLabel(app.label, 10)}</span>
               </button>
             );
@@ -188,7 +188,11 @@ export default function NexusTaskbar({
             <Bell className="w-3.5 h-3.5 text-zinc-400" />
           )}
           <span className="hidden md:inline">Alerts</span>
-          <strong className="text-[11px]">{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
+          {unreadNotifications > 0 && unreadNotifications <= 9 ? (
+            <NexusTokenIcon family={`number-${unreadNotifications}`} color="red" size="sm" />
+          ) : (
+            <strong className="text-[11px]">{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
+          )}
         </button>
 
         <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0">

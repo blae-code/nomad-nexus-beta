@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { isAdminUser } from '@/utils';
 import {
   BRIDGE_DEFAULT_PRESET,
   getBridgeThemeCssVars,
@@ -86,6 +87,31 @@ const FOCUS_APP_ALIASES = {
   manage: 'admin'
 };
 const MOBILE_NAV_APP_IDS = ['map', 'ops', 'comms', 'admin'];
+const TEXT_COMMS_RAIL_FLAG_KEY = 'nexus.flags.textCommsRailV2';
+const ADMIN_FOCUS_BYPASS_FLAG_KEY = 'nexus.flags.adminFocusBypass';
+
+function readTextCommsRailFlag() {
+  try {
+    const raw = localStorage.getItem(TEXT_COMMS_RAIL_FLAG_KEY);
+    if (!raw) return true;
+    const normalized = String(raw).trim().toLowerCase();
+    if (['0', 'false', 'off', 'no'].includes(normalized)) return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function readAdminFocusBypassFlag() {
+  try {
+    const raw = localStorage.getItem(ADMIN_FOCUS_BYPASS_FLAG_KEY);
+    if (!raw) return false;
+    const normalized = String(raw).trim().toLowerCase();
+    return ['1', 'true', 'on', 'yes'].includes(normalized);
+  } catch {
+    return false;
+  }
+}
 
 function FocusShell({ mode, sharedPanelProps, onClose, reducedMotion }) {
   const [mountedModes, setMountedModes] = useState(() => mode ? { [mode]: true } : { map: true });
@@ -186,6 +212,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const [events, setEvents] = useState(() => listStoredCqbEvents({ includeStale: true }));
   const [opsVersion, setOpsVersion] = useState(0);
   const [rightRailGraph, setRightRailGraph] = useState(null);
+  const adminFocusBypassEnabled = useMemo(() => readAdminFocusBypassFlag(), []);
 
   const lifecycle = useNexusAppLifecycle(FOCUS_APP_CATALOG.map((entry) => entry.id));
   const reducedMotion = useReducedMotion();
@@ -212,9 +239,20 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   const setForceDesignOpId = (nextOpId) => patchSnapshot({ forceDesignOpId: nextOpId });
   const setReportsOpId = (nextOpId) => patchSnapshot({ reportsOpId: nextOpId });
 
-  const openFocusApp = (appId) => {
-    if (lockedFocusMode) return;
-    if (!FOCUS_APP_IDS.has(appId)) return;
+  const openFocusApp = useCallback((appId) => {
+    if (lockedFocusMode) return { ok: false, reason: 'locked' };
+    if (!FOCUS_APP_IDS.has(appId)) return { ok: false, reason: 'invalid_app' };
+    if (appId === 'admin' && isWorkspaceMode && !adminFocusBypassEnabled && !isAdminUser(user)) {
+      const deniedMessage = 'Admin focus locked: admin clearance required.';
+      setCommandFeedback(deniedMessage);
+      tray.pushNotification({
+        title: 'Admin Focus Locked',
+        detail: 'Admin clearance is required in workspace mode.',
+        source: 'taskbar',
+        level: 'warning'
+      });
+      return { ok: false, reason: 'forbidden', message: deniedMessage };
+    }
     const label = FOCUS_APP_LABEL_BY_ID[appId] || String(appId || '').toUpperCase();
     profileSync('focus.open', appId, () => {
       patchSnapshot({ focusMode: appId });
@@ -226,7 +264,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       source: 'taskbar',
       level: 'info'
     });
-  };
+    return { ok: true, appId };
+  }, [lockedFocusMode, isWorkspaceMode, adminFocusBypassEnabled, user, profileSync, patchSnapshot, lifecycle, tray]);
 
   const closeFocusApp = () => {
     if (lockedFocusMode) return;
@@ -282,7 +321,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   useEffect(() => {
     if (!focusMode || !FOCUS_APP_IDS.has(focusMode)) return;
     lifecycle.markForeground(focusMode);
-  }, [focusMode]);
+  }, [focusMode, openFocusApp]);
 
   useEffect(() => {
     if (focusMode || lifecycle.foregroundAppId) return;
@@ -404,7 +443,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
       roles,
       orgId: profile.org_id || profile.orgId || user?.org_id || user?.orgId || 'ORG-LOCAL',
       membership: profile.membership || profile.tier || 'MEMBER',
-      isAdmin: Boolean(user?.is_admin)
+      isAdmin: isAdminUser(user)
     };
   }, [user, actorId]);
 
@@ -429,6 +468,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
   };
 
   const workbenchFocusMode = lockedFocusMode || focusMode || lifecycle.foregroundAppId || 'map';
+  const textCommsRailV2Enabled = useMemo(() => readTextCommsRailFlag(), []);
 
   const fallbackVoiceNets = useMemo(() => {
     return operations.slice(0, 6).map((operation) => {
@@ -685,7 +725,8 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
     if (keyword === 'open' || keyword === 'focus') {
       const appId = FOCUS_APP_ALIASES[normalizedArg] || (FOCUS_APP_IDS.has(normalizedArg) ? normalizedArg : null);
       if (!appId) return `Unknown app "${arg}". Use: map, ops, comms, admin.`;
-      openFocusApp(appId);
+      const result = openFocusApp(appId);
+      if (!result?.ok) return result?.message || `Unable to open ${FOCUS_APP_LABEL_BY_ID[appId] || appId.toUpperCase()}.`;
       return `Opened ${FOCUS_APP_LABEL_BY_ID[appId] || appId.toUpperCase()}.`;
     }
 
@@ -895,7 +936,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
           onResize={() => setIsResizingLeft(true)}
           isResizing={isResizingLeft}
-          title={workbenchFocusMode === 'comms' ? 'Comms Snapshot' : 'Text Comms'}
+          title={textCommsRailV2Enabled ? 'Text Comms' : workbenchFocusMode === 'comms' ? 'Comms Snapshot' : 'Text Comms'}
           icon={Radio}
           className="rounded-lg"
           statusMetrics={sidePanelRuntime.leftPanelMetrics}
@@ -908,7 +949,7 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
           onMaximize={() => setLeftPanelWidth(600)}
           onMinimize={() => setLeftPanelWidth(280)}>
 
-          {workbenchFocusMode === 'comms' ?
+          {!textCommsRailV2Enabled && workbenchFocusMode === 'comms' ?
           <CommsPeekPanel
             {...sharedPanelProps}
             onOpenCommsNetwork={() => openFocusApp('comms')} /> :
@@ -922,13 +963,19 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
             actorId={actorId}
             eventMessagesByChannel={sidePanelRuntime.eventMessagesByChannel}
             unreadByChannel={sidePanelRuntime.unreadByChannel}
+            events={events}
             channelVoiceMap={channelVoiceMap}
             voiceState={sidePanelRuntime.voiceState}
             onRouteVoiceNet={routeVoiceForChannel}
             onIssueCommsOrder={(eventType, payload = {}) => createMacroEvent(eventType, payload)}
             focusMode={workbenchFocusMode}
             isExpanded={!leftPanelCollapsed}
-            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)} />
+            onToggleExpand={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+            variantId={variantId}
+            opId={resolvedOpId || ''}
+            experienceMode={textCommsRailV2Enabled ? 'text-rail-v2' : 'legacy'}
+            featureFlags={{ progressiveParity: true }}
+            onOpenExpandedComms={() => openFocusApp('comms')} />
           }
 
         </TacticalSidePanel>

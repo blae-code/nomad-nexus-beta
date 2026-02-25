@@ -1,5 +1,5 @@
 export { default as TacticalMapPanel } from './TacticalMapPanel';
-export { default as TacticalMapFocusApp } from './TacticalMapFocusApp';
+export { default as TacticalMapFocusApp } from './TacticalMapFocusApp.jsx';
 export { default as RadialMenu } from './RadialMenu';
 export { default as IntelDetailPanel } from './IntelDetailPanel';
 export { default as IntentDraftPanel } from './IntentDraftPanel';

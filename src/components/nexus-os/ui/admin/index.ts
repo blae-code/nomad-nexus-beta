@@ -1,1 +1,1 @@
-export { default as SystemAdminFocusApp } from './SystemAdminFocusApp';
+export { default as SystemAdminFocusApp } from './SystemAdminFocusApp.jsx';

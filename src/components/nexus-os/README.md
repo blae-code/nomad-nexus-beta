@@ -1,5 +1,20 @@
 # Nexus OS Foundation (BIOS Layer)
 
+## Design System (Mandatory)
+
+- Style guide: [STYLE_GUIDE.md](./STYLE_GUIDE.md)
+- Token guide: [TOKEN_USAGE_GUIDE.md](./ui/tokens/TOKEN_USAGE_GUIDE.md)
+- Migration checklist: [TOKEN_MIGRATION_CHECKLIST.md](./ui/tokens/TOKEN_MIGRATION_CHECKLIST.md)
+- Design tokens: `ui/theme/design-tokens.js`
+- Validator: `validators/styleGuideValidator.js`
+
+Before building NexusOS UI:
+1. Use Nexus primitives (`NexusButton`, `NexusBadge`, token primitives) instead of ad-hoc controls.
+2. Keep lists capped to 5-7 items with paging (no internal scroll in normal mode).
+3. Enforce typography/spacing/icon matrices from the style guide.
+4. Keep token semantics deterministic (red=danger, green=ok).
+5. Preserve Element SDK and existing service/data contracts.
+
 This folder is the non-UI foundation for Nexus OS. It is intentionally isolated from routes/pages so we can lock doctrine before feature work.
 
 ## Hard Rules

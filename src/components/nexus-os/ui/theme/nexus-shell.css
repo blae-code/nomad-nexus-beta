@@ -661,6 +661,19 @@
   overflow: hidden !important;
 }
 
+.nx-app-shell .nx-allow-scroll {
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+
+.nx-app-shell .nx-allow-scroll.overflow-y-auto {
+  overflow-y: auto !important;
+}
+
+.nx-app-shell .nx-allow-scroll.overflow-x-auto {
+  overflow-x: auto !important;
+}
+
 .nx-shell-topbar {
   grid-column: 1 / -1;
   grid-row: 1;

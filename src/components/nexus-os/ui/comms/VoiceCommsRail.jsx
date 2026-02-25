@@ -9,7 +9,7 @@ import {
   Volume2 } from
 'lucide-react';
 import VoiceNetCreator from '@/components/voice/VoiceNetCreator';
-import { NexusBadge } from '../primitives';
+import { NexusBadge, NexusRosterBadge } from '../primitives';
 import TokenRenderer from '../tokens/TokenRenderer';
 import { tokenAssets } from '../tokens';
 import {
@@ -72,6 +72,14 @@ function channelRowsFromVoiceNets(voiceNets) {
     };
   }).
   filter(Boolean);
+}
+
+function netColorByCode(codeLike) {
+  const token = String(codeLike || '').trim().toLowerCase();
+  if (token.includes('command') || token.includes('cmd')) return 'orange';
+  if (token.includes('support') || token.includes('log')) return 'yellow';
+  if (token.includes('squad') || token.includes('alpha') || token.includes('bravo')) return 'cyan';
+  return 'grey';
 }
 
 export default function VoiceCommsRail({
@@ -349,6 +357,7 @@ export default function VoiceCommsRail({
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="font-bold uppercase tracking-wider truncate inline-flex items-center gap-1">
+              <TokenRenderer family="hex" color={netColorByCode(net.code || net.id || net.name)} size="xs" />
               {net.code || net.id || net.name}
             </div>
           </div>
@@ -484,12 +493,11 @@ export default function VoiceCommsRail({
                      </div>
                    </div>
 
-                   <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-1" onClick={closeContextMenu}>
-                     {pagedParticipants.map((user) => {
+                   <div className="flex-1 min-h-0 overflow-hidden px-2 py-1 space-y-1" onClick={closeContextMenu}>
+                     {pagedParticipants.map((user, index) => {
                 const userId = String(user.id || user.userId || user.email || '').trim();
                 const isSelected = selectedUsers.has(userId);
                 const status = getRosterItemStatus(user);
-                const statusColor = status === 'TX' ? 'orange' : status === 'ON-NET' ? 'green' : status === 'MUTED' ? 'grey' : 'red';
                 return (
                   <div
                     key={userId}
@@ -507,12 +515,17 @@ export default function VoiceCommsRail({
                     isSelected ? 'bg-orange-500/15 border-orange-500/40' : 'bg-zinc-900/40 border-zinc-700/40 hover:border-zinc-600/60'}`
                     }>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[9px] font-semibold text-zinc-200 truncate inline-flex items-center gap-1">
-                              <TokenRenderer family="square" color={status === 'OFFLINE' ? 'grey' : 'cyan'} size="xs" />
-                              {user.full_name || user.name || user.email}
-                            </span>
+                            <NexusRosterBadge
+                              number={rosterPage * PAGE_SIZE + index + 1}
+                              callsign={user.full_name || user.name || user.callsign || user.email}
+                              role={user.role || user.rank || 'operator'}
+                              element={user.element || ''}
+                              state={status}
+                              layout="horizontal"
+                              className="min-w-0 flex-1"
+                            />
                             <span className="inline-flex items-center gap-1">
-                              <TokenRenderer family="circle" color={statusColor} size="xs" animated={status === 'TX'} />
+                              {status === 'TX' ? <TokenRenderer family="circle" color="orange" size="xs" animated /> : null}
                               <NexusBadge tone={status === 'OFFLINE' ? 'neutral' : operatorStatusTone(status)}>{status}</NexusBadge>
                             </span>
                           </div>

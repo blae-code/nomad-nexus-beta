@@ -1,18 +1,13 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Signal } from 'lucide-react';
+import { NexusMetricCell, NexusSignalPill, NexusStatusPill } from '../primitives';
 
-const STATUS_TONE_CLASSES = {
-  ok: { dot: 'bg-green-500', text: 'text-green-400' },
-  warning: { dot: 'bg-amber-500', text: 'text-amber-400' },
-  danger: { dot: 'bg-red-500', text: 'text-red-400' },
-  neutral: { dot: 'bg-zinc-500', text: 'text-zinc-400' },
-};
-
-const SIGNAL_TONE_CLASSES = {
-  ok: 'text-green-400',
-  warning: 'text-amber-400',
-  danger: 'text-red-400',
-  neutral: 'text-zinc-500',
+const STATUS_DOT_CLASSES = {
+  ok: 'bg-green-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-red-500',
+  active: 'bg-orange-500',
+  neutral: 'bg-zinc-500',
 };
 
 function formatLogTimestamp(value) {
@@ -48,9 +43,7 @@ export default function TacticalSidePanel({
 }) {
   const isLeft = side === 'left';
   const borderSideClass = isLeft ? 'border-r' : 'border-l';
-
-  const headerStatusClass = STATUS_TONE_CLASSES[headerStatusTone] || STATUS_TONE_CLASSES.neutral;
-  const headerSignalClass = SIGNAL_TONE_CLASSES[headerSignalTone] || SIGNAL_TONE_CLASSES.neutral;
+  const headerStatusDotClass = STATUS_DOT_CLASSES[headerStatusTone] || STATUS_DOT_CLASSES.neutral;
 
   return (
     <aside
@@ -64,16 +57,10 @@ export default function TacticalSidePanel({
                <div className="min-w-0 flex items-center gap-1.5">
                  {Icon ? <Icon className="w-3.5 h-3.5 text-orange-500" /> : null}
                  <div className="min-w-0">
-                   <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white truncate">{title}</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white truncate">{title}</div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border transition-colors ${headerStatusTone === 'danger' ? 'border-red-500/30 bg-red-500/5' : headerStatusTone === 'warning' ? 'border-amber-500/30 bg-amber-500/5' : 'border-green-500/30 bg-green-500/5'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${headerStatusClass.dot}`} />
-                      <span className={`text-[8px] font-mono uppercase tracking-wider font-semibold ${headerStatusClass.text}`}>{headerStatusLabel}</span>
-                    </div>
-                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded border transition-colors ${headerSignalTone === 'danger' ? 'border-red-500/30 bg-red-500/5' : headerSignalTone === 'warning' ? 'border-amber-500/30 bg-amber-500/5' : 'border-green-500/30 bg-green-500/5'}`}>
-                      <Signal className={`w-2.5 h-2.5 ${headerSignalClass}`} />
-                      <span className={`text-[8px] font-mono tracking-wider font-semibold ${headerSignalClass}`}>{headerSignalValue}</span>
-                    </div>
+                    <NexusStatusPill tone={headerStatusTone} label={headerStatusLabel} size="sm" />
+                    <NexusSignalPill tone={headerSignalTone} value={headerSignalValue} icon={Signal} />
                   </div>
                 </div>
               </div>
@@ -113,10 +100,7 @@ export default function TacticalSidePanel({
             <footer className="flex-shrink-0 border-t border-zinc-700/40 bg-zinc-900/40 backdrop-blur-sm">
               <div className="grid grid-cols-3 divide-x divide-zinc-800/60">
                 {statusMetrics.slice(0, 3).map((metric, index) => (
-                  <div key={`${metric.label}:${index}`} className="px-2 py-2 flex flex-col items-center">
-                    <span className="text-[8px] text-zinc-300 uppercase tracking-wider font-semibold">{metric.label}</span>
-                    <span className="text-[10px] font-mono text-orange-400 font-bold mt-0.5">{metric.value}</span>
-                  </div>
+                  <NexusMetricCell key={`${metric.label}:${index}`} label={metric.label} value={metric.value} tone="active" />
                 ))}
               </div>
             </footer>
@@ -139,7 +123,7 @@ export default function TacticalSidePanel({
               {title}
             </span>
           </div>
-          <div className={`w-2 h-2 rounded-full ${headerStatusClass.dot}`} />
+          <div className={`w-2 h-2 rounded-full ${headerStatusDotClass}`} />
           <button
             type="button"
             onClick={onToggleCollapse}
