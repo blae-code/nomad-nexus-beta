@@ -933,19 +933,28 @@ export default function NexusOSPreviewPage({ mode = 'dev', forceFocusMode = '' }
 
         </TacticalSidePanel>
 
-        <main className="px-4 flex-1 overflow-hidden flex flex-col gap-3">
+        <main className="px-4 flex-1 overflow-hidden flex flex-col gap-2.5">
           {commandFeedback &&
-          <section aria-live="polite" className="nx-inline-feedback rounded-md border border-orange-500/40 bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-4 py-2.5 text-[11px] text-orange-300 font-bold uppercase tracking-[0.12em] hover:border-orange-500/60 hover:from-orange-500/15 hover:to-orange-600/10 transition-all duration-200 shadow-sm">
-              {commandFeedback}
+          <section 
+            aria-live="polite" 
+            className="nx-inline-feedback rounded-lg border border-orange-500/50 bg-gradient-to-r from-orange-500/12 via-orange-600/8 to-orange-700/5 px-4 py-2.5 text-[10px] text-orange-200 font-extrabold uppercase tracking-[0.14em] leading-tight hover:border-orange-400/70 hover:from-orange-500/18 hover:via-orange-600/12 hover:to-orange-700/8 hover:shadow-[0_0_16px_rgba(249,115,22,0.2)] transition-all duration-250 shadow-[0_2px_12px_rgba(0,0,0,0.3)] backdrop-blur-sm relative overflow-hidden"
+            style={{
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+            }}>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400/5 via-transparent to-transparent opacity-60 pointer-events-none" />
+              <div className="relative z-10">{commandFeedback}</div>
             </section>
           }
-          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-lg border border-zinc-800/60 bg-gradient-to-br from-zinc-950/60 via-zinc-900/40 to-zinc-950/50 hover:border-orange-500/50 hover:shadow-[0_0_24px_rgba(249,115,22,0.15)] transition-all duration-300 p-4 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative before:absolute before:inset-0 before:rounded-lg before:border before:border-white/[0.02] before:pointer-events-none">
-            <FocusShell
-              mode={workbenchFocusMode}
-              sharedPanelProps={sharedPanelProps}
-              onClose={closeFocusApp}
-              reducedMotion={reducedMotion} />
-
+          <div className="flex-1 overflow-hidden nx-workbench-wrap nexus-panel-glow rounded-xl border border-zinc-800/70 bg-gradient-to-br from-zinc-950/70 via-zinc-900/50 to-zinc-950/65 hover:border-orange-500/60 hover:shadow-[0_0_32px_rgba(249,115,22,0.18),0_0_8px_rgba(249,115,22,0.12)_inset] transition-all duration-320 p-5 backdrop-blur-lg shadow-[0_12px_40px_rgba(0,0,0,0.5),0_2px_12px_rgba(0,0,0,0.3)] relative overflow-hidden before:absolute before:inset-0 before:rounded-xl before:border before:border-white/[0.03] before:pointer-events-none after:absolute after:inset-0 after:rounded-xl after:bg-gradient-to-br after:from-orange-500/[0.02] after:via-transparent after:to-zinc-900/[0.03] after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-400 after:pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-zinc-700/40 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-zinc-800/30 to-transparent" />
+            <div className="relative z-10 h-full">
+              <FocusShell
+                mode={workbenchFocusMode}
+                sharedPanelProps={sharedPanelProps}
+                onClose={closeFocusApp}
+                reducedMotion={reducedMotion} />
+            </div>
           </div>
         </main>
 
