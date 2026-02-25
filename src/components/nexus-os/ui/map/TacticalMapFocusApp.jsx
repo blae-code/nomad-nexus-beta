@@ -10,18 +10,8 @@
  */
 
 import React from 'react';
-import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
-import type { ControlSignal } from '../../schemas/mapSchemas';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { NexusBadge, NexusButton } from '../primitives';
 import TacticalMapPanel from './TacticalMapPanel';
-
-interface TacticalMapFocusAppProps extends Partial<CqbPanelSharedProps> {
-  locationEstimates?: LocationEstimate[];
-  controlSignals?: ControlSignal[];
-  viewerScope?: VisibilityScope;
-  onClose?: () => void;
-}
 
 export default function TacticalMapFocusApp({
   locationEstimates = [],
@@ -32,7 +22,7 @@ export default function TacticalMapFocusApp({
   operations,
   focusOperationId,
   onClose,
-}: TacticalMapFocusAppProps) {
+}) {
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
       <section className="rounded border border-zinc-800 bg-zinc-950/55 px-3 py-2.5 flex items-center justify-between gap-2">
