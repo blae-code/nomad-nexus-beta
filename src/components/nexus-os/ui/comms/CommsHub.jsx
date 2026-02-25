@@ -1,3 +1,16 @@
+/**
+ * CommsHub - Text communications control center
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: Labels text-[9px]/[8px] uppercase, messages text-[10px]
+ * - Spacing: px-2.5 py-2 (sections), gap-1/1.5
+ * - Icons: w-3 h-3 (buttons), w-4 h-4 (collapse)
+ * - Tokens: ✅ Uses hex tokens (channel types), number tokens (unread counts), circle tokens (voice status)
+ * - Pagination: 5-6 items per section
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BellRing, ChevronLeft, ChevronRight, CornerDownRight, MessageSquare, Pin, Search, Send } from 'lucide-react';
 import { NexusBadge, NexusButton, NexusTokenIcon } from '../primitives';
