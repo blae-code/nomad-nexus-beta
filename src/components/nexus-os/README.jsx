@@ -1,5 +1,41 @@
 # Nexus OS Foundation (BIOS Layer)
 
+## 🎨 Design System (MANDATORY - Read Before Building)
+
+**All NexusOS UI must comply with the design system.**
+
+### Quick Start
+
+1. **Read the Style Guide:** [STYLE_GUIDE.md](./STYLE_GUIDE.md)
+2. **Review Token Guide:** [ui/tokens/TOKEN_USAGE_GUIDE.md](./ui/tokens/TOKEN_USAGE_GUIDE.md)
+3. **Use Component Template:** [ui/_template/NexusComponentTemplate.jsx](./ui/_template/NexusComponentTemplate.jsx)
+4. **Import Design Tokens:**
+   ```jsx
+   import { NX_TYPOGRAPHY, NX_COLORS, NX_SPACING } from '@/components/nexus-os/ui/theme/design-tokens';
+   ```
+5. **Use Primitives:**
+   ```jsx
+   import { NexusButton, NexusBadge, NexusTokenIcon } from '@/components/nexus-os/ui/primitives';
+   ```
+
+### Pre-Build Checklist
+- [ ] Typography: 8px and 10px only, font-semibold+, tracking-[0.12em]+, uppercase
+- [ ] Spacing: p-1.5/2/2.5, gap-1/1.5/2 only
+- [ ] Icons: w-2.5/3/3.5/4 only (square, from matrix)
+- [ ] Tokens: Use for status/tactical, Lucide for UI controls
+- [ ] Primitives: Use NexusButton/NexusBadge, not custom implementations
+
+### Post-Build Validation
+- [ ] Run validator: `runFullAudit(ref.current)` → Score >95%
+- [ ] Test viewports: 1366×768, 1440×900, 1920×1080
+- [ ] No horizontal scroll, no internal scrollbars
+- [ ] Lists capped to 5-7 items with pagination
+- [ ] Add compliance header comment
+
+---
+
+# Nexus OS Foundation (BIOS Layer)
+
 ## 🎨 Design System (MANDATORY - Read First)
 
 **Before building any NexusOS UI**, review these documents:
