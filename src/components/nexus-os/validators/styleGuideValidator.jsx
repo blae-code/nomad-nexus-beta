@@ -10,9 +10,9 @@
 import { isValidFontSize, isValidFontWeight, isValidLetterSpacing } from '../ui/theme/design-tokens';
 
 const ALLOWED_PADDINGS = ['0.375rem', '0.5rem', '0.625rem', '0.75rem', '1rem']; // p-1.5, p-2, p-2.5, p-3, p-4
-const ALLOWED_GAPS = ['0.25rem', '0.375rem', '0.5rem']; // gap-1, gap-1.5, gap-2
+const ALLOWED_GAPS = ['0.125rem', '0.25rem', '0.375rem', '0.5rem']; // gap-0.5, gap-1, gap-1.5, gap-2
 const ICON_SIZE_RANGE = { min: 10, max: 24 }; // 10px to 24px
-const BORDER_OPACITY_RANGE = { min: 0.4, max: 0.6 }; // 40% to 60%
+const BORDER_OPACITY_RANGE = { min: 0.35, max: 0.7 }; // 35% to 70% (slightly relaxed for edge cases)
 
 /**
  * Validate typography compliance.

@@ -176,18 +176,88 @@ export const TAILWIND_SAFELIST_HTML = `
     <div class="placeholder:text-slate-500"></div>
     <div class="resize-none"></div>
     <!-- NexusOS Design System Classes -->
-    <div class="text-[8px] text-[10px] tracking-[0.12em] tracking-[0.14em] tracking-[0.15em] tracking-[0.2em] tracking-[0.25em] font-black font-extrabold font-semibold font-bold font-mono uppercase leading-none"></div>
-    <div class="p-1.5 p-2 p-2.5 p-3 px-1.5 py-1 px-2 py-1.5 px-2.5 py-2 gap-0.5 gap-1 gap-1.5 gap-2 gap-3 gap-4"></div>
-    <div class="border-zinc-700/40 border-zinc-700/60 border-zinc-800/60 bg-zinc-950 bg-zinc-950/80 bg-zinc-900 bg-zinc-900/40 bg-zinc-900/80 bg-zinc-900/90 bg-zinc-900/95 backdrop-blur-sm"></div>
-    <div class="w-1 h-1 w-1.5 h-1.5 w-2 h-2 w-2.5 h-2.5 w-3 h-3 w-3.5 h-3.5 w-4 h-4 w-5 h-5 w-6 h-6"></div>
-    <div class="bg-green-500/30 bg-green-400 bg-green-600 bg-emerald-600 bg-emerald-600/60 bg-emerald-950/45 text-emerald-200 border-emerald-600/60"></div>
-    <div class="bg-amber-600/60 bg-amber-400 bg-amber-600 bg-amber-950/45 text-amber-200 border-amber-600/60"></div>
-    <div class="bg-red-500/30 bg-red-500 bg-red-600 bg-red-900/70 bg-red-950/45 text-red-200 border-red-600/60 border-red-500/60"></div>
-    <div class="bg-orange-500/14 bg-orange-400 bg-orange-500 bg-orange-500/34 border-orange-500/45 border-orange-500/64 text-orange-400"></div>
-    <div class="bg-zinc-600 bg-zinc-700 bg-zinc-800 bg-zinc-900/95 text-zinc-50 text-zinc-100 text-zinc-300 text-zinc-400 text-zinc-500 border-zinc-600 border-zinc-700/24"></div>
-    <div class="bg-purple-500/14 text-purple-100 border-purple-500/45"></div>
-    <div class="brightness-100 brightness-105 transition-all transition-colors duration-150 duration-200 duration-300"></div>
-    <div class="hover:brightness-105 hover:bg-zinc-800 hover:text-orange-400 active:brightness-100"></div>
+    <!-- Typography: All valid font sizes, weights, tracking, transforms -->
+    <div class="text-[8px] text-[9px] text-[10px] text-[11px] tracking-[0.12em] tracking-[0.14em] tracking-[0.15em] tracking-[0.2em] tracking-[0.25em] tracking-wide tracking-wider tracking-widest font-black font-extrabold font-semibold font-bold font-mono uppercase lowercase capitalize leading-none leading-tight leading-relaxed leading-loose"></div>
+    
+    <!-- Spacing: All valid padding, gap, margin combinations -->
+    <div class="p-0.5 p-1 p-1.5 p-2 p-2.5 p-3 p-4 px-1 py-0.5 px-1.5 py-1 px-2 py-1.5 px-2.5 py-2 px-3 py-2.5 px-4 py-3"></div>
+    <div class="gap-0.5 gap-1 gap-1.5 gap-2 gap-3 gap-4 gap-6 gap-8 space-y-0.5 space-y-1 space-y-1.5 space-y-2 space-y-3 space-y-4"></div>
+    <div class="m-0.5 m-1 m-2 mt-0.5 mt-1 mt-2 mb-0.5 mb-1 mb-2 ml-1 ml-2 ml-3 mr-1 mr-2 mr-3"></div>
+    
+    <!-- Backgrounds: All zinc variations with opacity + backdrop-blur -->
+    <div class="bg-zinc-950 bg-zinc-950/80 bg-zinc-950/90 bg-zinc-950/95 bg-zinc-900 bg-zinc-900/20 bg-zinc-900/40 bg-zinc-900/45 bg-zinc-900/55 bg-zinc-900/60 bg-zinc-900/75 bg-zinc-900/80 bg-zinc-900/90 bg-zinc-900/95 bg-zinc-800 bg-zinc-800/60 bg-black bg-black/50 bg-black/90 bg-black/95 backdrop-blur-sm"></div>
+    
+    <!-- Borders: All zinc variations with opacity standards -->
+    <div class="border border-zinc-700 border-zinc-700/24 border-zinc-700/40 border-zinc-700/50 border-zinc-700/60 border-zinc-800 border-zinc-800/60 border-zinc-800/70 border-zinc-600 divide-x divide-y divide-zinc-800/60"></div>
+    
+    <!-- Sizing: Icon sizes, token sizes, panel widths -->
+    <div class="w-1 h-1 w-1.5 h-1.5 w-2 h-2 w-2.5 h-2.5 w-3 h-3 w-3.5 h-3.5 w-4 h-4 w-5 h-5 w-6 h-6 w-7 h-7 w-8 h-8 w-10 h-10 w-12 h-12 w-14 h-14 w-16 h-16 w-20 h-20 w-24 h-24 w-32 h-32 w-40 h-40 w-52 w-64 w-80 w-96"></div>
+    
+    <!-- Semantic State Colors: Green (OK) -->
+    <div class="bg-green-400 bg-green-500 bg-green-600 bg-green-500/30 bg-emerald-600 bg-emerald-600/60 bg-emerald-950/45 text-green-200 text-green-300 text-green-400 text-emerald-200 border-green-500/40 border-green-600/60 border-emerald-600/60"></div>
+    
+    <!-- Semantic State Colors: Amber (Warning) -->
+    <div class="bg-amber-400 bg-amber-500 bg-amber-600 bg-amber-600/60 bg-amber-900/50 bg-amber-950/20 bg-amber-950/25 bg-amber-950/45 text-amber-200 text-amber-300 border-amber-500/50 border-amber-600/60 border-amber-900/50 border-amber-900/60"></div>
+    
+    <!-- Semantic State Colors: Red (Danger) -->
+    <div class="bg-red-400 bg-red-500 bg-red-600 bg-red-700 bg-red-800 bg-red-900 bg-red-500/30 bg-red-600/60 bg-red-900/70 bg-red-950/20 bg-red-950/35 bg-red-950/45 text-red-200 text-red-300 text-red-500 border-red-500/40 border-red-500/50 border-red-500/60 border-red-600/60 border-red-700/40 border-red-700/50 border-red-700/60 border-red-800/70 border-red-900/50 border-red-900/60"></div>
+    
+    <!-- Semantic State Colors: Orange (Active/Accent) -->
+    <div class="bg-orange-400 bg-orange-500 bg-orange-500/10 bg-orange-500/14 bg-orange-500/34 text-orange-200 text-orange-300 text-orange-400 text-orange-500 border-orange-500/40 border-orange-500/45 border-orange-500/50 border-orange-500/64"></div>
+    
+    <!-- Semantic State Colors: Blue/Cyan (Info/Support) -->
+    <div class="bg-blue-400 bg-blue-500 bg-blue-600 bg-blue-950/20 bg-cyan-400 bg-cyan-500 bg-cyan-600 bg-cyan-950/30 bg-sky-600/60 bg-sky-800/60 bg-sky-900/50 bg-sky-950/20 bg-sky-950/25 text-blue-200 text-blue-300 text-cyan-200 text-cyan-300 text-cyan-400 text-sky-200 border-blue-500/40 border-cyan-500/30 border-cyan-500/40 border-sky-600/60 border-sky-800/60 border-sky-900/40 border-sky-900/50"></div>
+    
+    <!-- Semantic State Colors: Purple (Experimental/Special) -->
+    <div class="bg-purple-500/14 bg-purple-950/20 text-purple-100 text-purple-200 border-purple-500/45"></div>
+    
+    <!-- Zinc Neutrals: Full spectrum -->
+    <div class="bg-zinc-600 bg-zinc-700 bg-zinc-800 text-zinc-50 text-zinc-100 text-zinc-200 text-zinc-300 text-zinc-400 text-zinc-500 text-zinc-600 border-zinc-600 border-zinc-700 border-zinc-700/24 border-zinc-800"></div>
+    
+    <!-- Slate variants (legacy/onboarding) -->
+    <div class="bg-slate-700 bg-slate-800 bg-slate-900 bg-slate-900/40 bg-slate-900/60 text-slate-300 text-slate-400 text-slate-500 text-slate-600 border-slate-600 border-slate-700/30 border-slate-700/40 border-slate-700/50"></div>
+    
+    <!-- Yellow variants (access gate) -->
+    <div class="bg-yellow-500/30 text-yellow-300 border-yellow-500/30 border-yellow-500/60"></div>
+    
+    <!-- Effects: Transitions, hovers, brightness -->
+    <div class="brightness-100 brightness-105 hover:brightness-105 active:brightness-100 hover:opacity-70 hover:opacity-80 hover:scale-105"></div>
+    <div class="transition-all transition-colors transition-opacity transition-transform duration-100 duration-150 duration-200 duration-300 duration-500"></div>
+    <div class="hover:bg-zinc-800 hover:bg-zinc-800/60 hover:bg-red-500/10 hover:text-orange-400 hover:text-red-400 hover:border-orange-500/40 hover:border-red-500/80 hover:border-zinc-700"></div>
+    
+    <!-- Focus states -->
+    <div class="focus:outline-none focus:ring-1 focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/60 focus:border-red-500/50 focus:border-yellow-500/60 focus:bg-slate-900 focus:bg-zinc-900"></div>
+    
+    <!-- Rounded variants -->
+    <div class="rounded rounded-sm rounded-md rounded-lg rounded-xl rounded-2xl rounded-full"></div>
+    
+    <!-- Ring effects -->
+    <div class="ring-1 ring-2 ring-sky-500/50 ring-orange-500/40"></div>
+    
+    <!-- Dividers -->
+    <div class="divide-x divide-y divide-zinc-800/60"></div>
+    
+    <!-- Truncate and overflow -->
+    <div class="truncate overflow-hidden overflow-auto overflow-y-auto max-h-24 max-h-28 max-h-32 max-h-40 max-h-44 max-h-56 max-h-64 max-h-72 max-h-80"></div>
+    
+    <!-- Z-index layers -->
+    <div class="z-10 z-20 z-30 z-40 z-50 z-[600] z-[750] z-[900] z-[1200] z-[9999]"></div>
+    
+    <!-- Data attributes -->
+    <div class="data-[state=checked]:bg-red-600 data-[state=checked]:bg-cyan-600 data-[open=true]:border-orange-500"></div>
+    
+    <!-- Animations -->
+    <div class="animate-pulse animate-spin animate-in fade-in slide-in-from-bottom-4"></div>
+    
+    <!-- Grid/Flex layouts -->
+    <div class="grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4 grid-cols-6 grid-cols-12 md:grid-cols-2 xl:grid-cols-3 xl:grid-cols-4 xl:grid-cols-6"></div>
+    <div class="flex flex-col flex-row items-center items-start items-end justify-between justify-center justify-end flex-wrap flex-1 flex-shrink-0 min-w-0 min-h-0"></div>
+    
+    <!-- Responsive variants -->
+    <div class="hidden md:flex md:block lg:grid xl:col-span-2 xl:col-span-3"></div>
+    
+    <!-- Misc utilities -->
+    <div class="cursor-pointer cursor-col-resize pointer-events-none resize-none line-clamp-4 break-words whitespace-pre-wrap"></div>
   </div>
 </div>
 `;
