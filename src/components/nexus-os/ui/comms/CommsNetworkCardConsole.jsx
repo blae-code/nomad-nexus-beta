@@ -51,9 +51,6 @@ import {
   buildSquadSlaSnapshots,
   normalizeBridgeTtlSec,
   sortSquadCardsDeterministic,
-  type BridgeLifecycleSession,
-  type EscalationSuggestion,
-  type SlaStatusColor,
 } from './commsCardConsoleRuntime';
 import {
   applySquadTransferProjection,
@@ -63,45 +60,7 @@ import {
   normalizeOperationalRoleToken,
   resolveScopedRoleRecipients,
   sortOperationalRoleLanes,
-  type OperationalRoleLaneCounts,
-  type OperationalRoleToken,
-  type ScopedRoleScope,
-  type SquadTransferPayload,
 } from './commsSquadCardEnhancementRuntime';
-
-interface CommsNetworkConsoleProps extends CqbPanelSharedProps {}
-
-interface SquadCard {
-  id: string;
-  wingId: string;
-  wingLabel: string;
-  squadLabel: string;
-  channels: Array<{ id: string; label: string; status: string; membershipCount: number }>;
-  vehicles: Array<{ id: string; label: string; status: string; crewCount: number; memberIds: string[] }>;
-  operators: Array<{ id: string; callsign: string; role: string; status: string; vehicleId?: string; roleToken: OperationalRoleToken }>;
-  primaryChannelId: string;
-  pilotCount: number;
-  medicCount: number;
-  leadCount: number;
-  txCount: number;
-  onlineCount: number;
-  offNetCount: number;
-  roleLaneCounts: OperationalRoleLaneCounts;
-  linkedSquadIds: string[];
-}
-
-interface BridgeSession extends BridgeLifecycleSession {}
-
-type RoleHailTarget = 'PILOT' | 'MEDIC' | 'ALL_HANDS' | 'SQUAD_LEAD';
-type RoleHailScope = 'SQUAD' | 'WING' | 'FLEET';
-type TransferItemKind = 'operator' | 'vehicle';
-type MoveDraft = {
-  kind: TransferItemKind;
-  memberIds: string[];
-  sourceSquadId: string;
-  sourceChannelId: string;
-  vehicleId: string | null;
-};
 
 const SQUAD_CARD_PAGE_SIZE = 5;
 const WATCHLIST_PAGE_SIZE = 5;
@@ -110,12 +69,12 @@ const MAX_ORDER_HISTORY = 24;
 const GRAPH_REFRESH_MS = 12_000;
 const MAX_BRIDGE_SESSIONS = 6;
 
-function dispatchIssuedAtMs(entry: { issuedAtMs?: unknown } | null | undefined): number {
+function dispatchIssuedAtMs(entry) {
   const issuedAtMs = Number(entry?.issuedAtMs || 0);
   return Number.isFinite(issuedAtMs) ? issuedAtMs : 0;
 }
 
-function formatAge(nowMs: number, createdAtMs: number): string {
+function formatAge(nowMs, createdAtMs) {
   const seconds = Math.max(0, Math.round((nowMs - createdAtMs) / 1000));
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -123,7 +82,7 @@ function formatAge(nowMs: number, createdAtMs: number): string {
   return `${Math.floor(minutes / 60)}h`;
 }
 
-function formatSlaAge(seconds: number): string {
+function formatSlaAge(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '0s';
   if (seconds < 60) return `${Math.round(seconds)}s`;
   const minutes = Math.floor(seconds / 60);
@@ -131,21 +90,21 @@ function formatSlaAge(seconds: number): string {
   return `${minutes}m ${String(rem).padStart(2, '0')}s`;
 }
 
-function slaTone(status: SlaStatusColor): 'ok' | 'warning' | 'danger' {
+function slaTone(status) {
   if (status === 'red') return 'danger';
   if (status === 'amber') return 'warning';
   return 'ok';
 }
 
-function slaTokenIcon(status: SlaStatusColor): string {
+function slaTokenIcon(status) {
   if (status === 'red') return tokenAssets.comms.operatorStatus.offNet;
   if (status === 'amber') return tokenAssets.comms.operatorStatus.tx;
   return tokenAssets.comms.operatorStatus.onNet;
 }
 
-function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
-  const cards: SquadCard[] = [];
-  const squadByChannelId = new Map<string, string>();
+function buildSquadCards(schemaTree, edges) {
+  const cards = [];
+  const squadByChannelId = new Map();
 
   for (const wing of schemaTree || []) {
     for (const squad of wing.squads || []) {
@@ -159,8 +118,8 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
         };
       });
 
-      const vehicles: SquadCard['vehicles'] = [];
-      const operators: SquadCard['operators'] = [];
+      const vehicles = [];
+      const operators = [];
 
       for (const channel of squad.channels || []) {
         for (const vehicle of channel.vehicles || []) {
@@ -234,10 +193,10 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
     const sourceSquadId = squadByChannelId.get(sourceChannelId);
     const targetSquadId = squadByChannelId.get(targetChannelId);
     if (!sourceSquadId || !targetSquadId || sourceSquadId === targetSquadId) continue;
-    const sourceSet = linkedBySquadId.get(sourceSquadId) || new Set<string>();
+    const sourceSet = linkedBySquadId.get(sourceSquadId) || new Set();
     sourceSet.add(targetSquadId);
     linkedBySquadId.set(sourceSquadId, sourceSet);
-    const targetSet = linkedBySquadId.get(targetSquadId) || new Set<string>();
+    const targetSet = linkedBySquadId.get(targetSquadId) || new Set();
     targetSet.add(sourceSquadId);
     linkedBySquadId.set(targetSquadId, targetSet);
   }
@@ -245,18 +204,18 @@ function buildSquadCards(schemaTree: any[], edges: any[]): SquadCard[] {
   return sortSquadCardsDeterministic(
     cards.map((card) => ({
       ...card,
-      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set<string>())],
+      linkedSquadIds: [...(linkedBySquadId.get(card.id) || new Set())],
     }))
   );
 }
 
-function onTemplateNameInput(defaultValue: string): string {
+function onTemplateNameInput(defaultValue) {
   if (typeof window === 'undefined') return defaultValue;
   const response = window.prompt('Bridge template name', defaultValue) || '';
   return response.trim();
 }
 
-function confirmAction(message: string): boolean {
+function confirmAction(message) {
   if (typeof window === 'undefined') return false;
   return Boolean(window.confirm(message));
 }
@@ -283,32 +242,32 @@ export default function CommsNetworkCardConsole({
   const scopeKey = useMemo(() => buildCommsCardConsoleScopeKey(scopeInput), [scopeInput]);
   const utilityCoreEnabled = useMemo(() => isCommsCardUtilityCoreEnabled(), []);
 
-  const [snapshot, setSnapshot] = useState<CommsGraphSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [schemaChannelPage, setSchemaChannelPage] = useState(0);
   const [squadCardPage, setSquadCardPage] = useState(0);
   const [watchlistPage, setWatchlistPage] = useState(0);
   const [selectedSquadId, setSelectedSquadId] = useState('');
-  const [bridgeDraftSquadIds, setBridgeDraftSquadIds] = useState<string[]>([]);
-  const [bridgeSessions, setBridgeSessions] = useState<BridgeSession[]>([]);
+  const [bridgeDraftSquadIds, setBridgeDraftSquadIds] = useState([]);
+  const [bridgeSessions, setBridgeSessions] = useState([]);
   const [bridgeTtlSec, setBridgeTtlSec] = useState(COMMS_CARD_CONSOLE_DEFAULT_TTL_SEC);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [directiveDispatches, setDirectiveDispatches] = useState<any[]>([]);
+  const [directiveDispatches, setDirectiveDispatches] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [consoleState, setConsoleState] = useState(() => loadLocalCommsCardConsoleState(scopeInput));
   const [remoteSynced, setRemoteSynced] = useState(false);
   const [mutationInFlight, setMutationInFlight] = useState(false);
   const [mutationError, setMutationError] = useState('');
-  const [pendingTransfer, setPendingTransfer] = useState<SquadTransferPayload | null>(null);
-  const [dragTransferPayload, setDragTransferPayload] = useState<SquadTransferPayload | null>(null);
-  const [moveDraft, setMoveDraft] = useState<MoveDraft | null>(null);
+  const [pendingTransfer, setPendingTransfer] = useState(null);
+  const [dragTransferPayload, setDragTransferPayload] = useState(null);
+  const [moveDraft, setMoveDraft] = useState(null);
   const [dropTargetSquadId, setDropTargetSquadId] = useState('');
-  const [transferPreviewCards, setTransferPreviewCards] = useState<SquadCard[] | null>(null);
+  const [transferPreviewCards, setTransferPreviewCards] = useState(null);
   const [selectedShipVehicleId, setSelectedShipVehicleId] = useState('');
-  const [scopedRoleScope, setScopedRoleScope] = useState<ScopedRoleScope>('SQUAD');
-  const [scopedRoleToken, setScopedRoleToken] = useState<OperationalRoleToken>('pilot');
+  const [scopedRoleScope, setScopedRoleScope] = useState('SQUAD');
+  const [scopedRoleToken, setScopedRoleToken] = useState('pilot');
 
   const offNetSinceByOperatorRef = useRef<Record<string, number>>({});
 
@@ -324,7 +283,7 @@ export default function CommsNetworkCardConsole({
           roster,
         });
         setSnapshot(next);
-      } catch (err: any) {
+      } catch (err) {
         setError(err?.message || 'Failed to load comms graph.');
       } finally {
         if (!silent) setLoading(false);
@@ -411,7 +370,7 @@ export default function CommsNetworkCardConsole({
     return baseSquadCards;
   }, [baseSquadCards, transferPreviewCards]);
   const squadById = useMemo(
-    () => squadCards.reduce<Record<string, SquadCard>>((acc, card) => ({ ...acc, [card.id]: card }), {}),
+    () => squadCards.reduce((acc, card) => ({ ...acc, [card.id]: card }), {}),
     [squadCards]
   );
 
@@ -420,7 +379,7 @@ export default function CommsNetworkCardConsole({
     () =>
       consoleState.watchlistSquadIds
         .map((squadId) => squadById[squadId])
-        .filter((card): card is SquadCard => Boolean(card)),
+        .filter((card) => Boolean(card)),
     [consoleState.watchlistSquadIds, squadById]
   );
 
@@ -521,7 +480,7 @@ export default function CommsNetworkCardConsole({
   const availableScopedRoleTokens = useMemo(() => {
     const counts = selectedSquad?.roleLaneCounts || buildOperationalRoleLaneCounts([]);
     const lanes = sortOperationalRoleLanes(counts).map((entry) => entry.roleToken);
-    return lanes.length > 0 ? lanes : (['pilot', 'medic', 'crew'] as OperationalRoleToken[]);
+    return lanes.length > 0 ? lanes : ['pilot', 'medic', 'crew'];
   }, [selectedSquad?.roleLaneCounts]);
 
   useEffect(() => {
@@ -540,7 +499,7 @@ export default function CommsNetworkCardConsole({
 
   const squadSlaSnapshots = useMemo(() => {
     const offNetSinceByOperatorId = offNetSinceByOperatorRef.current;
-    const liveOperatorIds = new Set<string>();
+    const liveOperatorIds = new Set();
 
     for (const squad of squadCards) {
       for (const operator of squad.operators) {
@@ -572,7 +531,7 @@ export default function CommsNetworkCardConsole({
 
   const slaBySquadId = useMemo(
     () =>
-      squadSlaSnapshots.reduce<Record<string, (typeof squadSlaSnapshots)[number]>>((acc, snapshot) => {
+      squadSlaSnapshots.reduce((acc, snapshot) => {
         acc[snapshot.squadId] = snapshot;
         return acc;
       }, {}),
@@ -581,7 +540,7 @@ export default function CommsNetworkCardConsole({
 
   const escalationBySquadId = useMemo(() => {
     const suggestions = buildEscalationSuggestions({ snapshots: squadSlaSnapshots });
-    return suggestions.reduce<Record<string, EscalationSuggestion>>((acc, suggestion) => {
+    return suggestions.reduce((acc, suggestion) => {
       acc[suggestion.squadId] = suggestion;
       return acc;
     }, {});
@@ -631,7 +590,7 @@ export default function CommsNetworkCardConsole({
 
   const templateById = useMemo(
     () =>
-      consoleState.bridgeTemplates.reduce<Record<string, (typeof consoleState.bridgeTemplates)[number]>>((acc, template) => {
+      consoleState.bridgeTemplates.reduce((acc, template) => {
         acc[template.id] = template;
         return acc;
       }, {}),
@@ -649,7 +608,7 @@ export default function CommsNetworkCardConsole({
     }
   }, [consoleState.uiPrefs.lastTemplateId, selectedTemplateId, templateById]);
 
-  const patchUiPrefs = useCallback((patch: Partial<typeof consoleState.uiPrefs>) => {
+  const patchUiPrefs = useCallback((patch) => {
     setConsoleState((prev) =>
       normalizeCommsCardConsoleState(
         {
@@ -666,7 +625,7 @@ export default function CommsNetworkCardConsole({
   }, []);
 
   const issueOrder = useCallback(
-    (input: { channelId: string; directive: string; eventType: CqbEventType; payload?: Record<string, unknown>; success: string }) => {
+    (input) => {
       if (!input.channelId) return;
       const dispatch = createOrderDispatch({
         channelId: input.channelId,
@@ -700,7 +659,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const applyTransferPayload = useCallback(
-    async (payload: SquadTransferPayload) => {
+    async (payload) => {
       const sourceSquad = squadById[payload.sourceSquadId];
       const destinationSquad = squadById[payload.destinationSquadId];
       if (!sourceSquad || !destinationSquad) return;
@@ -758,7 +717,7 @@ export default function CommsNetworkCardConsole({
         setDropTargetSquadId('');
         setTransferPreviewCards(null);
         await loadGraph(true);
-      } catch (error: any) {
+      } catch (error) {
         setTransferPreviewCards(null);
         setMutationError(error?.message || 'Transfer failed');
         setPendingTransfer(payload);
@@ -770,7 +729,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const buildMoveDraft = useCallback(
-    (input: { kind: TransferItemKind; memberIds: string[]; sourceSquadId: string; sourceChannelId: string; vehicleId?: string | null }): MoveDraft | null => {
+    (input) => {
       const memberIds = [...new Set((input.memberIds || []).map((entry) => String(entry || '').trim()).filter(Boolean))];
       if (!memberIds.length) return null;
       return {
@@ -785,7 +744,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const queueTransferToSquad = useCallback(
-    async (destinationSquadId: string, draft: MoveDraft) => {
+    async (destinationSquadId, draft) => {
       const destination = squadById[destinationSquadId];
       if (!destination) return;
       const payload = buildSquadTransferPayload({
@@ -804,7 +763,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const issueScopedRoleSignal = useCallback(
-    async (input: { scope: ScopedRoleScope; roleToken: OperationalRoleToken; squadId?: string; wingId?: string; vehicleId?: string }) => {
+    async (input) => {
       if (!canIssueScopedRoleCommand(input.scope, transferAuthority)) {
         setMutationError('Insufficient authority for scoped role signal.');
         return;
@@ -864,7 +823,7 @@ export default function CommsNetworkCardConsole({
           allowScopedRoleSignal: true,
           roleToken: input.roleToken,
         });
-      } catch (error: any) {
+      } catch (error) {
         setMutationError(error?.message || 'Whisper dispatch failed.');
       } finally {
         setMutationInFlight(false);
@@ -874,10 +833,10 @@ export default function CommsNetworkCardConsole({
   );
 
   const issueRoleHail = useCallback(
-    (input: { scope: RoleHailScope; targetRole: RoleHailTarget; squadIds: string[]; wingId?: string }) => {
+    (input) => {
       const targetSquads = input.squadIds
         .map((squadId) => squadById[squadId])
-        .filter((card): card is SquadCard => Boolean(card) && Boolean(card.primaryChannelId));
+        .filter((card) => Boolean(card) && Boolean(card.primaryChannelId));
       if (!targetSquads.length) return;
       const channelIds = targetSquads.map((card) => card.primaryChannelId);
       const directive = `HAIL_${input.targetRole}_${input.scope}`;
@@ -902,7 +861,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const hailSquad = useCallback(
-    (card: SquadCard | null, targetRole: RoleHailTarget) => {
+    (card, targetRole) => {
       if (!card) return;
       issueRoleHail({ scope: 'SQUAD', targetRole, squadIds: [card.id], wingId: card.wingId });
     },
@@ -910,7 +869,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const createBridgeSession = useCallback(() => {
-    const selectedCards = bridgeDraftSquadIds.map((id) => squadById[id]).filter((card): card is SquadCard => Boolean(card));
+    const selectedCards = bridgeDraftSquadIds.map((id) => squadById[id]).filter((card) => Boolean(card));
     if (selectedCards.length < 2) return;
 
     const anchor = selectedCards[0];
@@ -940,7 +899,7 @@ export default function CommsNetworkCardConsole({
   }, [bridgeDraftSquadIds, bridgeTtlSec, issueOrder, squadById]);
 
   const splitBridgeSession = useCallback(
-    (session: BridgeSession, fromSuggestion = false) => {
+    (session, fromSuggestion = false) => {
       for (const squadId of session.squadIds) {
         const squad = squadById[squadId];
         if (!squad?.primaryChannelId) continue;
@@ -1006,7 +965,7 @@ export default function CommsNetworkCardConsole({
   }, [selectedTemplateId, templateById]);
 
   const triggerEscalation = useCallback(
-    (card: SquadCard, suggestion: EscalationSuggestion) => {
+    (card, suggestion) => {
       if (!card.primaryChannelId) return;
       issueOrder({
         channelId: card.primaryChannelId,
@@ -1027,7 +986,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const beginMoveOperator = useCallback(
-    (card: SquadCard, operatorId: string) => {
+    (card, operatorId) => {
       const operator = card.operators.find((entry) => entry.id === operatorId);
       if (!operator) return;
       const draft = buildMoveDraft({
@@ -1045,7 +1004,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const beginMoveVehicle = useCallback(
-    (card: SquadCard, vehicleId: string) => {
+    (card, vehicleId) => {
       const vehicle = card.vehicles.find((entry) => entry.id === vehicleId);
       if (!vehicle) return;
       const draft = buildMoveDraft({
@@ -1063,10 +1022,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const onTransferDragStart = useCallback(
-    (
-      event: React.DragEvent<HTMLElement>,
-      input: { kind: TransferItemKind; memberIds: string[]; sourceSquadId: string; sourceChannelId: string; vehicleId?: string | null }
-    ) => {
+    (event, input) => {
       const draft = buildMoveDraft(input);
       if (!draft) return;
       const payload = buildSquadTransferPayload({
@@ -1088,7 +1044,7 @@ export default function CommsNetworkCardConsole({
   );
 
   const onSquadCardDrop = useCallback(
-    async (event: React.DragEvent<HTMLElement>, destinationSquadId: string) => {
+    async (event, destinationSquadId) => {
       event.preventDefault();
       setDropTargetSquadId('');
       const sourceRaw = event.dataTransfer.getData('text/plain');
@@ -1544,7 +1500,7 @@ export default function CommsNetworkCardConsole({
                 <div className="grid grid-cols-4 gap-1">
                   <select
                     value={scopedRoleScope}
-                    onChange={(event) => setScopedRoleScope(event.target.value as ScopedRoleScope)}
+                    onChange={(event) => setScopedRoleScope(event.target.value)}
                     className="col-span-1 h-7 rounded border border-zinc-700 bg-zinc-900 px-1.5 text-[10px] text-zinc-200"
                   >
                     <option value="FLEET" disabled={!canIssueScopedRoleCommand('FLEET', transferAuthority)}>FLEET</option>
@@ -1554,7 +1510,7 @@ export default function CommsNetworkCardConsole({
                   </select>
                   <select
                     value={scopedRoleToken}
-                    onChange={(event) => setScopedRoleToken(event.target.value as OperationalRoleToken)}
+                    onChange={(event) => setScopedRoleToken(event.target.value)}
                     className="col-span-1 h-7 rounded border border-zinc-700 bg-zinc-900 px-1.5 text-[10px] text-zinc-200"
                   >
                     {availableScopedRoleTokens.map((roleToken) => (
