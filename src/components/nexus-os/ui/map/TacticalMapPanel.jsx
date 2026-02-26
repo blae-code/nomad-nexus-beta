@@ -208,7 +208,7 @@ export default function TacticalMapPanel({
   focusOperationId,
   onOpenCommsWorkspace,
   onOpenOperationFocus,
-}: TacticalMapPanelProps) {
+) {
   const { aiFeaturesEnabled } = useAuth();
   const aiEnabled = aiFeaturesEnabled !== false;
   useRenderProfiler('TacticalMapPanel');
@@ -216,39 +216,39 @@ export default function TacticalMapPanel({
   const commandSurfaceV2Enabled = isMapCommandSurfaceV2Enabled();
 
   const initialMode = resolveTacticalMapDefaultMode(bridgeId);
-  const [mapMode, setMapMode] = useState<TacticalMapMode>(initialMode);
-  const [layers, setLayers] = useState<MapLayerState[]>(() => createLayerState(mapModeLayerDefaults(initialMode)));
-  const [activeDockId, setActiveDockId] = useState<TacticalMapDockId>(tacticalMapDockIdsForMode(initialMode)[0]);
-  const [visibleStrata, setVisibleStrata] = useState<Record<IntelStratum, boolean>>({ ...DEFAULT_VISIBLE_STRATA });
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const [selectedIntelId, setSelectedIntelId] = useState<string | null>(null);
-  const [activeRadial, setActiveRadial] = useState<MapRadialState | null>(null);
+  const [mapMode, setMapMode] = useState(initialMode);
+  const [layers, setLayers] = useState(() => createLayerState(mapModeLayerDefaults(initialMode)));
+  const [activeDockId, setActiveDockId] = useState(tacticalMapDockIdsForMode(initialMode)[0]);
+  const [visibleStrata, setVisibleStrata] = useState({ ...DEFAULT_VISIBLE_STRATA });
+  const [selectedZoneId, setSelectedZoneId] = useState(null);
+  const [selectedIntelId, setSelectedIntelId] = useState(null);
+  const [activeRadial, setActiveRadial] = useState(null);
   const [intelVersion, setIntelVersion] = useState(0);
   const [draftVersion, setDraftVersion] = useState(0);
-  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftError, setDraftError] = useState(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [commsPriorityFloor, setCommsPriorityFloor] = useState<CommsPriority>('STANDARD');
+  const [commsPriorityFloor, setCommsPriorityFloor] = useState('STANDARD');
   const [showCommsLinks, setShowCommsLinks] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [showLagrange, setShowLagrange] = useState(false);
   const [showOmMarkers, setShowOmMarkers] = useState(false);
   const [aiInferenceLoading, setAiInferenceLoading] = useState(false);
   const [aiInferenceText, setAiInferenceText] = useState('');
-  const [aiInferenceError, setAiInferenceError] = useState<string | null>(null);
+  const [aiInferenceError, setAiInferenceError] = useState(null);
   const [replayWindowMinutes, setReplayWindowMinutes] = useState(30);
   const [replayOffsetMinutes, setReplayOffsetMinutes] = useState(0);
-  const [mapViewMode, setMapViewMode] = useState<TacticalMapViewMode>('SYSTEM');
-  const [busyMacroId, setBusyMacroId] = useState<TacticalMacroId | null>(null);
-  const [macroExecutionMessage, setMacroExecutionMessage] = useState<string | null>(null);
-  const [macroExecutionError, setMacroExecutionError] = useState<string | null>(null);
-  const [remoteMapAlerts, setRemoteMapAlerts] = useState<MapCommandAlert[]>([]);
+  const [mapViewMode, setMapViewMode] = useState('SYSTEM');
+  const [busyMacroId, setBusyMacroId] = useState(null);
+  const [macroExecutionMessage, setMacroExecutionMessage] = useState(null);
+  const [macroExecutionError, setMacroExecutionError] = useState(null);
+  const [remoteMapAlerts, setRemoteMapAlerts] = useState([]);
   const [commsDegraded, setCommsDegraded] = useState(false);
   const [commsRetryDelayMs, setCommsRetryDelayMs] = useState(20_000);
   const [commsRefreshNonce, setCommsRefreshNonce] = useState(0);
   const [quickBroadcastMessage, setQuickBroadcastMessage] = useState('');
-  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState<CommsPriority>('STANDARD');
+  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState('STANDARD');
   const [quickBroadcastBusy, setQuickBroadcastBusy] = useState(false);
-  const [quickBroadcastError, setQuickBroadcastError] = useState<string | null>(null);
+  const [quickBroadcastError, setQuickBroadcastError] = useState(null);
   const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
   const [summaryCommsPage, setSummaryCommsPage] = useState(0);
   const [commsNetsPage, setCommsNetsPage] = useState(0);
@@ -256,7 +256,7 @@ export default function TacticalMapPanel({
   const commsRetryDelayRef = useRef(20_000);
 
   const scopedCommsOpId = focusOperationId || opId || '';
-  const [commsState, setCommsState] = useState<CommsOverlayState>({
+  const [commsState, setCommsState] = useState({
     loading: true,
     error: null,
     overlay: createEmptyMapCommsOverlay(scopedCommsOpId),
@@ -296,7 +296,7 @@ export default function TacticalMapPanel({
       {
         mode: mapMode,
         dockId: activeDockId,
-        layerDefaults: layers.reduce<Partial<Record<TacticalLayerId, boolean>>>((acc, layer) => {
+        layerDefaults: layers.reduce((acc, layer) => {
           acc[layer.id] = layer.enabled;
           return acc;
         }, {}),
@@ -325,7 +325,7 @@ export default function TacticalMapPanel({
     const loadComms = async () => {
       setCommsState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        let response: any;
+        let response;
         let usedFallback = false;
 
         if (commandSurfaceV2Enabled) {
@@ -393,7 +393,7 @@ export default function TacticalMapPanel({
           overlay,
         });
         scheduleNext(commsRetryDelayRef.current);
-      } catch (error: unknown) {
+      } catch (error) {
         if (!active) return;
         const errorText = getErrorText(error) || 'Comms topology unavailable.';
         const unavailable = /404|not found|unavailable|5\d\d|timeout/i.test(errorText);
@@ -477,8 +477,8 @@ export default function TacticalMapPanel({
   );
   const visibleCommsLinks = useMemo(() => (showCommsLinks ? commsOverlay.links : []), [showCommsLinks, commsOverlay.links]);
   const commsAnchors = useMemo(() => {
-    const byNetId: Record<string, MapCommsAnchor> = {};
-    const netsByNode = commsOverlay.nets.reduce<Record<string, MapCommsOverlayNet[]>>((acc, net) => {
+    const byNetId = {};
+    const netsByNode = commsOverlay.nets.reduce((acc, net) => {
       if (!acc[net.nodeId]) acc[net.nodeId] = [];
       acc[net.nodeId].push(net);
       return acc;
@@ -753,7 +753,7 @@ export default function TacticalMapPanel({
     : availabilityCopy(commsAvailability, commsState.error || undefined);
   const logisticsAvailability = resolveAvailabilityState({ count: layerEnabled('logistics') ? logisticsOverlay.lanes.length : undefined, staleCount: logisticsOverlay.lanes.filter((lane) => lane.stale).length });
 
-  const applyMapMode = (nextMode: TacticalMapMode) => {
+  const applyMapMode = (nextMode) => {
     setMapMode(nextMode);
     setLayers(createLayerState(mapModeLayerDefaults(nextMode)));
     if (!tacticalMapDockIdsForMode(nextMode).includes(activeDockId)) {
@@ -766,11 +766,11 @@ export default function TacticalMapPanel({
     }
   };
 
-  const toggleLayer = (id: TacticalLayerId) => {
+  const toggleLayer = (id) => {
     setLayers((prev) => prev.map((layer) => (layer.id === id ? { ...layer, enabled: !layer.enabled } : layer)));
   };
 
-  const createDraftFromMap = (kind: IntentDraftKind, target: { nodeId?: string; intelId?: string; zoneId?: string }, payload: Record<string, unknown> = {}) => {
+  const createDraftFromMap = (kind, target, payload = {}) => {
     setDraftError(null);
     createDraft({
       kind,
@@ -782,13 +782,13 @@ export default function TacticalMapPanel({
     setActiveRadial(null);
   };
 
-  const executeMacro = async (macroId: TacticalMacroId) => {
+  const executeMacro = async (macroId) => {
     if (busyMacroId) return;
     setBusyMacroId(macroId);
     setMacroExecutionError(null);
     setMacroExecutionMessage(null);
     try {
-      const response: any = await invokeMemberFunction('updateCommsConsole', {
+      const response = await invokeMemberFunction('updateCommsConsole', {
         action: 'execute_map_command_macro',
         macroId,
         eventId: scopedCommsOpId || undefined,
@@ -826,7 +826,7 @@ export default function TacticalMapPanel({
       setQuickBroadcastMessage('');
       setMacroExecutionMessage(`Broadcast transmitted (${quickBroadcastPriority}).`);
       setCommsRefreshNonce((prev) => prev + 1);
-    } catch (error: unknown) {
+    } catch (error) {
       const message = getErrorText(error) || 'Broadcast failed.';
       setQuickBroadcastError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -845,7 +845,7 @@ export default function TacticalMapPanel({
     setAiInferenceError(null);
     setAiInferenceLoading(true);
     try {
-      const response: any = await invokeMemberFunction('commsAssistant', {
+      const response = await invokeMemberFunction('commsAssistant', {
         action: 'ask_comms',
         data: { eventId: scopedCommsOpId || null, query: buildMapAiPrompt(mapInference) },
       });
@@ -875,34 +875,34 @@ export default function TacticalMapPanel({
     }
   };
 
-  const createNodeRadialItems = (nodeId: string): RadialMenuItem[] => [
+  const createNodeRadialItems = (nodeId) => [
     { id: 'declare-departing', label: 'Declare Departing', icon: 'depart', shortcut: '1', onSelect: () => createDraftFromMap('DECLARE_DEPARTURE', { nodeId }, { notes: `Departing ${nodeId}` }) },
     { id: 'declare-arriving', label: 'Declare Arriving', icon: 'arrive', shortcut: '2', onSelect: () => createDraftFromMap('DECLARE_ARRIVAL', { nodeId }, { notes: `Arriving ${nodeId}` }) },
     { id: 'report-contact', label: 'Report Contact', icon: 'contact', shortcut: '3', tone: 'warning', onSelect: () => createDraftFromMap('REPORT_CONTACT', { nodeId }, { notes: `Contact near ${nodeId}` }) },
     { id: 'drop-intel-pin', label: 'Drop Intel Pin', icon: 'intel-pin', shortcut: '4', onSelect: () => createDraftFromMap('DROP_INTEL', { nodeId }, { intelType: 'PIN', title: 'Intel Pin', body: '' }) },
   ];
 
-  const createIntelRadialItems = (intelId: string): RadialMenuItem[] => [
+  const createIntelRadialItems = (intelId) => [
     { id: 'endorse-intel', label: 'Endorse Intel', icon: 'endorse', shortcut: '1', onSelect: () => createDraftFromMap('ENDORSE_INTEL', { intelId }, { note: '' }) },
     { id: 'challenge-intel', label: 'Challenge Intel', icon: 'challenge', shortcut: '2', tone: 'danger', onSelect: () => createDraftFromMap('CHALLENGE_INTEL', { intelId }, { note: '' }) },
     { id: 'link-op', label: 'Link to Op', icon: 'link-op', shortcut: '3', onSelect: () => createDraftFromMap('LINK_INTEL_TO_OP', { intelId }, { opIds: focusOperationId || opId || '' }) },
   ];
 
-  const createZoneRadialItems = (zoneId: string, nodeId?: string): RadialMenuItem[] => [
+  const createZoneRadialItems = (zoneId, nodeId) => [
     { id: 'attach-intel', label: 'Attach Intel', icon: 'attach-intel', shortcut: '1', onSelect: () => createDraftFromMap('ATTACH_INTEL', { zoneId, nodeId }, { intelType: 'NOTE', title: 'Zone Intel' }) },
     { id: 'request-patrol', label: 'Request Patrol', icon: 'request-patrol', shortcut: '2', tone: 'warning', onSelect: () => createDraftFromMap('REQUEST_PATROL', { zoneId, nodeId }, { notes: 'Patrol requested' }) },
   ];
 
   const radialItems = useMemo(() => {
-    if (!activeRadial) return [] as RadialMenuItem[];
+    if (!activeRadial) return [];
     if (activeRadial.type === 'node' && activeRadial.nodeId) return createNodeRadialItems(activeRadial.nodeId);
     if (activeRadial.type === 'intel' && activeRadial.intelId) return createIntelRadialItems(activeRadial.intelId);
     if (activeRadial.type === 'zone' && activeRadial.zoneId) return createZoneRadialItems(activeRadial.zoneId, activeRadial.nodeId);
-    return [] as RadialMenuItem[];
+    return [];
   }, [activeRadial, actorId, opId, focusOperationId]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event) => {
       const action = resolveTacticalMapShortcut({
         key: event.key,
         shiftKey: event.shiftKey,
@@ -1135,7 +1135,7 @@ export default function TacticalMapPanel({
           </NexusBadge>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
+          {['STANDARD', 'HIGH', 'CRITICAL'].map((entry) => (
             <NexusButton
               key={`broadcast:${entry}`}
               size="sm"
@@ -1236,7 +1236,7 @@ export default function TacticalMapPanel({
     <MapTimelineReplay timeline={timeline} windowMinutes={replayWindowMinutes} offsetMinutes={replayOffsetMinutes} onChangeWindowMinutes={setReplayWindowMinutes} onChangeOffsetMinutes={setReplayOffsetMinutes} />
   );
 
-  const dockTabs: MapDockTab[] = [
+  const dockTabs = [
     { id: 'SUMMARY', label: 'Summary', count: mapInference.commandRiskScore, content: summaryTab },
     { id: 'COMMS', label: 'Comms', count: commsOverlay.nets.length, content: commsTab },
     { id: 'INTEL', label: 'Intel', count: visibleIntel.length, content: intelTab },
