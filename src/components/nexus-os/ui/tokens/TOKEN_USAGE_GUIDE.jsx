@@ -1,311 +1,292 @@
-# NexusOS Token Usage Guide
+# NexusOS Token Usage Guide (v2.0)
 
-**Version:** 1.0  
-**Last Updated:** 2026-02-25
+## Overview
+Tactical tokens are semantic icons with strict color, family, and size mappings. They provide deterministic visual language for operation-critical information.
 
-## Table of Contents
-
-1. [Introduction](#introduction)
-2. [Token vs Lucide Decision Tree](#token-vs-lucide-decision-tree)
-3. [Token Family Reference](#token-family-reference)
-4. [Color Semantic Mapping](#color-semantic-mapping)
-5. [Variant Usage Rules](#variant-usage-rules)
-6. [Token Sizing Standards](#token-sizing-standards)
-7. [Implementation Patterns](#implementation-patterns)
-8. [Anti-Patterns](#anti-patterns)
+**Core Principle**: Tokens convey **tactical semantics**, Lucide icons convey **UI actions**.
 
 ---
 
-## Introduction
-
-NexusOS includes 200+ tactical PNG token assets designed for military-grade operational UX. These tokens provide instant visual recognition for status, priority, roles, and tactical symbols—reducing cognitive load and improving scan speed.
-
-**When to use this guide:** When building any NexusOS UI that displays status, operations, communications, or tactical information.
-
----
-
-## Token vs Lucide Decision Tree
+## 1. Token vs Lucide Decision Tree
 
 ### Use Tokens For:
-✅ **Status indicators** - Online/offline, ready/busy, operational states  
-✅ **Tactical symbols** - Objectives, waypoints, targets, control zones  
-✅ **Operational markers** - Mission phases, priority levels, alert states  
-✅ **Roster badges** - Team numbering, role indicators, unit markers  
-✅ **Resource types** - Fuel, ammunition, medical, energy, supplies  
-✅ **Communication nodes** - Channels, nets, voice routing, squad structure  
+- **Status markers**: READY, STANDBY, OFFLINE, TX, MUTED
+- **Priority levels**: CRITICAL, HIGH, STANDARD, LOW
+- **Operation phases**: PLANNING, ACTIVE, WRAPPING, ARCHIVED
+- **Objective states**: OPEN, IN_PROGRESS, DONE, BLOCKED
+- **Channel types**: COMMAND, SQUAD, SUPPORT, GENERAL
+- **Roster positions**: #0-#13 (numbered roster slots)
+- **Specialist roles**: Medic, Engineer, Gunner (hospital, mechanics, target icons)
+- **Resource states**: Fuel, Ammo, Energy, Food (fuel, ammunition, energy, food icons)
 
-### Use Lucide Icons For:
-✅ **UI controls** - Buttons, toggles, navigation, menus  
-✅ **Actions** - Edit, delete, save, send, download  
-✅ **Generic interface** - Settings, help, search, filters  
-✅ **System feedback** - Loading spinners, success checks, error alerts  
+### Use Lucide For:
+- **UI navigation**: ChevronRight, ChevronDown, ArrowLeft
+- **Generic actions**: Edit, Trash, Copy, Download, Upload, Settings
+- **Content indicators**: MessageSquare, Calendar, Clock, User, Users
+- **Layout controls**: Maximize, Minimize, X (close)
 
-### Decision Flowchart:
-```
-Is this a state/status indicator? → YES → Use Token
-Is this a tactical/operational symbol? → YES → Use Token
-Is this a UI control or action? → YES → Use Lucide
-Is this a generic interface element? → YES → Use Lucide
-```
+### Anti-Pattern
+❌ **Never mix** token and Lucide for the same semantic role in one row:
+```js
+// BAD
+<div>
+  <Circle className="w-3 h-3" /> {/* Lucide */}
+  <NexusTokenIcon family="circle" color="green" /> {/* Token */}
+</div>
 
----
-
-## Token Family Reference
-
-| Family | Use Case | Examples |
-|--------|----------|----------|
-| **circle** | Presence, connection, simple status | Online, TX, Muted, Ready |
-| **hex** | Channels, networks, comms nodes | Command Net, Squad Channel, Voice Net |
-| **target** | Primary objectives, key waypoints | Mission Objective, Primary Target |
-| **target-alt** | Asset markers, fleet units, vehicles | Fleet Asset, Ship Status, Vehicle |
-| **penta** | Operation status, phase indicators | Planning, Active, Debrief, Complete |
-| **triangle** | Priority levels, alerts, callouts | High Priority, Warning, Attention |
-| **square** | Generic units, default placeholders | Unit Marker, Default Icon, Basic |
-| **number-0 to 13** | Roster numbering, sequences, counts | #1, #2, #3, Unread: 5, Objective 7 |
-| **hospital** | Medical/rescue roles, medical facilities | Medic, SAR Team, Medical Bay |
-| **mechanics** | Engineering/repair roles, maintenance | Engineer, Maintenance, Repair |
-| **fuel** | Fuel status, refueling operations | Fuel Level, RAVEN Station |
-| **energy** | Power status, shields, energy systems | Power Cell, Shield Status |
-| **ammunition** | Ammo status, armory, ordnance | Ammo Count, Ordnance Depot |
-| **food** | Supply status, provisioning, rations | Rations, Supply Drop, Galley |
-| **shelter** | Staging areas, safe zones, bases | Forward Base, Rally Point, Bunker |
-| **objective** | Mission objectives, points of interest | Primary Objective, POI, Target Site |
-
----
-
-## Color Semantic Mapping
-
-| Color | Meaning | Use Cases |
-|-------|---------|-----------|
-| **red** | Danger, hostile, critical, enemy | Critical alert, hostile contact, emergency, failed |
-| **orange** | Active, transmitting, primary focus | TX state, active mission, engaged, primary |
-| **yellow** | Warning, attention needed, pending | Warning, caution, pending approval, in-progress |
-| **green** | Ready, healthy, secure, friendly-safe | Operational, ready, complete, friendly, secure |
-| **blue** | Friendly, standard, information | Allied, standard ops, informational, default |
-| **cyan** | Support, logistics, secondary, utility | Support roles, logistics, secondary systems |
-| **grey** | Inactive, offline, neutral, disabled | Offline, disabled, archived, neutral |
-| **purple** | Special states (encrypted, secured) | Secured comms, encrypted, hardened |
-| **violet** | Alternative special (VIP, unique) | VIP, experimental, unique |
-
-### Color Selection Guide:
-- **State First:** Choose color based on state (danger=red, ok=green)
-- **Context Second:** Adjust based on context (friendly vs hostile)
-- **Consistency:** Use same color for same meaning across app
-
----
-
-## Variant Usage Rules
-
-Variants apply to **number tokens only** (number-0 through number-13):
-
-### Variants:
-- **base** - Standard operational state (default)
-- **v1** (purple numbers only) - Secured/encrypted/hardened state
-- **v2** (purple numbers only) - Escalated/critical/degraded state
-
-### When to Use Variants:
-```javascript
-// Base variant (default)
-<NexusTokenIcon family="number-1" color="blue" variant="base" />
-
-// V1 variant (secured/encrypted)
-<NexusTokenIcon family="number-1" color="purple" variant="v1" />
-// Use when: Comms encrypted, secure channel, authenticated
-
-// V2 variant (critical/escalated)
-<NexusTokenIcon family="number-1" color="purple" variant="v2" />
-// Use when: Critical alert, degraded state, escalated priority
-```
-
-**Note:** Only purple number tokens have v1/v2 variants. All other tokens use base only.
-
----
-
-## Token Sizing Standards
-
-| Size | Class | Pixels | Use Cases |
-|------|-------|--------|-----------|
-| **sm** | `w-3 h-3` | 12px | Inline badges, compact roster, tight layouts |
-| **md** | `w-4 h-4` | 16px | Standard markers, list items, default size |
-| **lg** | `w-5 h-5` | 20px | Prominent markers, section headers, featured |
-| **xl** | `w-6 h-6` | 24px | Focus elements, map markers, hero placements |
-
-### Size Selection Guide:
-- **Roster entries:** sm (12px) - maximize density
-- **List items:** md (16px) - standard readability
-- **Headers:** lg (20px) - visual hierarchy
-- **Map markers:** lg or xl (20-24px) - visibility and click targets
-
----
-
-## Implementation Patterns
-
-### Pattern 1: Token-Only Array (Roster Numbering)
-```jsx
-{participants.map((p, idx) => (
-  <NexusTokenIcon
-    key={p.id}
-    family={`number-${idx + 1}`}
-    color="blue"
-    size="sm"
-    tooltip={`Position ${idx + 1}`}
-  />
-))}
-```
-
-### Pattern 2: Token + Text Horizontal Layout
-```jsx
-<div className="flex items-center gap-1.5">
+// GOOD - Pick one system per semantic domain
+<div>
   <NexusTokenIcon family="circle" color="green" size="sm" />
-  <span className="text-[8px] uppercase">READY</span>
 </div>
-```
-
-### Pattern 3: Token + Text Vertical/Stacked Layout
-```jsx
-<div className="flex flex-col items-center gap-1">
-  <NexusTokenIcon family="objective" color="yellow" size="lg" />
-  <span className="text-[8px] uppercase">OBJ-01</span>
-</div>
-```
-
-### Pattern 4: Composite Badge (Number + Callsign + Role + Status)
-```jsx
-<NexusRosterBadge
-  number={1}
-  callsign="HAWK"
-  role="pilot"
-  state="ready"
-  layout="horizontal"
-/>
-// Renders: [1] HAWK [fuel-icon] [green-circle]
-```
-
-### Pattern 5: Status Token with Conditional Color
-```jsx
-<NexusStatusToken
-  status={participant.isOnline ? 'ready' : 'offline'}
-  label={participant.isOnline ? 'ONLINE' : 'OFFLINE'}
-  size="sm"
-  showLabel={true}
-/>
-```
-
-### Pattern 6: Token State Transitions (Color Change on Update)
-```jsx
-const [operationStatus, setOperationStatus] = useState('planning');
-
-<NexusTokenIcon
-  family="penta"
-  color={operationStatus === 'active' ? 'green' : 'blue'}
-  size="md"
-/>
 ```
 
 ---
 
-## Anti-Patterns
+## 2. Token Family Reference
 
-### ❌ DON'T: Token Size Outside Range
-```jsx
-// WRONG: Too small or too large
-<img src={tokenUrl} className="w-2 h-2" /> // 8px - too small
-<img src={tokenUrl} className="w-8 h-8" /> // 32px - too large
+### Status Tokens (`circle` family)
+- **circle-green**: Ready, Healthy, Secure, Online
+- **circle-orange**: Active, Transmitting, Priority
+- **circle-yellow**: Warning, Standby, Caution
+- **circle-red**: Critical, Hostile, Offline, Danger
+- **circle-grey**: Inactive, Offline, Disabled
+- **circle-purple** variants: Encrypted, Degraded, Escalated
 
-// CORRECT: Use standard sizes
-<NexusTokenIcon family="circle" color="green" size="sm" /> // 12px
+### Channel/Network Tokens (`hex` family)
+- **hex-orange**: Command net, Admin channel
+- **hex-blue**: Squad net, Operational channel
+- **hex-cyan**: Support net, Utility channel
+- **hex-grey**: Inactive, Archived
+- **hex-purple** variants: Secure channel, Encrypted net
+
+### Mission/Objective Tokens
+- **target-red**: Combat objective, Hostile target
+- **target-orange**: Priority objective, Active mission
+- **target-green**: Friendly asset, Secure objective
+- **objective-orange**: Primary objective marker
+- **objective-blue**: Secondary objective
+- **objective-grey**: Archived/completed objective
+
+### Operation Phase Tokens (`penta` family)
+- **penta-yellow**: PLANNING phase
+- **penta-orange**: ACTIVE phase
+- **penta-blue**: WRAPPING phase
+- **penta-grey**: ARCHIVED phase
+
+### Alert/Priority Tokens (`triangle` family)
+- **triangle-red**: Critical alert, Immediate action
+- **triangle-orange**: High priority, Urgent
+- **triangle-yellow**: Standard priority, Caution
+
+### Roster Tokens (`number-X` family)
+- **number-0** to **number-13**: Numbered roster positions
+- Color-coded by role or squad assignment
+
+### Specialist/Resource Tokens
+- **hospital-green**: Medic, Medical resource
+- **mechanics-cyan**: Engineer, Repair capability
+- **fuel-yellow**: Refuel, Fuel depot
+- **energy-blue**: Power, Energy resource
+- **ammunition-red**: Ammo, Combat supply
+- **food-green**: Sustenance, Supply depot
+- **shelter-cyan**: Safe zone, Bunker
+
+---
+
+## 3. Size Rules and Density
+
+### Token Size Matrix
+| Context | Size Prop | Tailwind Classes | Use Case |
+|---------|-----------|------------------|----------|
+| Compact row | `sm` | `w-3 h-3` | Dense lists, inline badges |
+| Default list | `md` | `w-4 h-4` | Standard roster/panel items |
+| Prominent card | `lg` | `w-5 h-5` | Headers, featured markers |
+| Focus marker | `xl` | `w-6 h-6` | Selected item, primary focus |
+
+**Rule**: Token size must scale with text density. Never use `xl` in compact rows.
+
+---
+
+## 4. Color Variant System
+
+### Base Variant (default)
+- Normal operational state
+- Example: `circle-green` = ready unit
+
+### V1 Variant (enhanced)
+- Secure/encrypted/hardened state
+- Example: `circle-green-v1` = ready unit with secure comms
+
+### V2 Variant (escalated)
+- Critical/degraded/escalated state
+- Example: `circle-red-v2` = critical alert with escalation
+
+**Usage**:
+```js
+<NexusTokenIcon family="circle" color="green" variant="base" size="md" />
+<NexusTokenIcon family="circle" color="green" variant="v1" size="md" /> {/* Secure */}
+<NexusTokenIcon family="circle" color="red" variant="v2" size="md" /> {/* Critical escalation */}
 ```
 
-### ❌ DON'T: Mix Tokens and Lucide for Same Semantic Purpose
-```jsx
-// WRONG: Using both for status
-<Circle className="w-3 h-3 text-green-500" /> {/* Lucide */}
-<NexusTokenIcon family="circle" color="green" size="sm" /> {/* Token */}
+---
 
-// CORRECT: Pick one consistently
-<NexusTokenIcon family="circle" color="green" size="sm" />
+## 5. Common UI Patterns
+
+### Roster Row (Standard)
+```js
+<div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-800 bg-zinc-950/55">
+  <NexusTokenIcon family="number-3" color="blue" size="sm" />
+  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-200">
+    SPECTRE-02
+  </span>
+  <NexusTokenIcon family="target" color="orange" size="sm" />
+  <NexusTokenIcon family="circle" color="green" size="sm" />
+  <NexusBadge tone="ok">READY</NexusBadge>
+</div>
 ```
 
-### ❌ DON'T: Use Tokens Purely Decoratively
-```jsx
-// WRONG: Token with no semantic meaning
-<NexusTokenIcon family="hex" color="orange" size="md" />
-<span>Random Section</span>
-
-// CORRECT: Token reinforces semantic meaning
-<NexusTokenIcon family="hex" color="orange" size="md" />
-<span>COMMAND CHANNEL</span>
+### Channel Row
+```js
+<div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-800 bg-zinc-950/55">
+  <NexusTokenIcon family="hex" color="orange" size="sm" />
+  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] flex-1">
+    COMMAND
+  </span>
+  <NexusTokenIcon family="number-5" color="orange" size="sm" />
+</div>
 ```
 
-### ❌ DON'T: Wrong Color Semantics
-```jsx
-// WRONG: Red for success, green for danger
-<NexusTokenIcon family="circle" color="red" size="sm" />
-<span>READY</span>
-
-// CORRECT: Green for success/ready
-<NexusTokenIcon family="circle" color="green" size="sm" />
-<span>READY</span>
+### Map Marker (Inline Image)
+```js
+<img
+  src={getSemanticTokenUrl('circle', 'green', 'base', 'md')}
+  alt="Ready unit"
+  className="w-4 h-4 rounded-sm border border-zinc-800/70 bg-zinc-900/60"
+/>
 ```
 
-### ❌ DON'T: Token Without Accessible Label
-```jsx
-// WRONG: No aria-label or title
-<img src={tokenUrl} className="w-4 h-4" />
-
-// CORRECT: Always provide accessibility
-<NexusTokenIcon
+### Status Display
+```js
+<NexusStatusToken
   family="circle"
   color="green"
-  size="sm"
-  tooltip="Online - Ready"
+  size="md"
+  label="READY"
+  tone="ok"
 />
 ```
 
-### ❌ DON'T: Hardcode Token Paths
-```jsx
-// WRONG: Hardcoded path
-<img src="/tokens/token-circle-green.png" className="w-4 h-4" />
+---
 
-// CORRECT: Use tokenAssetMap utilities
-import { getTokenAssetUrl } from '@/components/nexus-os/ui/tokens/tokenAssetMap';
-<img src={getTokenAssetUrl('circle', 'green')} className="w-4 h-4" />
+## 6. Anti-Patterns to Avoid
 
-// BETTER: Use primitive component
-<NexusTokenIcon family="circle" color="green" size="sm" />
+### ❌ Mixing Systems
+```js
+// BAD - mixing Lucide + Token for status
+<div>
+  <Circle className="w-3 h-3 text-green-500" />
+  <NexusTokenIcon family="circle" color="green" />
+</div>
+
+// GOOD - use one system
+<div>
+  <NexusTokenIcon family="circle" color="green" size="sm" />
+</div>
+```
+
+### ❌ Decorative Token Use
+```js
+// BAD - token without semantic meaning
+<NexusTokenIcon family="target" color="red" size="lg" /> {/* Just for decoration */}
+
+// GOOD - token with tactical meaning
+<NexusTokenIcon family="target" color="red" size="md" /> {/* Hostile objective marker */}
+```
+
+### ❌ Wrong Color for Semantics
+```js
+// BAD - red for success
+<NexusTokenIcon family="circle" color="red" /> READY
+
+// GOOD - green for ready/success
+<NexusTokenIcon family="circle" color="green" /> READY
+```
+
+### ❌ Missing Accessibility
+```js
+// BAD - token without alt text
+<img src={tokenUrl} className="w-4 h-4" />
+
+// GOOD - token with semantic alt
+<img src={tokenUrl} alt="Ready status" className="w-4 h-4" />
 ```
 
 ---
 
-## Quick Reference: Common Scenarios
+## 7. Token Asset Integration
 
-| Scenario | Token Family | Color | Size |
-|----------|-------------|-------|------|
-| User online status | `circle` | `green` | `sm` |
-| User offline status | `circle` | `grey` | `sm` |
-| Transmitting on voice | `circle` | `orange` | `sm` |
-| High priority alert | `triangle` | `red` | `md` |
-| Command channel | `hex` | `orange` | `sm` |
-| Squad channel | `hex` | `cyan` | `sm` |
-| Active operation | `penta` | `green` | `md` |
-| Mission objective | `objective` | `yellow` | `lg` |
-| Medic role | `hospital` | `green` | `sm` |
-| Pilot role | `fuel` | `blue` | `sm` |
-| Roster position #1 | `number-1` | `blue` | `sm` |
-| Fleet asset ready | `target-alt` | `green` | `md` |
-| Fleet asset degraded | `target-alt` | `red` | `md` |
+### Using getSemanticTokenUrl
+```js
+import { getSemanticTokenUrl } from '@/components/nexus-os/ui/theme/design-tokens';
+
+const statusIconUrl = getSemanticTokenUrl('circle', 'green', 'base', 'md');
+// Returns: /tokens/tactical/circle-green.svg (or similar path)
+```
+
+### Token Asset Map
+See `ui/tokens/tokenAssetMap.js` for complete mapping of all 200+ token assets.
 
 ---
 
-## Usage Metrics (Target)
+## 8. Validation and Testing
 
-After full token integration, aim for:
-- **70%+ of status indicators** use tokens (not text-only)
-- **100% of roster entries** use number tokens
-- **80%+ of tactical markers** use tokens
-- **0 text-only channel types** (all have hex tokens)
-- **100% of operation phases** use penta tokens
+### Component-Level Validation
+Every component should validate token usage:
+```js
+// Check if token exists before rendering
+const tokenUrl = getSemanticTokenUrl(family, color, variant, size);
+if (!tokenUrl) {
+  console.warn(`Token not found: ${family}-${color}-${variant}`);
+  // Fallback to Lucide or neutral token
+}
+```
+
+### Regression Prevention
+- Token family/color/variant combos must exist in asset map
+- Token sizes must be square (w-X h-X)
+- Alt text required for all token images
+- Tone prop must align with color semantic (green → ok, red → danger)
 
 ---
 
-**Questions or new use cases?** Update this guide and share with team.
+## 9. Quick Reference
+
+| Semantic | Token Family | Color Options | Example Use |
+|----------|--------------|---------------|-------------|
+| Unit ready | circle | green, orange, red, grey | Roster status |
+| Command net | hex | orange, red | Voice net type |
+| Combat objective | target | red, orange, green | Mission marker |
+| Op phase | penta | yellow, orange, blue, grey | Operation status |
+| Alert | triangle | red, orange, yellow | Priority indicator |
+| Roster slot | number-X | Any | Numbered position |
+| Medic role | hospital | green, cyan | Specialist marker |
+
+---
+
+## 10. Migration Examples
+
+### Before (Non-Compliant)
+```js
+<div className="status-indicator">
+  <Circle className="w-4 h-4 text-green-500" />
+  <span>Ready</span>
+</div>
+```
+
+### After (Compliant)
+```js
+<div className="flex items-center gap-1.5">
+  <NexusTokenIcon family="circle" color="green" size="md" />
+  <span className="text-[10px] font-semibold uppercase tracking-[0.12em]">READY</span>
+</div>
+``

@@ -1,799 +1,324 @@
-# NexusOS Design System Style Guide
+# NexusOS Style Guide (v2.0)
 
-**Version:** 1.0  
-**Status:** Enforced  
-**Last Updated:** 2026-02-25
+## Purpose
+NexusOS UI must be deterministic, compact, scan-first, and fully compliant with the design token system. This guide is **mandatory** for all components in `components/nexus-os/ui/**`.
 
----
-
-## Philosophy
-
-NexusOS embodies **military-grade precision** in every pixel:
-- Zero ambiguity in visual hierarchy
-- Combat-ready information density
-- Instant scannability under stress
-- Deterministic, predictable interactions
-
-This guide is **mandatory** for all NexusOS UI development.
+All components MUST include a design compliance header documenting typography, spacing, icons, tokens, and borders used.
 
 ---
 
-## Table of Contents
+## 1. Typography Standards
 
-1. [Typography System](#typography-system)
-2. [Color Palette](#color-palette)
-3. [Spacing & Layout](#spacing--layout)
-4. [Icon Standards](#icon-standards)
-5. [Component Specifications](#component-specifications)
-6. [Token System](#token-system)
-7. [Animation & Transitions](#animation--transitions)
-8. [Accessibility Requirements](#accessibility-requirements)
-9. [Critical Don'ts](#critical-donts)
-10. [Checklist for New Components](#checklist-for-new-components)
+### Scale Hierarchy
+- **Header Primary**: `text-[10px] font-black tracking-[0.15em] uppercase leading-none`
+- **Header Secondary**: `text-[8px] font-bold tracking-[0.14em] uppercase leading-none`
+- **Body Primary**: `text-[10px] font-semibold tracking-[0.12em] uppercase`
+- **Body Secondary**: `text-[8px] font-semibold tracking-[0.14em] uppercase leading-none`
+- **Telemetry**: `text-[10px] font-mono font-bold tracking-[0.15em] uppercase`
+- **Telemetry Small**: `text-[8px] font-mono font-semibold tracking-[0.14em] uppercase`
 
----
+### Mandatory Rules
+- System labels and controls: **8px or 10px only** (11px/12px only for user-authored content exceptions)
+- **`font-weight >= 600`** (semibold minimum)
+- **Uppercase required** for system UI (exceptions: user messages, narrative, titles)
+- **No TypeScript type annotations** — use vanilla JavaScript only
+- Dynamic user-authored text may use `text-xs` or `text-sm` with `normal-case` for readability
 
-## Typography System
-
-### The Rule: 8px and 10px ONLY
-
-**All text** in NexusOS uses exactly two font sizes:
-- `text-[8px]` - Secondary labels, helper text, compact data
-- `text-[10px]` - Primary headers, body text, telemetry
-
-**No exceptions.** No 12px, no 14px, no 16px.
-
-### Complete Hierarchy
-
-| Scale | Usage | Class |
-|-------|-------|-------|
-| **Header Primary** | Panel titles, section headers | `text-[10px] font-black tracking-[0.15em] uppercase leading-none` |
-| **Header Secondary** | Subsection titles | `text-[8px] font-bold tracking-[0.14em] uppercase leading-none` |
-| **Body Primary** | Primary labels, descriptions | `text-[10px] font-semibold tracking-[0.12em] uppercase` |
-| **Body Secondary** | Secondary labels, helper text | `text-[8px] font-semibold tracking-[0.14em] leading-none` |
-| **Telemetry Primary** | Numeric values, status codes | `text-[10px] font-mono font-bold tracking-[0.15em]` |
-| **Telemetry Secondary** | Small metrics, compact data | `text-[8px] font-mono font-semibold tracking-[0.14em]` |
-| **Button** | All button labels | `text-[10px] font-semibold uppercase tracking-[0.12em]` |
-| **Badge** | All badge labels | `text-[10px] font-semibold uppercase tracking-[0.14em]` |
-| **Pill** | Status and signal pills | `text-[8px] font-mono uppercase tracking-wider font-semibold` |
-
-### Font Weight Rules
-
-**Minimum weight: 600 (semibold)**
-
-- `font-semibold` (600) - Body text, labels
-- `font-bold` (700) - Secondary headers, important text
-- `font-extrabold` (800) - Focus app headers
-- `font-black` (900) - Primary headers, critical elements
-
-Never use `font-normal` or `font-medium` in NexusOS.
-
-### Letter Spacing Rules
-
-**Minimum tracking: 0.12em**
-
-- `tracking-[0.12em]` - Body text (minimum)
-- `tracking-[0.14em]` - Standard labels
-- `tracking-[0.15em]` - Headers and telemetry
-- `tracking-wider` - Pills and compact text
-
-Never use `tracking-normal` or `tracking-tight`.
-
-### Text Transform
-
-**Everything is uppercase.**
-
-All visible text must use `uppercase` or be manually uppercase. No lowercase, no capitalize (except proper nouns in content areas).
+### Validation
+```js
+// Allowed font sizes
+const ALLOWED_FONT_SIZES = ['text-[8px]', 'text-[10px]', 'text-xs', 'text-sm'];
+// Allowed font weights
+const ALLOWED_FONT_WEIGHTS = ['font-semibold', 'font-bold', 'font-black'];
+// Allowed letter spacing
+const ALLOWED_TRACKING = ['tracking-[0.12em]', 'tracking-[0.14em]', 'tracking-[0.15em]'];
+```
 
 ---
 
-## Color Palette
+## 2. Color System
 
-### Base Colors (Zinc Scale)
-
-- `zinc-950` - Primary background
-- `zinc-900` - Elevated surfaces, panels
-- `zinc-800` - Dividers (with opacity)
-- `zinc-700` - Borders (with opacity)
-- `zinc-600` - Locked/disabled states
-- `zinc-500` - Muted icons
-- `zinc-400` - Muted text
-- `zinc-300` - Secondary text
-- `zinc-100` - Primary text
+### Base Palette
+- **Background Base**: `bg-zinc-950`
+- **Background Elevated**: `bg-zinc-900`, `bg-zinc-900/80`, `bg-zinc-900/45`
+- **Borders**: `border-zinc-700/40`, `border-zinc-700/60`, `border-zinc-800`
+- **Text Primary**: `text-zinc-100`, `text-zinc-200`
+- **Text Secondary**: `text-zinc-400`, `text-zinc-500`
 
 ### Accent Colors
+- **Primary Accent**: `orange-400`, `orange-500` (active state, focus, transmit)
+- **Command/Admin**: `red-600`, `red-500` (critical actions, admin controls)
 
-- `orange-400` - Primary accent (bright)
-- `orange-500` - Primary accent (standard)
-- `red-500` - Admin/command accent
-- `red-600` - Command authority
+### State Semantics
+- **OK/Success**: `green-500`, `green-400` (ready, healthy, secure)
+- **Warning**: `amber-500`, `amber-400`, `yellow-500` (caution, soft flags)
+- **Danger**: `red-500`, `red-600` (critical, hostile, hard violations)
+- **Neutral**: `zinc-400`, `zinc-500` (inactive, standby, offline)
+- **Active**: `sky-500`, `blue-500` (in progress, engaged)
 
-### Semantic State Colors
+### Backdrop Rules
+- **Opacity backdrops MUST include `backdrop-blur-sm`**
+- Example: `bg-zinc-900/80 backdrop-blur-sm`
+- Never use opacity without blur for readability
 
-| State | Color | Usage |
-|-------|-------|-------|
-| **OK/Ready** | `green-400` | Operational, ready, complete, healthy |
-| **Warning** | `amber-400` | Caution, attention needed, pending |
-| **Danger** | `red-500` | Critical, failed, hostile, emergency |
-| **Active** | `orange-500` | Transmitting, engaged, primary focus |
-| **Neutral** | `zinc-400` | Inactive, default, standard |
-
-### Border Color Standards
-
-**All borders must use opacity:**
-
-- `border-zinc-700/40` - Standard borders (40% opacity)
-- `border-zinc-700/60` - Elevated borders (60% opacity)
-- `border-zinc-800/60` - Dividers (60% opacity)
-
-**Semantic borders:**
-- `border-orange-500/45` - Active state (45% opacity)
-- `border-orange-500/64` - Primary buttons (64% opacity)
-- `border-emerald-600/60` - OK state (60% opacity)
-- `border-amber-600/60` - Warning state (60% opacity)
-- `border-red-600/60` - Danger state (60% opacity)
-
-### Background Color Standards
-
-**Opacity backgrounds must include backdrop-blur:**
-
-```jsx
-// CORRECT: Opacity + blur
-<div className="bg-zinc-950/80 backdrop-blur-sm">
-
-// WRONG: Opacity without blur
-<div className="bg-zinc-950/80">
-```
-
-**Standard combinations:**
-- `bg-zinc-950/80 backdrop-blur-sm` - Panels
-- `bg-zinc-900/40 backdrop-blur-sm` - Headers
-- `bg-zinc-900/90 backdrop-blur-sm` - Cards
-- `bg-zinc-900/95 backdrop-blur-sm` - Elevated cards
-
-### Gradients
-
-**Decorative gradients are forbidden.**
-
-Gradients are only allowed for:
-- Hover effects (temporary state changes)
-- Active state transitions
-- Focus indicators
-- Loading/shimmer effects
+### Border Opacity Range
+- **Standard range**: `zinc-700/40` to `zinc-700/60`
+- **Elevated**: `zinc-800` (solid borders for critical panels)
+- **Danger**: `red-900/60`, `red-900/70`
+- **Warning**: `amber-900/50`, `amber-900/60`
 
 ---
 
-## Spacing & Layout
+## 3. Spacing Standards
 
-### Padding Standards
+### Padding
+- **Panel**: `p-1.5`, `p-2`, `p-2.5`
+- **Header**: `px-2.5 py-2` (standard), `px-2 py-1.5` (compact)
+- **Card**: `px-1.5 py-1`, `px-2 py-1.5`
+- **Inline Element**: `px-2 py-1`
 
-| Context | Class | Pixels | Usage |
-|---------|-------|--------|-------|
-| **Header Compact** | `px-2 py-1.5` | 8px×6px | Tight panel headers |
-| **Header Standard** | `px-2.5 py-2` | 10px×8px | Standard panel headers |
-| **Panel Body** | `p-1.5` | 6px | Panel content area |
-| **Card** | `px-1.5 py-1` | 6px×4px | Cards, list items |
-| **Button** | `px-2 py-1` | 8px×4px | Button padding |
-| **Compact** | `p-1.5` | 6px | General compact |
-| **Standard** | `p-2` | 8px | General standard |
-| **Relaxed** | `p-2.5` | 10px | General relaxed |
+### Gaps
+- **Tight**: `gap-1` (dense lists, badges in row)
+- **Standard**: `gap-1.5`, `gap-2` (normal spacing)
+- **Relaxed**: `gap-2.5`, `gap-3` (section spacing)
 
-### Gap Standards
+### Margins
+- **Avoid global margins** — use flex/grid gaps
+- **Exceptions**: `mt-2`, `mb-2` for section breaks only
 
-- `gap-1` (4px) - Tight spacing (icon + text in pills)
-- `gap-1.5` (6px) - Standard spacing (most layouts)
-- `gap-2` (8px) - Relaxed spacing (section separation)
-
-Never use `gap-3` or larger in NexusOS.
-
-### Margin Standards
-
-**Margins should be minimal.** Prefer `gap` over `margin`.
-
-Valid use cases:
-- `mt-0.5`, `mb-0.5` - Fine-tuning alignment
-- `m-1` - Isolated elements
-
-### Border Radius
-
-- `rounded` (4px) - Pills, badges, small buttons
-- `rounded-md` (6px) - Standard buttons, inputs
-- `rounded-lg` (8px) - Cards, panels
-- `rounded-full` - Dots, circles, avatars
+### Layout Constraints
+- **No page scroll** or internal panel scroll in normal operation
+- Lists **capped to 5-7 rows** with pagination controls
+- Full detail goes to modal/drawer (which may scroll)
 
 ---
 
-## Icon Standards
+## 4. Icon and Token Sizes
 
-### Size Matrix
+### Lucide Icons
+- **Compact**: `w-2.5 h-2.5` (tight rows, inline indicators)
+- **Small**: `w-3 h-3`, `w-3.5 h-3.5` (standard UI actions)
+- **Standard**: `w-4 h-4` (primary actions, headers)
+- **Large**: `w-5 h-5` (prominent controls)
 
-| Size | Class | Pixels | Usage |
-|------|-------|--------|-------|
-| **XS** | `w-2.5 h-2.5` | 10px | Signal indicators, dots |
-| **SM** | `w-3 h-3` | 12px | Buttons, inline icons, telemetry pills |
-| **MD** | `w-3.5 h-3.5` | 14px | Headers, primary actions, controls |
-| **LG** | `w-4 h-4` | 16px | Collapsed panels, featured icons |
+### Tactical Tokens
+- **Small (sm)**: `w-3 h-3` (compact rows, badges)
+- **Medium (md)**: `w-4 h-4` (default list/panel usage)
+- **Large (lg)**: `w-5 h-5` (prominent card/header markers)
+- **Extra Large (xl)**: `w-6 h-6` (focus markers only)
 
-**All icons must be square** (w-X h-X, never w-3 h-4).
-
-### Icon Color Standards
-
-- Primary icons: `text-orange-400` or `text-orange-500`
-- Muted icons: `text-zinc-500`
-- State icons: `text-green-400`, `text-amber-400`, `text-red-500`
-- Hover: `hover:text-orange-400` (from muted)
-
-### Icon vs Token Decision
-
-**Use Lucide icons for:** UI controls, actions, navigation  
-**Use tokens for:** Status, tactical symbols, operational markers
-
-See [Token System](#token-system) for details.
+**Rule**: Tokens must be square. Icon/token size must match typography density.
 
 ---
 
-## Component Specifications
+## 5. Component Primitives (Mandatory)
 
-### NexusBadge
+### Button Component
+- **Use `NexusButton` exclusively** — no raw `<button>` elements
+- Props: `intent`, `size`, `disabled`, `onClick`, `className`
+- Intents: `primary`, `secondary`, `subtle`, `danger`
+- Sizes: `sm`, `md`, `lg`
 
-**Purpose:** Labeled badges for status, categories, tags.
+### Badge Component
+- **Use `NexusBadge` exclusively** — no custom badges
+- Props: `tone`, `className`, `children`
+- Tones: `ok`, `warning`, `danger`, `active`, `neutral`
 
-**Props:**
-- `tone` - Visual tone (neutral, active, ok, warning, danger, locked, experimental)
-- `className` - Additional classes
-- `children` - Badge content
+### Status/Signal/Metric Cells
+- **`NexusStatusPill`**: For status values (READY, STANDBY, OFFLINE)
+- **`NexusSignalPill`**: For signal strength/quality indicators
+- **`NexusMetricCell`**: For metric displays with icon + value + label
 
-**Tone Classes:**
-```javascript
-neutral: 'border-zinc-700 bg-zinc-900/80 text-zinc-300'
-active: 'border-orange-500/45 bg-orange-500/14 text-zinc-100'
-ok: 'border-emerald-600/60 bg-emerald-950/45 text-emerald-200'
-warning: 'border-amber-600/60 bg-amber-950/45 text-amber-200'
-danger: 'border-red-600/60 bg-red-950/45 text-red-200'
-locked: 'border-zinc-600 bg-zinc-900/95 text-zinc-400'
-experimental: 'border-purple-500/45 bg-purple-500/14 text-purple-100'
-```
+### Tactical Token UI
+- **`NexusTokenIcon`**: Renders token family (circle, hex, penta, etc.) with color/size
+- **`NexusStatusToken`**: Token + label combo for status display
+- **`NexusRosterBadge`**: Roster number token with metadata
+- **`NexusTokenLabel`**: Token-anchored label with consistent spacing
 
-**Example:**
-```jsx
-<NexusBadge tone="ok">READY</NexusBadge>
-<NexusBadge tone="danger">CRITICAL</NexusBadge>
-```
+**Pattern**: Use primitives for all UI elements — no inline custom styling for buttons/badges/tokens.
 
 ---
 
-### NexusButton
-
-**Purpose:** All clickable buttons in NexusOS.
-
-**Props:**
-- `intent` - Visual style (primary, neutral, subtle, danger)
-- `size` - Size variant (sm, md, lg)
-- `className` - Additional classes
-
-**Intent Classes:**
-```javascript
-primary: 'border-orange-500/64 bg-orange-500/34 text-white'
-neutral: 'border-zinc-600 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-50'
-subtle: 'border-zinc-700/24 bg-zinc-900/90 text-zinc-100'
-danger: 'border-red-500/60 bg-red-900/70 text-white'
-```
-
-**Icon Enforcement:** All icons inside buttons must be `w-3 h-3`.
-
-**Example:**
-```jsx
-<NexusButton intent="primary">
-  <Zap className="w-3 h-3 mr-1" />
-  Execute
-</NexusButton>
-```
-
----
-
-### NexusStatusPill
-
-**Purpose:** Compact status with dot + label.
-
-**Props:**
-- `tone` - Visual tone
-- `label` - Status text
-- `size` - sm (default), md
-
-**Structure:** Dot (1.5×1.5px) + Label (8px mono)
-
-**Example:**
-```jsx
-<NexusStatusPill tone="ok" label="ACTIVE" />
-```
-
----
-
-### NexusSignalPill
-
-**Purpose:** Metric pill with icon + value.
-
-**Props:**
-- `tone` - Visual tone
-- `value` - Numeric value
-- `icon` - Lucide icon component
-- `unit` - Unit suffix (ms, %, etc.)
-
-**Example:**
-```jsx
-<NexusSignalPill tone="ok" value={45} icon={Signal} unit="ms" />
-```
-
----
-
-### NexusMetricCell
-
-**Purpose:** Labeled metric for footers/grids.
-
-**Props:**
-- `label` - Metric label
-- `value` - Metric value
-- `tone` - Value color tone
-- `token` - Optional token config
-
-**Example:**
-```jsx
-<NexusMetricCell label="FUEL" value="87%" tone="ok" />
-<NexusMetricCell 
-  label="FUEL" 
-  value="87%" 
-  tone="ok"
-  token={{ family: 'fuel', color: 'orange', size: 'sm' }}
-/>
-```
-
----
-
-### Token Primitives
-
-**See [Token System](#token-system) for complete documentation.**
-
-- **NexusTokenIcon** - Renders token image with sizing
-- **NexusStatusToken** - Token + optional label
-- **NexusRosterBadge** - Number + callsign + role + status
-- **NexusTokenLabel** - Token + text (inline/stacked)
-
----
-
-## Token System
-
-### Token Families (Complete List)
-
-- **Shapes:** circle, hex, penta, square, triangle, objective
-- **Resources:** ammunition, energy, food, fuel, shelter
-- **Specialist:** hospital, mechanics
-- **Tactical:** target, target-alt
-- **Numbers:** number-0 through number-13
-
-### Color Semantics
-
-| Color | Meaning | Examples |
-|-------|---------|----------|
-| **red** | Danger, hostile, critical | Enemy contact, critical alert, failed |
-| **orange** | Active, transmitting, primary | TX state, active mission, engaged |
-| **yellow** | Warning, pending, caution | Warning, pending, in-progress |
-| **green** | Ready, healthy, secure | Operational, ready, complete, friendly |
-| **blue** | Friendly, standard, info | Allied, standard, informational |
-| **cyan** | Support, logistics, secondary | Support roles, logistics, utility |
-| **grey** | Inactive, offline, neutral | Offline, disabled, archived |
-| **purple** | Special (encrypted, secured) | Secured comms, encrypted |
-| **violet** | Alternative special (VIP) | VIP, experimental, unique |
-
-### Token Sizing
-
-| Size | Class | Pixels | Usage |
-|------|-------|--------|-------|
-| **sm** | `w-3 h-3` | 12px | Inline badges, roster |
-| **md** | `w-4 h-4` | 16px | Standard markers, list items |
-| **lg** | `w-5 h-5` | 20px | Headers, featured items |
-| **xl** | `w-6 h-6` | 24px | Map markers, hero elements |
+## 6. Token System (Semantic Icons)
 
 ### When to Use Tokens vs Lucide
+- **Tokens**: Tactical semantics (status, priority, objective, role, channel type, roster number)
+- **Lucide**: Generic UI actions (open/close, edit, settings, navigation)
 
-**Tokens:** Status, tactical symbols, roles, priorities  
-**Lucide:** UI controls, actions, navigation
+### Token Families
+- **`circle`**: Live state (ready, tx, muted, offline)
+- **`hex`**: Channel/network classification
+- **`target`, `target-alt`, `objective`**: Mission/objective/asset markers
+- **`penta`**: Operation phase/status
+- **`triangle`**: Alert/priority
+- **`number-0` to `number-13`**: Roster/order/count markers
+- **`hospital`, `mechanics`, `fuel`, etc.**: Specialist/resource semantics
 
-**Example:**
-```jsx
-// Status indicator - USE TOKEN
-<NexusTokenIcon family="circle" color="green" size="sm" />
+### Color Semantics
+- **Red**: Danger/hostile/critical
+- **Orange**: Active/transmit/priority
+- **Yellow**: Warning/caution
+- **Green**: Healthy/ready/secure
+- **Blue**: Allied/info
+- **Cyan**: Support/utility
+- **Grey**: Inactive/offline
+- **Purple variants**: Secure/encrypted/degraded escalation
 
-// Edit button - USE LUCIDE
-<button><Edit className="w-3 h-3" /></button>
-```
+### Variant Rules
+- **`base`**: Normal state
+- **`v1`**: Secure/encrypted/hardened
+- **`v2`**: Critical/degraded/escalated
 
-### Implementation
-
-```jsx
-import { NexusTokenIcon, NexusStatusToken } from '@/components/nexus-os/ui/primitives';
-
-// Basic token
-<NexusTokenIcon family="circle" color="green" size="sm" />
-
-// Status with label
-<NexusStatusToken status="ready" label="READY" size="sm" />
-
-// Roster badge
-<NexusRosterBadge
-  number={1}
-  callsign="HAWK"
-  role="pilot"
-  state="ready"
-/>
-```
-
-**See:** `components/nexus-os/ui/tokens/TOKEN_USAGE_GUIDE.md` for comprehensive token documentation.
+See `ui/tokens/TOKEN_USAGE_GUIDE.md` for detailed patterns.
 
 ---
 
-## Animation & Transitions
+## 7. Validation and Testing
 
-### Standard Timing
-
-- **Fast:** `duration-150` - Instant feedback (hovers, clicks)
-- **Standard:** `duration-200` - Default transitions
-- **Slow:** `duration-300` - Panel animations, slides
-
-### Hover Effects
-
-```jsx
-// Standard button hover
-hover:brightness-105 transition-all duration-200
-
-// Icon hover
-hover:text-orange-400 transition-colors duration-200
-
-// Scale hover (use sparingly)
-hover:scale-105 transition-transform duration-200
-```
-
-### Active States
-
-```jsx
-// Button active
-active:brightness-100
-
-// Icon active
-active:text-orange-500
-```
-
-### Reduced Motion Support
-
-All animations automatically respect `prefers-reduced-motion`. No additional code needed (handled in globals.css).
-
----
-
-## Accessibility Requirements
-
-### Keyboard Navigation
-
-- All interactive elements must be keyboard accessible
-- Focus states must be visible: `focus:ring-2 focus:ring-orange-500/40`
-- Tab order must be logical
-
-### ARIA Labels
-
-**Required for:**
-- Icon-only buttons
-- Token images (use tooltip prop)
-- Status indicators
-- Metric cells
-
-**Example:**
-```jsx
-<button aria-label="Close panel" title="Close panel">
-  <X className="w-3 h-3" />
-</button>
-
-<NexusTokenIcon
-  family="circle"
-  color="green"
-  size="sm"
-  tooltip="Online - Ready"
-/>
-```
-
-### Color Contrast
-
-All text must meet **WCAG AA** standards:
-- Small text (8px, 10px): 4.5:1 minimum
-- Large text (never used in NexusOS): 3:1 minimum
-
-**Verified combinations:**
-- `text-zinc-100` on `bg-zinc-950` ✅ (16.1:1)
-- `text-zinc-300` on `bg-zinc-900` ✅ (10.5:1)
-- `text-orange-400` on `bg-zinc-950` ✅ (7.8:1)
-
----
-
-## Critical Don'ts
-
-### ❌ Typography Violations
-
-```jsx
-// WRONG: Wrong font size
-<span className="text-xs">...</span>          // 12px
-<span className="text-sm">...</span>          // 14px
-<span className="text-[12px]">...</span>      // 12px
-
-// CORRECT: Use 8px or 10px only
-<span className="text-[8px]">...</span>
-<span className="text-[10px]">...</span>
-```
-
-```jsx
-// WRONG: Light font weight
-<span className="font-normal">...</span>      // 400
-<span className="font-medium">...</span>      // 500
-
-// CORRECT: 600+ only
-<span className="font-semibold">...</span>    // 600
-<span className="font-bold">...</span>        // 700
-```
-
-```jsx
-// WRONG: Not uppercase
-<span className="capitalize">...</span>
-<span>hello world</span>
-
-// CORRECT: Always uppercase
-<span className="uppercase">...</span>
-<span>HELLO WORLD</span>
-```
-
-### ❌ Spacing Violations
-
-```jsx
-// WRONG: Large padding/gaps
-<div className="p-4 gap-3">...</div>          // 16px, 12px
-
-// CORRECT: Use standards
-<div className="p-2 gap-1.5">...</div>        // 8px, 6px
-```
-
-### ❌ Color Violations
-
-```jsx
-// WRONG: Opacity without blur
-<div className="bg-zinc-900/80">...</div>
-
-// CORRECT: Opacity + blur
-<div className="bg-zinc-900/80 backdrop-blur-sm">...</div>
-```
-
-```jsx
-// WRONG: Border without opacity
-<div className="border border-zinc-700">...</div>
-
-// CORRECT: Border with opacity
-<div className="border border-zinc-700/40">...</div>
-```
-
-### ❌ Icon Violations
-
-```jsx
-// WRONG: Wrong sizes
-<Icon className="w-5 h-5" />                  // Not in matrix
-<Icon className="w-3 h-4" />                  // Not square
-
-// CORRECT: Use matrix sizes, always square
-<Icon className="w-3 h-3" />
-<Icon className="w-3.5 h-3.5" />
-```
-
-### ❌ Token Violations
-
-```jsx
-// WRONG: Hardcoded path
-<img src="/tokens/token-circle-green.png" />
-
-// CORRECT: Use primitive
-<NexusTokenIcon family="circle" color="green" size="sm" />
-```
-
-```jsx
-// WRONG: Token for UI control
-<NexusTokenIcon family="circle" color="orange" />
-<button>Edit</button>
-
-// CORRECT: Lucide for UI controls
-<button><Edit className="w-3 h-3" />Edit</button>
-```
-
----
-
-## Checklist for New Components
-
-Before committing a new NexusOS component:
-
-### Typography
-- [ ] All text is 8px or 10px
-- [ ] All text is font-semibold or bolder
-- [ ] All text has tracking-[0.12em] or wider
-- [ ] All text is uppercase (or manually uppercase)
-
-### Spacing
-- [ ] Padding uses p-1.5, p-2, or p-2.5
-- [ ] Gaps use gap-1, gap-1.5, or gap-2
-- [ ] Margins are minimal or absent
-
-### Icons
-- [ ] All Lucide icons are w-2.5, w-3, w-3.5, or w-4
-- [ ] All icons are square (w-X h-X)
-- [ ] Icons have appropriate color
-
-### Tokens (if applicable)
-- [ ] Tokens use NexusTokenIcon component
-- [ ] Token sizing follows matrix (sm/md/lg/xl)
-- [ ] Token colors follow semantics (red=danger, green=ok)
-- [ ] Tokens have tooltips/aria-labels
-
-### Colors
-- [ ] Borders use zinc-700/40 or zinc-700/60
-- [ ] Opacity backgrounds include backdrop-blur-sm
-- [ ] No decorative gradients
-- [ ] Semantic colors used correctly
-
-### Primitives
-- [ ] Buttons use NexusButton
-- [ ] Badges use NexusBadge
-- [ ] Status uses NexusStatusPill or NexusStatusToken
-- [ ] Metrics use NexusMetricCell
-
-### Accessibility
-- [ ] Icon-only buttons have aria-label
-- [ ] Interactive elements are keyboard accessible
-- [ ] Focus states are visible
-- [ ] Color contrast meets WCAG AA
-
-### Layout
-- [ ] No horizontal scroll
-- [ ] No internal scrollbars (lists paginated to 5-7)
-- [ ] Works at 1366×768, 1440×900, 1920×1080
-
-### Documentation
-- [ ] JSDoc header with compliance note
-- [ ] Props documented
-- [ ] Usage examples in comments
-
----
-
-## Before/After Examples
-
-### Example 1: Status Indicator
-
-**Before:**
-```jsx
-<div className="flex items-center gap-2">
-  <div className="w-2 h-2 bg-green-500 rounded-full" />
-  <span className="text-sm font-medium">Ready</span>
-</div>
-```
-
-**After:**
-```jsx
-<NexusStatusPill tone="ok" label="READY" />
-```
-
-**Impact:** Typography compliant, spacing standardized, primitive usage.
-
----
-
-### Example 2: Button
-
-**Before:**
-```jsx
-<button className="px-4 py-2 bg-orange-600 text-white rounded">
-  Execute
-</button>
-```
-
-**After:**
-```jsx
-<NexusButton intent="primary">
-  <Zap className="w-3 h-3 mr-1" />
-  Execute
-</NexusButton>
-```
-
-**Impact:** Typography, spacing, icon sizing, hover effects all standardized.
-
----
-
-### Example 3: Panel Header
-
-**Before:**
-```jsx
-<div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900">
-  <h3 className="text-sm font-semibold">Voice Control</h3>
-</div>
-```
-
-**After:**
-```jsx
-<div className="px-2.5 py-2 border border-zinc-700/40 bg-zinc-900/40 backdrop-blur-sm">
-  <h3 className="text-[10px] font-black tracking-[0.15em] uppercase leading-none">
-    Voice Control
-  </h3>
-</div>
-```
-
-**Impact:** Typography hierarchy, spacing, border opacity, backdrop blur.
-
----
-
-### Example 4: Token Usage
-
-**Before:**
-```jsx
-<div className="flex items-center gap-2">
-  <Circle className="w-4 h-4 text-green-500" />
-  <span>Pilot</span>
-</div>
-```
-
-**After:**
-```jsx
-<div className="flex items-center gap-1.5">
-  <NexusTokenIcon family="fuel" color="blue" size="sm" />
-  <span className="text-[8px] uppercase tracking-[0.14em]">PILOT</span>
-</div>
-```
-
-**Impact:** Token usage, typography, spacing standardized.
-
----
-
-## Validation Tool
-
-Use the style guide validator for automated compliance checking:
-
-```javascript
+### Automated Validation
+```js
 import { runFullAudit } from '@/components/nexus-os/validators/styleGuideValidator';
 
-const componentRef = useRef(null);
-
-useEffect(() => {
-  if (componentRef.current) {
-    const report = runFullAudit(componentRef.current, { strict: false });
-    console.log('Compliance score:', report.score);
-  }
-}, []);
+// In development mode, run audit on mount
+const report = runFullAudit(componentRef.current, { strict: false });
+console.log('Compliance:', report.complianceScore, report.summary);
 ```
 
-**In development mode**, violations are logged to console automatically.
+### Manual Checklist
+- [ ] All typography uses 8px or 10px for system labels
+- [ ] All font weights are >= 600 (semibold)
+- [ ] Spacing uses only approved values (p-1.5, p-2, p-2.5, gap-1, gap-1.5, gap-2)
+- [ ] Icons are square and use approved sizes
+- [ ] Borders use approved opacity ranges (zinc-700/40 to zinc-700/60)
+- [ ] Opacity backdrops include backdrop-blur-sm
+- [ ] No TypeScript syntax (no type annotations, no `as` casts, no interfaces in JSX files)
+- [ ] Component has design compliance header documenting all standards used
+
+### Build Validation
+```bash
+npm run build  # Must pass without TypeScript errors
+```
 
 ---
 
-## Resources
+## 8. Mandatory Hard Rules
 
-- **Design Tokens:** `components/nexus-os/ui/theme/design-tokens.js`
-- **Token Guide:** `components/nexus-os/ui/tokens/TOKEN_USAGE_GUIDE.md`
-- **Primitives:** `components/nexus-os/ui/primitives/`
-- **Validator:** `components/nexus-os/validators/styleGuideValidator.js`
-- **Component Template:** `components/nexus-os/ui/_template/NexusComponentTemplate.jsx`
+### Typography Don'ts
+- ❌ No font sizes other than 8px, 10px (system) or xs/sm (user content)
+- ❌ No font-weight < 600
+- ❌ No lowercase text for system labels
+- ❌ No letter-spacing outside 0.12em-0.15em range
+
+### Layout Don'ts
+- ❌ No page-level scroll (use h-screen/dvh + internal overflow)
+- ❌ No unbounded lists (must cap at 5-7 items + pagination)
+- ❌ No decorative gradients in persistent panels
+- ❌ No horizontal scroll at 1366×768 minimum
+
+### Token Don'ts
+- ❌ No token sizes outside 12-24px (w-3 to w-6)
+- ❌ No text-only status if semantic token exists
+- ❌ No mixing token + Lucide for same semantic role in one row
+- ❌ No decorative token use without meaning
+
+### Technical Don'ts
+- ❌ No TypeScript syntax in component files
+- ❌ No new framework/runtime dependency for design enforcement
+- ❌ No fabricated telemetry or backend data
 
 ---
 
-## Enforcement
+## 9. Design Compliance Header (Mandatory)
 
-**This guide is mandatory.** All NexusOS components must comply.
-
-**Pre-merge checklist:**
-1. Run style guide validator
-2. Verify compliance score >95%
-3. Fix all violations
-4. Add compliance header comment
-5. Test at all breakpoints
-
-**Questions?** Reference this guide or ask in team chat.
+Every NexusOS component MUST include this header:
+```js
+/**
+ * ComponentName - Brief description
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: headerPrimary (10px black), bodySecondary (8px semibold)
+ * - Spacing: px-2.5 py-2 (header), p-1.5 (body), gap-1.5
+ * - Icons: w-3.5 h-3.5 (Lucide primary actions)
+ * - Tokens: circle (status), number-X (roster), penta (op phase)
+ * - Borders: zinc-700/40 (standard), zinc-800 (elevated)
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ * @see components/nexus-os/ui/tokens/TOKEN_USAGE_GUIDE.md
+ */
+```
 
 ---
 
-**Last Updated:** 2026-02-25  
-**Maintained By:** NexusOS Design System Team
+## 10. Common Patterns
+
+### Panel Structure
+```js
+<div className="rounded border border-zinc-800 bg-zinc-900/45 p-2.5">
+  <header className="flex items-center justify-between mb-2">
+    <h4 className="text-[10px] font-black uppercase tracking-[0.15em]">PANEL TITLE</h4>
+    <NexusBadge tone="active">STATUS</NexusBadge>
+  </header>
+  <div className="space-y-1.5">
+    {/* Panel content */}
+  </div>
+</div>
+```
+
+### List Item with Token
+```js
+<div className="flex items-center gap-1.5 px-2 py-1 rounded border border-zinc-800 bg-zinc-950/55">
+  <NexusTokenIcon family="circle" color="green" size="sm" />
+  <span className="text-[10px] font-semibold uppercase tracking-[0.12em]">ITEM LABEL</span>
+  <NexusBadge tone="ok">READY</NexusBadge>
+</div>
+```
+
+### Pagination Controls
+```js
+<div className="flex items-center justify-between gap-2">
+  <NexusButton size="sm" intent="subtle" disabled={page === 0} onClick={prevPage}>Prev</NexusButton>
+  <NexusBadge tone="neutral">{page + 1}/{pageCount}</NexusBadge>
+  <NexusButton size="sm" intent="subtle" disabled={page >= pageCount - 1} onClick={nextPage}>Next</NexusButton>
+</div>
+```
+
+---
+
+## 11. Validation Tools
+
+### Runtime Audit
+```js
+import { runFullAudit } from '@/components/nexus-os/validators/styleGuideValidator';
+
+const report = runFullAudit(componentRef.current, { strict: false });
+// report.complianceScore: 0-100
+// report.summary: human-readable summary
+// report.violations: array of specific issues
+```
+
+### React Hook (Development Only)
+```js
+import { useStyleGuideValidation } from '@/components/nexus-os/validators/styleGuideValidator';
+
+export default function MyComponent() {
+  const ref = useStyleGuideValidation('MyComponent');
+  return <div ref={ref}>...</div>;
+}
+```
+
+---
+
+## 12. Migration Checklist
+
+When updating existing components:
+- [ ] Remove all TypeScript syntax (`as`, `: Type`, `interface`, `<Generic>`)
+- [ ] Add design compliance header
+- [ ] Replace raw buttons with `NexusButton`
+- [ ] Replace raw badges with `NexusBadge`
+- [ ] Verify typography scale (8px/10px for system labels)
+- [ ] Verify spacing (p-1.5, p-2, p-2.5, gap-1, gap-1.5, gap-2)
+- [ ] Verify icon sizes (w-3 to w-4)
+- [ ] Verify token sizes (w-3 to w-6)
+- [ ] Verify border opacity (zinc-700/40 to zinc-700/60)
+- [ ] Add backdrop-blur-sm to all opacity backgrounds
+- [ ] Build passes without errors
