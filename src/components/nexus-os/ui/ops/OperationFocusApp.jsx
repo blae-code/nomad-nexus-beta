@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRenderProfiler } from '../../diagnostics';
-import { CommsTemplateRegistry, type CommsTemplateId } from '../../registries/commsTemplateRegistry';
-import type { Operation, RequirementKind, RuleEnforcement } from '../../schemas/opSchemas';
-import type { DoctrineLevel, MandateEnforcement } from '../../services/operationEnhancementService';
+import { CommsTemplateRegistry } from '../../registries/commsTemplateRegistry';
 import {
   applyCommsTemplate,
   canManageOperation,
@@ -21,14 +19,13 @@ import {
 import {
   canControlLifecycle,
   resolveOperationRoleView,
-  type OperationRoleView,
 } from '../../services/operationAuthorityService';
 import {
   buildOperationIcsFilename,
   buildOperationScheduleIcs,
 } from '../../services/operationScheduleService';
 import { isOperationExecutionBoardV2Enabled } from '../../services/operationFeatureFlagService';
-import type { DataClassification } from '../../schemas/crossOrgSchemas';
+
 import {
   challengeAssumption,
   createAssumption,
@@ -102,7 +99,7 @@ import {
   availabilityTone,
   resolveAvailabilityState,
 } from '../state';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
+
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
