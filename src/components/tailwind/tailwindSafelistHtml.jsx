@@ -175,9 +175,9 @@ export const TAILWIND_SAFELIST_HTML = `
     <div class="data-[state=checked]:bg-red-600"></div>
     <div class="placeholder:text-slate-500"></div>
     <div class="resize-none"></div>
-    <!-- NexusOS Design System Classes -->
+    <!-- NexusOS Design System Classes - Comprehensive Safelist -->
     <!-- Typography: All valid font sizes, weights, tracking, transforms -->
-    <div class="text-[8px] text-[9px] text-[10px] text-[11px] tracking-[0.12em] tracking-[0.14em] tracking-[0.15em] tracking-[0.2em] tracking-[0.25em] tracking-wide tracking-wider tracking-widest font-black font-extrabold font-semibold font-bold font-mono uppercase lowercase capitalize leading-none leading-tight leading-relaxed leading-loose"></div>
+    <div class="text-[7px] text-[8px] text-[9px] text-[10px] text-[11px] text-[12px] tracking-[0.12em] tracking-[0.14em] tracking-[0.15em] tracking-[0.2em] tracking-[0.25em] tracking-wide tracking-wider tracking-widest font-black font-extrabold font-semibold font-bold font-mono font-normal font-medium uppercase lowercase capitalize leading-none leading-tight leading-snug leading-normal leading-relaxed leading-loose"></div>
     
     <!-- Spacing: All valid padding, gap, margin combinations -->
     <div class="p-0.5 p-1 p-1.5 p-2 p-2.5 p-3 p-4 px-1 py-0.5 px-1.5 py-1 px-2 py-1.5 px-2.5 py-2 px-3 py-2.5 px-4 py-3"></div>
