@@ -2,11 +2,23 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
+import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
+import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
+import type {
+  ControlSignal,
+  MapLayerState,
+  TacticalLayerId,
+  TacticalMapDockId,
+  TacticalMapMode,
+} from '../../schemas/mapSchemas';
 import { getRenderableLocationEstimates } from '../../services/locationEstimateService';
 import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
+  type CommsPriority,
+  type MapCommsOverlay,
+  type MapCommsOverlayNet,
 } from '../../services/mapCommsOverlayService';
 import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
@@ -26,9 +38,12 @@ import {
 } from '../../services/intentDraftService';
 import {
   buildMapLogisticsOverlay,
+  type MapLogisticsLane,
 } from '../../services/mapLogisticsOverlayService';
 import {
   buildMapCommandSurface,
+  type MapCommandAlert,
+  type TacticalMacroId,
 } from '../../services/mapCommandSurfaceService';
 import { buildMapTimelineSnapshot } from '../../services/mapTimelineService';
 import {
@@ -54,16 +69,33 @@ import {
   availabilityTone,
   resolveAvailabilityState,
 } from '../state';
+import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import IntelDetailPanel from './IntelDetailPanel';
 import IntentDraftPanel from './IntentDraftPanel';
+import type { RadialMenuItem } from './RadialMenu';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID, TACTICAL_MAP_NODES, findMapNodeForLocation } from './mapBoard';
+import type { MapCommsAnchor, MapRadialState, OpsOverlayNode, RenderablePresence, TacticalMapViewMode } from './mapTypes';
 import MapCommandStrip from './MapCommandStrip';
 import MapStageCanvas from './MapStageCanvas';
-import MapDock from './MapDock';
+import MapDock, { type MapDockTab } from './MapDock';
 import MapActionQueue from './MapActionQueue';
 import MapTimelineReplay from './MapTimelineReplay';
 
-const DEFAULT_VISIBLE_STRATA = Object.freeze({
+interface TacticalMapPanelProps extends Partial<CqbPanelSharedProps> {
+  locationEstimates?: LocationEstimate[];
+  controlSignals?: ControlSignal[];
+  viewerScope?: VisibilityScope;
+  onOpenMapFocus?: () => void;
+  compact?: boolean;
+}
+
+interface CommsOverlayState {
+  loading: boolean;
+  error: string | null;
+  overlay: MapCommsOverlay;
+}
+
+const DEFAULT_VISIBLE_STRATA: Readonly<Record<IntelStratum, boolean>> = Object.freeze({
   PERSONAL: true,
   SHARED_COMMONS: true,
   OPERATIONAL: false,
@@ -72,7 +104,7 @@ const DEFAULT_VISIBLE_STRATA = Object.freeze({
 
 const SUMMARY_PAGE_SIZE = 5;
 
-function createLayerState(defaults) {
+function createLayerState(defaults: Partial<Record<TacticalLayerId, boolean>>): MapLayerState[] {
   return [
     { id: 'presence', enabled: defaults.presence !== false },
     { id: 'controlZones', enabled: defaults.controlZones !== false },
@@ -83,7 +115,7 @@ function createLayerState(defaults) {
   ];
 }
 
-function mapPresence(estimates, viewerScope) {
+function mapPresence(estimates: LocationEstimate[], viewerScope: VisibilityScope): RenderablePresence[] {
   const renderable = getRenderableLocationEstimates(estimates, { viewerScope, includeStale: true });
   return renderable
     .map((estimate) => {
@@ -124,7 +156,7 @@ function commsPriorityColor(priority) {
   return 'rgba(118, 172, 214, 0.84)';
 }
 
-function commsPriorityTone(priority: CommsPriority): 'danger' | 'warning' | 'active' {
+function commsPriorityTone(priority) {
   if (priority === 'CRITICAL') return 'danger';
   if (priority === 'HIGH') return 'warning';
   return 'active';
@@ -184,39 +216,39 @@ export default function TacticalMapPanel({
   const commandSurfaceV2Enabled = isMapCommandSurfaceV2Enabled();
 
   const initialMode = resolveTacticalMapDefaultMode(bridgeId);
-  const [mapMode, setMapMode] = useState<TacticalMapMode>(initialMode);
-  const [layers, setLayers] = useState<MapLayerState[]>(() => createLayerState(mapModeLayerDefaults(initialMode)));
-  const [activeDockId, setActiveDockId] = useState<TacticalMapDockId>(tacticalMapDockIdsForMode(initialMode)[0]);
-  const [visibleStrata, setVisibleStrata] = useState<Record<IntelStratum, boolean>>({ ...DEFAULT_VISIBLE_STRATA });
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const [selectedIntelId, setSelectedIntelId] = useState<string | null>(null);
-  const [activeRadial, setActiveRadial] = useState<MapRadialState | null>(null);
+  const [mapMode, setMapMode] = useState(initialMode);
+  const [layers, setLayers] = useState(() => createLayerState(mapModeLayerDefaults(initialMode)));
+  const [activeDockId, setActiveDockId] = useState(tacticalMapDockIdsForMode(initialMode)[0]);
+  const [visibleStrata, setVisibleStrata] = useState({ ...DEFAULT_VISIBLE_STRATA });
+  const [selectedZoneId, setSelectedZoneId] = useState(null);
+  const [selectedIntelId, setSelectedIntelId] = useState(null);
+  const [activeRadial, setActiveRadial] = useState(null);
   const [intelVersion, setIntelVersion] = useState(0);
   const [draftVersion, setDraftVersion] = useState(0);
-  const [draftError, setDraftError] = useState(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [commsPriorityFloor, setCommsPriorityFloor] = useState<CommsPriority>('STANDARD');
+  const [commsPriorityFloor, setCommsPriorityFloor] = useState('STANDARD');
   const [showCommsLinks, setShowCommsLinks] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [showLagrange, setShowLagrange] = useState(false);
   const [showOmMarkers, setShowOmMarkers] = useState(false);
   const [aiInferenceLoading, setAiInferenceLoading] = useState(false);
   const [aiInferenceText, setAiInferenceText] = useState('');
-  const [aiInferenceError, setAiInferenceError] = useState(null);
+  const [aiInferenceError, setAiInferenceError] = useState<string | null>(null);
   const [replayWindowMinutes, setReplayWindowMinutes] = useState(30);
   const [replayOffsetMinutes, setReplayOffsetMinutes] = useState(0);
-  const [mapViewMode, setMapViewMode] = useState<TacticalMapViewMode>('SYSTEM');
-  const [busyMacroId, setBusyMacroId] = useState<TacticalMacroId | null>(null);
-  const [macroExecutionMessage, setMacroExecutionMessage] = useState<string | null>(null);
-  const [macroExecutionError, setMacroExecutionError] = useState<string | null>(null);
-  const [remoteMapAlerts, setRemoteMapAlerts] = useState<MapCommandAlert[]>([]);
+  const [mapViewMode, setMapViewMode] = useState('SYSTEM');
+  const [busyMacroId, setBusyMacroId] = useState(null);
+  const [macroExecutionMessage, setMacroExecutionMessage] = useState(null);
+  const [macroExecutionError, setMacroExecutionError] = useState(null);
+  const [remoteMapAlerts, setRemoteMapAlerts] = useState([]);
   const [commsDegraded, setCommsDegraded] = useState(false);
   const [commsRetryDelayMs, setCommsRetryDelayMs] = useState(20_000);
   const [commsRefreshNonce, setCommsRefreshNonce] = useState(0);
   const [quickBroadcastMessage, setQuickBroadcastMessage] = useState('');
-  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState<CommsPriority>('STANDARD');
+  const [quickBroadcastPriority, setQuickBroadcastPriority] = useState('STANDARD');
   const [quickBroadcastBusy, setQuickBroadcastBusy] = useState(false);
-  const [quickBroadcastError, setQuickBroadcastError] = useState(null);
+  const [quickBroadcastError, setQuickBroadcastError] = useState<string | null>(null);
   const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
   const [summaryCommsPage, setSummaryCommsPage] = useState(0);
   const [commsNetsPage, setCommsNetsPage] = useState(0);
@@ -224,7 +256,7 @@ export default function TacticalMapPanel({
   const commsRetryDelayRef = useRef(20_000);
 
   const scopedCommsOpId = focusOperationId || opId || '';
-  const [commsState, setCommsState] = useState<CommsOverlayState>({
+  const [commsState, setCommsState] = useState({
     loading: true,
     error: null,
     overlay: createEmptyMapCommsOverlay(scopedCommsOpId),
@@ -416,7 +448,7 @@ export default function TacticalMapPanel({
   }, [intelObjects, selectedIntelId]);
   const selectedIntelComments = useMemo(() => (selectedIntel ? listIntelComments(selectedIntel.id) : []), [selectedIntel, intelVersion]);
 
-  const layerEnabled = (id: TacticalLayerId) => layers.find((entry) => entry.id === id)?.enabled === true;
+  const layerEnabled = (id) => layers.find((entry) => entry.id === id)?.enabled === true;
 
   const opsOverlay = useMemo(
     () =>
@@ -750,13 +782,13 @@ export default function TacticalMapPanel({
     setActiveRadial(null);
   };
 
-  const executeMacro = async (macroId) => {
+  const executeMacro = async (macroId: TacticalMacroId) => {
     if (busyMacroId) return;
     setBusyMacroId(macroId);
     setMacroExecutionError(null);
     setMacroExecutionMessage(null);
     try {
-      const response = await invokeMemberFunction('updateCommsConsole', {
+      const response: any = await invokeMemberFunction('updateCommsConsole', {
         action: 'execute_map_command_macro',
         macroId,
         eventId: scopedCommsOpId || undefined,
@@ -1031,7 +1063,7 @@ export default function TacticalMapPanel({
       </div>
       {commsAvailability !== 'OK' || commsDegraded ? <div className="text-[11px] text-zinc-500">{commsStatusCopy}</div> : null}
       <div className="flex items-center gap-1.5 flex-wrap">
-        {['STANDARD', 'HIGH', 'CRITICAL'].map((entry) => (
+        {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
           <NexusButton key={entry} size="sm" intent={commsPriorityFloor === entry ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setCommsPriorityFloor(entry)}>{entry === 'STANDARD' ? 'STD+' : entry}</NexusButton>
         ))}
         <NexusButton size="sm" intent={showCommsLinks ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setShowCommsLinks((prev) => !prev)}>Links</NexusButton>
