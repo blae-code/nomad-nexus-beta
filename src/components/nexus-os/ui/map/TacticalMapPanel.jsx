@@ -773,7 +773,7 @@ export default function TacticalMapPanel({
       });
       setCommsRefreshNonce((prev) => prev + 1);
       setMacroExecutionMessage(Array.isArray(response?.effects) ? response.effects.join(' | ') : `Executed ${macroId}.`);
-    } catch (error: any) {
+    } catch (error) {
       const message = error?.message || 'Macro execution failed.';
       setMacroExecutionError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -846,7 +846,7 @@ export default function TacticalMapPanel({
       setDraftError(null);
       setDraftVersion((prev) => prev + 1);
       setIntelVersion((prev) => prev + 1);
-    } catch (error: any) {
+    } catch (error) {
       setDraftError(error?.message || 'Failed to confirm draft');
     }
   };
@@ -1116,7 +1116,6 @@ export default function TacticalMapPanel({
               key={`broadcast:${entry}`}
               size="sm"
               intent={quickBroadcastPriority === entry ? 'primary' : 'subtle'}
-              className="text-[10px]"
               onClick={() => setQuickBroadcastPriority(entry)}
             >
               {entry === 'STANDARD' ? 'STD' : entry}
