@@ -1,28 +1,26 @@
 /**
- * NexusTaskbar - Application launcher and notification tray
+ * NexusTaskbar - Application dock and alerts center
  * 
  * DESIGN COMPLIANCE:
- * - Typography: App labels text-[8px] uppercase tracking-[0.14em]
- * - Icons: w-3.5 h-3.5 (actions), w-2 h-2 (state dots) -> ✅ Replaced with tokens
- * - Spacing: gap-1.5, px-2 py-1.5
- * - Pagination: 6 apps per page, 5 notifications per page
- * - Tokens: ✅ Uses square tokens for app lifecycle, number tokens for notification counts
+ * - Typography: bodySecondary (labels), telemetrySecondary (counts)
+ * - Spacing: px-1.5 py-1 (cards), gap-1.5 (standard)
+ * - Icons: w-3.5 h-3.5 (buttons)
+ * - Primitives: NexusBadge, NexusButton
  * 
  * @see components/nexus-os/STYLE_GUIDE.md
  */
-
 import React from 'react';
 import { AppWindow, Bell, BellRing, CheckCheck, ChevronLeft, ChevronRight, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
-import { NexusBadge, NexusButton, NexusTokenIcon } from '../primitives';
+import { NexusBadge, NexusButton } from '../primitives';
 
-function toneForNotificationLevel(level: NexusTrayNotification['level']) {
+function toneForNotificationLevel(level) {
   if (level === 'critical') return 'danger';
   if (level === 'warning') return 'warning';
   if (level === 'success') return 'ok';
   return 'active';
 }
 
-function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string {
+function dotForState(state) {
   if (state === 'foreground') return 'bg-emerald-400';
   if (state === 'background') return 'bg-sky-400';
   if (state === 'suspended') return 'bg-amber-400';
@@ -30,14 +28,14 @@ function dotForState(state: NexusAppLifecycleEntry['state'] | 'closed'): string 
   return 'bg-zinc-600';
 }
 
-function ageLabel(timestamp: string): string {
+function ageLabel(timestamp) {
   const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
   if (ageSeconds < 60) return `${ageSeconds}s`;
   if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m`;
   return `${Math.floor(ageSeconds / 3600)}h`;
 }
 
-function compactLabel(value: string, max = 10): string {
+function compactLabel(value, max = 10) {
   const clean = String(value || '').trim();
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}...`;
@@ -55,9 +53,9 @@ export default function NexusTaskbar({
   onMarkNotificationRead,
   onMarkAllNotificationsRead,
   onClearNotifications,
-}: NexusTaskbarProps) {
+}) {
   const [trayOpen, setTrayOpen] = React.useState(false);
-  const [trayFilter, setTrayFilter] = React.useState<'ALL' | 'UNREAD'>('UNREAD');
+  const [trayFilter, setTrayFilter] = React.useState('UNREAD');
   const [appPage, setAppPage] = React.useState(0);
   const [noticePage, setNoticePage] = React.useState(0);
   const appsPerPage = 6;
@@ -140,8 +138,8 @@ export default function NexusTaskbar({
                 className={`nx-taskbar-app ${active ? 'is-active' : ''}`}
                 title={app.hotkey ? `${app.label} (${app.hotkey})` : app.label}
               >
-                <NexusTokenIcon family="square" color={tokenColorForAppState(state)} size="sm" alt={state} />
-                <span className="truncate">{compactLabel(app.label)}</span>
+                <span className={`h-2 w-2 rounded-full ${dotForState(state)}`} />
+                <span className="truncate">{compactLabel(app.label, 11)}</span>
               </button>
             );
           })}
@@ -183,11 +181,7 @@ export default function NexusTaskbar({
         >
           {unreadNotifications > 0 ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
           <span className="hidden md:inline">Alerts</span>
-          {unreadNotifications > 0 && unreadNotifications <= 9 ? (
-            <NexusTokenIcon family={`number-${unreadNotifications}`} color="red" size="sm" alt={`${unreadNotifications} unread`} />
-          ) : (
-            <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
-          )}
+          <strong>{unreadNotifications > 0 ? unreadNotifications : notifications.length}</strong>
         </button>
 
         <NexusButton size="sm" intent="primary" onClick={onOpenCommandDeck} className="shrink-0 nx-taskbar-command-btn">

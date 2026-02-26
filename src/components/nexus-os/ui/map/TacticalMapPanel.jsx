@@ -1,24 +1,24 @@
+/**
+ * TacticalMapPanel - Core tactical map interface with overlays
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: headerPrimary (section headers), bodyPrimary (labels), telemetrySecondary (metrics)
+ * - Spacing: p-2.5 (sections), gap-2 (standard layout)
+ * - Borders: border-zinc-800 (standard), border-zinc-700/60 (elevated)
+ * - Icons: w-3.5 h-3.5 (standard)
+ * - Primitives: NexusBadge, NexusButton
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
-import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
-import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
-import type {
-  ControlSignal,
-  MapLayerState,
-  TacticalLayerId,
-  TacticalMapDockId,
-  TacticalMapMode,
-} from '../../schemas/mapSchemas';
 import { getRenderableLocationEstimates } from '../../services/locationEstimateService';
 import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
-  type CommsPriority,
-  type MapCommsOverlay,
-  type MapCommsOverlayNet,
 } from '../../services/mapCommsOverlayService';
 import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
@@ -36,15 +36,8 @@ import {
   subscribeIntentDrafts,
   updateDraft,
 } from '../../services/intentDraftService';
-import {
-  buildMapLogisticsOverlay,
-  type MapLogisticsLane,
-} from '../../services/mapLogisticsOverlayService';
-import {
-  buildMapCommandSurface,
-  type MapCommandAlert,
-  type TacticalMacroId,
-} from '../../services/mapCommandSurfaceService';
+import { buildMapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
+import { buildMapCommandSurface } from '../../services/mapCommandSurfaceService';
 import { buildMapTimelineSnapshot } from '../../services/mapTimelineService';
 import {
   loadTacticalMapPreferences,
@@ -167,15 +160,15 @@ function signalWeightLabel(signal, nowMs) {
 function getErrorText(error) {
   if (typeof error === 'string') return error;
   if (error instanceof Error) return error.message || '';
-  const candidate = error?.message;
+  const candidate = (error as any)?.message;
   return typeof candidate === 'string' ? candidate : '';
 }
 
 function isFormTarget(target) {
   if (!target || typeof target !== 'object') return false;
-  const node = target;
-  const tag = String(node.tagName || '').toLowerCase();
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || Boolean(node.isContentEditable);
+  const node = target as HTMLElement;
+  const tag = String((node as any).tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || Boolean((node as any).isContentEditable);
 }
 
 export default function TacticalMapPanel({
@@ -297,7 +290,7 @@ export default function TacticalMapPanel({
     let active = true;
     let timerId = 0;
 
-    const scheduleNext = (delayMs) => {
+    const scheduleNext = (delayMs: number) => {
       window.clearTimeout(timerId);
       if (!active) return;
       timerId = window.setTimeout(() => {
@@ -523,7 +516,7 @@ export default function TacticalMapPanel({
     if (mapViewMode === 'SYSTEM') {
       const focusSystemTag = selectedNode.systemTag;
       const focusSystemId = `system-${focusSystemTag.toLowerCase()}`;
-      const adjacentSystems = new Set<string>([focusSystemId]);
+      const adjacentSystems = new Set([focusSystemId]);
       for (const edge of TACTICAL_MAP_EDGES) {
         if (edge.kind !== 'jump') continue;
         if (edge.fromNodeId === focusSystemId) adjacentSystems.add(edge.toNodeId);
@@ -780,7 +773,7 @@ export default function TacticalMapPanel({
       });
       setCommsRefreshNonce((prev) => prev + 1);
       setMacroExecutionMessage(Array.isArray(response?.effects) ? response.effects.join(' | ') : `Executed ${macroId}.`);
-    } catch (error) {
+    } catch (error: any) {
       const message = error?.message || 'Macro execution failed.';
       setMacroExecutionError(message);
       if (/permission|403|privilege/i.test(message)) {
@@ -834,7 +827,7 @@ export default function TacticalMapPanel({
       });
       const answer = response?.data?.answer || response?.data?.response?.answer || response?.data?.summary || response?.data?.response || '';
       setAiInferenceText(String(answer || '').trim() || 'No AI estimate returned for current scoped records.');
-    } catch (error) {
+    } catch (error: any) {
       setAiInferenceError(error?.message || 'AI estimate unavailable.');
     } finally {
       setAiInferenceLoading(false);
@@ -853,7 +846,7 @@ export default function TacticalMapPanel({
       setDraftError(null);
       setDraftVersion((prev) => prev + 1);
       setIntelVersion((prev) => prev + 1);
-    } catch (error) {
+    } catch (error: any) {
       setDraftError(error?.message || 'Failed to confirm draft');
     }
   };
@@ -1046,7 +1039,7 @@ export default function TacticalMapPanel({
       </div>
       {commsAvailability !== 'OK' || commsDegraded ? <div className="text-[11px] text-zinc-500">{commsStatusCopy}</div> : null}
       <div className="flex items-center gap-1.5 flex-wrap">
-        {['STANDARD', 'HIGH', 'CRITICAL'].map((entry) => (
+        {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
           <NexusButton key={entry} size="sm" intent={commsPriorityFloor === entry ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setCommsPriorityFloor(entry)}>{entry === 'STANDARD' ? 'STD+' : entry}</NexusButton>
         ))}
         <NexusButton size="sm" intent={showCommsLinks ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setShowCommsLinks((prev) => !prev)}>Links</NexusButton>
