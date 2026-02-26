@@ -8,7 +8,7 @@
  * @see components/nexus-os/STYLE_GUIDE.md
  */
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { runFullAudit } from './styleGuideValidator';
 
 /**

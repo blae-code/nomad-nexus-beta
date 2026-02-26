@@ -196,6 +196,7 @@ export function runRegressionTests(root, options = {}) {
  * @returns {React.RefObject} - Ref to attach to root element
  */
 export function useRegressionTests(componentName, options = {}) {
+  const { useRef, useEffect } = require('react');
   const ref = useRef(null);
   const ranRef = useRef(false);
 

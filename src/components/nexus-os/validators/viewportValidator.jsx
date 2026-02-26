@@ -195,6 +195,7 @@ export function quickViewportCheck(element) {
  * @returns {React.RefObject} - Ref to attach to root element
  */
 export function useViewportValidation(componentName, options = {}) {
+  const { useRef, useEffect } = require('react');
   const ref = useRef(null);
   const ranRef = useRef(false);
 

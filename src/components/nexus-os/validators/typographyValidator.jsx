@@ -222,6 +222,7 @@ export function quickTypographyCheck(element) {
  * @returns {React.RefObject} - Ref to attach to root element
  */
 export function useTypographyValidation(componentName) {
+  const { useRef, useEffect } = require('react');
   const ref = useRef(null);
   const ranRef = useRef(false);
 

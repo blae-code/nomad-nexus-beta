@@ -44,6 +44,15 @@ export {
   runBatchRegressionTests,
 } from './regressionTests';
 
+// Batch compliance auditing
+export {
+  auditComponent,
+  auditComponentBatch,
+  formatAuditReport,
+  runAndLogAudit,
+  AUDIT_STATUS,
+} from './batchComplianceAudit';
+
 // Registry validators (existing)
 export {
   validateCommsTemplate,
