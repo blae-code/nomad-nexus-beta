@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRenderProfiler } from '../../diagnostics';
-import { CommsTemplateRegistry, type CommsTemplateId } from '../../registries/commsTemplateRegistry';
-import type { Operation, RequirementKind, RuleEnforcement } from '../../schemas/opSchemas';
-import type { DoctrineLevel, MandateEnforcement } from '../../services/operationEnhancementService';
+import { CommsTemplateRegistry } from '../../registries/commsTemplateRegistry';
 import {
   applyCommsTemplate,
   canManageOperation,
@@ -21,14 +19,12 @@ import {
 import {
   canControlLifecycle,
   resolveOperationRoleView,
-  type OperationRoleView,
 } from '../../services/operationAuthorityService';
 import {
   buildOperationIcsFilename,
   buildOperationScheduleIcs,
 } from '../../services/operationScheduleService';
 import { isOperationExecutionBoardV2Enabled } from '../../services/operationFeatureFlagService';
-import type { DataClassification } from '../../schemas/crossOrgSchemas';
 import {
   challengeAssumption,
   createAssumption,
@@ -102,7 +98,6 @@ import {
   availabilityTone,
   resolveAvailabilityState,
 } from '../state';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
@@ -117,40 +112,13 @@ import {
 } from './operationTokenSemantics';
 import { deriveOperationStagePolicy } from './stagePolicy';
 
-type TabId = 'EXECUTION' | 'PLAN' | 'ROSTER' | 'REQUIREMENTS' | 'DOCTRINE' | 'COMMS' | 'TIMELINE' | 'NARRATIVE' | 'COALITION';
-type TimelineSource = 'AUDIT' | 'DECISION' | 'EVENT';
-type TimelineFilter = 'ALL' | TimelineSource;
-type TimelineSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
-
-interface TimelineEntry {
-  id: string;
-  source: TimelineSource;
-  kind: string;
-  summary: string;
-  actor?: string;
-  createdAt: string;
-  severity: TimelineSeverity;
-}
-
-interface OperationFocusAppProps extends Partial<CqbPanelSharedProps> {
-  actorId: string;
-  onClose?: () => void;
-}
-
-const TABS: TabId[] = ['EXECUTION', 'PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
-const TIMELINE_FILTERS: TimelineFilter[] = ['ALL', 'AUDIT', 'DECISION', 'EVENT'];
+const TABS = ['EXECUTION', 'PLAN', 'ROSTER', 'REQUIREMENTS', 'DOCTRINE', 'COMMS', 'TIMELINE', 'NARRATIVE', 'COALITION'];
+const TIMELINE_FILTERS = ['ALL', 'AUDIT', 'DECISION', 'EVENT'];
 const DEFAULT_PAGE_SIZE = 6;
 const ORDER_ACK_EVENT_SET = new Set(['ROGER', 'WILCO', 'CLEAR_COMMS']);
 const ORDER_DIRECTIVE_EVENT_SET = new Set(['MOVE_OUT', 'HOLD', 'SELF_CHECK', ...ORDER_ACK_EVENT_SET]);
 
-interface PagedItems<T> {
-  page: number;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
-  pageCount: number;
-  visibleItems: T[];
-}
-
-function usePagedItems<T>(items: T[], pageSize: number = DEFAULT_PAGE_SIZE): PagedItems<T> {
+function usePagedItems(items, pageSize = DEFAULT_PAGE_SIZE) {
   const [page, setPage] = useState(0);
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
 
@@ -166,17 +134,7 @@ function usePagedItems<T>(items: T[], pageSize: number = DEFAULT_PAGE_SIZE): Pag
   return { page, setPage, pageCount, visibleItems };
 }
 
-function PaginationControls({
-  page,
-  pageCount,
-  setPage,
-  className = '',
-}: {
-  page: number;
-  pageCount: number;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
-  className?: string;
-}) {
+function PaginationControls({ page, pageCount, setPage, className = '' }) {
   if (pageCount <= 1) return null;
   return (
     <div className={`flex items-center gap-1.5 ${className}`.trim()}>
@@ -198,27 +156,27 @@ function PaginationControls({
   );
 }
 
-function cycleStatus(status: Operation['status']): Operation['status'] {
+function cycleStatus(status) {
   if (status === 'PLANNING') return 'ACTIVE';
   if (status === 'ACTIVE') return 'WRAPPING';
   if (status === 'WRAPPING') return 'ARCHIVED';
   return 'PLANNING';
 }
 
-function toneForStatus(status: Operation['status']): 'ok' | 'warning' | 'neutral' {
+function toneForStatus(status) {
   if (status === 'ACTIVE') return 'ok';
   if (status === 'PLANNING') return 'warning';
   return 'neutral';
 }
 
-function parseTokenList(value: string): string[] {
+function parseTokenList(value) {
   return [...new Set(String(value || '')
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean))];
 }
 
-function deriveTimelineSeverity(source: TimelineSource, kind: string, summary: string): TimelineSeverity {
+function deriveTimelineSeverity(source, kind, summary) {
   const signal = `${kind} ${summary}`.toUpperCase();
   if (source === 'DECISION') return 'HIGH';
   if (/(CRITICAL|ERROR|FAILED|FAIL|BLOCK|DENY|REJECT)/.test(signal)) return 'HIGH';
@@ -226,19 +184,19 @@ function deriveTimelineSeverity(source: TimelineSource, kind: string, summary: s
   return 'LOW';
 }
 
-function toneForTimelineSeverity(severity: TimelineSeverity): 'ok' | 'active' | 'danger' {
+function toneForTimelineSeverity(severity) {
   if (severity === 'HIGH') return 'danger';
   if (severity === 'MEDIUM') return 'active';
   return 'ok';
 }
 
-function classesForTimelineSeverity(severity: TimelineSeverity): string {
+function classesForTimelineSeverity(severity) {
   if (severity === 'HIGH') return 'border-red-800/70 bg-red-950/20';
   if (severity === 'MEDIUM') return 'border-sky-800/60 bg-sky-950/20';
   return 'border-zinc-800 bg-zinc-950/55';
 }
 
-function toneForTimelineSource(source: TimelineSource): 'neutral' | 'active' | 'ok' {
+function toneForTimelineSource(source) {
   if (source === 'DECISION') return 'active';
   if (source === 'EVENT') return 'ok';
   return 'neutral';
@@ -254,7 +212,7 @@ export default function OperationFocusApp({
   onClose,
   onOpenForceDesign,
   onOpenReports,
-}: OperationFocusAppProps) {
+}) {
   useRenderProfiler('OperationFocusApp');
   const executionBoardEnabled = isOperationExecutionBoardV2Enabled();
   const [opsVersion, setOpsVersion] = useState(0);
@@ -264,9 +222,9 @@ export default function OperationFocusApp({
   const [threadVersion, setThreadVersion] = useState(0);
   const [enhancementVersion, setEnhancementVersion] = useState(0);
   const [errorText, setErrorText] = useState('');
-  const [tabId, setTabId] = useState<TabId>('EXECUTION');
-  const [roleViewPreview, setRoleViewPreview] = useState<OperationRoleView | ''>('');
-  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('ALL');
+  const [tabId, setTabId] = useState('EXECUTION');
+  const [roleViewPreview, setRoleViewPreview] = useState('');
+  const [timelineFilter, setTimelineFilter] = useState('ALL');
   const [statusCapsuleOpen, setStatusCapsuleOpen] = useState(false);
   const [commandCapsuleOpen, setCommandCapsuleOpen] = useState(false);
   const [auditCapsuleOpen, setAuditCapsuleOpen] = useState(false);
@@ -274,7 +232,7 @@ export default function OperationFocusApp({
   const [metadataNameInput, setMetadataNameInput] = useState('');
   const [metadataAoNodeInput, setMetadataAoNodeInput] = useState('');
   const [metadataAoNoteInput, setMetadataAoNoteInput] = useState('');
-  const [metadataClassificationInput, setMetadataClassificationInput] = useState<DataClassification>('INTERNAL');
+  const [metadataClassificationInput, setMetadataClassificationInput] = useState('INTERNAL');
   const [statusOverrideReasonInput, setStatusOverrideReasonInput] = useState('');
   const [focusTemplateNameInput, setFocusTemplateNameInput] = useState('');
   const [focusTemplateDescriptionInput, setFocusTemplateDescriptionInput] = useState('');
@@ -284,7 +242,7 @@ export default function OperationFocusApp({
   const [taskInput, setTaskInput] = useState('');
   const [assumptionInput, setAssumptionInput] = useState('');
 
-  const [rsvpMode, setRsvpMode] = useState<'INDIVIDUAL' | 'ASSET'>('INDIVIDUAL');
+  const [rsvpMode, setRsvpMode] = useState('INDIVIDUAL');
   const [rsvpRole, setRsvpRole] = useState('Lead');
   const [rsvpNotes, setRsvpNotes] = useState('');
   const [exceptionReason, setExceptionReason] = useState('');
@@ -295,11 +253,11 @@ export default function OperationFocusApp({
   const [seatQty, setSeatQty] = useState(1);
   const [joinUserId, setJoinUserId] = useState('');
 
-  const [ruleEnforcement, setRuleEnforcement] = useState<RuleEnforcement>('SOFT');
-  const [ruleKind, setRuleKind] = useState<RequirementKind>('ROLE');
+  const [ruleEnforcement, setRuleEnforcement] = useState('SOFT');
+  const [ruleKind, setRuleKind] = useState('ROLE');
   const [ruleMessage, setRuleMessage] = useState('');
   const [rulePredicate, setRulePredicate] = useState('{"roleIn":["Lead","Medic"]}');
-  const [doctrineLevel, setDoctrineLevel] = useState<DoctrineLevel>('INDIVIDUAL');
+  const [doctrineLevel, setDoctrineLevel] = useState('INDIVIDUAL');
   const [editingDoctrineId, setEditingDoctrineId] = useState('');
   const [doctrineLabelInput, setDoctrineLabelInput] = useState('');
   const [doctrineDescriptionInput, setDoctrineDescriptionInput] = useState('');
@@ -310,19 +268,19 @@ export default function OperationFocusApp({
   const [doctrineFocusedEnabledInput, setDoctrineFocusedEnabledInput] = useState(true);
   const [roleMandateRole, setRoleMandateRole] = useState('Gunner');
   const [roleMandateMin, setRoleMandateMin] = useState(1);
-  const [roleMandateEnforcement, setRoleMandateEnforcement] = useState<MandateEnforcement>('SOFT');
+  const [roleMandateEnforcement, setRoleMandateEnforcement] = useState('SOFT');
   const [roleMandateRequiredTags, setRoleMandateRequiredTags] = useState('ship-combat,comms');
   const [loadoutMandateLabel, setLoadoutMandateLabel] = useState('Turret Ops Baseline');
   const [loadoutMandateTagsAny, setLoadoutMandateTagsAny] = useState('ship-combat,turret');
   const [loadoutMandateRoles, setLoadoutMandateRoles] = useState('Gunner');
-  const [loadoutMandateEnforcement, setLoadoutMandateEnforcement] = useState<MandateEnforcement>('SOFT');
+  const [loadoutMandateEnforcement, setLoadoutMandateEnforcement] = useState('SOFT');
   const [assetMandateTag, setAssetMandateTag] = useState('combat');
   const [assetMandateMin, setAssetMandateMin] = useState(1);
-  const [assetMandateEnforcement, setAssetMandateEnforcement] = useState<MandateEnforcement>('SOFT');
+  const [assetMandateEnforcement, setAssetMandateEnforcement] = useState('SOFT');
   const [preferenceUserId, setPreferenceUserId] = useState('');
   const [preferenceRoles, setPreferenceRoles] = useState('Gunner,Pilot');
   const [preferenceActivities, setPreferenceActivities] = useState('ship-combat,turret');
-  const [preferencePosture, setPreferencePosture] = useState<Operation['posture'] | 'ANY'>('ANY');
+  const [preferencePosture, setPreferencePosture] = useState('ANY');
   const [preferenceNotifyOptIn, setPreferenceNotifyOptIn] = useState(true);
 
   const [threadBody, setThreadBody] = useState('');
@@ -430,7 +388,7 @@ export default function OperationFocusApp({
     [selectedOp?.id, enhancementVersion]
   );
   const doctrineCatalogByLevel = useMemo(() => {
-    const grouped: Record<DoctrineLevel, ReturnType<typeof listDoctrineLibrary>> = {
+    const grouped = {
       INDIVIDUAL: [],
       SQUAD: [],
       WING: [],
@@ -447,17 +405,17 @@ export default function OperationFocusApp({
       element: member.element,
       loadoutTags: [member.role, member.element, 'comms'].filter(Boolean),
       activityTags: [member.role, member.element].filter(Boolean),
-      availability: 'READY' as const,
+      availability: 'READY',
     }));
     const entryPool = entries.map((entry) => ({
       userId: entry.userId,
       role: entry.rolePrimary,
       loadoutTags: [entry.rolePrimary, ...(entry.roleSecondary || []), 'comms'],
       activityTags: [entry.rolePrimary, ...(entry.roleSecondary || [])],
-      availability: entry.status === 'WITHDRAWN' ? ('OFFLINE' as const) : ('READY' as const),
+      availability: entry.status === 'WITHDRAWN' ? 'OFFLINE' : 'READY',
     }));
     const merged = [...rosterPool, ...entryPool];
-    const byUser = new Map<string, typeof merged[number]>();
+    const byUser = new Map();
     for (const candidate of merged) {
       const current = byUser.get(candidate.userId);
       if (!current) {
@@ -506,10 +464,10 @@ export default function OperationFocusApp({
     () => (selectedOp ? listOperationEvents(selectedOp.id).slice(0, 20) : []),
     [selectedOp?.id, opsVersion]
   );
-  const timelineEntries = useMemo<TimelineEntry[]>(() => {
+  const timelineEntries = useMemo(() => {
     const decisionItems = decisions.map((entry) => ({
       id: `decision:${entry.id}`,
-      source: 'DECISION' as const,
+      source: 'DECISION',
       kind: 'DECISION',
       summary: entry.title,
       actor: entry.createdBy,
@@ -518,7 +476,7 @@ export default function OperationFocusApp({
     }));
     const auditItems = auditEvents.map((entry) => ({
       id: `audit:${entry.id}`,
-      source: 'AUDIT' as const,
+      source: 'AUDIT',
       kind: entry.action,
       summary: entry.summary,
       actor: entry.actorId,
@@ -527,7 +485,7 @@ export default function OperationFocusApp({
     }));
     const eventItems = opEvents.map((entry) => ({
       id: `event:${entry.id}`,
-      source: 'EVENT' as const,
+      source: 'EVENT',
       kind: `EVENT:${entry.kind}`,
       summary: (() => {
         const payloadSummary = JSON.stringify(entry.payload || {});
@@ -541,8 +499,8 @@ export default function OperationFocusApp({
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 40);
   }, [auditEvents, decisions, opEvents]);
-  const timelineCounts = useMemo<Record<TimelineFilter, number>>(() => {
-    const counts: Record<TimelineFilter, number> = { ALL: timelineEntries.length, AUDIT: 0, DECISION: 0, EVENT: 0 };
+  const timelineCounts = useMemo(() => {
+    const counts = { ALL: timelineEntries.length, AUDIT: 0, DECISION: 0, EVENT: 0 };
     for (const entry of timelineEntries) counts[entry.source] += 1;
     return counts;
   }, [timelineEntries]);
@@ -574,16 +532,16 @@ export default function OperationFocusApp({
   );
   const phaseTaskRows = useMemo(
     () => [
-      ...phases.map((item) => ({ id: `phase:${item.id}`, kind: 'PHASE' as const, label: `Phase ${item.orderIndex + 1}: ${item.title}` })),
-      ...tasks.map((item) => ({ id: `task:${item.id}`, kind: 'TASK' as const, label: `Task: ${item.title}` })),
+      ...phases.map((item) => ({ id: `phase:${item.id}`, kind: 'PHASE', label: `Phase ${item.orderIndex + 1}: ${item.title}` })),
+      ...tasks.map((item) => ({ id: `task:${item.id}`, kind: 'TASK', label: `Task: ${item.title}` })),
     ],
     [phases, tasks]
   );
   const mandateRows = useMemo(
     () => [
-      ...(mandateProfile?.roleMandates || []).map((mandate) => ({ id: mandate.id, kind: 'ROLE' as const, mandate })),
-      ...(mandateProfile?.loadoutMandates || []).map((mandate) => ({ id: mandate.id, kind: 'LOADOUT' as const, mandate })),
-      ...(mandateProfile?.assetMandates || []).map((mandate) => ({ id: mandate.id, kind: 'ASSET' as const, mandate })),
+      ...(mandateProfile?.roleMandates || []).map((mandate) => ({ id: mandate.id, kind: 'ROLE', mandate })),
+      ...(mandateProfile?.loadoutMandates || []).map((mandate) => ({ id: mandate.id, kind: 'LOADOUT', mandate })),
+      ...(mandateProfile?.assetMandates || []).map((mandate) => ({ id: mandate.id, kind: 'ASSET', mandate })),
     ],
     [mandateProfile]
   );
@@ -694,7 +652,7 @@ export default function OperationFocusApp({
     () => (executionBoardEnabled ? TABS : TABS.filter((id) => id !== 'EXECUTION')),
     [executionBoardEnabled]
   );
-  const defaultTabForRole: TabId = executionBoardEnabled
+  const defaultTabForRole = executionBoardEnabled
     ? (effectiveRoleView === 'COMMAND' ? 'EXECUTION' : effectiveRoleView === 'LEAD' ? 'ROSTER' : 'COMMS')
     : (effectiveRoleView === 'LEAD' ? 'ROSTER' : 'COMMS');
 
@@ -739,16 +697,16 @@ export default function OperationFocusApp({
     hasConflict: (summary?.hardViolations || 0) > 0,
   });
 
-  const runAction = (action: () => void) => {
+  const runAction = (action) => {
     try {
       setErrorText('');
       action();
-    } catch (error: any) {
+    } catch (error) {
       setErrorText(error?.message || 'Action failed');
     }
   };
 
-  const exportOperationScheduleIcs = (operation: Operation) => {
+  const exportOperationScheduleIcs = (operation) => {
     try {
       const ics = buildOperationScheduleIcs(operation);
       if (typeof window === 'undefined') return;
@@ -761,7 +719,7 @@ export default function OperationFocusApp({
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
-    } catch (error: any) {
+    } catch (error) {
       setErrorText(error?.message || 'Unable to export operation schedule.');
     }
   };
@@ -777,7 +735,7 @@ export default function OperationFocusApp({
     setDoctrineFocusedEnabledInput(true);
   };
 
-  const loadDoctrineDraft = (doctrineId: string) => {
+  const loadDoctrineDraft = (doctrineId) => {
     const doctrine = listDoctrineLibrary().find((entry) => entry.id === doctrineId);
     if (!doctrine) return;
     setEditingDoctrineId(doctrine.id);
@@ -884,7 +842,7 @@ export default function OperationFocusApp({
           </NexusBadge>
           <select
             value={roleViewPreview}
-            onChange={(event) => setRoleViewPreview(event.target.value as OperationRoleView | '')}
+            onChange={(event) => setRoleViewPreview(event.target.value)}
             className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
           >
             <option value="">Preview: Auto</option>
@@ -974,7 +932,7 @@ export default function OperationFocusApp({
               />
               <select
                 value={metadataClassificationInput}
-                onChange={(e) => setMetadataClassificationInput(e.target.value as DataClassification)}
+                onChange={(e) => setMetadataClassificationInput(e.target.value)}
                 className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"
               >
                 <option value="INTERNAL">INTERNAL</option>
@@ -1000,7 +958,7 @@ export default function OperationFocusApp({
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              {(['CASUAL', 'FOCUSED'] as Operation['posture'][]).map((posture) => (
+              {['CASUAL', 'FOCUSED'].map((posture) => (
                 <NexusButton
                   key={posture}
                   size="sm"
@@ -1031,7 +989,7 @@ export default function OperationFocusApp({
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              {(['PLANNING', 'ACTIVE', 'WRAPPING', 'ARCHIVED'] as Operation['status'][]).map((status) => (
+              {['PLANNING', 'ACTIVE', 'WRAPPING', 'ARCHIVED'].map((status) => (
                 <NexusButton
                   key={status}
                   size="sm"
@@ -1219,7 +1177,7 @@ export default function OperationFocusApp({
             size="sm"
             intent="subtle"
             disabled={commsLocked}
-            onClick={() => runAction(() => applyCommsTemplate(selectedOp.id, selectedOp.commsTemplateId as CommsTemplateId, actorId))}
+            onClick={() => runAction(() => applyCommsTemplate(selectedOp.id, selectedOp.commsTemplateId, actorId))}
           >
             Reapply Template
           </NexusButton>
@@ -1315,7 +1273,7 @@ export default function OperationFocusApp({
                 <div className="text-[11px] text-zinc-500">{availabilityCopy(rosterAvailability)}</div>
               ) : null}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <select value={rsvpMode} disabled={rosterLocked} onChange={(e) => setRsvpMode(e.target.value as 'INDIVIDUAL' | 'ASSET')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="INDIVIDUAL">INDIVIDUAL</option><option value="ASSET">BRING A SHIP</option></select>
+                <select value={rsvpMode} disabled={rosterLocked} onChange={(e) => setRsvpMode(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="INDIVIDUAL">INDIVIDUAL</option><option value="ASSET">BRING A SHIP</option></select>
                 <input value={rsvpRole} disabled={rosterLocked} onChange={(e) => setRsvpRole(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Primary role" />
               </div>
               <textarea value={rsvpNotes} disabled={rosterLocked} onChange={(e) => setRsvpNotes(e.target.value)} className="h-16 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200" placeholder="Notes (comms-ok)" />
@@ -1400,7 +1358,7 @@ export default function OperationFocusApp({
               <input value={preferenceRoles} onChange={(e) => setPreferenceRoles(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Preferred roles (comma-separated)" />
               <input value={preferenceActivities} onChange={(e) => setPreferenceActivities(e.target.value)} className="h-8 w-full rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Activity tags (comma-separated)" />
               <div className="grid grid-cols-2 gap-2">
-                <select value={preferencePosture} onChange={(e) => setPreferencePosture(e.target.value as Operation['posture'] | 'ANY')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
+                <select value={preferencePosture} onChange={(e) => setPreferencePosture(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200">
                   <option value="ANY">ANY</option>
                   <option value="CASUAL">CASUAL</option>
                   <option value="FOCUSED">FOCUSED</option>
@@ -1580,7 +1538,7 @@ export default function OperationFocusApp({
                 </div>
               ) : null}
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
-                {(['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'] as DoctrineLevel[]).map((level) => (
+                {['INDIVIDUAL', 'SQUAD', 'WING', 'FLEET'].map((level) => (
                   <NexusButton key={level} size="sm" intent={doctrineLevel === level ? 'primary' : 'subtle'} onClick={() => setDoctrineLevel(level)}>
                     {level}
                   </NexusButton>
