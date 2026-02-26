@@ -171,7 +171,7 @@ function toneForStatus(status) {
   return 'neutral';
 }
 
-function parseTokenList(value: string): string[] {
+function parseTokenList(value) {
   return [...new Set(String(value || '')
     .split(',')
     .map((entry) => entry.trim())
@@ -214,7 +214,7 @@ export default function OperationFocusApp({
   onClose,
   onOpenForceDesign,
   onOpenReports,
-}: OperationFocusAppProps) {
+}) {
   useRenderProfiler('OperationFocusApp');
   const executionBoardEnabled = isOperationExecutionBoardV2Enabled();
   const [opsVersion, setOpsVersion] = useState(0);
@@ -1174,7 +1174,7 @@ export default function OperationFocusApp({
             size="sm"
             intent="subtle"
             disabled={commsLocked}
-            onClick={() => runAction(() => applyCommsTemplate(selectedOp.id, selectedOp.commsTemplateId as CommsTemplateId, actorId))}
+            onClick={() => runAction(() => applyCommsTemplate(selectedOp.id, selectedOp.commsTemplateId, actorId))}
           >
             Reapply Template
           </NexusButton>
@@ -1270,7 +1270,7 @@ export default function OperationFocusApp({
                 <div className="text-[11px] text-zinc-500">{availabilityCopy(rosterAvailability)}</div>
               ) : null}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <select value={rsvpMode} disabled={rosterLocked} onChange={(e) => setRsvpMode(e.target.value as 'INDIVIDUAL' | 'ASSET')} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="INDIVIDUAL">INDIVIDUAL</option><option value="ASSET">BRING A SHIP</option></select>
+                <select value={rsvpMode} disabled={rosterLocked} onChange={(e) => setRsvpMode(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200"><option value="INDIVIDUAL">INDIVIDUAL</option><option value="ASSET">BRING A SHIP</option></select>
                 <input value={rsvpRole} disabled={rosterLocked} onChange={(e) => setRsvpRole(e.target.value)} className="h-8 rounded border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200" placeholder="Primary role" />
               </div>
               <textarea value={rsvpNotes} disabled={rosterLocked} onChange={(e) => setRsvpNotes(e.target.value)} className="h-16 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200" placeholder="Notes (comms-ok)" />
