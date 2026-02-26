@@ -2,23 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { invokeMemberFunction } from '@/api/memberFunctions';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AIFeatureToggle from '@/components/ai/AIFeatureToggle';
-import type { LocationEstimate, VisibilityScope } from '../../schemas/coreSchemas';
-import type { IntelStratum, IntentDraftKind } from '../../schemas/intelSchemas';
-import type {
-  ControlSignal,
-  MapLayerState,
-  TacticalLayerId,
-  TacticalMapDockId,
-  TacticalMapMode,
-} from '../../schemas/mapSchemas';
 import { getRenderableLocationEstimates } from '../../services/locationEstimateService';
 import {
   buildMapCommsOverlay,
   createEmptyMapCommsOverlay,
   extractCommsTopologySnapshot,
-  type CommsPriority,
-  type MapCommsOverlay,
-  type MapCommsOverlayNet,
 } from '../../services/mapCommsOverlayService';
 import { buildMapAiPrompt, computeMapInference } from '../../services/mapInferenceService';
 import { applyTTLDecay, computeControlZones } from '../../services/controlZoneService';
@@ -36,15 +24,8 @@ import {
   subscribeIntentDrafts,
   updateDraft,
 } from '../../services/intentDraftService';
-import {
-  buildMapLogisticsOverlay,
-  type MapLogisticsLane,
-} from '../../services/mapLogisticsOverlayService';
-import {
-  buildMapCommandSurface,
-  type MapCommandAlert,
-  type TacticalMacroId,
-} from '../../services/mapCommandSurfaceService';
+import { buildMapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
+import { buildMapCommandSurface } from '../../services/mapCommandSurfaceService';
 import { buildMapTimelineSnapshot } from '../../services/mapTimelineService';
 import {
   loadTacticalMapPreferences,
@@ -69,33 +50,16 @@ import {
   availabilityTone,
   resolveAvailabilityState,
 } from '../state';
-import type { CqbPanelSharedProps } from '../cqb/cqbTypes';
 import IntelDetailPanel from './IntelDetailPanel';
 import IntentDraftPanel from './IntentDraftPanel';
-import type { RadialMenuItem } from './RadialMenu';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID, TACTICAL_MAP_NODES, findMapNodeForLocation } from './mapBoard';
-import type { MapCommsAnchor, MapRadialState, OpsOverlayNode, RenderablePresence, TacticalMapViewMode } from './mapTypes';
 import MapCommandStrip from './MapCommandStrip';
 import MapStageCanvas from './MapStageCanvas';
-import MapDock, { type MapDockTab } from './MapDock';
+import MapDock from './MapDock';
 import MapActionQueue from './MapActionQueue';
 import MapTimelineReplay from './MapTimelineReplay';
 
-interface TacticalMapPanelProps extends Partial<CqbPanelSharedProps> {
-  locationEstimates?: LocationEstimate[];
-  controlSignals?: ControlSignal[];
-  viewerScope?: VisibilityScope;
-  onOpenMapFocus?: () => void;
-  compact?: boolean;
-}
-
-interface CommsOverlayState {
-  loading: boolean;
-  error: string | null;
-  overlay: MapCommsOverlay;
-}
-
-const DEFAULT_VISIBLE_STRATA: Readonly<Record<IntelStratum, boolean>> = Object.freeze({
+const DEFAULT_VISIBLE_STRATA = Object.freeze({
   PERSONAL: true,
   SHARED_COMMONS: true,
   OPERATIONAL: false,
@@ -104,7 +68,7 @@ const DEFAULT_VISIBLE_STRATA: Readonly<Record<IntelStratum, boolean>> = Object.f
 
 const SUMMARY_PAGE_SIZE = 5;
 
-function createLayerState(defaults: Partial<Record<TacticalLayerId, boolean>>): MapLayerState[] {
+function createLayerState(defaults) {
   return [
     { id: 'presence', enabled: defaults.presence !== false },
     { id: 'controlZones', enabled: defaults.controlZones !== false },
@@ -115,7 +79,7 @@ function createLayerState(defaults: Partial<Record<TacticalLayerId, boolean>>): 
   ];
 }
 
-function mapPresence(estimates: LocationEstimate[], viewerScope: VisibilityScope): RenderablePresence[] {
+function mapPresence(estimates, viewerScope) {
   const renderable = getRenderableLocationEstimates(estimates, { viewerScope, includeStale: true });
   return renderable
     .map((estimate) => {
@@ -225,7 +189,7 @@ export default function TacticalMapPanel({
   const [activeRadial, setActiveRadial] = useState(null);
   const [intelVersion, setIntelVersion] = useState(0);
   const [draftVersion, setDraftVersion] = useState(0);
-  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftError, setDraftError] = useState(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [commsPriorityFloor, setCommsPriorityFloor] = useState('STANDARD');
   const [showCommsLinks, setShowCommsLinks] = useState(true);
@@ -234,7 +198,7 @@ export default function TacticalMapPanel({
   const [showOmMarkers, setShowOmMarkers] = useState(false);
   const [aiInferenceLoading, setAiInferenceLoading] = useState(false);
   const [aiInferenceText, setAiInferenceText] = useState('');
-  const [aiInferenceError, setAiInferenceError] = useState<string | null>(null);
+  const [aiInferenceError, setAiInferenceError] = useState(null);
   const [replayWindowMinutes, setReplayWindowMinutes] = useState(30);
   const [replayOffsetMinutes, setReplayOffsetMinutes] = useState(0);
   const [mapViewMode, setMapViewMode] = useState('SYSTEM');
@@ -248,7 +212,7 @@ export default function TacticalMapPanel({
   const [quickBroadcastMessage, setQuickBroadcastMessage] = useState('');
   const [quickBroadcastPriority, setQuickBroadcastPriority] = useState('STANDARD');
   const [quickBroadcastBusy, setQuickBroadcastBusy] = useState(false);
-  const [quickBroadcastError, setQuickBroadcastError] = useState<string | null>(null);
+  const [quickBroadcastError, setQuickBroadcastError] = useState(null);
   const [summaryOrdersPage, setSummaryOrdersPage] = useState(0);
   const [summaryCommsPage, setSummaryCommsPage] = useState(0);
   const [commsNetsPage, setCommsNetsPage] = useState(0);
@@ -782,13 +746,13 @@ export default function TacticalMapPanel({
     setActiveRadial(null);
   };
 
-  const executeMacro = async (macroId: TacticalMacroId) => {
+  const executeMacro = async (macroId) => {
     if (busyMacroId) return;
     setBusyMacroId(macroId);
     setMacroExecutionError(null);
     setMacroExecutionMessage(null);
     try {
-      const response: any = await invokeMemberFunction('updateCommsConsole', {
+      const response = await invokeMemberFunction('updateCommsConsole', {
         action: 'execute_map_command_macro',
         macroId,
         eventId: scopedCommsOpId || undefined,
