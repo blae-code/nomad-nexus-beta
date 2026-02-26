@@ -1,3 +1,14 @@
+/**
+ * MapCommandStrip - Map mode/layer/roster controls
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: headerPrimary (h3), telemetryPrimary (labels)
+ * - Spacing: px-3 py-2.5 (panel), gap-2/gap-3 (sections)
+ * - Borders: border-zinc-800 (standard)
+ * - Primitives: NexusBadge, NexusButton
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import { transitionStyle } from '../motion';
 import { NexusBadge, NexusButton } from '../primitives';

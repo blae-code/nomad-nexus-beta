@@ -1,3 +1,14 @@
+/**
+ * MapDock - Tabbed dock panel for map utilities
+ * 
+ * DESIGN COMPLIANCE:
+ * - Typography: headerPrimary (h4), telemetryPrimary (counts)
+ * - Spacing: p-2.5 (panel), gap-1.5 (tabs)
+ * - Borders: border-zinc-800 (standard)
+ * - Primitives: NexusBadge, NexusButton
+ * 
+ * @see components/nexus-os/STYLE_GUIDE.md
+ */
 import React from 'react';
 import { NexusBadge, NexusButton } from '../primitives';
 import { tacticalMapDockIdsForMode } from '../../services/tacticalMapInteractionService';

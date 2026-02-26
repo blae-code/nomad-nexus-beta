@@ -1,35 +1,19 @@
 /**
- * MapStageCanvas - Tactical map rendering engine with SVG overlays
+ * MapStageCanvas - SVG tactical map rendering with pan/zoom
  * 
  * DESIGN COMPLIANCE:
- * - Typography: HUD panels text-[11px] uppercase
- * - Icons: SVG markers, zoom controls
- * - Tokens: ✅ Presence markers (circle), intel markers (objective), comms callouts (triangle)
- * - Token opportunities: Intel markers should use objective/target-alt family
+ * - Typography: SVG text uses font-size in px units
+ * - Borders: border-zinc-800 (container)
+ * - Background: bg-zinc-950/60
+ * - Primitives: RadialMenu, AnimatedMount
  * 
  * @see components/nexus-os/STYLE_GUIDE.md
  */
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { ControlZone, TacticalLayerId } from '../../schemas/mapSchemas';
-import type { IntelRenderable } from '../../services/intelService';
-import type { MapCommsOverlay, MapCommsOverlayCallout, MapCommsOverlayLink } from '../../services/mapCommsOverlayService';
-import type { MapLogisticsLane, MapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
-import type {
-  MapRadialState,
-  MapCommsAnchor,
-  OpsOverlayNode,
-  RenderablePresence,
-  TacticalRenderableNode,
-  TacticalMapViewMode,
-} from './mapTypes';
 import RadialMenu from './RadialMenu';
 import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
-import { tokenAssets } from '../tokens';
-
-
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -125,46 +109,6 @@ function shouldRenderLabel(node, viewMode, selectedNodeId) {
   return false;
 }
 
-function getIntelTokenAsset(type, confidence) {
-  if (type === 'MARKER') {
-    if (confidence === 'HIGH') return tokenAssets.tactical['target-alt-green'];
-    if (confidence === 'MED') return tokenAssets.tactical['target-alt-yellow'];
-    return tokenAssets.tactical['target-alt-red'];
-  }
-  if (type === 'PIN') {
-    if (confidence === 'HIGH') return tokenAssets.tactical['objective-green'];
-    if (confidence === 'MED') return tokenAssets.tactical['objective-yellow'];
-    return tokenAssets.tactical['objective-orange'];
-  }
-  return tokenAssets.tactical['objective-cyan'];
-}
-
-function getPresenceTokenAsset(displayState, confidenceBand) {
-  if (displayState === 'DECLARED') {
-    if (confidenceBand === 'HIGH') return tokenAssets.shapes['circle-green'];
-    if (confidenceBand === 'MED') return tokenAssets.shapes['circle-cyan'];
-    return tokenAssets.shapes['circle-blue'];
-  }
-  if (displayState === 'INFERRED') {
-    return tokenAssets.shapes['circle-yellow'];
-  }
-  return tokenAssets.shapes['circle-grey'];
-}
-
-function getCommsCalloutTokenAsset(priority) {
-  if (priority === 'CRITICAL') return tokenAssets.shapes['triangle-red'];
-  if (priority === 'HIGH') return tokenAssets.shapes['triangle-yellow'];
-  return tokenAssets.shapes['triangle-cyan'];
-}
-
-function getLogisticsTokenAsset(laneKind, stale) {
-  if (stale) return tokenAssets.resources['logistics-grey'];
-  if (laneKind === 'EXTRACT') return tokenAssets.resources['logistics-green'];
-  if (laneKind === 'HOLD') return tokenAssets.resources['ammunition-yellow'];
-  if (laneKind === 'AVOID') return tokenAssets.resources['energy-red'];
-  return tokenAssets.resources['logistics-cyan'];
-}
-
 export default function MapStageCanvas({
   layerEnabled,
   opsOverlay,
@@ -194,7 +138,7 @@ export default function MapStageCanvas({
   const recenterKeyRef = useRef('');
   const [zoom, setZoom] = useState(1);
   const [viewportCenter, setViewportCenter] = useState({ x: 50, y: 50 });
-  const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [cursorCoords, setCursorCoords] = useState({ x: 50, y: 50 });
   const [isPointerActive, setIsPointerActive] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
@@ -238,7 +182,7 @@ export default function MapStageCanvas({
             dashed: node.category !== 'moon',
           };
         })
-        .filter(Boolean) as Array<{ id: string; x: number; y: number; radius: number; dashed: boolean }>,
+        .filter(Boolean),
     [visibleMapNodes, mapViewMode]
   );
   const mapNodeIdSet = useMemo(() => new Set(visibleMapNodes.map((node) => node.id)), [visibleMapNodes]);
@@ -624,11 +568,17 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = anchorNet ? anchorNet.x + (((index % 2) * 2) - 1) * 0.8 : node.x + (((index % 3) - 1) * 0.9);
               const y = anchorNet ? anchorNet.y - 1.7 : node.y - node.radius - 1.8 - (index % 2) * 0.6;
-              const opacity = callout.stale ? 0.44 : 0.96;
-              const tokenAsset = getCommsCalloutTokenAsset(callout.priority);
+              const color = commsPriorityColor(callout.priority);
+              const opacity = callout.stale ? 0.44 : 0.92;
               return (
                 <g key={`comms-callout:${callout.id}`} opacity={opacity}>
-                  <image href={tokenAsset} x={x - 1.1} y={y - 1.3} width={2.2} height={2.2} />
+                  <polygon
+                    points={`${x},${y - 0.9} ${x + 0.84},${y + 0.72} ${x - 0.84},${y + 0.72}`}
+                    fill="rgba(17,13,11,0.9)"
+                    stroke={color}
+                    strokeWidth={0.34}
+                  />
+                  <circle cx={x} cy={y + 0.18} r={0.24} fill={color} />
                 </g>
               );
             })
@@ -645,7 +595,6 @@ export default function MapStageCanvas({
               const y1 = fromNode.y + offset;
               const x2 = toNode.x + offset;
               const y2 = toNode.y + offset;
-              const tokenAsset = getLogisticsTokenAsset(lane.laneKind, lane.stale);
               return (
                 <g key={lane.id} opacity={lane.stale ? 0.45 : 0.92}>
                   <line
@@ -657,7 +606,7 @@ export default function MapStageCanvas({
                     strokeWidth={lane.laneKind === 'EXTRACT' ? 0.54 : 0.38}
                     strokeDasharray={lane.laneKind === 'HOLD' ? '1 1' : lane.laneKind === 'ROUTE_HYPOTHESIS' ? '1.4 1' : '1.6 1'}
                   />
-                  <image href={tokenAsset} x={x2 - 0.7} y={y2 - 0.7} width={1.4} height={1.4} />
+                  <circle cx={x2} cy={y2} r={0.34} fill={color} />
                 </g>
               );
             })
@@ -773,10 +722,9 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = node.x + ((index % 3) - 1) * 1.9;
               const y = node.y - node.radius - 2.2 - ((index % 2) * 1.2);
-              const tokenAsset = getPresenceTokenAsset(entry.displayState, entry.confidenceBand);
               return (
                 <g key={entry.id}>
-                  <image href={tokenAsset} x={x - 0.85} y={y - 0.85} width={1.7} height={1.7} opacity={0.92} />
+                  <circle cx={x} cy={y} r={0.9} fill={stateColor(entry.displayState)} stroke={confidenceColor(entry.confidenceBand)} strokeWidth={0.28} />
                   <text
                     x={x + 1.8}
                     y={y + 0.34}
@@ -799,8 +747,10 @@ export default function MapStageCanvas({
               if (!node) return null;
               const x = node.x + Number(intel.anchor.dx || 0);
               const y = node.y + Number(intel.anchor.dy || 0);
-              const opacity = intel.ttl.stale ? 0.28 : Math.max(0.42, Math.min(0.96, intel.ttl.decayRatio));
-              const tokenAsset = getIntelTokenAsset(intel.type, intel.confidence);
+              const strokeWidth = confidenceBandToStroke(intel.confidence);
+              const opacity = intel.ttl.stale ? 0.18 : Math.max(0.24, Math.min(0.9, intel.ttl.decayRatio));
+              const stroke = confidenceBandToColor(intel.confidence);
+              const fill = glyphFillForIntelType(intel.type);
               return (
                 <g
                   key={keyForIntel(intel)}
@@ -845,7 +795,33 @@ export default function MapStageCanvas({
                   style={{ cursor: 'pointer', opacity }}
                 >
                   <title>{intelTooltip(intel)}</title>
-                  <image href={tokenAsset} x={x - 1.7} y={y - 1.7} width={3.4} height={3.4} />
+                  {intel.type === 'PIN' ? (
+                    <polygon
+                      points={`${x},${y - 1.8} ${x + 1.8},${y} ${x},${y + 1.8} ${x - 1.8},${y}`}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={strokeWidth}
+                    />
+                  ) : null}
+                  {intel.type === 'MARKER' ? (
+                    <polygon
+                      points={`${x},${y - 2} ${x + 1.9},${y + 1.8} ${x - 1.9},${y + 1.8}`}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={strokeWidth}
+                    />
+                  ) : null}
+                  {intel.type === 'NOTE' ? (
+                    <rect
+                      x={x - 1.6}
+                      y={y - 1.6}
+                      width={3.2}
+                      height={3.2}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={strokeWidth}
+                    />
+                  ) : null}
                 </g>
               );
             })
