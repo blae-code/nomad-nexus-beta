@@ -1063,7 +1063,7 @@ export default function TacticalMapPanel({
       </div>
       {commsAvailability !== 'OK' || commsDegraded ? <div className="text-[11px] text-zinc-500">{commsStatusCopy}</div> : null}
       <div className="flex items-center gap-1.5 flex-wrap">
-        {(['STANDARD', 'HIGH', 'CRITICAL'] as CommsPriority[]).map((entry) => (
+        {['STANDARD', 'HIGH', 'CRITICAL'].map((entry) => (
           <NexusButton key={entry} size="sm" intent={commsPriorityFloor === entry ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setCommsPriorityFloor(entry)}>{entry === 'STANDARD' ? 'STD+' : entry}</NexusButton>
         ))}
         <NexusButton size="sm" intent={showCommsLinks ? 'primary' : 'subtle'} className="text-[10px]" onClick={() => setShowCommsLinks((prev) => !prev)}>Links</NexusButton>
