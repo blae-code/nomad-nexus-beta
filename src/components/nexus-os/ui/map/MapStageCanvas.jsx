@@ -1,44 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { ControlZone, TacticalLayerId } from '../../schemas/mapSchemas';
-import type { IntelRenderable } from '../../services/intelService';
-import type { MapCommsOverlay, MapCommsOverlayCallout, MapCommsOverlayLink } from '../../services/mapCommsOverlayService';
-import type { MapLogisticsLane, MapLogisticsOverlay } from '../../services/mapLogisticsOverlayService';
-import type {
-  MapRadialState,
-  MapCommsAnchor,
-  OpsOverlayNode,
-  RenderablePresence,
-  TacticalRenderableNode,
-  TacticalMapViewMode,
-} from './mapTypes';
-import RadialMenu, { type RadialMenuItem } from './RadialMenu';
+import RadialMenu from './RadialMenu';
 import { TacticalNodeGlyph } from './tacticalGlyphs';
 import { AnimatedMount } from '../motion';
 import { TACTICAL_MAP_EDGES, TACTICAL_MAP_NODE_BY_ID } from './mapBoard';
-
-interface MapStageCanvasProps {
-  layerEnabled: (id: TacticalLayerId) => boolean;
-  opsOverlay: OpsOverlayNode[];
-  controlZones: ControlZone[];
-  visibleCommsLinks: MapCommsOverlayLink[];
-  commsOverlay: MapCommsOverlay;
-  commsAnchors: Record<string, MapCommsAnchor>;
-  visibleCommsCallouts: MapCommsOverlayCallout[];
-  logisticsOverlay: MapLogisticsOverlay;
-  visibleMapNodes: TacticalRenderableNode[];
-  presence: RenderablePresence[];
-  visibleIntel: IntelRenderable[];
-  mapViewMode: TacticalMapViewMode;
-  selectedNodeId?: string;
-  selectedNodeLabel?: string;
-  activeRadial: MapRadialState | null;
-  radialItems: RadialMenuItem[];
-  hasAnyOverlay: boolean;
-  onClearRadial: () => void;
-  onSelectZone: (zoneId: string) => void;
-  onSelectIntel: (intelId: string) => void;
-  onSetActiveRadial: (value: MapRadialState | null) => void;
-}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -261,7 +225,7 @@ export default function MapStageCanvas({
 
   const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
     if (event.button !== 0) return;
-    const target = event.target;
+    const target = event.target as HTMLElement;
     if (target.closest('[data-map-interactive="true"]')) return;
     if (!stageRef.current) return;
     stageRef.current.setPointerCapture(event.pointerId);
