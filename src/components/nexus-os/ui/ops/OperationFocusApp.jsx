@@ -25,7 +25,6 @@ import {
   buildOperationScheduleIcs,
 } from '../../services/operationScheduleService';
 import { isOperationExecutionBoardV2Enabled } from '../../services/operationFeatureFlagService';
-
 import {
   challengeAssumption,
   createAssumption,
@@ -99,7 +98,6 @@ import {
   availabilityTone,
   resolveAvailabilityState,
 } from '../state';
-
 import { DegradedStateCard, NexusBadge, NexusButton } from '../primitives';
 import OperationNarrativePanel from './OperationNarrativePanel';
 import CoalitionOutreachPanel from './CoalitionOutreachPanel';
